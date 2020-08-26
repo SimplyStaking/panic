@@ -1,13 +1,22 @@
-image: node:11.10.1
-
-before_script:
-    - cd 'src/web-installer/frontend/'
+image: node:latest
 
 stages:
+    - build
     - test
 
-run-unit-test:
-    stage: test
+cache:
+    paths:
+        - node_modules/
+
+install_dependencies:
+    stage: build
     script:
-        - npm install # Install all dependencies
-        - npm test # Test 
+        - cd src/web-installer/frontend
+        - npm install
+    artifacts:
+        paths:
+        - node_modules/
+
+testing_testing:
+    stage: test
+    script: npm test
