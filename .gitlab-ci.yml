@@ -1,0 +1,13 @@
+image: node:11.10.1
+
+before_script:
+    - cd 'src/web-installer/frontend/'
+
+stages:
+    - test
+
+run-unit-test:
+    stage: test
+    script:
+        - npm install # Install all dependencies
+        - npm test # Test 
