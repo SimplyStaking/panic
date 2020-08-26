@@ -1,5 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# project builds
+/builds
+/cache
+
 # dependencies
 src/web-installer/frontend/node_modules
 /.pnp
