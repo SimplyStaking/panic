@@ -1,25 +1,25 @@
 image: node:latest
 
-before_script:
-    - cd 'src/web-installer/frontend/'
-
 stages:
     - build
     - test
 
 cache:
     paths:
-        - node_modules/
+        - src/web-installer/frontend/node_modules/
 
 install_dependencies:
     stage: build
     script:
         - cd src/web-installer/frontend
         - npm install
+        - npm test
     artifacts:
         paths:
         - node_modules/
 
 testing_testing:
     stage: test
-    script: npm test
+    script:
+        - cd src/web-installer/frontend/
+        - npm test
