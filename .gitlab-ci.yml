@@ -1,5 +1,8 @@
 image: node:latest
 
+before_script:
+    - cd 'src/web-installer/frontend/'
+
 stages:
     - build
     - test
