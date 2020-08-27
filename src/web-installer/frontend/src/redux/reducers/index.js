@@ -1,4 +1,4 @@
 import { combineReducers } from "redux";
-import todos from "./todos";
+import ChangePageReducer from "./pageChange";
 
-export default combineReducers({ todos });
+export default combineReducers({ ChangePageReducer });

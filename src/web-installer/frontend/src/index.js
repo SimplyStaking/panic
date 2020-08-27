@@ -8,6 +8,12 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
+// Temp to test in window
+import { changePage } from './redux/actions/pageActions';
+
+window.store = store;
+window.changePage = changePage;
+
 ReactDOM.render(
   <Provider store={store}>
     <App />
