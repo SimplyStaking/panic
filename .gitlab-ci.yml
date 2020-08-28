@@ -1,15 +1,14 @@
 image: node:latest
 
 before_script:
-    - cd src/web-installer/frontend
+    - cd src/web-installer
 
 stages:
     - build
-    - test
 
 cache:
     paths:
-        - src/web-installer/frontend/node_modules/
+        - src/web-installer/node_modules/
 
 install:
     stage: build

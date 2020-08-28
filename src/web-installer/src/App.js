@@ -7,23 +7,21 @@ import PageSelector from './containers/pageSelector';
 
 import './App.css';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   root: {
-      display: 'flex',
-  }
+    display: 'flex',
+  },
 }));
 
 function App() {
-
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-        <SideBar />
-        <PageSelector />
+      <SideBar />
+      <PageSelector />
     </div>
   );
 }
-
 
 export default App;
