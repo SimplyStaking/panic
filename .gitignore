@@ -5,7 +5,7 @@
 /cache
 
 # dependencies
-web-installer/frontend/node_modules
+web-installer/node_modules
 /.pnp
 .pnp.js
 
