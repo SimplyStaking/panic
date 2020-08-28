@@ -1,12 +1,13 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Box, Accordion } from '@material-ui/core';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import Typography from '@material-ui/core/Typography';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-
+import { Grid, Box } from '@material-ui/core';
+import ChannelAccordion from './channelAccordion';
 import TelegramIcon from '../../assets/icons/telegram.svg';
+import TwilioIcon from '../../assets/icons/twilio.svg';
+import EmailIcon from '../../assets/icons/email.svg';
+import PagerDuty from '../../assets/icons/pagerduty.svg';
+import OpsGenie from '../../assets/icons/opsGenie.svg';
+import ChannelContainer from '../../containers/channels/channelContainer';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -36,35 +37,12 @@ function ChannelsGrid() {
         border={1}
         borderRadius="borderRadius"
         borderColor="grey.300"
-      >
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Accordion>
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1a-content"
-                id="panel1a-header"
-              >
-                <img
-                  src={TelegramIcon}
-                  className={classes.icon}
-                  alt="TelegramIcon"
-                />
-                <Typography
-                  style={{ textAlign: 'center' }}
-                  variant="h5"
-                  align="center"
-                  gutterBottom
-                >
-                  Telegram
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <h1>Chicken</h1>
-              </AccordionDetails>
-            </Accordion>
-          </Grid>
+      >    
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <ChannelContainer />
         </Grid>
+      </Grid>
       </Box>
     </Box>
   );
