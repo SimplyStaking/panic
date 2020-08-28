@@ -5,9 +5,14 @@
 /cache
 
 # dependencies
-src/web-installer/frontend/node_modules
+web-installer/frontend/node_modules
 /.pnp
 .pnp.js
+
+# configs
+config/chains
+config/channels
+config/other
 
 # testing
 /coverage
