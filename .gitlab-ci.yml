@@ -1,15 +1,15 @@
 image: node:latest
 
 before_script:
-    - cd src/web-installer
+    - cd panic/web-installer
 
 stages:
     - build
-    - test
+    # - test
 
 cache:
     paths:
-        - src/web-installer/node_modules/
+        - panic/web-installer/node_modules/
 
 install:
     stage: build
@@ -19,8 +19,8 @@ install:
         paths:
         - node_modules/
 
-test:
-    stage: test
-    script:
-        - npm install
-        - npm test
+# test:
+#     stage: test
+#     script:
+#         - npm install
+#         - npm test
