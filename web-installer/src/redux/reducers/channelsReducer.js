@@ -9,8 +9,8 @@ function channelsReducer(state = initialstate, action) {
     case ADD_TELEGRAM:
       return {
         ...state,
-        telegrams: state.telegrams.concat(action.payload)
-      }
+        telegrams: state.telegrams.concat(action.payload),
+      };
     default:
       return state;
   }

@@ -9,7 +9,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    flexGrow: 1,
+    width: '100%',
   },
   paper: {
     padding: theme.spacing(2),
@@ -30,30 +30,32 @@ function ChannelAccordion(props) {
   const { icon, name, form } = props;
 
   return (
-    <Accordion>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls="panel1a-content"
-        id="panel1a-header"
-      >
-        <img
-          src={icon}
-          className={classes.icon}
-          alt="TelegramIcon"
-        />
-        <Typography
-          style={{ textAlign: 'center' }}
-          variant="h5"
-          align="center"
-          gutterBottom
+    <div className={classes.root}>
+      <Accordion>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="panel1a-content"
+          id="panel1a-header"
         >
-          {name}
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        {form}
-      </AccordionDetails>
-    </Accordion>
+          <img
+            src={icon}
+            className={classes.icon}
+            alt="TelegramIcon"
+          />
+          <Typography
+            style={{ textAlign: 'center' }}
+            variant="h5"
+            align="center"
+            gutterBottom
+          >
+            {name}
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          {form}
+        </AccordionDetails>
+      </Accordion>
+    </div>
   );
 }
 

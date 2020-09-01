@@ -1,13 +1,5 @@
-import React, { Component } from 'react'
+const TwilioForm = () => {
 
-class TwilioForm extends Component {
-  render() {
-    return (
-      <div>
-        
-      </div>
-    )
-  }
-}
+};
 
 export default TwilioForm;

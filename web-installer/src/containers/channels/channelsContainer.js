@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import ChannelAccordion from '../../components/channels/channelAccordion';
 import {
   TELEGRAM, TWILIO, EMAIL, PAGERDUTY, OPSGENIE,
@@ -11,40 +11,38 @@ import OpsGenie from '../../assets/icons/opsGenie.svg';
 import TelegramForm from './telegramForm';
 import TwilioForm from './twilioForm';
 
-class ChannelsContainer extends Component {
-  render() {
-    return (
-      <div>
-        <ChannelAccordion
-          icon={TelegramIcon}
-          name={TELEGRAM}
-          form={(<TelegramForm/>)}
-        />
-        <ChannelAccordion
-          icon={TwilioIcon}
-          name={TWILIO}
-          form={(
-          <TwilioForm/>
-          )}
-        />
-        <ChannelAccordion
-          icon={EmailIcon}
-          name={EMAIL}
-          form={<TelegramForm />}
-        />
-        <ChannelAccordion
-          icon={PagerDuty}
-          name={PAGERDUTY}
-          form={<TelegramForm />}
-        />
-        <ChannelAccordion
-          icon={OpsGenie}
-          name={OPSGENIE}
-          form={<TelegramForm />}
-        />
-      </div>
-    )
-  }
-}
+const ChannelsContainer = () => (
+  <div>
+    <ChannelAccordion
+      icon={TelegramIcon}
+      name={TELEGRAM}
+      form={(
+        <TelegramForm />
+      )}
+    />
+    <ChannelAccordion
+      icon={TwilioIcon}
+      name={TWILIO}
+      form={(
+        <TwilioForm />
+      )}
+    />
+    <ChannelAccordion
+      icon={EmailIcon}
+      name={EMAIL}
+      form={<TelegramForm />}
+    />
+    <ChannelAccordion
+      icon={PagerDuty}
+      name={PAGERDUTY}
+      form={<TelegramForm />}
+    />
+    <ChannelAccordion
+      icon={OpsGenie}
+      name={OPSGENIE}
+      form={<TelegramForm />}
+    />
+  </div>
+);
 
 export default ChannelsContainer;
