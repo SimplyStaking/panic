@@ -1,22 +1,37 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# project builds
-/builds
-/cache
+# IDE
+.idea/
+
+# Byte-compiled
+__pycache__/
+
+# logs
+logs/*.log*
+logs/*/*.log*
+!logs/alerts/.gitkeep
+!logs/general/.gitkeep
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# configs
+config/
+
+# sessions
+src/web/ui/sessions/*.json*
+!src/web/ui/sessions/.gitkeep
 
 # dependencies
-web-installer/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
-# configs
-config
-
 # testing
-/coverage
+coverage
 
 # production
-/build
+build
 
 # misc
 .DS_Store
@@ -24,8 +39,4 @@ config
 .env.development.local
 .env.test.local
 .env.production.local
-.idea
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
