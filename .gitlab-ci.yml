@@ -1,7 +1,7 @@
 image: node:latest
 
 before_script:
-    - cd panic/web-installer
+    - cd web-installer
 
 stages:
     - build
@@ -9,7 +9,7 @@ stages:
 
 cache:
     paths:
-        - panic/web-installer/node_modules/
+        - web-installer/node_modules/
 
 install:
     stage: build

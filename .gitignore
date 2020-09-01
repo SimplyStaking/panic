@@ -1,11 +1,14 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# vs code
+.vscode
+
 # project builds
 /builds
 /cache
 
 # dependencies
-panic/web-installer/node_modules
+web-installer/node_modules
 /.pnp
 .pnp.js
 

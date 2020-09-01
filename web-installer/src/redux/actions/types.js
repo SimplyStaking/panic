@@ -1,0 +1,3 @@
+export const ADD_TELEGRAM = 'ADD_TELEGRAM';
+export const REMOVE_TELEGRAM = 'REMOVE_TELEGRAM';
+export const CHANGE_PAGE = 'CHANGE_PAGE';
