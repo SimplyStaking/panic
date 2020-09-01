@@ -1,3 +1,5 @@
+// TODO: Pass more arguments to possibly make the errors more meaningful
+
 function InvalidConfigType() {
   this.message = 'The config type is invalid. It must either be \'channel\','
     + ' \'chain\', \'ui\' or \'other\'';

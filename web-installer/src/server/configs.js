@@ -1,7 +1,9 @@
 const ConfigParser = require('configparser');
+const fs = require('fs');
 const path = require('path');
 const errors = require('./errors');
 
+// Channel configs and config locations
 const USER_CONFIG_TELEGRAM = 'user_config_telegram.ini';
 const USER_CONFIG_EMAIL = 'user_config_email.ini';
 const USER_CONFIG_TWILIO = 'user_config_twilio.ini';
@@ -11,8 +13,9 @@ const ALL_CHANNELS_CONFIG_FILES = [
   USER_CONFIG_TELEGRAM, USER_CONFIG_EMAIL, USER_CONFIG_TWILIO,
   USER_CONFIG_PAGERDUTY, USER_CONFIG_OPSGENIE,
 ];
-const CHANNELS_CONFIGS_PATH = path.join('config', 'channels');
+const CHANNELS_CONFIGS_LOCATION = path.join('config', 'channels');
 
+// Chain configs and config locations
 const USER_CONFIG_NODES = 'user_config_nodes.ini';
 const USER_CONFIG_REPOS = 'user_config_repos.ini';
 const USER_CONFIG_KMS = 'user_config_kms.ini';
@@ -22,40 +25,54 @@ const ALL_CHAINS_CONFIG_FILES = [
   USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_KMS, USER_CONFIG_CHANNELS,
   USER_CONFIG_ALERTS,
 ];
-const COSMOS_CHAINS_CONFIGS_PATH = path.join('config', 'chains', 'cosmos');
-const SUBSTRATE_CHAINS_CONFIGS_PATH = path.join(
+const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('config', 'chains', 'cosmos');
+const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join(
   'config', 'chains', 'substrate',
 );
 
+// UI configs and config locations
 const USER_CONFIG_UI = 'user_config_ui.ini';
 const ALL_UI_CONFIG_FILES = [USER_CONFIG_UI];
-const UI_CONFIGS_PATH = path.join('config', 'ui');
+const UI_CONFIGS_LOCATION = path.join('config', 'ui');
 
+// Other configs and config locations
 const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_OTHER_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS];
-const OTHER_CONFIGS_PATH = path.join('config', 'others');
+const OTHER_CONFIGS_LOCATION = path.join('config', 'others');
 
+// Gets the full path of the config with the name of the config included. This
+// method restricts writing and reading from specific locations (adds security).
 function getConfigPath(configType, file, chainName = null, baseChain = null) {
+  // Determine the full path according to the config type, chainName and
+  // baseChain (Only if configType = Chain)
   switch (configType.toLowerCase()) {
     case 'channel':
-      return path.join(CHANNELS_CONFIGS_PATH, file);
+      return path.join(CHANNELS_CONFIGS_LOCATION, file);
     case 'chain':
       if (baseChain.toLowerCase() === 'cosmos') {
-        return path.join(COSMOS_CHAINS_CONFIGS_PATH, chainName, file);
+        return path.join(COSMOS_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       if (baseChain.toLowerCase() === 'substrate') {
-        return path.join(SUBSTRATE_CHAINS_CONFIGS_PATH, chainName, file);
+        return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       throw new errors.InvalidChainType();
     case 'ui':
-      return path.join(UI_CONFIGS_PATH, file);
+      return path.join(UI_CONFIGS_LOCATION, file);
     case 'other':
-      return path.join(OTHER_CONFIGS_PATH, file);
+      return path.join(OTHER_CONFIGS_LOCATION, file);
     default:
       throw new errors.InvalidConfigType();
   }
 }
 
+// Get the config file location. This function expects the full config path
+function getConfigLocation(configPath) {
+  const pathArr = configPath.split('\\').filter(val => val !== '');
+  pathArr.pop();
+  return path.join(...pathArr);
+}
+
+// This function returns true if 'file' is expected in the inferred location
 function fileValid(configType, file) {
   switch (configType.toLowerCase()) {
     case 'channel':
@@ -71,6 +88,7 @@ function fileValid(configType, file) {
   }
 }
 
+// Converts the parsed config file to dict
 function parsedConfigToDict(config) {
   const sections = config.sections();
   return sections.reduce((map, obj) => {
@@ -80,23 +98,21 @@ function parsedConfigToDict(config) {
 }
 
 module.exports = {
-  ALL_CHANNELS_CONFIG_FILES,
-  ALL_CHAINS_CONFIG_FILES,
-  ALL_UI_CONFIG_FILES,
-  ALL_OTHER_CONFIG_FILES,
-
   getConfigPath,
   fileValid,
 
+  // Reads the config given the full configPath
   readConfig: (configPath) => {
     const cp = new ConfigParser();
     cp.read(configPath);
     return parsedConfigToDict(cp);
   },
 
+  // Writes the config to the location specified by configPath
   writeConfig: (configPath, data) => {
     const cp = new ConfigParser();
 
+    // Generate config from dict
     Object.keys(data)
       .forEach((key) => {
         cp.addSection(key);
@@ -106,6 +122,13 @@ module.exports = {
           });
       });
 
-    cp.write(configPath);
+    // Get config location where the write should take place, create folders if
+    // they do not exist and after write the config to the location.
+    const configLocation = getConfigLocation(configPath);
+    // TODO: Try recursive creation of folders to see if it works
+    fs.mkdir(configLocation, (err) => {
+      if (err && err.code !== 'EEXIST') throw err;
+      cp.write(configPath);
+    });
   },
 };
