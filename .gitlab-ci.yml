@@ -5,7 +5,7 @@ before_script:
 
 stages:
     - build
-    - test
+    # - test
 
 cache:
     paths:
@@ -19,8 +19,8 @@ install:
         paths:
         - node_modules/
 
-test:
-    stage: test
-    script:
-        - npm install
-        - npm test
+# test:
+#     stage: test
+#     script:
+#         - npm install
+#         - npm test

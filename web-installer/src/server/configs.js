@@ -1,7 +1,6 @@
-import { InvalidChainType, InvalidConfigType } from './errors';
-
 const ConfigParser = require('configparser');
 const path = require('path');
+const errors = require('./errors');
 
 const USER_CONFIG_TELEGRAM = 'user_config_telegram.ini';
 const USER_CONFIG_EMAIL = 'user_config_email.ini';
@@ -30,11 +29,11 @@ const SUBSTRATE_CHAINS_CONFIGS_PATH = path.join(
 
 const USER_CONFIG_UI = 'user_config_ui.ini';
 const ALL_UI_CONFIG_FILES = [USER_CONFIG_UI];
-const UI_CONFIGS_PATH = path.join('configs', 'ui');
+const UI_CONFIGS_PATH = path.join('config', 'ui');
 
-const USER_CONFIG_SYSTEM = 'user_config_system.ini';
+const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_OTHER_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS];
-const OTHER_CONFIGS_PATH = path.join('configs', 'other');
+const OTHER_CONFIGS_PATH = path.join('config', 'others');
 
 function getConfigPath(configType, file, chainName = null, baseChain = null) {
   switch (configType.toLowerCase()) {
@@ -47,34 +46,28 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
       if (baseChain.toLowerCase() === 'substrate') {
         return path.join(SUBSTRATE_CHAINS_CONFIGS_PATH, chainName, file);
       }
-      throw new InvalidChainType();
+      throw new errors.InvalidChainType();
     case 'ui':
       return path.join(UI_CONFIGS_PATH, file);
     case 'other':
       return path.join(OTHER_CONFIGS_PATH, file);
     default:
-      throw new InvalidConfigType();
+      throw new errors.InvalidConfigType();
   }
 }
 
-function isFileValid(configType, file, baseChain = null) {
+function fileValid(configType, file) {
   switch (configType.toLowerCase()) {
     case 'channel':
       return ALL_CHANNELS_CONFIG_FILES.includes(file);
     case 'chain':
-      if (baseChain.toLowerCase() === 'cosmos') {
-        return COSMOS_CHAINS_CONFIGS_PATH.includes(file);
-      }
-      if (baseChain.toLowerCase() === 'substrate') {
-        return SUBSTRATE_CHAINS_CONFIGS_PATH.includes(file);
-      }
-      throw new InvalidChainType();
+      return ALL_CHAINS_CONFIG_FILES.includes(file);
     case 'ui':
       return ALL_UI_CONFIG_FILES.includes(file);
     case 'other':
       return ALL_OTHER_CONFIG_FILES.includes(file);
     default:
-      throw new InvalidConfigType();
+      throw new errors.InvalidConfigType();
   }
 }
 
@@ -93,7 +86,7 @@ module.exports = {
   ALL_OTHER_CONFIG_FILES,
 
   getConfigPath,
-  isFileValid,
+  fileValid,
 
   readConfig: (configPath) => {
     const cp = new ConfigParser();

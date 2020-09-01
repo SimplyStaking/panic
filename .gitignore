@@ -10,9 +10,7 @@ web-installer/node_modules
 .pnp.js
 
 # configs
-config/chains
-config/channels
-config/other
+config
 
 # testing
 /coverage
