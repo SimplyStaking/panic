@@ -5,6 +5,7 @@ import {
 } from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import { makeStyles } from '@material-ui/core/styles';
+import SendTestAlertButton from '../../../containers/channels/buttons';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -72,7 +73,7 @@ const TelegramForm = (props) => {
               type="text"
               name="chatID"
               placeholder="-123456789"
-              helperText={errors.chatID ? 'Chat ID is required!' : ''}
+              helperText={errors.chatID ? errors.chatID : ''}
               onChange={handleChange}
               onBlur={handleBlur}
               fullWidth
@@ -168,12 +169,17 @@ const TelegramForm = (props) => {
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
-                <Button variant="outlined" size="large">
-                  <Box px={2}>
-                    Test
-                  </Box>
-                </Button>
-                <Button variant="outlined" size="large" type="submit">
+                <SendTestAlertButton
+                  disabled={(errors.chatID || errors.botToken)}
+                  botChatID={values.chatID}
+                  botToken={values.botToken}
+                />
+                <Button
+                  variant="outlined"
+                  size="large"
+                  disabled={!(Object.keys(errors).length === 0)}
+                  type="submit"
+                >
                   <Box px={2}>
                     Add
                   </Box>

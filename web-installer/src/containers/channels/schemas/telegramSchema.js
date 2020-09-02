@@ -1,5 +1,19 @@
 import * as Yup from 'yup';
 
+/*
+  TelegramSchame takes in props and returns a Yup validation object,
+  this object performs validation on the individual values in side the form,
+  and returns error messages if any.
+
+  .test function is used to create a custom validation, in this case
+  we are checking through passed props if the Bot Name that is entered into the
+  form is unique or not, this will make the current states not overridable.
+
+  .string makes sure that the entered input is in the string format.
+  .number makes sure that the entered input is in numeric format.
+  .typeError returns the specified error message if the input is not numeric.
+*/
+
 const TelegramSchema = (props) => Yup.object().shape({
   botName: Yup.string()
     .test(
@@ -21,7 +35,8 @@ const TelegramSchema = (props) => Yup.object().shape({
     .required('Bot name is required.'),
   botToken: Yup.string()
     .required('Bot token is required.'),
-  chatID: Yup.number('Chat ID must be a number')
+  chatID: Yup.number()
+    .typeError('Chat ID must be numeric.')
     .required('Chat ID number is required.'),
 });
 

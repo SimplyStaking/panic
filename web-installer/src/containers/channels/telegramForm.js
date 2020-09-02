@@ -5,7 +5,6 @@ import { addTelegram } from '../../redux/actions/channelActions';
 import TelegramSchema from './schemas/telegramSchema';
 
 const Form = withFormik({
-
   mapPropsToValues: () => ({
     botName: '',
     botToken: '',
@@ -16,9 +15,10 @@ const Form = withFormik({
     error: false,
     alerts: true,
     commands: true,
+    enabled: true,
   }),
   validationSchema: (props) => TelegramSchema(props),
-  handleSubmit: (values, { props }) => {
+  handleSubmit: (values, { resetForm, props }) => {
     const { saveTelegramDetails } = props;
     const payload = {
       botName: values.botName,
@@ -30,8 +30,10 @@ const Form = withFormik({
       error: values.error,
       alerts: values.alerts,
       commands: values.commands,
+      enabled: values.enabled,
     };
     saveTelegramDetails(payload);
+    resetForm();
   },
 })(TelegramForm);
 
