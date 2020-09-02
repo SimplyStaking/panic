@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Checkbox, FormControlLabel, Typography, Switch,
 } from '@material-ui/core';
@@ -20,10 +21,9 @@ const TelegramForm = (props) => {
 
   const {
     errors,
-    handleSubmit,
     values,
+    handleSubmit,
     handleChange,
-    handleBlur,
     setFieldValue,
   } = props;
 
@@ -43,7 +43,6 @@ const TelegramForm = (props) => {
               placeholder="telegram_chat_1"
               helperText={errors.botName ? errors.botName : ''}
               onChange={handleChange}
-              onBlur={handleBlur}
               fullWidth
             />
           </Grid>
@@ -57,9 +56,8 @@ const TelegramForm = (props) => {
               type="text"
               name="botToken"
               placeholder="123456789:ABCDEF-1234abcd5678efgh12345_abc123"
-              helperText={errors.botToken ? 'Bot Token is required!' : ''}
+              helperText={errors.botToken ? errors.botToken : ''}
               onChange={handleChange}
-              onBlur={handleBlur}
               fullWidth
             />
           </Grid>
@@ -75,7 +73,6 @@ const TelegramForm = (props) => {
               placeholder="-123456789"
               helperText={errors.chatID ? errors.chatID : ''}
               onChange={handleChange}
-              onBlur={handleBlur}
               fullWidth
             />
           </Grid>
@@ -170,7 +167,7 @@ const TelegramForm = (props) => {
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
                 <SendTestAlertButton
-                  disabled={(errors.chatID || errors.botToken)}
+                  disabled={!(Object.keys(errors).length === 0)}
                   botChatID={values.chatID}
                   botToken={values.botToken}
                 />
@@ -193,7 +190,7 @@ const TelegramForm = (props) => {
   );
 };
 
-TelegramForm.propTypes = {
+TelegramForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     botName: PropTypes.string,
     botToken: PropTypes.string,
@@ -212,8 +209,7 @@ TelegramForm.propTypes = {
     commands: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
-  handleBlur: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-};
+});
 
 export default TelegramForm;

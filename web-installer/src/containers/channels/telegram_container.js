@@ -1,10 +1,15 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TelegramForm from '../../components/channels/forms/telegram';
+import TelegramForm from '../../components/channels/forms/telegram_form';
 import { addTelegram } from '../../redux/actions/channelActions';
 import TelegramSchema from './schemas/telegramSchema';
 
-const Form = withFormik({
+const TelegramContainer = withFormik({
+  mapPropsToErrors: () => ({
+    botName: '',
+    botToken: '',
+    chatID: '',
+  }),
   mapPropsToValues: () => ({
     botName: '',
     botToken: '',
@@ -47,4 +52,4 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Form);
+export default connect(mapStateToProps, mapDispatchToProps)(TelegramContainer);

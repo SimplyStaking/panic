@@ -13,7 +13,6 @@ import * as Yup from 'yup';
   .number makes sure that the entered input is in numeric format.
   .typeError returns the specified error message if the input is not numeric.
 */
-
 const TelegramSchema = (props) => Yup.object().shape({
   botName: Yup.string()
     .test(
