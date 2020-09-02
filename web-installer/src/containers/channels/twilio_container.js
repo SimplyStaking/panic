@@ -19,7 +19,6 @@ const Form = withFormik({
     authToken: '',
     twilioPhoneNo: '',
     phoneNoToDial: '',
-    enabled: true,
   }),
   validationSchema: (props) => TwilioSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
@@ -30,7 +29,6 @@ const Form = withFormik({
       authToken: values.authToken,
       twilioPhoneNo: values.twilioPhoneNo,
       phoneNoToDial: values.phoneNumbers,
-      enabled: true,
     };
     saveTwilioDetails(payload);
     resetForm();

@@ -47,7 +47,6 @@ const TelegramTable = (props) => {
             <TableCell align="center">Error</TableCell>
             <TableCell align="center">Alerts</TableCell>
             <TableCell align="center">Commands</TableCell>
-            <TableCell align="center">Enabled</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
@@ -78,9 +77,6 @@ const TelegramTable = (props) => {
                 {telegram.commands ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {telegram.enabled ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
                 <Button onClick={() => { removeTelegramDetails(telegram); }}>
                   <CancelIcon />
                 </Button>
@@ -104,7 +100,6 @@ TelegramTable.propTypes = forbidExtraProps({
     error: PropTypes.bool.isRequired,
     alerts: PropTypes.bool.isRequired,
     commands: PropTypes.bool.isRequired,
-    enabled: PropTypes.bool.isRequired,
   })).isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
 });
