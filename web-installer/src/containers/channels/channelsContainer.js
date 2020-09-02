@@ -9,7 +9,6 @@ import EmailIcon from '../../assets/icons/email.svg';
 import PagerDuty from '../../assets/icons/pagerduty.svg';
 import OpsGenie from '../../assets/icons/opsGenie.svg';
 import TelegramForm from './telegramForm';
-import TwilioForm from './twilioForm';
 
 const ChannelsContainer = () => (
   <div>
@@ -24,7 +23,7 @@ const ChannelsContainer = () => (
       icon={TwilioIcon}
       name={TWILIO}
       form={(
-        <TwilioForm />
+        <TelegramForm />
       )}
     />
     <ChannelAccordion
