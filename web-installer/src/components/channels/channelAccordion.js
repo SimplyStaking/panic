@@ -27,7 +27,11 @@ const useStyles = makeStyles((theme) => ({
 
 function ChannelAccordion(props) {
   const classes = useStyles();
-  const { icon, name, form } = props;
+  const {
+    icon,
+    name,
+    form,
+  } = props;
 
   return (
     <div className={classes.root}>

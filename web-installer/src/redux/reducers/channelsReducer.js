@@ -1,4 +1,4 @@
-import { ADD_TELEGRAM } from '../actions/types';
+import { ADD_TELEGRAM, REMOVE_TELEGRAM } from '../actions/types';
 
 const initialstate = {
   telegrams: [],
@@ -10,6 +10,12 @@ function channelsReducer(state = initialstate, action) {
       return {
         ...state,
         telegrams: state.telegrams.concat(action.payload),
+      };
+    case REMOVE_TELEGRAM:
+      console.log(action.payload);
+      return {
+        ...state,
+        telegrams: state.telegrams.filter((telegram) => telegram !== action.payload),
       };
     default:
       return state;

@@ -1,10 +1,11 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import TelegramForm from '../../components/channels/forms/telegram_form';
-import { addTelegram } from '../../redux/actions/channelActions';
+import TelegramTable from '../../components/channels/tables/telegram_table';
+import { addTelegram, removeTelegram } from '../../redux/actions/channelActions';
 import TelegramSchema from './schemas/telegramSchema';
 
-const TelegramContainer = withFormik({
+const Form = withFormik({
   mapPropsToErrors: () => ({
     botName: '',
     botToken: '',
@@ -52,4 +53,23 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TelegramContainer);
+function mapDispatchToPropsRemove(dispatch) {
+  return {
+    removeTelegramDetails: (details) => dispatch(removeTelegram(details)),
+  };
+}
+
+const TelegramFormContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Form);
+
+const TelegramTableContainer = connect(
+  mapStateToProps,
+  mapDispatchToPropsRemove,
+)(TelegramTable);
+
+export {
+  TelegramFormContainer,
+  TelegramTableContainer,
+};

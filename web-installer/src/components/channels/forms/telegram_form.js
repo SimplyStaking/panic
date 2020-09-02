@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Checkbox, FormControlLabel, Typography, Switch,
 } from '@material-ui/core';
@@ -190,7 +189,7 @@ const TelegramForm = (props) => {
   );
 };
 
-TelegramForm.propTypes = forbidExtraProps({
+TelegramForm.propTypes = {
   errors: PropTypes.shape({
     botName: PropTypes.string,
     botToken: PropTypes.string,
@@ -210,6 +209,6 @@ TelegramForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-});
+};
 
 export default TelegramForm;

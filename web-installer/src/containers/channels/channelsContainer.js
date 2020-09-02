@@ -8,38 +8,35 @@ import TwilioIcon from '../../assets/icons/twilio.svg';
 import EmailIcon from '../../assets/icons/email.svg';
 import PagerDuty from '../../assets/icons/pagerduty.svg';
 import OpsGenie from '../../assets/icons/opsGenie.svg';
-import TelegramContainer from './telegram_container';
+import { TelegramFormContainer, TelegramTableContainer } from './telegram_container';
 
 const ChannelsContainer = () => (
   <div>
     <ChannelAccordion
       icon={TelegramIcon}
       name={TELEGRAM}
-      form={(
-        <TelegramContainer />
-      )}
+      form={(<TelegramFormContainer />)}
     />
+    <TelegramTableContainer />
     <ChannelAccordion
       icon={TwilioIcon}
       name={TWILIO}
-      form={(
-        <TelegramContainer />
-      )}
+      form={(<TelegramFormContainer />)}
     />
     <ChannelAccordion
       icon={EmailIcon}
       name={EMAIL}
-      form={<TelegramContainer />}
+      form={<TelegramFormContainer />}
     />
     <ChannelAccordion
       icon={PagerDuty}
       name={PAGERDUTY}
-      form={<TelegramContainer />}
+      form={<TelegramFormContainer />}
     />
     <ChannelAccordion
       icon={OpsGenie}
       name={OPSGENIE}
-      form={<TelegramContainer />}
+      form={<TelegramFormContainer />}
     />
   </div>
 );
