@@ -3,7 +3,38 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 import { ToastsStore } from 'react-toasts';
-import { fetchData } from '../../utils/data';
+import { fetchData, testCall } from '../../utils/data';
+
+function TestCallButton({
+  disabled, phoneNoToDial, accountSid, authToken, twilioPhoneNo,
+}) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Calling number ${phoneNoToDial}`, 5000);
+      await testCall(accountSid, authToken, twilioPhoneNo, phoneNoToDial);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Error in calling ${phoneNoToDial}. Error: ${e.response.data.error
+          }`, 5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an
+        // Error
+        ToastsStore.error(
+          `Error in calling ${phoneNoToDial}. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
+  return (
+    <Button className="button-style2" disabled={disabled} onClick={onClick}>
+      Test call
+    </Button>
+  );
+}
 
 function SendTestAlertButton({ disabled, botChatID, botToken }) {
   const onClick = async () => {
@@ -44,6 +75,14 @@ function SendTestAlertButton({ disabled, botChatID, botToken }) {
     </Button>
   );
 }
+
+TestCallButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  phoneNoToDial: PropTypes.string.isRequired,
+  accountSid: PropTypes.string.isRequired,
+  authToken: PropTypes.string.isRequired,
+  twilioPhoneNo: PropTypes.string.isRequired,
+});
 
 SendTestAlertButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
