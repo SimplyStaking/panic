@@ -125,8 +125,7 @@ module.exports = {
     // Get config location where the write should take place, create folders if
     // they do not exist and after write the config to the location.
     const configLocation = getConfigLocation(configPath);
-    // TODO: Try recursive creation of folders to see if it works
-    fs.mkdir(configLocation, (err) => {
+    fs.mkdir(configLocation, { recursive: true }, (err) => {
       if (err && err.code !== 'EEXIST') throw err;
       cp.write(configPath);
     });
