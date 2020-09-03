@@ -55,7 +55,7 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
       if (baseChain.toLowerCase() === 'substrate') {
         return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
-      throw new errors.InvalidChainType();
+      throw new errors.InvalidBaseChain();
     case 'ui':
       return path.join(UI_CONFIGS_LOCATION, file);
     case 'other':

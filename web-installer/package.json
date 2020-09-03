@@ -10,13 +10,14 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "configparser": "^0.3.6",
+    "express": "^4.17.1",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-redux": "^7.2.1",
     "react-scripts": "3.4.3",
     "redux": "^4.0.5",
-    "express": "^4.17.1"
+    "twilio": "^3.49.1"
   },
   "scripts": {
     "start": "react-scripts start",

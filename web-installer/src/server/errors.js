@@ -12,8 +12,8 @@ function InvalidBaseChain() {
   this.code = 431;
 }
 
-function MissingArgument(arg) {
-  this.message = `Missing argument '${arg}'`;
+function MissingArguments(...args) {
+  this.message = `Missing argument(s) '${args}'`;
   this.code = 432;
 }
 
@@ -32,11 +32,17 @@ function InvalidEndpoint(endpoint) {
   this.code = 435;
 }
 
+function TwilioError(err) {
+  this.message = `Twilio Error: ${err}`;
+  this.code = 436;
+}
+
 module.exports = {
   InvalidConfigType,
-  InvalidChainType: InvalidBaseChain,
-  MissingArgument,
+  InvalidBaseChain,
+  MissingArguments,
   ConfigUnrecognized,
   ConfigNotFound,
   InvalidEndpoint,
+  TwilioError,
 };
