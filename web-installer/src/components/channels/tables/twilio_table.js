@@ -10,6 +10,8 @@ import {
   TableHead,
   TableRow,
   Button,
+  List,
+  ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CancelIcon from '@material-ui/icons/Cancel';
@@ -52,7 +54,17 @@ const TwilioTable = (props) => {
               <TableCell align="center">{twilio.accountSid}</TableCell>
               <TableCell align="center">{twilio.authToken}</TableCell>
               <TableCell align="center">{twilio.twilioPhoneNo}</TableCell>
-              <TableCell align="center">{twilio.phoneNoToDial}</TableCell>
+              <TableCell align="center">
+                <div style={{ maxHeight: 70, overflow: 'auto' }}>
+                  <List>
+                    {twilio.twilioPhoneNumbersToDialValid.map((number) => (
+                      <ListItem key={number}>
+                        { number }
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </TableCell>
               <TableCell align="center">
                 <Button onClick={() => { removeTwilioDetails(twilio); }}>
                   <CancelIcon />
@@ -72,7 +84,9 @@ TwilioTable.propTypes = forbidExtraProps({
     accountSid: PropTypes.string.isRequired,
     authToken: PropTypes.string.isRequired,
     twilioPhoneNo: PropTypes.string.isRequired,
-    phoneNoToDial: PropTypes.string.isRequired,
+    twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+      PropTypes.string.isRequired,
+    ).isRequired,
   })).isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
 });

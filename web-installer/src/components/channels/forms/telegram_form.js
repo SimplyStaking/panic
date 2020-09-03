@@ -5,7 +5,7 @@ import {
 } from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import { makeStyles } from '@material-ui/core/styles';
-import SendTestAlertButton from '../../../containers/channels/buttons';
+import { SendTestAlertButton } from '../../../containers/channels/buttons';
 
 const useStyles = makeStyles(() => ({
   root: {

@@ -6,32 +6,34 @@ import { ToastsStore } from 'react-toasts';
 import { fetchData, testCall } from '../../utils/data';
 
 function TestCallButton({
-  disabled, phoneNoToDial, accountSid, authToken, twilioPhoneNo,
+  disabled, twilioPhoneNumbersToDialValid, accountSid, authToken, twilioPhoneNo,
 }) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Calling number ${phoneNoToDial}`, 5000);
-      await testCall(accountSid, authToken, twilioPhoneNo, phoneNoToDial);
+      ToastsStore.info(`Calling number ${twilioPhoneNumbersToDialValid}`, 5000);
+      await testCall(accountSid, authToken, twilioPhoneNo, twilioPhoneNumbersToDialValid);
     } catch (e) {
       if (e.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Error in calling ${phoneNoToDial}. Error: ${e.response.data.error
+          `Error in calling ${twilioPhoneNumbersToDialValid}. Error: ${e.response.data.error
           }`, 5000,
         );
       } else {
         // Something happened in setting up the request that triggered an
         // Error
         ToastsStore.error(
-          `Error in calling ${phoneNoToDial}. Error: ${e.message}`, 5000,
+          `Error in calling ${twilioPhoneNumbersToDialValid}. Error: ${e.message}`, 5000,
         );
       }
     }
   };
   return (
-    <Button className="button-style2" disabled={disabled} onClick={onClick}>
-      Test call
+    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
+      <Box px={2}>
+        Test call
+      </Box>
     </Button>
   );
 }
@@ -78,7 +80,7 @@ function SendTestAlertButton({ disabled, botChatID, botToken }) {
 
 TestCallButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  phoneNoToDial: PropTypes.string.isRequired,
+  twilioPhoneNumbersToDialValid: PropTypes.string.isRequired,
   accountSid: PropTypes.string.isRequired,
   authToken: PropTypes.string.isRequired,
   twilioPhoneNo: PropTypes.string.isRequired,
@@ -90,4 +92,4 @@ SendTestAlertButton.propTypes = forbidExtraProps({
   botChatID: PropTypes.string.isRequired,
 });
 
-export default SendTestAlertButton;
+export { SendTestAlertButton, TestCallButton };

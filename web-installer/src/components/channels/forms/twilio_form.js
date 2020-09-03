@@ -5,7 +5,8 @@ import {
 } from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import { makeStyles } from '@material-ui/core/styles';
-import TestCallButton from '../../../containers/channels/buttons';
+import { Autocomplete } from '@material-ui/lab';
+import { TestCallButton } from '../../../containers/channels/buttons';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -23,7 +24,12 @@ const TwilioForm = (props) => {
     values,
     handleSubmit,
     handleChange,
+    setFieldValue,
   } = props;
+
+  const updateTwilioNumbers = (event, phoneNums) => {
+    setFieldValue('twilioPhoneNumbersToDialValid', phoneNums);
+  };
 
   return (
     <div>
@@ -93,15 +99,25 @@ const TwilioForm = (props) => {
             <Typography> Phone numbers to dial: </Typography>
           </Grid>
           <Grid item xs={10}>
-            <TextField
-              error={!errors.phoneNoToDial !== true}
-              value={values.phoneNoToDial}
-              type="text"
-              name="phoneNoToDial"
-              placeholder="+12025551234"
-              helperText={errors.phoneNoToDial ? errors.phoneNoToDial : ''}
-              onChange={handleChange}
-              fullWidth
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              onChange={updateTwilioNumbers}
+              value={values.twilioPhoneNumbersToDialValid}
+              renderInput={(params) => (
+                <TextField
+                  // eslint-disable-next-line react/jsx-props-no-spreading
+                  {...params}
+                  error={!errors.twilioPhoneNumbersToDialValid !== true}
+                  type="text"
+                  name="twilioPhoneNumbersToDialValid"
+                  placeholder="Add Phone Numbers"
+                  variant="standard"
+                  helperText={errors.twilioPhoneNumbersToDialValid ? errors.twilioPhoneNumbersToDialValid : ''}
+                  fullWidth
+                />
+              )}
             />
           </Grid>
           <Grid item xs={8} />
@@ -110,7 +126,10 @@ const TwilioForm = (props) => {
               <Box px={2}>
                 <TestCallButton
                   disabled={!(Object.keys(errors).length === 0)}
-                  phoneNoToDial={values.phoneNoToDial.split(';')[0]}
+                  twilioPhoneNumbersToDialValid={
+                    values.twilioPhoneNumbersToDialValid[0]
+                      ? values.twilioPhoneNumbersToDialValid[0] : ''
+                  }
                   accountSid={values.accountSid}
                   authToken={values.authToken}
                   twilioPhoneNo={values.twilioPhoneNo}
@@ -140,7 +159,7 @@ TwilioForm.propTypes = {
     accountSid: PropTypes.string,
     authToken: PropTypes.string,
     twilioPhoneNo: PropTypes.string,
-    phoneNoToDial: PropTypes.string,
+    twilioPhoneNumbersToDialValid: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
@@ -148,9 +167,12 @@ TwilioForm.propTypes = {
     accountSid: PropTypes.string.isRequired,
     authToken: PropTypes.string.isRequired,
     twilioPhoneNo: PropTypes.string.isRequired,
-    phoneNoToDial: PropTypes.string.isRequired,
+    twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+      PropTypes.string.isRequired,
+    ).isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
+  setFieldValue: PropTypes.func.isRequired,
 };
 
 export default TwilioForm;

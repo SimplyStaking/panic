@@ -25,8 +25,8 @@ const TwilioSchema = (props) => Yup.object().shape({
     .required('Authentication token is required.'),
   twilioPhoneNo: Yup.string()
     .required('Twilio phone number is required.'),
-  phoneNoToDial: Yup.string()
-    .required('Phone number to dial is required.'),
+  twilioPhoneNumbersToDialValid: Yup.array()
+    .required('Phone numbers to dial are required.'),
 });
 
 export default TwilioSchema;

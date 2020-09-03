@@ -8,10 +8,11 @@ import TwilioSchema from './schemas/twilioSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     configName: '',
-    accountSid: '',
-    authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: '',
+    smtp: '',
+    emailFrom: '',
+    emailTo: '',
+    username: '',
+    password: '',
   }),
   mapPropsToValues: () => ({
     configName: '',
