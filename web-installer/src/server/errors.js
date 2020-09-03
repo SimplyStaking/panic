@@ -37,6 +37,11 @@ function TwilioError(err) {
   this.code = 436;
 }
 
+function EmailError(err) {
+  this.message = `Email Error: ${err}`;
+  this.code = 437;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -45,4 +50,5 @@ module.exports = {
   ConfigNotFound,
   InvalidEndpoint,
   TwilioError,
+  EmailError,
 };

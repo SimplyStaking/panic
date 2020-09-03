@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const twilio = require('twilio');
+const nodemailer = require('nodemailer');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
@@ -133,7 +134,7 @@ app.post('/server/config', async (req, res) => {
 
 // ---------------------------------------- Twilio
 
-app.post('/server/twilio_call', async (req, res) => {
+app.post('/server/twilio_test_call', async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
@@ -179,6 +180,65 @@ app.post('/server/twilio_call', async (req, res) => {
       const error = new errors.TwilioError(err.message);
       res.status(error.code).send(utils.errorJson(error.message));
     });
+});
+
+// ---------------------------------------- E-mail
+
+app.post('/server/test_email', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const {
+    smtp, from, to, user, pass,
+  } = req.body;
+
+  // Check if smtp, from, to, user and pass are missing.
+  const missingParamsList = missingParams({ smtp, from, to });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Create mail transport (essentially an email client)
+  const transport = nodemailer.createTransport({
+    host: smtp,
+    auth: (user && pass) ? {
+      user,
+      pass,
+    } : undefined,
+  });
+
+  // If transporter valid, create and send test email
+  transport.verify((err, _) => {
+    if (err) {
+      console.log(err);
+      const error = new errors.EmailError(err.message);
+      res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+      return;
+    }
+
+    const testEmail = new msgs.TestEmail();
+    const message = {
+      from,
+      to,
+      subject: testEmail.subject,
+      text: testEmail.text,
+    };
+
+    // Send test email
+    transport.sendMail(message, (err2, info) => {
+      if (err2) {
+        console.log(err2);
+        const error = new errors.EmailError(err2.message);
+        res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+        return;
+      }
+      console.debug(info);
+      const msg = new msgs.EmailSubmitted(to);
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    });
+  });
 });
 
 // ---------------------------------------- Server defaults
