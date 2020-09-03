@@ -8,6 +8,12 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
+function sendTestEmail(smtp, from, to, user, pass) {
+  return sendData('/server/test_email', {}, {
+    smtp, from, to, user, pass,
+  });
+}
+
 function testCall(accountSid, authToken, twilioPhoneNumber,
   phoneNumberToDial) {
   return sendData('/server/test_twilio', {}, {
@@ -15,4 +21,6 @@ function testCall(accountSid, authToken, twilioPhoneNumber,
   });
 }
 
-export { fetchData, testCall, sendData };
+export {
+  fetchData, testCall, sendData, sendTestEmail,
+};

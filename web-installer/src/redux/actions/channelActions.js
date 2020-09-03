@@ -3,6 +3,8 @@ import {
   REMOVE_TELEGRAM,
   ADD_TWILIO,
   REMOVE_TWILIO,
+  ADD_EMAIL,
+  REMOVE_EMAIL,
 } from './types';
 
 export function addTelegram(payload) {
@@ -29,6 +31,20 @@ export function addTwilio(payload) {
 export function removeTwilio(payload) {
   return {
     type: REMOVE_TWILIO,
+    payload,
+  };
+}
+
+export function addEmail(payload) {
+  return {
+    type: ADD_EMAIL,
+    payload,
+  };
+}
+
+export function removeEmail(payload) {
+  return {
+    type: REMOVE_EMAIL,
     payload,
   };
 }

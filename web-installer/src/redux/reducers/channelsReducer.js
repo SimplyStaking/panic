@@ -3,11 +3,14 @@ import {
   REMOVE_TELEGRAM,
   ADD_TWILIO,
   REMOVE_TWILIO,
+  ADD_EMAIL,
+  REMOVE_EMAIL,
 } from '../actions/types';
 
 const initialstate = {
   telegrams: [],
   twilios: [],
+  emails: [],
 };
 
 function channelsReducer(state = initialstate, action) {
@@ -31,6 +34,16 @@ function channelsReducer(state = initialstate, action) {
       return {
         ...state,
         twilios: state.twilios.filter((twilio) => twilio !== action.payload),
+      };
+    case ADD_EMAIL:
+      return {
+        ...state,
+        emails: state.emails.concat(action.payload),
+      };
+    case REMOVE_EMAIL:
+      return {
+        ...state,
+        emails: state.emails.filter((email) => email !== action.payload),
       };
     default:
       return state;

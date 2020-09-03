@@ -43,6 +43,7 @@ const TwilioTable = (props) => {
             <TableCell align="center">Authentication Token</TableCell>
             <TableCell align="center">Twilio Phone Number</TableCell>
             <TableCell align="center">Numbers to dial</TableCell>
+            <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

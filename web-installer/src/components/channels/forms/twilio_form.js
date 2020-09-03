@@ -1,9 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField, Button, Box, Typography,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Grid,
 } from '@material-ui/core';
-import Grid from '@material-ui/core/Grid';
 import { makeStyles } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
 import { TestCallButton } from '../../../containers/channels/buttons';
@@ -127,8 +130,8 @@ const TwilioForm = (props) => {
                 <TestCallButton
                   disabled={!(Object.keys(errors).length === 0)}
                   twilioPhoneNumbersToDialValid={
-                    values.twilioPhoneNumbersToDialValid[0]
-                      ? values.twilioPhoneNumbersToDialValid[0] : ''
+                    values.twilioPhoneNumbersToDialValid
+                      ? values.twilioPhoneNumbersToDialValid : []
                   }
                   accountSid={values.accountSid}
                   authToken={values.authToken}

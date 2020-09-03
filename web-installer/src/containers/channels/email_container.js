@@ -1,9 +1,9 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TwilioForm from '../../components/channels/forms/twilio_form';
-import TwilioTable from '../../components/channels/tables/twilio_table';
-import { addTwilio, removeTwilio } from '../../redux/actions/channelActions';
-import TwilioSchema from './schemas/twilioSchema';
+import EmailForm from '../../components/channels/forms/email_form';
+import EmailTable from '../../components/channels/tables/email_table';
+import { addEmail, removeEmail } from '../../redux/actions/channelActions';
+import EmailSchema from './schemas/emailSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
@@ -16,53 +16,63 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     configName: '',
-    accountSid: '',
-    authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: [],
+    smtp: '',
+    emailFrom: '',
+    emailsTo: [],
+    username: '',
+    password: '',
+    info: false,
+    warning: false,
+    critical: false,
+    error: false,
   }),
-  validationSchema: (props) => TwilioSchema(props),
+  validationSchema: (props) => EmailSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveTwilioDetails } = props;
+    const { saveEmailDetails } = props;
     const payload = {
       configName: values.configName,
-      accountSid: values.accountSid,
-      authToken: values.authToken,
-      twilioPhoneNo: values.twilioPhoneNo,
-      twilioPhoneNumbersToDialValid: values.twilioPhoneNumbersToDialValid,
+      smtp: values.smtp,
+      emailFrom: values.emailFrom,
+      emailsTo: values.emailsTo,
+      username: values.username,
+      password: values.password,
+      info: values.info,
+      warning: values.warning,
+      critical: values.critical,
+      error: values.error,
     };
-    saveTwilioDetails(payload);
+    saveEmailDetails(payload);
     resetForm();
   },
-})(TwilioForm);
+})(EmailForm);
 
 const mapStateToProps = (state) => ({
-  twilios: state.ChannelsReducer.twilios,
+  emails: state.ChannelsReducer.emails,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveTwilioDetails: (details) => dispatch(addTwilio(details)),
+    saveEmailDetails: (details) => dispatch(addEmail(details)),
   };
 }
 
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeTwilioDetails: (details) => dispatch(removeTwilio(details)),
+    removeEmailDetails: (details) => dispatch(removeEmail(details)),
   };
 }
 
-const TwilioFormContainer = connect(
+const EmailFormContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(Form);
 
-const TwilioTableContainer = connect(
+const EmailTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
-)(TwilioTable);
+)(EmailTable);
 
 export {
-  TwilioFormContainer,
-  TwilioTableContainer,
+  EmailFormContainer,
+  EmailTableContainer,
 };

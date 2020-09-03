@@ -10,6 +10,7 @@ import PagerDuty from '../../assets/icons/pagerduty.svg';
 import OpsGenie from '../../assets/icons/opsGenie.svg';
 import { TelegramFormContainer, TelegramTableContainer } from './telegram_container';
 import { TwilioFormContainer, TwilioTableContainer } from './twilio_container';
+import { EmailFormContainer, EmailTableContainer } from './email_container';
 
 const ChannelsContainer = () => (
   <div>
@@ -28,8 +29,9 @@ const ChannelsContainer = () => (
     <ChannelAccordion
       icon={EmailIcon}
       name={EMAIL}
-      form={<TelegramFormContainer />}
+      form={<EmailFormContainer />}
     />
+    <EmailTableContainer />
     <ChannelAccordion
       icon={PagerDuty}
       name={PAGERDUTY}
