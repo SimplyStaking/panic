@@ -11,6 +11,8 @@ import OpsGenie from '../../assets/icons/opsGenie.svg';
 import { TelegramFormContainer, TelegramTableContainer } from './telegram_container';
 import { TwilioFormContainer, TwilioTableContainer } from './twilio_container';
 import { EmailFormContainer, EmailTableContainer } from './email_container';
+import { PagerDutyFormContainer, PagerDutyTableContainer } from './pagerDuty_container';
+import { OpsGenieFormContainer, OpsGenieTableContainer } from './opsGenie_container';
 
 const ChannelsContainer = () => (
   <div>
@@ -35,13 +37,15 @@ const ChannelsContainer = () => (
     <ChannelAccordion
       icon={PagerDuty}
       name={PAGERDUTY}
-      form={<TelegramFormContainer />}
+      form={<PagerDutyFormContainer />}
     />
+    <PagerDutyTableContainer />
     <ChannelAccordion
       icon={OpsGenie}
       name={OPSGENIE}
-      form={<TelegramFormContainer />}
+      form={<OpsGenieFormContainer />}
     />
+    <OpsGenieTableContainer />
   </div>
 );
 

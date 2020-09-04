@@ -74,6 +74,36 @@ function TestCallButton({
   );
 }
 
+function SendTestOpsGenieButton({ disabled, apiToken }) {
+  return (
+    <Button
+      variant="outlined"
+      size="large"
+      disabled={disabled}
+      onClick={() => console.log(`${apiToken}`)}
+    >
+      <Box px={2}>
+        Test
+      </Box>
+    </Button>
+  );
+}
+
+function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
+  return (
+    <Button
+      variant="outlined"
+      size="large"
+      disabled={disabled}
+      onClick={() => console.log(`${apiToken} ${integrationKey}`)}
+    >
+      <Box px={2}>
+        Test
+      </Box>
+    </Button>
+  );
+}
+
 function SendTestAlertButton({ disabled, botChatID, botToken }) {
   const onClick = async () => {
     try {
@@ -114,6 +144,17 @@ function SendTestAlertButton({ disabled, botChatID, botToken }) {
   );
 }
 
+SendTestOpsGenieButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  apiToken: PropTypes.string.isRequired,
+});
+
+SendTestPagerDutyButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  apiToken: PropTypes.string.isRequired,
+  integrationKey: PropTypes.string.isRequired,
+});
+
 SendTestEmailButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
@@ -141,4 +182,5 @@ SendTestAlertButton.propTypes = forbidExtraProps({
 
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
+  SendTestPagerDutyButton, SendTestOpsGenieButton,
 };
