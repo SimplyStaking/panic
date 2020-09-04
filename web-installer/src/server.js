@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
+const opsgenie = require('opsgenie-sdk');
 const PdClient = require('node-pagerduty');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
@@ -282,6 +283,46 @@ app.post('/server/pagerduty/test', async (req, res) => {
     console.error(err);
     const error = new errors.PagerDutyError(err.message);
     res.status(error.code).send(utils.errorJson(error.message));
+  });
+});
+
+// ---------------------------------------- OpsGenie
+
+// This endpoint triggers a test alert event to the OpsGenie space.
+app.post('/server/opsgenie/test', async (req, res) => {
+  // TODO: error handling and different alert modifications in the struct
+  console.log('Received POST request for %s', req.url);
+  const { apiKey } = req.body;
+
+  // Check if apiKey is missing.
+  const missingParamsList = missingParams({ apiKey });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Create OpsGenie client and test alert
+  opsgenie.configure({ api_key: apiKey });
+  const testAlert = new msgs.TestAlert();
+
+  // Send test alert
+  const alertObject = {
+    message: testAlert.message,
+  };
+
+  opsgenie.alertV2.create(alertObject, (err, response) => {
+    if (err) {
+      console.error(err);
+      const error = new errors.OpsGenieError(err.message);
+      res.status(error.code).send(utils.errorJson(error.message));
+    } else {
+      console.log(response);
+      const msg = new msgs.TestAlertSubmitted();
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    }
   });
 });
 

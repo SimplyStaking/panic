@@ -47,6 +47,11 @@ function PagerDutyError(err) {
   this.code = 438;
 }
 
+function OpsGenieError(err) {
+  this.message = `OpsGenie Error: ${err}`;
+  this.code = 439;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -57,4 +62,5 @@ module.exports = {
   TwilioError,
   EmailError,
   PagerDutyError,
+  OpsGenieError,
 };
