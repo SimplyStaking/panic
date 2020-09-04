@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
+const PdClient = require('node-pagerduty');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
@@ -134,7 +135,8 @@ app.post('/server/config', async (req, res) => {
 
 // ---------------------------------------- Twilio
 
-app.post('/server/twilio_test_call', async (req, res) => {
+// This endpoint performs a twilio test call on the given phone number.
+app.post('/server/twilio/test', async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
@@ -184,7 +186,8 @@ app.post('/server/twilio_test_call', async (req, res) => {
 
 // ---------------------------------------- E-mail
 
-app.post('/server/test_email', async (req, res) => {
+// This endpoint sends a test e-mail to the address.
+app.post('/server/email/test', async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     smtp, from, to, user, pass,
@@ -238,6 +241,47 @@ app.post('/server/test_email', async (req, res) => {
       const msg = new msgs.EmailSubmitted(to);
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     });
+  });
+});
+
+// ---------------------------------------- PagerDuty
+
+// This endpoint triggers an test alert event to the PagerDuty space.
+app.post('/server/pagerduty/test', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { apiToken, integrationKey } = req.body;
+
+  // Check if apiToken and integrationKey are missing.
+  const missingParamsList = missingParams({ apiToken, integrationKey });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Create PagerDuty client and test alert
+  const pdClient = new PdClient(apiToken);
+  const testAlert = new msgs.TestAlert();
+
+  // Send test alert event
+  pdClient.events.sendEvent({
+    routing_key: integrationKey,
+    event_action: 'trigger',
+    payload: {
+      summary: testAlert.message,
+      source: 'Test',
+      severity: 'info',
+    },
+  }).then((response) => {
+    console.log(response);
+    const msg = new msgs.TestAlertSubmitted();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  }).catch((err) => {
+    console.error(err);
+    const error = new errors.PagerDutyError(err.message);
+    res.status(error.code).send(utils.errorJson(error.message));
   });
 });
 

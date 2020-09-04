@@ -42,6 +42,11 @@ function EmailError(err) {
   this.code = 437;
 }
 
+function PagerDutyError(err) {
+  this.message = `PagerDuty Error: ${err}`;
+  this.code = 438;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -51,4 +56,5 @@ module.exports = {
   InvalidEndpoint,
   TwilioError,
   EmailError,
+  PagerDutyError,
 };

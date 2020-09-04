@@ -10,11 +10,24 @@ function EmailSubmitted(email) {
   this.message = `Email to ${email} submitted.`;
 }
 
+function TestAlertSubmitted() {
+  this.message = 'Test alert submitted';
+}
+
 function TestEmail() {
   this.subject = 'Test Email from PANIC';
   this.text = 'Test Email from PANIC';
 }
 
+function TestAlert() {
+  this.message = 'Test alert from PANIC';
+}
+
 module.exports = {
-  ConfigSubmitted, TwilioCallSubmitted, EmailSubmitted, TestEmail,
+  ConfigSubmitted,
+  TwilioCallSubmitted,
+  EmailSubmitted,
+  TestEmail,
+  TestAlert,
+  TestAlertSubmitted,
 };
