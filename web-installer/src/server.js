@@ -4,12 +4,27 @@ const twilio = require('twilio');
 const nodemailer = require('nodemailer');
 const opsgenie = require('opsgenie-sdk');
 const PdClient = require('node-pagerduty');
+const https = require('https');
+const fs = require('fs');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
 const msgs = require('./server/msgs');
 
 // TODO: Move logs to files
+
+// Read certificates. Note, the server will not start if the certificates are
+// missing.
+const httpsKey = fs.readFileSync(
+  path.join(__dirname, '../../', 'certificates', 'key.pem'),
+);
+const httpsCert = fs.readFileSync(
+  path.join(__dirname, '../../', 'certificates', 'cert.pem'),
+);
+const httpsOptions = {
+  key: httpsKey,
+  cert: httpsCert,
+};
 
 const app = express();
 app.disable('x-powered-by');
@@ -362,4 +377,10 @@ app.get('/*', (req, res) => {
 // TODO: Need to test if this gets updated with docker
 const port = process.env.INSTALLER_PORT || 8000;
 
-app.listen(port, () => { console.log('Listening on %s', port); });
+// Create Https server
+const server = https.createServer(httpsOptions, app);
+
+// Listen for requests
+server.listen(port, () => {
+  console.log('Listening on %s', port);
+});
