@@ -52,6 +52,11 @@ function OpsGenieError(err) {
   this.code = 439;
 }
 
+function MissingFile(filepath) {
+  this.message = `Cannot find ${filepath}.`;
+  this.code = 440;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -63,4 +68,5 @@ module.exports = {
   EmailError,
   PagerDutyError,
   OpsGenieError,
+  MissingFile,
 };

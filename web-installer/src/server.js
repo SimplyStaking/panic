@@ -10,15 +10,16 @@ const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
 const msgs = require('./server/msgs');
+const files = require('./server/files');
 
 // TODO: Move logs to files
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
-const httpsKey = fs.readFileSync(
+const httpsKey = files.readFile(
   path.join(__dirname, '../../', 'certificates', 'key.pem'),
 );
-const httpsCert = fs.readFileSync(
+const httpsCert = files.readFile(
   path.join(__dirname, '../../', 'certificates', 'cert.pem'),
 );
 const httpsOptions = {
