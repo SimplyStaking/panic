@@ -262,7 +262,7 @@ app.post('/server/pagerduty/test', async (req, res) => {
     return;
   }
 
-  // Create PagerDuty client and test alert
+  // Create PagerDuty client and test alert message
   const pdClient = new PdClient(apiToken);
   const testAlert = new msgs.TestAlert();
 
@@ -290,9 +290,8 @@ app.post('/server/pagerduty/test', async (req, res) => {
 
 // This endpoint triggers a test alert event to the OpsGenie space.
 app.post('/server/opsgenie/test', async (req, res) => {
-  // TODO: error handling and different alert modifications in the struct
   console.log('Received POST request for %s', req.url);
-  const { apiKey } = req.body;
+  const { apiKey, eu } = req.body;
 
   // Check if apiKey is missing.
   const missingParamsList = missingParams({ apiKey });
@@ -304,15 +303,24 @@ app.post('/server/opsgenie/test', async (req, res) => {
     return;
   }
 
-  // Create OpsGenie client and test alert
-  opsgenie.configure({ api_key: apiKey });
+  // If the eu=true set the host to the opsgenie EU url otherwise the sdk will
+  // run into an authentication error.
+  const euString = String(eu);
+  const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com'
+    : 'https://api.opsgenie.com';
+
+  // Create OpsGenie client and test alert message
+  opsgenie.configure({ api_key: apiKey, host });
   const testAlert = new msgs.TestAlert();
 
-  // Send test alert
+  // Test alert object
   const alertObject = {
     message: testAlert.message,
+    description: testAlert.message,
+    priority: 'P5',
   };
 
+  // Send test alert
   opsgenie.alertV2.create(alertObject, (err, response) => {
     if (err) {
       console.error(err);
