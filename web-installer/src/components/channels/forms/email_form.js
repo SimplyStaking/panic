@@ -11,7 +11,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { SendTestEmailButton } from '../../../containers/channels/buttons';
+import { SendTestEmailButton } from '../../../utils/buttons/channelsButtons';
 
 const useStyles = makeStyles(() => ({
   root: {

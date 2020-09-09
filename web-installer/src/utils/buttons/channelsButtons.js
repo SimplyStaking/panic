@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 import { ToastsStore } from 'react-toasts';
-import { fetchData, testCall, sendTestEmail } from '../../utils/data';
+import { fetchData, testCall, sendTestEmail } from '../data';
 
 function SendTestEmailButton({
   disabled, to, smtp, from, user, pass,

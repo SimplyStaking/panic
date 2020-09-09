@@ -9,7 +9,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { TestCallButton } from '../../../containers/channels/buttons';
+import { TestCallButton } from '../../../utils/buttons/channelsButtons';
 
 const useStyles = makeStyles(() => ({
   root: {

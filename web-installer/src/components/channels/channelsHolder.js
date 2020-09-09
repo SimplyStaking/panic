@@ -1,5 +1,5 @@
 import React from 'react';
-import ChannelAccordion from '../../components/channels/channelAccordion';
+import ChannelAccordion from './channelAccordion';
 import {
   TELEGRAM, TWILIO, EMAIL, PAGERDUTY, OPSGENIE,
 } from '../../constants/constants';
@@ -8,11 +8,11 @@ import TwilioIcon from '../../assets/icons/twilio.svg';
 import EmailIcon from '../../assets/icons/email.svg';
 import PagerDuty from '../../assets/icons/pagerduty.svg';
 import OpsGenie from '../../assets/icons/opsGenie.svg';
-import { TelegramFormContainer, TelegramTableContainer } from './telegram_container';
-import { TwilioFormContainer, TwilioTableContainer } from './twilio_container';
-import { EmailFormContainer, EmailTableContainer } from './email_container';
-import { PagerDutyFormContainer, PagerDutyTableContainer } from './pagerDuty_container';
-import { OpsGenieFormContainer, OpsGenieTableContainer } from './opsGenie_container';
+import { TelegramFormContainer, TelegramTableContainer } from '../../containers/channels/telegram_container';
+import { TwilioFormContainer, TwilioTableContainer } from '../../containers/channels/twilio_container';
+import { EmailFormContainer, EmailTableContainer } from '../../containers/channels/email_container';
+import { PagerDutyFormContainer, PagerDutyTableContainer } from '../../containers/channels/pagerDuty_container';
+import { OpsGenieFormContainer, OpsGenieTableContainer } from '../../containers/channels/opsGenie_container';
 
 const ChannelsContainer = () => (
   <div>

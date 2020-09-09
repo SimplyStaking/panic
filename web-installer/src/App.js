@@ -3,7 +3,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 
 import SideBar from './components/global/sidebar';
-import PageSelector from './containers/pageSelector';
+import PageManger from './containers/global/pageManager';
 
 import './App.css';
 
@@ -19,7 +19,7 @@ function App() {
   return (
     <div className={classes.root}>
       <SideBar />
-      <PageSelector />
+      <PageManger />
     </div>
   );
 }

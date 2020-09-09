@@ -10,7 +10,7 @@ import {
   Grid,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import { SendTestPagerDutyButton } from '../../../containers/channels/buttons';
+import { SendTestPagerDutyButton } from '../../../utils/buttons/channelsButtons';
 
 const useStyles = makeStyles(() => ({
   root: {
