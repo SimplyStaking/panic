@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 import { Button, Box } from '@material-ui/core';
 
 const NavigationButton = (props) => {
-  const { buttonText, navigation, nextPage } = props;
+  const {
+    buttonText, navigation, nextPage, disabled,
+  } = props;
 
   function triggerNextPage(e) {
     e.preventDefault();
@@ -16,6 +18,7 @@ const NavigationButton = (props) => {
         onClick={triggerNextPage}
         size="large"
         variant="outlined"
+        disabled={disabled}
         color="primary"
       >
         {buttonText}
@@ -25,6 +28,7 @@ const NavigationButton = (props) => {
 };
 
 NavigationButton.propTypes = {
+  disabled: PropTypes.bool.isRequired,
   buttonText: PropTypes.string.isRequired,
   navigation: PropTypes.string.isRequired,
   nextPage: PropTypes.func.isRequired,

@@ -6,12 +6,12 @@ const ChainNameSchema = (props) => Yup.object().shape({
       'unique-chain-name',
       'Chain name is not unique.',
       (value) => {
-        const { cosmosChains } = props;
-        if (cosmosChains.length === 0) {
+        const { cosmosConfigs } = props;
+        if (cosmosConfigs.length === 0) {
           return true;
         }
-        for (let i = 0; i < cosmosChains.length; i += 1) {
-          if (cosmosChains[i].chainName === value) {
+        for (let i = 0; i < cosmosConfigs.length; i += 1) {
+          if (cosmosConfigs[i].config.chainName === value) {
             return false;
           }
         }

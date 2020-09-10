@@ -3,10 +3,19 @@
   https://redux.js.org/recipes/structuring-reducers/refactoring-reducer-example
 */
 
-import { ADD_CHAIN, REMOVE_CHAIN, ADD_NODE } from '../actions/types';
+import { ADD_CHAIN, ADD_NODE } from '../actions/types';
 
 const initialstate = {
-  cosmosChains: [],
+  cosmosConfigs: [],
+  config: {
+    chainName: '',
+    nodes: [],
+    repositories: [],
+    kms: [],
+    channels: [],
+    alertsThreshold: [],
+    alertsSeverity: [],
+  },
 };
 
 function chainsReducer(state = initialstate, action) {
@@ -14,35 +23,18 @@ function chainsReducer(state = initialstate, action) {
     case ADD_CHAIN:
       return {
         ...state,
-        cosmosChains: state.cosmosChains.concat({
-          id: action.id,
-          chainName: action.chainName,
-          nodes: [],
-          repositories: [],
-          kms: [],
-          channels: [],
-          alertsThreshold: [],
-          alertsSeverity: [],
-        }),
-      };
-    case REMOVE_CHAIN:
-      return {
-        ...state,
-        cosmosChains: state.cosmosChains.filter((cosmosChain) => cosmosChain !== action.payload),
+        config: {
+          ...state.config,
+          chainName: action.payload.chainName,
+        },
       };
     case ADD_NODE:
       return {
         ...state,
-        cosmosChains: state.cosmosChains.map((cosmosChain) => {
-          if (cosmosChain.id !== action.id) {
-            return cosmosChain;
-          }
-
-          return {
-            ...cosmosChain,
-            nodes: cosmosChain.nodes.concat(action.payload),
-          };
-        }),
+        config: {
+          ...state.config,
+          nodes: state.config.nodes.concat(action.payload),
+        },
       };
     default:
       return state;

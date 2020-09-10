@@ -1,7 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField, Typography, Box, Grid,
+  TextField,
+  Typography,
+  Box,
+  Grid,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { NEXT, NODES_STEP } from '../../../../constants/constants';
@@ -15,7 +18,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const ChainNameForm = (props) => {
+const RepositoriesForm = (props) => {
   const classes = useStyles();
 
   const {
@@ -27,19 +30,19 @@ const ChainNameForm = (props) => {
 
   return (
     <div>
-      <form onChange={handleSubmit} className={classes.root}>
+      <form onSubmit={handleSubmit} className={classes.root}>
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={2}>
-            <Typography> Chain Name: </Typography>
+            <Typography> Repository Name: </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField
-              error={!errors.chainName !== true}
-              value={values.chainName}
+              error={!errors.repoName !== true}
+              value={values.repoName}
               type="text"
-              name="chainName"
-              placeholder="cosmos"
-              helperText={errors.chainName ? errors.chainName : ''}
+              name="repoName"
+              placeholder="cosmos/cosmos-sdk"
+              helperText={errors.repoName ? errors.repoName : ''}
               onChange={handleChange}
               fullWidth
             />
@@ -49,7 +52,6 @@ const ChainNameForm = (props) => {
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
                 <StepButtonContainer
-                  onClick={handleSubmit}
                   disabled={!(Object.keys(errors).length === 0)}
                   text={NEXT}
                   navigation={NODES_STEP}
@@ -63,15 +65,15 @@ const ChainNameForm = (props) => {
   );
 };
 
-ChainNameForm.propTypes = {
+RepositoriesForm.propTypes = {
   errors: PropTypes.shape({
-    chainName: PropTypes.string,
+    repoName: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    chainName: PropTypes.string.isRequired,
+    repoName: PropTypes.string.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
 };
 
-export default ChainNameForm;
+export default RepositoriesForm;

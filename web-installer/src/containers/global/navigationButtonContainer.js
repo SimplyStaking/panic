@@ -21,6 +21,7 @@ class NavigationButtonContainer extends Component {
 
     return (
       <NavigationButton
+        disabled={false}
         nextPage={this.nextPage}
         buttonText={text}
         navigation={navigation}

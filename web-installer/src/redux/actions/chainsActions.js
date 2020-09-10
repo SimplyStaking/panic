@@ -1,5 +1,5 @@
 import {
-  ADD_CHAIN, REMOVE_CHAIN, UPDATE_CHAIN, ADD_NODE,
+  ADD_CHAIN, REMOVE_CHAIN, UPDATE_CHAIN, ADD_NODE, ADD_REPOSITORY,
 } from './types';
 
 export function addChain(payload) {
@@ -26,6 +26,13 @@ export function updateChain(payload) {
 export function addNode(payload) {
   return {
     type: ADD_NODE,
+    payload,
+  };
+}
+
+export function addRepository(payload) {
+  return {
+    type: ADD_REPOSITORY,
     payload,
   };
 }

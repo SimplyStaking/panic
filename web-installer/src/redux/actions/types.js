@@ -19,3 +19,4 @@ export const ADD_CHAIN = 'ADD_CHAIN';
 export const REMOVE_CHAIN = 'REMOVE_CHAIN';
 export const UPDATE_CHAIN = 'UPDATE_CHAIN';
 export const ADD_NODE = 'ADD_NODE';
+export const ADD_REPOSITORY = 'ADD_REPOSITORY';

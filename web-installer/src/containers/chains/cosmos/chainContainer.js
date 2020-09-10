@@ -12,18 +12,17 @@ const Form = withFormik({
     chainName: '',
   }),
   validationSchema: (props) => ChainSchema(props),
-  handleSubmit: (values, { resetForm, props }) => {
+  handleSubmit: (values, { props }) => {
     const { saveChainDetails } = props;
     const payload = {
       chainName: values.chainName,
     };
     saveChainDetails(payload);
-    resetForm();
   },
 })(ChainForm);
 
 const mapStateToProps = (state) => ({
-  cosmosChains: state.ChainsReducer.cosmosChains,
+  cosmosConfigs: state.ChainsReducer.cosmosConfigs,
 });
 
 function mapDispatchToProps(dispatch) {

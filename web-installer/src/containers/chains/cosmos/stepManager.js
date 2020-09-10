@@ -17,11 +17,11 @@ import {
   REPOSITORIES_STEP,
 } from '../../../constants/constants';
 
-const mapStateToProps = (state) => ({ page: state.ChangePageReducer.page });
+const mapStateToProps = (state) => ({ step: state.ChangeStepReducer.step });
 
 // Returns the specific page according to pre-set steps
-function getStep(pageName) {
-  switch (pageName) {
+function getStep(stepName) {
+  switch (stepName) {
     case ALERTS_STEP:
       return <AlertsContainer />;
     case CHAINS_STEP:
