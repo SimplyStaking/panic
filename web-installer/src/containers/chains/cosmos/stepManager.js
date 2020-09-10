@@ -5,15 +5,11 @@ import AlertsContainer from './alertsContainer';
 import ChainContainer from './chainContainer';
 import ChannelsContainer from './channelsContainer';
 import KMSContainer from './kmsContainer';
-import NodesContainer from './nodesContainer';
+import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import RepositoriesContainer from './repositoriesContainer';
 
 import {
-  ALERTS_STEP,
-  CHAINS_STEP,
-  CHANNELS_STEP,
-  KMS_STEP,
-  NODES_STEP,
+  ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, KMS_STEP, NODES_STEP,
   REPOSITORIES_STEP,
 } from '../../../constants/constants';
 
@@ -31,7 +27,12 @@ function getStep(stepName) {
     case KMS_STEP:
       return <KMSContainer />;
     case NODES_STEP:
-      return <NodesContainer />;
+      return (
+        <div>
+          <NodesFormContainer />
+          <NodesTableContainer />
+        </div>
+      );
     case REPOSITORIES_STEP:
       return <RepositoriesContainer />;
     default:

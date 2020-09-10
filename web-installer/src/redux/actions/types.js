@@ -16,7 +16,14 @@ export const CHANGE_STEP = 'CHANGE_STEP';
 
 // Chains related actions
 export const ADD_CHAIN = 'ADD_CHAIN';
-export const REMOVE_CHAIN = 'REMOVE_CHAIN';
-export const UPDATE_CHAIN = 'UPDATE_CHAIN';
 export const ADD_NODE = 'ADD_NODE';
+export const REMOVE_NODE = 'REMOVE_NODE';
 export const ADD_REPOSITORY = 'ADD_REPOSITORY';
+export const REMOVE_REPOSITORY = 'REMOVE_REPOSITORY';
+export const ADD_KMS = 'ADD_KMS';
+export const REMOVE_KMS = 'REMOVE_KMS';
+export const ADD_CHANNEL = 'ADD_CHANNEL';
+export const REMOVE_CHANNEL = 'REMOVE_CHANNEL';
+export const SET_ALERTS = 'SET_ALERTS';
+export const ADD_CONFIG = 'ADD_CONFIG';
+export const REMOVE_CONFIG = 'REMOVE_CONFIG';
