@@ -39,31 +39,28 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 const mongoDBUrl = `mongodb://172.18.0.2:27017/${process.env.DB_NAME}`;
 
+// TODO: Load from .env and save to db if exists + update password
+// TODO: if username does not exist clear the db to only have 1 credential
+// TODO: Possibly remove these awaits
+// TODO: Possibly refactor into functions for mongo
+
 async function writeAuthDetailsToDB(username, password, refreshToken) {
   await mongoClient.connect(mongoDBUrl, mongo.options, async (err, db) => {
-    console.log(err);
-    console.log(db);
     if (err) throw new errors.MongoError(err);
     const myDB = db.db(`${process.env.DB_NAME}`);
     const authDoc = { username, password, refreshToken };
     const collection = myDB.collection('installer_authentication');
     // Find some documents
     await collection.find({ username }).toArray(async (err1, docs) => {
-      console.log(err1);
-      console.log(docs);
       if (err1) throw new errors.MongoError(err1);
-      if (docs.length) {
-        await collection.insertOne(authDoc, (err2, response) => {
-          console.log(err2);
-          console.log(response);
+      if (!docs.length) {
+        await collection.insertOne(authDoc, (err2, _) => {
           if (err2) throw new errors.MongoError(err2);
           db.close();
         });
       } else {
         const newDoc = { $set: authDoc };
-        await collection.updateOne({ username }, newDoc, (err2, response) => {
-          console.log(err2);
-          console.log(response);
+        await collection.updateOne({ username }, newDoc, (err2, _) => {
           if (err2) throw new errors.MongoError(err2);
           db.close();
         });
