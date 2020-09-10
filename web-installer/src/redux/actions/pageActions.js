@@ -1,8 +1,17 @@
-import { CHANGE_PAGE } from './types';
+import {
+  CHANGE_PAGE, CHANGE_STEP,
+} from './types';
 
-export default function changePage(payload) {
+export function changePage(payload) {
   return {
     type: CHANGE_PAGE,
+    payload,
+  };
+}
+
+export function changeStep(payload) {
+  return {
+    type: CHANGE_STEP,
     payload,
   };
 }

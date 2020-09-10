@@ -8,11 +8,11 @@ import TwilioIcon from '../../assets/icons/twilio.svg';
 import EmailIcon from '../../assets/icons/email.svg';
 import PagerDuty from '../../assets/icons/pagerduty.svg';
 import OpsGenie from '../../assets/icons/opsGenie.svg';
-import { TelegramFormContainer, TelegramTableContainer } from '../../containers/channels/telegram_container';
-import { TwilioFormContainer, TwilioTableContainer } from '../../containers/channels/twilio_container';
-import { EmailFormContainer, EmailTableContainer } from '../../containers/channels/email_container';
-import { PagerDutyFormContainer, PagerDutyTableContainer } from '../../containers/channels/pagerDuty_container';
-import { OpsGenieFormContainer, OpsGenieTableContainer } from '../../containers/channels/opsGenie_container';
+import { TelegramFormContainer, TelegramTableContainer } from '../../containers/channels/telegramContainer';
+import { TwilioFormContainer, TwilioTableContainer } from '../../containers/channels/twilioContainer';
+import { EmailFormContainer, EmailTableContainer } from '../../containers/channels/emailContainer';
+import { PagerDutyFormContainer, PagerDutyTableContainer } from '../../containers/channels/pagerDutyContainer';
+import { OpsGenieFormContainer, OpsGenieTableContainer } from '../../containers/channels/opsGenieContainer';
 
 const ChannelsContainer = () => (
   <div>

@@ -3,6 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
+import CosmosMultiStepForm from './cosmosMultiStepForm';
 import NavigationButtonContainer from '../../../containers/global/navigationButtonContainer';
 import {
   CHANNELS_PAGE, OTHER_PAGE, DONE, BACK,
@@ -47,7 +48,7 @@ function CosmosSetupPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <h1>Chicken Shit</h1>
+              <CosmosMultiStepForm />
             </Grid>
           </Grid>
         </Box>

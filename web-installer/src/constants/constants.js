@@ -25,3 +25,11 @@ export const OPSGENIE = 'OpsGenie';
 // Used for chain names
 export const COSMOS = 'Cosmos';
 export const SUBSTRATE = 'Substrate';
+
+// Used as Step Names in Multi-Step Chain Setup Form
+export const ALERTS_STEP = 'ALERTS_STEP';
+export const CHAINS_STEP = 'CHAINS_STEP';
+export const CHANNELS_STEP = 'CHANNELS_STEP';
+export const KMS_STEP = 'KMS_STEP';
+export const NODES_STEP = 'NODES_STEP';
+export const REPOSITORIES_STEP = 'REPOSITORIES_STEP';
