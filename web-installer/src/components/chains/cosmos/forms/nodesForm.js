@@ -198,7 +198,7 @@ const NodesForm = (props) => {
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
                 <StepButtonContainer
-                  disabled={!(Object.keys(errors).length === 0)}
+                  disabled={false}
                   text={NEXT}
                   navigation={REPOSITORIES_STEP}
                 />
