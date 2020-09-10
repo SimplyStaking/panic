@@ -57,6 +57,16 @@ function MissingFile(filepath) {
   this.code = 440;
 }
 
+function AuthenticationError(err) {
+  this.message = `Authentication Error: ${err}.`;
+  this.code = 441;
+}
+
+function MongoError(err) {
+  this.message = `Mongo Error: ${err}`;
+  this.code = 442;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -69,4 +79,6 @@ module.exports = {
   PagerDutyError,
   OpsGenieError,
   MissingFile,
+  AuthenticationError,
+  MongoError,
 };

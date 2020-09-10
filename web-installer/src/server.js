@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const twilio = require('twilio');
@@ -5,14 +6,16 @@ const nodemailer = require('nodemailer');
 const opsgenie = require('opsgenie-sdk');
 const PdClient = require('node-pagerduty');
 const https = require('https');
-const fs = require('fs');
+const bodyParser = require('body-parser');
+const mongoClient = require('mongodb').MongoClient;
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
 const msgs = require('./server/msgs');
 const files = require('./server/files');
-
-// TODO: Move logs to files
+const mongo = require('./server/mongo');
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -32,6 +35,42 @@ app.disable('x-powered-by');
 app.use(express.json()); // Recognize incoming data as json objects
 // Render the build at the root url
 app.use(express.static(path.join(__dirname, '../', 'build')));
+app.use(bodyParser.json());
+app.use(cookieParser());
+const mongoDBUrl = `mongodb://172.18.0.2:27017/${process.env.DB_NAME}`;
+
+async function writeAuthDetailsToDB(username, password, refreshToken) {
+  await mongoClient.connect(mongoDBUrl, mongo.options, async (err, db) => {
+    console.log(err);
+    console.log(db);
+    if (err) throw new errors.MongoError(err);
+    const myDB = db.db(`${process.env.DB_NAME}`);
+    const authDoc = { username, password, refreshToken };
+    const collection = myDB.collection('installer_authentication');
+    // Find some documents
+    await collection.find({ username }).toArray(async (err1, docs) => {
+      console.log(err1);
+      console.log(docs);
+      if (err1) throw new errors.MongoError(err1);
+      if (docs.length) {
+        await collection.insertOne(authDoc, (err2, response) => {
+          console.log(err2);
+          console.log(response);
+          if (err2) throw new errors.MongoError(err2);
+          db.close();
+        });
+      } else {
+        const newDoc = { $set: authDoc };
+        await collection.updateOne({ username }, newDoc, (err2, response) => {
+          console.log(err2);
+          console.log(response);
+          if (err2) throw new errors.MongoError(err2);
+          db.close();
+        });
+      }
+    });
+  });
+}
 
 // ---------------------------------------- Configs
 
@@ -350,6 +389,54 @@ app.post('/server/opsgenie/test', async (req, res) => {
   });
 });
 
+// ---------------------------------------- Authentication
+
+function credentialsCorrect(username, password) {
+  return username === process.env.INSTALLER_USERNAME
+    && password === process.env.INSTALLER_PASSWORD;
+}
+
+// This endpoint attempts to login a user of the installer. The authentication
+// credentials are the ones stored inside the .env file.
+app.post('/server/login', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username, password } = req.body;
+
+  // Check if apiKey is missing.
+  const missingParamsList = missingParams({ username, password });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Check if the inputted credentials are correct.
+  if (credentialsCorrect(username, password)) {
+    // If the credentials are correct give the user a jwt token
+    const payload = { username };
+    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: process.env.ACCESS_TOKEN_LIFE,
+    });
+    // This will be used to give access tokens
+    // TODO: Need to store this in a database
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: process.env.REFRESH_TOKEN_LIFE,
+    });
+    const msg = new msgs.AuthenticationSuccessful();
+    await writeAuthDetailsToDB(username, password, refreshToken);
+    res.status(utils.SUCCESS_STATUS)
+      .cookie('jwt', accessToken, { secure: true, httpOnly: true })
+      .send(utils.resultJson(msg.message));
+  } else {
+    const err = new errors.AuthenticationError('Incorrect Credentials');
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 // ---------------------------------------- Server defaults
 
 app.get('/server/*', async (req, res) => {
@@ -375,13 +462,12 @@ app.get('/*', (req, res) => {
 
 // ---------------------------------------- Start listen
 
-// TODO: Need to test if this gets updated with docker
 const port = process.env.INSTALLER_PORT || 8000;
 
 // Create Https server
 const server = https.createServer(httpsOptions, app);
 
 // Listen for requests
-server.listen(port, () => {
+server.listen(port, async () => {
   console.log('Listening on %s', port);
 });
