@@ -5,8 +5,11 @@
 
 import {
   ADD_CHAIN, ADD_NODE, ADD_REPOSITORY, REMOVE_NODE, REMOVE_REPOSITORY,
-  ADD_KMS, REMOVE_KMS, ADD_CHANNEL, REMOVE_CHANNEL, SET_ALERTS,
-  ADD_CONFIG, REMOVE_CONFIG,
+  ADD_KMS, REMOVE_KMS, SET_ALERTS, ADD_CONFIG, REMOVE_CONFIG,
+  ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
+  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, ADD_EMAIL_CHANNEL,
+  REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
+  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
 } from '../actions/types';
 
 const initialstate = {
@@ -17,6 +20,11 @@ const initialstate = {
     repositories: [],
     kmses: [],
     channels: [],
+    telegrams: [],
+    emails: [],
+    opsgenies: [],
+    pagerduties: [],
+    twilios: [],
     alerts: '',
   },
 };
@@ -83,21 +91,93 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_CHANNEL:
+    case ADD_TELEGRAM_CHANNEL:
       return {
         ...state,
         config: {
           ...state.config,
-          channels: state.config.channels.concat(action.payload),
+          telegrams: state.config.telegrams.concat(action.payload),
         },
       };
-    case REMOVE_CHANNEL:
+    case REMOVE_TELEGRAM_CHANNEL:
       return {
         ...state,
         config: {
           ...state.config,
-          channels: state.config.channels.filter(
-            (channel) => channel !== action.payload,
+          telegrams: state.config.telegrams.filter(
+            (telegram) => telegram !== action.payload,
+          ),
+        },
+      };
+    case ADD_OPSGENIE_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          opsgenies: state.config.opsgenies.concat(action.payload),
+        },
+      };
+    case REMOVE_OPSGENIE_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          opsgenies: state.config.opsgenies.filter(
+            (opsgenie) => opsgenie !== action.payload,
+          ),
+        },
+      };
+    case ADD_EMAIL_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          emails: state.config.emails.concat(action.payload),
+        },
+      };
+    case REMOVE_EMAIL_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          emails: state.config.emails.filter(
+            (email) => email !== action.payload,
+          ),
+        },
+      };
+    case ADD_TWILIO_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          twilios: state.config.twilios.concat(action.payload),
+        },
+      };
+    case REMOVE_TWILIO_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          twilios: state.config.twilios.filter(
+            (twilio) => twilio !== action.payload,
+          ),
+        },
+      };
+    case ADD_PAGERDUTY_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          pagerduties: state.config.pagerduties.concat(action.payload),
+        },
+      };
+    case REMOVE_PAGERDUTY_CHANNEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          pagerduties: state.config.pagerduties.filter(
+            (pagerduty) => pagerduty !== action.payload,
           ),
         },
       };

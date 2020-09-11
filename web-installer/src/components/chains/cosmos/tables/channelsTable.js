@@ -2,13 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Button, Grid,
+  Grid, FormControlLabel, Checkbox, List, ListItem, Typography,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import CheckIcon from '@material-ui/icons/Check';
-import ClearIcon from '@material-ui/icons/Clear';
-import CancelIcon from '@material-ui/icons/Cancel';
 
 const useStyles = makeStyles({
   table: {
@@ -16,68 +12,75 @@ const useStyles = makeStyles({
   },
 });
 
-const RepositoriesTable = (props) => {
+const ChannelsTable = (props) => {
   const classes = useStyles();
 
   const {
     config,
-    removeRepositoryDetails,
+    handleChange,
+    telegrams,
+    opsgenies,
+    emails,
+    pagerduties,
+    twilios,
+    saveTelegramDetails,
+    removeTelegramDetails,
   } = props;
 
-  if (config.repositories.length === 0) {
-    return <div />;
-  }
   return (
     <Grid container className={classes.root} spacing={2}>
       <Grid item xs={12}>
-        <Grid container justify="center" spacing={spacing}>
-          {[0, 1, 2].map((value) => (
-            <Grid key={value} item>
-              <Paper className={classes.paper} />
-            </Grid>
-          ))}
+        <Grid container justify="center" spacing={3}>
+          <Grid item>
+            <Paper className={classes.paper}>
+              <Typography>
+                Telegram
+              </Typography>
+              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <List>
+                  {telegrams.map((telegram) => (
+                    <ListItem key={telegram.botName}>
+                      <FormControlLabel
+                        control={(
+                          <Checkbox
+                            checked={config.telegrams.includes(telegram.botName)}
+                            onClick={() => {
+                              if (config.telegrams.includes(telegram.botName)) {
+                                removeTelegramDetails(telegram.botName);
+                              } else {
+                                saveTelegramDetails(telegram.botName);
+                              }
+                            }}
+                            onChange={handleChange}
+                            name="telegrams"
+                            color="primary"
+                          />
+                        )}
+                        label={telegram.botName}
+                        labelPlacement="start"
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </div>
+            </Paper>
+          </Grid>
         </Grid>
       </Grid>
     </Grid>
-    <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell align="center">Monitor</TableCell>
-            <TableCell align="center">Delete</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {config.repositories.map((repository) => (
-            <TableRow key={repository.repoName}>
-              <TableCell component="th" scope="row">
-                {repository.repoName}
-              </TableCell>
-              <TableCell align="center">
-                {repository.monitorNode ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                <Button onClick={() => { removeRepositoryDetails(repository); }}>
-                  <CancelIcon />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
   );
 };
 
-RepositoriesTable.propTypes = {
+ChannelsTable.propTypes = {
+  telegrams: PropTypes.arrayOf(PropTypes.shape({
+    botName: PropTypes.string.isRequired,
+  })).isRequired,
   config: PropTypes.shape({
-    repositories: PropTypes.arrayOf(PropTypes.shape({
-      repoName: PropTypes.string.isRequired,
-      monitorRepo: PropTypes.bool.isRequired,
-    })).isRequired,
+    telegrams: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
-  removeRepositoryDetails: PropTypes.func.isRequired,
+  handleChange: PropTypes.func.isRequired,
+  saveTelegramDetails: PropTypes.func.isRequired,
+  removeTelegramDetails: PropTypes.func.isRequired,
 };
 
-export default RepositoriesTable;
+export default ChannelsTable;

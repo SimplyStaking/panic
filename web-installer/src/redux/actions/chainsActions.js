@@ -1,7 +1,7 @@
 import {
   ADD_CHAIN, ADD_NODE, ADD_REPOSITORY, REMOVE_NODE, REMOVE_REPOSITORY,
   ADD_KMS, REMOVE_KMS, ADD_CHANNEL, REMOVE_CHANNEL, SET_ALERTS,
-  ADD_CONFIG, REMOVE_CONFIG,
+  ADD_CONFIG, REMOVE_CONFIG, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
 } from './types';
 
 export function addChain(payload) {
@@ -84,6 +84,21 @@ export function addConfig(payload) {
 export function removeConfig(payload) {
   return {
     type: REMOVE_CONFIG,
+    payload,
+  };
+}
+
+/* Testing functions */
+export function addTelegramChannel(payload) {
+  return {
+    type: ADD_TELEGRAM_CHANNEL,
+    payload,
+  };
+}
+
+export function removeTelegramChannel(payload) {
+  return {
+    type: REMOVE_TELEGRAM_CHANNEL,
     payload,
   };
 }

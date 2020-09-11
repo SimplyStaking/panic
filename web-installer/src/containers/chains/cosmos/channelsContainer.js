@@ -1,26 +1,15 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChannelsTable from '../../../components/chains/cosmos/tables/channelsTable';
-import { addChannel, removeChannel } from '../../../redux/actions/chainsActions';
+import { addTelegramChannel, removeTelegramChannel } from '../../../redux/actions/chainsActions';
 
 const Form = withFormik({
-  mapPropsToValues: () => ({
-    telegrams: [],
-    opsgenies: [],
-    emails: [],
-    pagerduties: [],
-    twilios: [],
-  }),
   handleSubmit: (values, { props }) => {
-    const { saveChannelsDetails } = props;
+    const { saveTelegramDetails } = props;
     const payload = {
-      telegrams: values.telegrams,
-      opsgenies: values.opsgenies,
-      emails: values.emails,
-      pagerduties: values.pagerduties,
-      twilios: values.twilios,
+      telegram: values.telegram,
     };
-    saveChannelsDetails(payload);
+    saveTelegramDetails(payload);
   },
 })(ChannelsTable);
 
@@ -35,8 +24,8 @@ const mapStateToProps = (state) => ({
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveChannelDetails: (details) => dispatch(addChannel(details)),
-    removeChannelDetails: (details) => dispatch(removeChannel(details)),
+    saveTelegramDetails: (details) => dispatch(addTelegramChannel(details)),
+    removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
   };
 }
 
