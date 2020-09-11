@@ -67,6 +67,12 @@ function MongoError(err) {
   this.code = 442;
 }
 
+function MissingInstallerCredentials(...args) {
+  this.message = `Missing installer credential(s) '${args}' in .env. Server`
+    + ' will stop.';
+  this.code = 443;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -81,4 +87,5 @@ module.exports = {
   MissingFile,
   AuthenticationError,
   MongoError,
+  MissingInstallerCredentials,
 };

@@ -17,6 +17,8 @@ const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
 
+// TODO: Continue with jwt and modify jwt db interaction
+
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
 const httpsKey = files.readFile(
@@ -30,6 +32,15 @@ const httpsOptions = {
   cert: httpsCert,
 };
 
+// Load installer authentication credentials and other info from .env
+const installerCredentials = {
+  INSTALLER_USERNAME: process.env.INSTALLER_USERNAME,
+  INSTALLER_PASSWORD: process.env.INSTALLER_PASSWORD,
+};
+const dbname = process.env.DB_NAME;
+const dbhost = '172.18.0.2:27017';
+const authenticationCollection = 'installer_authentication';
+
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json()); // Recognize incoming data as json objects
@@ -37,13 +48,70 @@ app.use(express.json()); // Recognize incoming data as json objects
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
-const mongoDBUrl = `mongodb://172.18.0.2:27017/${process.env.DB_NAME}`;
+const mongoDBUrl = `mongodb://${dbhost}/${dbname}`;
 
-// TODO: Load from .env and save to db if exists + update password
-// TODO: if username does not exist clear the db to only have 1 credential
-// TODO: Possibly remove these awaits
-// TODO: Possibly refactor into functions for mongo
+// Check which values are missing given an object, and return an array of
+// missing values
+function missingValues(values) {
+  const missingValuesList = [];
+  Object.keys(values).forEach((param) => {
+    if (!values[param]) {
+      missingValuesList.push(param);
+    }
+  });
+  return missingValuesList;
+}
 
+function checkInstAuthCredentials() {
+  // Check if installer credential are missing.
+  const missingCredentialsList = missingValues(installerCredentials);
+
+  // If any of the credentials is missing inform the user.
+  if (missingCredentialsList.length !== 0) {
+    throw new errors.MissingInstallerCredentials(missingCredentialsList);
+  }
+}
+
+// This function loads the authentication details in .env to the database. This
+// is needed to store the jwt token in case the server restarts (otherwise the
+// user would need to login each time the server restarts)
+async function loadAuthenticationToDB() {
+  let client;
+  let db;
+  try {
+    // connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collection = db.collection(authenticationCollection);
+    const username = installerCredentials.INSTALLER_USERNAME;
+    const password = installerCredentials.INSTALLER_PASSWORD;
+    const authDoc = { username, password, refreshToken: '' };
+    // Find authentication document
+    const docs = await collection.find({ username }).toArray();
+    if (!docs.length) {
+      // If the credentials inside the .env are not found, empty the database so
+      // that we always have one record (to prevent outside access), and insert
+      // the credentials in the database.
+      await collection.deleteMany({});
+      await collection.insertOne(authDoc);
+    } else {
+      // Otherwise update the record with the latest password
+      const newDoc = { $set: { password } };
+      await collection.updateOne({ username }, newDoc);
+    }
+  } catch (err) {
+    // If an error is raised throw a MongoError
+    throw new errors.MongoError(err);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
+}
+
+// TODO: Need to re-write as the one above
 async function writeAuthDetailsToDB(username, password, refreshToken) {
   await mongoClient.connect(mongoDBUrl, mongo.options, async (err, db) => {
     if (err) throw new errors.MongoError(err);
@@ -71,17 +139,6 @@ async function writeAuthDetailsToDB(username, password, refreshToken) {
 
 // ---------------------------------------- Configs
 
-// Check which params are missing and return an array of missing params
-function missingParams(params) {
-  const missingParamsList = [];
-  Object.keys(params).forEach((param) => {
-    if (!params[param]) {
-      missingParamsList.push(param);
-    }
-  });
-  return missingParamsList;
-}
-
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
 app.get('/server/config', async (req, res) => {
@@ -92,12 +149,12 @@ app.get('/server/config', async (req, res) => {
 
   // Check if configType and fileName are missing, as these are independent of
   // other parameters
-  const missingParamsList = missingParams({ configType, fileName });
+  const missingParamsList = missingValues({ configType, fileName });
 
   // If the config belongs to a chain, check if chainName and baseChain are
   // given. If not add them to the list of missing params.
   if (configType && configType.toLowerCase() === 'chain') {
-    missingParamsList.push(...missingParams({ chainName, baseChain }));
+    missingParamsList.push(...missingValues({ chainName, baseChain }));
   }
 
   // If some required parameters are missing inform the user.
@@ -147,12 +204,12 @@ app.post('/server/config', async (req, res) => {
 
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
-  const missingParamsList = missingParams({ configType, fileName, config });
+  const missingParamsList = missingValues({ configType, fileName, config });
 
   // If the config belongs to a chain, check if chainName and baseChain are
   // given. If not add them to the list of missing params.
   if (configType && configType.toLowerCase() === 'chain') {
-    missingParamsList.push(...missingParams({ chainName, baseChain }));
+    missingParamsList.push(...missingValues({ chainName, baseChain }));
   }
 
   // If some required parameters are missing inform the user.
@@ -197,7 +254,7 @@ app.post('/server/twilio/test', async (req, res) => {
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
-  const missingParamsList = missingParams({
+  const missingParamsList = missingValues({
     accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
   });
 
@@ -247,7 +304,7 @@ app.post('/server/email/test', async (req, res) => {
   } = req.body;
 
   // Check if smtp, from, to, user and pass are missing.
-  const missingParamsList = missingParams({ smtp, from, to });
+  const missingParamsList = missingValues({ smtp, from, to });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -305,7 +362,7 @@ app.post('/server/pagerduty/test', async (req, res) => {
   const { apiToken, integrationKey } = req.body;
 
   // Check if apiToken and integrationKey are missing.
-  const missingParamsList = missingParams({ apiToken, integrationKey });
+  const missingParamsList = missingValues({ apiToken, integrationKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -346,7 +403,7 @@ app.post('/server/opsgenie/test', async (req, res) => {
   const { apiKey, eu } = req.body;
 
   // Check if apiKey is missing.
-  const missingParamsList = missingParams({ apiKey });
+  const missingParamsList = missingValues({ apiKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -388,9 +445,10 @@ app.post('/server/opsgenie/test', async (req, res) => {
 
 // ---------------------------------------- Authentication
 
+// Check if the inputted credentials are the one stored inside .env
 function credentialsCorrect(username, password) {
-  return username === process.env.INSTALLER_USERNAME
-    && password === process.env.INSTALLER_PASSWORD;
+  return username === installerCredentials.username
+    && password === installerCredentials.password;
 }
 
 // This endpoint attempts to login a user of the installer. The authentication
@@ -400,7 +458,7 @@ app.post('/server/login', async (req, res) => {
   const { username, password } = req.body;
 
   // Check if apiKey is missing.
-  const missingParamsList = missingParams({ username, password });
+  const missingParamsList = missingValues({ username, password });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -461,10 +519,20 @@ app.get('/*', (req, res) => {
 
 const port = process.env.INSTALLER_PORT || 8000;
 
-// Create Https server
-const server = https.createServer(httpsOptions, app);
-
-// Listen for requests
-server.listen(port, async () => {
-  console.log('Listening on %s', port);
-});
+(async () => {
+  try {
+    // Check that installer credentials are in the .env. If not inform the user
+    // and terminate the server.
+    checkInstAuthCredentials();
+    // Load authentication details before listening for requests to avoid
+    // unexpected behaviour.
+    await loadAuthenticationToDB();
+  } catch (err) {
+    console.log(err);
+    process.exit(0);
+  }
+  // Create Https server
+  const server = https.createServer(httpsOptions, app);
+  // Listen for requests
+  server.listen(port, () => console.log('Listening on %s', port));
+})().catch(err => console.log(err));
