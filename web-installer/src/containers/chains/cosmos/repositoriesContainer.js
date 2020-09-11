@@ -1,7 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import RepositoriesForm from '../../../components/chains/cosmos/forms/repositoriesForm';
-import { addRepository } from '../../../redux/actions/chainsActions';
+import RepositoriesTable from '../../../components/chains/cosmos/tables/repositoriesTable';
+import { addRepository, removeRepository } from '../../../redux/actions/chainsActions';
 import RepositorySchema from './schemas/repositorySchema';
 
 const Form = withFormik({
@@ -10,12 +11,14 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     repoName: '',
+    monitorRepo: true,
   }),
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveRepositoryDetails } = props;
     const payload = {
       repoName: values.repoName,
+      monitorRepo: values.monitorRepo,
     };
     saveRepositoryDetails(payload);
     resetForm();
@@ -23,12 +26,18 @@ const Form = withFormik({
 })(RepositoriesForm);
 
 const mapStateToProps = (state) => ({
-  cosmosChains: state.ChainsReducer.cosmosChains,
+  cosmosConfigs: state.ChainsReducer.cosmosConfigs,
+  config: state.ChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     saveRepositoryDetails: (details) => dispatch(addRepository(details)),
+  };
+}
+function mapDispatchToPropsRemove(dispatch) {
+  return {
+    removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
   };
 }
 
@@ -37,4 +46,12 @@ const RepositoriesFormContainer = connect(
   mapDispatchToProps,
 )(Form);
 
-export default RepositoriesFormContainer;
+const RepositoriesTableContainer = connect(
+  mapStateToProps,
+  mapDispatchToPropsRemove,
+)(RepositoriesTable);
+
+export {
+  RepositoriesFormContainer,
+  RepositoriesTableContainer,
+};

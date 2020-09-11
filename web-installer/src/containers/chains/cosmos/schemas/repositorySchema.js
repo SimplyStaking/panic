@@ -11,7 +11,7 @@ const RepositorySchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs.config.nodes.length === 0) {
+          if (cosmosConfigs.config.repositories.length === 0) {
             return true;
           }
           for (let j = 0; j < cosmosConfigs[i].config.repositories.length; j += 1) {

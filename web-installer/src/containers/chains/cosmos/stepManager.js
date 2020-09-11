@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import AlertsContainer from './alertsContainer';
 import ChainContainer from './chainContainer';
 import ChannelsContainer from './channelsContainer';
-import KMSContainer from './kmsContainer';
+import { KMSFormContainer, KMSTableContainer } from './kmsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
-import RepositoriesContainer from './repositoriesContainer';
+import { RepositoriesFormContainer, RepositoriesTableContainer } from './repositoriesContainer';
 
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, KMS_STEP, NODES_STEP,
@@ -25,7 +25,12 @@ function getStep(stepName) {
     case CHANNELS_STEP:
       return <ChannelsContainer />;
     case KMS_STEP:
-      return <KMSContainer />;
+      return (
+        <div>
+          <KMSFormContainer />
+          <KMSTableContainer />
+        </div>
+      );
     case NODES_STEP:
       return (
         <div>
@@ -34,7 +39,12 @@ function getStep(stepName) {
         </div>
       );
     case REPOSITORIES_STEP:
-      return <RepositoriesContainer />;
+      return (
+        <div>
+          <RepositoriesFormContainer />
+          <RepositoriesTableContainer />
+        </div>
+      );
     default:
       return <ChainContainer />;
   }

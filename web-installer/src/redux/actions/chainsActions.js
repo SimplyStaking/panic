@@ -53,14 +53,14 @@ export function removeKMS(payload) {
   };
 }
 
-export function addChannels(payload) {
+export function addChannel(payload) {
   return {
     type: ADD_CHANNEL,
     payload,
   };
 }
 
-export function removeChannels(payload) {
+export function removeChannel(payload) {
   return {
     type: REMOVE_CHANNEL,
     payload,

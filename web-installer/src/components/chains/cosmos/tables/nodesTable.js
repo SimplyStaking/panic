@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -80,7 +79,7 @@ const NodesTable = (props) => {
   );
 };
 
-NodesTable.propTypes = forbidExtraProps({
+NodesTable.propTypes = {
   config: PropTypes.shape({
     nodes: PropTypes.arrayOf(PropTypes.shape({
       cosmosNodeName: PropTypes.string.isRequired,
@@ -95,6 +94,6 @@ NodesTable.propTypes = forbidExtraProps({
     })).isRequired,
   }).isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
-});
+};
 
 export default NodesTable;
