@@ -17,7 +17,8 @@ const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
 
-// TODO: Continue with jwt and modify jwt db interaction
+// TODO: Continue with jwt
+// TODO: Hash the password inside the database
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -111,30 +112,41 @@ async function loadAuthenticationToDB() {
   }
 }
 
-// TODO: Need to re-write as the one above
-async function writeAuthDetailsToDB(username, password, refreshToken) {
-  await mongoClient.connect(mongoDBUrl, mongo.options, async (err, db) => {
-    if (err) throw new errors.MongoError(err);
-    const myDB = db.db(`${process.env.DB_NAME}`);
+// This endpoint saves the refresh token to the database
+async function saveRefreshTokenToDB(username, password, refreshToken) {
+  let client;
+  let db;
+  try {
+    // connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collection = db.collection(authenticationCollection);
     const authDoc = { username, password, refreshToken };
-    const collection = myDB.collection('installer_authentication');
-    // Find some documents
-    await collection.find({ username }).toArray(async (err1, docs) => {
-      if (err1) throw new errors.MongoError(err1);
-      if (!docs.length) {
-        await collection.insertOne(authDoc, (err2, _) => {
-          if (err2) throw new errors.MongoError(err2);
-          db.close();
-        });
-      } else {
-        const newDoc = { $set: authDoc };
-        await collection.updateOne({ username }, newDoc, (err2, _) => {
-          if (err2) throw new errors.MongoError(err2);
-          db.close();
-        });
-      }
-    });
-  });
+    // Find authentication document
+    const docs = await collection.find({ username }).toArray();
+    // If we cannot find the authentication document, it must be that the
+    // database was tampered with. Therefore save the .env credentials again
+    // and update with the latest refresh token.
+    if (!docs.length) {
+      await loadAuthenticationToDB();
+    }
+    // Save the refresh token
+    const newDoc = { $set: authDoc };
+    await collection.updateOne({ username }, newDoc);
+  } catch (err) {
+    // If the error is already a mongo error no need to wrap it again as a mongo
+    // error
+    if (err.code === 442) {
+      throw err;
+    }
+    throw new errors.MongoError(err);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
 }
 
 // ---------------------------------------- Configs
@@ -447,8 +459,8 @@ app.post('/server/opsgenie/test', async (req, res) => {
 
 // Check if the inputted credentials are the one stored inside .env
 function credentialsCorrect(username, password) {
-  return username === installerCredentials.username
-    && password === installerCredentials.password;
+  return username === installerCredentials.INSTALLER_USERNAME
+    && password === installerCredentials.INSTALLER_PASSWORD;
 }
 
 // This endpoint attempts to login a user of the installer. The authentication
@@ -457,7 +469,7 @@ app.post('/server/login', async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { username, password } = req.body;
 
-  // Check if apiKey is missing.
+  // Check if username or password are missing.
   const missingParamsList = missingValues({ username, password });
 
   // If some required parameters are missing inform the user.
@@ -476,17 +488,24 @@ app.post('/server/login', async (req, res) => {
       expiresIn: process.env.ACCESS_TOKEN_LIFE,
     });
     // This will be used to give access tokens
-    // TODO: Need to store this in a database
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
       algorithm: 'HS256',
       expiresIn: process.env.REFRESH_TOKEN_LIFE,
     });
+    // Inform the user that authentication was successful and wrap the token
+    // inside a cookie for additional security
     const msg = new msgs.AuthenticationSuccessful();
-    await writeAuthDetailsToDB(username, password, refreshToken);
-    res.status(utils.SUCCESS_STATUS)
-      .cookie('jwt', accessToken, { secure: true, httpOnly: true })
-      .send(utils.resultJson(msg.message));
+    try {
+      await saveRefreshTokenToDB(username, password, refreshToken);
+      res.status(utils.SUCCESS_STATUS)
+        .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
+        .send(utils.resultJson(msg.message));
+    } catch (err) {
+      // Inform the user of any error that occurs
+      res.status(err.code).send(utils.errorJson(err.message));
+    }
   } else {
+    // If inputted credentials are incorrect inform the user
     const err = new errors.AuthenticationError('Incorrect Credentials');
     res.status(err.code).send(utils.errorJson(err.message));
   }

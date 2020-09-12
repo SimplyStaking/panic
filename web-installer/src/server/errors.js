@@ -73,6 +73,12 @@ function MissingInstallerCredentials(...args) {
   this.code = 443;
 }
 
+function CouldNotFindOriginalAuthCredentials() {
+  this.message = 'The installer credentials loaded in the .env could not be '
+    + 'found inside the database. Please restart the installer server.';
+  this.code = 444;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -88,4 +94,5 @@ module.exports = {
   AuthenticationError,
   MongoError,
   MissingInstallerCredentials,
+  CouldNotFindOriginalAuthCredentials,
 };
