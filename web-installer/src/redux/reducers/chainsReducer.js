@@ -12,6 +12,8 @@ import {
   ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
 } from '../actions/types';
 
+import { INFO, WARNING, CRITICAL } from '../../constants/constants';
+
 const initialstate = {
   cosmosConfigs: [],
   config: {
@@ -25,7 +27,249 @@ const initialstate = {
     opsgenies: [],
     pagerduties: [],
     twilios: [],
-    alerts: '',
+    alerts: {
+      thresholds: [
+        {
+          name: 'Cannot access validator',
+          warning: {
+            delay: 60,
+            repeat: 0,
+            enabled: true,
+          },
+          critical: {
+            delay: 60,
+            repeat: 300,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Cannot access node',
+          warning: {
+            delay: 60,
+            repeat: 300,
+            enabled: true,
+          },
+          critical: {
+            delay: 120,
+            repeat: 300,
+            enabled: false,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Lost connection with specific peer',
+          warning: {
+            delay: 60,
+            enabled: true,
+          },
+          critical: {
+            delay: 120,
+            enabled: false,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Peer count decreased',
+          warning: {
+            threshold: 3,
+            enabled: true,
+          },
+          critical: {
+            threshold: 2,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Missed Blocks',
+          warning: {
+            threshold: 20,
+            timewindow: 360,
+            enabled: true,
+          },
+          critical: {
+            threshold: 100,
+            timewindow: 3600,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'No change in block height',
+          warning: {
+            threshold: 180,
+            enabled: true,
+          },
+          critical: {
+            threshold: 300,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Time of last pre-commit/pre-vote activity is above threshold',
+          warning: {
+            threshold: 60,
+            enabled: true,
+          },
+          critical: {
+            threshold: 180,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Mempool Size',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'System CPU usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'System storage usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'System RAM usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'System network usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        {
+          name: 'Open File Descriptors increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+      ],
+      severties: [
+        {
+          name: 'Validator inaccessible on startup',
+          severtiy: CRITICAL,
+          enabled: true,
+        },
+        {
+          name: 'Node inaccessible on startup',
+          severtiy: WARNING,
+          enabled: true,
+        },
+        {
+          name: 'Slashed',
+          severtiy: CRITICAL,
+          enabled: true,
+        },
+        {
+          name: 'Slashed',
+          severtiy: CRITICAL,
+          enabled: true,
+        },
+        {
+          name: 'Node is syncing',
+          severtiy: WARNING,
+          enabled: true,
+        },
+        {
+          name: 'Validator is not active in this session',
+          severtiy: WARNING,
+          enabled: true,
+        },
+        {
+          name: 'Validator set size increased',
+          severtiy: INFO,
+          enabled: true,
+        },
+        {
+          name: 'Validator set size decreased',
+          severtiy: INFO,
+          enabled: true,
+        },
+        {
+          name: 'Validator is jailed',
+          severtiy: CRITICAL,
+          enabled: true,
+        },
+        {
+          name: 'Voting power increased',
+          severtiy: INFO,
+          enabled: false,
+        },
+        {
+          name: 'Validator power decreased',
+          severtiy: INFO,
+          enabled: false,
+        },
+        {
+          name: 'New proposal submitted',
+          severtiy: INFO,
+          enabled: false,
+        },
+        {
+          name: 'Proposal conducted',
+          severtiy: INFO,
+          enabled: false,
+        },
+        {
+          name: 'Delegated balance increase',
+          severtiy: INFO,
+          enabled: false,
+        },
+        {
+          name: 'Delegagted balance decrease',
+          severtiy: INFO,
+          enabled: false,
+        },
+      ],
+    },
   },
 };
 

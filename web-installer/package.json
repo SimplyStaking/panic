@@ -13,6 +13,7 @@
     "airbnb-prop-types": "^2.16.0",
     "axios": "^0.20.0",
     "formik": "^2.1.5",
+    "mdbreact": "^4.27.0",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",

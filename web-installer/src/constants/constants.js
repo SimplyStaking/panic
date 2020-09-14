@@ -33,3 +33,8 @@ export const CHANNELS_STEP = 'CHANNELS_STEP';
 export const KMS_STEP = 'KMS_STEP';
 export const NODES_STEP = 'NODES_STEP';
 export const REPOSITORIES_STEP = 'REPOSITORIES_STEP';
+
+// Severties constants
+export const INFO = 'INFO';
+export const WARNING = 'WARNING';
+export const CRITICAL = 'CRITICAL';
