@@ -23,7 +23,6 @@ const ChainNameForm = (props) => {
     errors,
     handleSubmit,
     handleChange,
-    config,
     values,
   } = props;
 
@@ -31,16 +30,6 @@ const ChainNameForm = (props) => {
     <div>
       <form onChange={handleSubmit} className={classes.root}>
         <Grid container spacing={3} justify="center" alignItems="center">
-          {config.chainName.length !== 0 && (
-            <Grid item xs={12}>
-              <Typography>
-                Current chain name configured:
-                {' '}
-                {config.chainName}
-                {' '}
-              </Typography>
-            </Grid>
-          )}
           <Grid item xs={2}>
             <Typography> Chain Name: </Typography>
           </Grid>
@@ -67,7 +56,7 @@ const ChainNameForm = (props) => {
               </Box>
               <Box px={2}>
                 <StepButtonContainer
-                  disabled={!(Object.keys(errors).length === 0) && (config.chainName.length === 0)}
+                  disabled={!(Object.keys(errors).length === 0)}
                   text={NEXT}
                   navigation={NODES_STEP}
                 />
@@ -85,9 +74,6 @@ ChainNameForm.propTypes = {
     chainName: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
-  config: PropTypes.shape({
-    chainName: PropTypes.string.isRequired,
-  }).isRequired,
   values: PropTypes.shape({
     chainName: PropTypes.string.isRequired,
   }).isRequired,

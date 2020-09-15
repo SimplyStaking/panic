@@ -62,8 +62,10 @@ function ChainAccordion(props) {
             <Grid item xs={2}>
               {button}
             </Grid>
+            <Grid item xs={12}>
+              {table}
+            </Grid>
           </Grid>
-          {table}
         </AccordionDetails>
       </Accordion>
     </div>
