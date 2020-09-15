@@ -9,7 +9,9 @@ import {
   ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
   ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, ADD_EMAIL_CHANNEL,
   REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
+  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, UPDATE_WARNING_DELAY,
+  UPDATE_WARNING_REPEAT, UPDATE_WARNING_THRESHOLD, UPDATE_WARNING_TIMEWINDOW,
+  UPDATE_WARNING_ENABLED,
 } from '../actions/types';
 
 import { INFO, WARNING, CRITICAL } from '../../constants/constants';
@@ -28,8 +30,8 @@ const initialstate = {
     pagerduties: [],
     twilios: [],
     alerts: {
-      thresholds: [
-        {
+      thresholds: {
+        alert1: {
           name: 'Cannot access validator',
           warning: {
             delay: 60,
@@ -43,7 +45,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert2: {
           name: 'Cannot access node',
           warning: {
             delay: 60,
@@ -57,7 +59,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert3: {
           name: 'Lost connection with specific peer',
           warning: {
             delay: 60,
@@ -69,7 +71,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert4: {
           name: 'Peer count decreased',
           warning: {
             threshold: 3,
@@ -81,7 +83,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert5: {
           name: 'Missed Blocks',
           warning: {
             threshold: 20,
@@ -95,7 +97,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert6: {
           name: 'No change in block height',
           warning: {
             threshold: 180,
@@ -107,7 +109,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert7: {
           name: 'Time of last pre-commit/pre-vote activity is above threshold',
           warning: {
             threshold: 60,
@@ -119,7 +121,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert8: {
           name: 'Mempool Size',
           warning: {
             threshold: 85,
@@ -131,7 +133,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert9: {
           name: 'System CPU usage increased',
           warning: {
             threshold: 85,
@@ -143,7 +145,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert10: {
           name: 'System storage usage increased',
           warning: {
             threshold: 85,
@@ -155,7 +157,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert11: {
           name: 'System RAM usage increased',
           warning: {
             threshold: 85,
@@ -167,7 +169,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert12: {
           name: 'System network usage increased',
           warning: {
             threshold: 85,
@@ -179,7 +181,7 @@ const initialstate = {
           },
           enabled: true,
         },
-        {
+        alert13: {
           name: 'Open File Descriptors increased',
           warning: {
             threshold: 85,
@@ -191,7 +193,7 @@ const initialstate = {
           },
           enabled: true,
         },
-      ],
+      },
       severties: [
         {
           name: 'Validator inaccessible on startup',
@@ -444,6 +446,106 @@ function chainsReducer(state = initialstate, action) {
         cosmosConfigs: state.cosmosConfigs.filter(
           (cosmosConfig) => cosmosConfig !== action.payload,
         ),
+      };
+    case UPDATE_WARNING_DELAY:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                warning: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].warning,
+                  delay: action.payload.delay,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_WARNING_REPEAT:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                warning: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].warning,
+                  repeat: action.payload.repeat,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_WARNING_THRESHOLD:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                warning: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].warning,
+                  threshold: action.payload.threshold,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_WARNING_TIMEWINDOW:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                warning: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].warning,
+                  timewindow: action.payload.timewindow,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_WARNING_ENABLED:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                warning: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].warning,
+                  enabled: action.payload.enabled,
+                },
+              },
+            },
+          },
+        },
       };
     default:
       return state;

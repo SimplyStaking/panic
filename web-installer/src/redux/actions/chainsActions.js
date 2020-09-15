@@ -4,7 +4,9 @@ import {
   ADD_CONFIG, REMOVE_CONFIG, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
   ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL,
   REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL,
+  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, UPDATE_WARNING_DELAY,
+  UPDATE_WARNING_REPEAT, UPDATE_WARNING_THRESHOLD, UPDATE_WARNING_TIMEWINDOW,
+  UPDATE_WARNING_ENABLED,
 } from './types';
 
 export function addChain(payload) {
@@ -157,6 +159,41 @@ export function addOpsGenieChannel(payload) {
 export function removeOpsGenieChannel(payload) {
   return {
     type: REMOVE_OPSGENIE_CHANNEL,
+    payload,
+  };
+}
+
+export function updateWarningDelay(payload) {
+  return {
+    type: UPDATE_WARNING_DELAY,
+    payload,
+  };
+}
+
+export function updateWarningRepeat(payload) {
+  return {
+    type: UPDATE_WARNING_REPEAT,
+    payload,
+  };
+}
+
+export function updateWarningThreshold(payload) {
+  return {
+    type: UPDATE_WARNING_THRESHOLD,
+    payload,
+  };
+}
+
+export function updateWarningTimeWindow(payload) {
+  return {
+    type: UPDATE_WARNING_TIMEWINDOW,
+    payload,
+  };
+}
+
+export function updateWarningEnabled(payload) {
+  return {
+    type: UPDATE_WARNING_ENABLED,
     payload,
   };
 }
