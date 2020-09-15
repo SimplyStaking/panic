@@ -10,7 +10,6 @@ services:
       - 'DB_NAME=${DB_NAME}'
       - 'INSTALLER_USERNAME=${INSTALLER_USERNAME}'
       - 'INSTALLER_PASSWORD=${INSTALLER_PASSWORD}'
-      - 'PASSWORD_HASH_SECRET=${PASSWORD_HASH_SECRET}'
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'

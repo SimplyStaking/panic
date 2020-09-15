@@ -9,6 +9,7 @@ const https = require('https');
 const bodyParser = require('body-parser');
 const mongoClient = require('mongodb').MongoClient;
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
@@ -25,6 +26,7 @@ const mongo = require('./server/mongo');
 // TODO: Give ID to the users as payload when storing users to DB
 //       (not for the installer since 1 auth) in case users have the same name
 //        role (admin ex) (or uniqueness in username)
+// TODO: Should usernames be case-sensitive?
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -91,8 +93,11 @@ async function loadAuthenticationToDB() {
     db = client.db(dbname);
     const collection = db.collection(authenticationCollection);
     const username = installerCredentials.INSTALLER_USERNAME;
+    const hashedPass = bcrypt.hashSync(
+      installerCredentials.INSTALLER_PASSWORD, 10,
+    );
     const password = installerCredentials.INSTALLER_PASSWORD;
-    const authDoc = { username, password, refreshToken: '' };
+    const authDoc = { username, password: hashedPass, refreshToken: '' };
     // Find authentication document
     const doc = await collection.findOne({ username });
     if (!doc) {
@@ -104,7 +109,7 @@ async function loadAuthenticationToDB() {
     // If the credentials are found and the password changed update the record.
     // We must also invalidate the refresh token so that eventually all logged
     // in users are logged out when the access token expires.
-    if (password !== doc.password) {
+    if (!bcrypt.compareSync(password, doc.password)) {
       const newDoc = { $set: authDoc };
       await collection.updateOne({ username }, newDoc);
     }
@@ -119,6 +124,9 @@ async function loadAuthenticationToDB() {
     }
   }
 }
+
+// TODO: Need to check if we need to add something else. I.E. Need to hash
+// TODO: the pass inside saveRefreshTokenToDB
 
 async function retrieveRefreshToken(username) {
   let client;
