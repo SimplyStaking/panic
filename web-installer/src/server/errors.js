@@ -73,10 +73,14 @@ function MissingInstallerCredentials(...args) {
   this.code = 443;
 }
 
-function CouldNotFindOriginalAuthCredentials() {
-  this.message = 'The installer credentials loaded in the .env could not be '
-    + 'found inside the database. Please restart the installer server.';
+function Unauthorized() {
+  this.message = 'Not authorized to perform this operation.';
   this.code = 444;
+}
+
+function CouldNotFindRefreshTokenInDB() {
+  this.message = 'Could not find refresh token in database.';
+  this.code = 445;
 }
 
 module.exports = {
@@ -94,5 +98,6 @@ module.exports = {
   AuthenticationError,
   MongoError,
   MissingInstallerCredentials,
-  CouldNotFindOriginalAuthCredentials,
+  Unauthorized,
+  CouldNotFindRefreshTokenInDB,
 };

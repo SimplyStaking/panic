@@ -23,10 +23,6 @@ function TestAlert() {
   this.message = 'Test alert from PANIC';
 }
 
-function Unauthorized() {
-  this.message = 'You are not authorize to perform this operation';
-}
-
 function AuthenticationSuccessful() {
   this.message = 'Authentication Successful';
 }
@@ -38,6 +34,5 @@ module.exports = {
   TestEmail,
   TestAlert,
   TestAlertSubmitted,
-  Unauthorized,
   AuthenticationSuccessful,
 };

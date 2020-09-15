@@ -17,8 +17,17 @@ const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
 
-// TODO: Continue with jwt
 // TODO: Hash the password inside the database
+// TODO: Remove user_config_ui.ini from list of accepted configurations. These
+//       should be stored in a database (Check if users exist first).
+// TODO: Have to create an endpoint which stores the authenticated users in the
+//       database. All users are admins.
+// TODO: Make sure that when the password is changed the user is not
+//       authenticated when he already has the cookie
+// TODO: Give ID to the users as payload when storing users to DB
+//       (not for the installer since 1 auth) in case users have the same name
+//        role (admin ex) (or uniqueness in username)
+// TODO: Need to consider log out and change password
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -97,9 +106,38 @@ async function loadAuthenticationToDB() {
       await collection.insertOne(authDoc);
     } else {
       // Otherwise update the record with the latest password
+      // TODO: Change of password must be handled here
       const newDoc = { $set: { password } };
       await collection.updateOne({ username }, newDoc);
     }
+  } catch (err) {
+    // If an error is raised throw a MongoError
+    throw new errors.MongoError(err);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
+}
+
+async function retrieveRefreshToken(username) {
+  let client;
+  let db;
+  try {
+    // connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collection = db.collection(authenticationCollection);
+    // Find the authentication document
+    const record = await collection.findOne({ username });
+    if (!record) {
+      // If the username is not found, return and empty string
+      return '';
+    }
+    // Otherwise return the refresh token of the record.
+    return record.refreshToken;
   } catch (err) {
     // If an error is raised throw a MongoError
     throw new errors.MongoError(err);
@@ -149,11 +187,166 @@ async function saveRefreshTokenToDB(username, password, refreshToken) {
   }
 }
 
+// ---------------------------------------- Authentication
+
+// Check if the inputted credentials are the one stored inside .env
+function credentialsCorrect(username, password) {
+  return username === installerCredentials.INSTALLER_USERNAME
+    && password === installerCredentials.INSTALLER_PASSWORD;
+}
+
+function verify(req, res, next) {
+  // Extract the authentication cookie
+  const accessToken = req.cookies.authCookie;
+  // If it does not exist, the user did not login therefore send an unauthorized
+  // error
+  if (!accessToken) {
+    const err = new errors.Unauthorized();
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+  try {
+    // Use the jwt.verify method to verify the access token. It throws an
+    // error if the token has expired or has a invalid signature
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+    next();
+  } catch (err) {
+    console.log(err);
+    // If an error occurs send an unauthorized error
+    const error = new errors.Unauthorized();
+    res.status(error.code).send(utils.errorJson(error.message));
+  }
+}
+
+// This endpoint attempts to login a user of the installer. The authentication
+// credentials are the ones stored inside the .env file.
+app.post('/server/login', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username, password } = req.body;
+
+  // Check if username or password are missing.
+  const missingParamsList = missingValues({ username, password });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Check if the inputted credentials are correct.
+  if (credentialsCorrect(username, password)) {
+    // If the credentials are correct give the user a jwt token
+    const payload = { username };
+    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+    });
+    // This will be used to give access tokens
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: parseInt(process.env.REFRESH_TOKEN_LIFE, 10),
+    });
+    // Inform the user that authentication was successful and wrap the token
+    // inside a cookie for additional security
+    const msg = new msgs.AuthenticationSuccessful();
+    try {
+      await saveRefreshTokenToDB(username, password, refreshToken);
+      res.status(utils.SUCCESS_STATUS)
+        .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
+        .send(utils.resultJson(msg.message));
+    } catch (err) {
+      // Inform the user of any error that occurs
+      res.status(err.code).send(utils.errorJson(err.message));
+    }
+  } else {
+    // If inputted credentials are incorrect inform the user
+    const err = new errors.AuthenticationError('Incorrect Credentials');
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// This endpoint returns a new access token using the stored refresh token if
+// the current access token has a valid signature.
+app.post('/server/refresh', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  // Extract the authentication cookie
+  const accessToken = req.cookies.authCookie;
+  // If it does not exist, the user did not login therefore send an unauthorized
+  // error
+  if (!accessToken) {
+    const err = new errors.Unauthorized();
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  let payload;
+  try {
+    // Use the jwt.verify method to verify that the access token has a valid
+    // signature. It throws an error if the token has an invalid signature.
+    payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, {
+      ignoreExpiration: true,
+    });
+  } catch (err) {
+    console.log(err);
+    // If an error occurs send an unauthorized error
+    const error = new errors.Unauthorized();
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  let refreshToken;
+  try {
+    // Get the refresh token from the database
+    refreshToken = await retrieveRefreshToken(payload.username);
+    // If the refresh token could not be found in the database inform the user.
+    if (refreshToken === '') {
+      throw new errors.CouldNotFindRefreshTokenInDB();
+    }
+  } catch (err) {
+    // Inform the user of any error that occurs when retrieving the token
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  // Verify the refresh token. If the token expired or is invalid send an
+  // unauthorized access message to the user.
+  try {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    console.log(err);
+    // If an error occurs send an unauthorized error
+    const error = new errors.Unauthorized();
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  try {
+    // Wrap the new token inside a cookie for additional security and inform the
+    // user that he has been authenticated again
+    const msg = new msgs.AuthenticationSuccessful();
+    const newPayload = { username: payload.username }; // Must be overwritten
+    const newAccessToken = jwt.sign(newPayload, process.env.ACCESS_TOKEN_SECRET,
+      {
+        algorithm: 'HS256',
+        expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+      });
+    res.status(utils.SUCCESS_STATUS)
+      .cookie('authCookie', newAccessToken, { secure: true, httpOnly: true })
+      .send(utils.resultJson(msg.message));
+  } catch (err) {
+    // Inform the user of any error that occurs
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 // ---------------------------------------- Configs
 
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
-app.get('/server/config', async (req, res) => {
+app.get('/server/config', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const {
     configType, fileName, chainName, baseChain,
@@ -207,7 +400,7 @@ app.get('/server/config', async (req, res) => {
 
 // This endpoint writes a config to the inferred path. The config path is
 // inferred from the parameters.
-app.post('/server/config', async (req, res) => {
+app.post('/server/config', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     configType, fileName, chainName, baseChain,
@@ -258,7 +451,7 @@ app.post('/server/config', async (req, res) => {
 // ---------------------------------------- Twilio
 
 // This endpoint performs a twilio test call on the given phone number.
-app.post('/server/twilio/test', async (req, res) => {
+app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
@@ -309,7 +502,7 @@ app.post('/server/twilio/test', async (req, res) => {
 // ---------------------------------------- E-mail
 
 // This endpoint sends a test e-mail to the address.
-app.post('/server/email/test', async (req, res) => {
+app.post('/server/email/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
     smtp, from, to, user, pass,
@@ -369,7 +562,7 @@ app.post('/server/email/test', async (req, res) => {
 // ---------------------------------------- PagerDuty
 
 // This endpoint triggers an test alert event to the PagerDuty space.
-app.post('/server/pagerduty/test', async (req, res) => {
+app.post('/server/pagerduty/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { apiToken, integrationKey } = req.body;
 
@@ -410,7 +603,7 @@ app.post('/server/pagerduty/test', async (req, res) => {
 // ---------------------------------------- OpsGenie
 
 // This endpoint triggers a test alert event to the OpsGenie space.
-app.post('/server/opsgenie/test', async (req, res) => {
+app.post('/server/opsgenie/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { apiKey, eu } = req.body;
 
@@ -455,71 +648,15 @@ app.post('/server/opsgenie/test', async (req, res) => {
   });
 });
 
-// ---------------------------------------- Authentication
-
-// Check if the inputted credentials are the one stored inside .env
-function credentialsCorrect(username, password) {
-  return username === installerCredentials.INSTALLER_USERNAME
-    && password === installerCredentials.INSTALLER_PASSWORD;
-}
-
-// This endpoint attempts to login a user of the installer. The authentication
-// credentials are the ones stored inside the .env file.
-app.post('/server/login', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { username, password } = req.body;
-
-  // Check if username or password are missing.
-  const missingParamsList = missingValues({ username, password });
-
-  // If some required parameters are missing inform the user.
-  if (missingParamsList.length !== 0) {
-    const err = new errors.MissingArguments(missingParamsList);
-    res.status(err.code).send(utils.errorJson(err.message));
-    return;
-  }
-
-  // Check if the inputted credentials are correct.
-  if (credentialsCorrect(username, password)) {
-    // If the credentials are correct give the user a jwt token
-    const payload = { username };
-    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: process.env.ACCESS_TOKEN_LIFE,
-    });
-    // This will be used to give access tokens
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: process.env.REFRESH_TOKEN_LIFE,
-    });
-    // Inform the user that authentication was successful and wrap the token
-    // inside a cookie for additional security
-    const msg = new msgs.AuthenticationSuccessful();
-    try {
-      await saveRefreshTokenToDB(username, password, refreshToken);
-      res.status(utils.SUCCESS_STATUS)
-        .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
-        .send(utils.resultJson(msg.message));
-    } catch (err) {
-      // Inform the user of any error that occurs
-      res.status(err.code).send(utils.errorJson(err.message));
-    }
-  } else {
-    // If inputted credentials are incorrect inform the user
-    const err = new errors.AuthenticationError('Incorrect Credentials');
-    res.status(err.code).send(utils.errorJson(err.message));
-  }
-});
-
 // ---------------------------------------- Server defaults
 
-app.get('/server/*', async (req, res) => {
+app.get('/server/*', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const err = new errors.InvalidEndpoint(req.url);
   res.status(err.code).send(utils.errorJson(err.message));
 });
 
-app.post('/server/*', async (req, res) => {
+app.post('/server/*', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const err = new errors.InvalidEndpoint(req.url);
   res.status(err.code).send(utils.errorJson(err.message));
@@ -528,7 +665,6 @@ app.post('/server/*', async (req, res) => {
 // ---------------------------------------- PANIC UI
 
 // Return the build at the root URL
-// TODO: Need to test if this is actually the case
 app.get('/*', (req, res) => {
   console.log('Received GET request for %s', req.url);
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
