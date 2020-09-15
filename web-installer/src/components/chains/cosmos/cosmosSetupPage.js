@@ -4,10 +4,6 @@ import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
 import StepManager from '../../../containers/chains/cosmos/stepManager';
-import NavigationButtonContainer from '../../../containers/global/navigationButtonContainer';
-import {
-  CHANNELS_PAGE, OTHER_PAGE, DONE, BACK,
-} from '../../../constants/constants';
 import Data from '../../../data/cosmos';
 
 const useStyles = makeStyles((theme) => ({
@@ -53,14 +49,6 @@ function CosmosSetupPage() {
           </Grid>
         </Box>
       </Box>
-      <NavigationButtonContainer
-        text={DONE}
-        navigation={OTHER_PAGE}
-      />
-      <NavigationButtonContainer
-        text={BACK}
-        navigation={CHANNELS_PAGE}
-      />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import {
   Grid, FormControlLabel, Checkbox, List, ListItem, Typography, Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import { NEXT, ALERTS_STEP } from '../../../../constants/constants';
+import {
+  NEXT, ALERTS_STEP, BACK, KMS_STEP,
+} from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
 
 const useStyles = makeStyles({
@@ -226,6 +228,13 @@ const ChannelsTable = (props) => {
       <Grid item xs={8} />
       <Grid item xs={4}>
         <Grid container direction="row" justify="flex-end" alignItems="center">
+          <Box px={2}>
+            <StepButtonContainer
+              disabled={false}
+              text={BACK}
+              navigation={KMS_STEP}
+            />
+          </Box>
           <Box px={2}>
             <StepButtonContainer
               disabled={false}

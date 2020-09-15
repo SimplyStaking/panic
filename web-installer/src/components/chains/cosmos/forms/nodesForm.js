@@ -4,7 +4,9 @@ import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import { NEXT, REPOSITORIES_STEP } from '../../../../constants/constants';
+import {
+  CHAINS_STEP, NEXT, REPOSITORIES_STEP, BACK,
+} from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
 
 const useStyles = makeStyles(() => ({
@@ -196,6 +198,13 @@ const NodesForm = (props) => {
           <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
+              <Box px={2}>
+                <StepButtonContainer
+                  disabled={false}
+                  text={BACK}
+                  navigation={CHAINS_STEP}
+                />
+              </Box>
               <Box px={2}>
                 <StepButtonContainer
                   disabled={false}

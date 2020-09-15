@@ -4,8 +4,9 @@ import {
   TextField, Typography, Box, Grid,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import { NEXT, NODES_STEP } from '../../../../constants/constants';
+import { NEXT, NODES_STEP, BACK, CHAINS_PAGE } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import NavigationButtonContainer from '../../../../containers/global/navigationButtonContainer';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -47,6 +48,12 @@ const ChainNameForm = (props) => {
           <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
+              <Box px={2}>
+                <NavigationButtonContainer
+                  text={BACK}
+                  navigation={CHAINS_PAGE}
+                />
+              </Box>
               <Box px={2}>
                 <StepButtonContainer
                   onClick={handleSubmit}

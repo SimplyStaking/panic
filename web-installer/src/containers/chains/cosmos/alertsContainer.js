@@ -1,7 +1,10 @@
 import { connect } from 'react-redux';
 import {
   updateWarningDelay, updateWarningRepeat, updateWarningThreshold,
-  updateWarningTimeWindow, updateWarningEnabled,
+  updateWarningTimeWindow, updateWarningEnabled, updateCriticalDelay,
+  updateCriticalRepeat, updateCriticalThreshold, updateCriticalTimeWindow,
+  updateCriticalEnabled, updateAlertEnabled, updateAlertSeverityLevel,
+  updateAlertSeverityEnabled,
 } from '../../../redux/actions/chainsActions';
 import AlertsTable from '../../../components/chains/cosmos/tables/alertsTable';
 
@@ -16,6 +19,14 @@ function mapDispatchToProps(dispatch) {
     updateWarningThreshold: (details) => dispatch(updateWarningThreshold(details)),
     updateWarningTimeWindow: (details) => dispatch(updateWarningTimeWindow(details)),
     updateWarningEnabled: (details) => dispatch(updateWarningEnabled(details)),
+    updateCriticalDelay: (details) => dispatch(updateCriticalDelay(details)),
+    updateCriticalRepeat: (details) => dispatch(updateCriticalRepeat(details)),
+    updateCriticalThreshold: (details) => dispatch(updateCriticalThreshold(details)),
+    updateCriticalTimeWindow: (details) => dispatch(updateCriticalTimeWindow(details)),
+    updateCriticalEnabled: (details) => dispatch(updateCriticalEnabled(details)),
+    updateAlertEnabled: (details) => dispatch(updateAlertEnabled(details)),
+    updateAlertSeverityLevel: (details) => dispatch(updateAlertSeverityLevel(details)),
+    updateAlertSeverityEnabled: (details) => dispatch(updateAlertSeverityEnabled(details)),
   };
 }
 

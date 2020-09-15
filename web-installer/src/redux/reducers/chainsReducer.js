@@ -11,7 +11,9 @@ import {
   REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, UPDATE_WARNING_DELAY,
   UPDATE_WARNING_REPEAT, UPDATE_WARNING_THRESHOLD, UPDATE_WARNING_TIMEWINDOW,
-  UPDATE_WARNING_ENABLED,
+  UPDATE_WARNING_ENABLED, UPDATE_CRITICAL_DELAY, UPDATE_CRITICAL_REPEAT,
+  UPDATE_CRITICAL_THRESHOLD, UPDATE_CRITICAL_TIMEWINDOW, UPDATE_CRITICAL_ENABLED,
+  UPDATE_ALERT_ENABLED, UPDATE_ALERT_SEVERTY_LEVEL, UPDATE_ALERT_SEVERTY_ENABLED,
 } from '../actions/types';
 
 import { INFO, WARNING, CRITICAL } from '../../constants/constants';
@@ -194,83 +196,78 @@ const initialstate = {
           enabled: true,
         },
       },
-      severties: [
-        {
+      severties: {
+        alert1: {
           name: 'Validator inaccessible on startup',
           severtiy: CRITICAL,
           enabled: true,
         },
-        {
+        alert2: {
           name: 'Node inaccessible on startup',
           severtiy: WARNING,
           enabled: true,
         },
-        {
+        alert3: {
           name: 'Slashed',
           severtiy: CRITICAL,
           enabled: true,
         },
-        {
-          name: 'Slashed',
-          severtiy: CRITICAL,
-          enabled: true,
-        },
-        {
+        alert4: {
           name: 'Node is syncing',
           severtiy: WARNING,
           enabled: true,
         },
-        {
+        alert5: {
           name: 'Validator is not active in this session',
           severtiy: WARNING,
           enabled: true,
         },
-        {
+        alert6: {
           name: 'Validator set size increased',
           severtiy: INFO,
           enabled: true,
         },
-        {
+        alert7: {
           name: 'Validator set size decreased',
           severtiy: INFO,
           enabled: true,
         },
-        {
+        alert8: {
           name: 'Validator is jailed',
           severtiy: CRITICAL,
           enabled: true,
         },
-        {
+        alert9: {
           name: 'Voting power increased',
           severtiy: INFO,
           enabled: false,
         },
-        {
+        alert10: {
           name: 'Validator power decreased',
           severtiy: INFO,
           enabled: false,
         },
-        {
+        alert11: {
           name: 'New proposal submitted',
           severtiy: INFO,
           enabled: false,
         },
-        {
+        alert12: {
           name: 'Proposal conducted',
           severtiy: INFO,
           enabled: false,
         },
-        {
+        alert13: {
           name: 'Delegated balance increase',
           severtiy: INFO,
           enabled: false,
         },
-        {
+        alert14: {
           name: 'Delegagted balance decrease',
           severtiy: INFO,
           enabled: false,
         },
-      ],
+      },
     },
   },
 };
@@ -542,6 +539,157 @@ function chainsReducer(state = initialstate, action) {
                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
                   enabled: action.payload.enabled,
                 },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_CRITICAL_DELAY:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                critical: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].critical,
+                  delay: action.payload.delay,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_CRITICAL_REPEAT:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                critical: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].critical,
+                  repeat: action.payload.repeat,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_CRITICAL_THRESHOLD:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                critical: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].critical,
+                  threshold: action.payload.threshold,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_CRITICAL_TIMEWINDOW:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                critical: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].critical,
+                  timewindow: action.payload.timewindow,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_CRITICAL_ENABLED:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                critical: {
+                  ...state.config.alerts.thresholds[action.payload.alertID].critical,
+                  enabled: action.payload.enabled,
+                },
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_ALERT_ENABLED:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            thresholds: {
+              ...state.config.alerts.thresholds,
+              [action.payload.alertID]: {
+                ...state.config.alerts.thresholds[action.payload.alertID],
+                enabled: action.payload.enabled,
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_ALERT_SEVERTY_LEVEL:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            severties: {
+              ...state.config.alerts.severties,
+              [action.payload.alertID]: {
+                ...state.config.alerts.severties[action.payload.alertID],
+                severtiy: action.payload.severtiy,
+              },
+            },
+          },
+        },
+      };
+    case UPDATE_ALERT_SEVERTY_ENABLED:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          alerts: {
+            ...state.config.alerts,
+            severties: {
+              ...state.config.alerts.severties,
+              [action.payload.alertID]: {
+                ...state.config.alerts.severties[action.payload.alertID],
+                enabled: action.payload.enabled,
               },
             },
           },

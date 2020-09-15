@@ -6,7 +6,9 @@ import {
   REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, UPDATE_WARNING_DELAY,
   UPDATE_WARNING_REPEAT, UPDATE_WARNING_THRESHOLD, UPDATE_WARNING_TIMEWINDOW,
-  UPDATE_WARNING_ENABLED,
+  UPDATE_WARNING_ENABLED, UPDATE_CRITICAL_DELAY, UPDATE_CRITICAL_REPEAT,
+  UPDATE_CRITICAL_THRESHOLD, UPDATE_CRITICAL_TIMEWINDOW, UPDATE_CRITICAL_ENABLED,
+  UPDATE_ALERT_ENABLED, UPDATE_ALERT_SEVERTY_LEVEL, UPDATE_ALERT_SEVERTY_ENABLED,
 } from './types';
 
 export function addChain(payload) {
@@ -194,6 +196,62 @@ export function updateWarningTimeWindow(payload) {
 export function updateWarningEnabled(payload) {
   return {
     type: UPDATE_WARNING_ENABLED,
+    payload,
+  };
+}
+
+export function updateCriticalDelay(payload) {
+  return {
+    type: UPDATE_CRITICAL_DELAY,
+    payload,
+  };
+}
+
+export function updateCriticalRepeat(payload) {
+  return {
+    type: UPDATE_CRITICAL_REPEAT,
+    payload,
+  };
+}
+
+export function updateCriticalThreshold(payload) {
+  return {
+    type: UPDATE_CRITICAL_THRESHOLD,
+    payload,
+  };
+}
+
+export function updateCriticalTimeWindow(payload) {
+  return {
+    type: UPDATE_CRITICAL_TIMEWINDOW,
+    payload,
+  };
+}
+
+export function updateCriticalEnabled(payload) {
+  return {
+    type: UPDATE_CRITICAL_ENABLED,
+    payload,
+  };
+}
+
+export function updateAlertEnabled(payload) {
+  return {
+    type: UPDATE_ALERT_ENABLED,
+    payload,
+  };
+}
+
+export function updateAlertSeverityLevel(payload) {
+  return {
+    type: UPDATE_ALERT_SEVERTY_LEVEL,
+    payload,
+  };
+}
+
+export function updateAlertSeverityEnabled(payload) {
+  return {
+    type: UPDATE_ALERT_SEVERTY_ENABLED,
     payload,
   };
 }

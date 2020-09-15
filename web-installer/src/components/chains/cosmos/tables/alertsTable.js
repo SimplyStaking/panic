@@ -4,9 +4,14 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   FormControlLabel, Checkbox, Typography, MenuItem, FormControl,
-  Select, TextField,
+  Select, TextField, Grid, Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
+import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import NavigationButtonContainer from '../../../../containers/global/navigationButtonContainer';
+import {
+  CHAINS_PAGE, DONE, BACK, CHANNELS_STEP,
+} from '../../../../constants/constants';
 
 const useStyles = makeStyles({
   table: {
@@ -24,11 +29,15 @@ const AlertsTable = (props) => {
     updateWarningThreshold,
     updateWarningTimeWindow,
     updateWarningEnabled,
+    updateCriticalDelay,
+    updateCriticalRepeat,
+    updateCriticalThreshold,
+    updateCriticalTimeWindow,
+    updateCriticalEnabled,
+    updateAlertEnabled,
+    updateAlertSeverityLevel,
+    updateAlertSeverityEnabled,
   } = props;
-
-  const handleChange = (event) => {
-    console.log(event.target.value);
-  };
 
   return (
     <div>
@@ -56,6 +65,14 @@ const AlertsTable = (props) => {
                     control={(
                       <Checkbox
                         checked={config.alerts.thresholds[alert].warning.enabled}
+                        onClick={() => {
+                          updateWarningEnabled(
+                            {
+                              alertID: alert,
+                              enabled: !config.alerts.thresholds[alert].warning.enabled,
+                            },
+                          );
+                        }}
                         color="primary"
                       />
                     )}
@@ -64,155 +81,195 @@ const AlertsTable = (props) => {
                   />
                   {config.alerts.thresholds[alert].warning.hasOwnProperty('delay')
                     && (
-                      <div>
-                        <p>
-                          Delay:
-                          {' '}
-                        </p>
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.delay}
-                          type="text"
-                          name="delayWarning"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningDelay(
-                              {
-                                alertID: alert,
-                                delay: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      </div>
+                      <TextField
+                        value={config.alerts.thresholds[alert].warning.delay}
+                        type="text"
+                        name="delayWarning"
+                        label="Delay"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateWarningDelay(
+                            {
+                              alertID: alert,
+                              delay: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
                   {config.alerts.thresholds[alert].warning.hasOwnProperty('repeat')
                     && (
-                      <div>
-                        <p>
-                          Repeat:
-                          {' '}
-                        </p>
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.repeat}
-                          type="text"
-                          name="repeatWarning"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningRepeat(
-                              {
-                                alertID: alert,
-                                repeat: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      </div>
+                      <TextField
+                        value={config.alerts.thresholds[alert].warning.repeat}
+                        type="text"
+                        name="repeatWarning"
+                        label="Repeat"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateWarningRepeat(
+                            {
+                              alertID: alert,
+                              repeat: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
                   {config.alerts.thresholds[alert].warning.hasOwnProperty('threshold')
                     && (
-                      <div>
-                        <p>
-                          Threshold:
-                          {' '}
-                        </p>
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.threshold}
-                          type="text"
-                          name="thresholdWarning"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningThreshold(
-                              {
-                                alertID: alert,
-                                threshold: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      </div>
+                      <TextField
+                        value={config.alerts.thresholds[alert].warning.threshold}
+                        type="text"
+                        name="thresholdWarning"
+                        label="Threshold"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateWarningThreshold(
+                            {
+                              alertID: alert,
+                              threshold: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
                   {config.alerts.thresholds[alert].warning.hasOwnProperty('timewindow')
                     && (
-                      <div>
-                        <p>
-                          Time Window:
-                          {' '}
-                        </p>
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.timewindow}
-                          type="text"
-                          name="timewindowWarning"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningTimeWindow(
-                              {
-                                alertID: alert,
-                                timewindow: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      </div>
+                      <TextField
+                        value={config.alerts.thresholds[alert].warning.timewindow}
+                        type="text"
+                        label="Time Window"
+                        name="timewindowWarning"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateWarningTimeWindow(
+                            {
+                              alertID: alert,
+                              timewindow: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
                 </TableCell>
                 <TableCell align="center">
-                  {/* <FormControlLabel
+                  <FormControlLabel
                     control={(
                       <Checkbox
-                        checked={alert.critical.enabled}
+                        checked={config.alerts.thresholds[alert].critical.enabled}
+                        onClick={() => {
+                          updateCriticalEnabled(
+                            {
+                              alertID: alert,
+                              enabled: !config.alerts.thresholds[alert].critical.enabled,
+                            },
+                          );
+                        }}
                         color="primary"
                       />
                     )}
-                    label="Enabled:"
+                    label="Enabled"
                     labelPlacement="end"
                   />
-                  {alert.critical.hasOwnProperty('delay')
+                  {config.alerts.thresholds[alert].critical.hasOwnProperty('delay')
                     && (
-                    <p>
-                      Delay:
-                      {' '}
-                      {alert.critical.delay}
-                    </p>
+                      <TextField
+                        value={config.alerts.thresholds[alert].critical.delay}
+                        type="text"
+                        name="delayCritical"
+                        label="Delay"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateCriticalDelay(
+                            {
+                              alertID: alert,
+                              delay: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
-                  {alert.critical.hasOwnProperty('repeat')
+                  {config.alerts.thresholds[alert].critical.hasOwnProperty('repeat')
                     && (
-                    <p>
-                      Repeat:
-                      {' '}
-                      {alert.critical.repeat}
-                    </p>
+                      <TextField
+                        value={config.alerts.thresholds[alert].critical.repeat}
+                        type="text"
+                        name="repeatCritical"
+                        label="Repeat"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateCriticalRepeat(
+                            {
+                              alertID: alert,
+                              repeat: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
-                  {alert.critical.hasOwnProperty('threshold')
+                  {config.alerts.thresholds[alert].critical.hasOwnProperty('threshold')
                     && (
-                    <p>
-                      Threshold:
-                      {' '}
-                      {alert.critical.threshold}
-                    </p>
+                      <TextField
+                        value={config.alerts.thresholds[alert].critical.threshold}
+                        type="text"
+                        name="thresholdCritical"
+                        label="Threshold"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateCriticalThreshold(
+                            {
+                              alertID: alert,
+                              threshold: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
                     )}
-                  {alert.critical.hasOwnProperty('timewindow')
+                  {config.alerts.thresholds[alert].critical.hasOwnProperty('timewindow')
                     && (
-                    <p>
-                      Time Window:
-                      {' '}
-                      {alert.critical.timewindow}
-                    </p>
-                    )} */}
+                      <TextField
+                        value={config.alerts.thresholds[alert].critical.timewindow}
+                        type="text"
+                        label="Time Window"
+                        name="timewindowCritical"
+                        placeholder="60"
+                        onChange={(event) => {
+                          updateCriticalTimeWindow(
+                            {
+                              alertID: alert,
+                              timewindow: event.target.value,
+                            },
+                          );
+                        }}
+                        fullWidth
+                      />
+                    )}
                 </TableCell>
                 <TableCell align="center">
-                  {/* <FormControlLabel
+                  <FormControlLabel
                     control={(
                       <Checkbox
-                        checked={alert.enabled}
+                        checked={config.alerts.thresholds[alert].enabled}
+                        onClick={() => {
+                          updateAlertEnabled(
+                            {
+                              alertID: alert,
+                              enabled: !config.alerts.thresholds[alert].enabled,
+                            },
+                          );
+                        }}
                         name="enabled"
                         color="primary"
                       />
                     )}
-                  /> */}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -232,18 +289,25 @@ const AlertsTable = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {config.alerts.severties.map((alert) => (
-              <TableRow key={alert.name}>
+            {Object.keys(config.alerts.severties).map((alert) => (
+              <TableRow key={config.alerts.severties[alert].name}>
                 <TableCell align="center">
-                  {alert.name}
+                  {config.alerts.severties[alert].name}
                 </TableCell>
                 <TableCell align="center">
                   <FormControl className={classes.formControl}>
                     <Select
                       labelId="severity"
                       id="severity-selection"
-                      value={alert.severtiy}
-                      onChange={handleChange}
+                      value={config.alerts.severties[alert].severtiy}
+                      onChange={(event) => {
+                        updateAlertSeverityLevel(
+                          {
+                            alertID: alert,
+                            severtiy: event.target.value,
+                          },
+                        );
+                      }}
                     >
                       <MenuItem value="INFO">Info</MenuItem>
                       <MenuItem value="WARNING">Warning</MenuItem>
@@ -255,7 +319,15 @@ const AlertsTable = (props) => {
                   <FormControlLabel
                     control={(
                       <Checkbox
-                        checked={alert.enabled}
+                        checked={config.alerts.severties[alert].enabled}
+                        onClick={() => {
+                          updateAlertSeverityEnabled(
+                            {
+                              alertID: alert,
+                              enabled: !config.alerts.severties[alert].enabled,
+                            },
+                          );
+                        }}
                         name="enabled"
                         color="primary"
                       />
@@ -267,30 +339,42 @@ const AlertsTable = (props) => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Grid item xs={8} />
+      <Grid item xs={4}>
+        <Grid container direction="row" justify="flex-end" alignItems="center">
+          <Box px={2}>
+            <StepButtonContainer
+              disabled={false}
+              text={BACK}
+              navigation={CHANNELS_STEP}
+            />
+          </Box>
+          <Box px={2}>
+            <NavigationButtonContainer
+              text={DONE}
+              navigation={CHAINS_PAGE}
+            />
+          </Box>
+        </Grid>
+      </Grid>
     </div>
   );
 };
 
 AlertsTable.propTypes = {
-  // config: PropTypes.shape({
-  //   alerts: PropTypes.arrayOf(PropTypes.shape({
-  //     thresholds: 
-  //     cosmosNodeName: PropTypes.string.isRequired,
-  //     tendermintRPCURL: PropTypes.string.isRequired,
-  //     cosmosRPCURL: PropTypes.string.isRequired,
-  //     prometheusURL: PropTypes.string.isRequired,
-  //     exporterURL: PropTypes.string.isRequired,
-  //     isValidator: PropTypes.bool.isRequired,
-  //     monitorNode: PropTypes.bool.isRequired,
-  //     isArchiveNode: PropTypes.bool.isRequired,
-  //     useAsDataSource: PropTypes.bool.isRequired,
-  //   })).isRequired,
-  // }).isRequired,
   updateWarningDelay: PropTypes.func.isRequired,
   updateWarningRepeat: PropTypes.func.isRequired,
   updateWarningThreshold: PropTypes.func.isRequired,
   updateWarningTimeWindow: PropTypes.func.isRequired,
   updateWarningEnabled: PropTypes.func.isRequired,
+  updateCriticalDelay: PropTypes.func.isRequired,
+  updateCriticalRepeat: PropTypes.func.isRequired,
+  updateCriticalThreshold: PropTypes.func.isRequired,
+  updateCriticalTimeWindow: PropTypes.func.isRequired,
+  updateCriticalEnabled: PropTypes.func.isRequired,
+  updateAlertEnabled: PropTypes.func.isRequired,
+  updateAlertSeverityLevel: PropTypes.func.isRequired,
+  updateAlertSeverityEnabled: PropTypes.func.isRequired,
 };
 
 export default AlertsTable;
