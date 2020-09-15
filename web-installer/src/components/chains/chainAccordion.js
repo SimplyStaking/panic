@@ -31,7 +31,7 @@ function ChainAccordion(props) {
     icon,
     name,
     button,
-    // table,
+    table,
   } = props;
 
   return (
@@ -63,7 +63,7 @@ function ChainAccordion(props) {
               {button}
             </Grid>
           </Grid>
-          {/* {table} */}
+          {table}
         </AccordionDetails>
       </Accordion>
     </div>
@@ -74,7 +74,7 @@ ChainAccordion.propTypes = {
   icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   button: PropTypes.element.isRequired,
-  // table: PropTypes.element.isRequired,
+  table: PropTypes.element.isRequired,
 };
 
 export default ChainAccordion;

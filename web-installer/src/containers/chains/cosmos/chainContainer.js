@@ -23,6 +23,7 @@ const Form = withFormik({
 
 const mapStateToProps = (state) => ({
   cosmosConfigs: state.ChainsReducer.cosmosConfigs,
+  config: state.ChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {

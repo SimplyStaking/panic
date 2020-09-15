@@ -4,6 +4,7 @@ import { Grid, Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
+import CosmosChainsTableContainer from '../../containers/chains/cosmos/cosmosChainsTableContainer';
 import ChainAccordion from './chainAccordion';
 import CosmosIcon from '../../assets/icons/cosmos.png';
 import {
@@ -58,6 +59,9 @@ function Chains() {
                     text={NEW}
                     navigation={COSMOS_SETUP_PAGE}
                   />
+                )}
+                table={(
+                  <CosmosChainsTableContainer />
                 )}
               />
             </Grid>

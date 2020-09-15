@@ -4,8 +4,9 @@ import {
   updateWarningTimeWindow, updateWarningEnabled, updateCriticalDelay,
   updateCriticalRepeat, updateCriticalThreshold, updateCriticalTimeWindow,
   updateCriticalEnabled, updateAlertEnabled, updateAlertSeverityLevel,
-  updateAlertSeverityEnabled,
+  updateAlertSeverityEnabled, addConfig, resetConfig,
 } from '../../../redux/actions/chainsActions';
+import { changePage, changeStep } from '../../../redux/actions/pageActions';
 import AlertsTable from '../../../components/chains/cosmos/tables/alertsTable';
 
 const mapStateToProps = (state) => ({
@@ -14,6 +15,10 @@ const mapStateToProps = (state) => ({
 
 function mapDispatchToProps(dispatch) {
   return {
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
+    addConfiguration: () => dispatch(addConfig()),
+    resetConfiguration: () => dispatch(resetConfig()),
     updateWarningDelay: (details) => dispatch(updateWarningDelay(details)),
     updateWarningRepeat: (details) => dispatch(updateWarningRepeat(details)),
     updateWarningThreshold: (details) => dispatch(updateWarningThreshold(details)),

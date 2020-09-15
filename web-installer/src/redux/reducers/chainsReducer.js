@@ -5,8 +5,8 @@
 
 import {
   ADD_CHAIN, ADD_NODE, ADD_REPOSITORY, REMOVE_NODE, REMOVE_REPOSITORY,
-  ADD_KMS, REMOVE_KMS, SET_ALERTS, ADD_CONFIG, REMOVE_CONFIG,
-  ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
+  ADD_KMS, REMOVE_KMS, SET_ALERTS, ADD_CONFIG, REMOVE_CONFIG, RESET_CONFIG,
+  LOAD_CONFIG, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
   ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, ADD_EMAIL_CHANNEL,
   REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, UPDATE_WARNING_DELAY,
@@ -435,7 +435,7 @@ function chainsReducer(state = initialstate, action) {
     case ADD_CONFIG:
       return {
         ...state,
-        cosmosConfigs: state.cosmosConfigs.concat(action.payload),
+        cosmosConfigs: state.cosmosConfigs.concat(state.config),
       };
     case REMOVE_CONFIG:
       return {
@@ -443,6 +443,18 @@ function chainsReducer(state = initialstate, action) {
         cosmosConfigs: state.cosmosConfigs.filter(
           (cosmosConfig) => cosmosConfig !== action.payload,
         ),
+      };
+    case RESET_CONFIG:
+      return {
+        ...state,
+        config: initialstate.config,
+      };
+    case LOAD_CONFIG:
+      return {
+        ...state,
+        config: state.cosmosConfigs.filter(
+          (cosmosConfig) => cosmosConfig === action.payload,
+        )[0],
       };
     case UPDATE_WARNING_DELAY:
       return {

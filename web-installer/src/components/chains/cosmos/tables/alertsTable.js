@@ -8,9 +8,9 @@ import {
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
-import NavigationButtonContainer from '../../../../containers/global/navigationButtonContainer';
+import NavigationButton from '../../../global/navigationButton';
 import {
-  CHAINS_PAGE, DONE, BACK, CHANNELS_STEP,
+  CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,
 } from '../../../../constants/constants';
 
 const useStyles = makeStyles({
@@ -38,6 +38,21 @@ const AlertsTable = (props) => {
     updateAlertSeverityLevel,
     updateAlertSeverityEnabled,
   } = props;
+
+  const nextPage = (page) => {
+    const {
+      pageChanger, stepChanger, addConfiguration, resetConfiguration,
+    } = props;
+
+    const payload = {
+      step: CHAINS_STEP,
+    };
+
+    stepChanger(payload);
+    pageChanger({ page });
+    addConfiguration();
+    resetConfiguration();
+  };
 
   return (
     <div>
@@ -350,8 +365,10 @@ const AlertsTable = (props) => {
             />
           </Box>
           <Box px={2}>
-            <NavigationButtonContainer
-              text={DONE}
+            <NavigationButton
+              disabled={false}
+              nextPage={nextPage}
+              buttonText={DONE}
               navigation={CHAINS_PAGE}
             />
           </Box>
@@ -375,6 +392,10 @@ AlertsTable.propTypes = {
   updateAlertEnabled: PropTypes.func.isRequired,
   updateAlertSeverityLevel: PropTypes.func.isRequired,
   updateAlertSeverityEnabled: PropTypes.func.isRequired,
+  pageChanger: PropTypes.func.isRequired,
+  stepChanger: PropTypes.func.isRequired,
+  addConfiguration: PropTypes.func.isRequired,
+  resetConfiguration: PropTypes.func.isRequired,
 };
 
 export default AlertsTable;

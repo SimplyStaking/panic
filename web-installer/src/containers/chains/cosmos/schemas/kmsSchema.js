@@ -11,11 +11,11 @@ const KMSSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs.config.kmses.length === 0) {
+          if (cosmosConfigs[i].kmses.length === 0) {
             return true;
           }
-          for (let j = 0; j < cosmosConfigs[i].config.kmses.length; j += 1) {
-            if (cosmosConfigs[i].config.kmses[j] === value) {
+          for (let j = 0; j < cosmosConfigs[i].kmses.length; j += 1) {
+            if (cosmosConfigs[i].kmses[j] === value) {
               return false;
             }
           }

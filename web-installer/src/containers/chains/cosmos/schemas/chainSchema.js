@@ -11,7 +11,7 @@ const ChainNameSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs[i].config.chainName === value) {
+          if (cosmosConfigs[i].chainName === value) {
             return false;
           }
         }

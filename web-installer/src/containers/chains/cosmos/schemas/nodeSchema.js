@@ -11,11 +11,11 @@ const NodeSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs[i].config.nodes.length === 0) {
+          if (cosmosConfigs[i].nodes.length === 0) {
             return true;
           }
-          for (let j = 0; j < cosmosConfigs[i].config.nodes.length; j += 1) {
-            if (cosmosConfigs[i].config.nodes[j].cosmosNodeName === value) {
+          for (let j = 0; j < cosmosConfigs[i].nodes.length; j += 1) {
+            if (cosmosConfigs[i].nodes[j].cosmosNodeName === value) {
               return false;
             }
           }

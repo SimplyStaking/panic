@@ -13,7 +13,9 @@ import {
   REPOSITORIES_STEP,
 } from '../../../constants/constants';
 
-const mapStateToProps = (state) => ({ step: state.ChangeStepReducer.step });
+const mapStateToProps = (state) => ({
+  step: state.ChangeStepReducer.step,
+});
 
 // Returns the specific page according to pre-set steps
 function getStep(stepName) {
@@ -51,7 +53,7 @@ function getStep(stepName) {
 }
 
 // Step Selector changes according to the step set
-function StepManger(props) {
+function StepManager(props) {
   const { step } = props;
   return (
     <div>
@@ -60,8 +62,8 @@ function StepManger(props) {
   );
 }
 
-StepManger.propTypes = {
+StepManager.propTypes = {
   step: PropTypes.string.isRequired,
 };
 
-export default connect(mapStateToProps)(StepManger);
+export default connect(mapStateToProps)(StepManager);

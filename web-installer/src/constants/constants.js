@@ -2,7 +2,6 @@
 export const WELCOME_PAGE = 'WELCOME_PAGE';
 export const CHANNELS_PAGE = 'CHANNELS_PAGE';
 export const CHAINS_PAGE = 'CHAINS_PAGE';
-export const CHAINS_NAME_PAGE = 'CHAINS_NAME_PAGE';
 export const COSMOS_PAGE = 'COSMOS_PAGE';
 export const COSMOS_SETUP_PAGE = 'COSMOS_SETUP_PAGE';
 export const SUBSTRATE_PAGE = 'SUBSTRATE_PAGE';
