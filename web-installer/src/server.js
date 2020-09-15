@@ -22,12 +22,9 @@ const mongo = require('./server/mongo');
 //       should be stored in a database (Check if users exist first).
 // TODO: Have to create an endpoint which stores the authenticated users in the
 //       database. All users are admins.
-// TODO: Make sure that when the password is changed the user is not
-//       authenticated when he already has the cookie
 // TODO: Give ID to the users as payload when storing users to DB
 //       (not for the installer since 1 auth) in case users have the same name
 //        role (admin ex) (or uniqueness in username)
-// TODO: Need to consider log out and change password
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -97,17 +94,18 @@ async function loadAuthenticationToDB() {
     const password = installerCredentials.INSTALLER_PASSWORD;
     const authDoc = { username, password, refreshToken: '' };
     // Find authentication document
-    const docs = await collection.find({ username }).toArray();
-    if (!docs.length) {
-      // If the credentials inside the .env are not found, empty the database so
-      // that we always have one record (to prevent outside access), and insert
-      // the credentials in the database.
-      await collection.deleteMany({});
+    const doc = await collection.findOne({ username });
+    if (!doc) {
+      // If the credentials inside the .env are not found insert the credentials
+      // in the database.
       await collection.insertOne(authDoc);
-    } else {
-      // Otherwise update the record with the latest password
-      // TODO: Change of password must be handled here
-      const newDoc = { $set: { password } };
+      return;
+    }
+    // If the credentials are found and the password changed update the record.
+    // We must also invalidate the refresh token so that eventually all logged
+    // in users are logged out when the access token expires.
+    if (password !== doc.password) {
+      const newDoc = { $set: authDoc };
       await collection.updateOne({ username }, newDoc);
     }
   } catch (err) {
@@ -161,11 +159,11 @@ async function saveRefreshTokenToDB(username, password, refreshToken) {
     const collection = db.collection(authenticationCollection);
     const authDoc = { username, password, refreshToken };
     // Find authentication document
-    const docs = await collection.find({ username }).toArray();
+    const doc = await collection.findOne({ username });
     // If we cannot find the authentication document, it must be that the
     // database was tampered with. Therefore save the .env credentials again
     // and update with the latest refresh token.
-    if (!docs.length) {
+    if (!doc) {
       await loadAuthenticationToDB();
     }
     // Save the refresh token
