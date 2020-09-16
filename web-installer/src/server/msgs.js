@@ -27,6 +27,10 @@ function AuthenticationSuccessful() {
   this.message = 'Authentication Successful';
 }
 
+function AccountSavedSuccessfully() {
+  this.message = 'Account saved successfully.';
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -35,4 +39,5 @@ module.exports = {
   TestAlert,
   TestAlertSubmitted,
   AuthenticationSuccessful,
+  AccountSavedSuccessfully,
 };

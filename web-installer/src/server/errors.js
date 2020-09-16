@@ -1,8 +1,6 @@
-// TODO: Pass more arguments to possibly make the errors more meaningful
-
 function InvalidConfigType() {
   this.message = 'The config type is invalid. It must either be \'channel\','
-    + ' \'chain\', \'ui\' or \'other\'';
+    + ' \'chain\' or \'other\'';
   this.code = 430;
 }
 
@@ -83,6 +81,17 @@ function CouldNotFindRefreshTokenInDB() {
   this.code = 445;
 }
 
+function RecordAlreadyExists(keyValue) {
+  this.message = `The record with key ${JSON.stringify(keyValue)} already `
+    + ' exists in the database.';
+  this.code = 446;
+}
+
+function UsernameAlreadyExists(username) {
+  this.message = `Username '${username}' already exists.`;
+  this.code = 447;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -100,4 +109,6 @@ module.exports = {
   MissingInstallerCredentials,
   Unauthorized,
   CouldNotFindRefreshTokenInDB,
+  RecordAlreadyExists,
+  UsernameAlreadyExists,
 };

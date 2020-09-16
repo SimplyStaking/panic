@@ -30,11 +30,6 @@ const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join(
   'config', 'chains', 'substrate',
 );
 
-// UI configs and config locations
-const USER_CONFIG_UI = 'user_config_ui.ini';
-const ALL_UI_CONFIG_FILES = [USER_CONFIG_UI];
-const UI_CONFIGS_LOCATION = path.join('config', 'ui');
-
 // Other configs and config locations
 const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_OTHER_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS];
@@ -56,8 +51,6 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
         return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       throw new errors.InvalidBaseChain();
-    case 'ui':
-      return path.join(UI_CONFIGS_LOCATION, file);
     case 'other':
       return path.join(OTHER_CONFIGS_LOCATION, file);
     default:
@@ -79,8 +72,6 @@ function fileValid(configType, file) {
       return ALL_CHANNELS_CONFIG_FILES.includes(file);
     case 'chain':
       return ALL_CHAINS_CONFIG_FILES.includes(file);
-    case 'ui':
-      return ALL_UI_CONFIG_FILES.includes(file);
     case 'other':
       return ALL_OTHER_CONFIG_FILES.includes(file);
     default:

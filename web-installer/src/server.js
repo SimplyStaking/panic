@@ -48,7 +48,8 @@ const installerCredentials = {
 };
 const dbname = process.env.DB_NAME;
 const dbhost = '172.18.0.2:27017';
-const authenticationCollection = 'installer_authentication';
+const instAuthCollection = 'installer_authentication';
+const accountsCollection = 'accounts';
 
 const app = express();
 app.disable('x-powered-by');
@@ -91,7 +92,7 @@ async function loadAuthenticationToDB() {
     // connect
     client = await mongoClient.connect(mongoDBUrl, mongo.options);
     db = client.db(dbname);
-    const collection = db.collection(authenticationCollection);
+    const collection = db.collection(instAuthCollection);
     const username = installerCredentials.INSTALLER_USERNAME;
     const hashedPass = bcrypt.hashSync(
       installerCredentials.INSTALLER_PASSWORD, 10,
@@ -125,6 +126,7 @@ async function loadAuthenticationToDB() {
   }
 }
 
+// This function retrieves the refresh token from the database
 async function retrieveRefreshToken(username) {
   let client;
   let db;
@@ -132,7 +134,7 @@ async function retrieveRefreshToken(username) {
     // connect
     client = await mongoClient.connect(mongoDBUrl, mongo.options);
     db = client.db(dbname);
-    const collection = db.collection(authenticationCollection);
+    const collection = db.collection(instAuthCollection);
     // Find the authentication document
     const record = await collection.findOne({ username });
     if (!record) {
@@ -153,7 +155,7 @@ async function retrieveRefreshToken(username) {
   }
 }
 
-// This endpoint saves the refresh token to the database
+// This function saves the refresh token to the database
 async function saveRefreshTokenToDB(username, refreshToken) {
   let client;
   let db;
@@ -161,7 +163,7 @@ async function saveRefreshTokenToDB(username, refreshToken) {
     // connect
     client = await mongoClient.connect(mongoDBUrl, mongo.options);
     db = client.db(dbname);
-    const collection = db.collection(authenticationCollection);
+    const collection = db.collection(instAuthCollection);
     // Find authentication document
     const doc = await collection.findOne({ username });
     // If we cannot find the authentication document, it must be that the
@@ -177,6 +179,38 @@ async function saveRefreshTokenToDB(username, refreshToken) {
     // If the error is already a mongo error no need to wrap it again as a mongo
     // error
     if (err.code === 442) {
+      throw err;
+    }
+    throw new errors.MongoError(err);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
+}
+
+async function saveToDatabase(record, collection, uniqueKeyValue) {
+  let client;
+  let db;
+  try {
+    // connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collectionInterface = db.collection(collection);
+    // Check if record already exists by using the unique key and its value.
+    // If yes, throw an already exists error, otherwise add the record to the
+    // database
+    const doc = await collectionInterface.findOne(uniqueKeyValue);
+    if (doc) {
+      throw new errors.RecordAlreadyExists(uniqueKeyValue);
+    }
+    await collectionInterface.insertOne(record);
+  } catch (err) {
+    // If the error is an already exists error re-throw it. Otherwise it must be
+    // a mongo error.
+    if (err.code === 446) {
       throw err;
     }
     throw new errors.MongoError(err);
@@ -343,6 +377,50 @@ app.post('/server/refresh', async (req, res) => {
     res.status(err.code).send(utils.errorJson(err.message));
   }
 });
+
+// ---------------------------------------- Account
+
+// TODO: If we decide to re-run the installer and want to over-write we can
+//       clear the database before starting. We need an empty database endpoint.
+// TODO: Need to make sure usernames are unique
+// TODO: Need to decide whether we are catering for username case sensiteveness
+//       both for accounts and installer
+// This endpoint saves an account inside the database
+app.post('/server/account/save', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username, password } = req.body;
+  // Check if username and password are missing
+  const missingParamsList = missingValues({ username, password });
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+  // Hash the password to be stored inside the database
+  const hashedPass = bcrypt.hashSync(password, 10);
+  const record = { username, password: hashedPass, refreshToken: '' };
+
+  try {
+    // Save the record to the database and inform the user if successful
+    await saveToDatabase(record, accountsCollection, { username });
+    const msg = new msgs.AccountSavedSuccessfully();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (err) {
+    // If the record is already present in the database return a username
+    // already exists error so that the error is more meaningful. Otherwise
+    // return whatever error is thrown.
+    if (err.code === 446) {
+      const error = new errors.UsernameAlreadyExists(username);
+      console.log(error);
+      res.status(error.code).send(utils.errorJson(error.message));
+      return;
+    }
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 
 // ---------------------------------------- Configs
 
