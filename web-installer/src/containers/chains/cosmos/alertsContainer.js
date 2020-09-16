@@ -1,37 +1,50 @@
 import { connect } from 'react-redux';
 import {
-  updateWarningDelay, updateWarningRepeat, updateWarningThreshold,
-  updateWarningTimeWindow, updateWarningEnabled, updateCriticalDelay,
-  updateCriticalRepeat, updateCriticalThreshold, updateCriticalTimeWindow,
-  updateCriticalEnabled, updateAlertEnabled, updateAlertSeverityLevel,
-  updateAlertSeverityEnabled, addConfig, resetConfig,
-} from '../../../redux/actions/chainsActions';
+  updateWarningDelayCosmos, updateWarningRepeatCosmos, updateWarningThresholdCosmos,
+  updateWarningTimeWindowCosmos, updateWarningEnabledCosmos, updateCriticalDelayCosmos,
+  updateCriticalRepeatCosmos, updateCriticalThresholdCosmos, updateCriticalTimeWindowCosmos,
+  updateCriticalEnabledCosmos, updateAlertEnabledCosmos, updateAlertSeverityLevelCosmos,
+  updateAlertSeverityEnabledCosmos, addConfigCosmos, resetConfigCosmos,
+} from '../../../redux/actions/cosmosChainsActions';
 import { changePage, changeStep } from '../../../redux/actions/pageActions';
 import AlertsTable from '../../../components/chains/cosmos/tables/alertsTable';
 
 const mapStateToProps = (state) => ({
-  config: state.ChainsReducer.config,
+  config: state.CosmosChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     stepChanger: (step) => dispatch(changeStep(step)),
     pageChanger: (page) => dispatch(changePage(page)),
-    addConfiguration: () => dispatch(addConfig()),
-    resetConfiguration: () => dispatch(resetConfig()),
-    updateWarningDelay: (details) => dispatch(updateWarningDelay(details)),
-    updateWarningRepeat: (details) => dispatch(updateWarningRepeat(details)),
-    updateWarningThreshold: (details) => dispatch(updateWarningThreshold(details)),
-    updateWarningTimeWindow: (details) => dispatch(updateWarningTimeWindow(details)),
-    updateWarningEnabled: (details) => dispatch(updateWarningEnabled(details)),
-    updateCriticalDelay: (details) => dispatch(updateCriticalDelay(details)),
-    updateCriticalRepeat: (details) => dispatch(updateCriticalRepeat(details)),
-    updateCriticalThreshold: (details) => dispatch(updateCriticalThreshold(details)),
-    updateCriticalTimeWindow: (details) => dispatch(updateCriticalTimeWindow(details)),
-    updateCriticalEnabled: (details) => dispatch(updateCriticalEnabled(details)),
-    updateAlertEnabled: (details) => dispatch(updateAlertEnabled(details)),
-    updateAlertSeverityLevel: (details) => dispatch(updateAlertSeverityLevel(details)),
-    updateAlertSeverityEnabled: (details) => dispatch(updateAlertSeverityEnabled(details)),
+    addConfiguration: () => dispatch(addConfigCosmos()),
+    resetConfiguration: () => dispatch(resetConfigCosmos()),
+    updateWarningDelayCosmos:
+      (details) => dispatch(updateWarningDelayCosmos(details)),
+    updateWarningRepeatCosmos:
+      (details) => dispatch(updateWarningRepeatCosmos(details)),
+    updateWarningThresholdCosmos:
+      (details) => dispatch(updateWarningThresholdCosmos(details)),
+    updateWarningTimeWindowCosmos:
+      (details) => dispatch(updateWarningTimeWindowCosmos(details)),
+    updateWarningEnabledCosmos:
+      (details) => dispatch(updateWarningEnabledCosmos(details)),
+    updateCriticalDelayCosmos:
+      (details) => dispatch(updateCriticalDelayCosmos(details)),
+    updateCriticalRepeatCosmos:
+      (details) => dispatch(updateCriticalRepeatCosmos(details)),
+    updateCriticalThresholdCosmos:
+      (details) => dispatch(updateCriticalThresholdCosmos(details)),
+    updateCriticalTimeWindowCosmos:
+      (details) => dispatch(updateCriticalTimeWindowCosmos(details)),
+    updateCriticalEnabledCosmos:
+      (details) => dispatch(updateCriticalEnabledCosmos(details)),
+    updateAlertEnabledCosmos:
+      (details) => dispatch(updateAlertEnabledCosmos(details)),
+    updateAlertSeverityLevelCosmos:
+      (details) => dispatch(updateAlertSeverityLevelCosmos(details)),
+    updateAlertSeverityEnabledCosmos:
+      (details) => dispatch(updateAlertSeverityEnabledCosmos(details)),
   };
 }
 

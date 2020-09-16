@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChainForm from '../../../components/chains/cosmos/forms/chainForm';
-import { addChain } from '../../../redux/actions/chainsActions';
+import { addChainCosmos } from '../../../redux/actions/cosmosChainsActions';
 import ChainSchema from './schemas/chainSchema';
 
 const Form = withFormik({
@@ -22,13 +22,13 @@ const Form = withFormik({
 })(ChainForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.ChainsReducer.cosmosConfigs,
-  config: state.ChainsReducer.config,
+  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
+  config: state.CosmosChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveChainDetails: (details) => dispatch(addChain(details)),
+    saveChainDetails: (details) => dispatch(addChainCosmos(details)),
   };
 }
 

@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from '../../../components/chains/cosmos/forms/nodesForm';
 import NodesTable from '../../../components/chains/cosmos/tables/nodesTable';
-import { addNode, removeNode } from '../../../redux/actions/chainsActions';
+import { addNodeCosmos, removeNodeCosmos } from '../../../redux/actions/cosmosChainsActions';
 import NodeSchema from './schemas/nodeSchema';
 
 const Form = withFormik({
@@ -40,19 +40,19 @@ const Form = withFormik({
 })(NodesForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.ChainsReducer.cosmosConfigs,
-  config: state.ChainsReducer.config,
+  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
+  config: state.CosmosChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveNodeDetails: (details) => dispatch(addNode(details)),
+    saveNodeDetails: (details) => dispatch(addNodeCosmos(details)),
   };
 }
 
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeNodeDetails: (details) => dispatch(removeNode(details)),
+    removeNodeDetails: (details) => dispatch(removeNodeCosmos(details)),
   };
 }
 

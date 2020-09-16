@@ -5,12 +5,11 @@ import WelcomePage from '../../components/welcome/welcomePage';
 import ChannelsPage from '../../components/channels/channelsPage';
 import ChainsPage from '../../components/chains/chainsPage';
 import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
+import SubstrateSetupPage from '../../components/chains/substrate/substrateSetupPage';
 
 import {
-  WELCOME_PAGE,
-  CHANNELS_PAGE,
-  CHAINS_PAGE,
-  COSMOS_SETUP_PAGE,
+  WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
+  SUBSTRATE_SETUP_PAGE, OTHERS_PAGE, USERS_PAGE,
 } from '../../constants/constants';
 
 const mapStateToProps = (state) => ({ page: state.ChangePageReducer.page });
@@ -26,6 +25,12 @@ function getPage(pageName) {
       return <ChainsPage />;
     case COSMOS_SETUP_PAGE:
       return <CosmosSetupPage />;
+    case SUBSTRATE_SETUP_PAGE:
+      return <SubstrateSetupPage />;
+    case USERS_PAGE:
+      return <SubstrateSetupPage />;
+    case OTHERS_PAGE:
+      return <SubstrateSetupPage />;
     default:
       return <WelcomePage />;
   }

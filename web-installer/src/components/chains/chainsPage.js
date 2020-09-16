@@ -5,11 +5,13 @@ import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
 import CosmosChainsTableContainer from '../../containers/chains/cosmos/cosmosChainsTableContainer';
+import SubstrateChainsTableContainer from '../../containers/chains/substrate/substrateChainsTableContainer';
 import ChainAccordion from './chainAccordion';
 import CosmosIcon from '../../assets/icons/cosmos.png';
+import SubstrateIcon from '../../assets/icons/substrate.png';
 import {
-  CHANNELS_PAGE, OTHER_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW,
-  COSMOS,
+  CHANNELS_PAGE, USERS_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW,
+  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE,
 } from '../../constants/constants';
 import Data from '../../data/chains';
 
@@ -65,12 +67,27 @@ function Chains() {
                 )}
               />
             </Grid>
+            <Grid item xs={12}>
+              <ChainAccordion
+                icon={SubstrateIcon}
+                name={SUBSTRATE}
+                button={(
+                  <NavigationButtonContainer
+                    text={NEW}
+                    navigation={SUBSTRATE_SETUP_PAGE}
+                  />
+                )}
+                table={(
+                  <SubstrateChainsTableContainer />
+                )}
+              />
+            </Grid>
           </Grid>
         </Box>
       </Box>
       <NavigationButtonContainer
         text={DONE}
-        navigation={OTHER_PAGE}
+        navigation={USERS_PAGE}
       />
       <NavigationButtonContainer
         text={BACK}

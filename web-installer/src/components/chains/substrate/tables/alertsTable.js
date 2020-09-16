@@ -7,7 +7,7 @@ import {
   Select, TextField, Grid, Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import {
   CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,
@@ -24,19 +24,19 @@ const AlertsTable = (props) => {
 
   const {
     config,
-    updateWarningDelayCosmos,
-    updateWarningRepeatCosmos,
-    updateWarningThresholdCosmos,
-    updateWarningTimeWindowCosmos,
-    updateWarningEnabledCosmos,
-    updateCriticalDelayCosmos,
-    updateCriticalRepeatCosmos,
-    updateCriticalThresholdCosmos,
-    updateCriticalTimeWindowCosmos,
-    updateCriticalEnabledCosmos,
-    updateAlertEnabledCosmos,
-    updateAlertSeverityLevelCosmos,
-    updateAlertSeverityEnabledCosmos,
+    updateWarningDelaySubstrate,
+    updateWarningRepeatSubstrate,
+    updateWarningThresholdSubstrate,
+    updateWarningTimeWindowSubstrate,
+    updateWarningEnabledSubstrate,
+    updateCriticalDelaySubstrate,
+    updateCriticalRepeatSubstrate,
+    updateCriticalThresholdSubstrate,
+    updateCriticalTimeWindowSubstrate,
+    updateCriticalEnabledSubstrate,
+    updateAlertEnabledSubstrate,
+    updateAlertSeverityLevelSubstrate,
+    updateAlertSeverityEnabledSubstrate,
   } = props;
 
   const nextPage = (page) => {
@@ -81,7 +81,7 @@ const AlertsTable = (props) => {
                       <Checkbox
                         checked={config.alerts.thresholds[alert].warning.enabled}
                         onClick={() => {
-                          updateWarningEnabledCosmos(
+                          updateWarningEnabledSubstrate(
                             {
                               alertID: alert,
                               enabled: !config.alerts.thresholds[alert].warning.enabled,
@@ -103,7 +103,7 @@ const AlertsTable = (props) => {
                         label="Delay"
                         placeholder="60"
                         onChange={(event) => {
-                          updateWarningDelayCosmos(
+                          updateWarningDelaySubstrate(
                             {
                               alertID: alert,
                               delay: event.target.value,
@@ -122,7 +122,7 @@ const AlertsTable = (props) => {
                         label="Repeat"
                         placeholder="60"
                         onChange={(event) => {
-                          updateWarningRepeatCosmos(
+                          updateWarningRepeatSubstrate(
                             {
                               alertID: alert,
                               repeat: event.target.value,
@@ -141,7 +141,7 @@ const AlertsTable = (props) => {
                         label="Threshold"
                         placeholder="60"
                         onChange={(event) => {
-                          updateWarningThresholdCosmos(
+                          updateWarningThresholdSubstrate(
                             {
                               alertID: alert,
                               threshold: event.target.value,
@@ -160,7 +160,7 @@ const AlertsTable = (props) => {
                         name="timewindowWarning"
                         placeholder="60"
                         onChange={(event) => {
-                          updateWarningTimeWindowCosmos(
+                          updateWarningTimeWindowSubstrate(
                             {
                               alertID: alert,
                               timewindow: event.target.value,
@@ -177,7 +177,7 @@ const AlertsTable = (props) => {
                       <Checkbox
                         checked={config.alerts.thresholds[alert].critical.enabled}
                         onClick={() => {
-                          updateCriticalEnabledCosmos(
+                          updateCriticalEnabledSubstrate(
                             {
                               alertID: alert,
                               enabled: !config.alerts.thresholds[alert].critical.enabled,
@@ -199,7 +199,7 @@ const AlertsTable = (props) => {
                         label="Delay"
                         placeholder="60"
                         onChange={(event) => {
-                          updateCriticalDelayCosmos(
+                          updateCriticalDelaySubstrate(
                             {
                               alertID: alert,
                               delay: event.target.value,
@@ -218,7 +218,7 @@ const AlertsTable = (props) => {
                         label="Repeat"
                         placeholder="60"
                         onChange={(event) => {
-                          updateCriticalRepeatCosmos(
+                          updateCriticalRepeatSubstrate(
                             {
                               alertID: alert,
                               repeat: event.target.value,
@@ -237,7 +237,7 @@ const AlertsTable = (props) => {
                         label="Threshold"
                         placeholder="60"
                         onChange={(event) => {
-                          updateCriticalThresholdCosmos(
+                          updateCriticalThresholdSubstrate(
                             {
                               alertID: alert,
                               threshold: event.target.value,
@@ -256,7 +256,7 @@ const AlertsTable = (props) => {
                         name="timewindowCritical"
                         placeholder="60"
                         onChange={(event) => {
-                          updateCriticalTimeWindowCosmos(
+                          updateCriticalTimeWindowSubstrate(
                             {
                               alertID: alert,
                               timewindow: event.target.value,
@@ -273,7 +273,7 @@ const AlertsTable = (props) => {
                       <Checkbox
                         checked={config.alerts.thresholds[alert].enabled}
                         onClick={() => {
-                          updateAlertEnabledCosmos(
+                          updateAlertEnabledSubstrate(
                             {
                               alertID: alert,
                               enabled: !config.alerts.thresholds[alert].enabled,
@@ -316,7 +316,7 @@ const AlertsTable = (props) => {
                       id="severity-selection"
                       value={config.alerts.severties[alert].severtiy}
                       onChange={(event) => {
-                        updateAlertSeverityLevelCosmos(
+                        updateAlertSeverityLevelSubstrate(
                           {
                             alertID: alert,
                             severtiy: event.target.value,
@@ -336,7 +336,7 @@ const AlertsTable = (props) => {
                       <Checkbox
                         checked={config.alerts.severties[alert].enabled}
                         onClick={() => {
-                          updateAlertSeverityEnabledCosmos(
+                          updateAlertSeverityEnabledSubstrate(
                             {
                               alertID: alert,
                               enabled: !config.alerts.severties[alert].enabled,
@@ -379,19 +379,19 @@ const AlertsTable = (props) => {
 };
 
 AlertsTable.propTypes = {
-  updateWarningDelayCosmos: PropTypes.func.isRequired,
-  updateWarningRepeatCosmos: PropTypes.func.isRequired,
-  updateWarningThresholdCosmos: PropTypes.func.isRequired,
-  updateWarningTimeWindowCosmos: PropTypes.func.isRequired,
-  updateWarningEnabledCosmos: PropTypes.func.isRequired,
-  updateCriticalDelayCosmos: PropTypes.func.isRequired,
-  updateCriticalRepeatCosmos: PropTypes.func.isRequired,
-  updateCriticalThresholdCosmos: PropTypes.func.isRequired,
-  updateCriticalTimeWindowCosmos: PropTypes.func.isRequired,
-  updateCriticalEnabledCosmos: PropTypes.func.isRequired,
-  updateAlertEnabledCosmos: PropTypes.func.isRequired,
-  updateAlertSeverityLevelCosmos: PropTypes.func.isRequired,
-  updateAlertSeverityEnabledCosmos: PropTypes.func.isRequired,
+  updateWarningDelaySubstrate: PropTypes.func.isRequired,
+  updateWarningRepeatSubstrate: PropTypes.func.isRequired,
+  updateWarningThresholdSubstrate: PropTypes.func.isRequired,
+  updateWarningTimeWindowSubstrate: PropTypes.func.isRequired,
+  updateWarningEnabledSubstrate: PropTypes.func.isRequired,
+  updateCriticalDelaySubstrate: PropTypes.func.isRequired,
+  updateCriticalRepeatSubstrate: PropTypes.func.isRequired,
+  updateCriticalThresholdSubstrate: PropTypes.func.isRequired,
+  updateCriticalTimeWindowSubstrate: PropTypes.func.isRequired,
+  updateCriticalEnabledSubstrate: PropTypes.func.isRequired,
+  updateAlertEnabledSubstrate: PropTypes.func.isRequired,
+  updateAlertSeverityLevelSubstrate: PropTypes.func.isRequired,
+  updateAlertSeverityEnabledSubstrate: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
   addConfiguration: PropTypes.func.isRequired,

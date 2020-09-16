@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import KMSForm from '../../../components/chains/cosmos/forms/kmsForm';
 import KMSTable from '../../../components/chains/cosmos/tables/kmsTable';
-import { addKMS, removeKMS } from '../../../redux/actions/chainsActions';
+import { addKMSCosmos, removeKMSCosmos } from '../../../redux/actions/cosmosChainsActions';
 import KMSSchema from './schemas/kmsSchema';
 
 const Form = withFormik({
@@ -29,18 +29,18 @@ const Form = withFormik({
 })(KMSForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.ChainsReducer.cosmosConfigs,
-  config: state.ChainsReducer.config,
+  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
+  config: state.CosmosChainsReducer.config,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveKMSDetails: (details) => dispatch(addKMS(details)),
+    saveKMSDetails: (details) => dispatch(addKMSCosmos(details)),
   };
 }
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeKMSDetails: (details) => dispatch(removeKMS(details)),
+    removeKMSDetails: (details) => dispatch(removeKMSCosmos(details)),
   };
 }
 

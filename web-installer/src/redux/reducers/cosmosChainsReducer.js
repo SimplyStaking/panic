@@ -4,16 +4,21 @@
 */
 
 import {
-  ADD_CHAIN, ADD_NODE, ADD_REPOSITORY, REMOVE_NODE, REMOVE_REPOSITORY,
-  ADD_KMS, REMOVE_KMS, SET_ALERTS, ADD_CONFIG, REMOVE_CONFIG, RESET_CONFIG,
-  LOAD_CONFIG, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
-  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, ADD_EMAIL_CHANNEL,
-  REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, UPDATE_WARNING_DELAY,
-  UPDATE_WARNING_REPEAT, UPDATE_WARNING_THRESHOLD, UPDATE_WARNING_TIMEWINDOW,
-  UPDATE_WARNING_ENABLED, UPDATE_CRITICAL_DELAY, UPDATE_CRITICAL_REPEAT,
-  UPDATE_CRITICAL_THRESHOLD, UPDATE_CRITICAL_TIMEWINDOW, UPDATE_CRITICAL_ENABLED,
-  UPDATE_ALERT_ENABLED, UPDATE_ALERT_SEVERTY_LEVEL, UPDATE_ALERT_SEVERTY_ENABLED,
+  ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, ADD_REPOSITORY_COSMOS, REMOVE_NODE_COSMOS,
+  REMOVE_REPOSITORY_COSMOS, ADD_KMS_COSMOS, REMOVE_KMS_COSMOS, SET_ALERTS_COSMOS,
+  ADD_CONFIG_COSMOS, REMOVE_CONFIG_COSMOS, RESET_CONFIG_COSMOS,
+  LOAD_CONFIG_COSMOS, ADD_TELEGRAM_CHANNEL_COSMOS,
+  REMOVE_TELEGRAM_CHANNEL_COSMOS, ADD_TWILIO_CHANNEL_COSMOS,
+  REMOVE_TWILIO_CHANNEL_COSMOS, ADD_EMAIL_CHANNEL_COSMOS,
+  REMOVE_EMAIL_CHANNEL_COSMOS, ADD_PAGERDUTY_CHANNEL_COSMOS,
+  REMOVE_PAGERDUTY_CHANNEL_COSMOS, ADD_OPSGENIE_CHANNEL_COSMOS,
+  REMOVE_OPSGENIE_CHANNEL_COSMOS, UPDATE_WARNING_DELAY_COSMOS,
+  UPDATE_WARNING_REPEAT_COSMOS, UPDATE_WARNING_THRESHOLD_COSMOS,
+  UPDATE_WARNING_TIMEWINDOW_COSMOS, UPDATE_WARNING_ENABLED_COSMOS,
+  UPDATE_CRITICAL_DELAY_COSMOS, UPDATE_CRITICAL_REPEAT_COSMOS,
+  UPDATE_CRITICAL_THRESHOLD_COSMOS, UPDATE_CRITICAL_TIMEWINDOW_COSMOS,
+  UPDATE_CRITICAL_ENABLED_COSMOS, UPDATE_ALERT_ENABLED_COSMOS,
+  UPDATE_ALERT_SEVERTY_LEVEL_COSMOS, UPDATE_ALERT_SEVERTY_ENABLED_COSMOS,
 } from '../actions/types';
 
 import { INFO, WARNING, CRITICAL } from '../../constants/constants';
@@ -272,9 +277,9 @@ const initialstate = {
   },
 };
 
-function chainsReducer(state = initialstate, action) {
+function cosmosChainsReducer(state = initialstate, action) {
   switch (action.type) {
-    case ADD_CHAIN:
+    case ADD_CHAIN_COSMOS:
       return {
         ...state,
         config: {
@@ -282,7 +287,7 @@ function chainsReducer(state = initialstate, action) {
           chainName: action.payload.chainName,
         },
       };
-    case ADD_NODE:
+    case ADD_NODE_COSMOS:
       return {
         ...state,
         config: {
@@ -290,7 +295,7 @@ function chainsReducer(state = initialstate, action) {
           nodes: state.config.nodes.concat(action.payload),
         },
       };
-    case REMOVE_NODE:
+    case REMOVE_NODE_COSMOS:
       return {
         ...state,
         config: {
@@ -298,7 +303,7 @@ function chainsReducer(state = initialstate, action) {
           nodes: state.config.nodes.filter((node) => node !== action.payload),
         },
       };
-    case ADD_REPOSITORY:
+    case ADD_REPOSITORY_COSMOS:
       return {
         ...state,
         config: {
@@ -306,7 +311,7 @@ function chainsReducer(state = initialstate, action) {
           repositories: state.config.repositories.concat(action.payload),
         },
       };
-    case REMOVE_REPOSITORY:
+    case REMOVE_REPOSITORY_COSMOS:
       return {
         ...state,
         config: {
@@ -316,7 +321,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_KMS:
+    case ADD_KMS_COSMOS:
       return {
         ...state,
         config: {
@@ -324,7 +329,7 @@ function chainsReducer(state = initialstate, action) {
           kmses: state.config.kmses.concat(action.payload),
         },
       };
-    case REMOVE_KMS:
+    case REMOVE_KMS_COSMOS:
       return {
         ...state,
         config: {
@@ -334,7 +339,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_TELEGRAM_CHANNEL:
+    case ADD_TELEGRAM_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -342,7 +347,7 @@ function chainsReducer(state = initialstate, action) {
           telegrams: state.config.telegrams.concat(action.payload),
         },
       };
-    case REMOVE_TELEGRAM_CHANNEL:
+    case REMOVE_TELEGRAM_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -352,7 +357,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_OPSGENIE_CHANNEL:
+    case ADD_OPSGENIE_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -360,7 +365,7 @@ function chainsReducer(state = initialstate, action) {
           opsgenies: state.config.opsgenies.concat(action.payload),
         },
       };
-    case REMOVE_OPSGENIE_CHANNEL:
+    case REMOVE_OPSGENIE_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -370,7 +375,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_EMAIL_CHANNEL:
+    case ADD_EMAIL_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -378,7 +383,7 @@ function chainsReducer(state = initialstate, action) {
           emails: state.config.emails.concat(action.payload),
         },
       };
-    case REMOVE_EMAIL_CHANNEL:
+    case REMOVE_EMAIL_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -388,7 +393,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_TWILIO_CHANNEL:
+    case ADD_TWILIO_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -396,7 +401,7 @@ function chainsReducer(state = initialstate, action) {
           twilios: state.config.twilios.concat(action.payload),
         },
       };
-    case REMOVE_TWILIO_CHANNEL:
+    case REMOVE_TWILIO_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -406,7 +411,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case ADD_PAGERDUTY_CHANNEL:
+    case ADD_PAGERDUTY_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -414,7 +419,7 @@ function chainsReducer(state = initialstate, action) {
           pagerduties: state.config.pagerduties.concat(action.payload),
         },
       };
-    case REMOVE_PAGERDUTY_CHANNEL:
+    case REMOVE_PAGERDUTY_CHANNEL_COSMOS:
       return {
         ...state,
         config: {
@@ -424,7 +429,7 @@ function chainsReducer(state = initialstate, action) {
           ),
         },
       };
-    case SET_ALERTS:
+    case SET_ALERTS_COSMOS:
       return {
         ...state,
         config: {
@@ -432,31 +437,31 @@ function chainsReducer(state = initialstate, action) {
           alerts: action.payload.alerts,
         },
       };
-    case ADD_CONFIG:
+    case ADD_CONFIG_COSMOS:
       return {
         ...state,
         cosmosConfigs: state.cosmosConfigs.concat(state.config),
       };
-    case REMOVE_CONFIG:
+    case REMOVE_CONFIG_COSMOS:
       return {
         ...state,
         cosmosConfigs: state.cosmosConfigs.filter(
           (cosmosConfig) => cosmosConfig !== action.payload,
         ),
       };
-    case RESET_CONFIG:
+    case RESET_CONFIG_COSMOS:
       return {
         ...state,
         config: initialstate.config,
       };
-    case LOAD_CONFIG:
+    case LOAD_CONFIG_COSMOS:
       return {
         ...state,
         config: state.cosmosConfigs.filter(
           (cosmosConfig) => cosmosConfig === action.payload,
         )[0],
       };
-    case UPDATE_WARNING_DELAY:
+    case UPDATE_WARNING_DELAY_COSMOS:
       return {
         ...state,
         config: {
@@ -476,7 +481,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_WARNING_REPEAT:
+    case UPDATE_WARNING_REPEAT_COSMOS:
       return {
         ...state,
         config: {
@@ -496,7 +501,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_WARNING_THRESHOLD:
+    case UPDATE_WARNING_THRESHOLD_COSMOS:
       return {
         ...state,
         config: {
@@ -516,7 +521,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_WARNING_TIMEWINDOW:
+    case UPDATE_WARNING_TIMEWINDOW_COSMOS:
       return {
         ...state,
         config: {
@@ -536,7 +541,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_WARNING_ENABLED:
+    case UPDATE_WARNING_ENABLED_COSMOS:
       return {
         ...state,
         config: {
@@ -556,7 +561,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_CRITICAL_DELAY:
+    case UPDATE_CRITICAL_DELAY_COSMOS:
       return {
         ...state,
         config: {
@@ -576,7 +581,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_CRITICAL_REPEAT:
+    case UPDATE_CRITICAL_REPEAT_COSMOS:
       return {
         ...state,
         config: {
@@ -596,7 +601,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_CRITICAL_THRESHOLD:
+    case UPDATE_CRITICAL_THRESHOLD_COSMOS:
       return {
         ...state,
         config: {
@@ -616,7 +621,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_CRITICAL_TIMEWINDOW:
+    case UPDATE_CRITICAL_TIMEWINDOW_COSMOS:
       return {
         ...state,
         config: {
@@ -636,7 +641,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_CRITICAL_ENABLED:
+    case UPDATE_CRITICAL_ENABLED_COSMOS:
       return {
         ...state,
         config: {
@@ -656,7 +661,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_ALERT_ENABLED:
+    case UPDATE_ALERT_ENABLED_COSMOS:
       return {
         ...state,
         config: {
@@ -673,7 +678,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_ALERT_SEVERTY_LEVEL:
+    case UPDATE_ALERT_SEVERTY_LEVEL_COSMOS:
       return {
         ...state,
         config: {
@@ -690,7 +695,7 @@ function chainsReducer(state = initialstate, action) {
           },
         },
       };
-    case UPDATE_ALERT_SEVERTY_ENABLED:
+    case UPDATE_ALERT_SEVERTY_ENABLED_COSMOS:
       return {
         ...state,
         config: {
@@ -712,4 +717,4 @@ function chainsReducer(state = initialstate, action) {
   }
 }
 
-export default chainsReducer;
+export default cosmosChainsReducer;

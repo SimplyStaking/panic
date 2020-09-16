@@ -2,10 +2,10 @@
 export const WELCOME_PAGE = 'WELCOME_PAGE';
 export const CHANNELS_PAGE = 'CHANNELS_PAGE';
 export const CHAINS_PAGE = 'CHAINS_PAGE';
-export const COSMOS_PAGE = 'COSMOS_PAGE';
 export const COSMOS_SETUP_PAGE = 'COSMOS_SETUP_PAGE';
-export const SUBSTRATE_PAGE = 'SUBSTRATE_PAGE';
-export const OTHER_PAGE = 'OTHER_PAGE';
+export const SUBSTRATE_SETUP_PAGE = 'SUBSTRATE_SETUP_PAGE';
+export const USERS_PAGE = 'USERS_PAGE';
+export const OTHERS_PAGE = 'OTHERS_PAGE';
 
 // Used for button names
 export const START = 'Start';
