@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import { UsersContainer } from '../../containers/users/usersContainer';
+import { UsersFormContainer, UsersTableContainer } from '../../containers/users/usersContainer';
 import {
   WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK,
 } from '../../constants/constants';
@@ -48,7 +48,8 @@ function UsersPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <UsersContainer />
+              <UsersFormContainer />
+              <UsersTableContainer />
             </Grid>
           </Grid>
         </Box>

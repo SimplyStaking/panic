@@ -16,51 +16,43 @@ const Form = withFormik({
   }),
   validationSchema: (props) => UserSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveEmailDetails } = props;
+    const { saveUserDetails } = props;
     const payload = {
-      configName: values.configName,
-      smtp: values.smtp,
-      emailFrom: values.emailFrom,
-      emailsTo: values.emailsTo,
       username: values.username,
       password: values.password,
-      info: values.info,
-      warning: values.warning,
-      critical: values.critical,
-      error: values.error,
     };
-    saveEmailDetails(payload);
+    saveUserDetails(payload);
     resetForm();
   },
-})(EmailForm);
+})(UsersForm);
 
 const mapStateToProps = (state) => ({
-  emails: state.ChannelsReducer.emails,
+  users: state.UsersReducer.users,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveEmailDetails: (details) => dispatch(addEmail(details)),
+    saveEmailDetails: (details) => dispatch(addUser(details)),
   };
 }
 
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeEmailDetails: (details) => dispatch(removeEmail(details)),
+    removeUserDetails: (details) => dispatch(removeUser(details)),
   };
 }
 
-const EmailFormContainer = connect(
+const UsersFormContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(Form);
 
-const EmailTableContainer = connect(
+const UsersTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
-)(EmailTable);
+)(UsersTable);
 
 export {
-  EmailFormContainer,
-  EmailTableContainer,
+  UsersFormContainer,
+  UsersTableContainer,
 };

@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import { OtherContainer } from '../../containers/others/otherContainer';
+import OtherFormContainer from '../../containers/others/otherContainer';
 import {
   WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK,
 } from '../../constants/constants';
@@ -48,7 +48,7 @@ function OtherPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <OtherContainer />
+              <OtherFormContainer />
             </Grid>
           </Grid>
         </Box>
