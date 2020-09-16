@@ -18,7 +18,7 @@ const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
 
-// TODO: Hash the password inside the database
+
 // TODO: Remove user_config_ui.ini from list of accepted configurations. These
 //       should be stored in a database (Check if users exist first).
 // TODO: Have to create an endpoint which stores the authenticated users in the
@@ -125,9 +125,6 @@ async function loadAuthenticationToDB() {
   }
 }
 
-// TODO: Need to check if we need to add something else. I.E. Need to hash
-// TODO: the pass inside saveRefreshTokenToDB
-
 async function retrieveRefreshToken(username) {
   let client;
   let db;
@@ -157,7 +154,7 @@ async function retrieveRefreshToken(username) {
 }
 
 // This endpoint saves the refresh token to the database
-async function saveRefreshTokenToDB(username, password, refreshToken) {
+async function saveRefreshTokenToDB(username, refreshToken) {
   let client;
   let db;
   try {
@@ -165,7 +162,6 @@ async function saveRefreshTokenToDB(username, password, refreshToken) {
     client = await mongoClient.connect(mongoDBUrl, mongo.options);
     db = client.db(dbname);
     const collection = db.collection(authenticationCollection);
-    const authDoc = { username, password, refreshToken };
     // Find authentication document
     const doc = await collection.findOne({ username });
     // If we cannot find the authentication document, it must be that the
@@ -175,7 +171,7 @@ async function saveRefreshTokenToDB(username, password, refreshToken) {
       await loadAuthenticationToDB();
     }
     // Save the refresh token
-    const newDoc = { $set: authDoc };
+    const newDoc = { $set: { refreshToken } };
     await collection.updateOne({ username }, newDoc);
   } catch (err) {
     // If the error is already a mongo error no need to wrap it again as a mongo
@@ -257,7 +253,7 @@ app.post('/server/login', async (req, res) => {
     // inside a cookie for additional security
     const msg = new msgs.AuthenticationSuccessful();
     try {
-      await saveRefreshTokenToDB(username, password, refreshToken);
+      await saveRefreshTokenToDB(username, refreshToken);
       res.status(utils.SUCCESS_STATUS)
         .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
         .send(utils.resultJson(msg.message));
