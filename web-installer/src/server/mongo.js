@@ -1,14 +1,16 @@
 const mongoClient = require('mongodb').MongoClient;
 const errors = require('./errors');
 
+const options = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  socketTimeoutMS: 10000,
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 5000,
+};
+
 module.exports = {
-  options: {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    socketTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-    serverSelectionTimeoutMS: 5000,
-  },
+  options,
 
   // This functions saves a record to a collection and makes sure that the key
   // is unique via a query.
@@ -17,7 +19,7 @@ module.exports = {
     let db;
     try {
       // connect
-      client = await mongoClient.connect(mongoDBUrl, this.options);
+      client = await mongoClient.connect(mongoDBUrl, options);
       db = client.db(dbname);
       const collectionInterface = db.collection(collection);
       // Check if record already exists by using the unique key and its value.
@@ -50,7 +52,7 @@ module.exports = {
     let db;
     try {
       // Connect
-      client = await mongoClient.connect(mongoDBUrl, this.options);
+      client = await mongoClient.connect(mongoDBUrl, options);
       db = client.db(dbname);
       const collectionInterface = db.collection(collection);
       await collectionInterface.drop();
@@ -73,7 +75,7 @@ module.exports = {
     let db;
     try {
       // Connect
-      client = await mongoClient.connect(mongoDBUrl, this.options);
+      client = await mongoClient.connect(mongoDBUrl, options);
       db = client.db(dbname);
       const collectionInterface = db.collection(collection);
       // Check if a record already exists. If it does it returns true, otherwise
