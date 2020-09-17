@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import OtherForm from '../../components/other/otherForm';
-import updatePeriodic from '../../redux/actions/otherActions';
-import OtherSchema from './otherSchema';
+import PeriodicForm from '../../components/general/form/periodicForm';
+import updatePeriodic from '../../redux/actions/generalActions';
+import PeriodicSchema from './schemas/periodicSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
@@ -12,7 +12,7 @@ const Form = withFormik({
     periodic: 0,
     enabled: false,
   }),
-  validationSchema: () => OtherSchema(),
+  validationSchema: () => PeriodicSchema(),
   handleSubmit: (values, { resetForm, props }) => {
     const { savePeriodicDetails } = props;
     const payload = {
@@ -22,10 +22,10 @@ const Form = withFormik({
     savePeriodicDetails(payload);
     resetForm();
   },
-})(OtherForm);
+})(PeriodicForm);
 
 const mapStateToProps = (state) => ({
-  periodic: state.OtherReducer.periodic,
+  periodic: state.GeneralReducer.periodic,
 });
 
 function mapDispatchToProps(dispatch) {
@@ -34,9 +34,9 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-const OtherFormContainer = connect(
+const PeriodicFormContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(Form);
 
-export default OtherFormContainer;
+export default PeriodicFormContainer;

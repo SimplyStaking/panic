@@ -5,7 +5,7 @@ export const CHAINS_PAGE = 'CHAINS_PAGE';
 export const COSMOS_SETUP_PAGE = 'COSMOS_SETUP_PAGE';
 export const SUBSTRATE_SETUP_PAGE = 'SUBSTRATE_SETUP_PAGE';
 export const USERS_PAGE = 'USERS_PAGE';
-export const OTHERS_PAGE = 'OTHERS_PAGE';
+export const GENERAL_PAGE = 'GENERAL_PAGE';
 
 // Used for button names
 export const START = 'Start';
@@ -37,3 +37,8 @@ export const REPOSITORIES_STEP = 'REPOSITORIES_STEP';
 export const INFO = 'INFO';
 export const WARNING = 'WARNING';
 export const CRITICAL = 'CRITICAL';
+
+// General forms constants
+export const PERIODIC = 'PERIODIC';
+export const SYSTEM = 'SYSTEMS';
+export const GITHUB = 'GITHUB';

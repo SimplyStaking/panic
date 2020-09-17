@@ -4,7 +4,7 @@ const RepositorySchema = (props) => Yup.object().shape({
   repoName: Yup.string()
     .test(
       'unique-repository-name',
-      'Repository is arleady exists.',
+      'Repository arleady exists.',
       (value) => {
         const { cosmosConfigs } = props;
         if (cosmosConfigs.length === 0) {

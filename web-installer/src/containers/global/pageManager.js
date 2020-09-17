@@ -9,7 +9,7 @@ import SubstrateSetupPage from '../../components/chains/substrate/substrateSetup
 
 import {
   WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
-  SUBSTRATE_SETUP_PAGE, OTHERS_PAGE, USERS_PAGE,
+  SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, USERS_PAGE,
 } from '../../constants/constants';
 
 const mapStateToProps = (state) => ({ page: state.ChangePageReducer.page });
@@ -29,7 +29,7 @@ function getPage(pageName) {
       return <SubstrateSetupPage />;
     case USERS_PAGE:
       return <SubstrateSetupPage />;
-    case OTHERS_PAGE:
+    case GENERAL_PAGE:
       return <SubstrateSetupPage />;
     default:
       return <WelcomePage />;

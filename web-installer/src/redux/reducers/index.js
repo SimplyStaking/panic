@@ -4,7 +4,7 @@ import ChangeStepReducer from './stepChange';
 import ChannelsReducer from './channelsReducer';
 import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
-import OtherReducer from './otherReducer';
+import GeneralReducer from './generalReducer';
 
 export default combineReducers({
   ChangePageReducer,
@@ -12,5 +12,5 @@ export default combineReducers({
   ChannelsReducer,
   CosmosChainsReducer,
   SubstrateChainsReducer,
-  OtherReducer,
+  GeneralReducer,
 });

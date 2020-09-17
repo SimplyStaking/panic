@@ -100,8 +100,12 @@ export const UPDATE_ALERT_ENABLED_SUBSTRATE = 'UPDATE_ALERT_ENABLED_SUBSTRATE';
 export const UPDATE_ALERT_SEVERTY_LEVEL_SUBSTRATE = 'UPDATE_ALERT_SEVERTY_LEVEL_SUBSTRATE';
 export const UPDATE_ALERT_SEVERTY_ENABLED_SUBSTRATE = 'UPDATE_ALERT_SEVERTY_ENABLED_SUBSTRATE';
 
-// Others Page, containing only the periodic alive reminder
+// General page
 export const UPDATE_PERIODIC = 'UPDATE_PERIODIC';
+export const ADD_REPOSITORY = 'ADD_REPOSITORY';
+export const ADD_SYSTEM = 'ADD_SYSTEM';
+export const REMOVE_REPOSITORY = 'REMOVE_REPOSITORY';
+export const REMOVE_SYSTEM = 'REMOVE_SYSTEM';
 
 // Users Page, containing only actions to set and remove users
 export const ADD_USER = 'ADD_USER';

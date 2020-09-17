@@ -4,10 +4,13 @@ import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import { UsersFormContainer, UsersTableContainer } from '../../containers/users/usersContainer';
+import FormAccordion from '../global/formAccordion';
 import {
-  WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK,
+  WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK, PERIODIC, SYSTEM, GITHUB,
 } from '../../constants/constants';
+import TimeLogo from '../../assets/icons/time.svg';
+import SystemLogo from '../../assets/icons/system.svg';
+import GithubLogo from '../../assets/icons/github.svg';
 import Data from '../../data/general';
 
 const useStyles = makeStyles((theme) => ({
@@ -28,16 +31,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function UsersPage() {
+function GeneralsPage() {
   const classes = useStyles();
 
   return (
     <div>
       <Title
-        text={Data.others.title}
+        text={Data.general.title}
       />
       <MainText
-        text={Data.others.description}
+        text={Data.general.description}
       />
       <Box p={2} className={classes.root}>
         <Box
@@ -48,8 +51,23 @@ function UsersPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <UsersFormContainer />
-              <UsersTableContainer />
+              <FormAccordion
+                icon={TimeLogo}
+                name={PERIODIC}
+                form={(<TelegramFormContainer />)}
+              />
+              <FormAccordion
+                icon={SystemLogo}
+                name={SYSTEM}
+                form={(<TelegramFormContainer />)}
+              />
+              <TwilioTableContainer />
+              <FormAccordion
+                icon={GithubLogo}
+                name={GITHUB}
+                form={(<TelegramFormContainer />)}
+              />
+              <EmailTableContainer />
             </Grid>
           </Grid>
         </Box>
@@ -66,4 +84,4 @@ function UsersPage() {
   );
 }
 
-export default UsersPage;
+export default GeneralsPage;
