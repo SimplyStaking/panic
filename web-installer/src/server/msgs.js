@@ -31,6 +31,10 @@ function AccountSavedSuccessfully() {
   this.message = 'Account saved successfully.';
 }
 
+function CollectionDropped(collection) {
+  this.message = `Collection '${collection}' dropped from database.`;
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -40,4 +44,5 @@ module.exports = {
   TestAlertSubmitted,
   AuthenticationSuccessful,
   AccountSavedSuccessfully,
+  CollectionDropped,
 };

@@ -18,16 +18,6 @@ const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
 
-
-// TODO: Remove user_config_ui.ini from list of accepted configurations. These
-//       should be stored in a database (Check if users exist first).
-// TODO: Have to create an endpoint which stores the authenticated users in the
-//       database. All users are admins.
-// TODO: Give ID to the users as payload when storing users to DB
-//       (not for the installer since 1 auth) in case users have the same name
-//        role (admin ex) (or uniqueness in username)
-// TODO: Should usernames be case-sensitive?
-
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
 const httpsKey = files.readFile(
@@ -48,8 +38,8 @@ const installerCredentials = {
 };
 const dbname = process.env.DB_NAME;
 const dbhost = '172.18.0.2:27017';
-const instAuthCollection = 'installer_authentication';
-const accountsCollection = 'accounts';
+const instAuthCollection = 'installer_authentication'; // TODO: Add to env variables
+const accountsCollection = 'accounts'; // TODO: Add to environment variables
 
 const app = express();
 app.disable('x-powered-by');
@@ -116,7 +106,7 @@ async function loadAuthenticationToDB() {
     }
   } catch (err) {
     // If an error is raised throw a MongoError
-    throw new errors.MongoError(err);
+    throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
     // is the case close the database connection to prevent leaks
@@ -145,7 +135,7 @@ async function retrieveRefreshToken(username) {
     return record.refreshToken;
   } catch (err) {
     // If an error is raised throw a MongoError
-    throw new errors.MongoError(err);
+    throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
     // is the case close the database connection to prevent leaks
@@ -181,7 +171,7 @@ async function saveRefreshTokenToDB(username, refreshToken) {
     if (err.code === 442) {
       throw err;
     }
-    throw new errors.MongoError(err);
+    throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
     // is the case close the database connection to prevent leaks
@@ -191,6 +181,8 @@ async function saveRefreshTokenToDB(username, refreshToken) {
   }
 }
 
+// This functions saves a record to a collection and makes sure that the given
+// key is unique.
 async function saveToDatabase(record, collection, uniqueKeyValue) {
   let client;
   let db;
@@ -213,7 +205,55 @@ async function saveToDatabase(record, collection, uniqueKeyValue) {
     if (err.code === 446) {
       throw err;
     }
-    throw new errors.MongoError(err);
+    throw new errors.MongoError(err.message);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
+}
+
+// This function deletes a collection
+async function dropCollection(collection) {
+  let client;
+  let db;
+  try {
+    // Connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collectionInterface = db.collection(collection);
+    await collectionInterface.drop();
+  } catch (err) {
+    // If an error is raised throw a MongoError
+    throw new errors.MongoError(err.message);
+  } finally {
+    // Check if an error was thrown after a connection was established. If this
+    // is the case close the database connection to prevent leaks
+    if (client && client.isConnected()) {
+      await client.close();
+    }
+  }
+}
+
+// This function returns true if a record already exists in a collection based
+// on a query (key)
+async function recordExists(collection, query) {
+  let client;
+  let db;
+  try {
+    // Connect
+    client = await mongoClient.connect(mongoDBUrl, mongo.options);
+    db = client.db(dbname);
+    const collectionInterface = db.collection(collection);
+    // Check if a record already exists. If it does it returns true, otherwise
+    // it returns false.
+    const doc = await collectionInterface.findOne(query);
+    return !!doc; // This must be done because doc is not a boolean
+  } catch (err) {
+    // If an error is raised throw a MongoError
+    throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
     // is the case close the database connection to prevent leaks
@@ -380,11 +420,6 @@ app.post('/server/refresh', async (req, res) => {
 
 // ---------------------------------------- Account
 
-// TODO: If we decide to re-run the installer and want to over-write we can
-//       clear the database before starting. We need an empty database endpoint.
-// TODO: Need to make sure usernames are unique
-// TODO: Need to decide whether we are catering for username case sensiteveness
-//       both for accounts and installer
 // This endpoint saves an account inside the database
 app.post('/server/account/save', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
@@ -416,6 +451,56 @@ app.post('/server/account/save', verify, async (req, res) => {
       res.status(error.code).send(utils.errorJson(error.message));
       return;
     }
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// This endpoint checks whether an account already exists with the given
+// username
+app.post('/server/account/exists', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username } = req.body;
+  // Check if username is missing
+  const missingParamsList = missingValues({ username });
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+  try {
+    // Check if the username already exists and inform the user about the result
+    const result = await recordExists(accountsCollection, { username });
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
+  } catch (err) {
+    // Inform the user of any errors.
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// ---------------------------------------- MongoDB
+
+// This endpoint saves an account inside the database
+app.post('/server/database/drop', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { collection } = req.body;
+  // Check if the collection parameter is missing
+  const missingParamsList = missingValues({ collection });
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+  try {
+    // Drop the collection from the database and inform the user if successful
+    await dropCollection(collection);
+    const msg = new msgs.CollectionDropped(collection);
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (err) {
+    // Give an error message to the user if the endpoint runs into an error
     console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }
