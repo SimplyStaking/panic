@@ -39,6 +39,6 @@ export const WARNING = 'WARNING';
 export const CRITICAL = 'CRITICAL';
 
 // General forms constants
-export const PERIODIC = 'PERIODIC';
-export const SYSTEM = 'SYSTEMS';
-export const GITHUB = 'GITHUB';
+export const PERIODIC = 'Periodic';
+export const SYSTEM = 'Systems';
+export const GITHUB = 'Github';

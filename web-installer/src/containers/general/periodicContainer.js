@@ -1,22 +1,22 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import PeriodicForm from '../../components/general/form/periodicForm';
-import updatePeriodic from '../../redux/actions/generalActions';
+import PeriodicForm from '../../components/general/forms/periodicForm';
+import { updatePeriodic } from '../../redux/actions/generalActions';
 import PeriodicSchema from './schemas/periodicSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    periodic: '',
+    time: '',
   }),
   mapPropsToValues: () => ({
-    periodic: 0,
+    time: 0,
     enabled: false,
   }),
   validationSchema: () => PeriodicSchema(),
   handleSubmit: (values, { resetForm, props }) => {
     const { savePeriodicDetails } = props;
     const payload = {
-      periodic: values.periodic,
+      time: values.time,
       enabled: values.enabled,
     };
     savePeriodicDetails(payload);

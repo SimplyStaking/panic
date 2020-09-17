@@ -4,7 +4,7 @@ const initialstate = {
   users: [],
 };
 
-function changePageReducer(state = initialstate, action) {
+function usersReducer(state = initialstate, action) {
   switch (action.type) {
     case ADD_USER:
       return {
@@ -21,4 +21,4 @@ function changePageReducer(state = initialstate, action) {
   }
 }
 
-export default changePageReducer;
+export default usersReducer;

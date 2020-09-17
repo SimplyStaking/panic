@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField, Button, Box, Typography, Grid,
+  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 
@@ -13,7 +13,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const UserForm = (props) => {
+const GithubForm = (props) => {
   const classes = useStyles();
 
   const {
@@ -21,6 +21,7 @@ const UserForm = (props) => {
     values,
     handleSubmit,
     handleChange,
+    setFieldValue,
   } = props;
 
   return (
@@ -28,35 +29,39 @@ const UserForm = (props) => {
       <form onSubmit={handleSubmit} className={classes.root}>
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={2}>
-            <Typography> Username: </Typography>
+            <Typography> Repository Name: </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField
-              error={!errors.username !== true}
-              value={values.username}
+              error={!errors.name !== true}
+              value={values.name}
               type="text"
-              name="username"
-              placeholder="panic_user_main"
-              helperText={errors.username ? errors.username : ''}
+              name="name"
+              placeholder="SimplyVC/panic"
+              helperText={errors.name ? errors.name : ''}
               onChange={handleChange}
               fullWidth
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography> Password: </Typography>
+            <Typography> Monitor Repository: </Typography>
           </Grid>
-          <Grid item xs={10}>
-            <TextField
-              error={!errors.password !== true}
-              value={values.password}
-              type="password"
-              name="password"
-              placeholder="*****************"
-              helperText={errors.password ? errors.password : ''}
-              onChange={handleChange}
-              fullWidth
+          <Grid item xs={1}>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={values.enabled}
+                  onClick={() => {
+                    setFieldValue('enabled', !values.enabled);
+                  }}
+                  name="enabled"
+                  color="primary"
+                />
+              )}
             />
           </Grid>
+          <Grid item xs={9} />
+          <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
@@ -64,10 +69,19 @@ const UserForm = (props) => {
                   variant="outlined"
                   size="large"
                   disabled={!(Object.keys(errors).length === 0)}
+                >
+                  <Box px={2}>
+                    Test Repository
+                  </Box>
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  disabled={!(Object.keys(errors).length === 0)}
                   type="submit"
                 >
                   <Box px={2}>
-                    Add
+                    Add Repository
                   </Box>
                 </Button>
               </Box>
@@ -79,17 +93,17 @@ const UserForm = (props) => {
   );
 };
 
-UserForm.propTypes = {
+GithubForm.propTypes = {
   errors: PropTypes.shape({
-    username: PropTypes.string,
-    password: PropTypes.string,
+    name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    password: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    enabled: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
+  setFieldValue: PropTypes.func.isRequired,
 };
 
-export default UserForm;
+export default GithubForm;

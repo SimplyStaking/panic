@@ -6,6 +6,8 @@ import ChannelsPage from '../../components/channels/channelsPage';
 import ChainsPage from '../../components/chains/chainsPage';
 import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
 import SubstrateSetupPage from '../../components/chains/substrate/substrateSetupPage';
+import GeneralPage from '../../components/general/generalPage';
+import UsersPage from '../../components/users/usersPage';
 
 import {
   WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
@@ -28,9 +30,9 @@ function getPage(pageName) {
     case SUBSTRATE_SETUP_PAGE:
       return <SubstrateSetupPage />;
     case USERS_PAGE:
-      return <SubstrateSetupPage />;
+      return <UsersPage />;
     case GENERAL_PAGE:
-      return <SubstrateSetupPage />;
+      return <GeneralPage />;
     default:
       return <WelcomePage />;
   }

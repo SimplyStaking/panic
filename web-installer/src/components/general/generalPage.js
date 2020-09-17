@@ -6,11 +6,14 @@ import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
 import FormAccordion from '../global/formAccordion';
 import {
-  WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK, PERIODIC, SYSTEM, GITHUB,
+  USERS_PAGE, CHAINS_PAGE, NEXT, BACK, PERIODIC, SYSTEM, GITHUB,
 } from '../../constants/constants';
 import TimeLogo from '../../assets/icons/time.svg';
 import SystemLogo from '../../assets/icons/system.svg';
 import GithubLogo from '../../assets/icons/github.svg';
+import { SystemFormContainer, SystemTableContainer } from '../../containers/general/systemContainer';
+import { GithubFormContainer, GithubTableContainer } from '../../containers/general/githubContainer';
+import PeriodicFormContainer from '../../containers/general/periodicContainer';
 import Data from '../../data/general';
 
 const useStyles = makeStyles((theme) => ({
@@ -54,31 +57,31 @@ function GeneralsPage() {
               <FormAccordion
                 icon={TimeLogo}
                 name={PERIODIC}
-                form={(<TelegramFormContainer />)}
+                form={(<PeriodicFormContainer />)}
               />
               <FormAccordion
                 icon={SystemLogo}
                 name={SYSTEM}
-                form={(<TelegramFormContainer />)}
+                form={(<SystemFormContainer />)}
               />
-              <TwilioTableContainer />
+              <SystemTableContainer />
               <FormAccordion
                 icon={GithubLogo}
                 name={GITHUB}
-                form={(<TelegramFormContainer />)}
+                form={(<GithubFormContainer />)}
               />
-              <EmailTableContainer />
+              <GithubTableContainer />
             </Grid>
           </Grid>
         </Box>
       </Box>
       <NavigationButtonContainer
         text={NEXT}
-        navigation={CHAINS_PAGE}
+        navigation={USERS_PAGE}
       />
       <NavigationButtonContainer
         text={BACK}
-        navigation={WELCOME_PAGE}
+        navigation={CHAINS_PAGE}
       />
     </div>
   );

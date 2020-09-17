@@ -6,9 +6,9 @@ import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
 import { UsersFormContainer, UsersTableContainer } from '../../containers/users/usersContainer';
 import {
-  WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK,
+  WELCOME_PAGE, GENERAL_PAGE, NEXT, BACK,
 } from '../../constants/constants';
-import Data from '../../data/general';
+import Data from '../../data/users';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -34,10 +34,10 @@ function UsersPage() {
   return (
     <div>
       <Title
-        text={Data.others.title}
+        text={Data.users.title}
       />
       <MainText
-        text={Data.others.description}
+        text={Data.users.description}
       />
       <Box p={2} className={classes.root}>
         <Box
@@ -56,7 +56,7 @@ function UsersPage() {
       </Box>
       <NavigationButtonContainer
         text={NEXT}
-        navigation={CHAINS_PAGE}
+        navigation={GENERAL_PAGE}
       />
       <NavigationButtonContainer
         text={BACK}

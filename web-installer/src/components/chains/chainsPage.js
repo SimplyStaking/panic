@@ -10,8 +10,8 @@ import ChainAccordion from './chainAccordion';
 import CosmosIcon from '../../assets/icons/cosmos.png';
 import SubstrateIcon from '../../assets/icons/substrate.png';
 import {
-  CHANNELS_PAGE, USERS_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW,
-  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE,
+  CHANNELS_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW,
+  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE, GENERAL_PAGE,
 } from '../../constants/constants';
 import Data from '../../data/chains';
 
@@ -87,7 +87,7 @@ function Chains() {
       </Box>
       <NavigationButtonContainer
         text={DONE}
-        navigation={USERS_PAGE}
+        navigation={GENERAL_PAGE}
       />
       <NavigationButtonContainer
         text={BACK}

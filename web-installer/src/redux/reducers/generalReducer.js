@@ -12,7 +12,7 @@ const initialstate = {
   repositories: [],
 };
 
-function changePageReducer(state = initialstate, action) {
+function generalReducer(state = initialstate, action) {
   switch (action.type) {
     case UPDATE_PERIODIC:
       return {
@@ -28,7 +28,8 @@ function changePageReducer(state = initialstate, action) {
       return {
         ...state,
         repositories: state.repositories.filter(
-          (repository) => repository !== action.payload),
+          (repository) => repository !== action.payload,
+        ),
       };
     case ADD_SYSTEM:
       return {
@@ -45,4 +46,4 @@ function changePageReducer(state = initialstate, action) {
   }
 }
 
-export default changePageReducer;
+export default generalReducer;
