@@ -37,36 +37,27 @@ const installerCredentials = {
   INSTALLER_PASSWORD: process.env.INSTALLER_PASSWORD,
 };
 const dbname = process.env.DB_NAME;
-const dbhost = '172.18.0.2:27017';
-const instAuthCollection = 'installer_authentication'; // TODO: Add to env variables
-const accountsCollection = 'accounts'; // TODO: Add to environment variables
+const dbhost = process.env.DB_HOST;
+const dbport = process.env.DB_PORT;
+const mongoDBUrl = `mongodb://${dbhost}:${dbport}/${dbname}`;
+const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
+const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
+// Server configuration
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json()); // Recognize incoming data as json objects
-// Render the build at the root url
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
-const mongoDBUrl = `mongodb://${dbhost}/${dbname}`;
 
-// Check which values are missing given an object, and return an array of
-// missing values
-function missingValues(values) {
-  const missingValuesList = [];
-  Object.keys(values).forEach((param) => {
-    if (!values[param]) {
-      missingValuesList.push(param);
-    }
-  });
-  return missingValuesList;
-}
 
+// This function confirms that the authentication of the installer are in the
+// .env file.
 function checkInstAuthCredentials() {
-  // Check if installer credential are missing.
-  const missingCredentialsList = missingValues(installerCredentials);
-
-  // If any of the credentials is missing inform the user.
+  // Check if installer credentials are missing.
+  const missingCredentialsList = utils.missingValues(installerCredentials);
+  // If any of the credentials is missing stop the server with an exception.
   if (missingCredentialsList.length !== 0) {
     throw new errors.MissingInstallerCredentials(missingCredentialsList);
   }
@@ -181,88 +172,6 @@ async function saveRefreshTokenToDB(username, refreshToken) {
   }
 }
 
-// This functions saves a record to a collection and makes sure that the given
-// key is unique.
-async function saveToDatabase(record, collection, uniqueKeyValue) {
-  let client;
-  let db;
-  try {
-    // connect
-    client = await mongoClient.connect(mongoDBUrl, mongo.options);
-    db = client.db(dbname);
-    const collectionInterface = db.collection(collection);
-    // Check if record already exists by using the unique key and its value.
-    // If yes, throw an already exists error, otherwise add the record to the
-    // database
-    const doc = await collectionInterface.findOne(uniqueKeyValue);
-    if (doc) {
-      throw new errors.RecordAlreadyExists(uniqueKeyValue);
-    }
-    await collectionInterface.insertOne(record);
-  } catch (err) {
-    // If the error is an already exists error re-throw it. Otherwise it must be
-    // a mongo error.
-    if (err.code === 446) {
-      throw err;
-    }
-    throw new errors.MongoError(err.message);
-  } finally {
-    // Check if an error was thrown after a connection was established. If this
-    // is the case close the database connection to prevent leaks
-    if (client && client.isConnected()) {
-      await client.close();
-    }
-  }
-}
-
-// This function deletes a collection
-async function dropCollection(collection) {
-  let client;
-  let db;
-  try {
-    // Connect
-    client = await mongoClient.connect(mongoDBUrl, mongo.options);
-    db = client.db(dbname);
-    const collectionInterface = db.collection(collection);
-    await collectionInterface.drop();
-  } catch (err) {
-    // If an error is raised throw a MongoError
-    throw new errors.MongoError(err.message);
-  } finally {
-    // Check if an error was thrown after a connection was established. If this
-    // is the case close the database connection to prevent leaks
-    if (client && client.isConnected()) {
-      await client.close();
-    }
-  }
-}
-
-// This function returns true if a record already exists in a collection based
-// on a query (key)
-async function recordExists(collection, query) {
-  let client;
-  let db;
-  try {
-    // Connect
-    client = await mongoClient.connect(mongoDBUrl, mongo.options);
-    db = client.db(dbname);
-    const collectionInterface = db.collection(collection);
-    // Check if a record already exists. If it does it returns true, otherwise
-    // it returns false.
-    const doc = await collectionInterface.findOne(query);
-    return !!doc; // This must be done because doc is not a boolean
-  } catch (err) {
-    // If an error is raised throw a MongoError
-    throw new errors.MongoError(err.message);
-  } finally {
-    // Check if an error was thrown after a connection was established. If this
-    // is the case close the database connection to prevent leaks
-    if (client && client.isConnected()) {
-      await client.close();
-    }
-  }
-}
-
 // ---------------------------------------- Authentication
 
 // Check if the inputted credentials are the one stored inside .env
@@ -274,8 +183,8 @@ function credentialsCorrect(username, password) {
 function verify(req, res, next) {
   // Extract the authentication cookie
   const accessToken = req.cookies.authCookie;
-  // If it does not exist, the user did not login therefore send an unauthorized
-  // error
+  // If authCookie does not exist, the user did not login therefore send an
+  // unauthorized error
   if (!accessToken) {
     const err = new errors.Unauthorized();
     res.status(err.code).send(utils.errorJson(err.message));
@@ -301,7 +210,7 @@ app.post('/server/login', async (req, res) => {
   const { username, password } = req.body;
 
   // Check if username or password are missing.
-  const missingParamsList = missingValues({ username, password });
+  const missingParamsList = utils.missingValues({ username, password });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -425,7 +334,7 @@ app.post('/server/account/save', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { username, password } = req.body;
   // Check if username and password are missing
-  const missingParamsList = missingValues({ username, password });
+  const missingParamsList = utils.missingValues({ username, password });
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
@@ -438,7 +347,9 @@ app.post('/server/account/save', verify, async (req, res) => {
 
   try {
     // Save the record to the database and inform the user if successful
-    await saveToDatabase(record, accountsCollection, { username });
+    await mongo.saveToDatabase(
+      mongoDBUrl, dbname, record, accountsCollection, { username },
+    );
     const msg = new msgs.AccountSavedSuccessfully();
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (err) {
@@ -462,7 +373,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { username } = req.body;
   // Check if username is missing
-  const missingParamsList = missingValues({ username });
+  const missingParamsList = utils.missingValues({ username });
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
@@ -471,7 +382,9 @@ app.post('/server/account/exists', verify, async (req, res) => {
   }
   try {
     // Check if the username already exists and inform the user about the result
-    const result = await recordExists(accountsCollection, { username });
+    const result = await mongo.recordExists(
+      mongoDBUrl, dbname, accountsCollection, { username },
+    );
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
     // Inform the user of any errors.
@@ -487,7 +400,7 @@ app.post('/server/database/drop', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { collection } = req.body;
   // Check if the collection parameter is missing
-  const missingParamsList = missingValues({ collection });
+  const missingParamsList = utils.missingValues({ collection });
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
@@ -496,7 +409,7 @@ app.post('/server/database/drop', verify, async (req, res) => {
   }
   try {
     // Drop the collection from the database and inform the user if successful
-    await dropCollection(collection);
+    await mongo.dropCollection(mongoDBUrl, dbname, collection);
     const msg = new msgs.CollectionDropped(collection);
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (err) {
@@ -519,12 +432,12 @@ app.get('/server/config', verify, async (req, res) => {
 
   // Check if configType and fileName are missing, as these are independent of
   // other parameters
-  const missingParamsList = missingValues({ configType, fileName });
+  const missingParamsList = utils.missingValues({ configType, fileName });
 
   // If the config belongs to a chain, check if chainName and baseChain are
   // given. If not add them to the list of missing params.
   if (configType && configType.toLowerCase() === 'chain') {
-    missingParamsList.push(...missingValues({ chainName, baseChain }));
+    missingParamsList.push(...utils.missingValues({ chainName, baseChain }));
   }
 
   // If some required parameters are missing inform the user.
@@ -574,12 +487,14 @@ app.post('/server/config', verify, async (req, res) => {
 
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
-  const missingParamsList = missingValues({ configType, fileName, config });
+  const missingParamsList = utils.missingValues({
+    configType, fileName, config,
+  });
 
   // If the config belongs to a chain, check if chainName and baseChain are
   // given. If not add them to the list of missing params.
   if (configType && configType.toLowerCase() === 'chain') {
-    missingParamsList.push(...missingValues({ chainName, baseChain }));
+    missingParamsList.push(...utils.missingValues({ chainName, baseChain }));
   }
 
   // If some required parameters are missing inform the user.
@@ -624,7 +539,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
-  const missingParamsList = missingValues({
+  const missingParamsList = utils.missingValues({
     accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
   });
 
@@ -674,7 +589,7 @@ app.post('/server/email/test', verify, async (req, res) => {
   } = req.body;
 
   // Check if smtp, from, to, user and pass are missing.
-  const missingParamsList = missingValues({ smtp, from, to });
+  const missingParamsList = utils.missingValues({ smtp, from, to });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -732,7 +647,7 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
   const { apiToken, integrationKey } = req.body;
 
   // Check if apiToken and integrationKey are missing.
-  const missingParamsList = missingValues({ apiToken, integrationKey });
+  const missingParamsList = utils.missingValues({ apiToken, integrationKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -773,7 +688,7 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   const { apiKey, eu } = req.body;
 
   // Check if apiKey is missing.
-  const missingParamsList = missingValues({ apiKey });
+  const missingParamsList = utils.missingValues({ apiKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {

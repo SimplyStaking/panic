@@ -10,6 +10,10 @@ services:
       - 'DB_NAME=${DB_NAME}'
       - 'INSTALLER_USERNAME=${INSTALLER_USERNAME}'
       - 'INSTALLER_PASSWORD=${INSTALLER_PASSWORD}'
+      - 'DB_HOST=${DB_HOST}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'INSTALLER_AUTH_COLLECTION=${INSTALLER_AUTH_COLLECTION}'
+      - 'ACCOUNTS_COLLECTION=${ACCOUNTS_COLLECTION}'
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
@@ -28,7 +32,7 @@ services:
     image: 'mongo'
     networks:
       panic_net:
-        ipv4_address: 172.18.0.2
+        ipv4_address: '${DB_HOST}'
     restart: always
 
 networks:
