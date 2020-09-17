@@ -20,6 +20,7 @@ const Form = withFormik({
     const { saveSystemDetails } = props;
     const payload = {
       name: values.name,
+      exporterURL: values.exporterURL,
       enabled: values.enabled,
     };
     saveSystemDetails(payload);

@@ -32,7 +32,7 @@ const mapStateToProps = (state) => ({
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveEmailDetails: (details) => dispatch(addUser(details)),
+    saveUserDetails: (details) => dispatch(addUser(details)),
   };
 }
 

@@ -33,6 +33,7 @@ const UsersTable = (props) => {
           <TableRow>
             <TableCell align="center">Username</TableCell>
             <TableCell align="center">Password</TableCell>
+            <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
