@@ -34,6 +34,9 @@ services:
       panic_net:
         ipv4_address: '${DB_HOST}'
     restart: always
+    container_name: 'mongo'
+    volumes:
+      - 'db-data:/data/db'
 
 networks:
   panic_net:
@@ -41,3 +44,6 @@ networks:
       driver: default
       config:
         - subnet: 172.18.0.0/24
+
+volumes:
+  db-data:
