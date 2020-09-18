@@ -110,3 +110,7 @@ export const REMOVE_SYSTEM = 'REMOVE_SYSTEM';
 // Users Page, containing only actions to set and remove users
 export const ADD_USER = 'ADD_USER';
 export const REMOVE_USER = 'REMOVE_USER';
+
+// Login actions
+export const LOGIN = 'LOGIN';
+export const LOGOUT = 'LOGOUT';

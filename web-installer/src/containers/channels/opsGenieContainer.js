@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import OpsGenieForm from '../../components/channels/forms/opsGenie_form';
-import OpsGenieTable from '../../components/channels/tables/opsGenie_table';
+import OpsGenieForm from '../../components/channels/forms/opsGenieForm';
+import OpsGenieTable from '../../components/channels/tables/opsGenieTable';
 import { addOpsGenie, removeOpsGenie } from '../../redux/actions/channelActions';
 import OpsGenieSchema from './schemas/opsGenieSchema';
 

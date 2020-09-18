@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Accordion } from '@material-ui/core';
+import { Accordion, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
@@ -31,6 +31,7 @@ function FormAccordion(props) {
     icon,
     name,
     form,
+    table,
   } = props;
 
   return (
@@ -56,7 +57,14 @@ function FormAccordion(props) {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {form}
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              {form}
+            </Grid>
+            <Grid item xs={12}>
+              {table}
+            </Grid>
+          </Grid>
         </AccordionDetails>
       </Accordion>
     </div>
@@ -67,6 +75,7 @@ FormAccordion.propTypes = {
   icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   form: PropTypes.element.isRequired,
+  table: PropTypes.element.isRequired,
 };
 
 export default FormAccordion;

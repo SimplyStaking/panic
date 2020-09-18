@@ -1,29 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  List,
-  ListItem,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Button, List, ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const TwilioTable = (props) => {
-  const classes = useStyles();
 
   const {
     twilios,
@@ -35,10 +20,10 @@ const TwilioTable = (props) => {
   }
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="greyBackground" aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell align="center">Twilio Name</TableCell>
             <TableCell align="center">Account Sid</TableCell>
             <TableCell align="center">Authentication Token</TableCell>
             <TableCell align="center">Twilio Phone Number</TableCell>

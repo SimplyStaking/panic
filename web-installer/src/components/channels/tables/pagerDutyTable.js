@@ -1,29 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const PagerDutyTable = (props) => {
-  const classes = useStyles();
 
   const {
     pagerDuties,
@@ -35,10 +21,10 @@ const PagerDutyTable = (props) => {
   }
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="greyBackground" aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell align="center">PagerDuty Name</TableCell>
             <TableCell align="center">API Token</TableCell>
             <TableCell align="center">Integration Key</TableCell>
             <TableCell align="center">Info</TableCell>

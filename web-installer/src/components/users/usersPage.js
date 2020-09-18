@@ -56,11 +56,11 @@ function UsersPage() {
       </Box>
       <NavigationButtonContainer
         text={NEXT}
-        navigation={GENERAL_PAGE}
+        navigation={WELCOME_PAGE}
       />
       <NavigationButtonContainer
         text={BACK}
-        navigation={WELCOME_PAGE}
+        navigation={GENERAL_PAGE}
       />
     </div>
   );

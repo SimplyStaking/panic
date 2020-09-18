@@ -6,6 +6,7 @@ import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
 import GeneralReducer from './generalReducer';
 import UsersReducer from './usersReducer';
+import LoginReducer from './loginReducer';
 
 export default combineReducers({
   ChangePageReducer,
@@ -15,4 +16,5 @@ export default combineReducers({
   SubstrateChainsReducer,
   GeneralReducer,
   UsersReducer,
+  LoginReducer,
 });
