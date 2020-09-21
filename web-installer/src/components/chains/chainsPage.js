@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Box } from '@material-ui/core';
+import { Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
@@ -51,38 +51,32 @@ function Chains() {
           borderRadius="borderRadius"
           borderColor="grey.300"
         >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <ChainAccordion
-                icon={CosmosIcon}
-                name={COSMOS}
-                button={(
-                  <NavigationButtonContainer
-                    text={NEW}
-                    navigation={COSMOS_SETUP_PAGE}
-                  />
-                )}
-                table={(
-                  <CosmosChainsTableContainer />
-                )}
+          <ChainAccordion
+            icon={CosmosIcon}
+            name={COSMOS}
+            button={(
+              <NavigationButtonContainer
+                text={NEW}
+                navigation={COSMOS_SETUP_PAGE}
               />
-            </Grid>
-            <Grid item xs={12}>
-              <ChainAccordion
-                icon={SubstrateIcon}
-                name={SUBSTRATE}
-                button={(
-                  <NavigationButtonContainer
-                    text={NEW}
-                    navigation={SUBSTRATE_SETUP_PAGE}
-                  />
-                )}
-                table={(
-                  <SubstrateChainsTableContainer />
-                )}
+            )}
+            table={(
+              <CosmosChainsTableContainer />
+            )}
+          />
+          <ChainAccordion
+            icon={SubstrateIcon}
+            name={SUBSTRATE}
+            button={(
+              <NavigationButtonContainer
+                text={NEW}
+                navigation={SUBSTRATE_SETUP_PAGE}
               />
-            </Grid>
-          </Grid>
+            )}
+            table={(
+              <SubstrateChainsTableContainer />
+            )}
+          />
         </Box>
       </Box>
       <NavigationButtonContainer

@@ -32,7 +32,7 @@ const NodesTable = (props) => {
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell align="center">Name</TableCell>
             <TableCell align="center">Tendermint</TableCell>
             <TableCell align="center">Cosmos SDK</TableCell>
             <TableCell align="center">Prometheus</TableCell>

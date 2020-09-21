@@ -11,10 +11,11 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     substrateNodeName: '',
-    tendermintRPCURL: '',
-    substrateRPCURL: '',
+    nodeWSURL: '',
+    telemetryURL: '',
     prometheusURL: '',
     exporterURL: '',
+    stashAddress: '',
     isValidator: false,
     monitorNode: true,
     isArchiveNode: true,
@@ -25,10 +26,11 @@ const Form = withFormik({
     const { saveNodeDetails } = props;
     const payload = {
       substrateNodeName: values.substrateNodeName,
-      tendermintRPCURL: values.tendermintRPCURL,
-      substrateRPCURL: values.substrateRPCURL,
+      nodeWSURL: values.nodeWSURL,
+      telemetryURL: values.telemetryURL,
       prometheusURL: values.prometheusURL,
       exporterURL: values.exporterURL,
+      stashAddress: values.stashAddress,
       isValidator: values.isValidator,
       monitorNode: values.monitorNode,
       isArchiveNode: values.isArchiveNode,

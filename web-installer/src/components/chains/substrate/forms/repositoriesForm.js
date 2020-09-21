@@ -7,7 +7,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   NEXT, KMS_STEP, BACK, NODES_STEP,
 } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -41,7 +41,7 @@ const RepositoriesForm = (props) => {
               value={values.repoName}
               type="text"
               name="repoName"
-              placeholder="cosmos/cosmos-sdk"
+              placeholder="paritytech/substrate"
               helperText={errors.repoName ? errors.repoName : ''}
               onChange={handleChange}
               fullWidth
@@ -91,24 +91,24 @@ const RepositoriesForm = (props) => {
               </Box>
             </Grid>
           </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={BACK}
+                navigation={NODES_STEP}
+              />
+            </Box>
+          </Grid>
           <Grid item xs={8} />
-          <Grid item xs={4}>
-            <Grid container direction="row" justify="flex-end" alignItems="center">
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={BACK}
-                  navigation={NODES_STEP}
-                />
-              </Box>
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={NEXT}
-                  navigation={KMS_STEP}
-                />
-              </Box>
-            </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={NEXT}
+                navigation={KMS_STEP}
+              />
+            </Box>
           </Grid>
         </Grid>
       </form>

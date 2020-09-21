@@ -32,8 +32,8 @@ const KMSTable = (props) => {
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Node Exporter Url</TableCell>
+            <TableCell align="center">Name</TableCell>
+            <TableCell align="center">Node Exporter Url</TableCell>
             <TableCell align="center">Monitor</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>

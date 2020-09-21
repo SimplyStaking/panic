@@ -7,7 +7,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   CHAINS_STEP, NEXT, REPOSITORIES_STEP, BACK,
 } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -37,38 +37,38 @@ const NodesForm = (props) => {
           </Grid>
           <Grid item xs={10}>
             <TextField
-              error={!errors.cosmosNodeName !== true}
-              value={values.cosmosNodeName}
+              error={!errors.substrateNodeName !== true}
+              value={values.substrateNodeName}
               type="text"
-              name="cosmosNodeName"
-              placeholder="cosmos-node-1"
-              helperText={errors.cosmosNodeName ? errors.cosmosNodeName : ''}
+              name="substrateNodeName"
+              placeholder="polkadot-node-1"
+              helperText={errors.substrateNodeName ? errors.substrateNodeName : ''}
               onChange={handleChange}
               fullWidth
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography> Tendermint RPC URL: </Typography>
+            <Typography> Node WS URL: </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField
-              value={values.tendermintRPCURL}
+              value={values.nodeWSURL}
               type="text"
-              name="tendermintRPCURL"
-              placeholder="http://122.321.32.12:26657"
+              name="nodeWSURL"
+              placeholder="ws://122.321.32.12:9944"
               onChange={handleChange}
               fullWidth
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography> Cosmos SDK RPC URL: </Typography>
+            <Typography> Telemetry URL: </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField
-              value={values.cosmosRPCURL}
+              value={values.telemetryURL}
               type="text"
-              name="cosmosRPCURL"
-              placeholder="http://122.321.32.12:1317"
+              name="telemetryURL"
+              placeholder="http://122.321.32.12:8000"
               onChange={handleChange}
               fullWidth
             />
@@ -95,6 +95,19 @@ const NodesForm = (props) => {
               type="text"
               name="exporterURL"
               placeholder="http://122,.321.32.12:13330"
+              onChange={handleChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={2}>
+            <Typography> Stash Address: </Typography>
+          </Grid>
+          <Grid item xs={10}>
+            <TextField
+              value={values.stashAddress}
+              type="text"
+              name="stashAddress"
+              placeholder="EDDJBTFGdsg0gh8sd0sdfs"
               onChange={handleChange}
               fullWidth
             />
@@ -195,24 +208,24 @@ const NodesForm = (props) => {
               </Box>
             </Grid>
           </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={BACK}
+                navigation={CHAINS_STEP}
+              />
+            </Box>
+          </Grid>
           <Grid item xs={8} />
-          <Grid item xs={4}>
-            <Grid container direction="row" justify="flex-end" alignItems="center">
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={BACK}
-                  navigation={CHAINS_STEP}
-                />
-              </Box>
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={NEXT}
-                  navigation={REPOSITORIES_STEP}
-                />
-              </Box>
-            </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={NEXT}
+                navigation={REPOSITORIES_STEP}
+              />
+            </Box>
           </Grid>
         </Grid>
       </form>
@@ -222,15 +235,16 @@ const NodesForm = (props) => {
 
 NodesForm.propTypes = {
   errors: PropTypes.shape({
-    cosmosNodeName: PropTypes.string,
+    substrateNodeName: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    cosmosNodeName: PropTypes.string.isRequired,
-    tendermintRPCURL: PropTypes.string,
-    cosmosRPCURL: PropTypes.string,
+    substrateNodeName: PropTypes.string.isRequired,
+    nodeWSURL: PropTypes.string,
+    telemetryURL: PropTypes.string,
     prometheusURL: PropTypes.string,
     exporterURL: PropTypes.string,
+    stashAddress: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,
     isArchiveNode: PropTypes.bool.isRequired,

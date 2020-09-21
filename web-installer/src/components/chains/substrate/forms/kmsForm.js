@@ -4,8 +4,10 @@ import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import { NEXT, CHANNELS_STEP, BACK, REPOSITORIES_STEP } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import {
+  NEXT, CHANNELS_STEP, BACK, REPOSITORIES_STEP,
+} from '../../../../constants/constants';
+import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -104,24 +106,24 @@ const KMSForm = (props) => {
               </Box>
             </Grid>
           </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={BACK}
+                navigation={REPOSITORIES_STEP}
+              />
+            </Box>
+          </Grid>
           <Grid item xs={8} />
-          <Grid item xs={4}>
-            <Grid container direction="row" justify="flex-end" alignItems="center">
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={BACK}
-                  navigation={REPOSITORIES_STEP}
-                />
-              </Box>
-              <Box px={2}>
-                <StepButtonContainer
-                  disabled={false}
-                  text={NEXT}
-                  navigation={CHANNELS_STEP}
-                />
-              </Box>
-            </Grid>
+          <Grid item xs={2}>
+            <Box px={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={NEXT}
+                navigation={CHANNELS_STEP}
+              />
+            </Box>
           </Grid>
         </Grid>
       </form>

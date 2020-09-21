@@ -40,209 +40,219 @@ const ChannelsTable = (props) => {
 
   return (
     <Grid container className={classes.root} spacing={2}>
-      <Grid item xs={4}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item>
-            <Paper className={classes.paper}>
-              <Typography>
-                Telegram
-              </Typography>
-              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
-                <List>
-                  {telegrams.map((telegram) => (
-                    <ListItem key={telegram.botName}>
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={config.telegrams.includes(telegram.botName)}
-                            onClick={() => {
-                              if (config.telegrams.includes(telegram.botName)) {
-                                removeTelegramDetails(telegram.botName);
-                              } else {
-                                addTelegramDetails(telegram.botName);
-                              }
-                            }}
-                            name="telegrams"
-                            color="primary"
-                          />
-                        )}
-                        label={telegram.botName}
-                        labelPlacement="start"
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </Paper>
+      {telegrams.length !== 0 && (
+        <Grid item xs={4}>
+          <Grid container justify="center" spacing={3}>
+            <Grid item>
+              <Paper className={classes.paper}>
+                <Typography>
+                  Telegram
+                </Typography>
+                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                  <List>
+                    {telegrams.map((telegram) => (
+                      <ListItem key={telegram.botName}>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={config.telegrams.includes(telegram.botName)}
+                              onClick={() => {
+                                if (config.telegrams.includes(telegram.botName)) {
+                                  removeTelegramDetails(telegram.botName);
+                                } else {
+                                  addTelegramDetails(telegram.botName);
+                                }
+                              }}
+                              name="telegrams"
+                              color="primary"
+                            />
+                          )}
+                          label={telegram.botName}
+                          labelPlacement="start"
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      <Grid item xs={4}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item>
-            <Paper className={classes.paper}>
-              <Typography>
-                Twilio
-              </Typography>
-              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
-                <List>
-                  {twilios.map((twilio) => (
-                    <ListItem key={twilio.configName}>
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={config.twilios.includes(twilio.configName)}
-                            onClick={() => {
-                              if (config.twilios.includes(twilio.configName)) {
-                                removeTwilioDetails(twilio.configName);
-                              } else {
-                                addTwilioDetails(twilio.configName);
-                              }
-                            }}
-                            name="twilios"
-                            color="primary"
-                          />
-                        )}
-                        label={twilio.configName}
-                        labelPlacement="start"
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </Paper>
+      )}
+      {twilios.length !== 0 && (
+        <Grid item xs={4}>
+          <Grid container justify="center" spacing={3}>
+            <Grid item>
+              <Paper className={classes.paper}>
+                <Typography>
+                  Twilio
+                </Typography>
+                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                  <List>
+                    {twilios.map((twilio) => (
+                      <ListItem key={twilio.configName}>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={config.twilios.includes(twilio.configName)}
+                              onClick={() => {
+                                if (config.twilios.includes(twilio.configName)) {
+                                  removeTwilioDetails(twilio.configName);
+                                } else {
+                                  addTwilioDetails(twilio.configName);
+                                }
+                              }}
+                              name="twilios"
+                              color="primary"
+                            />
+                            )}
+                          label={twilio.configName}
+                          labelPlacement="start"
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      <Grid item xs={4}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item>
-            <Paper className={classes.paper}>
-              <Typography>
-                Email
-              </Typography>
-              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
-                <List>
-                  {emails.map((email) => (
-                    <ListItem key={email.configName}>
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={config.emails.includes(email.configName)}
-                            onClick={() => {
-                              if (config.emails.includes(email.configName)) {
-                                removeEmailDetails(email.configName);
-                              } else {
-                                addEmailDetails(email.configName);
-                              }
-                            }}
-                            name="emails"
-                            color="primary"
-                          />
-                        )}
-                        label={email.configName}
-                        labelPlacement="start"
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </Paper>
+      )}
+      {emails.length !== 0 && (
+        <Grid item xs={4}>
+          <Grid container justify="center" spacing={3}>
+            <Grid item>
+              <Paper className={classes.paper}>
+                <Typography>
+                  Email
+                </Typography>
+                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                  <List>
+                    {emails.map((email) => (
+                      <ListItem key={email.configName}>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={config.emails.includes(email.configName)}
+                              onClick={() => {
+                                if (config.emails.includes(email.configName)) {
+                                  removeEmailDetails(email.configName);
+                                } else {
+                                  addEmailDetails(email.configName);
+                                }
+                              }}
+                              name="emails"
+                              color="primary"
+                            />
+                          )}
+                          label={email.configName}
+                          labelPlacement="start"
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      <Grid item xs={4}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item>
-            <Paper className={classes.paper}>
-              <Typography>
-                PagerDuty
-              </Typography>
-              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
-                <List>
-                  {pagerduties.map((pagerduty) => (
-                    <ListItem key={pagerduty.configName}>
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={config.pagerduties.includes(pagerduty.configName)}
-                            onClick={() => {
-                              if (config.pagerduties.includes(pagerduty.configName)) {
-                                removePagerDutyDetails(pagerduty.configName);
-                              } else {
-                                addPagerDutyDetails(pagerduty.configName);
-                              }
-                            }}
-                            name="pagerduties"
-                            color="primary"
-                          />
-                        )}
-                        label={pagerduty.configName}
-                        labelPlacement="start"
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </Paper>
+      )}
+      {pagerduties.length !== 0 && (
+        <Grid item xs={4}>
+          <Grid container justify="center" spacing={3}>
+            <Grid item>
+              <Paper className={classes.paper}>
+                <Typography>
+                  PagerDuty
+                </Typography>
+                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                  <List>
+                    {pagerduties.map((pagerduty) => (
+                      <ListItem key={pagerduty.configName}>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={config.pagerduties.includes(pagerduty.configName)}
+                              onClick={() => {
+                                if (config.pagerduties.includes(pagerduty.configName)) {
+                                  removePagerDutyDetails(pagerduty.configName);
+                                } else {
+                                  addPagerDutyDetails(pagerduty.configName);
+                                }
+                              }}
+                              name="pagerduties"
+                              color="primary"
+                            />
+                          )}
+                          label={pagerduty.configName}
+                          labelPlacement="start"
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      <Grid item xs={4}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item>
-            <Paper className={classes.paper}>
-              <Typography>
-                OpsGenie
-              </Typography>
-              <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
-                <List>
-                  {opsgenies.map((opsgenie) => (
-                    <ListItem key={opsgenie.configName}>
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={config.opsgenies.includes(opsgenie.configName)}
-                            onClick={() => {
-                              if (config.opsgenies.includes(opsgenie.configName)) {
-                                removeOpsGenieDetails(opsgenie.configName);
-                              } else {
-                                addOpsGenieDetails(opsgenie.configName);
-                              }
-                            }}
-                            name="opsgenies"
-                            color="primary"
-                          />
-                        )}
-                        label={opsgenie.configName}
-                        labelPlacement="start"
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            </Paper>
+      )}
+      {opsgenies.length !== 0 && (
+        <Grid item xs={4}>
+          <Grid container justify="center" spacing={3}>
+            <Grid item>
+              <Paper className={classes.paper}>
+                <Typography>
+                  OpsGenie
+                </Typography>
+                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                  <List>
+                    {opsgenies.map((opsgenie) => (
+                      <ListItem key={opsgenie.configName}>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={config.opsgenies.includes(opsgenie.configName)}
+                              onClick={() => {
+                                if (config.opsgenies.includes(opsgenie.configName)) {
+                                  removeOpsGenieDetails(opsgenie.configName);
+                                } else {
+                                  addOpsGenieDetails(opsgenie.configName);
+                                }
+                              }}
+                              name="opsgenies"
+                              color="primary"
+                            />
+                          )}
+                          label={opsgenie.configName}
+                          labelPlacement="start"
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
+      )}
+      <Grid item xs={2}>
+        <Box px={2}>
+          <StepButtonContainer
+            disabled={false}
+            text={BACK}
+            navigation={KMS_STEP}
+          />
+        </Box>
       </Grid>
       <Grid item xs={8} />
-      <Grid item xs={4}>
-        <Grid container direction="row" justify="flex-end" alignItems="center">
-          <Box px={2}>
-            <StepButtonContainer
-              disabled={false}
-              text={BACK}
-              navigation={KMS_STEP}
-            />
-          </Box>
-          <Box px={2}>
-            <StepButtonContainer
-              disabled={false}
-              text={NEXT}
-              navigation={ALERTS_STEP}
-            />
-          </Box>
-        </Grid>
+      <Grid item xs={2}>
+        <Box px={2}>
+          <StepButtonContainer
+            disabled={false}
+            text={NEXT}
+            navigation={ALERTS_STEP}
+          />
+        </Box>
       </Grid>
     </Grid>
   );

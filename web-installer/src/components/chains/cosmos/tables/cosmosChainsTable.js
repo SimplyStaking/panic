@@ -78,7 +78,6 @@ const CosmosChainsTable = (props) => {
 };
 
 CosmosChainsTable.propTypes = {
-  pageChanger: PropTypes.func.isRequired,
   // loadConfigDetails: PropTypes.func.isRequired,
   removeConfigDetails: PropTypes.func.isRequired,
 };

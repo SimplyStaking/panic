@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const NodeSchema = (props) => Yup.object().shape({
-  cosmosNodeName: Yup.string()
+  substrateNodeName: Yup.string()
     .test(
       'unique-node-name',
       'Node name is not unique.',
