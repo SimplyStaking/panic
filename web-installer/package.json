@@ -13,7 +13,9 @@
     "airbnb-prop-types": "^2.16.0",
     "axios": "^0.20.0",
     "formik": "^2.1.5",
+    "lodash": "^4.17.20",
     "mdbreact": "^4.27.0",
+    "node-uuid": "^1.4.8",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -22,6 +24,7 @@
     "react-scripts": "3.4.3",
     "react-toasts": "^3.0.6",
     "redux": "^4.0.5",
+    "uuid": "^8.3.0",
     "yup": "^0.29.3"
   },
   "scripts": {

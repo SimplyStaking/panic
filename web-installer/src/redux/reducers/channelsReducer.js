@@ -1,23 +1,43 @@
 import {
-  ADD_TELEGRAM,
-  REMOVE_TELEGRAM,
-  ADD_TWILIO,
-  REMOVE_TWILIO,
-  ADD_EMAIL,
-  REMOVE_EMAIL,
-  ADD_PAGERDUTY,
-  REMOVE_PAGERDUTY,
-  ADD_OPSGENIE,
-  REMOVE_OPSGENIE,
+  ADD_TELEGRAM, REMOVE_TELEGRAM, ADD_TWILIO, REMOVE_TWILIO, ADD_EMAIL,
+  REMOVE_EMAIL, ADD_PAGERDUTY, REMOVE_PAGERDUTY, ADD_OPSGENIE, REMOVE_OPSGENIE,
 } from '../actions/types';
 
 const initialstate = {
+  // telegramz: {
+  //   byId: {},
+  //   allIds: [],
+  // },
   telegrams: [],
   twilios: [],
   emails: [],
   pagerDuties: [],
   opsGenies: [],
 };
+
+// function telegramsById(state = {}, action) {
+//   switch (action.type) {
+//     case ADD_TELEGRAM:
+//       return {
+//         ...state,
+//         [action.payload.id]: action.payload,
+//       };
+//     default:
+//       return state;
+//   }
+// }
+
+// function allTelegrams(state = [], action) {
+//   switch (action.type) {
+//     case ADD_TELEGRAM:
+//       return [
+//         ...state,
+//         action.payload.id,
+//       ];
+//     default:
+//       return state;
+//   }
+// }
 
 function channelsReducer(state = initialstate, action) {
   switch (action.type) {

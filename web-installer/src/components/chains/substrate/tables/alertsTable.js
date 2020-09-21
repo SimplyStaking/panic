@@ -327,12 +327,12 @@ const AlertsTable = (props) => {
                       <Select
                         labelId="severity"
                         id="severity-selection"
-                        value={config.alerts.severties[alert].severtiy}
+                        value={config.alerts.severties[alert].severity}
                         onChange={(event) => {
                           updateAlertSeverityLevelSubstrate(
                             {
                               alertID: alert,
-                              severtiy: event.target.value,
+                              severity: event.target.value,
                             },
                           );
                         }}

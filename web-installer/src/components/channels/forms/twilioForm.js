@@ -42,7 +42,7 @@ const TwilioForm = (props) => {
     setFieldValue,
   } = props;
 
-  const updateTwilioNumbers = (phoneNums) => {
+  const updateTwilioNumbers = (events, phoneNums) => {
     setFieldValue('twilioPhoneNumbersToDialValid', phoneNums);
   };
 

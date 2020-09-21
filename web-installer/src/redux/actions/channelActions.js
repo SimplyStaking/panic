@@ -3,10 +3,23 @@ import {
   REMOVE_EMAIL, ADD_PAGERDUTY, REMOVE_PAGERDUTY, ADD_OPSGENIE, REMOVE_OPSGENIE,
 } from './types';
 
+const { v4: uuidv4 } = require('uuid');
+
 export function addTelegram(payload) {
   return {
     type: ADD_TELEGRAM,
-    payload,
+    payload: {
+      id: uuidv4(),
+      botName: payload.botName,
+      botToken: payload.botToken,
+      chatID: payload.chatID,
+      info: payload.info,
+      warning: payload.warning,
+      critical: payload.critical,
+      error: payload.error,
+      alerts: payload.alerts,
+      commands: payload.commands,
+    },
   };
 }
 
