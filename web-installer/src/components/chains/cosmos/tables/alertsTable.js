@@ -303,7 +303,7 @@ const AlertsTable = (props) => {
           <Table aria-label="simple table">
             <TableHead>
               <TableRow>
-                <TableCell>Alert</TableCell>
+                <TableCell align="center">Alert</TableCell>
                 <TableCell align="center">Severity</TableCell>
                 <TableCell align="center">Enabled</TableCell>
               </TableRow>
@@ -360,25 +360,27 @@ const AlertsTable = (props) => {
           </Table>
         </TableContainer>
       </Box>
-      <Grid item xs={2}>
-        <Box px={2}>
-          <StepButtonContainer
-            disabled={false}
-            text={BACK}
-            navigation={CHANNELS_STEP}
-          />
-        </Box>
-      </Grid>
-      <Grid item xs={8} />
-      <Grid item xs={2}>
-        <Box px={2}>
-          <NavigationButton
-            disabled={false}
-            nextPage={nextPage}
-            buttonText={DONE}
-            navigation={CHAINS_PAGE}
-          />
-        </Box>
+      <Grid container spacing={2}>
+        <Grid item xs={2}>
+          <Box px={2}>
+            <StepButtonContainer
+              disabled={false}
+              text={BACK}
+              navigation={CHANNELS_STEP}
+            />
+          </Box>
+        </Grid>
+        <Grid item xs={8} />
+        <Grid item xs={2}>
+          <Box px={2}>
+            <NavigationButton
+              disabled={false}
+              nextPage={nextPage}
+              buttonText={DONE}
+              navigation={CHAINS_PAGE}
+            />
+          </Box>
+        </Grid>
       </Grid>
     </div>
   );
