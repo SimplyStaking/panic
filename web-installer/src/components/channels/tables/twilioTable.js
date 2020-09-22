@@ -9,7 +9,6 @@ import Paper from '@material-ui/core/Paper';
 import CancelIcon from '@material-ui/icons/Cancel';
 
 const TwilioTable = (props) => {
-
   const {
     twilios,
     removeTwilioDetails,

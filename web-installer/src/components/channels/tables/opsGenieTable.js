@@ -10,7 +10,6 @@ import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
 const OpsGenieTable = (props) => {
-
   const {
     opsGenies,
     removeOpsGenieDetails,
