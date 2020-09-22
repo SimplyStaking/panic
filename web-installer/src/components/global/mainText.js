@@ -1,20 +1,14 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from 'react'
 import Box from '@material-ui/core/Box';
 
-function MainText(props) {
-  const { text } = props;
-  return (
-    <Box p={5} className="greyBackground">
-      <p style={{ textAlign: 'justify' }}>
-        {text}
-      </p>
-    </Box>
-  );
+function MainText( props ) {
+    return (
+        <Box p={5} className="greyBackground">
+            <p style={{textAlign:"justify"}}>
+                {props.text}
+            </p>
+        </Box>
+    )
 }
-
-MainText.propTypes = {
-  text: PropTypes.string.isRequired,
-};
 
 export default MainText;

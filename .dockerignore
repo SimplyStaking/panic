@@ -1,0 +1,5 @@
+./config
+./logs
+./certificates
+./web-installer/node_modules
+./web-installer/build

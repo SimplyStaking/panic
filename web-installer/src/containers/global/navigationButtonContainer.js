@@ -1,49 +1,42 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
-import { changePage } from '../../redux/actions/pageActions';
-import NavigationButton from '../../components/global/navigationButton';
+import React, { Component } from 'react'
+import { connect } from "react-redux";
+
+import { changePage } from "../../redux/actions/pageActions";
+import NavigationButton from "../../components/global/navigationButton";
 
 class NavigationButtonContainer extends Component {
-  constructor(props) {
-    super(props);
-    this.nextPage = this.nextPage.bind(this);
-  }
 
-  nextPage(page) {
-    const { pageChanger } = this.props;
-    // Change the upcoming page information
-    pageChanger({ page });
-  }
+    constructor(props) {
+        super(props);
+        this.nextPage = this.nextPage.bind(this);
+    }
 
-  render() {
-    const { text, navigation } = this.props;
+    nextPage( page ){
+        // Change the upcoming page information
+        this.props.changePage({ page });
+    }
 
-    return (
-      <NavigationButton
-        disabled={false}
-        nextPage={this.nextPage}
-        buttonText={text}
-        navigation={navigation}
-      />
-    );
-  }
+    render() {
+        return (
+            <NavigationButton 
+                nextPage={this.nextPage}
+                buttonText={this.props.text}
+                navigation={this.props.navigation}
+            />
+        )
+    }
 }
 
-const mapStateToProps = (state) => ({
-  page: state.ChangePageReducer.page,
-});
+const mapStateToProps = state => {
+    return { 
+        page: state.ChangePageReducer.page,
+    };
+};
 
 function mapDispatchToProps(dispatch) {
-  return {
-    pageChanger: (page) => dispatch(changePage(page)),
-  };
+    return {
+        changePage: page => dispatch(changePage(page))
+    }
 }
-
-NavigationButtonContainer.propTypes = {
-  pageChanger: PropTypes.func.isRequired,
-  text: PropTypes.string.isRequired,
-  navigation: PropTypes.string.isRequired,
-};
 
 export default connect(mapStateToProps, mapDispatchToProps)(NavigationButtonContainer);

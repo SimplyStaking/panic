@@ -1,13 +1,4 @@
-import { createStore } from 'redux';
-import rootReducer from '../reducers';
-// import { loadState, saveState } from './localStorage';
+import { createStore } from "redux";
+import rootReducer from "../reducers";
 
-// const persistedState = loadState();
-
-const store = createStore(rootReducer);
-
-// store.subscribe(() => {
-//   saveState(store.getState());
-// });
-
-export default store;
+export default createStore(rootReducer);
