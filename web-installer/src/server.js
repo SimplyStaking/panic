@@ -239,7 +239,10 @@ app.post('/server/login', async (req, res) => {
       await saveRefreshTokenToDB(username, refreshToken);
       res.status(utils.SUCCESS_STATUS)
         .cookie('authCookie', accessToken, {
-          secure: true, httpOnly: true, sameSite: true,
+          secure: true,
+          httpOnly: true,
+          sameSite: true,
+          maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
         }).send(utils.resultJson(msg.message));
     } catch (err) {
       // Inform the user of any error that occurs
@@ -269,10 +272,9 @@ app.post('/server/refresh', async (req, res) => {
   let payload;
   try {
     // Use the jwt.verify method to verify that the access token has a valid
-    // signature. It throws an error if the token has an invalid signature.
-    payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, {
-      ignoreExpiration: true,
-    });
+    // signature and not expired, it throws an error otherwise. This is done
+    // so that no one can issue new tokens with stolen.
+    payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
   } catch (err) {
     console.log(err);
     // If an error occurs send an unauthorized error
@@ -320,7 +322,10 @@ app.post('/server/refresh', async (req, res) => {
       });
     res.status(utils.SUCCESS_STATUS)
       .cookie('authCookie', newAccessToken, {
-        secure: true, httpOnly: true, sameSite: true,
+        secure: true,
+        httpOnly: true,
+        sameSite: true,
+        maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
       }).send(utils.resultJson(msg.message));
   } catch (err) {
     // Inform the user of any error that occurs
