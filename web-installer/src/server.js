@@ -238,8 +238,9 @@ app.post('/server/login', async (req, res) => {
     try {
       await saveRefreshTokenToDB(username, refreshToken);
       res.status(utils.SUCCESS_STATUS)
-        .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
-        .send(utils.resultJson(msg.message));
+        .cookie('authCookie', accessToken, {
+          secure: true, httpOnly: true, sameSite: true,
+        }).send(utils.resultJson(msg.message));
     } catch (err) {
       // Inform the user of any error that occurs
       res.status(err.code).send(utils.errorJson(err.message));
@@ -318,8 +319,9 @@ app.post('/server/refresh', async (req, res) => {
         expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
       });
     res.status(utils.SUCCESS_STATUS)
-      .cookie('authCookie', newAccessToken, { secure: true, httpOnly: true })
-      .send(utils.resultJson(msg.message));
+      .cookie('authCookie', newAccessToken, {
+        secure: true, httpOnly: true, sameSite: true,
+      }).send(utils.resultJson(msg.message));
   } catch (err) {
     // Inform the user of any error that occurs
     console.log(err);
