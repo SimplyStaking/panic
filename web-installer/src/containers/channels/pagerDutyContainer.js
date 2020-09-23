@@ -38,7 +38,7 @@ const Form = withFormik({
 })(PagerDutyForm);
 
 const mapStateToProps = (state) => ({
-  pagerDuties: state.ChannelsReducer.pagerDuties,
+  pagerDuties: state.PagerDutyReducer,
 });
 
 function mapDispatchToProps(dispatch) {

@@ -3,9 +3,9 @@ import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
+import LoginContainer from '../../containers/welcome/loginContainer';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
 import { CHANNELS_PAGE, START } from '../../constants/constants';
-import LoginContainer from '../../containers/welcome/loginContainer';
 import Data from '../../data/welcome';
 
 const useStyles = makeStyles((theme) => ({

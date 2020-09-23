@@ -7,7 +7,7 @@ import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { makeStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { TestCallButton } from '../../../utils/buttons/channelsButtons';
+import { TestCallButton } from '../../../utils/buttons';
 import Data from '../../../data/channels';
 
 const defaultTheme = createMuiTheme();

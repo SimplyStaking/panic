@@ -15,7 +15,7 @@ const PagerDutyTable = (props) => {
     removePagerDutyDetails,
   } = props;
 
-  if (pagerDuties.length === 0) {
+  if (pagerDuties.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -34,27 +34,27 @@ const PagerDutyTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {pagerDuties.map((pagerDuty) => (
-            <TableRow key={pagerDuty.configName}>
-              <TableCell component="th" scope="row">
-                {pagerDuty.configName}
+          {Object.keys(pagerDuties.byId).map((pagerDuty) => (
+            <TableRow key={pagerDuties.byId[pagerDuty].id}>
+              <TableCell align="center" component="th" scope="row">
+                {pagerDuties.byId[pagerDuty].configName}
               </TableCell>
-              <TableCell align="center">{pagerDuty.apiToken}</TableCell>
-              <TableCell align="center">{pagerDuty.integrationKey}</TableCell>
+              <TableCell align="center">{pagerDuties.byId[pagerDuty].apiToken}</TableCell>
+              <TableCell align="center">{pagerDuties.byId[pagerDuty].integrationKey}</TableCell>
               <TableCell align="center">
-                {pagerDuty.info ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuty.warning ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {pagerDuty.critical ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].warning ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {pagerDuty.error ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].critical ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removePagerDutyDetails(pagerDuty); }}>
+                {pagerDuties.byId[pagerDuty].error ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => { removePagerDutyDetails(pagerDuties.byId[pagerDuty]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -67,15 +67,19 @@ const PagerDutyTable = (props) => {
 };
 
 PagerDutyTable.propTypes = forbidExtraProps({
-  pagerDuties: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    apiToken: PropTypes.string.isRequired,
-    integrationKey: PropTypes.string.isRequired,
-    info: PropTypes.bool.isRequired,
-    warning: PropTypes.bool.isRequired,
-    critical: PropTypes.bool.isRequired,
-    error: PropTypes.bool.isRequired,
-  })).isRequired,
+  pagerDuties: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      configName: PropTypes.string.isRequired,
+      apiToken: PropTypes.string.isRequired,
+      integrationKey: PropTypes.string.isRequired,
+      info: PropTypes.bool.isRequired,
+      warning: PropTypes.bool.isRequired,
+      critical: PropTypes.bool.isRequired,
+      error: PropTypes.bool.isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
 });
 

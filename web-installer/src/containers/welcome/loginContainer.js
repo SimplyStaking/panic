@@ -2,6 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import LoginForm from '../../components/welcome/loginForm';
 import { login } from '../../redux/actions/loginActions';
+import { changePage } from '../../redux/actions/pageActions';
 import LoginSchema from './loginSchema';
 
 const Form = withFormik({
@@ -27,11 +28,13 @@ const Form = withFormik({
 
 const mapStateToProps = (state) => ({
   users: state.UsersReducer.users,
+  page: state.ChangePageReducer.page,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     loginDetails: (details) => dispatch(login(details)),
+    pageChanger: (page) => dispatch(changePage(page)),
   };
 }
 

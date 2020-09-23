@@ -1,7 +1,10 @@
 import { combineReducers } from 'redux';
 import ChangePageReducer from './pageChange';
 import ChangeStepReducer from './stepChange';
-import ChannelsReducer from './channelsReducer';
+import {
+  TelegramsReducer, TwiliosReducer, EmailsReducer, PagerDutyReducer,
+  OpsGenieReducer,
+} from './channelsReducer';
 import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
 import GeneralReducer from './generalReducer';
@@ -11,7 +14,11 @@ import LoginReducer from './loginReducer';
 export default combineReducers({
   ChangePageReducer,
   ChangeStepReducer,
-  ChannelsReducer,
+  TelegramsReducer,
+  TwiliosReducer,
+  EmailsReducer,
+  PagerDutyReducer,
+  OpsGenieReducer,
   CosmosChainsReducer,
   SubstrateChainsReducer,
   GeneralReducer,

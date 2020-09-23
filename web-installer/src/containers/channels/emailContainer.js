@@ -47,7 +47,7 @@ const Form = withFormik({
 })(EmailForm);
 
 const mapStateToProps = (state) => ({
-  emails: state.ChannelsReducer.emails,
+  emails: state.EmailsReducer,
 });
 
 function mapDispatchToProps(dispatch) {

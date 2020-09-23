@@ -51,7 +51,6 @@ app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-
 // This function confirms that the authentication of the installer are in the
 // .env file.
 function checkInstAuthCredentials() {
@@ -419,7 +418,6 @@ app.post('/server/database/drop', verify, async (req, res) => {
   }
 });
 
-
 // ---------------------------------------- Configs
 
 // This endpoint returns the configs. It infers the config path automatically
@@ -770,4 +768,4 @@ const port = process.env.INSTALLER_PORT || 8000;
   const server = https.createServer(httpsOptions, app);
   // Listen for requests
   server.listen(port, () => console.log('Listening on %s', port));
-})().catch(err => console.log(err));
+})().catch((err) => console.log(err));

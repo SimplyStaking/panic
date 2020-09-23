@@ -35,7 +35,7 @@ const Form = withFormik({
 })(OpsGenieForm);
 
 const mapStateToProps = (state) => ({
-  opsGenies: state.ChannelsReducer.opsGenies,
+  opsGenies: state.OpsGenieReducer,
 });
 
 function mapDispatchToProps(dispatch) {

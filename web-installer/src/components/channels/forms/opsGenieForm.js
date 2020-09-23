@@ -6,7 +6,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { makeStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
-import { SendTestOpsGenieButton } from '../../../utils/buttons/channelsButtons';
+import { SendTestOpsGenieButton } from '../../../utils/buttons';
 import Data from '../../../data/channels';
 
 const defaultTheme = createMuiTheme();

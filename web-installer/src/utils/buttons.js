@@ -3,7 +3,10 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 import { ToastsStore } from 'react-toasts';
-import { fetchData, testCall, sendTestEmail } from '../data';
+import {
+  authenticate, fetchData, sendTestEmail, testCall, pingRepo,
+} from './data';
+import sleep from './time';
 
 function SendTestEmailButton({
   disabled, to, smtp, from, user, pass,
@@ -144,6 +147,72 @@ function SendTestAlertButton({ disabled, botChatID, botToken }) {
   );
 }
 
+function PingRepoButton({ disabled, repo }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with repo ${repo}`, 5000);
+      // Remove last '/' to connect with https://api.github.com/repos/repoPage`.
+      await pingRepo(`https://api.github.com/repos/${
+        repo.substring(0, repo.length - 1)
+      }`);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(`Could not connect with repo ${repo}. Error: ${
+          e.response.data.message}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not connect with repo ${repo}. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
+  return (
+    <Button className="button-style2" disabled={disabled} onClick={onClick}>
+      Connect with repo
+    </Button>
+  );
+}
+
+function LoginButton({
+  username, password, disabled, setAuthentication, handleSetCredentialsValid,
+  handleSetValidated,
+}) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info('Authenticating...', 2000);
+      await authenticate(username, password);
+      handleSetCredentialsValid(true);
+      await sleep(2000);
+      ToastsStore.success('Authentication successful', 2000);
+      setAuthentication(true);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Authentication failed. Error: ${e.response.data.error}`, 5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Authentication failed. Error: ${e.message}`, 5000);
+      }
+      handleSetCredentialsValid(false);
+    }
+    handleSetValidated(true);
+  };
+  return (
+    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
+      <Box px={2}>
+        Login
+      </Box>
+    </Button>
+  );
+}
+
 SendTestOpsGenieButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   apiToken: PropTypes.string.isRequired,
@@ -180,7 +249,22 @@ SendTestAlertButton.propTypes = forbidExtraProps({
   botChatID: PropTypes.string.isRequired,
 });
 
+LoginButton.propTypes = forbidExtraProps({
+  username: PropTypes.string.isRequired,
+  password: PropTypes.string.isRequired,
+  disabled: PropTypes.bool.isRequired,
+  setAuthentication: PropTypes.func.isRequired,
+  handleSetCredentialsValid: PropTypes.func.isRequired,
+  handleSetValidated: PropTypes.func.isRequired,
+});
+
+PingRepoButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  repo: PropTypes.string.isRequired,
+});
+
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
-  SendTestPagerDutyButton, SendTestOpsGenieButton,
+  SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
+  PingRepoButton,
 };

@@ -16,7 +16,7 @@ const TelegramTable = (props) => {
     removeTelegramDetails,
   } = props;
 
-  if (telegrams.length === 0) {
+  if (telegrams.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -38,33 +38,33 @@ const TelegramTable = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {telegrams.map((telegram) => (
-              <TableRow key={telegram.botName}>
+            {Object.keys(telegrams.byId).map((telegram) => (
+              <TableRow key={telegrams.byId[telegram].id}>
                 <TableCell align="center" component="th" scope="row">
-                  {telegram.botName}
+                  {telegrams.byId[telegram].botName}
                 </TableCell>
-                <TableCell align="center">{telegram.botToken}</TableCell>
-                <TableCell align="center">{telegram.chatID}</TableCell>
+                <TableCell align="center">{telegrams.byId[telegram].botToken}</TableCell>
+                <TableCell align="center">{telegrams.byId[telegram].chatID}</TableCell>
                 <TableCell align="center">
-                  {telegram.info ? <CheckIcon /> : <ClearIcon />}
-                </TableCell>
-                <TableCell align="center">
-                  {telegram.warning ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].info ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegram.critical ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].warning ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegram.error ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].critical ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegram.alerts ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].error ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegram.commands ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].alerts ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  <Button onClick={() => { removeTelegramDetails(telegram); }}>
+                  {telegrams.byId[telegram].commands ? <CheckIcon /> : <ClearIcon />}
+                </TableCell>
+                <TableCell align="center">
+                  <Button onClick={() => { removeTelegramDetails(telegrams.byId[telegram]); }}>
                     <CancelIcon />
                   </Button>
                 </TableCell>
@@ -78,17 +78,21 @@ const TelegramTable = (props) => {
 };
 
 TelegramTable.propTypes = forbidExtraProps({
-  telegrams: PropTypes.arrayOf(PropTypes.shape({
-    botName: PropTypes.string.isRequired,
-    botToken: PropTypes.string.isRequired,
-    chatID: PropTypes.string.isRequired,
-    info: PropTypes.bool.isRequired,
-    warning: PropTypes.bool.isRequired,
-    critical: PropTypes.bool.isRequired,
-    error: PropTypes.bool.isRequired,
-    alerts: PropTypes.bool.isRequired,
-    commands: PropTypes.bool.isRequired,
-  })).isRequired,
+  telegrams: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      botName: PropTypes.string.isRequired,
+      botToken: PropTypes.string.isRequired,
+      chatID: PropTypes.string.isRequired,
+      info: PropTypes.bool.isRequired,
+      warning: PropTypes.bool.isRequired,
+      critical: PropTypes.bool.isRequired,
+      error: PropTypes.bool.isRequired,
+      alerts: PropTypes.bool.isRequired,
+      commands: PropTypes.bool.isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
 });
 

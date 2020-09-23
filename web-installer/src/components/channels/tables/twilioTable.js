@@ -14,7 +14,7 @@ const TwilioTable = (props) => {
     removeTwilioDetails,
   } = props;
 
-  if (twilios.length === 0) {
+  if (twilios.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -31,18 +31,18 @@ const TwilioTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {twilios.map((twilio) => (
-            <TableRow key={twilio.configName}>
+          {Object.keys(twilios.byId).map((twilio) => (
+            <TableRow key={twilios.byId[twilio].id}>
               <TableCell component="th" scope="row">
-                {twilio.configName}
+                {twilios.byId[twilio].configName}
               </TableCell>
-              <TableCell align="center">{twilio.accountSid}</TableCell>
-              <TableCell align="center">{twilio.authToken}</TableCell>
-              <TableCell align="center">{twilio.twilioPhoneNo}</TableCell>
+              <TableCell align="center">{twilios.byId[twilio].accountSid}</TableCell>
+              <TableCell align="center">{twilios.byId[twilio].authToken}</TableCell>
+              <TableCell align="center">{twilios.byId[twilio].twilioPhoneNo}</TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {twilio.twilioPhoneNumbersToDialValid.map((number) => (
+                    {twilios.byId[twilio].twilioPhoneNumbersToDialValid.map((number) => (
                       <ListItem key={number}>
                         { number }
                       </ListItem>
@@ -51,7 +51,7 @@ const TwilioTable = (props) => {
                 </div>
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeTwilioDetails(twilio); }}>
+                <Button onClick={() => { removeTwilioDetails(twilios.byId[twilio]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -64,15 +64,19 @@ const TwilioTable = (props) => {
 };
 
 TwilioTable.propTypes = forbidExtraProps({
-  twilios: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    accountSid: PropTypes.string.isRequired,
-    authToken: PropTypes.string.isRequired,
-    twilioPhoneNo: PropTypes.string.isRequired,
-    twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
-      PropTypes.string.isRequired,
-    ).isRequired,
-  })).isRequired,
+  twilios: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      configName: PropTypes.string.isRequired,
+      accountSid: PropTypes.string.isRequired,
+      authToken: PropTypes.string.isRequired,
+      twilioPhoneNo: PropTypes.string.isRequired,
+      twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+        PropTypes.string.isRequired,
+      ).isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
 });
 

@@ -15,7 +15,7 @@ const OpsGenieTable = (props) => {
     removeOpsGenieDetails,
   } = props;
 
-  if (opsGenies.length === 0) {
+  if (opsGenies.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -33,26 +33,26 @@ const OpsGenieTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {opsGenies.map((opsGenie) => (
-            <TableRow key={opsGenie.configName}>
-              <TableCell component="th" scope="row">
-                {opsGenie.configName}
+          {Object.keys(opsGenies.byId).map((opsgenie) => (
+            <TableRow key={opsGenies.byId[opsgenie].id}>
+              <TableCell align="center" component="th" scope="row">
+                {opsGenies.byId[opsgenie].configName}
               </TableCell>
-              <TableCell align="center">{opsGenie.apiToken}</TableCell>
+              <TableCell align="center">{opsGenies.byId[opsgenie].apiToken}</TableCell>
               <TableCell align="center">
-                {opsGenie.info ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenie.warning ? <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {opsGenie.critical ? <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].warning ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {opsGenie.error ? <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].critical ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeOpsGenieDetails(opsGenie); }}>
+                {opsGenies.byId[opsgenie].error ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => { removeOpsGenieDetails(opsGenies.byId[opsgenie]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -65,14 +65,18 @@ const OpsGenieTable = (props) => {
 };
 
 OpsGenieTable.propTypes = forbidExtraProps({
-  opsGenies: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    apiToken: PropTypes.string.isRequired,
-    info: PropTypes.bool.isRequired,
-    warning: PropTypes.bool.isRequired,
-    critical: PropTypes.bool.isRequired,
-    error: PropTypes.bool.isRequired,
-  })).isRequired,
+  opsGenies: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      configName: PropTypes.string.isRequired,
+      apiToken: PropTypes.string.isRequired,
+      info: PropTypes.bool.isRequired,
+      warning: PropTypes.bool.isRequired,
+      critical: PropTypes.bool.isRequired,
+      error: PropTypes.bool.isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
 });
 

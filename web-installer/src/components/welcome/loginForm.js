@@ -1,9 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField, Button, Box, Typography, Grid,
+  TextField, Box, Typography, Grid,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import { LoginButton } from '../../utils/buttons';
+import { CHANNELS_PAGE } from '../../constants/constants';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -21,7 +23,27 @@ const LoginForm = (props) => {
     values,
     handleSubmit,
     handleChange,
+    pageChanger,
   } = props;
+
+  function setAuthentication(authenticated) {
+    if (authenticated === true) {
+      pageChanger({ page: CHANNELS_PAGE });
+    }
+  }
+
+  /*
+    @Dylan these are imported from older PANIC version,
+    I'm not sure what they were used for but I do not believe
+    they are currently needed.
+  */
+  function handleSetCredentialsValid(setCredentials) {
+    console.log(setCredentials);
+  }
+
+  function handleSetValidated(setValidated) {
+    console.log(setValidated);
+  }
 
   return (
     <div>
@@ -57,20 +79,19 @@ const LoginForm = (props) => {
               fullWidth
             />
           </Grid>
+          <Grid item xs={12} />
           <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>
-                <Button
-                  variant="outlined"
-                  size="large"
+                <LoginButton
+                  username={values.username}
+                  password={values.password}
                   disabled={!(Object.keys(errors).length === 0)}
-                  type="submit"
-                >
-                  <Box px={2}>
-                    Login
-                  </Box>
-                </Button>
+                  setAuthentication={setAuthentication}
+                  handleSetCredentialsValid={handleSetCredentialsValid}
+                  handleSetValidated={handleSetValidated}
+                />
               </Box>
             </Grid>
           </Grid>
@@ -91,6 +112,7 @@ LoginForm.propTypes = {
     password: PropTypes.string.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
+  pageChanger: PropTypes.func.isRequired,
 };
 
 export default LoginForm;

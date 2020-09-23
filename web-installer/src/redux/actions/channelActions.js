@@ -33,7 +33,14 @@ export function removeTelegram(payload) {
 export function addTwilio(payload) {
   return {
     type: ADD_TWILIO,
-    payload,
+    payload: {
+      id: uuidv4(),
+      configName: payload.configName,
+      accountSid: payload.accountSid,
+      authToken: payload.authToken,
+      twilioPhoneNo: payload.twilioPhoneNo,
+      twilioPhoneNumbersToDialValid: payload.twilioPhoneNumbersToDialValid,
+    },
   };
 }
 
@@ -47,7 +54,19 @@ export function removeTwilio(payload) {
 export function addEmail(payload) {
   return {
     type: ADD_EMAIL,
-    payload,
+    payload: {
+      id: uuidv4(),
+      configName: payload.configName,
+      smtp: payload.smtp,
+      emailFrom: payload.emailFrom,
+      emailsTo: payload.emailsTo,
+      username: payload.username,
+      password: payload.password,
+      info: payload.info,
+      warning: payload.warning,
+      critical: payload.critical,
+      error: payload.error,
+    },
   };
 }
 
@@ -61,7 +80,16 @@ export function removeEmail(payload) {
 export function addPagerDuty(payload) {
   return {
     type: ADD_PAGERDUTY,
-    payload,
+    payload: {
+      id: uuidv4(),
+      configName: payload.configName,
+      apiToken: payload.apiToken,
+      integrationKey: payload.integrationKey,
+      info: payload.info,
+      warning: payload.warning,
+      critical: payload.critical,
+      error: payload.error,
+    },
   };
 }
 
@@ -75,7 +103,15 @@ export function removePagerDuty(payload) {
 export function addOpsGenie(payload) {
   return {
     type: ADD_OPSGENIE,
-    payload,
+    payload: {
+      id: uuidv4(),
+      configName: payload.configName,
+      apiToken: payload.apiToken,
+      info: payload.info,
+      warning: payload.warning,
+      critical: payload.critical,
+      error: payload.error,
+    },
   };
 }
 

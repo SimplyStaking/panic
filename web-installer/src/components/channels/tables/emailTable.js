@@ -16,7 +16,7 @@ const EmailTable = (props) => {
     removeEmailDetails,
   } = props;
 
-  if (emails.length === 0) {
+  if (emails.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -24,7 +24,7 @@ const EmailTable = (props) => {
       <Table className="greyBackground" aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell align="center"> Email Name</TableCell>
+            <TableCell align="center">Email Name</TableCell>
             <TableCell align="center">SMTP</TableCell>
             <TableCell align="center">Email From</TableCell>
             <TableCell align="center">Email To</TableCell>
@@ -38,17 +38,17 @@ const EmailTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {emails.map((email) => (
-            <TableRow key={email.configName}>
+          {Object.keys(emails.byId).map((email) => (
+            <TableRow key={emails.byId[email].id}>
               <TableCell component="th" scope="row">
-                {email.configName}
+                {emails.byId[email].configName}
               </TableCell>
-              <TableCell align="center">{email.smtp}</TableCell>
-              <TableCell align="center">{email.emailFrom}</TableCell>
+              <TableCell align="center">{emails.byId[email].smtp}</TableCell>
+              <TableCell align="center">{emails.byId[email].emailFrom}</TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {email.emailsTo.map((to) => (
+                    {emails.byId[email].emailsTo.map((to) => (
                       <ListItem key={to}>
                         { to }
                       </ListItem>
@@ -56,22 +56,22 @@ const EmailTable = (props) => {
                   </List>
                 </div>
               </TableCell>
-              <TableCell align="center">{email.username}</TableCell>
-              <TableCell align="center">{email.password}</TableCell>
+              <TableCell align="center">{emails.byId[email].username}</TableCell>
+              <TableCell align="center">{emails.byId[email].password}</TableCell>
               <TableCell align="center">
-                {email.info ? <CheckIcon /> : <ClearIcon />}
+                {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {email.warning ? <CheckIcon /> : <ClearIcon />}
+                {emails.byId[email].warning ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {email.critical ? <CheckIcon /> : <ClearIcon />}
+                {emails.byId[email].critical ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {email.error ? <CheckIcon /> : <ClearIcon />}
+                {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeEmailDetails(email); }}>
+                <Button onClick={() => { removeEmailDetails(emails.byId[email]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -84,18 +84,21 @@ const EmailTable = (props) => {
 };
 
 EmailTable.propTypes = forbidExtraProps({
-  emails: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    smtp: PropTypes.string.isRequired,
-    emailFrom: PropTypes.string.isRequired,
-    emailsTo: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    username: PropTypes.string.isRequired,
-    password: PropTypes.string.isRequired,
-    info: PropTypes.bool.isRequired,
-    warning: PropTypes.bool.isRequired,
-    critical: PropTypes.bool.isRequired,
-    error: PropTypes.bool.isRequired,
-  })).isRequired,
+  emails: PropTypes.shape({
+    byId: PropTypes.shape({
+      configName: PropTypes.string.isRequired,
+      smtp: PropTypes.string.isRequired,
+      emailFrom: PropTypes.string.isRequired,
+      emailsTo: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+      username: PropTypes.string.isRequired,
+      password: PropTypes.string.isRequired,
+      info: PropTypes.bool.isRequired,
+      warning: PropTypes.bool.isRequired,
+      critical: PropTypes.bool.isRequired,
+      error: PropTypes.bool.isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeEmailDetails: PropTypes.func.isRequired,
 });
 

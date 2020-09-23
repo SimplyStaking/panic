@@ -36,7 +36,7 @@ const Form = withFormik({
 })(TwilioForm);
 
 const mapStateToProps = (state) => ({
-  twilios: state.ChannelsReducer.twilios,
+  twilios: state.TwiliosReducer,
 });
 
 function mapDispatchToProps(dispatch) {

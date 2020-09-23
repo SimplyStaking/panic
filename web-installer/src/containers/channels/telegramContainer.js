@@ -42,7 +42,7 @@ const Form = withFormik({
 })(TelegramForm);
 
 const mapStateToProps = (state) => ({
-  telegrams: state.ChannelsReducer.telegrams,
+  telegrams: state.TelegramsReducer,
 });
 
 function mapDispatchToProps(dispatch) {
