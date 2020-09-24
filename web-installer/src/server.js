@@ -619,7 +619,7 @@ app.post('/server/email/test', verify, async (req, res) => {
     if (err) {
       console.log(err);
       const error = new errors.EmailError(err.message);
-      res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+      res.status(error.code).send(utils.errorJson(error.message));
       return;
     }
 
@@ -636,7 +636,7 @@ app.post('/server/email/test', verify, async (req, res) => {
       if (err2) {
         console.log(err2);
         const error = new errors.EmailError(err2.message);
-        res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+        res.status(error.code).send(utils.errorJson(error.message));
         return;
       }
       console.debug(info);

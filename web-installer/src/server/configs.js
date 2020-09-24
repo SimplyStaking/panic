@@ -60,9 +60,7 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
 
 // Get the config file location. This function expects the full config path
 function getConfigLocation(configPath) {
-  const pathArr = configPath.split('\\').filter(val => val !== '');
-  pathArr.pop();
-  return path.join(...pathArr);
+  return configPath.replace(/[^\/]*$/, '');
 }
 
 // This function returns true if 'file' is expected in the inferred location
@@ -122,3 +120,8 @@ module.exports = {
     });
   },
 };
+
+// TODO: Wait for writing to be succesfull, therefore ins erver make async await
+//       and give more meaningful messages .. need to also do try catch
+//     : Make sure that if './config' does not exist the function works (Start from here tomorrow)
+//     : Check if folder exists before writing
