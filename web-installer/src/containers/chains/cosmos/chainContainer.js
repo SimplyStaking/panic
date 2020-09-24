@@ -1,7 +1,10 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChainForm from '../../../components/chains/cosmos/forms/chainForm';
-import { addChainCosmos } from '../../../redux/actions/cosmosChainsActions';
+import {
+  addChainCosmos, updateChainCosmos, resetCurrentChainId,
+} from '../../../redux/actions/cosmosChainsActions';
+import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import ChainSchema from './schemas/chainSchema';
 
 const Form = withFormik({
@@ -12,23 +15,24 @@ const Form = withFormik({
     chainName: '',
   }),
   validationSchema: (props) => ChainSchema(props),
-  handleSubmit: (values, { props }) => {
-    const { saveChainDetails } = props;
-    const payload = {
-      chainName: values.chainName,
-    };
-    saveChainDetails(payload);
-  },
 })(ChainForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
-  config: state.CosmosChainsReducer.config,
+  step: state.ChangeStepReducer.step,
+  config: state.CosmosChainsReducer,
+  currentChain: state.CurrentCosmosChain,
 });
 
+// step and page changers are used diretly in this form instead of their
+// respective button containers as extra functionality is needed for the
+// onSubmit events.
 function mapDispatchToProps(dispatch) {
   return {
     saveChainDetails: (details) => dispatch(addChainCosmos(details)),
+    updateChainDetails: (details) => dispatch(updateChainCosmos(details)),
+    clearChainId: () => dispatch(resetCurrentChainId()),
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
   };
 }
 

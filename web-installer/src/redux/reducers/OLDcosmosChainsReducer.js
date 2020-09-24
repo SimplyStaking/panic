@@ -1,5 +1,8 @@
-import _ from 'lodash';
-import { combineReducers } from 'redux';
+/*
+  Reference to understand this reducer code
+  https://redux.js.org/recipes/structuring-reducers/refactoring-reducer-example
+*/
+
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, ADD_REPOSITORY_COSMOS, REMOVE_NODE_COSMOS,
   REMOVE_REPOSITORY_COSMOS, ADD_KMS_COSMOS, REMOVE_KMS_COSMOS, SET_ALERTS_COSMOS,
@@ -20,301 +23,261 @@ import {
 
 import { INFO, WARNING, CRITICAL } from '../../constants/constants';
 
-// const initialstate = {
-//   cosmosConfigs: [],
-//   config: {
-//     chainName: '',
-//     nodes: [],
-//     repositories: [],
-//     kmses: [],
-//     channels: [],
-//     telegrams: [],
-//     emails: [],
-//     opsgenies: [],
-//     pagerduties: [],
-//     twilios: [],
-//     alerts: {
-//       thresholds: {
-//         alert1: {
-//           name: 'Cannot access validator',
-//           warning: {
-//             delay: 60,
-//             repeat: 0,
-//             enabled: true,
-//           },
-//           critical: {
-//             delay: 60,
-//             repeat: 300,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert2: {
-//           name: 'Cannot access node',
-//           warning: {
-//             delay: 60,
-//             repeat: 300,
-//             enabled: true,
-//           },
-//           critical: {
-//             delay: 120,
-//             repeat: 300,
-//             enabled: false,
-//           },
-//           enabled: true,
-//         },
-//         alert3: {
-//           name: 'Lost connection with specific peer',
-//           warning: {
-//             delay: 60,
-//             enabled: true,
-//           },
-//           critical: {
-//             delay: 120,
-//             enabled: false,
-//           },
-//           enabled: true,
-//         },
-//         alert4: {
-//           name: 'Peer count decreased',
-//           warning: {
-//             threshold: 3,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 2,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert5: {
-//           name: 'Missed Blocks',
-//           warning: {
-//             threshold: 20,
-//             timewindow: 360,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 100,
-//             timewindow: 3600,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert6: {
-//           name: 'No change in block height',
-//           warning: {
-//             threshold: 180,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 300,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert7: {
-//           name: 'Time of last pre-commit/pre-vote activity is above threshold',
-//           warning: {
-//             threshold: 60,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 180,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert8: {
-//           name: 'Mempool Size',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert9: {
-//           name: 'System CPU usage increased',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert10: {
-//           name: 'System storage usage increased',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert11: {
-//           name: 'System RAM usage increased',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert12: {
-//           name: 'System network usage increased',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//         alert13: {
-//           name: 'Open File Descriptors increased',
-//           warning: {
-//             threshold: 85,
-//             enabled: true,
-//           },
-//           critical: {
-//             threshold: 95,
-//             enabled: true,
-//           },
-//           enabled: true,
-//         },
-//       },
-//       severties: {
-//         alert1: {
-//           name: 'Validator inaccessible on startup',
-//           severity: CRITICAL,
-//           enabled: true,
-//         },
-//         alert2: {
-//           name: 'Node inaccessible on startup',
-//           severity: WARNING,
-//           enabled: true,
-//         },
-//         alert3: {
-//           name: 'Slashed',
-//           severity: CRITICAL,
-//           enabled: true,
-//         },
-//         alert4: {
-//           name: 'Node is syncing',
-//           severity: WARNING,
-//           enabled: true,
-//         },
-//         alert5: {
-//           name: 'Validator is not active in this session',
-//           severity: WARNING,
-//           enabled: true,
-//         },
-//         alert6: {
-//           name: 'Validator set size increased',
-//           severity: INFO,
-//           enabled: true,
-//         },
-//         alert7: {
-//           name: 'Validator set size decreased',
-//           severity: INFO,
-//           enabled: true,
-//         },
-//         alert8: {
-//           name: 'Validator is jailed',
-//           severity: CRITICAL,
-//           enabled: true,
-//         },
-//         alert9: {
-//           name: 'Voting power increased',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//         alert10: {
-//           name: 'Validator power decreased',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//         alert11: {
-//           name: 'New proposal submitted',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//         alert12: {
-//           name: 'Proposal conducted',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//         alert13: {
-//           name: 'Delegated balance increase',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//         alert14: {
-//           name: 'Delegated balance decrease',
-//           severity: INFO,
-//           enabled: false,
-//         },
-//       },
-//     },
-//   },
-// };
-
-// Substrate and Cosmos nodes could be grouped up together, but I think it's
-// better to keep them seperate and therefore more manageable. This is because
-// unlike KMS/Github they have different keys.
-
-// Reducers to add and remove cosmos node configurations from global state
-function nodesById(state = {}, action) {
-  switch (action.type) {
-    case ADD_NODE_COSMOS:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case REMOVE_NODE_COSMOS:
-      return _.omit(state, action.payload.id);
-    default:
-      return state;
-  }
-}
-
-// Reducers to add and remove from list of all cosmos nodes
-function allNodes(state = [], action) {
-  switch (action.type) {
-    case ADD_NODE_COSMOS:
-      return state.concat(action.payload.id);
-    case REMOVE_NODE_COSMOS:
-      return state.filter((config) => config !== action.payload.id);
-    default:
-      return state;
-  }
-}
-
-const CosmosNodesReducer = combineReducers({
-  byId: nodesById,
-  allIds: allNodes,
-});
-
-export {
-  CosmosNodesReducer,
+const initialstate = {
+  cosmosConfigs: [],
+  config: {
+    chainName: '',
+    nodes: [],
+    repositories: [],
+    kmses: [],
+    channels: [],
+    telegrams: [],
+    emails: [],
+    opsgenies: [],
+    pagerduties: [],
+    twilios: [],
+    alerts: {
+      thresholds: {
+        alert1: {
+          name: 'Cannot access validator',
+          warning: {
+            delay: 60,
+            repeat: 0,
+            enabled: true,
+          },
+          critical: {
+            delay: 60,
+            repeat: 300,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert2: {
+          name: 'Cannot access node',
+          warning: {
+            delay: 60,
+            repeat: 300,
+            enabled: true,
+          },
+          critical: {
+            delay: 120,
+            repeat: 300,
+            enabled: false,
+          },
+          enabled: true,
+        },
+        alert3: {
+          name: 'Lost connection with specific peer',
+          warning: {
+            delay: 60,
+            enabled: true,
+          },
+          critical: {
+            delay: 120,
+            enabled: false,
+          },
+          enabled: true,
+        },
+        alert4: {
+          name: 'Peer count decreased',
+          warning: {
+            threshold: 3,
+            enabled: true,
+          },
+          critical: {
+            threshold: 2,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert5: {
+          name: 'Missed Blocks',
+          warning: {
+            threshold: 20,
+            timewindow: 360,
+            enabled: true,
+          },
+          critical: {
+            threshold: 100,
+            timewindow: 3600,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert6: {
+          name: 'No change in block height',
+          warning: {
+            threshold: 180,
+            enabled: true,
+          },
+          critical: {
+            threshold: 300,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert7: {
+          name: 'Time of last pre-commit/pre-vote activity is above threshold',
+          warning: {
+            threshold: 60,
+            enabled: true,
+          },
+          critical: {
+            threshold: 180,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert8: {
+          name: 'Mempool Size',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert9: {
+          name: 'System CPU usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert10: {
+          name: 'System storage usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert11: {
+          name: 'System RAM usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert12: {
+          name: 'System network usage increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+        alert13: {
+          name: 'Open File Descriptors increased',
+          warning: {
+            threshold: 85,
+            enabled: true,
+          },
+          critical: {
+            threshold: 95,
+            enabled: true,
+          },
+          enabled: true,
+        },
+      },
+      severties: {
+        alert1: {
+          name: 'Validator inaccessible on startup',
+          severity: CRITICAL,
+          enabled: true,
+        },
+        alert2: {
+          name: 'Node inaccessible on startup',
+          severity: WARNING,
+          enabled: true,
+        },
+        alert3: {
+          name: 'Slashed',
+          severity: CRITICAL,
+          enabled: true,
+        },
+        alert4: {
+          name: 'Node is syncing',
+          severity: WARNING,
+          enabled: true,
+        },
+        alert5: {
+          name: 'Validator is not active in this session',
+          severity: WARNING,
+          enabled: true,
+        },
+        alert6: {
+          name: 'Validator set size increased',
+          severity: INFO,
+          enabled: true,
+        },
+        alert7: {
+          name: 'Validator set size decreased',
+          severity: INFO,
+          enabled: true,
+        },
+        alert8: {
+          name: 'Validator is jailed',
+          severity: CRITICAL,
+          enabled: true,
+        },
+        alert9: {
+          name: 'Voting power increased',
+          severity: INFO,
+          enabled: false,
+        },
+        alert10: {
+          name: 'Validator power decreased',
+          severity: INFO,
+          enabled: false,
+        },
+        alert11: {
+          name: 'New proposal submitted',
+          severity: INFO,
+          enabled: false,
+        },
+        alert12: {
+          name: 'Proposal conducted',
+          severity: INFO,
+          enabled: false,
+        },
+        alert13: {
+          name: 'Delegated balance increase',
+          severity: INFO,
+          enabled: false,
+        },
+        alert14: {
+          name: 'Delegated balance decrease',
+          severity: INFO,
+          enabled: false,
+        },
+      },
+    },
+  },
 };
 
-function cosmosChainsReducer(state = {}, action) {
+function cosmosChainsReducer(state = initialstate, action) {
   switch (action.type) {
     case ADD_CHAIN_COSMOS:
       return {
@@ -322,6 +285,22 @@ function cosmosChainsReducer(state = {}, action) {
         config: {
           ...state.config,
           chainName: action.payload.chainName,
+        },
+      };
+    case ADD_NODE_COSMOS:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          nodes: state.config.nodes.concat(action.payload),
+        },
+      };
+    case REMOVE_NODE_COSMOS:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          nodes: state.config.nodes.filter((node) => node !== action.payload),
         },
       };
     case ADD_REPOSITORY_COSMOS:

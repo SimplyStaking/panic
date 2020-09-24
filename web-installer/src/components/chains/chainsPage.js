@@ -60,9 +60,7 @@ function Chains() {
                 navigation={COSMOS_SETUP_PAGE}
               />
             )}
-            table={(
-              <CosmosChainsTableContainer />
-            )}
+            table={(<CosmosChainsTableContainer />)}
           />
           <ChainAccordion
             icon={SubstrateIcon}

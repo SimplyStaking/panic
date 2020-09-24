@@ -1,16 +1,16 @@
 import { connect } from 'react-redux';
 import CosmosChainsTable from '../../../components/chains/cosmos/tables/cosmosChainsTable';
-import { removeConfigCosmos, loadConfigCosmos } from '../../../redux/actions/cosmosChainsActions';
+import { removeChainCosmos, loadConfigCosmos } from '../../../redux/actions/cosmosChainsActions';
 import { changePage } from '../../../redux/actions/pageActions';
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
+  config: state.CosmosChainsReducer,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     pageChanger: (page) => dispatch(changePage(page)),
-    removeConfigDetails: (details) => dispatch(removeConfigCosmos(details)),
+    removeChainDetails: (details) => dispatch(removeChainCosmos(details)),
     loadConfigDetails: (details) => dispatch(loadConfigCosmos(details)),
   };
 }

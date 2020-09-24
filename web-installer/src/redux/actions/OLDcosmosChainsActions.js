@@ -14,58 +14,12 @@ import {
   UPDATE_CRITICAL_THRESHOLD_COSMOS, UPDATE_CRITICAL_TIMEWINDOW_COSMOS,
   UPDATE_CRITICAL_ENABLED_COSMOS, UPDATE_ALERT_ENABLED_COSMOS,
   UPDATE_ALERT_SEVERTY_LEVEL_COSMOS, UPDATE_ALERT_SEVERTY_ENABLED_COSMOS,
-  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS,
 } from './types';
 
-const { v4: uuidv4 } = require('uuid');
-
-// Only on the creation of a new chain, do you need to assign it
-// a new identifer, from then on you re-used the old one.
 export function addChainCosmos(payload) {
   return {
     type: ADD_CHAIN_COSMOS,
-    payload: {
-      id: uuidv4(),
-      chainName: payload.chainName,
-    },
-  };
-}
-
-// This is used to delete the entire configuration of a setup cosmos chain
-// To be invoked AFTER clearing the actual objects that are referenced in this
-// object.
-export function removeChainCosmos(payload) {
-  return {
-    type: REMOVE_CHAIN_COSMOS,
     payload,
-  };
-}
-
-// @REMOVE Currently edited out, potentially not needed
-
-// This function is used to keep track of which cosmos chain we are currently
-// editing in the multi-step form.
-// export function setCurrentCosmosChain(payload) {
-//   return {
-//     type: SET_CHAIN_COSMOS,
-//     payload,
-//   };
-// }
-
-// This function is used to change the name of the current chain
-export function updateChainCosmos(payload) {
-  return {
-    type: UPDATE_CHAIN_NAME,
-    payload,
-  };
-}
-
-// This action is used to reset the current chain name to nothing
-// most likely this will happen when click back after setting chain name
-// or finishing a configuration setup of a chain
-export function resetCurrentChainId() {
-  return {
-    type: RESET_CHAIN_COSMOS,
   };
 }
 

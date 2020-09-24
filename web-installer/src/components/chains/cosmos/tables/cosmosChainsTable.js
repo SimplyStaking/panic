@@ -21,9 +21,8 @@ const CosmosChainsTable = (props) => {
   const classes = useStyles();
 
   const {
-    cosmosConfigs,
+    config,
     // loadConfigDetails,
-    removeConfigDetails,
   } = props;
 
   // const manageConfiguration = (page, config) => {
@@ -32,7 +31,22 @@ const CosmosChainsTable = (props) => {
   //   loadConfigDetails(config);
   // };
 
-  if (cosmosConfigs.length === 0) {
+  // Function to clear all references, including the referenced objects
+  // from configured object.
+  function clearAllChainDetails(chainID) {
+    const { removeChainDetails } = props;
+    // First remove all the configured nodes
+    // Second remove all the configured githubs
+    // Third remove all the configured kmses
+    // Fourth remove all the configured alerts
+    // Finally remove the object itself.
+    const payload = {
+      id: chainID,
+    };
+    removeChainDetails(payload);
+  }
+
+  if (config.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -46,10 +60,10 @@ const CosmosChainsTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {cosmosConfigs.map((config) => (
-            <TableRow key={config.chainName}>
+          {config.allIds.map((id) => (
+            <TableRow key={id}>
               <TableCell component="th" scope="row">
-                {config.chainName}
+                {config.byId[id].chainName}
               </TableCell>
               {/* <TableCell component="th" scope="row">
                 <Box px={2}>
@@ -63,7 +77,7 @@ const CosmosChainsTable = (props) => {
               </TableCell> */}
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeConfigDetails(config);
+                  clearAllChainDetails(id);
                 }}
                 >
                   <CancelIcon />
@@ -79,7 +93,14 @@ const CosmosChainsTable = (props) => {
 
 CosmosChainsTable.propTypes = {
   // loadConfigDetails: PropTypes.func.isRequired,
-  removeConfigDetails: PropTypes.func.isRequired,
+  removeChainDetails: PropTypes.func.isRequired,
+  config: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      chainName: PropTypes.string.isRequired,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  }).isRequired,
 };
 
 export default CosmosChainsTable;

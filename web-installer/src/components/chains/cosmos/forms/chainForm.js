@@ -9,8 +9,7 @@ import { makeStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/
 import {
   NEXT, NODES_STEP, BACK, CHAINS_PAGE,
 } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
-import NavigationButtonContainer from '../../../../containers/global/navigationButtonContainer';
+import NavigationButton from '../../../global/navigationButton';
 import Data from '../../../../data/chains';
 
 const defaultTheme = createMuiTheme();
@@ -39,10 +38,47 @@ const ChainNameForm = (props) => {
 
   const {
     errors,
-    handleSubmit,
     handleChange,
     values,
   } = props;
+
+  // NextStep function will save the chain name, step changer
+  function nextStep(step) {
+    const {
+      stepChanger, saveChainDetails, currentChain, updateChainDetails,
+    } = props;
+    // If there is a current chain assigned already, overwrite the value
+    // Otherwise add a new chain name.
+    if (currentChain) {
+      // Create a payload with the old ID but new chain name
+      const payload = {
+        id: currentChain,
+        chainName: values.chainName,
+      };
+      // Update the global State
+      updateChainDetails(payload);
+    } else {
+      // Create a payload with a new chain name, the unique ID will be set in
+      // the action.
+      const payload = {
+        chainName: values.chainName,
+      };
+      // Update the global state
+      saveChainDetails(payload);
+    }
+    // Update the step in the form which is being shown
+    stepChanger({ step });
+  }
+
+  // Next page is infact returning back to the Chains Setings Page
+  // but keeping the name the same for consistency
+  function nextPage(page) {
+    const { pageChanger, clearChainId } = props;
+    // Clear the current chain, id we are working on.
+    clearChainId();
+    // Change page
+    pageChanger({ page });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -54,7 +90,7 @@ const ChainNameForm = (props) => {
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onChange={handleSubmit} className={classes.root}>
+          <form onSubmit={(e) => { e.preventDefault(); }} className={classes.root}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> Chain Name: </Typography>
@@ -82,8 +118,10 @@ const ChainNameForm = (props) => {
               </Grid>
               <Grid item xs={2}>
                 <Box px={2}>
-                  <NavigationButtonContainer
-                    text={BACK}
+                  <NavigationButton
+                    disabled={false}
+                    nextPage={nextPage}
+                    buttonText={BACK}
                     navigation={CHAINS_PAGE}
                   />
                 </Box>
@@ -91,9 +129,10 @@ const ChainNameForm = (props) => {
               <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
-                  <StepButtonContainer
+                  <NavigationButton
                     disabled={!(Object.keys(errors).length === 0)}
-                    text={NEXT}
+                    nextPage={nextStep}
+                    buttonText={NEXT}
                     navigation={NODES_STEP}
                   />
                 </Box>
@@ -110,11 +149,16 @@ ChainNameForm.propTypes = {
   errors: PropTypes.shape({
     chainName: PropTypes.string,
   }).isRequired,
-  handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     chainName: PropTypes.string.isRequired,
   }).isRequired,
+  currentChain: PropTypes.string.isRequired,
+  saveChainDetails: PropTypes.func.isRequired,
+  stepChanger: PropTypes.func.isRequired,
+  updateChainDetails: PropTypes.func.isRequired,
   handleChange: PropTypes.func.isRequired,
+  pageChanger: PropTypes.func.isRequired,
+  clearChainId: PropTypes.func.isRequired,
 };
 
 export default ChainNameForm;

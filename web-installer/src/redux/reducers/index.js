@@ -5,9 +5,10 @@ import {
   TelegramsReducer, TwiliosReducer, EmailsReducer, PagerDutyReducer,
   OpsGenieReducer,
 } from './channelsReducer';
-import CosmosChainsReducer from './cosmosChainsReducer';
+// import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
 import { RepositoryReducer, SystemsReducer, periodicReducer } from './generalReducer';
+import { CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain } from './cosmosChainsReducer';
 import UsersReducer from './usersReducer';
 import LoginReducer from './loginReducer';
 
@@ -19,7 +20,9 @@ export default combineReducers({
   EmailsReducer,
   PagerDutyReducer,
   OpsGenieReducer,
+  CosmosNodesReducer,
   CosmosChainsReducer,
+  CurrentCosmosChain,
   SubstrateChainsReducer,
   RepositoryReducer,
   SystemsReducer,
