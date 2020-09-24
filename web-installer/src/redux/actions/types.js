@@ -100,12 +100,14 @@ export const UPDATE_ALERT_ENABLED_SUBSTRATE = 'UPDATE_ALERT_ENABLED_SUBSTRATE';
 export const UPDATE_ALERT_SEVERTY_LEVEL_SUBSTRATE = 'UPDATE_ALERT_SEVERTY_LEVEL_SUBSTRATE';
 export const UPDATE_ALERT_SEVERTY_ENABLED_SUBSTRATE = 'UPDATE_ALERT_SEVERTY_ENABLED_SUBSTRATE';
 
-// General page
+// General aka not chain specific actions
 export const UPDATE_PERIODIC = 'UPDATE_PERIODIC';
 export const ADD_REPOSITORY = 'ADD_REPOSITORY';
 export const ADD_SYSTEM = 'ADD_SYSTEM';
 export const REMOVE_REPOSITORY = 'REMOVE_REPOSITORY';
 export const REMOVE_SYSTEM = 'REMOVE_SYSTEM';
+export const ADD_KMS = 'ADD_KMS';
+export const REMOVE_KMS = 'REMOVE_KMS';
 
 // Users Page, containing only actions to set and remove users
 export const ADD_USER = 'ADD_USER';

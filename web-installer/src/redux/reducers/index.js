@@ -7,7 +7,7 @@ import {
 } from './channelsReducer';
 import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
-import GeneralReducer from './generalReducer';
+import { RepositoryReducer, SystemsReducer, periodicReducer } from './generalReducer';
 import UsersReducer from './usersReducer';
 import LoginReducer from './loginReducer';
 
@@ -21,7 +21,9 @@ export default combineReducers({
   OpsGenieReducer,
   CosmosChainsReducer,
   SubstrateChainsReducer,
-  GeneralReducer,
+  RepositoryReducer,
+  SystemsReducer,
+  periodicReducer,
   UsersReducer,
   LoginReducer,
 });
