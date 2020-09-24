@@ -20,7 +20,8 @@ const ChannelsTable = (props) => {
   const classes = useStyles();
 
   const {
-    config,
+    chainConfig,
+    currentChain,
     telegrams,
     opsgenies,
     emails,
@@ -40,7 +41,7 @@ const ChannelsTable = (props) => {
 
   return (
     <Grid container className={classes.root} spacing={2}>
-      {telegrams.length !== 0 && (
+      {telegrams.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
@@ -50,24 +51,28 @@ const ChannelsTable = (props) => {
                 </Typography>
                 <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
                   <List>
-                    {telegrams.map((telegram) => (
-                      <ListItem key={telegram.botName}>
+                    {telegrams.allIds.map((id) => (
+                      <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={config.telegrams.includes(telegram.botName)}
+                              checked={chainConfig.byId[currentChain].telegrams.includes(id)}
                               onClick={() => {
-                                if (config.telegrams.includes(telegram.botName)) {
-                                  removeTelegramDetails(telegram.botName);
+                                const payload = {
+                                  id,
+                                  parentId: currentChain,
+                                };
+                                if (chainConfig.byId[currentChain].telegrams.includes(id)) {
+                                  removeTelegramDetails(payload);
                                 } else {
-                                  addTelegramDetails(telegram.botName);
+                                  addTelegramDetails(payload);
                                 }
                               }}
                               name="telegrams"
                               color="primary"
                             />
                           )}
-                          label={telegram.botName}
+                          label={telegrams.byId[id].botName}
                           labelPlacement="start"
                         />
                       </ListItem>
@@ -79,7 +84,7 @@ const ChannelsTable = (props) => {
           </Grid>
         </Grid>
       )}
-      {twilios.length !== 0 && (
+      {twilios.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
@@ -89,24 +94,28 @@ const ChannelsTable = (props) => {
                 </Typography>
                 <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
                   <List>
-                    {twilios.map((twilio) => (
-                      <ListItem key={twilio.configName}>
+                    {twilios.allIds.map((id) => (
+                      <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={config.twilios.includes(twilio.configName)}
+                              checked={chainConfig.byId[currentChain].twilios.includes(id)}
                               onClick={() => {
-                                if (config.twilios.includes(twilio.configName)) {
-                                  removeTwilioDetails(twilio.configName);
+                                const payload = {
+                                  id,
+                                  parentId: currentChain,
+                                };
+                                if (chainConfig.byId[currentChain].twilios.includes(id)) {
+                                  removeTwilioDetails(payload);
                                 } else {
-                                  addTwilioDetails(twilio.configName);
+                                  addTwilioDetails(payload);
                                 }
                               }}
                               name="twilios"
                               color="primary"
                             />
                           )}
-                          label={twilio.configName}
+                          label={twilios.byId[id].configName}
                           labelPlacement="start"
                         />
                       </ListItem>
@@ -118,7 +127,7 @@ const ChannelsTable = (props) => {
           </Grid>
         </Grid>
       )}
-      {emails.length !== 0 && (
+      {emails.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
@@ -128,24 +137,28 @@ const ChannelsTable = (props) => {
                 </Typography>
                 <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
                   <List>
-                    {emails.map((email) => (
-                      <ListItem key={email.configName}>
+                    {emails.allIds.map((id) => (
+                      <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={config.emails.includes(email.configName)}
+                              checked={chainConfig.byId[currentChain].emails.includes(id)}
                               onClick={() => {
-                                if (config.emails.includes(email.configName)) {
-                                  removeEmailDetails(email.configName);
+                                const payload = {
+                                  id,
+                                  parentId: currentChain,
+                                };
+                                if (chainConfig.byId[currentChain].emails.includes(id)) {
+                                  removeEmailDetails(payload);
                                 } else {
-                                  addEmailDetails(email.configName);
+                                  addEmailDetails(payload);
                                 }
                               }}
                               name="emails"
                               color="primary"
                             />
                           )}
-                          label={email.configName}
+                          label={emails.byId[id].configName}
                           labelPlacement="start"
                         />
                       </ListItem>
@@ -157,7 +170,7 @@ const ChannelsTable = (props) => {
           </Grid>
         </Grid>
       )}
-      {pagerduties.length !== 0 && (
+      {pagerduties.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
@@ -167,24 +180,28 @@ const ChannelsTable = (props) => {
                 </Typography>
                 <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
                   <List>
-                    {pagerduties.map((pagerduty) => (
-                      <ListItem key={pagerduty.configName}>
+                    {pagerduties.allIds.map((id) => (
+                      <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={config.pagerduties.includes(pagerduty.configName)}
+                              checked={chainConfig.byId[currentChain].pagerduties.includes(id)}
                               onClick={() => {
-                                if (config.pagerduties.includes(pagerduty.configName)) {
-                                  removePagerDutyDetails(pagerduty.configName);
+                                const payload = {
+                                  id,
+                                  parentId: currentChain,
+                                };
+                                if (chainConfig.byId[currentChain].pagerduties.includes(id)) {
+                                  removePagerDutyDetails(payload);
                                 } else {
-                                  addPagerDutyDetails(pagerduty.configName);
+                                  addPagerDutyDetails(payload);
                                 }
                               }}
                               name="pagerduties"
                               color="primary"
                             />
                           )}
-                          label={pagerduty.configName}
+                          label={pagerduties.byId[id].configName}
                           labelPlacement="start"
                         />
                       </ListItem>
@@ -196,7 +213,7 @@ const ChannelsTable = (props) => {
           </Grid>
         </Grid>
       )}
-      {opsgenies.length !== 0 && (
+      {opsgenies.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
@@ -206,24 +223,28 @@ const ChannelsTable = (props) => {
                 </Typography>
                 <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
                   <List>
-                    {opsgenies.map((opsgenie) => (
-                      <ListItem key={opsgenie.configName}>
+                    {opsgenies.allIds.map((id) => (
+                      <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={config.opsgenies.includes(opsgenie.configName)}
+                              checked={chainConfig.byId[currentChain].opsgenies.includes(id)}
                               onClick={() => {
-                                if (config.opsgenies.includes(opsgenie.configName)) {
-                                  removeOpsGenieDetails(opsgenie.configName);
+                                const payload = {
+                                  id,
+                                  parentId: currentChain,
+                                };
+                                if (chainConfig.byId[currentChain].opsgenies.includes(id)) {
+                                  removeOpsGenieDetails(payload);
                                 } else {
-                                  addOpsGenieDetails(opsgenie.configName);
+                                  addOpsGenieDetails(payload);
                                 }
                               }}
                               name="opsgenies"
                               color="primary"
                             />
                           )}
-                          label={opsgenie.configName}
+                          label={opsgenies.byId[id].configName}
                           labelPlacement="start"
                         />
                       </ListItem>
@@ -260,27 +281,50 @@ const ChannelsTable = (props) => {
 };
 
 ChannelsTable.propTypes = {
-  telegrams: PropTypes.arrayOf(PropTypes.shape({
-    botName: PropTypes.string.isRequired,
-  })).isRequired,
-  twilios: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-  })).isRequired,
-  emails: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-  })).isRequired,
-  pagerduties: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-  })).isRequired,
-  opsgenies: PropTypes.arrayOf(PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-  })).isRequired,
-  config: PropTypes.shape({
-    telegrams: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    twilios: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    emails: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    pagerduties: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    opsgenies: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  telegrams: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      botName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  twilios: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      configName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  emails: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      configName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  pagerduties: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      configName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  opsgenies: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      configName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  chainConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      telegrams: PropTypes.arrayOf(PropTypes.string),
+      twilios: PropTypes.arrayOf(PropTypes.string),
+      emails: PropTypes.arrayOf(PropTypes.string),
+      pagerduties: PropTypes.arrayOf(PropTypes.string),
+      opsgenies: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
   }).isRequired,
   addTelegramDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
@@ -292,6 +336,7 @@ ChannelsTable.propTypes = {
   removePagerDutyDetails: PropTypes.func.isRequired,
   addOpsGenieDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 };
 
 export default ChannelsTable;

@@ -92,15 +92,15 @@ const CosmosChainsTable = (props) => {
 };
 
 CosmosChainsTable.propTypes = {
-  // loadConfigDetails: PropTypes.func.isRequired,
-  removeChainDetails: PropTypes.func.isRequired,
   config: PropTypes.shape({
     byId: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      chainName: PropTypes.string.isRequired,
+      id: PropTypes.string,
+      chainName: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
+  removeChainDetails: PropTypes.func.isRequired,
+  // loadConfigDetails: PropTypes.func.isRequired,
 };
 
 export default CosmosChainsTable;

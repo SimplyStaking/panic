@@ -2,12 +2,10 @@ import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, ADD_REPOSITORY_COSMOS, REMOVE_NODE_COSMOS,
   REMOVE_REPOSITORY_COSMOS, ADD_KMS_COSMOS, REMOVE_KMS_COSMOS, SET_ALERTS_COSMOS,
   ADD_CONFIG_COSMOS, REMOVE_CONFIG_COSMOS, RESET_CONFIG_COSMOS,
-  LOAD_CONFIG_COSMOS, ADD_TELEGRAM_CHANNEL_COSMOS,
-  REMOVE_TELEGRAM_CHANNEL_COSMOS, ADD_TWILIO_CHANNEL_COSMOS,
-  REMOVE_TWILIO_CHANNEL_COSMOS, ADD_EMAIL_CHANNEL_COSMOS,
-  REMOVE_EMAIL_CHANNEL_COSMOS, ADD_PAGERDUTY_CHANNEL_COSMOS,
-  REMOVE_PAGERDUTY_CHANNEL_COSMOS, ADD_OPSGENIE_CHANNEL_COSMOS,
-  REMOVE_OPSGENIE_CHANNEL_COSMOS, UPDATE_WARNING_DELAY_COSMOS,
+  LOAD_CONFIG_COSMOS, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
+  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL,
+  REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
+  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, UPDATE_WARNING_DELAY_COSMOS,
   UPDATE_WARNING_REPEAT_COSMOS, UPDATE_WARNING_THRESHOLD_COSMOS,
   UPDATE_WARNING_TIMEWINDOW_COSMOS, UPDATE_WARNING_ENABLED_COSMOS,
   UPDATE_CRITICAL_DELAY_COSMOS, UPDATE_CRITICAL_REPEAT_COSMOS,
@@ -21,12 +19,23 @@ const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
 // a new identifer, from then on you re-used the old one.
+// When creating a new chain, we must add empty lists as we need to intialize
+// the key/value pairs beforehand.
 export function addChainCosmos(payload) {
   return {
     type: ADD_CHAIN_COSMOS,
     payload: {
       id: uuidv4(),
       chainName: payload.chainName,
+      nodes: [],
+      kmses: [],
+      repositories: [],
+      alerts: [],
+      telegrams: [],
+      twilios: [],
+      emails: [],
+      pagerduties: [],
+      opsgenies: [],
     },
   };
 }
@@ -69,13 +78,28 @@ export function resetCurrentChainId() {
   };
 }
 
+// Action to add a cosmos node to a configuration, payload is intercepted,
+// and a unqiue id is generated for it.
 export function addNodeCosmos(payload) {
   return {
     type: ADD_NODE_COSMOS,
-    payload,
+    payload: {
+      id: uuidv4(),
+      parentId: payload.parentId,
+      cosmosNodeName: payload.cosmosNodeName,
+      tendermintRPCURL: payload.tendermintRPCURL,
+      cosmosRPCURL: payload.cosmosRPCURL,
+      prometheusURL: payload.prometheusURL,
+      exporterURL: payload.exporterURL,
+      isValidator: payload.isValidator,
+      monitorNode: payload.monitorNode,
+      isArchiveNode: payload.isArchiveNode,
+      useAsDataSource: payload.useAsDataSource,
+    },
   };
 }
 
+// Action to remove a cosmos node from the current configuration
 export function removeNodeCosmos(payload) {
   return {
     type: REMOVE_NODE_COSMOS,
@@ -83,6 +107,7 @@ export function removeNodeCosmos(payload) {
   };
 }
 
+// @REMOVE remove the 4 functions underneath, these are now general
 export function addRepositoryCosmos(payload) {
   return {
     type: ADD_REPOSITORY_COSMOS,
@@ -144,72 +169,72 @@ export function loadConfigCosmos(payload) {
   };
 }
 
-export function addTelegramChannelCosmos(payload) {
+export function addTelegramChannel(payload) {
   return {
-    type: ADD_TELEGRAM_CHANNEL_COSMOS,
+    type: ADD_TELEGRAM_CHANNEL,
     payload,
   };
 }
 
-export function removeTelegramChannelCosmos(payload) {
+export function removeTelegramChannel(payload) {
   return {
-    type: REMOVE_TELEGRAM_CHANNEL_COSMOS,
+    type: REMOVE_TELEGRAM_CHANNEL,
     payload,
   };
 }
 
-export function addTwilioChannelCosmos(payload) {
+export function addTwilioChannel(payload) {
   return {
-    type: ADD_TWILIO_CHANNEL_COSMOS,
+    type: ADD_TWILIO_CHANNEL,
     payload,
   };
 }
 
-export function removeTwilioChannelCosmos(payload) {
+export function removeTwilioChannel(payload) {
   return {
-    type: REMOVE_TWILIO_CHANNEL_COSMOS,
+    type: REMOVE_TWILIO_CHANNEL,
     payload,
   };
 }
 
-export function addEmailChannelCosmos(payload) {
+export function addEmailChannel(payload) {
   return {
-    type: ADD_EMAIL_CHANNEL_COSMOS,
+    type: ADD_EMAIL_CHANNEL,
     payload,
   };
 }
 
-export function removeEmailChannelCosmos(payload) {
+export function removeEmailChannel(payload) {
   return {
-    type: REMOVE_EMAIL_CHANNEL_COSMOS,
+    type: REMOVE_EMAIL_CHANNEL,
     payload,
   };
 }
 
-export function addPagerDutyChannelCosmos(payload) {
+export function addPagerDutyChannel(payload) {
   return {
-    type: ADD_PAGERDUTY_CHANNEL_COSMOS,
+    type: ADD_PAGERDUTY_CHANNEL,
     payload,
   };
 }
 
-export function removePagerDutyChannelCosmos(payload) {
+export function removePagerDutyChannel(payload) {
   return {
-    type: REMOVE_PAGERDUTY_CHANNEL_COSMOS,
+    type: REMOVE_PAGERDUTY_CHANNEL,
     payload,
   };
 }
 
-export function addOpsGenieChannelCosmos(payload) {
+export function addOpsGenieChannel(payload) {
   return {
-    type: ADD_OPSGENIE_CHANNEL_COSMOS,
+    type: ADD_OPSGENIE_CHANNEL,
     payload,
   };
 }
 
-export function removeOpsGenieChannelCosmos(payload) {
+export function removeOpsGenieChannel(payload) {
   return {
-    type: REMOVE_OPSGENIE_CHANNEL_COSMOS,
+    type: REMOVE_OPSGENIE_CHANNEL,
     payload,
   };
 }

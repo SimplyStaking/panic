@@ -2,7 +2,11 @@ import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS,
-  REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS,
+  REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
+  REMOVE_REPOSITORY, ADD_KMS, REMOVE_KMS, ADD_TELEGRAM_CHANNEL,
+  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
+  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
+  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
 } from '../actions/types';
 
 // Substrate and Cosmos nodes could be grouped up together, but I think it's
@@ -56,26 +60,222 @@ function cosmosChainsById(state = {}, action) {
           chainName: action.payload.chainName,
         },
       };
+    case REMOVE_CHAIN_COSMOS:
+      return _.omit(state, action.payload.id);
     case ADD_NODE_COSMOS:
       return {
         ...state,
-        [action.payload.id]: {
-          ...state[action.payload.id],
-          nodes: state[action.payload.id].nodes.concat(action.payload.cosmosNodeName),
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          nodes: state[action.payload.parentId].nodes.concat(action.payload.id),
         },
       };
     case REMOVE_NODE_COSMOS:
       return {
         ...state,
-        [action.payload.id]: {
-          ...state[action.payload.id],
-          nodes: state[action.payload.id].nodes.filter(
-            (config) => config !== action.payload.cosmosNodeName,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          nodes: state[action.payload.parentId].nodes.filter(
+            (config) => config !== action.payload.id,
           ),
         },
       };
-    case REMOVE_CHAIN_COSMOS:
-      return _.omit(state, action.payload.id);
+    case ADD_REPOSITORY:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          repositories: state[action.payload.parentId].repositories.concat(action.payload.id),
+        },
+      };
+    case REMOVE_REPOSITORY:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          repositories: state[action.payload.parentId].repositories.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_KMS:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          kmses: state[action.payload.parentId].kmses.concat(action.payload.id),
+        },
+      };
+    case REMOVE_KMS:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          kmses: state[action.payload.parentId].kmses.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_TELEGRAM_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          telegrams: state[action.payload.parentId].telegrams.concat(action.payload.id),
+        },
+      };
+    case REMOVE_TELEGRAM_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          telegrams: state[action.payload.parentId].telegrams.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_TWILIO_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          twilios: state[action.payload.parentId].twilios.concat(action.payload.id),
+        },
+      };
+    case REMOVE_TWILIO_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          twilios: state[action.payload.parentId].twilios.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_EMAIL_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          emails: state[action.payload.parentId].emails.concat(action.payload.id),
+        },
+      };
+    case REMOVE_EMAIL_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          emails: state[action.payload.parentId].emails.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_PAGERDUTY_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          pagerduties: state[action.payload.parentId].pagerduties.concat(action.payload.id),
+        },
+      };
+    case REMOVE_PAGERDUTY_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          pagerduties: state[action.payload.parentId].pagerduties.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_OPSGENIE_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          opsgenies: state[action.payload.parentId].opsgenies.concat(action.payload.id),
+        },
+      };
+    case REMOVE_OPSGENIE_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          opsgenies: state[action.payload.parentId].opsgenies.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
     default:
       return state;
   }
@@ -107,6 +307,7 @@ function CurrentCosmosChain(state = '', action) {
       return state;
   }
 }
+
 export {
   CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain,
 };

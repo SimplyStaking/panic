@@ -7,7 +7,9 @@ import {
 } from './channelsReducer';
 // import CosmosChainsReducer from './cosmosChainsReducer';
 import SubstrateChainsReducer from './substrateChainsReducer';
-import { RepositoryReducer, SystemsReducer, periodicReducer } from './generalReducer';
+import {
+  RepositoryReducer, SystemsReducer, PeriodicReducer, KmsReducer,
+} from './generalReducer';
 import { CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain } from './cosmosChainsReducer';
 import UsersReducer from './usersReducer';
 import LoginReducer from './loginReducer';
@@ -26,7 +28,8 @@ export default combineReducers({
   SubstrateChainsReducer,
   RepositoryReducer,
   SystemsReducer,
-  periodicReducer,
+  PeriodicReducer,
+  KmsReducer,
   UsersReducer,
   LoginReducer,
 });

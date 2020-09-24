@@ -7,11 +7,11 @@ const TwilioSchema = (props) => Yup.object().shape({
       'Twilio config name is not unique.',
       (value) => {
         const { twilios } = props;
-        if (twilios.length === 0) {
+        if (twilios.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < twilios.length; i += 1) {
-          if (twilios[i].configName === value) {
+        for (let i = 0; i < twilios.allIds.length; i += 1) {
+          if (twilios.byId[twilios.allIds[i]].configName === value) {
             return false;
           }
         }

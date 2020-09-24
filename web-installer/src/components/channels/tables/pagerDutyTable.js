@@ -69,14 +69,14 @@ const PagerDutyTable = (props) => {
 PagerDutyTable.propTypes = forbidExtraProps({
   pagerDuties: PropTypes.shape({
     byId: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      configName: PropTypes.string.isRequired,
-      apiToken: PropTypes.string.isRequired,
-      integrationKey: PropTypes.string.isRequired,
-      info: PropTypes.bool.isRequired,
-      warning: PropTypes.bool.isRequired,
-      critical: PropTypes.bool.isRequired,
-      error: PropTypes.bool.isRequired,
+      id: PropTypes.string,
+      configName: PropTypes.string,
+      apiToken: PropTypes.string,
+      integrationKey: PropTypes.string,
+      info: PropTypes.bool,
+      warning: PropTypes.bool,
+      critical: PropTypes.bool,
+      error: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

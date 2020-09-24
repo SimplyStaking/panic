@@ -7,11 +7,11 @@ const OpsGenieSchema = (props) => Yup.object().shape({
       'OpsGenie config name is not unique.',
       (value) => {
         const { opsGenies } = props;
-        if (opsGenies.length === 0) {
+        if (opsGenies.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < opsGenies.length; i += 1) {
-          if (opsGenies[i].configName === value) {
+        for (let i = 0; i < opsGenies.allIds.length; i += 1) {
+          if (opsGenies.byId[opsGenies.allIds[i]].configName === value) {
             return false;
           }
         }

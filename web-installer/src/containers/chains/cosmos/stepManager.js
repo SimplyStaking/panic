@@ -37,7 +37,7 @@ function getStep(stepName) {
       return (
         <div>
           <NodesFormContainer />
-          {/* <NodesTableContainer /> */}
+          <NodesTableContainer />
         </div>
       );
     case REPOSITORIES_STEP:

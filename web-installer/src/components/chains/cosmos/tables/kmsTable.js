@@ -20,11 +20,13 @@ const KMSTable = (props) => {
   const classes = useStyles();
 
   const {
-    config,
-    removeKMSDetails,
+    currentChain,
+    chainConfig,
+    kmsConfig,
+    removeKmsDetails,
   } = props;
 
-  if (config.kmses.length === 0) {
+  if (chainConfig.byId[currentChain].kmses.length === 0) {
     return <div />;
   }
   return (
@@ -32,26 +34,26 @@ const KMSTable = (props) => {
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Node Exporter Url</TableCell>
+            <TableCell align="center">Name</TableCell>
+            <TableCell align="center">Node Exporter Url</TableCell>
             <TableCell align="center">Monitor</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {config.kmses.map((kms) => (
-            <TableRow key={kms.kmsName}>
-              <TableCell component="th" scope="row">
-                {kms.kmsName}
+          {chainConfig.byId[currentChain].kmses.map((id) => (
+            <TableRow key={id}>
+              <TableCell align="center" component="th" scope="row">
+                {kmsConfig.byId[id].kmsName}
               </TableCell>
-              <TableCell component="th" scope="row">
-                {kms.exporterURL}
-              </TableCell>
-              <TableCell align="center">
-                {kms.monitorKMS ? <CheckIcon /> : <ClearIcon />}
+              <TableCell align="center" component="th" scope="row">
+                {kmsConfig.byId[id].exporterURL}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeKMSDetails(kms); }}>
+                {kmsConfig.byId[id].monitorKMS ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => { removeKmsDetails(kmsConfig.byId[id]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -64,14 +66,24 @@ const KMSTable = (props) => {
 };
 
 KMSTable.propTypes = {
-  config: PropTypes.shape({
-    kmses: PropTypes.arrayOf(PropTypes.shape({
-      kmsName: PropTypes.string.isRequired,
-      exporterURL: PropTypes.string.isRequired,
-      monitorKMS: PropTypes.bool.isRequired,
-    })).isRequired,
+  chainConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      kmses: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
   }).isRequired,
-  removeKMSDetails: PropTypes.func.isRequired,
+  kmsConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parentId: PropTypes.string,
+      kmsName: PropTypes.string,
+      exporterURL: PropTypes.string,
+      monitorKMS: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  removeKmsDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 };
 
 export default KMSTable;

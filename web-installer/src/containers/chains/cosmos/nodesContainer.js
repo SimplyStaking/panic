@@ -22,8 +22,9 @@ const Form = withFormik({
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveNodeDetails } = props;
+    const { saveNodeDetails, currentChain } = props;
     const payload = {
+      parentId: currentChain,
       cosmosNodeName: values.cosmosNodeName,
       tendermintRPCURL: values.tendermintRPCURL,
       cosmosRPCURL: values.cosmosRPCURL,
@@ -39,9 +40,12 @@ const Form = withFormik({
   },
 })(NodesForm);
 
+// Need all of the configuration, including the current chain id we are setting
+// up.
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
-  config: state.CosmosChainsReducer.config,
+  currentChain: state.CurrentCosmosChain,
+  chainConfig: state.CosmosChainsReducer,
+  nodesConfig: state.CosmosNodesReducer,
 });
 
 function mapDispatchToProps(dispatch) {

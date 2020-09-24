@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import RepositoriesForm from '../../../components/chains/cosmos/forms/repositoriesForm';
 import RepositoriesTable from '../../../components/chains/cosmos/tables/repositoriesTable';
-import { addRepositoryCosmos, removeRepositoryCosmos } from '../../../redux/actions/cosmosChainsActions';
+import { addRepository, removeRepository } from '../../../redux/actions/generalActions';
 import RepositorySchema from './schemas/repositorySchema';
 
 const Form = withFormik({
@@ -15,8 +15,9 @@ const Form = withFormik({
   }),
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveRepositoryDetails } = props;
+    const { saveRepositoryDetails, currentChain } = props;
     const payload = {
+      parentId: currentChain,
       repoName: values.repoName,
       monitorRepo: values.monitorRepo,
     };
@@ -26,18 +27,19 @@ const Form = withFormik({
 })(RepositoriesForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
-  config: state.CosmosChainsReducer.config,
+  currentChain: state.CurrentCosmosChain,
+  chainConfig: state.CosmosChainsReducer,
+  reposConfig: state.RepositoryReducer,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveRepositoryDetails: (details) => dispatch(addRepositoryCosmos(details)),
+    saveRepositoryDetails: (details) => dispatch(addRepository(details)),
   };
 }
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeRepositoryDetails: (details) => dispatch(removeRepositoryCosmos(details)),
+    removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
   };
 }
 

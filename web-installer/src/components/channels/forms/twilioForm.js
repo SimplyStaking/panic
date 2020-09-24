@@ -74,7 +74,7 @@ const TwilioForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.twilio.name} placement="left">
                       <InfoIcon />
@@ -98,7 +98,7 @@ const TwilioForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.twilio.account} placement="left">
                       <InfoIcon />
@@ -122,7 +122,7 @@ const TwilioForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.twilio.token} placement="left">
                       <InfoIcon />
@@ -146,7 +146,7 @@ const TwilioForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.twilio.phoneNumber} placement="left">
                       <InfoIcon />
@@ -180,7 +180,7 @@ const TwilioForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.twilio.dialNumbers} placement="left">
                       <InfoIcon />

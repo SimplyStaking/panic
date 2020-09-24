@@ -11,7 +11,7 @@ const ChainNameSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < config.allIds.length; i += 1) {
-          if (config.allIds[i] === value) {
+          if (config.byId[config.allIds[i]] === value) {
             return false;
           }
         }

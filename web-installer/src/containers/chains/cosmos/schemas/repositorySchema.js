@@ -6,20 +6,19 @@ const RepositorySchema = (props) => Yup.object().shape({
       'unique-repository-name',
       'Repository arleady exists.',
       (value) => {
-        const { cosmosConfigs } = props;
-        if (cosmosConfigs.length === 0) {
+        const { reposConfig } = props;
+
+        // If repos are empty no need to validate anything
+        if (reposConfig.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs.repositories.length === 0) {
-            return true;
-          }
-          for (let j = 0; j < cosmosConfigs[i].repositories.length; j += 1) {
-            if (cosmosConfigs[i].repositories[j] === value) {
-              return false;
-            }
+
+        for (let i = 0; i < reposConfig.allIds.length; i += 1) {
+          if (reposConfig.byId[reposConfig.allIds[i]].repoName === value) {
+            return false;
           }
         }
+
         return true;
       },
     )

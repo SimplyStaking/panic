@@ -17,6 +17,7 @@ export function addRepository(payload) {
     type: ADD_REPOSITORY,
     payload: {
       id: uuidv4(),
+      parentId: payload.parentId,
       repoName: payload.repoName,
       monitorRepo: payload.monitorRepo,
     },
@@ -54,6 +55,7 @@ export function addKms(payload) {
     type: ADD_KMS,
     payload: {
       id: uuidv4(),
+      parentId: payload.parentId,
       kmsName: payload.kmsName,
       exporterURL: payload.exporterURL,
       monitorKMS: payload.monitorKMS,

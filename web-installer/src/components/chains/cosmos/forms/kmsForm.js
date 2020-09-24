@@ -72,7 +72,7 @@ const KMSForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.kms.name} placement="left">
                       <InfoIcon />
@@ -96,7 +96,7 @@ const KMSForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.kms.exporterUrl} placement="left">
                       <InfoIcon />
@@ -122,7 +122,7 @@ const KMSForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.kms.monitorKms} placement="left">
                       <InfoIcon />

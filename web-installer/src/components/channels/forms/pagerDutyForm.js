@@ -68,7 +68,7 @@ const PagerDutyForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.pagerDuty.name} placement="left">
                       <InfoIcon />
@@ -92,7 +92,7 @@ const PagerDutyForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.pagerDuty.token} placement="left">
                       <InfoIcon />
@@ -116,7 +116,7 @@ const PagerDutyForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.pagerDuty.integrationKey} placement="left">
                       <InfoIcon />
@@ -178,7 +178,7 @@ const PagerDutyForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.pagerDuty.severties} placement="left">
                       <InfoIcon />

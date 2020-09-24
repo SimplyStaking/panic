@@ -7,11 +7,11 @@ const EmailSchema = (props) => Yup.object().shape({
       'Email config name is not unique.',
       (value) => {
         const { emails } = props;
-        if (emails.length === 0) {
+        if (emails.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < emails.length; i += 1) {
-          if (emails[i].configName === value) {
+        for (let i = 0; i < emails.allIds.length; i += 1) {
+          if (emails.byId[emails.allIds[i]].configName === value) {
             return false;
           }
         }

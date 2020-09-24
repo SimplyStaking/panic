@@ -20,11 +20,11 @@ const TelegramSchema = (props) => Yup.object().shape({
       'Bot Name is not unique.',
       (value) => {
         const { telegrams } = props;
-        if (telegrams.length === 0) {
+        if (telegrams.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < telegrams.length; i += 1) {
-          if (telegrams[i].botName === value) {
+        for (let i = 0; i < telegrams.allIds.length; i += 1) {
+          if (telegrams.byId[telegrams.allIds[i]].botName === value) {
             return false;
           }
         }

@@ -70,7 +70,7 @@ const TelegramForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.name} placement="left">
                       <InfoIcon />
@@ -94,7 +94,7 @@ const TelegramForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.token} placement="left">
                       <InfoIcon />
@@ -118,7 +118,7 @@ const TelegramForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.chatID} placement="left">
                       <InfoIcon />
@@ -180,7 +180,7 @@ const TelegramForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.severties} placement="left">
                       <InfoIcon />
@@ -192,7 +192,7 @@ const TelegramForm = (props) => {
                 <Typography> Telegram Commands: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.commands} placement="left">
                       <InfoIcon />
@@ -218,7 +218,7 @@ const TelegramForm = (props) => {
                 <Typography> Telegram Alerts: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.telegram.alerts} placement="left">
                       <InfoIcon />

@@ -66,14 +66,14 @@ const TwilioTable = (props) => {
 TwilioTable.propTypes = forbidExtraProps({
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      configName: PropTypes.string.isRequired,
-      accountSid: PropTypes.string.isRequired,
-      authToken: PropTypes.string.isRequired,
-      twilioPhoneNo: PropTypes.string.isRequired,
+      id: PropTypes.string,
+      configName: PropTypes.string,
+      accountSid: PropTypes.string,
+      authToken: PropTypes.string,
+      twilioPhoneNo: PropTypes.string,
       twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
-        PropTypes.string.isRequired,
-      ).isRequired,
+        PropTypes.string,
+      ),
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

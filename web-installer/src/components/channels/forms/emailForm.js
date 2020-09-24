@@ -74,7 +74,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.name} placement="left">
                       <InfoIcon />
@@ -98,7 +98,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.smtp} placement="left">
                       <InfoIcon />
@@ -122,7 +122,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.from} placement="left">
                       <InfoIcon />
@@ -156,7 +156,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.to} placement="left">
                       <InfoIcon />
@@ -180,7 +180,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.username} placement="left">
                       <InfoIcon />
@@ -204,7 +204,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.password} placement="left">
                       <InfoIcon />
@@ -266,7 +266,7 @@ const EmailForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.email.severties} placement="left">
                       <InfoIcon />

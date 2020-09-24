@@ -72,7 +72,7 @@ const NodesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.name} placement="left">
                       <InfoIcon />
@@ -94,7 +94,7 @@ const NodesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.tendermintRPC} placement="left">
                       <InfoIcon />
@@ -116,7 +116,7 @@ const NodesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.cosmosSDKRPC} placement="left">
                       <InfoIcon />
@@ -138,7 +138,7 @@ const NodesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.prometheusURL} placement="left">
                       <InfoIcon />
@@ -160,7 +160,7 @@ const NodesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.nodeExporterURL} placement="left">
                       <InfoIcon />
@@ -172,7 +172,7 @@ const NodesForm = (props) => {
                 <Typography> Node is Validator: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.isValidator} placement="left">
                       <InfoIcon />
@@ -198,7 +198,7 @@ const NodesForm = (props) => {
                 <Typography> Is Archive Node: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.isArchive} placement="left">
                       <InfoIcon />
@@ -225,7 +225,7 @@ const NodesForm = (props) => {
                 <Typography> Monitor Node: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.monitorNode} placement="left">
                       <InfoIcon />
@@ -251,7 +251,7 @@ const NodesForm = (props) => {
                 <Typography> Use as Data Source: </Typography>
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.nodeDetails.useAsDataSource} placement="left">
                       <InfoIcon />

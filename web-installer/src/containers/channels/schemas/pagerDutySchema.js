@@ -7,11 +7,11 @@ const PagerDutySchema = (props) => Yup.object().shape({
       'PagerDuty config name is not unique.',
       (value) => {
         const { pagerDuties } = props;
-        if (pagerDuties.length === 0) {
+        if (pagerDuties.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < pagerDuties.length; i += 1) {
-          if (pagerDuties[i].configName === value) {
+        for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
+          if (pagerDuties.byId[pagerDuties.allIds[i]].configName === value) {
             return false;
           }
         }

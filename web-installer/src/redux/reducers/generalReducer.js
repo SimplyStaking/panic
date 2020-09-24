@@ -14,7 +14,7 @@ const periodicState = {
 };
 
 // Periodic alive reminder reducer
-function periodicReducer(state = periodicState, action) {
+function PeriodicReducer(state = periodicState, action) {
   switch (action.type) {
     case UPDATE_PERIODIC:
       return action.payload;
@@ -118,42 +118,7 @@ const KmsReducer = combineReducers({
   byId: kmsesById,
   allIds: allKmses,
 });
-// OLD REDUCER TO BE @REMOVED
-
-// function generalReducer(state = initialstate, action) {
-//   switch (action.type) {
-//     case UPDATE_PERIODIC:
-//       return {
-//         ...state,
-//         periodic: action.payload,
-//       };
-//     case ADD_REPOSITORY:
-//       return {
-//         ...state,
-//         repositories: state.repositories.concat(action.payload),
-//       };
-//     case REMOVE_REPOSITORY:
-//       return {
-//         ...state,
-//         repositories: state.repositories.filter(
-//           (repository) => repository !== action.payload,
-//         ),
-//       };
-//     case ADD_SYSTEM:
-//       return {
-//         ...state,
-//         systems: state.systems.concat(action.payload),
-//       };
-//     case REMOVE_SYSTEM:
-//       return {
-//         ...state,
-//         systems: state.systems.filter((system) => system !== action.payload),
-//       };
-//     default:
-//       return state;
-//   }
-// }
 
 export {
-  RepositoryReducer, SystemsReducer, KmsReducer, periodicReducer,
+  RepositoryReducer, SystemsReducer, KmsReducer, PeriodicReducer,
 };

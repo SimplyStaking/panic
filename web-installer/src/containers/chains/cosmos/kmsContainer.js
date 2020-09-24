@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import KMSForm from '../../../components/chains/cosmos/forms/kmsForm';
 import KMSTable from '../../../components/chains/cosmos/tables/kmsTable';
-import { addKMSCosmos, removeKMSCosmos } from '../../../redux/actions/cosmosChainsActions';
+import { addKms, removeKms } from '../../../redux/actions/generalActions';
 import KMSSchema from './schemas/kmsSchema';
 
 const Form = withFormik({
@@ -17,30 +17,32 @@ const Form = withFormik({
   }),
   validationSchema: (props) => KMSSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveKMSDetails } = props;
+    const { saveKmsDetails, currentChain } = props;
     const payload = {
+      parentId: currentChain,
       kmsName: values.kmsName,
       exporterURL: values.exporterURL,
       monitorKMS: values.monitorKMS,
     };
-    saveKMSDetails(payload);
+    saveKmsDetails(payload);
     resetForm();
   },
 })(KMSForm);
 
 const mapStateToProps = (state) => ({
-  cosmosConfigs: state.CosmosChainsReducer.cosmosConfigs,
-  config: state.CosmosChainsReducer.config,
+  currentChain: state.CurrentCosmosChain,
+  chainConfig: state.CosmosChainsReducer,
+  kmsConfig: state.KmsReducer,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveKMSDetails: (details) => dispatch(addKMSCosmos(details)),
+    saveKmsDetails: (details) => dispatch(addKms(details)),
   };
 }
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeKMSDetails: (details) => dispatch(removeKMSCosmos(details)),
+    removeKmsDetails: (details) => dispatch(removeKms(details)),
   };
 }
 

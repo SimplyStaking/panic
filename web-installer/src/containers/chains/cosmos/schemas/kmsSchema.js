@@ -6,20 +6,19 @@ const KMSSchema = (props) => Yup.object().shape({
       'unique-kms-name',
       'KMS name is not unique.',
       (value) => {
-        const { cosmosConfigs } = props;
-        if (cosmosConfigs.length === 0) {
+        const { kmsConfig } = props;
+
+        // If kmses are empty no need to validate anything
+        if (kmsConfig.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < cosmosConfigs.length; i += 1) {
-          if (cosmosConfigs[i].kmses.length === 0) {
-            return true;
-          }
-          for (let j = 0; j < cosmosConfigs[i].kmses.length; j += 1) {
-            if (cosmosConfigs[i].kmses[j] === value) {
-              return false;
-            }
+
+        for (let i = 0; i < kmsConfig.allIds.length; i += 1) {
+          if (kmsConfig.byId[kmsConfig.allIds[i]].kmsName === value) {
+            return false;
           }
         }
+
         return true;
       },
     )

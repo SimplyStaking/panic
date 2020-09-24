@@ -68,7 +68,7 @@ const OpsGenieForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.opsGenie.name} placement="left">
                       <InfoIcon />
@@ -92,7 +92,7 @@ const OpsGenieForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.opsGenie.token} placement="left">
                       <InfoIcon />
@@ -154,7 +154,7 @@ const OpsGenieForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.opsGenie.severties} placement="left">
                       <InfoIcon />

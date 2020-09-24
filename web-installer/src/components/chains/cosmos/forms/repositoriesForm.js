@@ -72,7 +72,7 @@ const RepositoriesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.repositoryDetails.name} placement="left">
                       <InfoIcon />
@@ -98,7 +98,7 @@ const RepositoriesForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.repositoryDetails.monitorRepo} placement="left">
                       <InfoIcon />

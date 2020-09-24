@@ -108,7 +108,7 @@ const ChainNameForm = (props) => {
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="center" alignItems="right">
+                <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip title={Data.chainName.name} placement="left">
                       <InfoIcon />
