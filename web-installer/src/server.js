@@ -526,12 +526,8 @@ app.post('/server/config', verify, async (req, res) => {
     const err = new errors.ConfigUnrecognized(fileName);
     return res.status(err.code).send(utils.errorJson(err.message));
   } catch (err) {
-    // If no valid path can be inferred from configType and baseChain return a
-    // related error message
-    if (err.code === 430 || err.code === 431) {
-      return res.status(err.code).send(utils.errorJson(err.message));
-    }
-    throw err;
+    // If error inform the user
+    return res.status(err.code).send(utils.errorJson(err.message));
   }
 });
 

@@ -35,6 +35,10 @@ function CollectionDropped(collection) {
   this.message = `Collection '${collection}' dropped from database.`;
 }
 
+function DirectoryNotCreated(directory) {
+  this.message = `Directory '${directory}' was not created.`;
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -45,4 +49,5 @@ module.exports = {
   AuthenticationSuccessful,
   AccountSavedSuccessfully,
   CollectionDropped,
+  DirectoryNotCreated,
 };

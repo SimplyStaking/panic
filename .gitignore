@@ -19,10 +19,6 @@ yarn-error.log*
 config/*
 !config/.gitkeep
 
-# sessions
-src/web/ui/sessions/*.json*
-!src/web/ui/sessions/.gitkeep
-
 # dependencies
 node_modules/
 /.pnp
