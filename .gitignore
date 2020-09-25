@@ -16,7 +16,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # configs
-config/
+config/*
+!config/.gitkeep
 
 # sessions
 src/web/ui/sessions/*.json*
