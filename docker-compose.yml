@@ -27,6 +27,8 @@ services:
     networks:
       panic_net:
         ipv4_address: 172.18.0.3
+    depends_on:
+      - mongo
 
   mongo:
     image: 'mongo'
