@@ -10,4 +10,8 @@ COPY ./ ./
 RUN pip3 install pipenv
 RUN pipenv sync
 
-CMD [ "pipenv", "run", "python", "run_alerter.py" ]
+# Tool which waits for dependent containers
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
+RUN chmod +x /wait
+
+CMD /wait && pipenv run python run_alerter.py

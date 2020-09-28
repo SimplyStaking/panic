@@ -41,6 +41,24 @@ services:
     volumes:
       - 'db-data:/data/db'
 
+  alerter:
+    environment:
+      - 'DB_NAME=${DB_NAME}'
+      - 'DB_HOST=${DB_HOST}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}'
+    build: .
+    image: 'simplyvc/panic_alerter:1.0.0'
+    volumes:
+      - './config:/opt/panic/config'
+      - './logs:/opt/panic/logs'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${ALERTER_HOST}'
+    depends_on:
+      - mongo
+
 networks:
   panic_net:
     ipam:
