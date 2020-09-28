@@ -23,4 +23,8 @@ WORKDIR ../
 # Expose port
 EXPOSE 8000
 
-CMD [ "bash", "run_installer_server.sh" ]
+# Tool which waits for dependent containers
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
+RUN chmod +x /wait
+
+CMD /wait && bash run_installer_server.sh

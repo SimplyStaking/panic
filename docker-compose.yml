@@ -14,6 +14,7 @@ services:
       - 'DB_PORT=${DB_PORT}'
       - 'INSTALLER_AUTH_COLLECTION=${INSTALLER_AUTH_COLLECTION}'
       - 'ACCOUNTS_COLLECTION=${ACCOUNTS_COLLECTION}'
+      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}'
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
@@ -26,7 +27,7 @@ services:
     restart: always
     networks:
       panic_net:
-        ipv4_address: 172.18.0.3
+        ipv4_address: '${INSTALLER_HOST}'
     depends_on:
       - mongo
 
