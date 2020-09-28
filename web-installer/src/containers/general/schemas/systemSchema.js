@@ -7,11 +7,11 @@ const SystemSchema = (props) => Yup.object().shape({
       'System config name is not unique.',
       (value) => {
         const { systems } = props;
-        if (systems.length === 0) {
+        if (systems.allIds.length === 0) {
           return true;
         }
-        for (let i = 0; i < systems.length; i += 1) {
-          if (systems[i].name === value) {
+        for (let i = 0; i < systems.allIds.length; i += 1) {
+          if (systems.byId[systems.allIds[i]].name === value) {
             return false;
           }
         }

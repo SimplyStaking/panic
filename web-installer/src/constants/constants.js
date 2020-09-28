@@ -14,6 +14,9 @@ export const BACK = 'Back';
 export const DONE = 'Done';
 export const NEW = 'New';
 
+// Used for General Reducer Parent
+export const GLOBAL = 'GLOBAL';
+
 // Used for channel names
 export const TELEGRAM = 'Telegram';
 export const TWILIO = 'Twilio';

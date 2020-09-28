@@ -8,7 +8,7 @@ import {
 import { SubstrateNodesReducer, SubstrateChainsReducer, CurrentSubstrateChain } from './substrateChainsReducer';
 import { CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain } from './cosmosChainsReducer';
 import {
-  RepositoryReducer, SystemsReducer, PeriodicReducer, KmsReducer,
+  RepositoryReducer, SystemsReducer, PeriodicReducer, KmsReducer, GeneralReducer,
 } from './generalReducer';
 import UsersReducer from './usersReducer';
 import LoginReducer from './loginReducer';
@@ -30,6 +30,7 @@ export default combineReducers({
   RepositoryReducer,
   SystemsReducer,
   PeriodicReducer,
+  GeneralReducer,
   KmsReducer,
   UsersReducer,
   LoginReducer,

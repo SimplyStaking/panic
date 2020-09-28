@@ -17,6 +17,7 @@ const PeriodicForm = (props) => {
   const classes = useStyles();
 
   const {
+    values,
     periodic,
     savePeriodicDetails,
   } = props;
@@ -30,7 +31,7 @@ const PeriodicForm = (props) => {
           </Grid>
           <Grid item xs={10}>
             <TextField
-              value={periodic.time}
+              value={values.time}
               type="text"
               name="time"
               placeholder="0"
@@ -50,7 +51,7 @@ const PeriodicForm = (props) => {
             <FormControlLabel
               control={(
                 <Switch
-                  checked={periodic.enabled}
+                  checked={values.enabled}
                   onClick={() => {
                     savePeriodicDetails({
                       time: periodic.time,
@@ -71,11 +72,15 @@ const PeriodicForm = (props) => {
 };
 
 PeriodicForm.propTypes = {
-  savePeriodicDetails: PropTypes.func.isRequired,
   periodic: PropTypes.shape({
-    time: PropTypes.string.isRequired,
-    enabled: PropTypes.bool.isRequired,
+    time: PropTypes.string,
+    enabled: PropTypes.bool,
   }).isRequired,
+  values: PropTypes.shape({
+    time: PropTypes.string,
+    enabled: PropTypes.bool,
+  }).isRequired,
+  savePeriodicDetails: PropTypes.func.isRequired,
 };
 
 export default PeriodicForm;

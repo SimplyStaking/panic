@@ -12,7 +12,7 @@ import TimeLogo from '../../assets/icons/time.svg';
 import SystemLogo from '../../assets/icons/system.svg';
 import GithubLogo from '../../assets/icons/github.svg';
 import { SystemFormContainer, SystemTableContainer } from '../../containers/general/systemContainer';
-import { GithubFormContainer, GithubTableContainer } from '../../containers/general/githubContainer';
+import { RepositoryFormContainer, RepositoryTableContainer } from '../../containers/general/repositoryContainer';
 import PeriodicFormContainer from '../../containers/general/periodicContainer';
 import Data from '../../data/general';
 
@@ -58,19 +58,20 @@ function GeneralsPage() {
                 icon={TimeLogo}
                 name={PERIODIC}
                 form={(<PeriodicFormContainer />)}
+                table={(<div />)}
               />
               <FormAccordion
                 icon={SystemLogo}
                 name={SYSTEM}
                 form={(<SystemFormContainer />)}
+                table={(<SystemTableContainer />)}
               />
-              <SystemTableContainer />
               <FormAccordion
                 icon={GithubLogo}
                 name={GITHUB}
-                form={(<GithubFormContainer />)}
+                form={(<RepositoryFormContainer />)}
+                table={(<RepositoryTableContainer />)}
               />
-              <GithubTableContainer />
             </Grid>
           </Grid>
         </Box>

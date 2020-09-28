@@ -4,6 +4,7 @@ import {
   UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
   REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS,
 } from '../actions/types';
+import { GLOBAL } from '../../constants/constants';
 
 // Initial periodic state
 const periodicState = {
@@ -12,6 +13,75 @@ const periodicState = {
     enabled: false,
   },
 };
+
+// Initial general state
+const generalState = {
+  repositories: [],
+  systems: [],
+  periodic: periodicState,
+};
+
+// General reducer to keep track of Periodic alive reminder, repositories and
+// systems
+function GeneralReducer(state = generalState, action) {
+  switch (action.type) {
+    case UPDATE_PERIODIC:
+      return {
+        ...state,
+        periodic: action.payload,
+      };
+    case ADD_REPOSITORY:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+
+      return {
+        ...state,
+        repositories: state.repositories.concat(action.payload.id),
+      };
+    case REMOVE_REPOSITORY:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+
+      return {
+        ...state,
+        repositories: state.repositories.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case ADD_SYSTEM:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+
+      return {
+        ...state,
+        systems: state.systems.concat(action.payload.id),
+      };
+    case REMOVE_SYSTEM:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+
+      return {
+        ...state,
+        systems: state.systems.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    default:
+      return state;
+  }
+}
 
 // Periodic alive reminder reducer
 function PeriodicReducer(state = periodicState, action) {
@@ -121,4 +191,5 @@ const KmsReducer = combineReducers({
 
 export {
   RepositoryReducer, SystemsReducer, KmsReducer, PeriodicReducer,
+  GeneralReducer,
 };

@@ -36,6 +36,7 @@ export function addSystem(payload) {
     type: ADD_SYSTEM,
     payload: {
       id: uuidv4(),
+      parentId: payload.parentId,
       name: payload.name,
       exporterURL: payload.exporterURL,
       enabled: payload.enabled,

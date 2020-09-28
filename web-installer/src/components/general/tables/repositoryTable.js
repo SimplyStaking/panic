@@ -9,6 +9,7 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import { GLOBAL } from '../../../constants/constants';
 
 const useStyles = makeStyles({
   table: {
@@ -16,38 +17,46 @@ const useStyles = makeStyles({
   },
 });
 
-const GithubsTable = (props) => {
+const RepositoryTable = (props) => {
   const classes = useStyles();
 
   const {
+    config,
     repositories,
-    removeGithubDetails,
+    removeRepositoryDetails,
   } = props;
 
-  if (repositories.length === 0) {
+  if (config.repositories.length === 0) {
     return <div />;
   }
+
   return (
     <TableContainer component={Paper}>
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell align="center">Name</TableCell>
             <TableCell align="center">Monitor</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {repositories.map((repository) => (
-            <TableRow key={repository.repoName}>
-              <TableCell component="th" scope="row">
-                {repository.repoName}
+          {config.repositories.map((id) => (
+            <TableRow key={id}>
+              <TableCell align="center">
+                {repositories.byId[id].repoName}
               </TableCell>
               <TableCell align="center">
-                {repository.enabled ? <CheckIcon /> : <ClearIcon />}
+                {repositories.byId[id].monitorRepo ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeGithubDetails(repository); }}>
+                <Button onClick={() => {
+                  removeRepositoryDetails({
+                    id,
+                    parentId: GLOBAL,
+                  });
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -59,12 +68,18 @@ const GithubsTable = (props) => {
   );
 };
 
-GithubsTable.propTypes = {
-  repositories: PropTypes.arrayOf(PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    enabled: PropTypes.bool.isRequired,
-  })).isRequired,
-  removeGithubDetails: PropTypes.func.isRequired,
+RepositoryTable.propTypes = {
+  config: PropTypes.shape({
+    repositories: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  repositories: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      repoName: PropTypes.string,
+      monitorRepo: PropTypes.bool,
+    }).isRequired,
+  }).isRequired,
+  removeRepositoryDetails: PropTypes.func.isRequired,
 };
 
-export default GithubsTable;
+export default RepositoryTable;

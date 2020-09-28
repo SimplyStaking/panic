@@ -13,7 +13,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const GithubForm = (props) => {
+const RepositoryForm = (props) => {
   const classes = useStyles();
 
   const {
@@ -33,12 +33,12 @@ const GithubForm = (props) => {
           </Grid>
           <Grid item xs={10}>
             <TextField
-              error={!errors.name !== true}
-              value={values.name}
+              error={!errors.repoName !== true}
+              value={values.repoName}
               type="text"
-              name="name"
+              name="repoName"
               placeholder="SimplyVC/panic"
-              helperText={errors.name ? errors.name : ''}
+              helperText={errors.repoName ? errors.repoName : ''}
               onChange={handleChange}
               fullWidth
             />
@@ -50,11 +50,11 @@ const GithubForm = (props) => {
             <FormControlLabel
               control={(
                 <Switch
-                  checked={values.enabled}
+                  checked={values.monitorRepo}
                   onClick={() => {
-                    setFieldValue('enabled', !values.enabled);
+                    setFieldValue('enabled', !values.monitorRepo);
                   }}
-                  name="enabled"
+                  name="monitorRepo"
                   color="primary"
                 />
               )}
@@ -93,17 +93,17 @@ const GithubForm = (props) => {
   );
 };
 
-GithubForm.propTypes = {
+RepositoryForm.propTypes = {
   errors: PropTypes.shape({
-    name: PropTypes.string,
+    repoName: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    enabled: PropTypes.bool.isRequired,
+    repoName: PropTypes.string.isRequired,
+    monitorRepo: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
 };
 
-export default GithubForm;
+export default RepositoryForm;

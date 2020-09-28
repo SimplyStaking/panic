@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import SystemForm from '../../components/general/forms/systemForm';
 import SystemTable from '../../components/general/tables/systemTable';
 import { addSystem, removeSystem } from '../../redux/actions/generalActions';
+import { GLOBAL } from '../../constants/constants';
 import SystemSchema from './schemas/systemSchema';
 
 const Form = withFormik({
@@ -19,6 +20,7 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveSystemDetails } = props;
     const payload = {
+      parentId: GLOBAL,
       name: values.name,
       exporterURL: values.exporterURL,
       enabled: values.enabled,
@@ -29,7 +31,8 @@ const Form = withFormik({
 })(SystemForm);
 
 const mapStateToProps = (state) => ({
-  systems: state.GeneralReducer.systems,
+  config: state.GeneralReducer,
+  systems: state.SystemsReducer,
 });
 
 function mapDispatchToProps(dispatch) {
