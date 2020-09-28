@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import RepositoriesForm from '../../../components/chains/substrate/forms/repositoriesForm';
 import RepositoriesTable from '../../../components/chains/substrate/tables/repositoriesTable';
-import { addRepositorySubstrate, removeRepositorySubstrate } from '../../../redux/actions/substrateChainsActions';
+import { addRepository, removeRepository } from '../../../redux/actions/generalActions';
 import RepositorySchema from './schemas/repositorySchema';
 
 const Form = withFormik({
@@ -15,8 +15,9 @@ const Form = withFormik({
   }),
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveRepositoryDetails } = props;
+    const { saveRepositoryDetails, currentChain } = props;
     const payload = {
+      parentId: currentChain,
       repoName: values.repoName,
       monitorRepo: values.monitorRepo,
     };
@@ -26,20 +27,21 @@ const Form = withFormik({
 })(RepositoriesForm);
 
 const mapStateToProps = (state) => ({
-  substrateConfigs: state.SubstrateChainsReducer.substrateConfigs,
-  config: state.SubstrateChainsReducer.config,
+  currentChain: state.CurrentSubstrateChain,
+  chainConfig: state.SubstrateChainsReducer,
+  reposConfig: state.RepositoryReducer,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     saveRepositoryDetails:
-      (details) => dispatch(addRepositorySubstrate(details)),
+      (details) => dispatch(addRepository(details)),
   };
 }
 function mapDispatchToPropsRemove(dispatch) {
   return {
     removeRepositoryDetails:
-      (details) => dispatch(removeRepositorySubstrate(details)),
+      (details) => dispatch(removeRepository(details)),
   };
 }
 

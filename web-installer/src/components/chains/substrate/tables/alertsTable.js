@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  FormControlLabel, Checkbox, Typography, MenuItem, FormControl,
-  Select, TextField, Grid, Box,
+  FormControlLabel, Checkbox, Typography, TextField, Grid, Box, MenuItem, Select,
+  FormControl,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
@@ -13,35 +12,25 @@ import {
   CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,
 } from '../../../../constants/constants';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const AlertsTable = (props) => {
-  const classes = useStyles();
-
   const {
-    config,
-    updateWarningDelaySubstrate,
-    updateWarningRepeatSubstrate,
-    updateWarningThresholdSubstrate,
-    updateWarningTimeWindowSubstrate,
-    updateWarningEnabledSubstrate,
-    updateCriticalDelaySubstrate,
-    updateCriticalRepeatSubstrate,
-    updateCriticalThresholdSubstrate,
-    updateCriticalTimeWindowSubstrate,
-    updateCriticalEnabledSubstrate,
-    updateAlertEnabledSubstrate,
-    updateAlertSeverityLevelSubstrate,
-    updateAlertSeverityEnabledSubstrate,
+    chainConfig,
+    currentChain,
+    updateRepeatAlertDetails,
+    updateTimeWindowAlertDetails,
+    updateThresholdAlertDetails,
+    updateSeverityAlertDetails,
   } = props;
+
+  // Assigning buffer values as they become too long
+  const RepeatAlerts = chainConfig.byId[currentChain].repeatAlerts;
+  const TimeWindowAlerts = chainConfig.byId[currentChain].timeWindowAlerts;
+  const ThresholdAlerts = chainConfig.byId[currentChain].thresholdAlerts;
+  const SeverityAlerts = chainConfig.byId[currentChain].severityAlerts;
 
   const nextPage = (page) => {
     const {
-      pageChanger, stepChanger, addConfiguration, resetConfiguration,
+      pageChanger, stepChanger, clearChainId,
     } = props;
 
     const payload = {
@@ -50,8 +39,7 @@ const AlertsTable = (props) => {
 
     stepChanger(payload);
     pageChanger({ page });
-    addConfiguration();
-    resetConfiguration();
+    clearChainId();
   };
 
   return (
@@ -66,7 +54,7 @@ const AlertsTable = (props) => {
       </Typography>
       <Box py={4}>
         <TableContainer component={Paper}>
-          <Table className={classes.table} aria-label="simple table">
+          <Table aria-label="simple table">
             <TableHead>
               <TableRow>
                 <TableCell align="center">Alert</TableCell>
@@ -76,21 +64,121 @@ const AlertsTable = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Object.keys(config.alerts.thresholds).map((alert) => (
-                <TableRow key={config.alerts.thresholds[alert].name}>
+              {RepeatAlerts.allIds.map((id) => (
+                <TableRow key={id}>
                   <TableCell align="center">
-                    {config.alerts.thresholds[alert].name}
+                    {RepeatAlerts.byId[id].name}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Grid container>
+                      <Grid item>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={RepeatAlerts.byId[id].warning.enabled}
+                              onClick={() => {
+                                updateRepeatAlertDetails(
+                                  {
+                                    id,
+                                    parentId: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      warning: {
+                                        delay: RepeatAlerts.byId[id].warning.delay,
+                                        repeat: RepeatAlerts.byId[id].warning.repeat,
+                                        enabled: !RepeatAlerts.byId[id].warning.enabled,
+                                      },
+                                      critical: RepeatAlerts.byId[id].critical,
+                                      enabled: RepeatAlerts.byId[id].enabled,
+                                    },
+                                  },
+                                );
+                              }}
+                              color="primary"
+                            />
+                          )}
+                          label="Enabled"
+                          labelPlacement="end"
+                        />
+                      </Grid>
+                      <Grid item>
+                        <Grid container>
+                          <TextField
+                            value={RepeatAlerts.byId[id].warning.delay}
+                            type="text"
+                            name="delayWarning"
+                            label="Delay"
+                            placeholder="60"
+                            onChange={(event) => {
+                              updateRepeatAlertDetails(
+                                {
+                                  id,
+                                  parentId: currentChain,
+                                  alert: {
+                                    name: RepeatAlerts.byId[id].name,
+                                    warning: {
+                                      delay: event.target.value,
+                                      repeat: RepeatAlerts.byId[id].warning.repeat,
+                                      enabled: RepeatAlerts.byId[id].warning.enabled,
+                                    },
+                                    critical: RepeatAlerts.byId[id].critical,
+                                    enabled: RepeatAlerts.byId[id].enabled,
+                                  },
+                                },
+                              );
+                            }}
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid container>
+                          <TextField
+                            value={RepeatAlerts.byId[id].warning.repeat}
+                            type="text"
+                            name="repeatWarning"
+                            label="Repeat"
+                            placeholder="60"
+                            onChange={(event) => {
+                              updateRepeatAlertDetails({
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: RepeatAlerts.byId[id].name,
+                                  warning: {
+                                    delay: RepeatAlerts.byId[id].warning.delay,
+                                    repeat: event.target.value,
+                                    enabled: RepeatAlerts.byId[id].warning.enabled,
+                                  },
+                                  critical: RepeatAlerts.byId[id].critical,
+                                  enabled: RepeatAlerts.byId[id].enabled,
+                                },
+                              });
+                            }}
+                            fullWidth
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
                   </TableCell>
                   <TableCell align="center">
                     <FormControlLabel
                       control={(
                         <Checkbox
-                          checked={config.alerts.thresholds[alert].warning.enabled}
+                          checked={RepeatAlerts.byId[id].critical.enabled}
                           onClick={() => {
-                            updateWarningEnabledSubstrate(
+                            updateRepeatAlertDetails(
                               {
-                                alertID: alert,
-                                enabled: !config.alerts.thresholds[alert].warning.enabled,
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: RepeatAlerts.byId[id].name,
+                                  warning: RepeatAlerts.byId[id].warning,
+                                  critical: {
+                                    delay: RepeatAlerts.byId[id].critical.delay,
+                                    repeat: RepeatAlerts.byId[id].critical.repeat,
+                                    enabled: !RepeatAlerts.byId[id].critical.enabled,
+                                  },
+                                  enabled: RepeatAlerts.byId[id].enabled,
+                                },
                               },
                             );
                           }}
@@ -100,93 +188,197 @@ const AlertsTable = (props) => {
                       label="Enabled"
                       labelPlacement="end"
                     />
-                    {config.alerts.thresholds[alert].warning.hasOwnProperty('delay')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.delay}
-                          type="text"
-                          name="delayWarning"
-                          label="Delay"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningDelaySubstrate(
-                              {
-                                alertID: alert,
+                    <TextField
+                      value={RepeatAlerts.byId[id].critical.delay}
+                      type="text"
+                      name="delayWarning"
+                      label="Delay"
+                      placeholder="60"
+                      onChange={(event) => {
+                        updateRepeatAlertDetails(
+                          {
+                            id,
+                            parentId: currentChain,
+                            alert: {
+                              name: RepeatAlerts.byId[id].name,
+                              critical: {
                                 delay: event.target.value,
+                                repeat: RepeatAlerts.byId[id].critical.repeat,
+                                enabled: RepeatAlerts.byId[id].critical.enabled,
                               },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].warning.hasOwnProperty('repeat')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.repeat}
-                          type="text"
-                          name="repeatWarning"
-                          label="Repeat"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningRepeatSubstrate(
-                              {
-                                alertID: alert,
-                                repeat: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].warning.hasOwnProperty('threshold')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.threshold}
-                          type="text"
-                          name="thresholdWarning"
-                          label="Threshold"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningThresholdSubstrate(
-                              {
-                                alertID: alert,
-                                threshold: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].warning.hasOwnProperty('timewindow')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].warning.timewindow}
-                          type="text"
-                          label="Time Window"
-                          name="timewindowWarning"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateWarningTimeWindowSubstrate(
-                              {
-                                alertID: alert,
-                                timewindow: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
+                              warning: RepeatAlerts.byId[id].warning,
+                              enabled: RepeatAlerts.byId[id].enabled,
+                            },
+                          },
+                        );
+                      }}
+                      fullWidth
+                    />
+                    <TextField
+                      value={RepeatAlerts.byId[id].critical.repeat}
+                      type="text"
+                      name="repeatWarning"
+                      label="Repeat"
+                      placeholder="60"
+                      onChange={(event) => {
+                        updateRepeatAlertDetails({
+                          id,
+                          parentId: currentChain,
+                          alert: {
+                            name: RepeatAlerts.byId[id].name,
+                            warning: {
+                              delay: RepeatAlerts.byId[id].critical.delay,
+                              repeat: event.target.value,
+                              enabled: RepeatAlerts.byId[id].critical.enabled,
+                            },
+                            critical: RepeatAlerts.byId[id].critical,
+                            enabled: RepeatAlerts.byId[id].enabled,
+                          },
+                        });
+                      }}
+                      fullWidth
+                    />
                   </TableCell>
                   <TableCell align="center">
                     <FormControlLabel
                       control={(
                         <Checkbox
-                          checked={config.alerts.thresholds[alert].critical.enabled}
+                          checked={RepeatAlerts.byId[id].enabled}
                           onClick={() => {
-                            updateCriticalEnabledSubstrate(
+                            updateRepeatAlertDetails({
+                              id,
+                              parentId: currentChain,
+                              alert: {
+                                name: RepeatAlerts.byId[id].name,
+                                warning: RepeatAlerts.byId[id].warning,
+                                critical: RepeatAlerts.byId[id].critical,
+                                enabled: !RepeatAlerts.byId[id].enabled,
+                              },
+                            });
+                          }}
+                          name="enabled"
+                          color="primary"
+                        />
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+              {TimeWindowAlerts.allIds.map((id) => (
+                <TableRow key={id}>
+                  <TableCell align="center">
+                    {TimeWindowAlerts.byId[id].name}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Grid container>
+                      <Grid item>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={TimeWindowAlerts.byId[id].warning.enabled}
+                              onClick={() => {
+                                updateTimeWindowAlertDetails(
+                                  {
+                                    id,
+                                    parentId: currentChain,
+                                    alert: {
+                                      name: TimeWindowAlerts.byId[id].name,
+                                      warning: {
+                                        threshold: TimeWindowAlerts.byId[id].warning.threshold,
+                                        timewindow: TimeWindowAlerts.byId[id].warning.timewindow,
+                                        enabled: !TimeWindowAlerts.byId[id].warning.enabled,
+                                      },
+                                      critical: TimeWindowAlerts.byId[id].critical,
+                                      enabled: TimeWindowAlerts.byId[id].enabled,
+                                    },
+                                  },
+                                );
+                              }}
+                              color="primary"
+                            />
+                          )}
+                          label="Enabled"
+                          labelPlacement="end"
+                        />
+                      </Grid>
+                      <Grid item>
+                        <Grid container>
+                          <TextField
+                            value={TimeWindowAlerts.byId[id].warning.threshold}
+                            type="text"
+                            name="thresholdWarning"
+                            label="Threshold"
+                            placeholder="60"
+                            onChange={(event) => {
+                              updateTimeWindowAlertDetails(
+                                {
+                                  id,
+                                  parentId: currentChain,
+                                  alert: {
+                                    name: TimeWindowAlerts.byId[id].name,
+                                    warning: {
+                                      threshold: event.target.value,
+                                      timewindow: TimeWindowAlerts.byId[id].warning.timewindow,
+                                      enabled: TimeWindowAlerts.byId[id].warning.enabled,
+                                    },
+                                    critical: TimeWindowAlerts.byId[id].critical,
+                                    enabled: TimeWindowAlerts.byId[id].enabled,
+                                  },
+                                },
+                              );
+                            }}
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid container>
+                          <TextField
+                            value={TimeWindowAlerts.byId[id].warning.timewindow}
+                            type="text"
+                            name="timewindowWarning"
+                            label="Repeat"
+                            placeholder="60"
+                            onChange={(event) => {
+                              updateTimeWindowAlertDetails({
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: TimeWindowAlerts.byId[id].name,
+                                  warning: {
+                                    threshold: TimeWindowAlerts.byId[id].warning.threshold,
+                                    timewindow: event.target.value,
+                                    enabled: TimeWindowAlerts.byId[id].warning.enabled,
+                                  },
+                                  critical: TimeWindowAlerts.byId[id].critical,
+                                  enabled: TimeWindowAlerts.byId[id].enabled,
+                                },
+                              });
+                            }}
+                            fullWidth
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </TableCell>
+                  <TableCell align="center">
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={TimeWindowAlerts.byId[id].critical.enabled}
+                          onClick={() => {
+                            updateTimeWindowAlertDetails(
                               {
-                                alertID: alert,
-                                enabled: !config.alerts.thresholds[alert].critical.enabled,
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: TimeWindowAlerts.byId[id].name,
+                                  warning: TimeWindowAlerts.byId[id].warning,
+                                  critical: {
+                                    threshold: TimeWindowAlerts.byId[id].critical.threshold,
+                                    timewindow: TimeWindowAlerts.byId[id].critical.timewindow,
+                                    enabled: !TimeWindowAlerts.byId[id].critical.enabled,
+                                  },
+                                  enabled: TimeWindowAlerts.byId[id].enabled,
+                                },
                               },
                             );
                           }}
@@ -196,95 +388,219 @@ const AlertsTable = (props) => {
                       label="Enabled"
                       labelPlacement="end"
                     />
-                    {config.alerts.thresholds[alert].critical.hasOwnProperty('delay')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].critical.delay}
-                          type="text"
-                          name="delayCritical"
-                          label="Delay"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateCriticalDelaySubstrate(
-                              {
-                                alertID: alert,
-                                delay: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].critical.hasOwnProperty('repeat')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].critical.repeat}
-                          type="text"
-                          name="repeatCritical"
-                          label="Repeat"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateCriticalRepeatSubstrate(
-                              {
-                                alertID: alert,
-                                repeat: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].critical.hasOwnProperty('threshold')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].critical.threshold}
-                          type="text"
-                          name="thresholdCritical"
-                          label="Threshold"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateCriticalThresholdSubstrate(
-                              {
-                                alertID: alert,
+                    <TextField
+                      value={TimeWindowAlerts.byId[id].critical.threshold}
+                      type="text"
+                      name="thresholdWarning"
+                      label="Threshold"
+                      placeholder="60"
+                      onChange={(event) => {
+                        updateTimeWindowAlertDetails(
+                          {
+                            id,
+                            parentId: currentChain,
+                            alert: {
+                              name: TimeWindowAlerts.byId[id].name,
+                              warning: TimeWindowAlerts.byId[id].warning,
+                              critical: {
                                 threshold: event.target.value,
+                                timewindow: TimeWindowAlerts.byId[id].critical.timewindow,
+                                enabled: TimeWindowAlerts.byId[id].critical.enabled,
                               },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
-                    {config.alerts.thresholds[alert].critical.hasOwnProperty('timewindow')
-                      && (
-                        <TextField
-                          value={config.alerts.thresholds[alert].critical.timewindow}
-                          type="text"
-                          label="Time Window"
-                          name="timewindowCritical"
-                          placeholder="60"
-                          onChange={(event) => {
-                            updateCriticalTimeWindowSubstrate(
-                              {
-                                alertID: alert,
-                                timewindow: event.target.value,
-                              },
-                            );
-                          }}
-                          fullWidth
-                        />
-                      )}
+                              enabled: TimeWindowAlerts.byId[id].enabled,
+                            },
+                          },
+                        );
+                      }}
+                      fullWidth
+                    />
+                    <TextField
+                      value={TimeWindowAlerts.byId[id].critical.timewindow}
+                      type="text"
+                      name="timewindowWarning"
+                      label="Repeat"
+                      placeholder="60"
+                      onChange={(event) => {
+                        updateTimeWindowAlertDetails({
+                          id,
+                          parentId: currentChain,
+                          alert: {
+                            name: TimeWindowAlerts.byId[id].name,
+                            warning: TimeWindowAlerts.byId[id].warning,
+                            critical: {
+                              threshold: TimeWindowAlerts.byId[id].critical.threshold,
+                              timewindow: event.target.value,
+                              enabled: TimeWindowAlerts.byId[id].critical.enabled,
+                            },
+                            enabled: TimeWindowAlerts.byId[id].enabled,
+                          },
+                        });
+                      }}
+                      fullWidth
+                    />
                   </TableCell>
                   <TableCell align="center">
                     <FormControlLabel
                       control={(
                         <Checkbox
-                          checked={config.alerts.thresholds[alert].enabled}
+                          checked={TimeWindowAlerts.byId[id].enabled}
                           onClick={() => {
-                            updateAlertEnabledSubstrate(
+                            updateTimeWindowAlertDetails({
+                              id,
+                              parentId: currentChain,
+                              alert: {
+                                name: TimeWindowAlerts.byId[id].name,
+                                warning: TimeWindowAlerts.byId[id].warning,
+                                critical: TimeWindowAlerts.byId[id].critical,
+                                enabled: !TimeWindowAlerts.byId[id].enabled,
+                              },
+                            });
+                          }}
+                          name="enabled"
+                          color="primary"
+                        />
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+              {ThresholdAlerts.allIds.map((id) => (
+                <TableRow key={id}>
+                  <TableCell align="center">
+                    {ThresholdAlerts.byId[id].name}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Grid container>
+                      <Grid item>
+                        <FormControlLabel
+                          control={(
+                            <Checkbox
+                              checked={ThresholdAlerts.byId[id].warning.enabled}
+                              onClick={() => {
+                                updateThresholdAlertDetails(
+                                  {
+                                    id,
+                                    parentId: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      warning: {
+                                        threshold: ThresholdAlerts.byId[id].warning.threshold,
+                                        enabled: !ThresholdAlerts.byId[id].warning.enabled,
+                                      },
+                                      critical: ThresholdAlerts.byId[id].critical,
+                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                    },
+                                  },
+                                );
+                              }}
+                              color="primary"
+                            />
+                          )}
+                          label="Enabled"
+                          labelPlacement="end"
+                        />
+                      </Grid>
+                      <Grid item>
+                        <Grid container>
+                          <TextField
+                            value={ThresholdAlerts.byId[id].warning.threshold}
+                            type="text"
+                            name="thresholdWarning"
+                            label="Threshold"
+                            placeholder="60"
+                            onChange={(event) => {
+                              updateThresholdAlertDetails(
+                                {
+                                  id,
+                                  parentId: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    warning: {
+                                      threshold: event.target.value,
+                                      enabled: ThresholdAlerts.byId[id].warning.enabled,
+                                    },
+                                    critical: ThresholdAlerts.byId[id].critical,
+                                    enabled: ThresholdAlerts.byId[id].enabled,
+                                  },
+                                },
+                              );
+                            }}
+                            fullWidth
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </TableCell>
+                  <TableCell align="center">
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={ThresholdAlerts.byId[id].critical.enabled}
+                          onClick={() => {
+                            updateThresholdAlertDetails(
                               {
-                                alertID: alert,
-                                enabled: !config.alerts.thresholds[alert].enabled,
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: ThresholdAlerts.byId[id].name,
+                                  warning: ThresholdAlerts.byId[id].warning,
+                                  critical: {
+                                    threshold: ThresholdAlerts.byId[id].critical.threshold,
+                                    enabled: !ThresholdAlerts.byId[id].critical.enabled,
+                                  },
+                                  enabled: ThresholdAlerts.byId[id].enabled,
+                                },
                               },
                             );
+                          }}
+                          color="primary"
+                        />
+                      )}
+                      label="Enabled"
+                      labelPlacement="end"
+                    />
+                    <TextField
+                      value={ThresholdAlerts.byId[id].critical.threshold}
+                      type="text"
+                      name="thresholdWarning"
+                      label="Threshold"
+                      placeholder="60"
+                      onChange={(event) => {
+                        updateThresholdAlertDetails(
+                          {
+                            id,
+                            parentId: currentChain,
+                            alert: {
+                              name: ThresholdAlerts.byId[id].name,
+                              warning: ThresholdAlerts.byId[id].warning,
+                              critical: {
+                                threshold: event.target.value,
+                                enabled: ThresholdAlerts.byId[id].critical.enabled,
+                              },
+                              enabled: ThresholdAlerts.byId[id].enabled,
+                            },
+                          },
+                        );
+                      }}
+                      fullWidth
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={ThresholdAlerts.byId[id].enabled}
+                          onClick={() => {
+                            updateThresholdAlertDetails({
+                              id,
+                              parentId: currentChain,
+                              alert: {
+                                name: ThresholdAlerts.byId[id].name,
+                                warning: ThresholdAlerts.byId[id].warning,
+                                critical: ThresholdAlerts.byId[id].critical,
+                                enabled: !ThresholdAlerts.byId[id].enabled,
+                              },
+                            });
                           }}
                           name="enabled"
                           color="primary"
@@ -308,7 +624,7 @@ const AlertsTable = (props) => {
       </Typography>
       <Box py={4}>
         <TableContainer component={Paper}>
-          <Table className={classes.table} aria-label="simple table">
+          <Table aria-label="simple table">
             <TableHead>
               <TableRow>
                 <TableCell align="center">Alert</TableCell>
@@ -317,22 +633,27 @@ const AlertsTable = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Object.keys(config.alerts.severties).map((alert) => (
-                <TableRow key={config.alerts.severties[alert].name}>
+              {SeverityAlerts.allIds.map((id) => (
+                <TableRow key={id}>
                   <TableCell align="center">
-                    {config.alerts.severties[alert].name}
+                    {SeverityAlerts.byId[id].name}
                   </TableCell>
                   <TableCell align="center">
-                    <FormControl className={classes.formControl}>
+                    <FormControl>
                       <Select
                         labelId="severity"
                         id="severity-selection"
-                        value={config.alerts.severties[alert].severity}
+                        value={SeverityAlerts.byId[id].severity}
                         onChange={(event) => {
-                          updateAlertSeverityLevelSubstrate(
+                          updateSeverityAlertDetails(
                             {
-                              alertID: alert,
-                              severity: event.target.value,
+                              id,
+                              parentId: currentChain,
+                              alert: {
+                                name: SeverityAlerts.byId[id].name,
+                                severity: event.target.value,
+                                enabled: SeverityAlerts.byId[id].enabled,
+                              },
                             },
                           );
                         }}
@@ -347,12 +668,17 @@ const AlertsTable = (props) => {
                     <FormControlLabel
                       control={(
                         <Checkbox
-                          checked={config.alerts.severties[alert].enabled}
+                          checked={SeverityAlerts.byId[id].enabled}
                           onClick={() => {
-                            updateAlertSeverityEnabledSubstrate(
+                            updateSeverityAlertDetails(
                               {
-                                alertID: alert,
-                                enabled: !config.alerts.severties[alert].enabled,
+                                id,
+                                parentId: currentChain,
+                                alert: {
+                                  name: SeverityAlerts.byId[id].name,
+                                  severity: SeverityAlerts.byId[id].severity,
+                                  enabled: !SeverityAlerts.byId[id].enabled,
+                                },
                               },
                             );
                           }}
@@ -395,23 +721,76 @@ const AlertsTable = (props) => {
 };
 
 AlertsTable.propTypes = {
-  updateWarningDelaySubstrate: PropTypes.func.isRequired,
-  updateWarningRepeatSubstrate: PropTypes.func.isRequired,
-  updateWarningThresholdSubstrate: PropTypes.func.isRequired,
-  updateWarningTimeWindowSubstrate: PropTypes.func.isRequired,
-  updateWarningEnabledSubstrate: PropTypes.func.isRequired,
-  updateCriticalDelaySubstrate: PropTypes.func.isRequired,
-  updateCriticalRepeatSubstrate: PropTypes.func.isRequired,
-  updateCriticalThresholdSubstrate: PropTypes.func.isRequired,
-  updateCriticalTimeWindowSubstrate: PropTypes.func.isRequired,
-  updateCriticalEnabledSubstrate: PropTypes.func.isRequired,
-  updateAlertEnabledSubstrate: PropTypes.func.isRequired,
-  updateAlertSeverityLevelSubstrate: PropTypes.func.isRequired,
-  updateAlertSeverityEnabledSubstrate: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
-  addConfiguration: PropTypes.func.isRequired,
-  resetConfiguration: PropTypes.func.isRequired,
+  chainConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      repeatAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      timeWindowAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      thresholdAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      severityAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          severity: PropTypes.string,
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+    }).isRequired,
+    allIds: [],
+  }).isRequired,
+  currentChain: PropTypes.string.isRequired,
+  clearChainId: PropTypes.func.isRequired,
+  updateRepeatAlertDetails: PropTypes.func.isRequired,
+  updateTimeWindowAlertDetails: PropTypes.func.isRequired,
+  updateThresholdAlertDetails: PropTypes.func.isRequired,
+  updateSeverityAlertDetails: PropTypes.func.isRequired,
 };
 
 export default AlertsTable;

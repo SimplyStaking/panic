@@ -1,16 +1,19 @@
 import { connect } from 'react-redux';
 import SubstrateChainsTable from '../../../components/chains/substrate/tables/substrateChainsTable';
-import { removeConfigSubstrate, loadConfigSubstrate } from '../../../redux/actions/substrateChainsActions';
+import { removeChainSubstrate, loadConfigSubstrate } from '../../../redux/actions/substrateChainsActions';
 import { changePage } from '../../../redux/actions/pageActions';
 
+// We will need the configured state of the substrate nodes
 const mapStateToProps = (state) => ({
-  substrateConfigs: state.SubstrateChainsReducer.substrateConfigs,
+  config: state.SubstrateChainsReducer,
 });
 
+// Functions required are to change page, remove the chain details
+// later to also load the chain details.
 function mapDispatchToProps(dispatch) {
   return {
     pageChanger: (page) => dispatch(changePage(page)),
-    removeConfigDetails: (details) => dispatch(removeConfigSubstrate(details)),
+    removeChainDetails: (details) => dispatch(removeChainSubstrate(details)),
     loadConfigDetails: (details) => dispatch(loadConfigSubstrate(details)),
   };
 }

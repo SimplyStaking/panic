@@ -7,7 +7,7 @@ import {
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
-// import { COSMOS_SETUP_PAGE } from '../../../../constants/constants';
+// import { SUBSTRATE_SETUP_PAGE } from '../../../../constants/constants';
 
 const useStyles = makeStyles({
   table: {
@@ -21,9 +21,8 @@ const SubstrateChainsTable = (props) => {
   const classes = useStyles();
 
   const {
-    substrateConfigs,
+    config,
     // loadConfigDetails,
-    removeConfigDetails,
   } = props;
 
   // const manageConfiguration = (page, config) => {
@@ -32,7 +31,22 @@ const SubstrateChainsTable = (props) => {
   //   loadConfigDetails(config);
   // };
 
-  if (substrateConfigs.length === 0) {
+  // Function to clear all references, including the referenced objects
+  // from configured object.
+  function clearAllChainDetails(chainID) {
+    const { removeChainDetails } = props;
+    // First remove all the configured nodes
+    // Second remove all the configured githubs
+    // Third remove all the configured kmses
+    // Fourth remove all the configured alerts
+    // Finally remove the object itself.
+    const payload = {
+      id: chainID,
+    };
+    removeChainDetails(payload);
+  }
+
+  if (config.allIds.length === 0) {
     return <div />;
   }
   return (
@@ -46,15 +60,15 @@ const SubstrateChainsTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {substrateConfigs.map((config) => (
-            <TableRow key={config.chainName}>
+          {config.allIds.map((id) => (
+            <TableRow key={id}>
               <TableCell component="th" scope="row">
-                {config.chainName}
+                {config.byId[id].chainName}
               </TableCell>
               {/* <TableCell component="th" scope="row">
                 <Box px={2}>
                   <Button onClick={() => {
-                    manageConfiguration(COSMOS_SETUP_PAGE, config);
+                    manageConfiguration(SUBSTRATE_SETUP_PAGE, config);
                   }}
                   >
                     Manage
@@ -63,7 +77,7 @@ const SubstrateChainsTable = (props) => {
               </TableCell> */}
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeConfigDetails(config);
+                  clearAllChainDetails(id);
                 }}
                 >
                   <CancelIcon />
@@ -78,9 +92,15 @@ const SubstrateChainsTable = (props) => {
 };
 
 SubstrateChainsTable.propTypes = {
-  pageChanger: PropTypes.func.isRequired,
+  config: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      chainName: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  }).isRequired,
+  removeChainDetails: PropTypes.func.isRequired,
   // loadConfigDetails: PropTypes.func.isRequired,
-  removeConfigDetails: PropTypes.func.isRequired,
 };
 
 export default SubstrateChainsTable;

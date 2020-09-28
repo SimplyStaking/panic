@@ -1,44 +1,34 @@
 import { connect } from 'react-redux';
 import ChannelsTable from '../../../components/chains/cosmos/tables/channelsTable';
 import {
-  addTelegramChannelSubstrate, removeTelegramChannelSubstrate,
-  addTwilioChannelSubstrate, removeTwilioChannelSubstrate,
-  addEmailChannelSubstrate, removeEmailChannelSubstrate,
-  addPagerDutyChannelSubstrate, removePagerDutyChannelSubstrate,
-  addOpsGenieChannelSubstrate, removeOpsGenieChannelSubstrate,
-} from '../../../redux/actions/substrateChainsActions';
+  addTelegramChannel, removeTelegramChannel, addTwilioChannel,
+  removeTwilioChannel, addEmailChannel, removeEmailChannel,
+  addPagerDutyChannel, removePagerDutyChannel, addOpsGenieChannel,
+  removeOpsGenieChannel,
+} from '../../../redux/actions/cosmosChainsActions';
 
 const mapStateToProps = (state) => ({
-  telegrams: state.ChannelsReducer.telegrams,
-  twilios: state.ChannelsReducer.twilios,
-  emails: state.ChannelsReducer.emails,
-  pagerduties: state.ChannelsReducer.pagerDuties,
-  opsgenies: state.ChannelsReducer.opsGenies,
-  config: state.SubstrateChainsReducer.config,
+  telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
+  emails: state.EmailsReducer,
+  pagerduties: state.PagerDutyReducer,
+  opsgenies: state.OpsGenieReducer,
+  currentChain: state.CurrentSubstrateChain,
+  chainConfig: state.SubstrateChainsReducer,
 });
 
 function mapDispatchToProps(dispatch) {
   return {
-    addTelegramDetails:
-      (details) => dispatch(addTelegramChannelSubstrate(details)),
-    removeTelegramDetails:
-      (details) => dispatch(removeTelegramChannelSubstrate(details)),
-    addTwilioDetails:
-      (details) => dispatch(addTwilioChannelSubstrate(details)),
-    removeTwilioDetails:
-      (details) => dispatch(removeTwilioChannelSubstrate(details)),
-    addEmailDetails:
-      (details) => dispatch(addEmailChannelSubstrate(details)),
-    removeEmailDetails:
-      (details) => dispatch(removeEmailChannelSubstrate(details)),
-    addPagerDutyDetails:
-      (details) => dispatch(addPagerDutyChannelSubstrate(details)),
-    removePagerDutyDetails:
-      (details) => dispatch(removePagerDutyChannelSubstrate(details)),
-    addOpsGenieDetails:
-      (details) => dispatch(addOpsGenieChannelSubstrate(details)),
-    removeOpsGenieDetails:
-      (details) => dispatch(removeOpsGenieChannelSubstrate(details)),
+    addTelegramDetails: (details) => dispatch(addTelegramChannel(details)),
+    removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
+    addTwilioDetails: (details) => dispatch(addTwilioChannel(details)),
+    removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
+    addEmailDetails: (details) => dispatch(addEmailChannel(details)),
+    removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
+    addPagerDutyDetails: (details) => dispatch(addPagerDutyChannel(details)),
+    removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
+    addOpsGenieDetails: (details) => dispatch(addOpsGenieChannel(details)),
+    removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
   };
 }
 

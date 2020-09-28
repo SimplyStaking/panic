@@ -20,11 +20,13 @@ const NodesTable = (props) => {
   const classes = useStyles();
 
   const {
-    config,
+    chainConfig,
+    nodesConfig,
+    currentChain,
     removeNodeDetails,
   } = props;
 
-  if (config.nodes.length === 0) {
+  if (chainConfig.byId[currentChain].nodes.length === 0) {
     return <div />;
   }
   return (
@@ -33,10 +35,11 @@ const NodesTable = (props) => {
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Tendermint</TableCell>
-            <TableCell align="center">Cosmos SDK</TableCell>
+            <TableCell align="center">Websocket</TableCell>
+            <TableCell align="center">Telemetry</TableCell>
             <TableCell align="center">Prometheus</TableCell>
             <TableCell align="center">Node Exporter</TableCell>
+            <TableCell align="center">Stash Address</TableCell>
             <TableCell align="center">Validator</TableCell>
             <TableCell align="center">Monitor</TableCell>
             <TableCell align="center">Archive</TableCell>
@@ -45,29 +48,30 @@ const NodesTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {config.nodes.map((node) => (
-            <TableRow key={node.cosmosNodeName}>
-              <TableCell component="th" scope="row">
-                {node.cosmosNodeName}
+          {chainConfig.byId[currentChain].nodes.map((id) => (
+            <TableRow key={id}>
+              <TableCell align="center" component="th" scope="row">
+                {nodesConfig.byId[id].substrateNodeName}
               </TableCell>
-              <TableCell align="center">{node.tendermintRPCURL}</TableCell>
-              <TableCell align="center">{node.cosmosRPCURL}</TableCell>
-              <TableCell align="center">{node.prometheusURL}</TableCell>
-              <TableCell align="center">{node.exporterURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].nodeWSURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].telemetryURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].prometheusURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].exporterURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].stashAddress}</TableCell>
               <TableCell align="center">
-                {node.isValidator ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                {node.monitorNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].isValidator ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {node.isArchiveNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].monitorNode ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {node.useAsDataSource ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].isArchiveNode ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeNodeDetails(node); }}>
+                {nodesConfig.byId[id].useAsDataSource ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => { removeNodeDetails(nodesConfig.byId[id]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -80,20 +84,31 @@ const NodesTable = (props) => {
 };
 
 NodesTable.propTypes = {
-  config: PropTypes.shape({
-    nodes: PropTypes.arrayOf(PropTypes.shape({
-      cosmosNodeName: PropTypes.string.isRequired,
-      tendermintRPCURL: PropTypes.string.isRequired,
-      cosmosRPCURL: PropTypes.string.isRequired,
-      prometheusURL: PropTypes.string.isRequired,
-      exporterURL: PropTypes.string.isRequired,
-      isValidator: PropTypes.bool.isRequired,
-      monitorNode: PropTypes.bool.isRequired,
-      isArchiveNode: PropTypes.bool.isRequired,
-      useAsDataSource: PropTypes.bool.isRequired,
-    })).isRequired,
+  chainConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      nodes: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  nodesConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parentId: PropTypes.string,
+      substrateNodeName: PropTypes.string.isRequired,
+      nodeWSURL: PropTypes.string,
+      telemetryURL: PropTypes.string,
+      prometheusURL: PropTypes.string,
+      exporterURL: PropTypes.string,
+      stashAddress: PropTypes.string,
+      isValidator: PropTypes.bool,
+      monitorNode: PropTypes.bool,
+      isArchiveNode: PropTypes.bool,
+      useAsDataSource: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 };
 
 export default NodesTable;

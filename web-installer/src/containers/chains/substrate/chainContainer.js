@@ -1,7 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChainForm from '../../../components/chains/substrate/forms/chainForm';
-import { addChainSubstrate } from '../../../redux/actions/substrateChainsActions';
+import { addChainSubstrate, updateChainSubstrate, resetCurrentChainId } from '../../../redux/actions/substrateChainsActions';
+import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import ChainSchema from './schemas/chainSchema';
 
 const Form = withFormik({
@@ -12,23 +13,24 @@ const Form = withFormik({
     chainName: '',
   }),
   validationSchema: (props) => ChainSchema(props),
-  handleSubmit: (values, { props }) => {
-    const { saveChainDetails } = props;
-    const payload = {
-      chainName: values.chainName,
-    };
-    saveChainDetails(payload);
-  },
 })(ChainForm);
 
 const mapStateToProps = (state) => ({
-  substrateConfigs: state.SubstrateChainsReducer.substrateConfigs,
-  config: state.SubstrateChainsReducer.config,
+  step: state.ChangeStepReducer.step,
+  config: state.SubstrateChainsReducer,
+  currentChain: state.CurrentSubstrateChain,
 });
 
+// step and page changers are used diretly in this form instead of their
+// respective button containers as extra functionality is needed for the
+// onSubmit events.
 function mapDispatchToProps(dispatch) {
   return {
     saveChainDetails: (details) => dispatch(addChainSubstrate(details)),
+    updateChainDetails: (details) => dispatch(updateChainSubstrate(details)),
+    clearChainId: () => dispatch(resetCurrentChainId()),
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
   };
 }
 

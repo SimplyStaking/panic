@@ -636,7 +636,6 @@ const AlertsTable = (props) => {
               {SeverityAlerts.allIds.map((id) => (
                 <TableRow key={id}>
                   <TableCell align="center">
-                    {console.log(SeverityAlerts)}
                     {SeverityAlerts.byId[id].name}
                   </TableCell>
                   <TableCell align="center">

@@ -20,11 +20,13 @@ const RepositoriesTable = (props) => {
   const classes = useStyles();
 
   const {
-    config,
+    currentChain,
+    chainConfig,
+    reposConfig,
     removeRepositoryDetails,
   } = props;
 
-  if (config.repositories.length === 0) {
+  if (chainConfig.byId[currentChain].repositories.length === 0) {
     return <div />;
   }
   return (
@@ -32,22 +34,22 @@ const RepositoriesTable = (props) => {
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell align="center">Name</TableCell>
             <TableCell align="center">Monitor</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {config.repositories.map((repository) => (
-            <TableRow key={repository.repoName}>
-              <TableCell component="th" scope="row">
-                {repository.repoName}
+          {chainConfig.byId[currentChain].repositories.map((id) => (
+            <TableRow key={id}>
+              <TableCell align="center" component="th" scope="row">
+                {reposConfig.byId[id].repoName}
               </TableCell>
               <TableCell align="center">
-                {repository.monitorNode ? <CheckIcon /> : <ClearIcon />}
+                {reposConfig.byId[id].monitorRepo ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeRepositoryDetails(repository); }}>
+                <Button onClick={() => { removeRepositoryDetails(reposConfig.byId[id]); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -60,13 +62,23 @@ const RepositoriesTable = (props) => {
 };
 
 RepositoriesTable.propTypes = {
-  config: PropTypes.shape({
-    repositories: PropTypes.arrayOf(PropTypes.shape({
-      repoName: PropTypes.string.isRequired,
-      monitorRepo: PropTypes.bool.isRequired,
-    })).isRequired,
+  chainConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      repositories: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  reposConfig: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parentId: PropTypes.string,
+      repoName: PropTypes.string,
+      monitorRepo: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 };
 
 export default RepositoriesTable;

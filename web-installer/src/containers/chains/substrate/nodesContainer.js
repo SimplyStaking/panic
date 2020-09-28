@@ -23,8 +23,9 @@ const Form = withFormik({
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveNodeDetails } = props;
+    const { saveNodeDetails, currentChain } = props;
     const payload = {
+      parentId: currentChain,
       substrateNodeName: values.substrateNodeName,
       nodeWSURL: values.nodeWSURL,
       telemetryURL: values.telemetryURL,
@@ -41,9 +42,12 @@ const Form = withFormik({
   },
 })(NodesForm);
 
+// Need all of the configuration, including the current chain id we are setting
+// up.
 const mapStateToProps = (state) => ({
-  substrateConfigs: state.SubstrateChainsReducer.substrateConfigs,
-  config: state.SubstrateChainsReducer.config,
+  currentChain: state.CurrentSubstrateChain,
+  chainConfig: state.SubstrateChainsReducer,
+  nodesConfig: state.SubstrateNodesReducer,
 });
 
 function mapDispatchToProps(dispatch) {
