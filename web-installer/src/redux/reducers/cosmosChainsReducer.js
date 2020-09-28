@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { combineReducers } from 'redux';
+import { INFO, WARNING, CRITICAL } from '../../constants/constants';
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS,
   REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
@@ -7,11 +8,267 @@ import {
   REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
   ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
+  UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT,
+  UPDATE_SEVERITY_ALERT,
 } from '../actions/types';
 
-// Substrate and Cosmos nodes could be grouped up together, but I think it's
-// better to keep them seperate and therefore more manageable. This is because
-// unlike KMS/Github they have different keys.
+const cosmosRepeatAlerts = {
+  byId: {
+    1: {
+      name: 'Cannot access validator',
+      warning: {
+        delay: 60,
+        repeat: 0,
+        enabled: true,
+      },
+      critical: {
+        delay: 60,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    2: {
+      name: 'Cannot access node',
+      warning: {
+        delay: 60,
+        repeat: 300,
+        enabled: true,
+      },
+      critical: {
+        delay: 120,
+        repeat: 300,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    3: {
+      name: 'Lost connection with specific peer',
+      warning: {
+        delay: 60,
+        repeat: 0,
+        enabled: true,
+      },
+      critical: {
+        delay: 120,
+        repeat: 0,
+        enabled: false,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['1', '2'],
+};
+
+const cosmosTimeWindowAlerts = {
+  byId: {
+    1: {
+      name: 'Missed Blocks',
+      warning: {
+        threshold: 20,
+        timewindow: 360,
+        enabled: true,
+      },
+      critical: {
+        threshold: 100,
+        timewindow: 3600,
+        enabled: true,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['1'],
+};
+
+const cosmosThresholdAlerts = {
+  byId: {
+    1: {
+      name: 'Open File Descriptors increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    2: {
+      name: 'Peer count decreased',
+      warning: {
+        threshold: 3,
+        enabled: true,
+      },
+      critical: {
+        threshold: 2,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    3: {
+      name: 'No change in block height',
+      warning: {
+        threshold: 180,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    4: {
+      name: 'Time of last pre-commit/pre-vote activity is above threshold',
+      warning: {
+        threshold: 60,
+        enabled: true,
+      },
+      critical: {
+        threshold: 180,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    5: {
+      name: 'Mempool Size',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    6: {
+      name: 'System CPU usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    7: {
+      name: 'System storage usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    8: {
+      name: 'System RAM usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    9: {
+      name: 'System network usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+};
+
+const cosmosSeverityAlerts = {
+  byId: {
+    1: {
+      name: 'Validator inaccessible on startup',
+      severity: CRITICAL,
+      enabled: true,
+    },
+    2: {
+      name: 'Node inaccessible on startup',
+      severity: WARNING,
+      enabled: true,
+    },
+    3: {
+      name: 'Slashed',
+      severity: CRITICAL,
+      enabled: true,
+    },
+    4: {
+      name: 'Node is syncing',
+      severity: WARNING,
+      enabled: true,
+    },
+    5: {
+      name: 'Validator is not active in this session',
+      severity: WARNING,
+      enabled: true,
+    },
+    6: {
+      name: 'Validator set size increased',
+      severity: INFO,
+      enabled: true,
+    },
+    7: {
+      name: 'Validator set size decreased',
+      severity: INFO,
+      enabled: true,
+    },
+    8: {
+      name: 'Validator is jailed',
+      severity: CRITICAL,
+      enabled: true,
+    },
+    9: {
+      name: 'Voting power increased',
+      severity: INFO,
+      enabled: false,
+    },
+    10: {
+      name: 'Validator power decreased',
+      severity: INFO,
+      enabled: false,
+    },
+    11: {
+      name: 'New proposal submitted',
+      severity: INFO,
+      enabled: false,
+    },
+    12: {
+      name: 'Proposal conducted',
+      severity: INFO,
+      enabled: false,
+    },
+    13: {
+      name: 'Delegated balance increase',
+      severity: INFO,
+      enabled: false,
+    },
+    14: {
+      name: 'Delegated balance decrease',
+      severity: INFO,
+      enabled: false,
+    },
+  },
+  allIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+};
 
 // Reducers to add and remove cosmos node configurations from global state
 function nodesById(state = {}, action) {
@@ -50,7 +307,23 @@ function cosmosChainsById(state = {}, action) {
     case ADD_CHAIN_COSMOS:
       return {
         ...state,
-        [action.payload.id]: action.payload,
+        [action.payload.id]: {
+          id: action.payload.id,
+          chainName: action.payload.chainName,
+          nodes: [],
+          kmses: [],
+          repositories: [],
+          alerts: [],
+          telegrams: [],
+          twilios: [],
+          emails: [],
+          pagerduties: [],
+          opsgenies: [],
+          repeatAlerts: cosmosRepeatAlerts,
+          timeWindowAlerts: cosmosTimeWindowAlerts,
+          thresholdAlerts: cosmosThresholdAlerts,
+          severityAlerts: cosmosSeverityAlerts,
+        },
       };
     case UPDATE_CHAIN_NAME:
       return {
@@ -276,6 +549,82 @@ function cosmosChainsById(state = {}, action) {
           ),
         },
       };
+    case UPDATE_REPEAT_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          repeatAlerts: {
+            ...state[action.payload.parentId].repeatAlerts,
+            byId: {
+              ...state[action.payload.parentId].repeatAlerts.byId,
+              [action.payload.id]: action.payload.alert,
+            },
+          },
+        },
+      };
+    case UPDATE_TIMEWINDOW_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          timeWindowAlerts: {
+            ...state[action.payload.parentId].timeWindowAlerts,
+            byId: {
+              ...state[action.payload.parentId].timeWindowAlerts.byId,
+              [action.payload.id]: action.payload.alert,
+            },
+          },
+        },
+      };
+    case UPDATE_THRESHOLD_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          thresholdAlerts: {
+            ...state[action.payload.parentId].thresholdAlerts,
+            byId: {
+              ...state[action.payload.parentId].thresholdAlerts.byId,
+              [action.payload.id]: action.payload.alert,
+            },
+          },
+        },
+      };
+    case UPDATE_SEVERITY_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parentId] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parentId]: {
+          ...state[action.payload.parentId],
+          severityAlerts: {
+            ...state[action.payload.parentId].severityAlerts,
+            byId: {
+              ...state[action.payload.parentId].severityAlerts.byId,
+              [action.payload.id]: action.payload.alert,
+            },
+          },
+        },
+      };
     default:
       return state;
   }
@@ -311,431 +660,3 @@ function CurrentCosmosChain(state = '', action) {
 export {
   CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain,
 };
-
-// OLD Reducer to be removed
-
-// function cosmosChainsReducer(state = {}, action) {
-//   switch (action.type) {
-//     case ADD_CHAIN_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           chainName: action.payload.chainName,
-//         },
-//       };
-//     case ADD_REPOSITORY_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           repositories: state.config.repositories.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_REPOSITORY_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           repositories: state.config.repositories.filter(
-//             (repository) => repository !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_KMS_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           kmses: state.config.kmses.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_KMS_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           kmses: state.config.kmses.filter(
-//             (kms) => kms !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_TELEGRAM_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           telegrams: state.config.telegrams.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_TELEGRAM_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           telegrams: state.config.telegrams.filter(
-//             (telegram) => telegram !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_OPSGENIE_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           opsgenies: state.config.opsgenies.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_OPSGENIE_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           opsgenies: state.config.opsgenies.filter(
-//             (opsgenie) => opsgenie !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_EMAIL_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           emails: state.config.emails.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_EMAIL_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           emails: state.config.emails.filter(
-//             (email) => email !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_TWILIO_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           twilios: state.config.twilios.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_TWILIO_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           twilios: state.config.twilios.filter(
-//             (twilio) => twilio !== action.payload,
-//           ),
-//         },
-//       };
-//     case ADD_PAGERDUTY_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           pagerduties: state.config.pagerduties.concat(action.payload),
-//         },
-//       };
-//     case REMOVE_PAGERDUTY_CHANNEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           pagerduties: state.config.pagerduties.filter(
-//             (pagerduty) => pagerduty !== action.payload,
-//           ),
-//         },
-//       };
-//     case SET_ALERTS_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: action.payload.alerts,
-//         },
-//       };
-//     case ADD_CONFIG_COSMOS:
-//       return {
-//         ...state,
-//         cosmosConfigs: state.cosmosConfigs.concat(state.config),
-//       };
-//     case REMOVE_CONFIG_COSMOS:
-//       return {
-//         ...state,
-//         cosmosConfigs: state.cosmosConfigs.filter(
-//           (cosmosConfig) => cosmosConfig !== action.payload,
-//         ),
-//       };
-//     case RESET_CONFIG_COSMOS:
-//       return {
-//         ...state,
-//         config: initialstate.config,
-//       };
-//     case LOAD_CONFIG_COSMOS:
-//       return {
-//         ...state,
-//         config: state.cosmosConfigs.filter(
-//           (cosmosConfig) => cosmosConfig === action.payload,
-//         )[0],
-//       };
-//     case UPDATE_WARNING_DELAY_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 warning: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
-//                   delay: action.payload.delay,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_WARNING_REPEAT_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 warning: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
-//                   repeat: action.payload.repeat,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_WARNING_THRESHOLD_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 warning: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
-//                   threshold: action.payload.threshold,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_WARNING_TIMEWINDOW_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 warning: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
-//                   timewindow: action.payload.timewindow,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_WARNING_ENABLED_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 warning: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].warning,
-//                   enabled: action.payload.enabled,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_CRITICAL_DELAY_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 critical: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].critical,
-//                   delay: action.payload.delay,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_CRITICAL_REPEAT_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 critical: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].critical,
-//                   repeat: action.payload.repeat,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_CRITICAL_THRESHOLD_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 critical: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].critical,
-//                   threshold: action.payload.threshold,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_CRITICAL_TIMEWINDOW_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 critical: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].critical,
-//                   timewindow: action.payload.timewindow,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_CRITICAL_ENABLED_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 critical: {
-//                   ...state.config.alerts.thresholds[action.payload.alertID].critical,
-//                   enabled: action.payload.enabled,
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_ALERT_ENABLED_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             thresholds: {
-//               ...state.config.alerts.thresholds,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.thresholds[action.payload.alertID],
-//                 enabled: action.payload.enabled,
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_ALERT_SEVERTY_LEVEL_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             severties: {
-//               ...state.config.alerts.severties,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.severties[action.payload.alertID],
-//                 severity: action.payload.severity,
-//               },
-//             },
-//           },
-//         },
-//       };
-//     case UPDATE_ALERT_SEVERTY_ENABLED_COSMOS:
-//       return {
-//         ...state,
-//         config: {
-//           ...state.config,
-//           alerts: {
-//             ...state.config.alerts,
-//             severties: {
-//               ...state.config.alerts.severties,
-//               [action.payload.alertID]: {
-//                 ...state.config.alerts.severties[action.payload.alertID],
-//                 enabled: action.payload.enabled,
-//               },
-//             },
-//           },
-//         },
-//       };
-//     default:
-//       return state;
-//   }
-// }
-
-// export default cosmosChainsReducer;

@@ -1,18 +1,11 @@
 import {
-  ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, ADD_REPOSITORY_COSMOS, REMOVE_NODE_COSMOS,
-  REMOVE_REPOSITORY_COSMOS, ADD_KMS_COSMOS, REMOVE_KMS_COSMOS, SET_ALERTS_COSMOS,
-  ADD_CONFIG_COSMOS, REMOVE_CONFIG_COSMOS, RESET_CONFIG_COSMOS,
-  LOAD_CONFIG_COSMOS, ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL,
-  ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL,
-  REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL, UPDATE_WARNING_DELAY_COSMOS,
-  UPDATE_WARNING_REPEAT_COSMOS, UPDATE_WARNING_THRESHOLD_COSMOS,
-  UPDATE_WARNING_TIMEWINDOW_COSMOS, UPDATE_WARNING_ENABLED_COSMOS,
-  UPDATE_CRITICAL_DELAY_COSMOS, UPDATE_CRITICAL_REPEAT_COSMOS,
-  UPDATE_CRITICAL_THRESHOLD_COSMOS, UPDATE_CRITICAL_TIMEWINDOW_COSMOS,
-  UPDATE_CRITICAL_ENABLED_COSMOS, UPDATE_ALERT_ENABLED_COSMOS,
-  UPDATE_ALERT_SEVERTY_LEVEL_COSMOS, UPDATE_ALERT_SEVERTY_ENABLED_COSMOS,
-  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS,
+  ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS, LOAD_CONFIG_COSMOS,
+  ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL,
+  REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL,
+  ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL,
+  REMOVE_OPSGENIE_CHANNEL, RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME,
+  REMOVE_CHAIN_COSMOS, UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT,
+  UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -27,15 +20,6 @@ export function addChainCosmos(payload) {
     payload: {
       id: uuidv4(),
       chainName: payload.chainName,
-      nodes: [],
-      kmses: [],
-      repositories: [],
-      alerts: [],
-      telegrams: [],
-      twilios: [],
-      emails: [],
-      pagerduties: [],
-      opsgenies: [],
     },
   };
 }
@@ -49,17 +33,6 @@ export function removeChainCosmos(payload) {
     payload,
   };
 }
-
-// @REMOVE Currently edited out, potentially not needed
-
-// This function is used to keep track of which cosmos chain we are currently
-// editing in the multi-step form.
-// export function setCurrentCosmosChain(payload) {
-//   return {
-//     type: SET_CHAIN_COSMOS,
-//     payload,
-//   };
-// }
 
 // This function is used to change the name of the current chain
 export function updateChainCosmos(payload) {
@@ -104,61 +77,6 @@ export function removeNodeCosmos(payload) {
   return {
     type: REMOVE_NODE_COSMOS,
     payload,
-  };
-}
-
-// @REMOVE remove the 4 functions underneath, these are now general
-export function addRepositoryCosmos(payload) {
-  return {
-    type: ADD_REPOSITORY_COSMOS,
-    payload,
-  };
-}
-
-export function removeRepositoryCosmos(payload) {
-  return {
-    type: REMOVE_REPOSITORY_COSMOS,
-    payload,
-  };
-}
-
-export function addKMSCosmos(payload) {
-  return {
-    type: ADD_KMS_COSMOS,
-    payload,
-  };
-}
-
-export function removeKMSCosmos(payload) {
-  return {
-    type: REMOVE_KMS_COSMOS,
-    payload,
-  };
-}
-
-export function setAlertsCosmos(payload) {
-  return {
-    type: SET_ALERTS_COSMOS,
-    payload,
-  };
-}
-
-export function addConfigCosmos() {
-  return {
-    type: ADD_CONFIG_COSMOS,
-  };
-}
-
-export function removeConfigCosmos(payload) {
-  return {
-    type: REMOVE_CONFIG_COSMOS,
-    payload,
-  };
-}
-
-export function resetConfigCosmos() {
-  return {
-    type: RESET_CONFIG_COSMOS,
   };
 }
 
@@ -239,93 +157,30 @@ export function removeOpsGenieChannel(payload) {
   };
 }
 
-export function updateWarningDelayCosmos(payload) {
+export function updateRepeatAlert(payload) {
   return {
-    type: UPDATE_WARNING_DELAY_COSMOS,
+    type: UPDATE_REPEAT_ALERT,
     payload,
   };
 }
 
-export function updateWarningRepeatCosmos(payload) {
+export function updateTimeWindowAlert(payload) {
   return {
-    type: UPDATE_WARNING_REPEAT_COSMOS,
+    type: UPDATE_TIMEWINDOW_ALERT,
     payload,
   };
 }
 
-export function updateWarningThresholdCosmos(payload) {
+export function updateThresholdAlert(payload) {
   return {
-    type: UPDATE_WARNING_THRESHOLD_COSMOS,
+    type: UPDATE_THRESHOLD_ALERT,
     payload,
   };
 }
 
-export function updateWarningTimeWindowCosmos(payload) {
+export function updateSeverityAlert(payload) {
   return {
-    type: UPDATE_WARNING_TIMEWINDOW_COSMOS,
-    payload,
-  };
-}
-
-export function updateWarningEnabledCosmos(payload) {
-  return {
-    type: UPDATE_WARNING_ENABLED_COSMOS,
-    payload,
-  };
-}
-
-export function updateCriticalDelayCosmos(payload) {
-  return {
-    type: UPDATE_CRITICAL_DELAY_COSMOS,
-    payload,
-  };
-}
-
-export function updateCriticalRepeatCosmos(payload) {
-  return {
-    type: UPDATE_CRITICAL_REPEAT_COSMOS,
-    payload,
-  };
-}
-
-export function updateCriticalThresholdCosmos(payload) {
-  return {
-    type: UPDATE_CRITICAL_THRESHOLD_COSMOS,
-    payload,
-  };
-}
-
-export function updateCriticalTimeWindowCosmos(payload) {
-  return {
-    type: UPDATE_CRITICAL_TIMEWINDOW_COSMOS,
-    payload,
-  };
-}
-
-export function updateCriticalEnabledCosmos(payload) {
-  return {
-    type: UPDATE_CRITICAL_ENABLED_COSMOS,
-    payload,
-  };
-}
-
-export function updateAlertEnabledCosmos(payload) {
-  return {
-    type: UPDATE_ALERT_ENABLED_COSMOS,
-    payload,
-  };
-}
-
-export function updateAlertSeverityLevelCosmos(payload) {
-  return {
-    type: UPDATE_ALERT_SEVERTY_LEVEL_COSMOS,
-    payload,
-  };
-}
-
-export function updateAlertSeverityEnabledCosmos(payload) {
-  return {
-    type: UPDATE_ALERT_SEVERTY_ENABLED_COSMOS,
+    type: UPDATE_SEVERITY_ALERT,
     payload,
   };
 }
