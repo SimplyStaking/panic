@@ -46,7 +46,11 @@ function authenticate(username, password) {
   return sendData('/server/login', {}, { username, password });
 }
 
+function refreshAccessToken() {
+  return sendData('/server/refresh', {}, {});
+}
+
 export {
   fetchData, testCall, sendData, sendTestEmail, pingNode, pingRepo,
-  authenticate, sendTestPagerDuty, sendTestOpsGenie,
+  authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
 };

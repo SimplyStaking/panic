@@ -63,3 +63,4 @@ export const REMOVE_USER = 'REMOVE_USER';
 // Login actions
 export const LOGIN = 'LOGIN';
 export const LOGOUT = 'LOGOUT';
+export const SET_AUTHENTICATED = 'SET_AUTHENTICATED';

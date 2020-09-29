@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import LoginForm from '../../components/welcome/loginForm';
-import { login } from '../../redux/actions/loginActions';
+import { login, setAuthenticated } from '../../redux/actions/loginActions';
 import { changePage } from '../../redux/actions/pageActions';
 import LoginSchema from './loginSchema';
 
@@ -34,6 +34,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     loginDetails: (details) => dispatch(login(details)),
+    authenticate: (details) => dispatch(setAuthenticated(details)),
     pageChanger: (page) => dispatch(changePage(page)),
   };
 }

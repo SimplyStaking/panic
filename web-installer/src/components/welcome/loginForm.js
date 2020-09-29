@@ -24,11 +24,13 @@ const LoginForm = (props) => {
     handleSubmit,
     handleChange,
     pageChanger,
+    authenticate,
   } = props;
 
   function setAuthentication(authenticated) {
     if (authenticated === true) {
       pageChanger({ page: CHANNELS_PAGE });
+      authenticate(authenticated);
     }
   }
 
@@ -113,6 +115,7 @@ LoginForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
+  authenticate: PropTypes.func.isRequired,
 };
 
 export default LoginForm;

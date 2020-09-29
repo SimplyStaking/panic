@@ -1,4 +1,4 @@
-import { LOGIN, LOGOUT } from './types';
+import { LOGIN, LOGOUT, SET_AUTHENTICATED } from './types';
 
 export function login(payload) {
   return {
@@ -10,6 +10,13 @@ export function login(payload) {
 export function logout(payload) {
   return {
     type: LOGOUT,
+    payload,
+  };
+}
+
+export function setAuthenticated(payload) {
+  return {
+    type: SET_AUTHENTICATED,
     payload,
   };
 }

@@ -29,8 +29,6 @@ const SystemTable = (props) => {
   if (config.systems.length === 0) {
     return <div />;
   }
-  console.log(config);
-  console.log(systems);
 
   return (
     <TableContainer component={Paper}>

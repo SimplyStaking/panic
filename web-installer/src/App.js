@@ -1,7 +1,8 @@
 import React from 'react';
-
 import { makeStyles } from '@material-ui/core/styles';
-
+import {
+  ToastsContainer, ToastsContainerPosition, ToastsStore,
+} from 'react-toasts';
 import SideBar from './components/global/sidebar';
 import PageManger from './containers/global/pageManager';
 
@@ -20,6 +21,11 @@ function App() {
     <div className={classes.root}>
       <SideBar />
       <PageManger />
+      <ToastsContainer
+        store={ToastsStore}
+        position={ToastsContainerPosition.TOP_CENTER}
+        lightBackground
+      />
     </div>
   );
 }

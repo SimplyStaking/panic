@@ -8,8 +8,6 @@ const RepositorySchema = (props) => Yup.object().shape({
       (value) => {
         const { repositories } = props;
 
-        console.log(repositories);
-        console.log(value);
         // If repos are empty no need to validate anything
         if (repositories.allIds.length === 0) {
           return true;
