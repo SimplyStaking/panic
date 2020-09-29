@@ -58,68 +58,46 @@ const substrateRepeatAlerts = {
       enabled: true,
     },
   },
-  allIds: ['1', '2'],
+  allIds: ['1', '2', '3'],
 };
 
 const substrateTimeWindowAlerts = {
   byId: {
     1: {
-      name: 'Missed Blocks',
+      name: 'No change in best block height above warning threshold',
       warning: {
-        threshold: 20,
+        threshold: 30,
         timewindow: 360,
         enabled: true,
       },
       critical: {
-        threshold: 100,
+        threshold: 60,
+        timewindow: 3600,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    2: {
+      name: 'No change in finalized block height above warning threshold',
+      warning: {
+        threshold: 30,
+        timewindow: 360,
+        enabled: true,
+      },
+      critical: {
+        threshold: 60,
         timewindow: 3600,
         enabled: true,
       },
       enabled: true,
     },
   },
-  allIds: ['1'],
+  allIds: ['1', '2'],
 };
 
 const substrateThresholdAlerts = {
   byId: {
     1: {
-      name: 'Open File Descriptors increased',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    2: {
-      name: 'Peer count decreased',
-      warning: {
-        threshold: 3,
-        enabled: true,
-      },
-      critical: {
-        threshold: 2,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    3: {
-      name: 'No change in block height',
-      warning: {
-        threshold: 180,
-        enabled: true,
-      },
-      critical: {
-        threshold: 300,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    4: {
       name: 'Time of last pre-commit/pre-vote activity is above threshold',
       warning: {
         threshold: 60,
@@ -131,7 +109,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    5: {
+    2: {
       name: 'Mempool Size',
       warning: {
         threshold: 85,
@@ -143,7 +121,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    6: {
+    3: {
       name: 'System CPU usage increased',
       warning: {
         threshold: 85,
@@ -155,7 +133,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    7: {
+    4: {
       name: 'System storage usage increased',
       warning: {
         threshold: 85,
@@ -167,7 +145,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    8: {
+    5: {
       name: 'System RAM usage increased',
       warning: {
         threshold: 85,
@@ -179,7 +157,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    9: {
+    6: {
       name: 'System network usage increased',
       warning: {
         threshold: 85,
@@ -191,8 +169,20 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
+    7: {
+      name: 'Open File Descriptors increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7'],
 };
 
 const substrateSeverityAlerts = {
@@ -233,18 +223,18 @@ const substrateSeverityAlerts = {
       enabled: true,
     },
     8: {
-      name: 'Validator is jailed',
-      severity: CRITICAL,
+      name: 'Validator was declared as offline by the blockchain',
+      severity: WARNING,
       enabled: true,
     },
     9: {
-      name: 'Voting power increased',
-      severity: INFO,
+      name: 'Validator did not author a block and sent no heartbeats in the previous session',
+      severity: WARNING,
       enabled: false,
     },
     10: {
-      name: 'Validator power decreased',
-      severity: INFO,
+      name: 'A new payout is pending',
+      severity: WARNING,
       enabled: false,
     },
     11: {
@@ -267,8 +257,95 @@ const substrateSeverityAlerts = {
       severity: INFO,
       enabled: false,
     },
+    15: {
+      name: 'Bonded balance increased',
+      severity: INFO,
+      enabled: false,
+    },
+    16: {
+      name: 'Bonded balance decreased',
+      severity: INFO,
+      enabled: false,
+    },
+    17: {
+      name: 'Free balance increased',
+      severity: INFO,
+      enabled: false,
+    },
+    18: {
+      name: 'Free balance decreased',
+      severity: INFO,
+      enabled: false,
+    },
+    19: {
+      name: 'Reserved balance increased',
+      severity: INFO,
+      enabled: false,
+    },
+    20: {
+      name: 'Reserved balance decreased',
+      severity: INFO,
+      enabled: false,
+    },
+    21: {
+      name: 'Nominated balance increased',
+      severity: INFO,
+      enabled: false,
+    },
+    22: {
+      name: 'Nominated balance decreased',
+      severity: INFO,
+      enabled: false,
+    },
+    23: {
+      name: 'Validator is not elected for next session',
+      severity: WARNING,
+      enabled: true,
+    },
+    24: {
+      name: 'Validator has been disabled in session',
+      severity: CRITICAL,
+      enabled: true,
+    },
+    25: {
+      name: 'New Council proposal',
+      severity: INFO,
+      enabled: true,
+    },
+    26: {
+      name: 'Validator is now part of the council',
+      severity: INFO,
+      enabled: true,
+    },
+    27: {
+      name: 'Validator is no longer part of the council',
+      severity: INFO,
+      enabled: true,
+    },
+    28: {
+      name: 'A new treasury proposal has been submitted',
+      severity: INFO,
+      enabled: true,
+    },
+    29: {
+      name: 'A new tip proposal has been submitted',
+      severity: INFO,
+      enabled: true,
+    },
+    30: {
+      name: 'New Referendum submitted',
+      severity: INFO,
+      enabled: true,
+    },
+    31: {
+      name: 'Referendum completed',
+      severity: INFO,
+      enabled: true,
+    },
   },
-  allIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+    '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26',
+    '27', '28', '29', '30', '31'],
 };
 
 // Reducers to add and remove substrate node configurations from global state

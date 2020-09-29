@@ -57,7 +57,7 @@ const cosmosRepeatAlerts = {
       enabled: true,
     },
   },
-  allIds: ['1', '2'],
+  allIds: ['1', '2', '3'],
 };
 
 const cosmosTimeWindowAlerts = {
