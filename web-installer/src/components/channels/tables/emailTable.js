@@ -40,7 +40,7 @@ const EmailTable = (props) => {
         <TableBody>
           {Object.keys(emails.byId).map((email) => (
             <TableRow key={emails.byId[email].id}>
-              <TableCell component="th" scope="row">
+              <TableCell align="center">
                 {emails.byId[email].configName}
               </TableCell>
               <TableCell align="center">{emails.byId[email].smtp}</TableCell>

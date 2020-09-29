@@ -49,7 +49,7 @@ const NodesTable = (props) => {
         <TableBody>
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center" align="center">
                 {nodesConfig.byId[id].cosmosNodeName}
               </TableCell>
               <TableCell align="center">{nodesConfig.byId[id].tendermintRPCURL}</TableCell>

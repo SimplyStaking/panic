@@ -62,10 +62,10 @@ const CosmosChainsTable = (props) => {
         <TableBody>
           {config.allIds.map((id) => (
             <TableRow key={id}>
-              <TableCell component="th" scope="row">
+              <TableCell align="center">
                 {config.byId[id].chainName}
               </TableCell>
-              {/* <TableCell component="th" scope="row">
+              {/* <TableCell align="center">
                 <Box px={2}>
                   <Button onClick={() => {
                     manageConfiguration(COSMOS_SETUP_PAGE, config);

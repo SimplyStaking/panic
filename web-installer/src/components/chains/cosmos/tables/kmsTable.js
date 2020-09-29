@@ -43,10 +43,10 @@ const KMSTable = (props) => {
         <TableBody>
           {chainConfig.byId[currentChain].kmses.map((id) => (
             <TableRow key={id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center" align="center">
                 {kmsConfig.byId[id].kmsName}
               </TableCell>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center" align="center">
                 {kmsConfig.byId[id].exporterURL}
               </TableCell>
               <TableCell align="center">

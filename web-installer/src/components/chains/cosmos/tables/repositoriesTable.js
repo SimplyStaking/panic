@@ -42,7 +42,7 @@ const RepositoriesTable = (props) => {
         <TableBody>
           {chainConfig.byId[currentChain].repositories.map((id) => (
             <TableRow key={id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center" align="center">
                 {reposConfig.byId[id].repoName}
               </TableCell>
               <TableCell align="center">

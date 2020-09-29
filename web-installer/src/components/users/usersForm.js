@@ -57,6 +57,7 @@ const UsersForm = (props) => {
               fullWidth
             />
           </Grid>
+          <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <Box px={2}>

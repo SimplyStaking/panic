@@ -33,7 +33,7 @@ const TwilioTable = (props) => {
         <TableBody>
           {Object.keys(twilios.byId).map((twilio) => (
             <TableRow key={twilios.byId[twilio].id}>
-              <TableCell component="th" scope="row">
+              <TableCell align="center">
                 {twilios.byId[twilio].configName}
               </TableCell>
               <TableCell align="center">{twilios.byId[twilio].accountSid}</TableCell>

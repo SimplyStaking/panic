@@ -35,7 +35,7 @@ const OpsGenieTable = (props) => {
         <TableBody>
           {Object.keys(opsGenies.byId).map((opsgenie) => (
             <TableRow key={opsGenies.byId[opsgenie].id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center">
                 {opsGenies.byId[opsgenie].configName}
               </TableCell>
               <TableCell align="center">{opsGenies.byId[opsgenie].apiToken}</TableCell>

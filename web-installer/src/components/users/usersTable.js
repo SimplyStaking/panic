@@ -39,7 +39,7 @@ const UsersTable = (props) => {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.username}>
-              <TableCell component="th" scope="row">
+              <TableCell align="center">
                 {user.username}
               </TableCell>
               <TableCell align="center">*************</TableCell>

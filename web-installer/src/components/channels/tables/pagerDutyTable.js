@@ -36,7 +36,7 @@ const PagerDutyTable = (props) => {
         <TableBody>
           {Object.keys(pagerDuties.byId).map((pagerDuty) => (
             <TableRow key={pagerDuties.byId[pagerDuty].id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center">
                 {pagerDuties.byId[pagerDuty].configName}
               </TableCell>
               <TableCell align="center">{pagerDuties.byId[pagerDuty].apiToken}</TableCell>

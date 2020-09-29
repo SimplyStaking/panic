@@ -40,7 +40,7 @@ const TelegramTable = (props) => {
           <TableBody>
             {Object.keys(telegrams.byId).map((telegram) => (
               <TableRow key={telegrams.byId[telegram].id}>
-                <TableCell align="center" component="th" scope="row">
+                <TableCell align="center">
                   {telegrams.byId[telegram].botName}
                 </TableCell>
                 <TableCell align="center">{telegrams.byId[telegram].botToken}</TableCell>

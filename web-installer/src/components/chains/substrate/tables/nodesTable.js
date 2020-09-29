@@ -50,7 +50,7 @@ const NodesTable = (props) => {
         <TableBody>
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
-              <TableCell align="center" component="th" scope="row">
+              <TableCell align="center">
                 {nodesConfig.byId[id].substrateNodeName}
               </TableCell>
               <TableCell align="center">{nodesConfig.byId[id].nodeWSURL}</TableCell>

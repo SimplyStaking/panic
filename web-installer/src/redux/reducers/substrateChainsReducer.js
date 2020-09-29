@@ -12,7 +12,6 @@ import {
   UPDATE_SEVERITY_ALERT,
 } from '../actions/types';
 
-// @TODO edit these alerts to fit the ones substrate actually has
 const substrateRepeatAlerts = {
   byId: {
     1: {
