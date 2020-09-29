@@ -55,6 +55,9 @@ services:
       - 'DB_NAME=${DB_NAME}'
       - 'DB_HOST=${DB_HOST}'
       - 'DB_PORT=${DB_PORT}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_HOST=${REDIS_HOST}'
+      - 'REDIS_PORT=${REDIS_PORT}'
       - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}, ${REDIS_HOST}:${REDIS_PORT}'
     build: .
     image: 'simplyvc/panic_alerter:1.0.0'
