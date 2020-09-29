@@ -92,6 +92,12 @@ function UsernameAlreadyExists(username) {
   this.code = 447;
 }
 
+function CouldNotWriteConfig(err, config, path) {
+  this.message = `Could not write config '${config}' to '${path}'. Error: `
+    + `${err}`;
+  this.code = 448;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -111,4 +117,5 @@ module.exports = {
   CouldNotFindRefreshTokenInDB,
   RecordAlreadyExists,
   UsernameAlreadyExists,
+  CouldNotWriteConfig,
 };

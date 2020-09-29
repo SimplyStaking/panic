@@ -2,6 +2,7 @@ const ConfigParser = require('configparser');
 const fs = require('fs');
 const path = require('path');
 const errors = require('./errors');
+const msgs = require('./msgs');
 
 // Channel configs and config locations
 const USER_CONFIG_TELEGRAM = 'user_config_telegram.ini';
@@ -60,9 +61,12 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
 
 // Get the config file location. This function expects the full config path
 function getConfigLocation(configPath) {
-  const pathArr = configPath.split('\\').filter(val => val !== '');
-  pathArr.pop();
-  return path.join(...pathArr);
+  return path.parse(configPath).dir;
+}
+
+// Get the config file from a path. This function expects the full config path.
+function getConfigFileFromLocation(configPath) {
+  return path.basename(configPath);
 }
 
 // This function returns true if 'file' is expected in the inferred location
@@ -116,9 +120,24 @@ module.exports = {
     // Get config location where the write should take place, create folders if
     // they do not exist and after write the config to the location.
     const configLocation = getConfigLocation(configPath);
-    fs.mkdir(configLocation, { recursive: true }, (err) => {
-      if (err && err.code !== 'EEXIST') throw err;
+    const configFile = getConfigFileFromLocation(configPath);
+    // For the below to work the 'config' folder must never be deleted
+    try {
+      fs.mkdirSync(configLocation, { recursive: true });
+    } catch (err) {
+      throw new errors.CouldNotWriteConfig(err, configFile, configPath);
+    }
+    // Check that the path exists before writing, otherwise throw an error.
+    if (fs.existsSync(configLocation)) {
       cp.write(configPath);
-    });
+    } else {
+      const msg = new msgs.DirectoryNotCreated(configLocation);
+      throw new errors.CouldNotWriteConfig(
+        msg.message, configFile, configPath,
+      );
+    }
   },
 };
+
+// TODO: Wait for writing to be successfull, therefore in server make async await
+//       and give more meaningful messages .. need to also do try catch
