@@ -8,9 +8,19 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
-function pingNode(apiUrl, nodeName) {
-  return sendData('/server/ping_cosmos', {},
-    { apiUrl, nodeName });
+function pingTendermint(tendermintRPCURL) {
+  return sendData('/server/cosmos/tendermint', {},
+    { tendermintRPCURL });
+}
+
+function pingCosmosPrometheus(prometheusURL) {
+  return sendData('/server/cosmos/prometheus', {},
+    { prometheusURL });
+}
+
+function pingNodeExporter(exporterURL) {
+  return sendData('/server/system/exporter', {},
+    { exporterURL });
 }
 
 function pingRepo(url) {
@@ -51,6 +61,7 @@ function refreshAccessToken() {
 }
 
 export {
-  fetchData, testCall, sendData, sendTestEmail, pingNode, pingRepo,
+  fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
+  pingCosmosPrometheus, pingNodeExporter,
 };

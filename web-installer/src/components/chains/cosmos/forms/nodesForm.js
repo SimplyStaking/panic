@@ -10,6 +10,7 @@ import {
   CHAINS_STEP, NEXT, REPOSITORIES_STEP, BACK,
 } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import { PingCosmosButton } from '../../../../utils/buttons';
 import Data from '../../../../data/chains';
 
 const defaultTheme = createMuiTheme();
@@ -154,7 +155,7 @@ const NodesForm = (props) => {
                   value={values.exporterURL}
                   type="text"
                   name="exporterURL"
-                  placeholder="http://122,.321.32.12:13330"
+                  placeholder="http://122,.321.32.12:9100"
                   onChange={handleChange}
                   fullWidth
                 />
@@ -278,15 +279,12 @@ const NodesForm = (props) => {
               <Grid item xs={4}>
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
-                    >
-                      <Box px={2}>
-                        Test Node
-                      </Box>
-                    </Button>
+                    <PingCosmosButton
+                      disabled={false}
+                      tendermintRPCURL={values.tendermintRPCURL}
+                      prometheusURL={values.prometheusURL}
+                      exporterURL={values.exporterURL}
+                    />
                     <Button
                       variant="outlined"
                       size="large"

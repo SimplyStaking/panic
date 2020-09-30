@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const axios = require('axios');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
@@ -699,8 +700,6 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com'
     : 'https://api.opsgenie.com';
 
-  console.log(req.body);
-
   // Create OpsGenie client and test alert message
   opsgenie.configure({ api_key: apiKey, host });
   const testAlert = new msgs.TestAlert();
@@ -724,6 +723,122 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     }
   });
+});
+
+// ---------------------------------------- Cosmos
+
+app.post('/server/cosmos/tendermint', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { tendermintRPCURL } = req.body;
+
+  // Check if tendermintRPCURL is missing.
+  const missingParamsList = utils.missingValues({ tendermintRPCURL });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${tendermintRPCURL}/health?`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing)
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+app.post('/server/cosmos/prometheus', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { prometheusURL } = req.body;
+
+  // Check if prometheusURL is missing.
+  const missingParamsList = utils.missingValues({ prometheusURL });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${prometheusURL}`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing
+        // or prometheus is not enabled)
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+// ---------------------------------------- System (Node Exporter)
+
+app.post('/server/system/exporter', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { exporterURL } = req.body;
+
+  // Check if exporterURL is missing.
+  const missingParamsList = utils.missingValues({ exporterURL });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${exporterURL}/metrics`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred node exporter is not installed
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
 });
 
 // ---------------------------------------- Server defaults

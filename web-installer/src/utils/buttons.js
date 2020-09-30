@@ -5,7 +5,7 @@ import { Button, Box } from '@material-ui/core';
 import { ToastsStore } from 'react-toasts';
 import {
   authenticate, fetchData, sendTestEmail, testCall, pingRepo, sendTestPagerDuty,
-  sendTestOpsGenie,
+  sendTestOpsGenie, pingTendermint, pingCosmosPrometheus, pingNodeExporter,
 } from './data';
 import sleep from './time';
 
@@ -222,6 +222,83 @@ function PingRepoButton({ disabled, repo }) {
   );
 }
 
+function PingCosmosButton({
+  disabled, tendermintRPCURL, prometheusURL, exporterURL,
+}) {
+  const onClick = async () => {
+    // Check if the tendermint RPC URL given works properly
+    if (tendermintRPCURL) {
+      try {
+        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRPCURL}`, 5000);
+        await pingTendermint(tendermintRPCURL);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(`Could not connect with Tendermint RPC Url ${tendermintRPCURL}. Error: ${
+            e.response.data.message}`, 5000);
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Tendermint RPC Url ${tendermintRPCURL}. Error: ${e.message}`, 5000,
+          );
+        }
+      }
+    }
+
+    // Check if the prometheus url given works properly
+    if (prometheusURL) {
+      try {
+        ToastsStore.info(`Connecting with Prometheus Url ${prometheusURL}`, 5000);
+        await pingCosmosPrometheus(prometheusURL);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(`Could not connect with prometheus url ${prometheusURL}. Error: ${
+            e.response.data.message}`, 5000);
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with prometheus url ${prometheusURL}. Error: ${e.message}`, 5000,
+          );
+        }
+      }
+    }
+
+    // Check if the node exporter url given works properly
+    if (exporterURL) {
+      try {
+        ToastsStore.info(`Connecting with Node exporter Url ${exporterURL}`, 5000);
+        await pingNodeExporter(exporterURL);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(`Could not connect with node exporter url ${exporterURL}. Error: ${
+            e.response.data.message}`, 5000);
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with node exporter url ${exporterURL}. Error: ${e.message}`, 5000,
+          );
+        }
+      }
+    }
+  };
+
+  return (
+    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
+      <Box px={2}>
+        Test Node
+      </Box>
+    </Button>
+  );
+}
+
 function LoginButton({
   username, password, disabled, setAuthentication, handleSetCredentialsValid,
   handleSetValidated,
@@ -309,8 +386,15 @@ PingRepoButton.propTypes = forbidExtraProps({
   repo: PropTypes.string.isRequired,
 });
 
+PingCosmosButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  tendermintRPCURL: PropTypes.string.isRequired,
+  prometheusURL: PropTypes.string.isRequired,
+  exporterURL: PropTypes.string.isRequired,
+});
+
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
-  PingRepoButton,
+  PingRepoButton, PingCosmosButton,
 };

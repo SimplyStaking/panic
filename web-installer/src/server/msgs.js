@@ -39,6 +39,18 @@ function DirectoryNotCreated(directory) {
   this.message = `Directory '${directory}' was not created.`;
 }
 
+function MessagePong() {
+  this.message = 'PONG';
+}
+
+function MessageNoConnection() {
+  this.message = 'No connection.';
+}
+
+function ConnectionError() {
+  this.message = 'Connection Error.';
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -50,4 +62,7 @@ module.exports = {
   AccountSavedSuccessfully,
   CollectionDropped,
   DirectoryNotCreated,
+  MessagePong,
+  MessageNoConnection,
+  ConnectionError,
 };
