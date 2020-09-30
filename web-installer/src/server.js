@@ -585,7 +585,6 @@ app.post('/server/email/test', verify, async (req, res) => {
   const {
     smtp, from, to, user, pass,
   } = req.body;
-
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
 
@@ -684,7 +683,6 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
 app.post('/server/opsgenie/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { apiKey, eu } = req.body;
-
   // Check if apiKey is missing.
   const missingParamsList = utils.missingValues({ apiKey });
 
@@ -700,6 +698,8 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   const euString = String(eu);
   const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com'
     : 'https://api.opsgenie.com';
+
+  console.log(req.body);
 
   // Create OpsGenie client and test alert message
   opsgenie.configure({ api_key: apiKey, host });

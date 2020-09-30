@@ -13,6 +13,7 @@ const Form = withFormik({
   mapPropsToValues: () => ({
     configName: '',
     apiToken: '',
+    eu: false,
     info: false,
     warning: false,
     critical: false,
@@ -24,6 +25,7 @@ const Form = withFormik({
     const payload = {
       configName: values.configName,
       apiToken: values.apiToken,
+      eu: values.eu,
       info: values.info,
       warning: values.warning,
       critical: values.critical,

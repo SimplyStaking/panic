@@ -169,12 +169,10 @@ const EmailForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.username !== true}
                   value={values.username}
                   type="text"
                   name="username"
                   placeholder="my_username"
-                  helperText={errors.username ? errors.username : ''}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -193,12 +191,10 @@ const EmailForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.password !== true}
                   value={values.password}
                   type="password"
                   name="password"
                   placeholder="password"
-                  helperText={errors.password ? errors.password : ''}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -313,8 +309,6 @@ EmailForm.propTypes = {
     smtp: PropTypes.string,
     emailFrom: PropTypes.string,
     emailsTo: PropTypes.string,
-    username: PropTypes.string,
-    password: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({

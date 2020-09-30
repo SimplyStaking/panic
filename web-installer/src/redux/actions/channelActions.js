@@ -107,6 +107,7 @@ export function addOpsGenie(payload) {
       id: uuidv4(),
       configName: payload.configName,
       apiToken: payload.apiToken,
+      eu: payload.eu,
       info: payload.info,
       warning: payload.warning,
       critical: payload.critical,

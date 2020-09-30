@@ -43,10 +43,6 @@ const EmailSchema = (props) => Yup.object().shape({
       },
     )
     .required('Email To is required.'),
-  username: Yup.string()
-    .required('Username  is required.'),
-  password: Yup.string()
-    .required('Password  is required.'),
 });
 
 export default EmailSchema;

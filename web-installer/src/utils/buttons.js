@@ -4,7 +4,8 @@ import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 import { ToastsStore } from 'react-toasts';
 import {
-  authenticate, fetchData, sendTestEmail, testCall, pingRepo,
+  authenticate, fetchData, sendTestEmail, testCall, pingRepo, sendTestPagerDuty,
+  sendTestOpsGenie,
 } from './data';
 import sleep from './time';
 
@@ -77,13 +78,35 @@ function TestCallButton({
   );
 }
 
-function SendTestOpsGenieButton({ disabled, apiToken }) {
+function SendTestOpsGenieButton({ disabled, apiKey, eu }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info('Sending test OpsGenie alert.', 5000);
+      await sendTestOpsGenie(apiKey, eu);
+      ToastsStore.success('Successfully send alert!', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Error in sending alert to OpsGenie. Error: ${e.response.data.error
+          }`, 5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an
+        // Error
+        ToastsStore.error(
+          `Error in sending alert to OpsGenie. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
   return (
     <Button
       variant="outlined"
       size="large"
       disabled={disabled}
-      onClick={() => console.log(`${apiToken}`)}
+      onClick={onClick}
     >
       <Box px={2}>
         Test
@@ -93,12 +116,34 @@ function SendTestOpsGenieButton({ disabled, apiToken }) {
 }
 
 function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info('Sending test PagerDuty alert.', 5000);
+      await sendTestPagerDuty(apiToken, integrationKey);
+      ToastsStore.success('Successfully send alert!', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Error in sending alert to PagerDuty. Error: ${e.response.data.error
+          }`, 5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an
+        // Error
+        ToastsStore.error(
+          `Error in sending alert to PagerDuty. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
   return (
     <Button
       variant="outlined"
       size="large"
       disabled={disabled}
-      onClick={() => console.log(`${apiToken} ${integrationKey}`)}
+      onClick={onClick}
     >
       <Box px={2}>
         Test
@@ -215,7 +260,8 @@ function LoginButton({
 
 SendTestOpsGenieButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  apiToken: PropTypes.string.isRequired,
+  apiKey: PropTypes.string.isRequired,
+  eu: PropTypes.bool.isRequired,
 });
 
 SendTestPagerDutyButton.propTypes = forbidExtraProps({

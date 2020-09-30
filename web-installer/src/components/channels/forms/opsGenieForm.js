@@ -101,6 +101,31 @@ const OpsGenieForm = (props) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <Typography> EU: </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.eu}
+                      onChange={handleChange}
+                      name="eu"
+                      color="primary"
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={8} />
+              <Grid item xs={1}>
+                <Grid container justify="center">
+                  <MuiThemeProvider theme={theme}>
+                    <Tooltip title={Data.opsGenie.token} placement="left">
+                      <InfoIcon />
+                    </Tooltip>
+                  </MuiThemeProvider>
+                </Grid>
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Severities: </Typography>
               </Grid>
               <Grid item xs={9}>
@@ -168,7 +193,8 @@ const OpsGenieForm = (props) => {
                   <Box px={2}>
                     <SendTestOpsGenieButton
                       disabled={!(Object.keys(errors).length === 0)}
-                      apiToken={values.apiToken}
+                      apiKey={values.apiToken}
+                      eu={values.eu}
                     />
                     <Button
                       variant="outlined"
@@ -200,6 +226,7 @@ OpsGenieForm.propTypes = {
   values: PropTypes.shape({
     configName: PropTypes.string.isRequired,
     apiToken: PropTypes.string.isRequired,
+    eu: PropTypes.bool.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

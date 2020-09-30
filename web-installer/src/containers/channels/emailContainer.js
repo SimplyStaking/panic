@@ -11,8 +11,6 @@ const Form = withFormik({
     smtp: '',
     emailFrom: '',
     emailTo: '',
-    username: '',
-    password: '',
   }),
   mapPropsToValues: () => ({
     configName: '',
