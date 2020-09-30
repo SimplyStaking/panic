@@ -49,6 +49,14 @@ services:
     restart: always
     container_name: 'redis'
 
+  rabbitmq:
+    image: 'rabbitmq:3-management'
+    networks:
+      panic_net:
+        ipv4_address: '${RABBIT_HOST}'
+    restart: always
+    container_name: 'rabbitmq'
+
 # TODO: Must also depend on installer finishing
   alerter:
     environment:
@@ -58,7 +66,8 @@ services:
       - 'REDIS_DB=${REDIS_DB}'
       - 'REDIS_HOST=${REDIS_HOST}'
       - 'REDIS_PORT=${REDIS_PORT}'
-      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}, ${REDIS_HOST}:${REDIS_PORT}'
+      - 'RABBIT_HOST=${RABBIT_HOST}'
+      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}, ${REDIS_HOST}:${REDIS_PORT}, ${RABBIT_HOST}:${RABBIT_PORT}'
     build: .
     image: 'simplyvc/panic_alerter:1.0.0'
     volumes:
@@ -71,6 +80,7 @@ services:
     depends_on:
       - mongo
       - redis
+      - rabbitmq
 
 networks:
   panic_net:

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "05f34732937aa32853d009956f71c81d90e41bd7feb652e2998cad79d37ff8dd"
+            "sha256": "e246c16f58cb4e6b5e951eb57c789d307255acabb929d144d7a08670cf96ec1b"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -119,6 +119,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.10"
+        },
+        "pika": {
+            "hashes": [
+                "sha256:4e1a1a6585a41b2341992ec32aadb7a919d649eb82904fd8e4a4e0871c8cf3af",
+                "sha256:9fa76ba4b65034b878b2b8de90ff8660a59d925b087c5bb88f8fdbb4b64a1dbf"
+            ],
+            "index": "pypi",
+            "version": "==1.1.0"
         },
         "pycparser": {
             "hashes": [
@@ -239,7 +247,7 @@
                 "sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259",
                 "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.15.0"
         },
         "tornado": {
@@ -259,10 +267,10 @@
         },
         "twilio": {
             "hashes": [
-                "sha256:df1cf8f7e62fbe4d412e66204ee7f948cd31ff18173ff4690475834174eedaf0"
+                "sha256:ccab1e0831486e5e3833e2aab5a677453ef2a88aed3d988b6831b876ebb0374d"
             ],
             "index": "pypi",
-            "version": "==6.45.3"
+            "version": "==6.45.4"
         },
         "urllib3": {
             "hashes": [
