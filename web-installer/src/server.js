@@ -483,7 +483,7 @@ app.post('/server/config', verify, async (req, res) => {
     configType, fileName, chainName, baseChain,
   } = req.query;
   const { config } = req.body;
-
+  console.log(config);
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
   const missingParamsList = utils.missingValues({
@@ -509,8 +509,11 @@ app.post('/server/config', verify, async (req, res) => {
       const configPath = configs.getConfigPath(
         configType, fileName, chainName, baseChain,
       );
+      console.log("WRITE CONIFG");
       configs.writeConfig(configPath, config);
+      console.log("DO NOT WRITE CONIFG");
       const msg = new msgs.ConfigSubmitted(fileName, configPath);
+      console.log("CONFIG SUBMITTED");
       return res.status(utils.SUCCESS_STATUS)
         .send(utils.resultJson(msg.message));
     }

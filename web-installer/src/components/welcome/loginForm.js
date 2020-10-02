@@ -40,11 +40,11 @@ const LoginForm = (props) => {
     they are currently needed.
   */
   function handleSetCredentialsValid(setCredentials) {
-    console.log(setCredentials);
+    console.log('');
   }
 
   function handleSetValidated(setValidated) {
-    console.log(setValidated);
+    console.log('');
   }
 
   return (

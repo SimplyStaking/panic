@@ -10,6 +10,7 @@ import {
   NEXT, KMS_STEP, BACK, NODES_STEP,
 } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import { PingRepoButton } from '../../../../utils/buttons';
 import Data from '../../../../data/chains';
 
 const defaultTheme = createMuiTheme();
@@ -111,15 +112,10 @@ const RepositoriesForm = (props) => {
               <Grid item xs={4}>
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
-                    <Button
-                      variant="outlined"
-                      size="large"
+                    <PingRepoButton
                       disabled={!(Object.keys(errors).length === 0)}
-                    >
-                      <Box px={2}>
-                        Test Repository
-                      </Box>
-                    </Button>
+                      repo={values.repoName}
+                    />
                     <Button
                       variant="outlined"
                       size="large"

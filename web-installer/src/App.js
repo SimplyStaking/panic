@@ -3,7 +3,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   ToastsContainer, ToastsContainerPosition, ToastsStore,
 } from 'react-toasts';
-import SideBar from './components/global/sidebar';
 import PageManger from './containers/global/pageManager';
 
 import './App.css';
@@ -19,7 +18,6 @@ function App() {
 
   return (
     <div className={classes.root}>
-      <SideBar />
       <PageManger />
       <ToastsContainer
         store={ToastsStore}

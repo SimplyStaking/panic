@@ -27,6 +27,12 @@ function pingRepo(url) {
   return fetchData(url);
 }
 
+function sendConfig(configType, fileName, chainName, baseChain, config) {
+  return sendData('/server/config', {
+    configType, fileName, chainName, baseChain,
+  }, { config });
+}
+
 function sendTestEmail(smtp, from, to, user, pass) {
   return sendData('/server/email/test', {}, {
     smtp, from, to, user, pass,
@@ -63,5 +69,5 @@ function refreshAccessToken() {
 export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
-  pingCosmosPrometheus, pingNodeExporter,
+  pingCosmosPrometheus, pingNodeExporter, sendConfig,
 };

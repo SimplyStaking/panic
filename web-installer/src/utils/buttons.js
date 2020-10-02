@@ -216,8 +216,10 @@ function PingRepoButton({ disabled, repo }) {
     }
   };
   return (
-    <Button className="button-style2" disabled={disabled} onClick={onClick}>
-      Connect with repo
+    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
+      <Box px={2}>
+        Test Repository
+      </Box>
     </Button>
   );
 }
@@ -268,6 +270,48 @@ function PingCosmosButton({
       }
     }
 
+    // Check if the node exporter url given works properly
+    if (exporterURL) {
+      try {
+        ToastsStore.info(`Connecting with Node exporter Url ${exporterURL}`, 5000);
+        await pingNodeExporter(exporterURL);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(`Could not connect with node exporter url ${exporterURL}. Error: ${
+            e.response.data.message}`, 5000);
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with node exporter url ${exporterURL}. Error: ${e.message}`, 5000,
+          );
+        }
+      }
+    }
+  };
+
+  return (
+    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
+      <Box px={2}>
+        Test Node
+      </Box>
+    </Button>
+  );
+}
+
+function SaveConfigButton({ onClick, text }) {
+  return (
+    <Button variant="outlined" size="large" onClick={onClick}>
+      <Box px={2}>
+        {text}
+      </Box>
+    </Button>
+  );
+}
+function PingNodeExpoter({ disabled, exporterURL }) {
+  const onClick = async () => {
     // Check if the node exporter url given works properly
     if (exporterURL) {
       try {
@@ -372,6 +416,11 @@ SendTestAlertButton.propTypes = forbidExtraProps({
   botChatID: PropTypes.string.isRequired,
 });
 
+SaveConfigButton.propTypes = forbidExtraProps({
+  onClick: PropTypes.func.isRequired,
+  text: PropTypes.string.isRequired,
+});
+
 LoginButton.propTypes = forbidExtraProps({
   username: PropTypes.string.isRequired,
   password: PropTypes.string.isRequired,
@@ -393,8 +442,13 @@ PingCosmosButton.propTypes = forbidExtraProps({
   exporterURL: PropTypes.string.isRequired,
 });
 
+PingNodeExpoter.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  exporterURL: PropTypes.string.isRequired,
+});
+
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
-  PingRepoButton, PingCosmosButton,
+  PingRepoButton, PingCosmosButton, PingNodeExpoter, SaveConfigButton,
 };

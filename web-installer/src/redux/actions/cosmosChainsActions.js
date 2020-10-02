@@ -18,7 +18,7 @@ export function addChainCosmos(payload) {
   return {
     type: ADD_CHAIN_COSMOS,
     payload: {
-      id: uuidv4(),
+      id: `chain_name_${uuidv4()}`,
       chainName: payload.chainName,
     },
   };
@@ -57,7 +57,7 @@ export function addNodeCosmos(payload) {
   return {
     type: ADD_NODE_COSMOS,
     payload: {
-      id: uuidv4(),
+      id: `node_${uuidv4()}`,
       parentId: payload.parentId,
       cosmosNodeName: payload.cosmosNodeName,
       tendermintRPCURL: payload.tendermintRPCURL,

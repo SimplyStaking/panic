@@ -18,7 +18,7 @@ export function addChainSubstrate(payload) {
   return {
     type: ADD_CHAIN_SUBSTRATE,
     payload: {
-      id: uuidv4(),
+      id: `chain_name_${uuidv4()}`,
       chainName: payload.chainName,
     },
   };
@@ -57,7 +57,7 @@ export function addNodeSubstrate(payload) {
   return {
     type: ADD_NODE_SUBSTRATE,
     payload: {
-      id: uuidv4(),
+      id: `node_${uuidv4()}`,
       parentId: payload.parentId,
       substrateNodeName: payload.substrateNodeName,
       nodeWSURL: payload.nodeWSURL,

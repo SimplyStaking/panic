@@ -9,7 +9,7 @@ export function addTelegram(payload) {
   return {
     type: ADD_TELEGRAM,
     payload: {
-      id: uuidv4(),
+      id: `telegram_${uuidv4()}`,
       botName: payload.botName,
       botToken: payload.botToken,
       chatID: payload.chatID,
@@ -34,7 +34,7 @@ export function addTwilio(payload) {
   return {
     type: ADD_TWILIO,
     payload: {
-      id: uuidv4(),
+      id: `twilio_${uuidv4()}`,
       configName: payload.configName,
       accountSid: payload.accountSid,
       authToken: payload.authToken,
@@ -55,7 +55,7 @@ export function addEmail(payload) {
   return {
     type: ADD_EMAIL,
     payload: {
-      id: uuidv4(),
+      id: `email_${uuidv4()}`,
       configName: payload.configName,
       smtp: payload.smtp,
       emailFrom: payload.emailFrom,
@@ -81,7 +81,7 @@ export function addPagerDuty(payload) {
   return {
     type: ADD_PAGERDUTY,
     payload: {
-      id: uuidv4(),
+      id: `pagerduty_${uuidv4()}`,
       configName: payload.configName,
       apiToken: payload.apiToken,
       integrationKey: payload.integrationKey,
@@ -104,7 +104,7 @@ export function addOpsGenie(payload) {
   return {
     type: ADD_OPSGENIE,
     payload: {
-      id: uuidv4(),
+      id: `opsgenie_${uuidv4()}`,
       configName: payload.configName,
       apiToken: payload.apiToken,
       eu: payload.eu,

@@ -8,6 +8,7 @@ import { UsersFormContainer, UsersTableContainer } from '../../containers/users/
 import {
   WELCOME_PAGE, GENERAL_PAGE, NEXT, BACK,
 } from '../../constants/constants';
+import SaveConfig from '../../containers/global/saveConfig';
 import Data from '../../data/users';
 
 const useStyles = makeStyles((theme) => ({
@@ -54,10 +55,7 @@ function UsersPage() {
           </Grid>
         </Box>
       </Box>
-      <NavigationButtonContainer
-        text={NEXT}
-        navigation={WELCOME_PAGE}
-      />
+      <SaveConfig />
       <NavigationButtonContainer
         text={BACK}
         navigation={GENERAL_PAGE}

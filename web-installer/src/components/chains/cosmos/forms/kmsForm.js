@@ -10,6 +10,7 @@ import {
   NEXT, CHANNELS_STEP, BACK, REPOSITORIES_STEP,
 } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import { PingNodeExpoter } from '../../../../utils/buttons';
 import Data from '../../../../data/chains';
 
 const defaultTheme = createMuiTheme();
@@ -135,15 +136,10 @@ const KMSForm = (props) => {
               <Grid item xs={4}>
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
-                    <Button
-                      variant="outlined"
-                      size="large"
+                    <PingNodeExpoter
                       disabled={!(Object.keys(errors).length === 0)}
-                    >
-                      <Box px={2}>
-                        Test KMS
-                      </Box>
-                    </Button>
+                      exporterURL={values.exporterURL}
+                    />
                     <Button
                       variant="outlined"
                       size="large"
