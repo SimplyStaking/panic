@@ -53,6 +53,7 @@ class RabbitMQApi:
             self._logger.error('RabbitMQ error in %s: %s', function.__name__, e)
             return default_return
         except Exception as e:
+            # TODO: Need to test if Pika exceptions fall into this category
             self._logger.error('RabbitMQ error in %s: %s', function.__name__, e)
             self._set_as_disconnected()
             return default_return
@@ -64,18 +65,36 @@ class RabbitMQApi:
                 pika.ConnectionParameters(host=self._host))
             self._channel = self._connection.channel()
         else:
+            # TODO: Need to test authentication
             credentials = pika.PlainCredentials(self._username, self._password)
             parameters = pika.ConnectionParameters(
                 self._host, self._port, '/', credentials)
             self._connection = pika.BlockingConnection(parameters)
             self._channel = self._connection.channel()
         self._set_as_connected()
-        self._logger.info('Successfully connected with RabbitMQ')
 
-    def connect(self) -> None:
-        return None
+    # Returns the default value on error, otherwise returns 0
+    # TODO: Need to test this function
+    def connect(self, default=-1) -> int:
+        ret = self._safe(self.connect_unsafe, [], default)
+        if ret == default:
+            self._logger.info(
+                'Connection could not be established with RabbitMQ')
+            return default
+        else:
+            self._logger.info('Successfully connected with RabbitMQ')
+            return 0
 
     def disconnect(self) -> None:
+        # TODO: Need to check if connection still open first, and do not forget
+        #       to disconnect
+        # def close_connection(self): this is repo code
+        #     self._consuming = False
+        #     if self._connection.is_closing or self._connection.is_closed:
+        #         LOGGER.info('Connection is closing or already closed')
+        #     else:
+        #         LOGGER.info('Closing connection')
+        #         self._connection.close()
         return None
 
     # Connections and disconnecitons should be functions or their own
