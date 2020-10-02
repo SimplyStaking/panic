@@ -1,9 +1,12 @@
 import logging
 from datetime import timedelta
-from alerter.src.utils.timing import TimedTaskLimiter
-from typing import Dict, List, Optional
+from typing import List
+
 import pika
 import pika.exceptions
+
+from alerter.src.utils.logging import DUMMY_LOGGER
+from alerter.src.utils.timing import TimedTaskLimiter
 
 
 class RabbitMQApi:
@@ -39,7 +42,8 @@ class RabbitMQApi:
         self._is_connected = False
 
     def _do_not_use_if_recently_disconnected(self) -> bool:
-        return not self.is_connected and not self._live_check_limiter.can_do_task()
+        return not self.is_connected and not self._live_check_limiter\
+            .can_do_task()
 
     def _safe(self, function, args: List, default_return):
         try:
@@ -54,6 +58,7 @@ class RabbitMQApi:
             return default_return
         except Exception as e:
             # TODO: Need to test if Pika exceptions fall into this category
+            print(e) # TODO: Why errors not outputted?
             self._logger.error('RabbitMQ error in %s: %s', function.__name__, e)
             self._set_as_disconnected()
             return default_return
@@ -74,7 +79,9 @@ class RabbitMQApi:
         self._set_as_connected()
 
     # Returns the default value on error, otherwise returns 0
-    # TODO: Need to test this function
+    # TODO: Need to test this function to the whole with errors etc. When
+    #     : connection is good all seems ok. Need to test when service offline,
+    #     : and connection closes (this must be tested by a publish or something)
     def connect(self, default=-1) -> int:
         ret = self._safe(self.connect_unsafe, [], default)
         if ret == default:
@@ -109,3 +116,6 @@ class RabbitMQApi:
     # In disconnect we need to test connection
     # TODO: Inline documentation
 
+
+rabbitMQAPI = RabbitMQApi(DUMMY_LOGGER)
+rabbitMQAPI.connect()
