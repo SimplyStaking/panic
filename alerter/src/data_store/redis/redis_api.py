@@ -63,8 +63,7 @@ class RedisApi:
         self._is_live = False
 
     def _do_not_use_if_recently_went_down(self) -> bool:
-        # If Redis is not live and cannot check if it is live (by using it)
-        # then stop the function called from happening by returning True
+        # If Redis is not live and cannot check if it is live return true
         return not self._is_live and not self._live_check_limiter.can_do_task()
 
     def _safe(self, function, args: List, default_return):

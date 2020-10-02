@@ -14,4 +14,5 @@ RUN pipenv sync
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
 
+# TODO: Do -u when testing rabbitmq in docker due to output buffer in python
 CMD /wait && pipenv run python run_alerter.py
