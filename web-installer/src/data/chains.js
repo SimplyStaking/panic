@@ -13,6 +13,12 @@ export default {
     exporterUrl: '',
     monitorKms: '',
   },
+  systems: {
+    description: '',
+    name: 'This will be used to identify the curren System configuration.',
+    exporterUrl: '',
+    monitorSystem: '',
+  },
   nodeDetails: {
     description: '',
     name: '',

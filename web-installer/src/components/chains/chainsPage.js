@@ -9,9 +9,11 @@ import SubstrateChainsTableContainer from '../../containers/chains/substrate/sub
 import ChainAccordion from './chainAccordion';
 import CosmosIcon from '../../assets/icons/cosmos.png';
 import SubstrateIcon from '../../assets/icons/substrate.png';
+import SystemIcon from '../../assets/icons/system.svg';
 import {
-  CHANNELS_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW,
-  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE, GENERAL_PAGE,
+  CHANNELS_PAGE, DONE, BACK, COSMOS_SETUP_PAGE, NEW, CONFIGURE,
+  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, GENERAL_SETUP_PAGE,
+  GENERAL,
 } from '../../constants/constants';
 import Data from '../../data/chains';
 
@@ -74,6 +76,17 @@ function Chains() {
             table={(
               <SubstrateChainsTableContainer />
             )}
+          />
+          <ChainAccordion
+            icon={SystemIcon}
+            name={GENERAL}
+            button={(
+              <NavigationButtonContainer
+                text={CONFIGURE}
+                navigation={GENERAL_SETUP_PAGE}
+              />
+            )}
+            table={(<div />)}
           />
         </Box>
       </Box>

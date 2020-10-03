@@ -1,13 +1,10 @@
 import React from 'react';
-import { Grid, Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import Title from '../global/title';
-import MainText from '../global/mainText';
-import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import { UsersFormContainer, UsersTableContainer } from '../../containers/users/usersContainer';
-import { GENERAL_PAGE, BACK } from '../../constants/constants';
-import SaveConfig from '../../containers/global/saveConfig';
-import Data from '../../data/users';
+import { Grid, Box } from '@material-ui/core';
+import Title from '../../global/title';
+import MainText from '../../global/mainText';
+import StepManager from '../../../containers/chains/general/stepManager';
+import Data from '../../../data/substrate';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -27,16 +24,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function UsersPage() {
+function GeneralSetupPage() {
   const classes = useStyles();
 
   return (
     <div>
       <Title
-        text={Data.users.title}
+        text={Data.substrate.title}
       />
       <MainText
-        text={Data.users.description}
+        text={Data.substrate.description}
       />
       <Box p={2} className={classes.root}>
         <Box
@@ -47,19 +44,13 @@ function UsersPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <UsersFormContainer />
-              <UsersTableContainer />
+              <StepManager />
             </Grid>
           </Grid>
         </Box>
       </Box>
-      <SaveConfig />
-      <NavigationButtonContainer
-        text={BACK}
-        navigation={GENERAL_PAGE}
-      />
     </div>
   );
 }
 
-export default UsersPage;
+export default GeneralSetupPage;

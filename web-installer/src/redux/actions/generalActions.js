@@ -1,6 +1,9 @@
 import {
   UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY, REMOVE_SYSTEM,
-  ADD_KMS, REMOVE_KMS,
+  ADD_KMS, REMOVE_KMS, UPDATE_THRESHOLD_ALERT, ADD_TELEGRAM_CHANNEL,
+  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
+  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL,
+  REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -39,7 +42,7 @@ export function addSystem(payload) {
       parentId: payload.parentId,
       name: payload.name,
       exporterURL: payload.exporterURL,
-      enabled: payload.enabled,
+      monitorSystem: payload.monitorSystem,
     },
   };
 }
@@ -67,6 +70,83 @@ export function addKms(payload) {
 export function removeKms(payload) {
   return {
     type: REMOVE_KMS,
+    payload,
+  };
+}
+
+export function updateThresholdAlert(payload) {
+  return {
+    type: UPDATE_THRESHOLD_ALERT,
+    payload,
+  };
+}
+
+export function addTelegramChannel(payload) {
+  return {
+    type: ADD_TELEGRAM_CHANNEL,
+    payload,
+  };
+}
+
+export function removeTelegramChannel(payload) {
+  return {
+    type: REMOVE_TELEGRAM_CHANNEL,
+    payload,
+  };
+}
+
+export function addTwilioChannel(payload) {
+  return {
+    type: ADD_TWILIO_CHANNEL,
+    payload,
+  };
+}
+
+export function removeTwilioChannel(payload) {
+  return {
+    type: REMOVE_TWILIO_CHANNEL,
+    payload,
+  };
+}
+
+export function addEmailChannel(payload) {
+  return {
+    type: ADD_EMAIL_CHANNEL,
+    payload,
+  };
+}
+
+export function removeEmailChannel(payload) {
+  return {
+    type: REMOVE_EMAIL_CHANNEL,
+    payload,
+  };
+}
+
+export function addPagerDutyChannel(payload) {
+  return {
+    type: ADD_PAGERDUTY_CHANNEL,
+    payload,
+  };
+}
+
+export function removePagerDutyChannel(payload) {
+  return {
+    type: REMOVE_PAGERDUTY_CHANNEL,
+    payload,
+  };
+}
+
+export function addOpsGenieChannel(payload) {
+  return {
+    type: ADD_OPSGENIE_CHANNEL,
+    payload,
+  };
+}
+
+export function removeOpsGenieChannel(payload) {
+  return {
+    type: REMOVE_OPSGENIE_CHANNEL,
     payload,
   };
 }

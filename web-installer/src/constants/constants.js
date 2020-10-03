@@ -6,6 +6,7 @@ export const COSMOS_SETUP_PAGE = 'COSMOS_SETUP_PAGE';
 export const SUBSTRATE_SETUP_PAGE = 'SUBSTRATE_SETUP_PAGE';
 export const USERS_PAGE = 'USERS_PAGE';
 export const GENERAL_PAGE = 'GENERAL_PAGE';
+export const GENERAL_SETUP_PAGE = 'GENERAL_SETUP_PAGE';
 
 // Used for button names
 export const START = 'Start';
@@ -13,6 +14,8 @@ export const NEXT = 'Next';
 export const BACK = 'Back';
 export const DONE = 'Done';
 export const NEW = 'New';
+export const GENERAL = 'GENERAL';
+export const CONFIGURE = 'CONFIGURE';
 
 // Used for General Reducer Parent
 export const GLOBAL = 'GLOBAL';
@@ -35,6 +38,7 @@ export const CHANNELS_STEP = 'CHANNELS_STEP';
 export const KMS_STEP = 'KMS_STEP';
 export const NODES_STEP = 'NODES_STEP';
 export const REPOSITORIES_STEP = 'REPOSITORIES_STEP';
+export const SYSTEMS_STEP = 'SYSTEMS_STEP';
 
 // Severties constants
 export const INFO = 'INFO';

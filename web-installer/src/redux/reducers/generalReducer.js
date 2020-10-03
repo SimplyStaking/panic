@@ -2,9 +2,79 @@ import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
   UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
-  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS,
+  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, ADD_TELEGRAM_CHANNEL,
+  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
+  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
+  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
+  UPDATE_THRESHOLD_ALERT,
 } from '../actions/types';
 import { GLOBAL } from '../../constants/constants';
+
+const generalThresholdAlerts = {
+  byId: {
+    1: {
+      name: 'Open File Descriptors increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    2: {
+      name: 'System CPU usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    3: {
+      name: 'System storage usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    4: {
+      name: 'System RAM usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    5: {
+      name: 'System network usage increased',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        enabled: true,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['1', '2', '3', '4', '5'],
+};
 
 // Initial periodic state
 const periodicState = {
@@ -19,6 +89,12 @@ const generalState = {
   repositories: [],
   systems: [],
   periodic: periodicState,
+  telegrams: [],
+  twilios: [],
+  emails: [],
+  pagerduties: [],
+  opsgenies: [],
+  thresholdAlerts: generalThresholdAlerts,
 };
 
 // General reducer to keep track of Periodic alive reminder, repositories and
@@ -77,6 +153,132 @@ function GeneralReducer(state = generalState, action) {
         systems: state.systems.filter(
           (config) => config !== action.payload.id,
         ),
+      };
+    case ADD_TELEGRAM_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        telegrams: state.telegrams.concat(action.payload.id),
+      };
+    case REMOVE_TELEGRAM_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        telegrams: state.telegrams.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case ADD_TWILIO_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        twilios: state.twilios.concat(action.payload.id),
+      };
+    case REMOVE_TWILIO_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        twilios: state.twilios.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case ADD_EMAIL_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        emails: state.emails.concat(action.payload.id),
+      };
+    case REMOVE_EMAIL_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        emails: state.emails.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case ADD_PAGERDUTY_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        pagerduties: state.pagerduties.concat(action.payload.id),
+      };
+    case REMOVE_PAGERDUTY_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        pagerduties: state.pagerduties.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case ADD_OPSGENIE_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        opsgenies: state.opsgenies.concat(action.payload.id),
+      };
+    case REMOVE_OPSGENIE_CHANNEL:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        opsgenies: state.opsgenies.filter(
+          (config) => config !== action.payload.id,
+        ),
+      };
+    case UPDATE_THRESHOLD_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        thresholdAlerts: {
+          ...state.thresholdAlerts,
+          byId: {
+            ...state.thresholdAlerts.byId,
+            [action.payload.id]: action.payload.alert,
+          },
+        },
       };
     default:
       return state;
