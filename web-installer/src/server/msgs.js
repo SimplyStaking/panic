@@ -31,6 +31,10 @@ function AccountSavedSuccessfully() {
   this.message = 'Account saved successfully.';
 }
 
+function AccountRemovedSuccessfully() {
+  this.message = 'Account removed successfully.';
+}
+
 function CollectionDropped(collection) {
   this.message = `Collection '${collection}' dropped from database.`;
 }
@@ -60,6 +64,7 @@ module.exports = {
   TestAlertSubmitted,
   AuthenticationSuccessful,
   AccountSavedSuccessfully,
+  AccountRemovedSuccessfully,
   CollectionDropped,
   DirectoryNotCreated,
   MessagePong,

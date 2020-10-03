@@ -4,6 +4,7 @@ import {
   TextField, Typography, Grid, Switch, FormControlLabel,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import MainText from '../../global/mainText';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -24,8 +25,12 @@ const PeriodicForm = (props) => {
 
   return (
     <div>
+      <MainText
+        text="Preiodic alive reminder description"
+      />
       <form className={classes.root}>
         <Grid container spacing={3} justify="center" alignItems="center">
+          <Grid item xs={12} />
           <Grid item xs={2}>
             <Typography> Interval Seconds: </Typography>
           </Grid>

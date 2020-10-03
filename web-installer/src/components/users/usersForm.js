@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-  TextField, Button, Box, Typography, Grid,
-} from '@material-ui/core';
+import { TextField, Typography, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import { AddAccount } from '../../utils/buttons';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -60,18 +59,11 @@ const UsersForm = (props) => {
           <Grid item xs={8} />
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
-              <Box px={2}>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  disabled={!(Object.keys(errors).length === 0)}
-                  type="submit"
-                >
-                  <Box px={2}>
-                    Add
-                  </Box>
-                </Button>
-              </Box>
+              <AddAccount
+                disabled={!(Object.keys(errors).length === 0)}
+                username={values.username}
+                password={values.password}
+              />
             </Grid>
           </Grid>
         </Grid>

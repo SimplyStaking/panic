@@ -53,11 +53,11 @@ function UsersPage() {
           </Grid>
         </Box>
       </Box>
-      <SaveConfig />
       <NavigationButtonContainer
         text={BACK}
         navigation={GENERAL_PAGE}
       />
+      <SaveConfig />
     </div>
   );
 }

@@ -33,6 +33,14 @@ function sendConfig(configType, fileName, chainName, baseChain, config) {
   }, { config });
 }
 
+function saveAccount(username, password) {
+  return sendData('/server/account/save', {}, { username, password });
+}
+
+function deleteAccount(username) {
+  return sendData('/server/account/delete', {}, { username });
+}
+
 function sendTestEmail(smtp, from, to, user, pass) {
   return sendData('/server/email/test', {}, {
     smtp, from, to, user, pass,
@@ -69,5 +77,6 @@ function refreshAccessToken() {
 export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
-  pingCosmosPrometheus, pingNodeExporter, sendConfig,
+  pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
+  deleteAccount,
 };

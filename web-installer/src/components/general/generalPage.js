@@ -4,15 +4,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import FormAccordion from '../global/formAccordion';
 import {
-  USERS_PAGE, CHAINS_PAGE, NEXT, BACK, PERIODIC, SYSTEM, GITHUB,
+  USERS_PAGE, CHAINS_PAGE, NEXT, BACK,
 } from '../../constants/constants';
-import TimeLogo from '../../assets/icons/time.svg';
-import SystemLogo from '../../assets/icons/system.svg';
-import GithubLogo from '../../assets/icons/github.svg';
-import { SystemFormContainer, SystemTableContainer } from '../../containers/general/systemContainer';
-import { RepositoryFormContainer, RepositoryTableContainer } from '../../containers/general/repositoryContainer';
 import PeriodicFormContainer from '../../containers/general/periodicContainer';
 import Data from '../../data/general';
 
@@ -54,24 +48,7 @@ function GeneralsPage() {
         >
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <FormAccordion
-                icon={TimeLogo}
-                name={PERIODIC}
-                form={(<PeriodicFormContainer />)}
-                table={(<div />)}
-              />
-              <FormAccordion
-                icon={SystemLogo}
-                name={SYSTEM}
-                form={(<SystemFormContainer />)}
-                table={(<SystemTableContainer />)}
-              />
-              <FormAccordion
-                icon={GithubLogo}
-                name={GITHUB}
-                form={(<RepositoryFormContainer />)}
-                table={(<RepositoryTableContainer />)}
-              />
+              <PeriodicFormContainer />
             </Grid>
           </Grid>
         </Box>

@@ -36,7 +36,7 @@ class SaveConfig extends Component {
   async saveConfigs() {
     const {
       emails, pagerduties, telegrams, twilios, opsgenies, cosmosChains, cosmosNodes,
-      repositories, kmses, substrateChains, substrateNodes,
+      repositories, kmses, substrateChains, substrateNodes, general, systems,
     } = this.props;
 
     // Save all the channels configurations if any
@@ -313,6 +313,57 @@ class SaveConfig extends Component {
       await sendConfig('chain', 'timewindow_alerts_config.ini',
         chainConfig.chainName, 'substrate', timeWindowAlertsConfig);
     });
+
+    // Save the general configurations
+    const channelConfigs = {};
+    channelConfigs.telegram = general.telegrams;
+    channelConfigs.email = general.emails;
+    channelConfigs.twilio = general.twilios;
+    channelConfigs.opsgenie = general.opsgenies;
+    channelConfigs.pagerduty = general.pagerduties;
+
+    // Save the channels
+    await sendConfig('chain', 'channels_config.ini', 'general', 'general',
+      channelConfigs);
+
+    const generalSystems = {};
+    for (let k = 0; k < general.systems.length; k += 1) {
+      generalSystems[general.systems[k]] = systems.byId[general.systems[k]];
+    }
+    await sendConfig('chain', 'systems_config.ini', 'general', 'general',
+      generalSystems);
+
+    const generalRepos = {};
+    for (let k = 0; k < general.repositories.length; k += 1) {
+      generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
+    }
+    await sendConfig('chain', 'repos_config.ini', 'general', 'general',
+      generalRepos);
+
+    // Redo the structure of these alerts to be able to save them in the .ini
+    // file
+    const generalThreshold = {};
+    for (let i = 0; i < general.thresholdAlerts.allIds.length; i += 1) {
+      const id = general.thresholdAlerts.allIds[i];
+      generalThreshold[id] = {};
+      generalThreshold[id].name = general.thresholdAlerts.byId[id].name;
+      generalThreshold[id].enabled = general.thresholdAlerts.byId[id].enabled;
+      generalThreshold[id].critical_threshold = general.thresholdAlerts
+        .byId[id].critical.threshold;
+      generalThreshold[id].critical_enabled = general
+        .thresholdAlerts.byId[id].critical.enabled;
+      generalThreshold[id].warning_threshold = general
+        .thresholdAlerts.byId[id].warning.threshold;
+      generalThreshold[id].warning_enabled = general
+        .thresholdAlerts.byId[id].warning.enabled;
+    }
+
+    await sendConfig('chain', 'threshold_alerts_config.ini', 'general',
+      'general', generalThreshold);
+
+    const generalPeriodic = { periodic: general.periodic };
+    await sendConfig('chain', 'periodic_config.ini', 'general',
+      'general', generalPeriodic);
   }
 
   render() {
@@ -466,6 +517,16 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
+  systems: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parentId: PropTypes.string,
+      name: PropTypes.string,
+      exporterURL: PropTypes.string,
+      monitorSystem: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   cosmosNodes: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -569,6 +630,34 @@ SaveConfig.propTypes = {
       useAsDataSource: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  general: PropTypes.shape({
+    repositories: PropTypes.arrayOf(PropTypes.string).isRequired,
+    systems: PropTypes.arrayOf(PropTypes.string).isRequired,
+    periodic: PropTypes.shape({
+      time: PropTypes.string,
+      enabled: PropTypes.bool,
+    }),
+    telegrams: PropTypes.arrayOf(PropTypes.string).isRequired,
+    twilios: PropTypes.arrayOf(PropTypes.string).isRequired,
+    emails: PropTypes.arrayOf(PropTypes.string).isRequired,
+    pagerduties: PropTypes.arrayOf(PropTypes.string).isRequired,
+    opsgenies: PropTypes.arrayOf(PropTypes.string).isRequired,
+    thresholdAlerts: PropTypes.shape({
+      byId: PropTypes.shape({
+        name: PropTypes.string,
+        warning: PropTypes.shape({
+          threshold: PropTypes.number,
+          enabled: PropTypes.bool,
+        }),
+        critical: PropTypes.shape({
+          threshold: PropTypes.number,
+          enabled: PropTypes.bool,
+        }),
+        enabled: PropTypes.bool,
+      }),
+      allIds: [],
+    }),
   }).isRequired,
 };
 

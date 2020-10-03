@@ -367,6 +367,40 @@ app.post('/server/account/save', verify, async (req, res) => {
   }
 });
 
+// This should remove an account by username from the database
+app.post('/server/account/delete', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username } = req.body;
+  // Check if username is missing
+  const missingParamsList = utils.missingValues({ username });
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  try {
+    // Remove an account from the collection
+    await mongo.removeFromCollection(mongoDBUrl, dbname,
+      accountsCollection, { username });
+    const msg = new msgs.AccountRemovedSuccessfully();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (err) {
+    // If the record is already present in the database return a username
+    // already exists error so that the error is more meaningful. Otherwise
+    // return whatever error is thrown.
+    if (err.code === 446) {
+      const error = new errors.UsernameDoesNotExists(username);
+      console.log(error);
+      res.status(error.code).send(utils.errorJson(error.message));
+      return;
+    }
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 // This endpoint checks whether an account already exists with the given
 // username
 app.post('/server/account/exists', verify, async (req, res) => {
@@ -399,6 +433,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
 app.post('/server/database/drop', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { collection } = req.body;
+
   // Check if the collection parameter is missing
   const missingParamsList = utils.missingValues({ collection });
   // If some required parameters are missing inform the user.
@@ -509,11 +544,8 @@ app.post('/server/config', verify, async (req, res) => {
       const configPath = configs.getConfigPath(
         configType, fileName, chainName, baseChain,
       );
-      console.log("WRITE CONIFG");
       configs.writeConfig(configPath, config);
-      console.log("DO NOT WRITE CONIFG");
       const msg = new msgs.ConfigSubmitted(fileName, configPath);
-      console.log("CONFIG SUBMITTED");
       return res.status(utils.SUCCESS_STATUS)
         .send(utils.resultJson(msg.message));
     }

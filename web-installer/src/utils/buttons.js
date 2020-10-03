@@ -2,10 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
+import CancelIcon from '@material-ui/icons/Cancel';
 import { ToastsStore } from 'react-toasts';
 import {
   authenticate, fetchData, sendTestEmail, testCall, pingRepo, sendTestPagerDuty,
   sendTestOpsGenie, pingTendermint, pingCosmosPrometheus, pingNodeExporter,
+  saveAccount, deleteAccount,
 } from './data';
 import sleep from './time';
 
@@ -219,6 +221,75 @@ function PingRepoButton({ disabled, repo }) {
     <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
       <Box px={2}>
         Test Repository
+      </Box>
+    </Button>
+  );
+}
+
+function DeleteAccount({ username, removeFromRedux }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Deleting account ${username}`, 5000);
+      // First remove from the database
+      await deleteAccount(username);
+      // Then remove from redux
+      removeFromRedux(username);
+      ToastsStore.success('Successfully removed account', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(`Could not remove account from database ${username}. Error: ${
+          e.response.data.message}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not remove account from database ${username}. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
+  return (
+    <Button
+      onClick={onClick}
+    >
+      <CancelIcon />
+    </Button>
+  );
+}
+
+function AddAccount({ username, password, disabled }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Saving account ${username}`, 5000);
+
+      await saveAccount(username, password);
+
+      ToastsStore.success('Successfully added new account', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(`Could not save account in databse ${username}. Error: ${
+          e.response.data.message}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not save account in database ${username}. Error: ${e.message}`, 5000,
+        );
+      }
+    }
+  };
+  return (
+    <Button
+      type="submit"
+      variant="outlined"
+      size="large"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Box px={2}>
+        Add Account
       </Box>
     </Button>
   );
@@ -447,8 +518,20 @@ PingNodeExpoter.propTypes = forbidExtraProps({
   exporterURL: PropTypes.string.isRequired,
 });
 
+AddAccount.propTypes = forbidExtraProps({
+  username: PropTypes.string.isRequired,
+  password: PropTypes.string.isRequired,
+  disabled: PropTypes.bool.isRequired,
+});
+
+DeleteAccount.propTypes = forbidExtraProps({
+  username: PropTypes.string.isRequired,
+  removeFromRedux: PropTypes.func.isRequired,
+});
+
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
   PingRepoButton, PingCosmosButton, PingNodeExpoter, SaveConfigButton,
+  AddAccount, DeleteAccount,
 };

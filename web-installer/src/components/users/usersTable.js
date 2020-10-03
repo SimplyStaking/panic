@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import CancelIcon from '@material-ui/icons/Cancel';
+import { DeleteAccount } from '../../utils/buttons';
 
 const useStyles = makeStyles({
   table: {
@@ -44,9 +44,10 @@ const UsersTable = (props) => {
               </TableCell>
               <TableCell align="center">*************</TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeUserDetails(user); }}>
-                  <CancelIcon />
-                </Button>
+                <DeleteAccount
+                  username={user.username}
+                  removeFromRedux={removeUserDetails}
+                />
               </TableCell>
             </TableRow>
           ))}

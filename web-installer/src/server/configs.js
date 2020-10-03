@@ -26,21 +26,26 @@ const USER_CONFIG_REPEAT_ALERTS = 'repeat_alerts_config.ini';
 const USER_CONFIG_THRESHOLD_ALERTS = 'threshold_alerts_config.ini';
 const USER_CONFIG_TIMEWINDOW_ALERTS = 'timewindow_alerts_config.ini';
 const USER_CONFIG_SEVERTY_ALERTS = 'severity_alerts_config.ini';
+const USER_CONFIG_SYSTEMS = 'systems_config.ini';
+const USER_CONFIG_PERIODIC = 'periodic_config.ini';
 const ALL_CHAINS_CONFIG_FILES = [
   USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_KMS, USER_CONFIG_CHANNELS,
   USER_CONFIG_ALERTS, USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
-  USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS,
+  USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS, USER_CONFIG_SYSTEMS,
+  USER_CONFIG_PERIODIC,
 ];
 const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('config', 'chains', 'cosmos');
 const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join(
   'config', 'chains', 'substrate',
 );
-
+const GENERAL_CONFIGS_LOCATION = path.join(
+  'config', 'chains', 'general',
+);
 // Other configs and config locations
 const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_OTHER_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS,
   USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS, USER_CONFIG_TIMEWINDOW_ALERTS,
-  USER_CONFIG_SEVERTY_ALERTS,
+  USER_CONFIG_SEVERTY_ALERTS, USER_CONFIG_SYSTEMS, USER_CONFIG_PERIODIC,
 ];
 const OTHER_CONFIGS_LOCATION = path.join('config', 'others');
 
@@ -58,6 +63,9 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
       }
       if (baseChain.toLowerCase() === 'substrate') {
         return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
+      }
+      if (baseChain.toLowerCase() === 'general') {
+        return path.join(GENERAL_CONFIGS_LOCATION, chainName, file);
       }
       throw new errors.InvalidBaseChain();
     case 'other':
@@ -95,6 +103,7 @@ function fileValid(configType, file) {
 function parsedConfigToDict(config) {
   const sections = config.sections();
   return sections.reduce((map, obj) => {
+    // eslint-disable-next-line no-param-reassign
     map[obj] = config.items(obj);
     return map;
   }, {});

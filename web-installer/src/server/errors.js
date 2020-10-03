@@ -98,6 +98,11 @@ function CouldNotWriteConfig(err, config, path) {
   this.code = 448;
 }
 
+function UsernameDoesNotExists(username) {
+  this.message = `Username '${username}' does not exists.`;
+  this.code = 449;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -118,4 +123,5 @@ module.exports = {
   RecordAlreadyExists,
   UsernameAlreadyExists,
   CouldNotWriteConfig,
+  UsernameDoesNotExists,
 };

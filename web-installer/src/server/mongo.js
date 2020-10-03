@@ -46,6 +46,28 @@ module.exports = {
     }
   },
 
+  // This function deletes an account from the accounts collection
+  removeFromCollection: async (mongoDBUrl, dbname, collection, record) => {
+    let client;
+    let db;
+    try {
+      // Connect
+      client = await mongoClient.connect(mongoDBUrl, options);
+      db = client.db(dbname);
+      const collectionInterface = db.collection(collection);
+      await collectionInterface.deleteOne(record);
+    } catch (err) {
+      // If an error is raised throw a MongoError
+      throw new errors.MongoError(err.message);
+    } finally {
+      // Check if an error was thrown after a connection was established. If this
+      // is the case close the database connection to prevent leaks
+      if (client && client.isConnected()) {
+        await client.close();
+      }
+    }
+  },
+
   // This function deletes a collection
   dropCollection: async (mongoDBUrl, dbname, collection) => {
     let client;
