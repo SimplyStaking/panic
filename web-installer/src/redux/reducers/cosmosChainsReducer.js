@@ -9,7 +9,7 @@ import {
   ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT,
-  UPDATE_SEVERITY_ALERT,
+  UPDATE_SEVERITY_ALERT, LOAD_CONFIG_COSMOS,
 } from '../actions/types';
 
 const cosmosRepeatAlerts = {
@@ -652,6 +652,8 @@ function CurrentCosmosChain(state = '', action) {
       return action.payload.id;
     case RESET_CHAIN_COSMOS:
       return '';
+    case LOAD_CONFIG_COSMOS:
+      return action.payload.id;
     default:
       return state;
   }

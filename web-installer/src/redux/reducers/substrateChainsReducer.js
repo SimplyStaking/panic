@@ -9,7 +9,7 @@ import {
   ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT,
-  UPDATE_SEVERITY_ALERT,
+  UPDATE_SEVERITY_ALERT, LOAD_CONFIG_SUBSTRATE,
 } from '../actions/types';
 
 const substrateRepeatAlerts = {
@@ -700,6 +700,8 @@ function CurrentSubstrateChain(state = '', action) {
       return action.payload.id;
     case RESET_CHAIN_SUBSTRATE:
       return '';
+    case LOAD_CONFIG_SUBSTRATE:
+      return action.payload.id;
     default:
       return state;
   }

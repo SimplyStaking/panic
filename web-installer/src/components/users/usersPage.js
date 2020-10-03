@@ -53,11 +53,22 @@ function UsersPage() {
           </Grid>
         </Box>
       </Box>
-      <NavigationButtonContainer
-        text={BACK}
-        navigation={GENERAL_PAGE}
-      />
-      <SaveConfig />
+      <Grid container spacing={3} justify="center" alignItems="center">
+        <Grid item xs={2}>
+          <Box px={2}>
+            <NavigationButtonContainer
+              text={BACK}
+              navigation={GENERAL_PAGE}
+            />
+          </Box>
+        </Grid>
+        <Grid item xs={8} />
+        <Grid item xs={2}>
+          <Box px={2}>
+            <SaveConfig />
+          </Box>
+        </Grid>
+      </Grid>
     </div>
   );
 }

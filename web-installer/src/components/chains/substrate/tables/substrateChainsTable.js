@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Button,
+  Button, Box,
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
-// import { SUBSTRATE_SETUP_PAGE } from '../../../../constants/constants';
+import { SUBSTRATE_SETUP_PAGE } from '../../../../constants/constants';
 
 const useStyles = makeStyles({
   table: {
@@ -15,21 +15,19 @@ const useStyles = makeStyles({
   },
 });
 
-/* Temporarily removing management of already added configurations */
-
 const SubstrateChainsTable = (props) => {
   const classes = useStyles();
 
   const {
     config,
-    // loadConfigDetails,
+    loadConfigDetails,
   } = props;
 
-  // const manageConfiguration = (page, config) => {
-  //   const { pageChanger } = props;
-  //   pageChanger({ page });
-  //   loadConfigDetails(config);
-  // };
+  const loadConfiguration = (page, id) => {
+    const { pageChanger } = props;
+    loadConfigDetails({ id });
+    pageChanger({ page });
+  };
 
   // Function to clear all references, including the referenced objects
   // from configured object.
@@ -54,8 +52,8 @@ const SubstrateChainsTable = (props) => {
       <Table className={classes.table} aria-label="simple table">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
-            {/* <TableCell align="center">Manage</TableCell> */}
+            <TableCell align="center">Name</TableCell>
+            <TableCell align="center">Manage</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
@@ -65,21 +63,18 @@ const SubstrateChainsTable = (props) => {
               <TableCell align="center">
                 {config.byId[id].chainName}
               </TableCell>
-              {/* <TableCell align="center">
+              <TableCell align="center">
                 <Box px={2}>
                   <Button onClick={() => {
-                    manageConfiguration(SUBSTRATE_SETUP_PAGE, config);
+                    loadConfiguration(SUBSTRATE_SETUP_PAGE, id);
                   }}
                   >
-                    Manage
+                    Load
                   </Button>
                 </Box>
-              </TableCell> */}
+              </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
-                  clearAllChainDetails(id);
-                }}
-                >
+                <Button onClick={() => { clearAllChainDetails(id); }}>
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -100,7 +95,8 @@ SubstrateChainsTable.propTypes = {
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
   removeChainDetails: PropTypes.func.isRequired,
-  // loadConfigDetails: PropTypes.func.isRequired,
+  loadConfigDetails: PropTypes.func.isRequired,
+  pageChanger: PropTypes.func.isRequired,
 };
 
 export default SubstrateChainsTable;
