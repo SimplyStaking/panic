@@ -238,8 +238,12 @@ app.post('/server/login', async (req, res) => {
     try {
       await saveRefreshTokenToDB(username, refreshToken);
       res.status(utils.SUCCESS_STATUS)
-        .cookie('authCookie', accessToken, { secure: true, httpOnly: true })
-        .send(utils.resultJson(msg.message));
+        .cookie('authCookie', accessToken, {
+          secure: true,
+          httpOnly: true,
+          sameSite: true,
+          maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
+        }).send(utils.resultJson(msg.message));
     } catch (err) {
       // Inform the user of any error that occurs
       res.status(err.code).send(utils.errorJson(err.message));
@@ -268,10 +272,9 @@ app.post('/server/refresh', async (req, res) => {
   let payload;
   try {
     // Use the jwt.verify method to verify that the access token has a valid
-    // signature. It throws an error if the token has an invalid signature.
-    payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, {
-      ignoreExpiration: true,
-    });
+    // signature and not expired, it throws an error otherwise. This is done
+    // so that no one can issue new tokens with stolen.
+    payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
   } catch (err) {
     console.log(err);
     // If an error occurs send an unauthorized error
@@ -318,8 +321,12 @@ app.post('/server/refresh', async (req, res) => {
         expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
       });
     res.status(utils.SUCCESS_STATUS)
-      .cookie('authCookie', newAccessToken, { secure: true, httpOnly: true })
-      .send(utils.resultJson(msg.message));
+      .cookie('authCookie', newAccessToken, {
+        secure: true,
+        httpOnly: true,
+        sameSite: true,
+        maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
+      }).send(utils.resultJson(msg.message));
   } catch (err) {
     // Inform the user of any error that occurs
     console.log(err);
@@ -495,18 +502,14 @@ app.get('/server/config', verify, async (req, res) => {
     const err = new errors.ConfigUnrecognized(fileName);
     return res.status(err.code).send(utils.errorJson(err.message));
   } catch (err) {
-    // If no valid path can be inferred from configType and baseChain return a
-    // related error message
-    if (err.code === 430 || err.code === 431) {
-      return res.status(err.code).send(utils.errorJson(err.message));
-    }
     // If the config cannot be found in the inferred location inform the client
     if (err.code === 'ENOENT') {
       const errNotFound = new errors.ConfigNotFound(fileName);
       return res.status(errNotFound.code)
         .send(utils.errorJson(errNotFound.message));
     }
-    throw err;
+    // Otherwise inform the user about the error.
+    return res.status(err.code).send(utils.errorJson(err.message));
   }
 });
 
@@ -553,12 +556,8 @@ app.post('/server/config', verify, async (req, res) => {
     const err = new errors.ConfigUnrecognized(fileName);
     return res.status(err.code).send(utils.errorJson(err.message));
   } catch (err) {
-    // If no valid path can be inferred from configType and baseChain return a
-    // related error message
-    if (err.code === 430 || err.code === 431) {
-      return res.status(err.code).send(utils.errorJson(err.message));
-    }
-    throw err;
+    // If error inform the user
+    return res.status(err.code).send(utils.errorJson(err.message));
   }
 });
 
@@ -645,7 +644,7 @@ app.post('/server/email/test', verify, async (req, res) => {
     if (err) {
       console.log(err);
       const error = new errors.EmailError(err.message);
-      res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+      res.status(error.code).send(utils.errorJson(error.message));
       return;
     }
 
@@ -662,7 +661,7 @@ app.post('/server/email/test', verify, async (req, res) => {
       if (err2) {
         console.log(err2);
         const error = new errors.EmailError(err2.message);
-        res.status(utils.ERR_STATUS).send(utils.errorJson(error.message));
+        res.status(error.code).send(utils.errorJson(error.message));
         return;
       }
       console.debug(info);

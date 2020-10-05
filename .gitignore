@@ -25,11 +25,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # configs
-config/
-
-# sessions
-src/web/ui/sessions/*.json*
-!src/web/ui/sessions/.gitkeep
+config/*
+!config/.gitkeep
 
 # dependencies
 node_modules/
