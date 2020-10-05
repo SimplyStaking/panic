@@ -1,11 +1,10 @@
 import logging
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 
 import pika
 import pika.exceptions
 
-from alerter.src.utils.logging import DUMMY_LOGGER
 from alerter.src.utils.timing import TimedTaskLimiter
 
 
@@ -29,20 +28,15 @@ class RabbitMQApi:
         return self._is_connected
 
     def _set_as_connected(self) -> None:
-        if not self.is_connected:
-            self._logger.info('Connected with RabbitMQ again.')
         self._is_connected = True
 
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self._live_check_limiter.can_do_task():
             self._live_check_limiter.did_task()
-            self._logger.critical('Connection with RabbitMQ is down for some '
-                                  'reason. Stopping usage temporarily to '
-                                  'improve performance.')
         self._is_connected = False
 
     def _do_not_use_if_recently_disconnected(self) -> bool:
-        return not self.is_connected and not self._live_check_limiter\
+        return not self.is_connected and not self._live_check_limiter \
             .can_do_task()
 
     def _safe(self, function, args: List, default_return):
@@ -50,72 +44,79 @@ class RabbitMQApi:
             if self._do_not_use_if_recently_disconnected():
                 return default_return
             ret = function(*args)
-            self._set_as_connected()
             return ret
         except pika.exceptions.AMQPChannelError as e:
-            # Channel errors do not always reflect a connection error
-            self._logger.error('RabbitMQ error in %s: %s', function.__name__, e)
-            return default_return
+            # Channel errors do not always reflect a connection error, therefore
+            # do not set as disconnected
+            self._logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            raise e
         except Exception as e:
-            # TODO: Need to test if Pika exceptions fall into this category
-            print(e) # TODO: Why errors not outputted?
-            self._logger.error('RabbitMQ error in %s: %s', function.__name__, e)
-            self._set_as_disconnected()
-            return default_return
+            self._logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            self._logger.warning('Stopping RabbitMQ usage temporarily to '
+                                 'improve performance.')
+            # If the error did not close the connection, close the connection
+            # and mark it as closed. Otherwise just mark it as closed
+            if self._connection.is_open:
+                self.disconnect()
+            else:
+                self._set_as_disconnected()
+            raise e
 
     def connect_unsafe(self) -> None:
-        self._logger.info('Connecting with RabbitMQ...')
-        if self._password == '':
-            self._connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=self._host))
-            self._channel = self._connection.channel()
+        if self.is_connected:
+            # Avoid creating a lot of connections to avoid memory issues
+            self._logger.info('Already connected with RabbitMQ, no need to '
+                              're-connect!')
         else:
-            # TODO: Need to test authentication
-            credentials = pika.PlainCredentials(self._username, self._password)
-            parameters = pika.ConnectionParameters(
-                self._host, self._port, '/', credentials)
-            self._connection = pika.BlockingConnection(parameters)
-            self._channel = self._connection.channel()
-        self._set_as_connected()
+            self._logger.info('Connecting with RabbitMQ...')
+            if self._password == '':
+                self._connection = pika.BlockingConnection(
+                    pika.ConnectionParameters(host=self._host))
+                self._channel = self._connection.channel()
+            else:
+                credentials = pika.PlainCredentials(self._username,
+                                                    self._password)
+                parameters = pika.ConnectionParameters(
+                    self._host, self._port, '/', credentials)
+                self._connection = pika.BlockingConnection(parameters)
+                self._channel = self._connection.channel()
+            self._logger.info('Connected with RabbitMQ')
+            self._set_as_connected()
 
     # Returns the default value on error, otherwise returns 0
-    # TODO: Need to test this function to the whole with errors etc. When
-    #     : connection is good all seems ok. Need to test when service offline,
-    #     : and connection closes (this must be tested by a publish or something)
-    def connect(self, default=-1) -> int:
-        ret = self._safe(self.connect_unsafe, [], default)
-        if ret == default:
-            self._logger.info(
-                'Connection could not be established with RabbitMQ')
-            return default
+    # TODO: Test when connection closes (this must be tested by a publish or
+    #       something)
+    def connect(self) -> Optional[int]:
+        return self._safe(self.connect_unsafe, [], -1)
+
+    def disconnect_unsafe(self) -> None:
+        if self.is_connected and self._connection.is_open:
+            self._logger.info('Closing connection with RabbitMQ')
+            self._connection.close()
+            self._set_as_disconnected()
+            self._logger.info('Connection with RabbitMQ closed')
         else:
-            self._logger.info('Successfully connected with RabbitMQ')
-            return 0
+            self._logger.info('Already disconnected.')
 
-    def disconnect(self) -> None:
-        # TODO: Need to check if connection still open first, and do not forget
-        #       to disconnect
-        # def close_connection(self): this is repo code
-        #     self._consuming = False
-        #     if self._connection.is_closing or self._connection.is_closed:
-        #         LOGGER.info('Connection is closing or already closed')
-        #     else:
-        #         LOGGER.info('Closing connection')
-        #         self._connection.close()
-        return None
+    # Should be called on open connections only
+    def disconnect(self) -> Optional[int]:
+        return self._safe(self.disconnect_unsafe, [], -1)
 
-    # Connections and disconnecitons should be functions or their own
-    # Each method should have a safe function to check that connection is not lost
-    # Channel error we may need to reconnect
-    # Need to test pass authentication
-    # Logger, set_as live etc we used to do in the constructor before must be
-    # set in connect and disconnect
+    def connect_till_successful(self) -> None:
+        while True:
+            try:
+                ret = self.connect()
+                # If None is returned, Rabbit is not experiencing issues,
+                # therefore the API must have connected to Rabbit
+                if ret is None:
+                    break
+            except Exception:
+                continue
+
+    # The producer/consumer must perform the error handling himself. For example
+    # if a basic_publish fails with a connection error, the user must re-connect
+    # first
     # Must do all qos, publisher confirms, everything that can be done, publish,
     # subscribe etc must be done in the wrapper
-    # For now, no data should be raised to the outside, attempt re-connection here
-    # In disconnect we need to test connection
+    # In consume we must pass a function from the outside
     # TODO: Inline documentation
-
-
-rabbitMQAPI = RabbitMQApi(DUMMY_LOGGER)
-rabbitMQAPI.connect()
