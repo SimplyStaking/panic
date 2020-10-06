@@ -44,7 +44,7 @@ const KmsForm = (props) => {
                   value={values.kmsName}
                   type="text"
                   name="kmsName"
-                  placeholder={data.kmsForm.namePlaceHolder}
+                  placeholder={data.kmsForm.nameHolder}
                   helperText={errors.kmsName ? errors.kmsName : ''}
                   onChange={handleChange}
                   fullWidth
@@ -68,7 +68,7 @@ const KmsForm = (props) => {
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"
-                  placeholder={data.kmsForm.exporterUrlPlaceHolder}
+                  placeholder={data.kmsForm.exporterUrlHolder}
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
                   fullWidth
@@ -174,8 +174,8 @@ KmsForm.propTypes = {
   data: PropTypes.shape({
     kmsForm: PropTypes.shape({
       description: PropTypes.string.isRequired,
-      exporterUrlPlaceHolder: PropTypes.string.isRequired,
-      namePlaceHolder: PropTypes.string.isRequired,
+      exporterUrlHolder: PropTypes.string.isRequired,
+      nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
       exporterUrlTip: PropTypes.string.isRequired,
       monitorKmsTip: PropTypes.string.isRequired,

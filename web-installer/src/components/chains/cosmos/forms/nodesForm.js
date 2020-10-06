@@ -6,13 +6,10 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  CHAINS_STEP, NEXT, REPOSITORIES_STEP, BACK,
-} from '../../../../constants/constants';
+import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
 import { PingCosmosButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
-import Data from '../../../../data/chains';
 
 const NodesForm = (props) => {
   const classes = useStyles();
@@ -23,6 +20,7 @@ const NodesForm = (props) => {
     handleSubmit,
     handleChange,
     setFieldValue,
+    data,
   } = props;
 
   return (
@@ -30,7 +28,7 @@ const NodesForm = (props) => {
       <div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{Data.nodeDetails.description}</p>
+            <p>{data.nodeForm.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -46,7 +44,7 @@ const NodesForm = (props) => {
                   value={values.cosmosNodeName}
                   type="text"
                   name="cosmosNodeName"
-                  placeholder="cosmos-node-1"
+                  placeholder={data.nodeForm.nameHolder}
                   helperText={errors.cosmosNodeName ? errors.cosmosNodeName : ''}
                   onChange={handleChange}
                   fullWidth
@@ -55,7 +53,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.name} placement="left">
+                    <Tooltip title={data.nodeForm.nameTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -69,7 +67,7 @@ const NodesForm = (props) => {
                   value={values.tendermintRPCURL}
                   type="text"
                   name="tendermintRPCURL"
-                  placeholder="http://122.321.32.12:26657"
+                  placeholder={data.nodeForm.tendermintHolder}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -77,7 +75,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.tendermintRPC} placement="left">
+                    <Tooltip title={data.nodeForm.tendermintTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -91,7 +89,7 @@ const NodesForm = (props) => {
                   value={values.cosmosRPCURL}
                   type="text"
                   name="cosmosRPCURL"
-                  placeholder="http://122.321.32.12:1317"
+                  placeholder={data.nodeForm.sdkHolder}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -99,7 +97,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.cosmosSDKRPC} placement="left">
+                    <Tooltip title={data.nodeForm.sdkTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -113,7 +111,7 @@ const NodesForm = (props) => {
                   value={values.prometheusURL}
                   type="text"
                   name="prometheusURL"
-                  placeholder="http://122.321.32.12:26660"
+                  placeholder={data.nodeForm.prometheusHodler}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -121,7 +119,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.prometheusURL} placement="left">
+                    <Tooltip title={data.nodeForm.prometheusTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -135,7 +133,7 @@ const NodesForm = (props) => {
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"
-                  placeholder="http://122,.321.32.12:9100"
+                  placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -143,7 +141,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.nodeExporterURL} placement="left">
+                    <Tooltip title={data.nodeForm.exporterUrlTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -155,7 +153,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.isValidator} placement="left">
+                    <Tooltip title={data.nodeForm.isValidatorTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -181,7 +179,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.isArchive} placement="left">
+                    <Tooltip title={data.nodeForm.isArchiveTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -208,7 +206,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.monitorNode} placement="left">
+                    <Tooltip title={data.nodeForm.monitorNodeTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -234,7 +232,7 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.nodeDetails.useAsDataSource} placement="left">
+                    <Tooltip title={data.nodeForm.useAsDataSourceTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -283,7 +281,7 @@ const NodesForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={BACK}
-                    navigation={CHAINS_STEP}
+                    navigation={data.nodeForm.backStep}
                   />
                 </Box>
               </Grid>
@@ -293,7 +291,7 @@ const NodesForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={NEXT}
-                    navigation={REPOSITORIES_STEP}
+                    navigation={data.nodeForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -323,6 +321,27 @@ NodesForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  data: PropTypes.shape({
+    nodeForm: PropTypes.shape({
+      description: PropTypes.string.isRequired,
+      nameHolder: PropTypes.string.isRequired,
+      nameTip: PropTypes.string.isRequired,
+      tendermintHolder: PropTypes.string.isRequired,
+      tendermintTip: PropTypes.string.isRequired,
+      sdkHolder: PropTypes.string.isRequired,
+      sdkTip: PropTypes.string.isRequired,
+      prometheusHodler: PropTypes.string.isRequired,
+      prometheusTip: PropTypes.string.isRequired,
+      exporterUrlHolder: PropTypes.string.isRequired,
+      exporterUrlTip: PropTypes.string.isRequired,
+      isValidatorTip: PropTypes.string.isRequired,
+      isArchiveTip: PropTypes.string.isRequired,
+      monitorNodeTip: PropTypes.string.isRequired,
+      useAsDataSourceTip: PropTypes.string.isRequired,
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default NodesForm;
