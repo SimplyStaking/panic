@@ -18,9 +18,9 @@ function pingCosmosPrometheus(prometheusURL) {
     { prometheusURL });
 }
 
-function pingNodeExporter(exporterURL) {
+function pingNodeExporter(exporterUrl) {
   return sendData('/server/system/exporter', {},
-    { exporterURL });
+    { exporterUrl });
 }
 
 function pingRepo(url) {

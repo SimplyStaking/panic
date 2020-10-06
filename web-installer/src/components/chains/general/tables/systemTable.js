@@ -46,7 +46,7 @@ const SystemTable = (props) => {
                 {systemConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {systemConfig.byId[id].exporterURL}
+                {systemConfig.byId[id].exporterUrl}
               </TableCell>
               <TableCell align="center">
                 {systemConfig.byId[id].monitorSystem ? <CheckIcon /> : <ClearIcon />}
@@ -73,7 +73,7 @@ SystemTable.propTypes = {
       id: PropTypes.string,
       parentId: PropTypes.string,
       name: PropTypes.string,
-      exporterURL: PropTypes.string,
+      exporterUrl: PropTypes.string,
       monitorSystem: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,

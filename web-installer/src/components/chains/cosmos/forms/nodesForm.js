@@ -132,9 +132,9 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.exporterURL}
+                  value={values.exporterUrl}
                   type="text"
-                  name="exporterURL"
+                  name="exporterUrl"
                   placeholder="http://122,.321.32.12:9100"
                   onChange={handleChange}
                   fullWidth
@@ -263,7 +263,7 @@ const NodesForm = (props) => {
                       disabled={false}
                       tendermintRPCURL={values.tendermintRPCURL}
                       prometheusURL={values.prometheusURL}
-                      exporterURL={values.exporterURL}
+                      exporterUrl={values.exporterUrl}
                     />
                     <Button
                       variant="outlined"
@@ -315,7 +315,7 @@ NodesForm.propTypes = {
     tendermintRPCURL: PropTypes.string,
     cosmosRPCURL: PropTypes.string,
     prometheusURL: PropTypes.string,
-    exporterURL: PropTypes.string,
+    exporterUrl: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,
     isArchiveNode: PropTypes.bool.isRequired,

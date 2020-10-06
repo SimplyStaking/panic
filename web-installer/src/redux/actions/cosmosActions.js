@@ -58,7 +58,7 @@ export function addNodeCosmos(payload) {
       tendermintRPCURL: payload.tendermintRPCURL,
       cosmosRPCURL: payload.cosmosRPCURL,
       prometheusURL: payload.prometheusURL,
-      exporterURL: payload.exporterURL,
+      exporterUrl: payload.exporterUrl,
       isValidator: payload.isValidator,
       monitorNode: payload.monitorNode,
       isArchiveNode: payload.isArchiveNode,

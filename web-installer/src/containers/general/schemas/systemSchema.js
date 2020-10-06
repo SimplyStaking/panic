@@ -19,7 +19,7 @@ const SystemSchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  exporterURL: Yup.string()
+  exporterUrl: Yup.string()
     .required('Node Exporter Url is required.'),
 });
 

@@ -298,7 +298,7 @@ function AddAccount({ username, password, disabled }) {
 }
 
 function PingCosmosButton({
-  disabled, tendermintRPCURL, prometheusURL, exporterURL,
+  disabled, tendermintRPCURL, prometheusURL, exporterUrl,
 }) {
   const onClick = async () => {
     // Check if the tendermint RPC URL given works properly
@@ -344,21 +344,21 @@ function PingCosmosButton({
     }
 
     // Check if the node exporter url given works properly
-    if (exporterURL) {
+    if (exporterUrl) {
       try {
-        ToastsStore.info(`Connecting with Node exporter Url ${exporterURL}`, 5000);
-        await pingNodeExporter(exporterURL);
+        ToastsStore.info(`Connecting with Node exporter Url ${exporterUrl}`, 5000);
+        await pingNodeExporter(exporterUrl);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with node exporter url ${exporterURL}. Error: ${
+          ToastsStore.error(`Could not connect with node exporter url ${exporterUrl}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with node exporter url ${exporterURL}. Error: ${e.message}`, 5000,
+            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.message}`, 5000,
           );
         }
       }
@@ -383,24 +383,24 @@ function SaveConfigButton({ onClick, text }) {
     </Button>
   );
 }
-function PingNodeExpoter({ disabled, exporterURL }) {
+function PingNodeExpoter({ disabled, exporterUrl }) {
   const onClick = async () => {
     // Check if the node exporter url given works properly
-    if (exporterURL) {
+    if (exporterUrl) {
       try {
-        ToastsStore.info(`Connecting with Node exporter Url ${exporterURL}`, 5000);
-        await pingNodeExporter(exporterURL);
+        ToastsStore.info(`Connecting with Node exporter Url ${exporterUrl}`, 5000);
+        await pingNodeExporter(exporterUrl);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with node exporter url ${exporterURL}. Error: ${
+          ToastsStore.error(`Could not connect with node exporter url ${exporterUrl}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with node exporter url ${exporterURL}. Error: ${e.message}`, 5000,
+            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.message}`, 5000,
           );
         }
       }
@@ -506,12 +506,12 @@ PingCosmosButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   tendermintRPCURL: PropTypes.string.isRequired,
   prometheusURL: PropTypes.string.isRequired,
-  exporterURL: PropTypes.string.isRequired,
+  exporterUrl: PropTypes.string.isRequired,
 });
 
 PingNodeExpoter.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  exporterURL: PropTypes.string.isRequired,
+  exporterUrl: PropTypes.string.isRequired,
 });
 
 AddAccount.propTypes = forbidExtraProps({

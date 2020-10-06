@@ -840,10 +840,10 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 
 app.post('/server/system/exporter', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { exporterURL } = req.body;
+  const { exporterUrl } = req.body;
 
-  // Check if exporterURL is missing.
-  const missingParamsList = utils.missingValues({ exporterURL });
+  // Check if exporterUrl is missing.
+  const missingParamsList = utils.missingValues({ exporterUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -852,7 +852,7 @@ app.post('/server/system/exporter', async (req, res) => {
     return;
   }
 
-  const url = `${exporterURL}/metrics`;
+  const url = `${exporterUrl}/metrics`;
 
   axios.get(url, { params: {} })
     .then((_) => {

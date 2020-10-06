@@ -16,7 +16,7 @@ const useStyles = makeStyles({
   },
 });
 
-const KMSTable = (props) => {
+const KmsTable = (props) => {
   const classes = useStyles();
 
   const {
@@ -47,10 +47,10 @@ const KMSTable = (props) => {
                 {kmsConfig.byId[id].kmsName}
               </TableCell>
               <TableCell align="center">
-                {kmsConfig.byId[id].exporterURL}
+                {kmsConfig.byId[id].exporterUrl}
               </TableCell>
               <TableCell align="center">
-                {kmsConfig.byId[id].monitorKMS ? <CheckIcon /> : <ClearIcon />}
+                {kmsConfig.byId[id].monitorKms ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
                 <Button onClick={() => { removeKmsDetails(kmsConfig.byId[id]); }}>
@@ -65,7 +65,7 @@ const KMSTable = (props) => {
   );
 };
 
-KMSTable.propTypes = {
+KmsTable.propTypes = {
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -77,8 +77,8 @@ KMSTable.propTypes = {
       id: PropTypes.string,
       parentId: PropTypes.string,
       kmsName: PropTypes.string,
-      exporterURL: PropTypes.string,
-      monitorKMS: PropTypes.bool,
+      exporterUrl: PropTypes.string,
+      monitorKms: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
@@ -86,4 +86,4 @@ KMSTable.propTypes = {
   currentChain: PropTypes.string.isRequired,
 };
 
-export default KMSTable;
+export default KmsTable;

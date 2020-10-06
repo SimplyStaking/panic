@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 
-const KMSSchema = (props) => Yup.object().shape({
+const KmsSchema = (props) => Yup.object().shape({
   kmsName: Yup.string()
     .test(
       'unique-kms-name',
@@ -23,8 +23,8 @@ const KMSSchema = (props) => Yup.object().shape({
       },
     )
     .required('KMS name is required.'),
-  exporterURL: Yup.string()
+  exporterUrl: Yup.string()
     .required('Node Exporter Url is required.'),
 });
 
-export default KMSSchema;
+export default KmsSchema;

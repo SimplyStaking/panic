@@ -9,11 +9,11 @@ import SystemSchema from './schemas/systemSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporterURL: '',
+    exporterUrl: '',
   }),
   mapPropsToValues: () => ({
     name: '',
-    exporterURL: '',
+    exporterUrl: '',
     enabled: true,
   }),
   validationSchema: (props) => SystemSchema(props),
@@ -22,7 +22,7 @@ const Form = withFormik({
     const payload = {
       parentId: GLOBAL,
       name: values.name,
-      exporterURL: values.exporterURL,
+      exporterUrl: values.exporterUrl,
       enabled: values.enabled,
     };
     saveSystemDetails(payload);

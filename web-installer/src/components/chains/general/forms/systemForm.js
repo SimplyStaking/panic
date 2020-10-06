@@ -75,12 +75,12 @@ const SystemForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.exporterURL !== true}
-                  value={values.exporterURL}
+                  error={!errors.exporterUrl !== true}
+                  value={values.exporterUrl}
                   type="text"
-                  name="exporterURL"
+                  name="exporterUrl"
                   placeholder="http://176.67.65.56:9000"
-                  helperText={errors.exporterURL ? errors.exporterURL : ''}
+                  helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -127,7 +127,7 @@ const SystemForm = (props) => {
                   <Box px={2}>
                     <PingNodeExpoter
                       disabled={!(Object.keys(errors).length === 0)}
-                      exporterURL={values.exporterURL}
+                      exporterUrl={values.exporterUrl}
                     />
                     <Button
                       variant="outlined"
@@ -173,12 +173,12 @@ const SystemForm = (props) => {
 SystemForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
-    exporterURL: PropTypes.string,
+    exporterUrl: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    exporterURL: PropTypes.string.isRequired,
+    exporterUrl: PropTypes.string.isRequired,
     monitorSystem: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,

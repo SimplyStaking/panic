@@ -131,9 +131,9 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.exporterURL}
+                  value={values.exporterUrl}
                   type="text"
-                  name="exporterURL"
+                  name="exporterUrl"
                   placeholder="http://122,.321.32.12:13330"
                   onChange={handleChange}
                   fullWidth
@@ -339,7 +339,7 @@ NodesForm.propTypes = {
     nodeWSURL: PropTypes.string,
     telemetryURL: PropTypes.string,
     prometheusURL: PropTypes.string,
-    exporterURL: PropTypes.string,
+    exporterUrl: PropTypes.string,
     stashAddress: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,

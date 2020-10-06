@@ -18,8 +18,8 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     chainName: '',
   }),
-  mapPropsToValues: () => ({
-    chainName: '',
+  mapPropsToValues: (props) => ({
+    chainName: props.currentChain,
   }),
   validationSchema: (props) => ChainSchema(props),
 })(ChainForm);

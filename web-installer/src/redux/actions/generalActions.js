@@ -41,7 +41,7 @@ export function addSystem(payload) {
       id: `system_${uuidv4()}`,
       parentId: payload.parentId,
       name: payload.name,
-      exporterURL: payload.exporterURL,
+      exporterUrl: payload.exporterUrl,
       monitorSystem: payload.monitorSystem,
     },
   };
@@ -61,8 +61,8 @@ export function addKms(payload) {
       id: `kms_${uuidv4()}`,
       parentId: payload.parentId,
       kmsName: payload.kmsName,
-      exporterURL: payload.exporterURL,
-      monitorKMS: payload.monitorKMS,
+      exporterUrl: payload.exporterUrl,
+      monitorKms: payload.monitorKms,
     },
   };
 }

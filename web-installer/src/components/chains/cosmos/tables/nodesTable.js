@@ -55,7 +55,7 @@ const NodesTable = (props) => {
               <TableCell align="center">{nodesConfig.byId[id].tendermintRPCURL}</TableCell>
               <TableCell align="center">{nodesConfig.byId[id].cosmosRPCURL}</TableCell>
               <TableCell align="center">{nodesConfig.byId[id].prometheusURL}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].exporterURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].exporterUrl}</TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].isValidator ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -96,7 +96,7 @@ NodesTable.propTypes = {
       tendermintRPCURL: PropTypes.string,
       cosmosRPCURL: PropTypes.string,
       prometheusURL: PropTypes.string,
-      exporterURL: PropTypes.string,
+      exporterUrl: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,
       isArchiveNode: PropTypes.bool,
