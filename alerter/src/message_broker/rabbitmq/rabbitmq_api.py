@@ -18,7 +18,8 @@ from alerter.src.utils.timing import TimedTaskLimiter
 class RabbitMQApi:
     def __init__(self, logger: logging.Logger, host: str = 'localhost',
                  port: int = 5672, username: str = '', password: str = '',
-                 live_check_time_interval: timedelta = timedelta(seconds=60)) \
+                 connection_check_time_interval: timedelta = timedelta(
+                     seconds=60)) \
             -> None:
         self._logger = logger
         self._host = host
@@ -28,10 +29,15 @@ class RabbitMQApi:
         #     : this will be the case, error handling must be improved to cater
         #     : for two channels.
         self._channel = None
-        self._port = port
+        self._port = port  # Port used by the AMQP 0-9-1 and 1.0 clients
         self._username = username
         self._password = password
-        self._live_check_limiter = TimedTaskLimiter(live_check_time_interval)
+        # The limiter will restrict usage of RabbitMQ whenever it is running
+        # into problems so that recovery is faster.
+        self._connection_check_limiter = TimedTaskLimiter(
+            connection_check_time_interval)
+        # A boolean variable which keeps track of the connection status with
+        # RabbitMQ
         self._is_connected = False
 
     @property
@@ -68,7 +74,7 @@ class RabbitMQApi:
 
     @property
     def live_check_limiter(self) -> TimedTaskLimiter:
-        return self._live_check_limiter
+        return self._connection_check_limiter
 
     def _set_as_connected(self) -> None:
         if not self.is_connected:
@@ -82,10 +88,15 @@ class RabbitMQApi:
         self._is_connected = False
 
     def _do_not_use_if_recently_disconnected(self) -> bool:
+        # If currently not connected with RabbitMQ and cannot check the
+        # connection status return true
         return not self.is_connected and not self.live_check_limiter \
             .can_do_task()
 
     def _safe(self, function, args: List, default_return):
+        # Calls the function with the provided arguments and performs exception
+        # handling as well as returns a specified default if RabbtiMQ is running
+        # into difficulties. Exceptions are raised to the calling function.
         try:
             if self._do_not_use_if_recently_disconnected():
                 self.logger.debug('RabbitMQ: Could not execute %s as RabbitMQ '
@@ -98,22 +109,24 @@ class RabbitMQApi:
             # Channel errors do not always reflect a connection error, therefore
             # do not set as disconnected
             self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
-            # If the channel error closed the channel, open another channel from
-            # the same connection
+            # If the channel error closed the communication channel, open
+            # another channel using the same connection
             if self.channel.is_closed:
                 self.new_channel_unsafe()
             raise e
         except Exception as e:
+            # Treat all other exceptions as connection related. If a connection
+            # has been initialized, close it.
             self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
             if self.connection is not None:
                 self.disconnect_unsafe()
             raise e
 
     def _connection_initialized(self) -> bool:
-        # If a connection has already been initialized return true
+        # If a connection has already been initialized return true, otherwise
+        # throw a meaningful exception.
         if self.connection is not None:
             return True
-        # Otherwise throw a meaningful exception
         else:
             self.logger.info(ConnectionNotInitializedException(
                 'RabbitMQ').message)
@@ -121,10 +134,13 @@ class RabbitMQApi:
 
     def connect_unsafe(self) -> None:
         if self.is_connected and self.connection.is_open:
-            # Avoid creating a lot of connections to avoid memory issues
+            # If the connection status is 'connected' and the connection socket
+            # is open do not re-connect to avoid memory issues.
             self.logger.info('Already connected with RabbitMQ, no need to '
                              're-connect!')
         else:
+            # Open a new connection depending on whether authentication is
+            # needed, and set the connection status as 'connected'
             self.logger.info('Connecting with RabbitMQ...')
             if self.password == '':
                 self._connection = pika.BlockingConnection(
@@ -140,12 +156,13 @@ class RabbitMQApi:
             self.logger.info('Connected with RabbitMQ')
             self._set_as_connected()
 
-    # Returns the default value on error, otherwise returns 0
     def connect(self) -> Optional[int]:
         return self._safe(self.connect_unsafe, [], -1)
 
     # Should not be used if connection has not yet been initialized
     def disconnect_unsafe(self) -> None:
+        # Perform disconnection based on the connection status and the
+        # connection socket.
         if self.is_connected and self.connection.is_open:
             self.logger.info('Closing connection with RabbitMQ')
             self.connection.close()
@@ -154,6 +171,7 @@ class RabbitMQApi:
                              'performance')
             self._set_as_disconnected()
         elif not self.is_connected and self.connection.is_open:
+            # This case was done only for the sake of completion.
             self.logger.info('Closing connection with RabbitMQ')
             self.connection.close()
             self.logger.info('Connection with RabbitMQ closed')
@@ -167,15 +185,19 @@ class RabbitMQApi:
             self.logger.info('Already disconnected.')
 
     def disconnect(self) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         if self._connection_initialized():
             return self._safe(self.disconnect_unsafe, [], -1)
 
     def connect_till_successful(self) -> None:
+        # Try to connect until successful. All exceptions will be ignored in
+        # this case.
         while True:
             try:
                 ret = self.connect()
                 # If None is returned, Rabbit is not experiencing issues,
-                # therefore the API must have connected to Rabbit
+                # therefore the API must have connected to Rabbit.
                 if ret is None:
                     break
             except Exception:
@@ -185,17 +207,23 @@ class RabbitMQApi:
     def queue_declare(self, queue, passive=False, durable=False,
                       exclusive=False, auto_delete=False) \
             -> Optional[Union[int, str]]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [queue, passive, durable, exclusive, auto_delete]
         if self._connection_initialized():
             return self._safe(self.channel.queue_declare, args, -1)
 
     def queue_bind(self, queue, exchange, routing_key=None) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [queue, exchange, routing_key]
         if self._connection_initialized():
             return self._safe(self.channel.queue_bind, args, -1)
 
     def basic_publish(self, exchange, routing_key, body, properties=None,
                       mandatory=False) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [exchange, routing_key, body, properties, mandatory]
         if self._connection_initialized():
             return self._safe(self.channel.basic_publish, args, -1)
@@ -203,29 +231,42 @@ class RabbitMQApi:
     def basic_publish_confirm(self, exchange, routing_key, body,
                               properties=None, mandatory=False) \
             -> Optional[int]:
+        # Attempt a publish and wait until a message is sent to an exchange. If
+        # mandatory is set to true, this function will block until the consumer
+        # receives the message. Note: self.confirm_delivery() must be called
+        # once on a channel for this function to work as expected.
         try:
             return self.basic_publish(exchange, routing_key, body, properties,
                                       mandatory)
         except pika.exceptions.UnroutableError as e:
+            # If a message is not delivered, the exception below is raised.
             raise MessageWasNotDeliveredException(e)
 
     def basic_consume(self, queue, on_message_callback, auto_ack=False,
                       exclusive=False, consumer_tag=None) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [queue, on_message_callback, auto_ack, exclusive, consumer_tag]
         if self._connection_initialized():
             return self._safe(self.channel.basic_consume, args, -1)
 
     def start_consuming(self) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         if self._connection_initialized():
             return self._safe(self.channel.start_consuming, [], -1)
 
     def basic_ack(self, delivery_tag=0, multiple=False) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [delivery_tag, multiple]
         if self._connection_initialized():
             return self._safe(self.channel.basic_ack, args, -1)
 
     def basic_qos(self, prefetch_size=0, prefetch_count=0, global_qos=False) \
             -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [prefetch_size, prefetch_count, global_qos]
         if self._connection_initialized():
             return self._safe(self.channel.basic_qos, args, -1)
@@ -233,17 +274,23 @@ class RabbitMQApi:
     def exchange_declare(self, exchange, exchange_type='direct', passive=False,
                          durable=False, auto_delete=False, internal=False) \
             -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         args = [exchange, exchange_type, passive, durable, auto_delete,
                 internal]
         if self._connection_initialized():
             return self._safe(self.channel.exchange_declare, args, -1)
 
     def confirm_delivery(self) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         if self._connection_initialized():
             return self._safe(self.channel.confirm_delivery, [], -1)
 
     # Should not be used if connection has not yet been initialized
     def new_channel_unsafe(self) -> None:
+        # If a channel is open, close it and create a new channel from the
+        # current connection
         if self.channel.is_open:
             self.logger.info('Closing RabbitMQ Channel')
             self.channel.close()
@@ -251,7 +298,7 @@ class RabbitMQApi:
         self._channel = self.connection.channel()
 
     def new_channel(self) -> Optional[int]:
+        # Perform operation only if a connection has been initialized,
+        # otherwise, this function will throw a not initialized exception
         if self._connection_initialized():
             return self._safe(self.new_channel_unsafe, [], -1)
-
-    # TODO: Inline documentation
