@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import ChainForm from '../../../components/chains/cosmos/forms/chainForm';
 import {
   addChainCosmos, updateChainCosmos, resetCurrentChainId,
-} from '../../../redux/actions/cosmosChainsActions';
+} from '../../../redux/actions/cosmosActions';
 import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import ChainSchema from './schemas/chainSchema';
 

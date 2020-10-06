@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import CosmosChainsTable from '../../../components/chains/cosmos/tables/cosmosChainsTable';
-import { removeChainCosmos, loadConfigCosmos } from '../../../redux/actions/cosmosChainsActions';
+import { removeChainCosmos, loadConfigCosmos } from '../../../redux/actions/cosmosActions';
 import { changePage } from '../../../redux/actions/pageActions';
 
 // We will need the configured state of the cosmos nodes

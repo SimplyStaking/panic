@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChainForm from '../../../components/chains/substrate/forms/chainForm';
-import { addChainSubstrate, updateChainSubstrate, resetCurrentChainId } from '../../../redux/actions/substrateChainsActions';
+import { addChainSubstrate, updateChainSubstrate, resetCurrentChainId } from '../../../redux/actions/substrateActions';
 import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import ChainSchema from './schemas/chainSchema';
 

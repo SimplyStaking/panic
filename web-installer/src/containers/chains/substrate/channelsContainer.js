@@ -5,7 +5,7 @@ import {
   removeTwilioChannel, addEmailChannel, removeEmailChannel,
   addPagerDutyChannel, removePagerDutyChannel, addOpsGenieChannel,
   removeOpsGenieChannel,
-} from '../../../redux/actions/cosmosChainsActions';
+} from '../../../redux/actions/generalActions';
 
 const mapStateToProps = (state) => ({
   telegrams: state.TelegramsReducer,

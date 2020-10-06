@@ -1,11 +1,6 @@
 import {
   ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE, LOAD_CONFIG_SUBSTRATE,
-  ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL,
-  REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL,
-  ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME,
-  REMOVE_CHAIN_SUBSTRATE, UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT,
-  UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
+  RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME, REMOVE_CHAIN_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -84,104 +79,6 @@ export function removeNodeSubstrate(payload) {
 export function loadConfigSubstrate(payload) {
   return {
     type: LOAD_CONFIG_SUBSTRATE,
-    payload,
-  };
-}
-
-export function addTelegramChannel(payload) {
-  return {
-    type: ADD_TELEGRAM_CHANNEL,
-    payload,
-  };
-}
-
-export function removeTelegramChannel(payload) {
-  return {
-    type: REMOVE_TELEGRAM_CHANNEL,
-    payload,
-  };
-}
-
-export function addTwilioChannel(payload) {
-  return {
-    type: ADD_TWILIO_CHANNEL,
-    payload,
-  };
-}
-
-export function removeTwilioChannel(payload) {
-  return {
-    type: REMOVE_TWILIO_CHANNEL,
-    payload,
-  };
-}
-
-export function addEmailChannel(payload) {
-  return {
-    type: ADD_EMAIL_CHANNEL,
-    payload,
-  };
-}
-
-export function removeEmailChannel(payload) {
-  return {
-    type: REMOVE_EMAIL_CHANNEL,
-    payload,
-  };
-}
-
-export function addPagerDutyChannel(payload) {
-  return {
-    type: ADD_PAGERDUTY_CHANNEL,
-    payload,
-  };
-}
-
-export function removePagerDutyChannel(payload) {
-  return {
-    type: REMOVE_PAGERDUTY_CHANNEL,
-    payload,
-  };
-}
-
-export function addOpsGenieChannel(payload) {
-  return {
-    type: ADD_OPSGENIE_CHANNEL,
-    payload,
-  };
-}
-
-export function removeOpsGenieChannel(payload) {
-  return {
-    type: REMOVE_OPSGENIE_CHANNEL,
-    payload,
-  };
-}
-
-export function updateRepeatAlert(payload) {
-  return {
-    type: UPDATE_REPEAT_ALERT,
-    payload,
-  };
-}
-
-export function updateTimeWindowAlert(payload) {
-  return {
-    type: UPDATE_TIMEWINDOW_ALERT,
-    payload,
-  };
-}
-
-export function updateThresholdAlert(payload) {
-  return {
-    type: UPDATE_THRESHOLD_ALERT,
-    payload,
-  };
-}
-
-export function updateSeverityAlert(payload) {
-  return {
-    type: UPDATE_SEVERITY_ALERT,
     payload,
   };
 }

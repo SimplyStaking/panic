@@ -8,8 +8,8 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
-// Temp to test in window
-window.store = store;
+// Uncomment to be able to access the store from Chrome console.
+// window.store = store;
 
 ReactDOM.render(
   <Provider store={store}>

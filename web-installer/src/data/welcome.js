@@ -9,7 +9,7 @@ export default {
     + 'users to fine-tune the alerter to their preference. We are sure that PANIC will be beneficial for node operators in the Blockchain community '
     + 'and we look forward for feedback. Feel free to read on if you are interested in the design of the alerter, if you wish to try it out, or '
     + 'if you would like to support and contribute to this open source project.',
+    username: 'This can be found in your .env file under the key INSTALLER_USERNAME.',
+    password: 'This can be found in your .env file under the key INSTALLER_PASSWORD.',
   },
-  username: 'This can be found in your .env file under the key INSTALLER_USERNAME.',
-  password: 'This can be found in your .env file under the key INSTALLER_PASSWORD.',
 };

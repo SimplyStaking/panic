@@ -11,6 +11,7 @@ import {
 } from './data';
 import sleep from './time';
 
+// Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
   disabled, to, smtp, from, user, pass,
 }) {
@@ -45,6 +46,7 @@ function SendTestEmailButton({
   );
 }
 
+// Sends test calls to every phone number provided in the "twilioPhoneNo" array.
 function TestCallButton({
   disabled, twilioPhoneNumbersToDialValid, accountSid, authToken, twilioPhoneNo,
 }) {
@@ -415,14 +417,12 @@ function PingNodeExpoter({ disabled, exporterURL }) {
 }
 
 function LoginButton({
-  username, password, disabled, setAuthentication, handleSetCredentialsValid,
-  handleSetValidated,
+  username, password, disabled, setAuthentication,
 }) {
   const onClick = async () => {
     try {
       ToastsStore.info('Authenticating...', 2000);
       await authenticate(username, password);
-      handleSetCredentialsValid(true);
       await sleep(2000);
       ToastsStore.success('Authentication successful', 2000);
       setAuthentication(true);
@@ -437,9 +437,7 @@ function LoginButton({
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(`Authentication failed. Error: ${e.message}`, 5000);
       }
-      handleSetCredentialsValid(false);
     }
-    handleSetValidated(true);
   };
   return (
     <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
@@ -497,8 +495,6 @@ LoginButton.propTypes = forbidExtraProps({
   password: PropTypes.string.isRequired,
   disabled: PropTypes.bool.isRequired,
   setAuthentication: PropTypes.func.isRequired,
-  handleSetCredentialsValid: PropTypes.func.isRequired,
-  handleSetValidated: PropTypes.func.isRequired,
 });
 
 PingRepoButton.propTypes = forbidExtraProps({

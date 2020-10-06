@@ -2,7 +2,7 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from '../../../components/chains/cosmos/forms/nodesForm';
 import NodesTable from '../../../components/chains/cosmos/tables/nodesTable';
-import { addNodeCosmos, removeNodeCosmos } from '../../../redux/actions/cosmosChainsActions';
+import { addNodeCosmos, removeNodeCosmos } from '../../../redux/actions/cosmosActions';
 import NodeSchema from './schemas/nodeSchema';
 
 const Form = withFormik({

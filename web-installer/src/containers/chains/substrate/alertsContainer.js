@@ -1,8 +1,9 @@
 import { connect } from 'react-redux';
 import {
   updateRepeatAlert, updateTimeWindowAlert, updateThresholdAlert,
-  updateSeverityAlert, resetCurrentChainId,
-} from '../../../redux/actions/substrateChainsActions';
+  updateSeverityAlert,
+} from '../../../redux/actions/alertActions';
+import { resetCurrentChainId } from '../../../redux/actions/substrateActions';
 import { changePage, changeStep } from '../../../redux/actions/pageActions';
 import AlertsTable from '../../../components/chains/substrate/tables/alertsTable';
 

@@ -5,9 +5,9 @@ import {
   removeTwilioChannel, addEmailChannel, removeEmailChannel,
   addPagerDutyChannel, removePagerDutyChannel, addOpsGenieChannel,
   removeOpsGenieChannel,
-} from '../../../redux/actions/cosmosChainsActions';
+} from '../../../redux/actions/generalActions';
 
-const mapStateToProps = (state) => ({
+const mapSubstratetStateToProps = (state) => ({
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
   emails: state.EmailsReducer,
@@ -33,7 +33,7 @@ function mapDispatchToProps(dispatch) {
 }
 
 const ChannelsTableContainer = connect(
-  mapStateToProps,
+  mapSubstratetStateToProps,
   mapDispatchToProps,
 )(ChannelsTable);
 
