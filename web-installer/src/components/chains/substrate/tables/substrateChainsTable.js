@@ -29,18 +29,32 @@ const SubstrateChainsTable = (props) => {
     pageChanger({ page });
   };
 
-  // Function to clear all references, including the referenced objects
-  // from configured object.
+  // We have to clean up all the other reducers once a chain configuration
+  // is completely removed
   function clearAllChainDetails(chainID) {
-    const { removeChainDetails } = props;
-    // First remove all the configured nodes
-    // Second remove all the configured githubs
-    // Third remove all the configured kmses
-    // Fourth remove all the configured alerts
-    // Finally remove the object itself.
-    const payload = {
-      id: chainID,
-    };
+    const {
+      removeChainDetails,
+      removeNodeDetails,
+      removeRepositoryDetails,
+    } = props;
+    // Assign buffer variable for easier readability
+    const currentConfig = config.byId[chainID];
+    const payload = { parentId: chainID, id: '' };
+
+    // Clear all the configured nodes from state
+    for (let i = 0; i < currentConfig.nodes.length; i += 1) {
+      payload.id = currentConfig.nodes[i];
+      removeNodeDetails(payload);
+    }
+
+    // Clear all the configured repositories from state
+    for (let i = 0; i < currentConfig.repositories.length; i += 1) {
+      payload.id = currentConfig.repositories[i];
+      removeRepositoryDetails(payload);
+    }
+
+    // Finally clear the chain from the configuration
+    payload.id = chainID;
     removeChainDetails(payload);
   }
 
@@ -97,6 +111,8 @@ SubstrateChainsTable.propTypes = {
   removeChainDetails: PropTypes.func.isRequired,
   loadConfigDetails: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
+  removeNodeDetails: PropTypes.func.isRequired,
+  removeRepositoryDetails: PropTypes.func.isRequired,
 };
 
 export default SubstrateChainsTable;

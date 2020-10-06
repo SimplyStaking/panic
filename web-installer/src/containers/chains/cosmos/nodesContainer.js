@@ -2,7 +2,8 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from '../../../components/chains/cosmos/forms/nodesForm';
 import NodesTable from '../../../components/chains/cosmos/tables/nodesTable';
-import { addNodeCosmos, removeNodeCosmos } from '../../../redux/actions/cosmosActions';
+import { addNodeCosmos, removeNodeCosmos } from
+  '../../../redux/actions/cosmosActions';
 import NodeSchema from './schemas/nodeSchema';
 import CosmosData from '../../../data/cosmos';
 
