@@ -63,23 +63,24 @@ import time
 
 # Giving a queue a name is important when you want to sharethe queue between
 # consumers and producers
+from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from alerter.src.utils.logging import DUMMY_LOGGER
+
 if __name__ == '__main__':
     rabbit_host = "localhost"
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=rabbit_host))
-    channel = connection.channel()
-    channel.confirm_delivery()
-    channel.exchange_declare(exchange='topic_logs',
-                             exchange_type='topic')
+    rabbitAPI = RabbitMQApi(DUMMY_LOGGER)
+    rabbitAPI.connect()
+    rabbitAPI.confirm_delivery()
+    rabbitAPI.exchange_declare(exchange='topic_logs', exchange_type='topic')
     try:
-        channel.basic_publish(
+        rabbitAPI.basic_publish(
             exchange='topic_logs', routing_key='black.cat', body='black cat',
             properties=pika.BasicProperties(delivery_mode=2,
                                             # make message persistent
                                             ), mandatory=True,
         )
         print('Message was published')
-        channel.basic_publish(
+        rabbitAPI.basic_publish(
             exchange='topic_logs', routing_key='black.mouse',
             body='black mouse',
             properties=pika.BasicProperties(delivery_mode=2,
@@ -87,7 +88,7 @@ if __name__ == '__main__':
                                             ), mandatory=True,
         )
         print('Message was published')
-        channel.basic_publish(
+        rabbitAPI.basic_publish(
             exchange='topic_logs', routing_key='white.cat', body='white cat',
             properties=pika.BasicProperties(delivery_mode=2,
                                             # make message persistent
@@ -97,7 +98,7 @@ if __name__ == '__main__':
         print('Message was published')
         # Short time window where message not yet saved to disk and rabbitmq
         # stops. See publisher guarantees to solve this.
-        channel.basic_publish(
+        rabbitAPI.basic_publish(
             exchange='topic_logs', routing_key='white.mouse',
             body='white mouse',
             properties=pika.BasicProperties(delivery_mode=2,
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     except pika.exceptions.UnroutableError:
         print('Message was returned')
     print(" [x] Sent Messages ")
-    connection.close()
+    rabbitAPI.disconnect()
 
 # TODO: May need to combine what we learned in acknowledgements tutorial with
 #       direct/topic exchanges, even recovery (we might need to name queues)

@@ -1,12 +1,19 @@
 import logging
 from datetime import timedelta
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pika
 import pika.exceptions
 
+from alerter.src.utils.exceptions import ConnectionNotInitializedException,\
+    MessageWasNotDeliveredException
 from alerter.src.utils.timing import TimedTaskLimiter
 
+
+# The producer/consumer must perform the error handling himself. For example
+# if a basic_publish fails with a connection error, the user must re-connect
+# first. This had to be done because a producer/consumer may treat an error
+# differently
 
 class RabbitMQApi:
     def __init__(self, logger: logging.Logger, host: str = 'localhost',
@@ -16,6 +23,10 @@ class RabbitMQApi:
         self._logger = logger
         self._host = host
         self._connection = None
+        # TODO: We may need two channels, one for outputting and one for
+        #     : inputting. But it seems that this is not the case for now. If
+        #     : this will be the case, error handling must be improved to cater
+        #     : for two channels.
         self._channel = None
         self._port = port
         self._username = username
@@ -49,18 +60,30 @@ class RabbitMQApi:
             # Channel errors do not always reflect a connection error, therefore
             # do not set as disconnected
             self._logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            # If the channel error closed the channel, open another channel from
+            # the same connection
+            if self._channel.is_closed:
+                self._channel = self._connection.channel()
             raise e
         except Exception as e:
             self._logger.error('RabbitMQ error in %s: %r', function.__name__, e)
-            self._logger.warning('Stopping RabbitMQ usage temporarily to '
-                                 'improve performance.')
-            # If the error did not close the connection, close the connection
-            # and mark it as closed. Otherwise just mark it as closed
-            if self._connection.is_open:
-                self.disconnect()
-            else:
-                self._set_as_disconnected()
+            self.disconnect_unsafe()
             raise e
+
+    def _execute_if_connection_initialized(self, function, args,
+                                           default_return) -> Optional[int]:
+        def connection_initialized() -> bool:
+            # If a connection has already been initialized return true
+            if self._connection is not None:
+                return True
+            # Otherwise throw a meaningful exception
+            else:
+                raise ConnectionNotInitializedException('RabbitMQ')
+
+        # If a connection has already been initialized perform the operation,
+        # otherwise throw the exception raised by _connection_is_initialized
+        if connection_initialized():
+            return self._safe(function, args, default_return)
 
     def connect_unsafe(self) -> None:
         if self.is_connected:
@@ -84,8 +107,6 @@ class RabbitMQApi:
             self._set_as_connected()
 
     # Returns the default value on error, otherwise returns 0
-    # TODO: Test when connection closes (this must be tested by a publish or
-    #       something)
     def connect(self) -> Optional[int]:
         return self._safe(self.connect_unsafe, [], -1)
 
@@ -94,7 +115,19 @@ class RabbitMQApi:
             self._logger.info('Closing connection with RabbitMQ')
             self._connection.close()
             self._set_as_disconnected()
+            self._logger.info('Connection with RabbitMQ closed. RabbitMQ '
+                              'cannot be used temporarily to improve '
+                              'performance')
+        elif not self._is_connected and self._connection.is_open:
+            self._logger.info('Closing connection with RabbitMQ')
+            self._connection.close()
             self._logger.info('Connection with RabbitMQ closed')
+        elif self._is_connected and self._connection.is_closed:
+            self._logger.info('Marking connection with RabbitMQ as closed')
+            self._set_as_disconnected()
+            self._logger.info('Connection with RabbitMQ marked as closed. '
+                              'RabbitMQ cannot be used temporarily to improve '
+                              'performance')
         else:
             self._logger.info('Already disconnected.')
 
@@ -113,10 +146,67 @@ class RabbitMQApi:
             except Exception:
                 continue
 
-    # The producer/consumer must perform the error handling himself. For example
-    # if a basic_publish fails with a connection error, the user must re-connect
-    # first
-    # Must do all qos, publisher confirms, everything that can be done, publish,
-    # subscribe etc must be done in the wrapper
-    # In consume we must pass a function from the outside
+    def queue_declare(self, queue, passive=False, durable=False,
+                      exclusive=False, auto_delete=False) \
+            -> Optional[Union[int, str]]:
+        args = [queue, passive, durable, exclusive, auto_delete]
+        return self._execute_if_connection_initialized(
+            self._channel.queue_declare, args, -1)
+
+    def queue_bind(self, queue, exchange, routing_key=None) -> Optional[int]:
+        args = [queue, exchange, routing_key]
+        return self._execute_if_connection_initialized(self._channel.queue_bind,
+                                                       args, -1)
+
+    def basic_publish(self, exchange, routing_key, body, properties=None,
+                      mandatory=False) -> Optional[int]:
+        args = [exchange, routing_key, body, properties, mandatory]
+        return self._execute_if_connection_initialized(
+            self._channel.basic_publish, args, -1)
+
+    def basic_publish_confirm(self, exchange, routing_key, body,
+                              properties=None, mandatory=False) \
+            -> Optional[int]:
+        args = [exchange, routing_key, body, properties, mandatory]
+        try:
+            return self._execute_if_connection_initialized(
+                self._channel.basic_publish, args, -1)
+        except pika.exceptions.UnroutableError as e:
+            raise MessageWasNotDeliveredException(e)
+
+    def basic_consume(self, queue, on_message_callback, auto_ack=False,
+                      exclusive=False, consumer_tag=None) -> Optional[int]:
+        args = [queue, on_message_callback, auto_ack, exclusive, consumer_tag]
+        return self._execute_if_connection_initialized(
+            self._channel.basic_consume, args, -1)
+
+    def start_consuming(self) -> Optional[int]:
+        return self._execute_if_connection_initialized(
+            self._channel.start_consuming, [], -1)
+
+    def basic_ack(self, delivery_tag=0, multiple=False) -> Optional[int]:
+        args = [delivery_tag, multiple]
+        return self._execute_if_connection_initialized(self._channel.basic_ack,
+                                                       args, -1)
+
+    def basic_qos(self, prefetch_size=0, prefetch_count=0, global_qos=False) \
+            -> Optional[int]:
+        args = [prefetch_size, prefetch_count, global_qos]
+        return self._execute_if_connection_initialized(self._channel.basic_qos,
+                                                       args, -1)
+
+    def exchange_declare(self, exchange, exchange_type='direct', passive=False,
+                         durable=False, auto_delete=False, internal=False) \
+            -> Optional[int]:
+        args = [exchange, exchange_type, passive, durable, auto_delete,
+                internal]
+        return self._execute_if_connection_initialized(
+            self._channel.exchange_declare, args, -1)
+
+    def confirm_delivery(self) -> Optional[int]:
+        return self._execute_if_connection_initialized(
+            self._channel.confirm_delivery, [], -1)
+
+    # TODO: Way to create a new channel based on the same connection
+    # TODO: Add logging to all functions
     # TODO: Inline documentation
