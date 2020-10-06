@@ -7,7 +7,7 @@ import {
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from
-  '../../../../containers/chains/cosmos/stepButtonContainer';
+  '../../../../containers/chains/general/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import {
   CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,

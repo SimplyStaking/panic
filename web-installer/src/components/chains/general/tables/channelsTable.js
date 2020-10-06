@@ -7,7 +7,7 @@ import {
 import Paper from '@material-ui/core/Paper';
 import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
-  '../../../../containers/chains/cosmos/stepButtonContainer';
+  '../../../../containers/chains/general/stepButtonContainer';
 
 const useStyles = makeStyles({
   table: {

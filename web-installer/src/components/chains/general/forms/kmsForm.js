@@ -8,7 +8,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
-  '../../../../containers/chains/cosmos/stepButtonContainer';
+  '../../../../containers/chains/general/stepButtonContainer';
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
