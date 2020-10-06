@@ -27,6 +27,7 @@ const mapStateToProps = (state) => ({
   kmses: state.KmsReducer,
   general: state.GeneralReducer.byId[GLOBAL],
   systems: state.SystemsReducer,
+  periodic: state.PeriodicReducer,
 });
 
 class SaveConfig extends Component {
@@ -39,7 +40,7 @@ class SaveConfig extends Component {
     const {
       emails, pagerduties, telegrams, twilios, opsgenies, cosmosChains,
       cosmosNodes, repositories, kmses, substrateChains, substrateNodes,
-      general, systems,
+      general, systems, periodic,
     } = this.props;
 
     ToastsStore.info('Starting to save data config.', 5000);
@@ -374,9 +375,8 @@ class SaveConfig extends Component {
     await sendConfig('chain', 'threshold_alerts_config.ini', 'general',
       'general', generalThreshold);
 
-    const generalPeriodic = { periodic: general.periodic };
     await sendConfig('chain', 'periodic_config.ini', 'general',
-      'general', generalPeriodic);
+      'general', { periodic });
 
     ToastsStore.success('Saved General configs!', 5000);
   }
@@ -649,10 +649,6 @@ SaveConfig.propTypes = {
   general: PropTypes.shape({
     repositories: PropTypes.arrayOf(PropTypes.string).isRequired,
     systems: PropTypes.arrayOf(PropTypes.string).isRequired,
-    periodic: PropTypes.shape({
-      time: PropTypes.string,
-      enabled: PropTypes.bool,
-    }),
     telegrams: PropTypes.arrayOf(PropTypes.string).isRequired,
     twilios: PropTypes.arrayOf(PropTypes.string).isRequired,
     emails: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -673,6 +669,10 @@ SaveConfig.propTypes = {
       }),
       allIds: [],
     }),
+  }).isRequired,
+  periodic: PropTypes.shape({
+    time: PropTypes.string,
+    enabled: PropTypes.bool,
   }).isRequired,
 };
 

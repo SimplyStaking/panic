@@ -106,11 +106,11 @@ const generalState = {
 // systems
 function GeneralReducer(state = generalState, action) {
   switch (action.type) {
-    case UPDATE_PERIODIC:
-      return {
-        ...state,
-        periodic: action.payload,
-      };
+    // case UPDATE_PERIODIC:
+    //   return {
+    //     ...state,
+    //     periodic: action.payload,
+    //   };
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
