@@ -298,46 +298,46 @@ function AddAccount({ username, password, disabled }) {
 }
 
 function PingCosmosButton({
-  disabled, tendermintRPCURL, prometheusURL, exporterUrl,
+  disabled, tendermintRpcUrl, prometheusUrl, exporterUrl,
 }) {
   const onClick = async () => {
     // Check if the tendermint RPC URL given works properly
-    if (tendermintRPCURL) {
+    if (tendermintRpcUrl) {
       try {
-        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRPCURL}`, 5000);
-        await pingTendermint(tendermintRPCURL);
+        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRpcUrl}`, 5000);
+        await pingTendermint(tendermintRpcUrl);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with Tendermint RPC Url ${tendermintRPCURL}. Error: ${
+          ToastsStore.error(`Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with Tendermint RPC Url ${tendermintRPCURL}. Error: ${e.message}`, 5000,
+            `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.message}`, 5000,
           );
         }
       }
     }
 
     // Check if the prometheus url given works properly
-    if (prometheusURL) {
+    if (prometheusUrl) {
       try {
-        ToastsStore.info(`Connecting with Prometheus Url ${prometheusURL}`, 5000);
-        await pingCosmosPrometheus(prometheusURL);
+        ToastsStore.info(`Connecting with Prometheus Url ${prometheusUrl}`, 5000);
+        await pingCosmosPrometheus(prometheusUrl);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with prometheus url ${prometheusURL}. Error: ${
+          ToastsStore.error(`Could not connect with prometheus url ${prometheusUrl}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with prometheus url ${prometheusURL}. Error: ${e.message}`, 5000,
+            `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.message}`, 5000,
           );
         }
       }
@@ -504,8 +504,8 @@ PingRepoButton.propTypes = forbidExtraProps({
 
 PingCosmosButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  tendermintRPCURL: PropTypes.string.isRequired,
-  prometheusURL: PropTypes.string.isRequired,
+  tendermintRpcUrl: PropTypes.string.isRequired,
+  prometheusUrl: PropTypes.string.isRequired,
   exporterUrl: PropTypes.string.isRequired,
 });
 

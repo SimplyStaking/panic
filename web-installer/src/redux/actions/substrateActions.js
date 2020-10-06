@@ -57,7 +57,7 @@ export function addNodeSubstrate(payload) {
       substrateNodeName: payload.substrateNodeName,
       nodeWSURL: payload.nodeWSURL,
       telemetryURL: payload.telemetryURL,
-      prometheusURL: payload.prometheusURL,
+      prometheusUrl: payload.prometheusUrl,
       exporterUrl: payload.exporterUrl,
       stashAddress: payload.stashAddress,
       isValidator: payload.isValidator,

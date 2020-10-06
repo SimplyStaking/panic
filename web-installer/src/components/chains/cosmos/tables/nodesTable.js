@@ -52,24 +52,39 @@ const NodesTable = (props) => {
               <TableCell align="center">
                 {nodesConfig.byId[id].cosmosNodeName}
               </TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].tendermintRPCURL}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].cosmosRPCURL}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].prometheusURL}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].exporterUrl}</TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isValidator ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].tendermintRpcUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitorNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].cosmosRpcUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isArchiveNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].prometheusUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].useAsDataSource ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].exporterUrl}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeNodeDetails(nodesConfig.byId[id]); }}>
+                {nodesConfig.byId[id].isValidator
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].monitorNode
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].isArchiveNode
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].useAsDataSource
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => {
+                  removeNodeDetails(nodesConfig.byId[id]);
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -93,9 +108,9 @@ NodesTable.propTypes = {
       id: PropTypes.string,
       parentId: PropTypes.string,
       cosmosNodeName: PropTypes.string,
-      tendermintRPCURL: PropTypes.string,
-      cosmosRPCURL: PropTypes.string,
-      prometheusURL: PropTypes.string,
+      tendermintRpcUrl: PropTypes.string,
+      cosmosRpcUrl: PropTypes.string,
+      prometheusUrl: PropTypes.string,
       exporterUrl: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,

@@ -763,10 +763,10 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
 
 app.post('/server/cosmos/tendermint', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { tendermintRPCURL } = req.body;
+  const { tendermintRpcUrl } = req.body;
 
-  // Check if tendermintRPCURL is missing.
-  const missingParamsList = utils.missingValues({ tendermintRPCURL });
+  // Check if tendermintRpcUrl is missing.
+  const missingParamsList = utils.missingValues({ tendermintRpcUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -775,7 +775,7 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     return;
   }
 
-  const url = `${tendermintRPCURL}/health?`;
+  const url = `${tendermintRpcUrl}/health?`;
 
   axios.get(url, { params: {} })
     .then((_) => {
@@ -800,10 +800,10 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
 
 app.post('/server/cosmos/prometheus', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { prometheusURL } = req.body;
+  const { prometheusUrl } = req.body;
 
-  // Check if prometheusURL is missing.
-  const missingParamsList = utils.missingValues({ prometheusURL });
+  // Check if prometheusUrl is missing.
+  const missingParamsList = utils.missingValues({ prometheusUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -812,7 +812,7 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
     return;
   }
 
-  const url = `${prometheusURL}`;
+  const url = `${prometheusUrl}`;
 
   axios.get(url, { params: {} })
     .then((_) => {

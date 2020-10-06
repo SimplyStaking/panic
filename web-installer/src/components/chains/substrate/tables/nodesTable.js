@@ -55,7 +55,7 @@ const NodesTable = (props) => {
               </TableCell>
               <TableCell align="center">{nodesConfig.byId[id].nodeWSURL}</TableCell>
               <TableCell align="center">{nodesConfig.byId[id].telemetryURL}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].prometheusURL}</TableCell>
+              <TableCell align="center">{nodesConfig.byId[id].prometheusUrl}</TableCell>
               <TableCell align="center">{nodesConfig.byId[id].exporterUrl}</TableCell>
               <TableCell align="center">{nodesConfig.byId[id].stashAddress}</TableCell>
               <TableCell align="center">
@@ -97,7 +97,7 @@ NodesTable.propTypes = {
       substrateNodeName: PropTypes.string.isRequired,
       nodeWSURL: PropTypes.string,
       telemetryURL: PropTypes.string,
-      prometheusURL: PropTypes.string,
+      prometheusUrl: PropTypes.string,
       exporterUrl: PropTypes.string,
       stashAddress: PropTypes.string,
       isValidator: PropTypes.bool,

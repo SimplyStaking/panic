@@ -64,9 +64,9 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.tendermintRPCURL}
+                  value={values.tendermintRpcUrl}
                   type="text"
-                  name="tendermintRPCURL"
+                  name="tendermintRpcUrl"
                   placeholder={data.nodeForm.tendermintHolder}
                   onChange={handleChange}
                   fullWidth
@@ -86,9 +86,9 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.cosmosRPCURL}
+                  value={values.cosmosRpcUrl}
                   type="text"
-                  name="cosmosRPCURL"
+                  name="cosmosRpcUrl"
                   placeholder={data.nodeForm.sdkHolder}
                   onChange={handleChange}
                   fullWidth
@@ -108,9 +108,9 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.prometheusURL}
+                  value={values.prometheusUrl}
                   type="text"
-                  name="prometheusURL"
+                  name="prometheusUrl"
                   placeholder={data.nodeForm.prometheusHodler}
                   onChange={handleChange}
                   fullWidth
@@ -259,8 +259,8 @@ const NodesForm = (props) => {
                   <Box px={2}>
                     <PingCosmosButton
                       disabled={false}
-                      tendermintRPCURL={values.tendermintRPCURL}
-                      prometheusURL={values.prometheusURL}
+                      tendermintRpcUrl={values.tendermintRpcUrl}
+                      prometheusUrl={values.prometheusUrl}
                       exporterUrl={values.exporterUrl}
                     />
                     <Button
@@ -310,9 +310,9 @@ NodesForm.propTypes = {
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     cosmosNodeName: PropTypes.string.isRequired,
-    tendermintRPCURL: PropTypes.string,
-    cosmosRPCURL: PropTypes.string,
-    prometheusURL: PropTypes.string,
+    tendermintRpcUrl: PropTypes.string,
+    cosmosRpcUrl: PropTypes.string,
+    prometheusUrl: PropTypes.string,
     exporterUrl: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,

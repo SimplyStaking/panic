@@ -8,14 +8,14 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
-function pingTendermint(tendermintRPCURL) {
+function pingTendermint(tendermintRpcUrl) {
   return sendData('/server/cosmos/tendermint', {},
-    { tendermintRPCURL });
+    { tendermintRpcUrl });
 }
 
-function pingCosmosPrometheus(prometheusURL) {
+function pingCosmosPrometheus(prometheusUrl) {
   return sendData('/server/cosmos/prometheus', {},
-    { prometheusURL });
+    { prometheusUrl });
 }
 
 function pingNodeExporter(exporterUrl) {
