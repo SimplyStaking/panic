@@ -5,7 +5,9 @@ import AlertsContainer from './alertsContainer';
 import { SubstrateChainFormContainer } from '../general/chainContainer';
 import ChannelsContainer from './channelsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
-import { RepositoriesFormContainer, RepositoriesTableContainer } from './repositoriesContainer';
+import {
+  RepositoriesSubstrateFormContainer, RepositoriesSubstrateTableContainer,
+} from '../general/repositoriesContainer';
 
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, NODES_STEP,
@@ -35,8 +37,8 @@ function getStep(stepName) {
     case REPOSITORIES_STEP:
       return (
         <div>
-          <RepositoriesFormContainer />
-          <RepositoriesTableContainer />
+          <RepositoriesSubstrateFormContainer />
+          <RepositoriesSubstrateTableContainer />
         </div>
       );
     default:

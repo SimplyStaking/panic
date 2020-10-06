@@ -7,7 +7,8 @@ import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from
+  '../../../../containers/chains/cosmos/stepButtonContainer';
 import { PingCosmosButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
@@ -45,7 +46,8 @@ const NodesForm = (props) => {
                   type="text"
                   name="cosmosNodeName"
                   placeholder={data.nodeForm.nameHolder}
-                  helperText={errors.cosmosNodeName ? errors.cosmosNodeName : ''}
+                  helperText={errors.cosmosNodeName
+                    ? errors.cosmosNodeName : ''}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -75,7 +77,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.tendermintTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.tendermintTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -119,7 +124,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.prometheusTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.prometheusTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -141,7 +149,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.exporterUrlTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.exporterUrlTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -153,7 +164,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.isValidatorTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.isValidatorTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -179,7 +193,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.isArchiveTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.isArchiveTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -206,7 +223,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.monitorNodeTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.monitorNodeTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -232,7 +252,10 @@ const NodesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.nodeForm.useAsDataSourceTip} placement="left">
+                    <Tooltip
+                      title={data.nodeForm.useAsDataSourceTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -244,7 +267,8 @@ const NodesForm = (props) => {
                     <Switch
                       checked={values.useAsDataSource}
                       onClick={() => {
-                        setFieldValue('useAsDataSource', !values.useAsDataSource);
+                        setFieldValue('useAsDataSource',
+                          !values.useAsDataSource);
                       }}
                       name="useAsDataSource"
                       color="primary"
@@ -255,7 +279,12 @@ const NodesForm = (props) => {
               <Grid item xs={4} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <PingCosmosButton
                       disabled={false}

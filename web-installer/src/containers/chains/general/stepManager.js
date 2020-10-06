@@ -4,7 +4,9 @@ import PropTypes from 'prop-types';
 import AlertsContainer from './alertsContainer';
 import ChannelsContainer from './channelsContainer';
 import { SystemFormContainer, SystemTableContainer } from './systemsContainer';
-import { RepositoriesFormContainer, RepositoriesTableContainer } from './repositoriesContainer';
+import {
+  RepositoriesGeneralFormContainer, RepositoriesGeneralTableContainer,
+} from './repositoriesContainer';
 import {
   ALERTS_STEP, CHANNELS_STEP, REPOSITORIES_STEP, SYSTEMS_STEP,
 } from '../../../constants/constants';
@@ -30,8 +32,8 @@ function getStep(stepName) {
     case REPOSITORIES_STEP:
       return (
         <div>
-          <RepositoriesFormContainer />
-          <RepositoriesTableContainer />
+          <RepositoriesGeneralFormContainer />
+          <RepositoriesGeneralTableContainer />
         </div>
       );
     default:

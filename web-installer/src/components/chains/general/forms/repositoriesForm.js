@@ -6,13 +6,11 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, CHANNELS_STEP, BACK, NODES_STEP,
-} from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/substrate/stepButtonContainer';
+import { NEXT, BACK } from '../../../../constants/constants';
+import StepButtonContainer from
+  '../../../../containers/chains/substrate/stepButtonContainer';
 import { PingRepoButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
-import Data from '../../../../data/chains';
 
 const RepositoriesForm = (props) => {
   const classes = useStyles();
@@ -23,6 +21,7 @@ const RepositoriesForm = (props) => {
     handleSubmit,
     handleChange,
     setFieldValue,
+    data,
   } = props;
 
   return (
@@ -30,7 +29,7 @@ const RepositoriesForm = (props) => {
       <div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{Data.repositoryDetails.description}</p>
+            <p>{data.repoForm.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -46,7 +45,7 @@ const RepositoriesForm = (props) => {
                   value={values.repoName}
                   type="text"
                   name="repoName"
-                  placeholder="paritytech/substrate"
+                  placeholder={data.repoForm.nameHolder}
                   helperText={errors.repoName ? errors.repoName : ''}
                   onChange={handleChange}
                   fullWidth
@@ -55,7 +54,7 @@ const RepositoriesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.repositoryDetails.name} placement="left">
+                    <Tooltip title={data.repoForm.nameTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -81,7 +80,7 @@ const RepositoriesForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.repositoryDetails.monitorRepo} placement="left">
+                    <Tooltip title={data.repoForm.monitorTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -90,7 +89,12 @@ const RepositoriesForm = (props) => {
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <PingRepoButton
                       disabled={!(Object.keys(errors).length === 0)}
@@ -114,7 +118,7 @@ const RepositoriesForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={BACK}
-                    navigation={NODES_STEP}
+                    navigation={data.repoForm.backStep}
                   />
                 </Box>
               </Grid>
@@ -124,7 +128,7 @@ const RepositoriesForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={NEXT}
-                    navigation={CHANNELS_STEP}
+                    navigation={data.repoForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -147,6 +151,16 @@ RepositoriesForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  data: PropTypes.shape({
+    repoForm: PropTypes.shape({
+      description: PropTypes.string.isRequired,
+      nameHolder: PropTypes.string.isRequired,
+      nameTip: PropTypes.string.isRequired,
+      monitorTip: PropTypes.string.isRequired,
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default RepositoriesForm;

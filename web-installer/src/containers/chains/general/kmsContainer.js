@@ -50,7 +50,7 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-// Functions to be used in the Cosmos Kms table to delete the saved details
+// Function to be used in the Cosmos Kms table to delete the saved details
 // from state
 function mapDispatchToPropsRemove(dispatch) {
   return {

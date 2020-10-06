@@ -20,12 +20,12 @@ const RepositoriesTable = (props) => {
   const classes = useStyles();
 
   const {
-    generalConfig,
+    config,
     reposConfig,
     removeRepositoryDetails,
   } = props;
 
-  if (generalConfig.repositories.length === 0) {
+  if (config.repositories.length === 0) {
     return <div />;
   }
   return (
@@ -39,16 +39,20 @@ const RepositoriesTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {generalConfig.repositories.map((id) => (
+          {config.repositories.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
                 {reposConfig.byId[id].repoName}
               </TableCell>
               <TableCell align="center">
-                {reposConfig.byId[id].monitorRepo ? <CheckIcon /> : <ClearIcon />}
+                {reposConfig.byId[id].monitorRepo
+                  ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeRepositoryDetails(reposConfig.byId[id]); }}>
+                <Button onClick={() => {
+                  removeRepositoryDetails(reposConfig.byId[id]);
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -61,7 +65,7 @@ const RepositoriesTable = (props) => {
 };
 
 RepositoriesTable.propTypes = {
-  generalConfig: PropTypes.shape({
+  config: PropTypes.shape({
     repositories: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   reposConfig: PropTypes.shape({
