@@ -6,13 +6,10 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, CHANNELS_STEP, BACK, REPOSITORIES_STEP,
-} from '../../../../constants/constants';
+import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
-import Data from '../../../../data/chains';
 
 const KmsForm = (props) => {
   const classes = useStyles();
@@ -23,6 +20,7 @@ const KmsForm = (props) => {
     handleSubmit,
     handleChange,
     setFieldValue,
+    data,
   } = props;
 
   return (
@@ -30,7 +28,7 @@ const KmsForm = (props) => {
       <div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{Data.chainName.description}</p>
+            <p>{data.kmsForm.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -46,7 +44,7 @@ const KmsForm = (props) => {
                   value={values.kmsName}
                   type="text"
                   name="kmsName"
-                  placeholder="KMS_1"
+                  placeholder={data.kmsForm.namePlaceHolder}
                   helperText={errors.kmsName ? errors.kmsName : ''}
                   onChange={handleChange}
                   fullWidth
@@ -55,7 +53,7 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.kms.name} placement="left">
+                    <Tooltip title={data.kmsForm.nameTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -70,7 +68,7 @@ const KmsForm = (props) => {
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"
-                  placeholder="http://176.67.65.56:9000"
+                  placeholder={data.kmsForm.exporterUrlPlaceHolder}
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
                   fullWidth
@@ -79,7 +77,7 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.kms.exporterUrl} placement="left">
+                    <Tooltip title={data.kmsForm.exporterUrlTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -105,7 +103,7 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.kms.monitorKms} placement="left">
+                    <Tooltip title={data.kmsForm.monitorKmsTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -138,7 +136,7 @@ const KmsForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={BACK}
-                    navigation={REPOSITORIES_STEP}
+                    navigation={data.kmsForm.backStep}
                   />
                 </Box>
               </Grid>
@@ -148,7 +146,7 @@ const KmsForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={NEXT}
-                    navigation={CHANNELS_STEP}
+                    navigation={data.kmsForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -173,6 +171,18 @@ KmsForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  data: PropTypes.shape({
+    kmsForm: PropTypes.shape({
+      description: PropTypes.string.isRequired,
+      exporterUrlPlaceHolder: PropTypes.string.isRequired,
+      namePlaceHolder: PropTypes.string.isRequired,
+      nameTip: PropTypes.string.isRequired,
+      exporterUrlTip: PropTypes.string.isRequired,
+      monitorKmsTip: PropTypes.string.isRequired,
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default KmsForm;
