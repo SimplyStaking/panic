@@ -1,14 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import AlertsContainer from './alertsContainer';
+import { AlertsSubstrateTableContainer } from '../general/alertsContainer';
 import { SubstrateChainFormContainer } from '../general/chainContainer';
-import ChannelsContainer from './channelsContainer';
+import { ChannelsSubstrateTableContainer } from '../general/channelsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import {
   RepositoriesSubstrateFormContainer, RepositoriesSubstrateTableContainer,
 } from '../general/repositoriesContainer';
-
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, NODES_STEP,
   REPOSITORIES_STEP,
@@ -22,11 +21,11 @@ const mapStateToProps = (state) => ({
 function getStep(stepName) {
   switch (stepName) {
     case ALERTS_STEP:
-      return <AlertsContainer />;
+      return <AlertsSubstrateTableContainer />;
     case CHAINS_STEP:
       return <SubstrateChainFormContainer />;
     case CHANNELS_STEP:
-      return <ChannelsContainer />;
+      return <ChannelsSubstrateTableContainer />;
     case NODES_STEP:
       return (
         <div>

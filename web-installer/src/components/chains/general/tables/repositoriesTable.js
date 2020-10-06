@@ -20,12 +20,13 @@ const RepositoriesTable = (props) => {
   const classes = useStyles();
 
   const {
+    currentChain,
     config,
     reposConfig,
     removeRepositoryDetails,
   } = props;
 
-  if (config.repositories.length === 0) {
+  if (config.byId[currentChain].repositories.length === 0) {
     return <div />;
   }
   return (
@@ -39,7 +40,7 @@ const RepositoriesTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {config.repositories.map((id) => (
+          {config.byId[currentChain].repositories.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
                 {reposConfig.byId[id].repoName}
@@ -66,7 +67,9 @@ const RepositoriesTable = (props) => {
 
 RepositoriesTable.propTypes = {
   config: PropTypes.shape({
-    repositories: PropTypes.arrayOf(PropTypes.string),
+    byId: PropTypes.shape({
+      repositories: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
   }).isRequired,
   reposConfig: PropTypes.shape({
     byId: PropTypes.shape({
@@ -78,6 +81,7 @@ RepositoriesTable.propTypes = {
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 };
 
 export default RepositoriesTable;

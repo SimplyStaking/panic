@@ -7,7 +7,8 @@ import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from
+  '../../../../containers/chains/cosmos/stepButtonContainer';
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
@@ -77,7 +78,10 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.kmsForm.exporterUrlTip} placement="left">
+                    <Tooltip
+                      title={data.kmsForm.exporterUrlTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -103,7 +107,10 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.kmsForm.monitorKmsTip} placement="left">
+                    <Tooltip
+                      title={data.kmsForm.monitorKmsTip}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -112,7 +119,12 @@ const KmsForm = (props) => {
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <PingNodeExpoter
                       disabled={!(Object.keys(errors).length === 0)}

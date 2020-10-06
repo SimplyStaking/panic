@@ -18,8 +18,11 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     chainName: '',
   }),
+  // If the current chain is set then load the name of that chain otherwise
+  // return the blank output for the chain name form.
   mapPropsToValues: (props) => ({
-    chainName: props.currentChain,
+    chainName: props.currentChain
+      ? props.config.byId[props.currentChain].chainName : props.currentChain,
   }),
   validationSchema: (props) => ChainSchema(props),
 })(ChainForm);

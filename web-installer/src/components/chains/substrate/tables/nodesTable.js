@@ -53,25 +53,42 @@ const NodesTable = (props) => {
               <TableCell align="center">
                 {nodesConfig.byId[id].substrateNodeName}
               </TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].nodeWsUrl}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].telemetryUrl}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].prometheusUrl}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].exporterUrl}</TableCell>
-              <TableCell align="center">{nodesConfig.byId[id].stashAddress}</TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isValidator ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].nodeWsUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitorNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].telemetryUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isArchiveNode ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].prometheusUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].useAsDataSource ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].exporterUrl}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeNodeDetails(nodesConfig.byId[id]); }}>
+                {nodesConfig.byId[id].stashAddress}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].isValidator
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].monitorNode
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].isArchiveNode
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                {nodesConfig.byId[id].useAsDataSource
+                  ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
+              <TableCell align="center">
+                <Button onClick={() => {
+                  removeNodeDetails(nodesConfig.byId[id]);
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

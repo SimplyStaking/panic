@@ -9,6 +9,7 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import { GLOBAL } from '../../../../constants/constants';
 
 const useStyles = makeStyles({
   table: {
@@ -20,12 +21,14 @@ const SystemTable = (props) => {
   const classes = useStyles();
 
   const {
-    generalConfig,
+    config,
     systemConfig,
     removeSystemDetails,
   } = props;
 
-  if (generalConfig.systems.length === 0) {
+  const currentConfig = config.byId[GLOBAL];
+
+  if (currentConfig.systems.length === 0) {
     return <div />;
   }
   return (
@@ -40,7 +43,7 @@ const SystemTable = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {generalConfig.systems.map((id) => (
+          {currentConfig.systems.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
                 {systemConfig.byId[id].name}
@@ -49,10 +52,14 @@ const SystemTable = (props) => {
                 {systemConfig.byId[id].exporterUrl}
               </TableCell>
               <TableCell align="center">
-                {systemConfig.byId[id].monitorSystem ? <CheckIcon /> : <ClearIcon />}
+                {systemConfig.byId[id].monitorSystem
+                  ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeSystemDetails(systemConfig.byId[id]); }}>
+                <Button onClick={() => {
+                  removeSystemDetails(systemConfig.byId[id]);
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -65,8 +72,10 @@ const SystemTable = (props) => {
 };
 
 SystemTable.propTypes = {
-  generalConfig: PropTypes.shape({
-    systems: PropTypes.arrayOf(PropTypes.string),
+  config: PropTypes.shape({
+    byId: PropTypes.shape({
+      systems: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
   }).isRequired,
   systemConfig: PropTypes.shape({
     byId: PropTypes.shape({

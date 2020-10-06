@@ -7,6 +7,8 @@ import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import { GLOBAL } from '../../../constants/constants';
 import SystemSchema from './schemas/systemSchema';
 
+// Form validation, check if the system name is unique and if the exporter
+// URL was provided.
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
@@ -33,7 +35,7 @@ const Form = withFormik({
 
 const mapStateToProps = (state) => ({
   currentChain: GLOBAL,
-  generalConfig: state.GeneralReducer,
+  config: state.GeneralReducer,
   systemConfig: state.SystemsReducer,
 });
 

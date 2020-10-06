@@ -55,14 +55,21 @@ const ChainNameForm = (props) => {
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
-        <Typography variant="subtitle1" gutterBottom className="greyBackground">
+        <Typography
+          variant="subtitle1"
+          gutterBottom
+          className="greyBackground"
+        >
           <Box m={2} p={3}>
             <p>{data.chainForm.description}</p>
           </Box>
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onSubmit={(e) => { e.preventDefault(); }} className={classes.root}>
+          <form
+            onSubmit={(e) => { e.preventDefault(); }}
+            className={classes.root}
+          >
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> Chain Name: </Typography>

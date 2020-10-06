@@ -5,10 +5,9 @@ import {
   Grid, FormControlLabel, Checkbox, List, ListItem, Typography, Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import {
-  NEXT, ALERTS_STEP, BACK, REPOSITORIES_STEP, GLOBAL,
-} from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import { NEXT, BACK } from '../../../../constants/constants';
+import StepButtonContainer from
+  '../../../../containers/chains/cosmos/stepButtonContainer';
 
 const useStyles = makeStyles({
   table: {
@@ -20,7 +19,9 @@ const ChannelsTable = (props) => {
   const classes = useStyles();
 
   const {
-    generalConfig,
+    data,
+    config,
+    currentChain,
     telegrams,
     opsgenies,
     emails,
@@ -38,6 +39,8 @@ const ChannelsTable = (props) => {
     removeOpsGenieDetails,
   } = props;
 
+  const currentConfig = config.byId[currentChain];
+
   return (
     <Grid container className={classes.root} spacing={2}>
       {telegrams.allIds.length !== 0 && (
@@ -48,20 +51,22 @@ const ChannelsTable = (props) => {
                 <Typography>
                   Telegram
                 </Typography>
-                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <div
+                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                >
                   <List>
                     {telegrams.allIds.map((id) => (
                       <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={generalConfig.telegrams.includes(id)}
+                              checked={currentConfig.telegrams.includes(id)}
                               onClick={() => {
                                 const payload = {
                                   id,
-                                  parentId: GLOBAL,
+                                  parentId: currentChain,
                                 };
-                                if (generalConfig.telegrams.includes(id)) {
+                                if (currentConfig.telegrams.includes(id)) {
                                   removeTelegramDetails(payload);
                                 } else {
                                   addTelegramDetails(payload);
@@ -91,20 +96,22 @@ const ChannelsTable = (props) => {
                 <Typography>
                   Twilio
                 </Typography>
-                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <div
+                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                >
                   <List>
                     {twilios.allIds.map((id) => (
                       <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={generalConfig.twilios.includes(id)}
+                              checked={currentConfig.twilios.includes(id)}
                               onClick={() => {
                                 const payload = {
                                   id,
-                                  parentId: GLOBAL,
+                                  parentId: currentChain,
                                 };
-                                if (generalConfig.twilios.includes(id)) {
+                                if (currentConfig.twilios.includes(id)) {
                                   removeTwilioDetails(payload);
                                 } else {
                                   addTwilioDetails(payload);
@@ -134,20 +141,22 @@ const ChannelsTable = (props) => {
                 <Typography>
                   Email
                 </Typography>
-                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <div
+                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                >
                   <List>
                     {emails.allIds.map((id) => (
                       <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={generalConfig.emails.includes(id)}
+                              checked={currentConfig.emails.includes(id)}
                               onClick={() => {
                                 const payload = {
                                   id,
-                                  parentId: GLOBAL,
+                                  parentId: currentChain,
                                 };
-                                if (generalConfig.emails.includes(id)) {
+                                if (currentConfig.emails.includes(id)) {
                                   removeEmailDetails(payload);
                                 } else {
                                   addEmailDetails(payload);
@@ -177,20 +186,22 @@ const ChannelsTable = (props) => {
                 <Typography>
                   PagerDuty
                 </Typography>
-                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <div
+                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                >
                   <List>
                     {pagerduties.allIds.map((id) => (
                       <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={generalConfig.pagerduties.includes(id)}
+                              checked={currentConfig.pagerduties.includes(id)}
                               onClick={() => {
                                 const payload = {
                                   id,
-                                  parentId: GLOBAL,
+                                  parentId: currentChain,
                                 };
-                                if (generalConfig.pagerduties.includes(id)) {
+                                if (currentConfig.pagerduties.includes(id)) {
                                   removePagerDutyDetails(payload);
                                 } else {
                                   addPagerDutyDetails(payload);
@@ -220,20 +231,22 @@ const ChannelsTable = (props) => {
                 <Typography>
                   OpsGenie
                 </Typography>
-                <div style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}>
+                <div
+                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                >
                   <List>
                     {opsgenies.allIds.map((id) => (
                       <ListItem key={id}>
                         <FormControlLabel
                           control={(
                             <Checkbox
-                              checked={generalConfig.opsgenies.includes(id)}
+                              checked={currentConfig.opsgenies.includes(id)}
                               onClick={() => {
                                 const payload = {
                                   id,
-                                  parentId: GLOBAL,
+                                  parentId: currentChain,
                                 };
-                                if (generalConfig.opsgenies.includes(id)) {
+                                if (currentConfig.opsgenies.includes(id)) {
                                   removeOpsGenieDetails(payload);
                                 } else {
                                   addOpsGenieDetails(payload);
@@ -261,7 +274,7 @@ const ChannelsTable = (props) => {
           <StepButtonContainer
             disabled={false}
             text={BACK}
-            navigation={REPOSITORIES_STEP}
+            navigation={data.channelsTable.backStep}
           />
         </Box>
       </Grid>
@@ -271,7 +284,7 @@ const ChannelsTable = (props) => {
           <StepButtonContainer
             disabled={false}
             text={NEXT}
-            navigation={ALERTS_STEP}
+            navigation={data.channelsTable.nextStep}
           />
         </Box>
       </Grid>
@@ -315,12 +328,14 @@ ChannelsTable.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
-  generalConfig: PropTypes.shape({
-    telegrams: PropTypes.arrayOf(PropTypes.string),
-    twilios: PropTypes.arrayOf(PropTypes.string),
-    emails: PropTypes.arrayOf(PropTypes.string),
-    pagerduties: PropTypes.arrayOf(PropTypes.string),
-    opsgenies: PropTypes.arrayOf(PropTypes.string),
+  config: PropTypes.shape({
+    byId: PropTypes.shape({
+      telegrams: PropTypes.arrayOf(PropTypes.string),
+      twilios: PropTypes.arrayOf(PropTypes.string),
+      emails: PropTypes.arrayOf(PropTypes.string),
+      pagerduties: PropTypes.arrayOf(PropTypes.string),
+      opsgenies: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
   }).isRequired,
   addTelegramDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
@@ -332,6 +347,13 @@ ChannelsTable.propTypes = {
   removePagerDutyDetails: PropTypes.func.isRequired,
   addOpsGenieDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
+  data: PropTypes.shape({
+    channelsTable: PropTypes.shape({
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default ChannelsTable;

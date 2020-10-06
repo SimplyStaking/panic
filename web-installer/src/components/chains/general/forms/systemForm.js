@@ -9,7 +9,8 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import {
   NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
 } from '../../../../constants/constants';
-import StepButtonContainer from '../../../../containers/chains/cosmos/stepButtonContainer';
+import StepButtonContainer from
+  '../../../../containers/chains/cosmos/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
@@ -114,7 +115,10 @@ const SystemForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.systems.monitorSystem} placement="left">
+                    <Tooltip
+                      title={Data.systems.monitorSystem}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -123,7 +127,12 @@ const SystemForm = (props) => {
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <PingNodeExpoter
                       disabled={!(Object.keys(errors).length === 0)}

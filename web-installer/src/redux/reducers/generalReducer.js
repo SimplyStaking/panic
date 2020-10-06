@@ -86,15 +86,20 @@ const periodicState = {
 
 // Initial general state
 const generalState = {
-  repositories: [],
-  systems: [],
-  periodic: periodicState,
-  telegrams: [],
-  twilios: [],
-  emails: [],
-  pagerduties: [],
-  opsgenies: [],
-  thresholdAlerts: generalThresholdAlerts,
+  byId: {
+    GLOBAL: {
+      repositories: [],
+      systems: [],
+      periodic: periodicState,
+      telegrams: [],
+      twilios: [],
+      emails: [],
+      pagerduties: [],
+      opsgenies: [],
+      thresholdAlerts: generalThresholdAlerts,
+    },
+  },
+  allIds: [GLOBAL],
 };
 
 // General reducer to keep track of Periodic alive reminder, repositories and
@@ -115,7 +120,13 @@ function GeneralReducer(state = generalState, action) {
 
       return {
         ...state,
-        repositories: state.repositories.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            repositories: state.byId[GLOBAL].repositories.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
@@ -126,9 +137,15 @@ function GeneralReducer(state = generalState, action) {
 
       return {
         ...state,
-        repositories: state.repositories.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            repositories: state.byId[GLOBAL].repositories.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_SYSTEM:
       // Since this is common for multiple chains and general settings
@@ -136,10 +153,15 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parentId !== GLOBAL) {
         return state;
       }
-
       return {
         ...state,
-        systems: state.systems.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            systems: state.byId[GLOBAL].systems.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
@@ -150,9 +172,15 @@ function GeneralReducer(state = generalState, action) {
 
       return {
         ...state,
-        systems: state.systems.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            systems: state.byId[GLOBAL].systems.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -162,7 +190,13 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        telegrams: state.telegrams.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            telegrams: state.byId[GLOBAL].telegrams.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -172,9 +206,15 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        telegrams: state.telegrams.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            telegrams: state.byId[GLOBAL].telegrams.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -184,7 +224,13 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        twilios: state.twilios.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            twilios: state.byId[GLOBAL].twilios.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -194,9 +240,15 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        twilios: state.twilios.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            twilios: state.byId[GLOBAL].twilios.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -206,7 +258,13 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        emails: state.emails.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            emails: state.byId[GLOBAL].emails.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -216,9 +274,15 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        emails: state.emails.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            emails: state.byId[GLOBAL].emails.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -228,7 +292,13 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        pagerduties: state.pagerduties.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            pagerduties: state.byId[GLOBAL].pagerduties.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -238,9 +308,15 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        pagerduties: state.pagerduties.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            pagerduties: state.byId[GLOBAL].pagerduties.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case ADD_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -250,7 +326,13 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        opsgenies: state.opsgenies.concat(action.payload.id),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            opsgenies: state.byId[GLOBAL].opsgenies.concat(action.payload.id),
+          },
+        },
       };
     case REMOVE_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
@@ -260,9 +342,15 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        opsgenies: state.opsgenies.filter(
-          (config) => config !== action.payload.id,
-        ),
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            opsgenies: state.byId[GLOBAL].opsgenies.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
       };
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
@@ -272,11 +360,17 @@ function GeneralReducer(state = generalState, action) {
       }
       return {
         ...state,
-        thresholdAlerts: {
-          ...state.thresholdAlerts,
-          byId: {
-            ...state.thresholdAlerts.byId,
-            [action.payload.id]: action.payload.alert,
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            thresholdAlerts: {
+              ...state.byId[GLOBAL].thresholdAlerts,
+              byId: {
+                ...state.byId[GLOBAL].thresholdAlerts.byId,
+                [action.payload.id]: action.payload.alert,
+              },
+            },
           },
         },
       };

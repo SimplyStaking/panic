@@ -4,7 +4,7 @@ import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
 import StepManager from '../../../containers/chains/general/stepManager';
-import Data from '../../../data/substrate';
+import Data from '../../../data/general';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -30,10 +30,10 @@ function GeneralSetupPage() {
   return (
     <div>
       <Title
-        text={Data.substrate.title}
+        text={Data.general.title}
       />
       <MainText
-        text={Data.substrate.description}
+        text={Data.general.description}
       />
       <Box p={2} className={classes.root}>
         <Box
