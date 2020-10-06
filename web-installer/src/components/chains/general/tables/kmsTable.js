@@ -53,7 +53,10 @@ const KmsTable = (props) => {
                 {kmsConfig.byId[id].monitorKms ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeKmsDetails(kmsConfig.byId[id]); }}>
+                <Button onClick={() => {
+                  removeKmsDetails(kmsConfig.byId[id]);
+                }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

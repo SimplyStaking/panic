@@ -6,9 +6,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, NODES_STEP, BACK, CHAINS_PAGE,
-} from '../../../../constants/constants';
+import { NEXT, BACK } from '../../../../constants/constants';
 import NavigationButton from '../../../global/navigationButton';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
@@ -96,7 +94,7 @@ const ChainNameForm = (props) => {
                     disabled={false}
                     nextPage={nextPage}
                     buttonText={BACK}
-                    navigation={CHAINS_PAGE}
+                    navigation={data.chainForm.backStep}
                   />
                 </Box>
               </Grid>
@@ -107,7 +105,7 @@ const ChainNameForm = (props) => {
                     disabled={!(Object.keys(errors).length === 0)}
                     nextPage={nextStep}
                     buttonText={NEXT}
-                    navigation={NODES_STEP}
+                    navigation={data.chainForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -138,6 +136,8 @@ ChainNameForm.propTypes = {
       description: PropTypes.string.isRequired,
       placeholder: PropTypes.string.isRequired,
       tooltip: PropTypes.string.isRequired,
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
 };
