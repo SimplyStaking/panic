@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import { ToastsStore } from 'react-toasts';
 import { SaveConfigButton } from '../../utils/buttons';
 import { sendConfig } from '../../utils/data';
+import { GLOBAL } from '../../constants/constants';
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
@@ -23,7 +25,7 @@ const mapStateToProps = (state) => ({
   // General data related to
   repositories: state.RepositoryReducer,
   kmses: state.KmsReducer,
-  general: state.GeneralReducer,
+  general: state.GeneralReducer.byId[GLOBAL],
   systems: state.SystemsReducer,
 });
 
@@ -35,30 +37,37 @@ class SaveConfig extends Component {
 
   async saveConfigs() {
     const {
-      emails, pagerduties, telegrams, twilios, opsgenies, cosmosChains, cosmosNodes,
-      repositories, kmses, substrateChains, substrateNodes, general, systems,
+      emails, pagerduties, telegrams, twilios, opsgenies, cosmosChains,
+      cosmosNodes, repositories, kmses, substrateChains, substrateNodes,
+      general, systems,
     } = this.props;
 
+    ToastsStore.info('Starting to save data config.', 5000);
     // Save all the channels configurations if any
     if (emails.allIds.length !== 0) {
       await sendConfig('channel', 'email_config.ini', '', '', emails.byId);
     }
+    ToastsStore.success('Saved email configs!', 5000);
 
     if (pagerduties.allIds.length !== 0) {
       await sendConfig('channel', 'pagerduty_config.ini', '', '', pagerduties.byId);
     }
+    ToastsStore.success('Saved pagerduty configs!', 5000);
 
     if (telegrams.allIds.length !== 0) {
       await sendConfig('channel', 'telegram_config.ini', '', '', telegrams.byId);
     }
+    ToastsStore.success('Saved telegram configs!', 5000);
 
     if (twilios.allIds.length !== 0) {
       await sendConfig('channel', 'twilio_config.ini', '', '', twilios.byId);
     }
+    ToastsStore.success('Saved twilio configs!', 5000);
 
     if (opsgenies.allIds.length !== 0) {
       await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
     }
+    ToastsStore.success('Saved opsgenie configs!', 5000);
 
     // We have to use forEach as await requires the For loop to be async
     cosmosChains.allIds.forEach(async (currentChainId) => {
@@ -195,6 +204,8 @@ class SaveConfig extends Component {
         chainConfig.chainName, 'cosmos', timeWindowAlertsConfig);
     });
 
+    ToastsStore.success('Saved Cosmos Configs!', 5000);
+
     // We have to use forEach as await requires the For loop to be async
     substrateChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = substrateChains.byId[currentChainId];
@@ -314,6 +325,8 @@ class SaveConfig extends Component {
         chainConfig.chainName, 'substrate', timeWindowAlertsConfig);
     });
 
+    ToastsStore.success('Saved Substrate Configs!', 5000);
+
     // Save the general configurations
     const channelConfigs = {};
     channelConfigs.telegram = general.telegrams;
@@ -364,6 +377,8 @@ class SaveConfig extends Component {
     const generalPeriodic = { periodic: general.periodic };
     await sendConfig('chain', 'periodic_config.ini', 'general',
       'general', generalPeriodic);
+
+    ToastsStore.success('Saved General configs!', 5000);
   }
 
   render() {
