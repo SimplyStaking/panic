@@ -3,7 +3,7 @@ import {
   updateRepeatAlert, updateTimeWindowAlert, updateThresholdAlert,
   updateSeverityAlert,
 } from '../../../redux/actions/alertActions';
-import { resetCurrentChainId } from '../../../redux/actions/substrateActions';
+import { resetCurrentChainIdSubstrate } from '../../../redux/actions/substrateActions';
 import { changePage, changeStep } from '../../../redux/actions/pageActions';
 import AlertsTable from '../../../components/chains/substrate/tables/alertsTable';
 
@@ -16,7 +16,7 @@ function mapDispatchToProps(dispatch) {
   return {
     stepChanger: (step) => dispatch(changeStep(step)),
     pageChanger: (page) => dispatch(changePage(page)),
-    clearChainId: () => dispatch(resetCurrentChainId()),
+    clearChainId: () => dispatch(resetCurrentChainIdSubstrate()),
     updateRepeatAlertDetails: (details) => dispatch(updateRepeatAlert(details)),
     updateTimeWindowAlertDetails: (details) => dispatch(updateTimeWindowAlert(details)),
     updateThresholdAlertDetails: (details) => dispatch(updateThresholdAlert(details)),

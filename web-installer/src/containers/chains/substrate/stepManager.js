@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import AlertsContainer from './alertsContainer';
-import ChainContainer from './chainContainer';
+import { SubstrateChainFormContainer } from '../general/chainContainer';
 import ChannelsContainer from './channelsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import { RepositoriesFormContainer, RepositoriesTableContainer } from './repositoriesContainer';
@@ -22,7 +22,7 @@ function getStep(stepName) {
     case ALERTS_STEP:
       return <AlertsContainer />;
     case CHAINS_STEP:
-      return <ChainContainer />;
+      return <SubstrateChainFormContainer />;
     case CHANNELS_STEP:
       return <ChannelsContainer />;
     case NODES_STEP:
@@ -40,7 +40,7 @@ function getStep(stepName) {
         </div>
       );
     default:
-      return <ChainContainer />;
+      return <SubstrateChainFormContainer />;
   }
 }
 

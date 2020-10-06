@@ -40,7 +40,7 @@ export function updateChainSubstrate(payload) {
 // This action is used to reset the current chain name to nothing
 // most likely this will happen when click back after setting chain name
 // or finishing a configuration setup of a chain
-export function resetCurrentChainId() {
+export function resetCurrentChainIdSubstrate() {
   return {
     type: RESET_CHAIN_SUBSTRATE,
   };

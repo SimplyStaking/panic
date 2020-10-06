@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import AlertsContainer from './alertsContainer';
-import ChainContainer from './chainContainer';
+import { CosmosChainFormContainer } from '../general/chainContainer';
 import ChannelsContainer from './channelsContainer';
 import { KMSFormContainer, KMSTableContainer } from './kmsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
@@ -23,7 +23,7 @@ function getStep(stepName) {
     case ALERTS_STEP:
       return <AlertsContainer />;
     case CHAINS_STEP:
-      return <ChainContainer />;
+      return <CosmosChainFormContainer />;
     case CHANNELS_STEP:
       return <ChannelsContainer />;
     case KMS_STEP:
@@ -48,7 +48,7 @@ function getStep(stepName) {
         </div>
       );
     default:
-      return <ChainContainer />;
+      return <CosmosChainFormContainer />;
   }
 }
 
