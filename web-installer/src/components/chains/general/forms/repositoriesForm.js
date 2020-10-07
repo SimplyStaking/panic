@@ -102,13 +102,13 @@ const RepositoriesForm = (props) => {
                 >
                   <Box px={2}>
                     <PingRepoButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       repo={values.repoName}
                     />
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

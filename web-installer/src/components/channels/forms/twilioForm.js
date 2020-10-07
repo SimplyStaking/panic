@@ -173,7 +173,7 @@ const TwilioForm = (props) => {
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <TestCallButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       twilioPhoneNumbersToDialValid={
                         values.twilioPhoneNumbersToDialValid
                           ? values.twilioPhoneNumbersToDialValid : []
@@ -185,7 +185,7 @@ const TwilioForm = (props) => {
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

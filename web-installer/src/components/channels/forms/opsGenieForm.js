@@ -172,14 +172,14 @@ const OpsGenieForm = (props) => {
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestOpsGenieButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       apiKey={values.apiToken}
                       eu={values.eu}
                     />
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

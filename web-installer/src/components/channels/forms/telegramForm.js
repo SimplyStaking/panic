@@ -224,14 +224,14 @@ const TelegramForm = (props) => {
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestAlertButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       botChatID={values.chatID}
                       botToken={values.botToken}
                     />
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

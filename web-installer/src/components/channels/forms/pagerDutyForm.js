@@ -171,14 +171,14 @@ const PagerDutyForm = (props) => {
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestPagerDutyButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       apiToken={values.apiToken}
                       integrationKey={values.integrationKey}
                     />
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

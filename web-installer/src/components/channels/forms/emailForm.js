@@ -255,7 +255,7 @@ const EmailForm = (props) => {
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestEmailButton
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       to={values.emailsTo}
                       from={values.emailFrom}
                       smtp={values.smtp}
@@ -265,7 +265,7 @@ const EmailForm = (props) => {
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>

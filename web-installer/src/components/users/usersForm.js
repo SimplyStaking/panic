@@ -60,7 +60,7 @@ const UsersForm = (props) => {
           <Grid item xs={4}>
             <Grid container direction="row" justify="flex-end" alignItems="center">
               <AddAccount
-                disabled={!(Object.keys(errors).length === 0)}
+                disabled={(Object.keys(errors).length !== 0)}
                 username={values.username}
                 password={values.password}
               />

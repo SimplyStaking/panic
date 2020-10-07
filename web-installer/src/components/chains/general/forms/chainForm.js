@@ -112,7 +112,7 @@ const ChainNameForm = (props) => {
               <Grid item xs={2}>
                 <Box px={2}>
                   <NavigationButton
-                    disabled={!(Object.keys(errors).length === 0)}
+                    disabled={(Object.keys(errors).length !== 0)}
                     nextPage={nextStep}
                     buttonText={NEXT}
                     navigation={data.chainForm.nextStep}

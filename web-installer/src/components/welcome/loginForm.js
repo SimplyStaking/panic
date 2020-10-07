@@ -92,7 +92,7 @@ const LoginForm = (props) => {
                   <LoginButton
                     username={values.username}
                     password={values.password}
-                    disabled={!(Object.keys(errors).length === 0)}
+                    disabled={(Object.keys(errors).length !== 0)}
                     setAuthentication={setAuthentication}
                   />
                 </Box>

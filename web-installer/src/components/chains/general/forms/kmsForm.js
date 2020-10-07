@@ -131,13 +131,13 @@ const KmsForm = (props) => {
                 >
                   <Box px={2}>
                     <PingNodeExpoter
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       exporterUrl={values.exporterUrl}
                     />
                     <Button
                       variant="outlined"
                       size="large"
-                      disabled={!(Object.keys(errors).length === 0)}
+                      disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
                       <Box px={2}>
