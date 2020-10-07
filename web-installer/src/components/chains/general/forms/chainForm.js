@@ -10,6 +10,9 @@ import { NEXT, BACK } from '../../../../constants/constants';
 import NavigationButton from '../../../global/navigationButton';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
+/*
+ * This form allows for the input of a chain name.
+ */
 const ChainNameForm = (props) => {
   const classes = useStyles();
 

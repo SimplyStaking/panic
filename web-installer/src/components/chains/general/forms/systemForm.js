@@ -16,6 +16,11 @@ import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 import Data from '../../../../data/chains';
 
+/*
+ * Systems form contains all the information and structure needed to setup
+ * a system configuration. Contains functionality to test if the provided system
+ * is correct.
+ */
 const SystemForm = (props) => {
   const classes = useStyles();
 

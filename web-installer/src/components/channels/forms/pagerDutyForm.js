@@ -5,30 +5,10 @@ import {
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
-import { makeStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import { SendTestPagerDutyButton } from '../../../utils/buttons';
+import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
-
-const defaultTheme = createMuiTheme();
-const theme = createMuiTheme({
-  overrides: {
-    MuiTooltip: {
-      tooltip: {
-        fontSize: '1em',
-        color: 'white',
-        backgroundColor: 'black',
-      },
-    },
-  },
-});
-
-const useStyles = makeStyles(() => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-}));
 
 const PagerDutyForm = (props) => {
   const classes = useStyles();

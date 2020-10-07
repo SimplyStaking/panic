@@ -12,6 +12,10 @@ import StepButtonContainer from
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
+/*
+ * Contains the details to setup a KMS configuration to be monitored, this also
+ * has the functionality to test the Node Exporter IP address that will be given.
+ */
 const KmsForm = (props) => {
   const classes = useStyles();
 

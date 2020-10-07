@@ -16,6 +16,10 @@ const useStyles = makeStyles({
   },
 });
 
+/*
+ * Contains the data of all the nodes of the current chain process. Has the
+ * functionality to delete node data from redux.
+ */
 const NodesTable = (props) => {
   const classes = useStyles();
 

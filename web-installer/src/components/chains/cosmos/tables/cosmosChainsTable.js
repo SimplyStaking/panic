@@ -15,6 +15,11 @@ const useStyles = makeStyles({
   },
 });
 
+/*
+ * Displays all the names of the configured chains, in the chain accordion.
+ * Has functionality to load a chains configuration as well as clear all data
+ * setup for a chain.
+*/
 const CosmosChainsTable = (props) => {
   const classes = useStyles();
 

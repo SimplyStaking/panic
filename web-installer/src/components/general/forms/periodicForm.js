@@ -3,16 +3,8 @@ import PropTypes from 'prop-types';
 import {
   TextField, Typography, Grid, Switch, FormControlLabel,
 } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { useStyles } from '../../theme/default';
 import MainText from '../../global/mainText';
-
-const useStyles = makeStyles(() => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-}));
 
 const PeriodicForm = (props) => {
   const classes = useStyles();

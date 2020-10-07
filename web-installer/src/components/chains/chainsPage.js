@@ -38,6 +38,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+/*
+ * This page holds all the chain accordions, configured to load a chain setup
+ * and the chains already setup.
+ */
 function Chains() {
   const classes = useStyles();
 

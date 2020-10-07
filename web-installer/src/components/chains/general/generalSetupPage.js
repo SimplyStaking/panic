@@ -24,6 +24,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+/*
+ * Main general setup page, this will be constant through out the general
+ * setup process. What will change is whatever the StepManager returns. This
+ * depends on what is currently set in the state through redux. E.g if the step
+ * is set as the REPOS_STEP in redux then the repositories form and table will
+ * be rendered.
+*/
 function GeneralSetupPage() {
   const classes = useStyles();
 

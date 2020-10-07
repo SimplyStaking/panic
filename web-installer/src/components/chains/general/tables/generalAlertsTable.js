@@ -12,6 +12,10 @@ import {
   CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,
 } from '../../../../constants/constants';
 
+/*
+ * AlertsTable will show display the alert types needed for general
+ * configuration together with the function to directly edit them.
+*/
 const AlertsTable = (props) => {
   const {
     config,

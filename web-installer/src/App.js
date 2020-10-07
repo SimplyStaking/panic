@@ -13,10 +13,12 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-// Main application, which loads the PageManager and the ToastsContainer
-// PageManager changes which page/form is being viewed through redux
-// Toasts Container controls the overlayed notifications when interacting
-// with the backend.
+/*
+* Main application, which loads the PageManager and the ToastsContainer
+* PageManager changes which page/form is being viewed through redux
+* Toasts Container controls the overlayed notifications when interacting
+* with the backend.
+*/
 function App() {
   const classes = useStyles();
 

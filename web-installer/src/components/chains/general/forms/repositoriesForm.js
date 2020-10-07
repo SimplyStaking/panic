@@ -12,6 +12,11 @@ import StepButtonContainer from
 import { PingRepoButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
+/*
+ * Repositories form contains all the information and structure needed to setup
+ * a repo configuration. Contains functionality to test if the provided repo
+ * is correct.
+ */
 const RepositoriesForm = (props) => {
   const classes = useStyles();
 

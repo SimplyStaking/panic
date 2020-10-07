@@ -24,6 +24,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+/*
+ * Main cosmos setup page, this will be constant through out the cosmos chain
+ * setup process. What will change is whatever the StepManager returns. This
+ * depends on what is currently set in the state through redux. E.g if the step
+ * is set as the NODES_STEP in redux then the nodes form and table will be
+ * rendered.
+*/
 function CosmosSetupPage() {
   const classes = useStyles();
 
