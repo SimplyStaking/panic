@@ -3,9 +3,12 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
-import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import CosmosChainsTableContainer from '../../containers/chains/cosmos/cosmosChainsTableContainer';
-import SubstrateChainsTableContainer from '../../containers/chains/substrate/substrateChainsTableContainer';
+import NavigationButtonContainer from
+  '../../containers/global/navigationButtonContainer';
+import CosmosChainsTableContainer from
+  '../../containers/chains/cosmos/cosmosChainsTableContainer';
+import SubstrateChainsTableContainer from
+  '../../containers/chains/substrate/substrateChainsTableContainer';
 import ChainAccordion from './chainAccordion';
 import CosmosIcon from '../../assets/icons/cosmos.png';
 import SubstrateIcon from '../../assets/icons/substrate.png';
