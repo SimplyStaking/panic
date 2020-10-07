@@ -43,7 +43,7 @@ const TwilioForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.configName !== true}
+                  error={errors.configName}
                   value={values.configName}
                   type="text"
                   name="configName"
@@ -67,7 +67,7 @@ const TwilioForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.accountSid !== true}
+                  error={errors.accountSid}
                   value={values.accountSid}
                   type="text"
                   name="accountSid"
@@ -91,7 +91,7 @@ const TwilioForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.authToken !== true}
+                  error={errors.authToken}
                   value={values.authToken}
                   type="text"
                   name="authToken"
@@ -115,7 +115,7 @@ const TwilioForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.twilioPhoneNo !== true}
+                  error={errors.twilioPhoneNo}
                   value={values.twilioPhoneNo}
                   type="text"
                   name="twilioPhoneNo"
@@ -148,7 +148,7 @@ const TwilioForm = (props) => {
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={!errors.twilioPhoneNumbersToDialValid !== true}
+                      error={errors.twilioPhoneNumbersToDialValid}
                       type="text"
                       name="twilioPhoneNumbersToDialValid"
                       placeholder="Add Phone Numbers"

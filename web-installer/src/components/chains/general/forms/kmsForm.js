@@ -45,7 +45,7 @@ const KmsForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.kmsName !== true}
+                  error={errors.kmsName}
                   value={values.kmsName}
                   type="text"
                   name="kmsName"
@@ -69,7 +69,7 @@ const KmsForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.exporterUrl !== true}
+                  error={errors.exporterUrl}
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"

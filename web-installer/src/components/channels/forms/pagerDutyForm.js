@@ -37,7 +37,7 @@ const PagerDutyForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.configName !== true}
+                  error={errors.configName}
                   value={values.configName}
                   type="text"
                   name="configName"
@@ -61,7 +61,7 @@ const PagerDutyForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.apiToken !== true}
+                  error={errors.apiToken}
                   value={values.apiToken}
                   type="text"
                   name="apiToken"
@@ -85,7 +85,7 @@ const PagerDutyForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.integrationKey !== true}
+                  error={errors.integrationKey}
                   value={values.integrationKey}
                   type="text"
                   name="integrationKey"

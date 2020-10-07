@@ -39,7 +39,7 @@ const TelegramForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.botName !== true}
+                  error={errors.botName}
                   value={values.botName}
                   type="text"
                   name="botName"
@@ -63,7 +63,7 @@ const TelegramForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.botToken !== true}
+                  error={errors.botToken}
                   value={values.botToken}
                   type="text"
                   name="botToken"
@@ -87,7 +87,7 @@ const TelegramForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.chatID !== true}
+                  error={errors.chatID}
                   value={values.chatID}
                   type="text"
                   name="chatID"

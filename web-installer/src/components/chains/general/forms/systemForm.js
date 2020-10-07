@@ -57,7 +57,7 @@ const SystemForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.name !== true}
+                  error={errors.name}
                   value={values.name}
                   type="text"
                   name="name"
@@ -81,7 +81,7 @@ const SystemForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.exporterUrl !== true}
+                  error={errors.exporterUrl}
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"

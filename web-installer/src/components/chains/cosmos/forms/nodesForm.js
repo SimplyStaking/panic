@@ -41,7 +41,7 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.cosmosNodeName !== true}
+                  error={errors.cosmosNodeName}
                   value={values.cosmosNodeName}
                   type="text"
                   name="cosmosNodeName"

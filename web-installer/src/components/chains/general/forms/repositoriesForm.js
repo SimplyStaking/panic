@@ -46,7 +46,7 @@ const RepositoriesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.repoName !== true}
+                  error={errors.repoName}
                   value={values.repoName}
                   type="text"
                   name="repoName"

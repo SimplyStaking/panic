@@ -43,7 +43,7 @@ const EmailForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.configName !== true}
+                  error={errors.configName}
                   value={values.configName}
                   type="text"
                   name="configName"
@@ -67,7 +67,7 @@ const EmailForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.smtp !== true}
+                  error={errors.smtp}
                   value={values.smtp}
                   type="text"
                   name="smtp"
@@ -91,7 +91,7 @@ const EmailForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.emailFrom !== true}
+                  error={errors.emailFrom}
                   value={values.emailFrom}
                   type="text"
                   name="emailFrom"
@@ -124,7 +124,7 @@ const EmailForm = (props) => {
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={!errors.emailsTo !== true}
+                      error={errors.emailsTo}
                       type="text"
                       name="emailsTo"
                       placeholder="Add a destination email."

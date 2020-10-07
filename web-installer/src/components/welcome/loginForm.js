@@ -41,7 +41,7 @@ const LoginForm = (props) => {
             </Grid>
             <Grid item xs={9}>
               <TextField
-                error={!errors.username !== true}
+                error={errors.username}
                 value={values.username}
                 type="text"
                 name="username"
@@ -65,7 +65,7 @@ const LoginForm = (props) => {
             </Grid>
             <Grid item xs={9}>
               <TextField
-                error={!errors.password !== true}
+                error={errors.password}
                 value={values.password}
                 type="password"
                 name="password"

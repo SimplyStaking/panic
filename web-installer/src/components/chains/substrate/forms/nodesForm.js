@@ -40,7 +40,7 @@ const NodesForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.substrateNodeName !== true}
+                  error={errors.substrateNodeName}
                   value={values.substrateNodeName}
                   type="text"
                   name="substrateNodeName"

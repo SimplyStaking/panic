@@ -79,7 +79,7 @@ const ChainNameForm = (props) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={!errors.chainName !== true}
+                  error={errors.chainName}
                   value={values.chainName}
                   type="text"
                   name="chainName"
