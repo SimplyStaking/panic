@@ -120,5 +120,8 @@ if __name__ == '__main__':
 # TODO: IMPORTANT: Error re-connection, qos, ack, mandatory true, topics etc,
 #     : exception handling in each function
 # TODO: Connection.close is imp
-# TODO: For mandatory=true to work, the queue must already be bounded, no queue it will fail (so there must already be a consumer) mandatory=true will not fail if the message is delivered to the consumer .. without it it only confirms that it was delviered to the exchange
+# TODO: For mandatory=true to work, the queue must already be bounded, no queue
+#       it will fail (so there must already be a consumer) mandatory=true will
+#       not fail if the message is delivered to the consumer .. without it it
+#       only confirms that it was delviered to the exchange
 # TODO: Implement pika with authentication as well

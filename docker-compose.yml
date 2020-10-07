@@ -67,6 +67,8 @@ services:
       - 'REDIS_HOST=${REDIS_HOST}'
       - 'REDIS_PORT=${REDIS_PORT}'
       - 'RABBIT_HOST=${RABBIT_HOST}'
+      - 'LOGGING_LEVEL=${LOGGING_LEVEL}'
+      - 'SYSTEM_MONITOR_LOG_FILE_TEMPLATE=${SYSTEM_MONITOR_LOG_FILE_TEMPLATE}'
       - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}, ${REDIS_HOST}:${REDIS_PORT}, ${RABBIT_HOST}:${RABBIT_PORT}'
     build: .
     image: 'simplyvc/panic_alerter:1.0.0'
