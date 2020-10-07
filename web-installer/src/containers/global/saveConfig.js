@@ -337,22 +337,20 @@ class SaveConfig extends Component {
     channelConfigs.pagerduty = general.pagerduties;
 
     // Save the channels
-    await sendConfig('chain', 'channels_config.ini', 'general', 'general',
-      channelConfigs);
+    await sendConfig('general', 'channels_config.ini', '', '', channelConfigs);
 
     const generalSystems = {};
     for (let k = 0; k < general.systems.length; k += 1) {
       generalSystems[general.systems[k]] = systems.byId[general.systems[k]];
     }
-    await sendConfig('chain', 'systems_config.ini', 'general', 'general',
-      generalSystems);
+    await sendConfig('general', 'systems_config.ini', '', '', generalSystems);
 
     const generalRepos = {};
     for (let k = 0; k < general.repositories.length; k += 1) {
-      generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
+      generalRepos[general.repositories[k]] =
+        repositories.byId[general.repositories[k]];
     }
-    await sendConfig('chain', 'repos_config.ini', 'general', 'general',
-      generalRepos);
+    await sendConfig('general', 'repos_config.ini', '', '', generalRepos);
 
     // Redo the structure of these alerts to be able to save them in the .ini
     // file
@@ -372,11 +370,10 @@ class SaveConfig extends Component {
         .thresholdAlerts.byId[id].warning.enabled;
     }
 
-    await sendConfig('chain', 'threshold_alerts_config.ini', 'general',
-      'general', generalThreshold);
+    await sendConfig('general', 'threshold_alerts_config.ini', '', '',
+      generalThreshold);
 
-    await sendConfig('chain', 'periodic_config.ini', 'general',
-      'general', { periodic });
+    await sendConfig('general', 'periodic_config.ini', '', '', { periodic });
 
     ToastsStore.success('Saved General configs!', 5000);
   }
