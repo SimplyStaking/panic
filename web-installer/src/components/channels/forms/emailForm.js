@@ -174,7 +174,7 @@ const EmailForm = (props) => {
                   value={values.password}
                   type="password"
                   name="password"
-                  placeholder="password"
+                  placeholder="*****************"
                   onChange={handleChange}
                   fullWidth
                 />

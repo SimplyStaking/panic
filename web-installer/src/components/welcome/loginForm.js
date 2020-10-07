@@ -25,7 +25,7 @@ const LoginForm = (props) => {
   // If authenetication is accepted by the backend, change the page
   // to the channels setup and set authenticated.
   function setAuthentication(authenticated) {
-    if (authenticated === true) {
+    if (authenticated) {
       pageChanger({ page: CHANNELS_PAGE });
       authenticate(authenticated);
     }
