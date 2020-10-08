@@ -2,7 +2,8 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from '../../../components/chains/substrate/forms/nodesForm';
 import NodesTable from '../../../components/chains/substrate/tables/nodesTable';
-import { addNodeSubstrate, removeNodeSubstrate } from '../../../redux/actions/substrateActions';
+import { addNodeSubstrate, removeNodeSubstrate } from
+  '../../../redux/actions/substrateActions';
 import NodeSchema from './schemas/nodeSchema';
 import SubstrateData from '../../../data/substrate';
 

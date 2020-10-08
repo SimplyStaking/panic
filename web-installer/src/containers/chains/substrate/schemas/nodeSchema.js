@@ -11,7 +11,8 @@ const NodeSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < nodesConfig.allIds.length; i += 1) {
-          if (nodesConfig.byId[nodesConfig.allIds[i]].substrateNodeName === value) {
+          if (nodesConfig.byId[nodesConfig.allIds[i]].substrateNodeName
+              === value) {
             return false;
           }
         }

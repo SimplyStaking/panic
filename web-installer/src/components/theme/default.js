@@ -1,4 +1,4 @@
-import { makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import { createMuiTheme } from '@material-ui/core/styles';
 
 // This is used to style tooltips through out all forms.
 const defaultTheme = createMuiTheme();
@@ -14,12 +14,4 @@ const theme = createMuiTheme({
   },
 });
 
-const useStyles = makeStyles(() => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-}));
-
-export { defaultTheme, theme, useStyles };
+export { defaultTheme, theme };

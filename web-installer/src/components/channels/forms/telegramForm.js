@@ -9,17 +9,15 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
 import { SendTestAlertButton } from '../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../theme/default';
+import { defaultTheme, theme } from '../../theme/default';
 import Data from '../../../data/channels';
 
 const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
-  const classes = useStyles();
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
-        <form onSubmit={handleSubmit} className={classes.root}>
+        <form onSubmit={handleSubmit} className="root">
           <Typography variant="subtitle1" gutterBottom className="greyBackground">
             <Box m={2} p={3}>
               <p>{Data.telegram.description}</p>

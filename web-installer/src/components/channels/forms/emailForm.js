@@ -9,12 +9,11 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
 import { SendTestEmailButton } from '../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../theme/default';
+import { defaultTheme, theme } from '../../theme/default';
 import Data from '../../../data/channels';
 
 const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
-  const classes = useStyles();
 
   const updateToEmails = (event, emailsTo) => {
     setFieldValue('emailsTo', emailsTo);
@@ -29,7 +28,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
           </Box>
         </Typography>
         <Divider />
-        <form onSubmit={handleSubmit} className={classes.root}>
+        <form onSubmit={handleSubmit} className="root">
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>

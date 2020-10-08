@@ -1,34 +1,14 @@
 import React from 'react';
 import { Box } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import LoginContainer from '../../containers/welcome/loginContainer';
-import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
+import NavigationButtonContainer from
+  '../../containers/global/navigationButtonContainer';
 import { CHANNELS_PAGE, START } from '../../constants/constants';
 import Data from '../../data/welcome';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
-
 function WelcomePage() {
-  const classes = useStyles();
-
   return (
     <div>
       <Title
@@ -37,7 +17,7 @@ function WelcomePage() {
       <MainText
         text={Data.welcome.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

@@ -1,28 +1,9 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
 import StepManager from '../../../containers/chains/cosmos/stepManager';
 import Data from '../../../data/cosmos';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
 
 /*
  * Main cosmos setup page, this will be constant through out the cosmos chain
@@ -32,8 +13,6 @@ const useStyles = makeStyles((theme) => ({
  * rendered.
 */
 function CosmosSetupPage() {
-  const classes = useStyles();
-
   return (
     <div>
       <Title
@@ -42,7 +21,7 @@ function CosmosSetupPage() {
       <MainText
         text={Data.cosmos.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

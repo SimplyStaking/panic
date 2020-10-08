@@ -14,7 +14,7 @@ import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import { PingNodeExpoter } from '../../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../../theme/default';
+import { defaultTheme, theme } from '../../../theme/default';
 import Data from '../../../../data/chains';
 
 /*
@@ -24,7 +24,6 @@ import Data from '../../../../data/chains';
  */
 const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   pageChanger}) => {
-  const classes = useStyles();
 
   // Next page is infact returning back to the Chains Setings Page
   // but keeping the name the same for consistency
@@ -43,7 +42,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onSubmit={handleSubmit} className={classes.root}>
+          <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> System Name: </Typography>

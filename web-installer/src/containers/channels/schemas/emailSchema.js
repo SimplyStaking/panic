@@ -24,24 +24,13 @@ const EmailSchema = (props) => Yup.object().shape({
   emailFrom: Yup.string()
     .email('Email is not valid.')
     .required('Email From is required.'),
-  emailsTo: Yup.string()
-    .test(
-      'invalid-email-entered',
-      'Invalid email detected, please enter a valid email.',
-      (value) => {
-        if (value.length === 0) {
-          return true;
-        }
-        const emailList = value.split(',');
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        for (let i = 0; i < emailList.length; i += 1) {
-          if (!emailRegex.test(emailList[i])) {
-            return false;
-          }
-        }
-        return true;
-      },
-    )
+  emailsTo: Yup.array()
+    .transform(function(value, originalValue) {
+      if (this.isType(value) && value !== null) {
+        return value;
+      }
+      return originalValue ? originalValue.split(/[\s,]+/) : [];
+    }).of(Yup.string().email(({ value }) => `${value} is not a valid email `))
     .required('Email To is required.'),
 });
 

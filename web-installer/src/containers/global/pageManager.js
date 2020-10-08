@@ -6,7 +6,8 @@ import WelcomePage from '../../components/welcome/welcomePage';
 import ChannelsPage from '../../components/channels/channelsPage';
 import ChainsPage from '../../components/chains/chainsPage';
 import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
-import SubstrateSetupPage from '../../components/chains/substrate/substrateSetupPage';
+import SubstrateSetupPage from
+  '../../components/chains/substrate/substrateSetupPage';
 import GeneralSetupPage from '../../components/general/generalSetupPage';
 import GeneralPage from '../../components/general/generalPage';
 import UsersPage from '../../components/users/usersPage';
@@ -72,14 +73,15 @@ class PageManager extends Component {
         await refreshAccessToken();
       } catch (e) {
         if (e.response) {
-          // The request was made and the server responded with a status code that
-          // falls out of the range of 2xx
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
           ToastsStore.error(
             `Could not get authentication status. Error: ${
               e.response.data.error}`, 5000,
           );
         } else {
-          // Something happened in setting up the request that triggered an Error
+          // Something happened in setting up the request that triggered an
+          // error
           ToastsStore.error(
             `Could not get authentication status. Error: ${e.message}`, 5000,
           );

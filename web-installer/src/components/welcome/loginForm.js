@@ -8,13 +8,11 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import { LoginButton } from '../../utils/buttons';
 import { CHANNELS_PAGE } from '../../constants/constants';
-import { defaultTheme, theme, useStyles } from '../theme/default';
+import { defaultTheme, theme } from '../theme/default';
 import Data from '../../data/welcome';
 
 const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
   authenticate}) => {
-  const classes = useStyles();
-
   // If authenetication is accepted by the backend, change the page
   // to the channels setup and set authenticated.
   function setAuthentication(authenticated) {
@@ -27,7 +25,7 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
-        <form onSubmit={handleSubmit} className={classes.root}>
+        <form onSubmit={handleSubmit} className="root">
           <Grid container spacing={3} justify="center" alignItems="center">
             <Grid item xs={2}>
               <Typography> Username: </Typography>

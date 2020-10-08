@@ -51,22 +51,26 @@ class SaveConfig extends Component {
     ToastsStore.success('Saved email configs!', 5000);
 
     if (pagerduties.allIds.length !== 0) {
-      await sendConfig('channel', 'pagerduty_config.ini', '', '', pagerduties.byId);
+      await sendConfig('channel', 'pagerduty_config.ini', '', '',
+        pagerduties.byId);
     }
     ToastsStore.success('Saved pagerduty configs!', 5000);
 
     if (telegrams.allIds.length !== 0) {
-      await sendConfig('channel', 'telegram_config.ini', '', '', telegrams.byId);
+      await sendConfig('channel', 'telegram_config.ini', '', '',
+        telegrams.byId);
     }
     ToastsStore.success('Saved telegram configs!', 5000);
 
     if (twilios.allIds.length !== 0) {
-      await sendConfig('channel', 'twilio_config.ini', '', '', twilios.byId);
+      await sendConfig('channel', 'twilio_config.ini', '', '',
+        twilios.byId);
     }
     ToastsStore.success('Saved twilio configs!', 5000);
 
     if (opsgenies.allIds.length !== 0) {
-      await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
+      await sendConfig('channel', 'opsgenie_config.ini', '', '',
+        opsgenies.byId);
     }
     ToastsStore.success('Saved opsgenie configs!', 5000);
 
@@ -152,7 +156,8 @@ class SaveConfig extends Component {
       await sendConfig('chain', 'repeat_alerts_config.ini',
         chainConfig.chainName, 'cosmos', repeatAlertsConfig);
 
-      // Redo the structure of these alerts to be able to save them in the .ini file
+      // Redo the structure of these alerts to be able to save them in the .ini
+      // file
       const thresholdAlertsConfig = {};
       for (let i = 0; i < chainConfig.thresholdAlerts.allIds.length; i += 1) {
         const id = chainConfig.thresholdAlerts.allIds[i];
@@ -249,7 +254,8 @@ class SaveConfig extends Component {
       await sendConfig('chain', 'channels_config.ini',
         chainConfig.chainName, 'substrate', channelConfigs);
 
-      // Redo the structure of these alerts to be able to save them in the .ini file
+      // Redo the structure of these alerts to be able to save them in the .ini
+      // file
       const repeatAlertsConfig = {};
       for (let i = 0; i < chainConfig.repeatAlerts.allIds.length; i += 1) {
         const id = chainConfig.repeatAlerts.allIds[i];
@@ -299,7 +305,8 @@ class SaveConfig extends Component {
       await sendConfig('chain', 'severity_alerts_config.ini',
         chainConfig.chainName, 'substrate', chainConfig.severityAlerts.byId);
 
-      // Redo the structure of these alerts to be able to save them in the .ini file
+      // Redo the structure of these alerts to be able to save them in the .ini
+      // file
       const timeWindowAlertsConfig = {};
       for (let i = 0; i < chainConfig.timeWindowAlerts.allIds.length; i += 1) {
         const id = chainConfig.timeWindowAlerts.allIds[i];

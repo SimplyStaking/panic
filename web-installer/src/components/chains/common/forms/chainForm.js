@@ -9,7 +9,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
 import NavigationButton from '../../../global/navigationButton';
-import { defaultTheme, theme, useStyles } from '../../../theme/default';
+import { defaultTheme, theme } from '../../../theme/default';
 
 /*
  * This form allows for the input of a chain name.
@@ -17,7 +17,6 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
 const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
   saveChainDetails, currentChain, updateChainDetails, pageChanger,
   clearChainId}) => {
-  const classes = useStyles();
 
   // NextStep function will save the chain name, step changer
   function nextStep(step) {
@@ -63,7 +62,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
         <Box py={4}>
           <form
             onSubmit={(e) => { e.preventDefault(); }}
-            className={classes.root}
+            className="root"
           >
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>

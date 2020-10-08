@@ -4,18 +4,15 @@ import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Grid, Switch, FormControlLabel,
 } from '@material-ui/core';
-import { useStyles } from '../../theme/default';
 import MainText from '../../global/mainText';
 
 const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
-  const classes = useStyles();
-
   return (
     <div>
       <MainText
         text="Preiodic alive reminder description"
       />
-      <form className={classes.root}>
+      <form className="root">
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={12} />
           <Grid item xs={2}>

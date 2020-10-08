@@ -9,7 +9,8 @@ import { resetCurrentChainIdSubstrate } from
   '../../../redux/actions/substrateActions';
 import { changePage, changeStep } from '../../../redux/actions/pageActions';
 import AlertsTable from '../../../components/chains/common/tables/alertsTable';
-import GeneralAlertsTable from '../../../components/chains/common/tables/generalAlertsTable';
+import GeneralAlertsTable from
+  '../../../components/chains/common/tables/generalAlertsTable';
 import { GLOBAL } from '../../../constants/constants';
 import CosmosData from '../../../data/cosmos';
 import SubstrateData from '../../../data/substrate';

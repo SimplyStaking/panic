@@ -11,7 +11,7 @@ import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import { PingRepoButton } from '../../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../../theme/default';
+import { defaultTheme, theme } from '../../../theme/default';
 
 /*
  * Repositories form contains all the information and structure needed to setup
@@ -20,7 +20,6 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  */
 const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
   setFieldValue, data}) => {
-  const classes = useStyles();
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -32,7 +31,7 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onSubmit={handleSubmit} className={classes.root}>
+          <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> Repository Name: </Typography>

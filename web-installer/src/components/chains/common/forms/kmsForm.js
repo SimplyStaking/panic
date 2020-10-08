@@ -11,7 +11,7 @@ import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import { PingNodeExpoter } from '../../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../../theme/default';
+import { defaultTheme, theme } from '../../../theme/default';
 
 /*
  * Contains the details to setup a KMS configuration to be monitored, this also
@@ -19,8 +19,6 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  */
 const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   data}) => {
-  const classes = useStyles();
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
@@ -31,7 +29,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onSubmit={handleSubmit} className={classes.root}>
+          <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> KMS Name: </Typography>

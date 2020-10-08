@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Box,
@@ -9,12 +8,6 @@ import {
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
 import { COSMOS_SETUP_PAGE } from '../../../../constants/constants';
-
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
@@ -24,7 +17,6 @@ const useStyles = makeStyles({
 const CosmosChainsTable = ({config, loadConfigDetails, pageChanger,
   removeChainDetails, removeNodeDetails, removeRepositoryDetails,
   removeKmsDetails}) => {
-  const classes = useStyles();
 
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -66,7 +58,7 @@ const CosmosChainsTable = ({config, loadConfigDetails, pageChanger,
   }
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="table" aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

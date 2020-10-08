@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button,
@@ -11,26 +10,19 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 /*
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
 const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
   }) => {
-  const classes = useStyles();
-
   if (chainConfig.byId[currentChain].nodes.length === 0) {
     return <div />;
   }
+
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="table" aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

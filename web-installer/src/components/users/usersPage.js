@@ -1,35 +1,16 @@
 import React from 'react';
 import { Grid, Box } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import Title from '../global/title';
 import MainText from '../global/mainText';
-import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
-import { UsersFormContainer, UsersTableContainer } from '../../containers/users/usersContainer';
+import NavigationButtonContainer from
+  '../../containers/global/navigationButtonContainer';
+import { UsersFormContainer, UsersTableContainer } from
+  '../../containers/users/usersContainer';
 import { GENERAL_PAGE, BACK } from '../../constants/constants';
 import SaveConfig from '../../containers/global/saveConfig';
 import Data from '../../data/users';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
-
 function UsersPage() {
-  const classes = useStyles();
-
   return (
     <div>
       <Title
@@ -38,7 +19,7 @@ function UsersPage() {
       <MainText
         text={Data.users.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

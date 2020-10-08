@@ -11,7 +11,7 @@ const NavigationButton = ({navigation, nextPage, buttonText}) => {
   }
 
   return (
-    <Box p={5} style={{ float: 'right' }}>
+    <Box p={5} className="button_float_right">
       <Button
         onClick={triggerNextPage}
         size="large"

@@ -10,12 +10,10 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
-import { defaultTheme, theme, useStyles } from '../../../theme/default';
+import { defaultTheme, theme } from '../../../theme/default';
 
 const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   data}) => {
-  const classes = useStyles();
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
@@ -26,7 +24,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         </Typography>
         <Divider />
         <Box py={4}>
-          <form onSubmit={handleSubmit} className={classes.root}>
+          <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
                 <Typography> Node Name: </Typography>

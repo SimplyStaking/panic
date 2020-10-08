@@ -2,7 +2,8 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import PagerDutyForm from '../../components/channels/forms/pagerDutyForm';
 import PagerDutyTable from '../../components/channels/tables/pagerDutyTable';
-import { addPagerDuty, removePagerDuty } from '../../redux/actions/channelActions';
+import { addPagerDuty, removePagerDuty } from
+  '../../redux/actions/channelActions';
 import PagerDutySchema from './schemas/pagerDutySchema';
 
 const Form = withFormik({

@@ -8,12 +8,10 @@ import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { SendTestOpsGenieButton } from '../../../utils/buttons';
-import { defaultTheme, theme, useStyles } from '../../theme/default';
+import { defaultTheme, theme } from '../../theme/default';
 import Data from '../../../data/channels';
 
 const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
-  const classes = useStyles();
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
@@ -23,7 +21,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
           </Box>
         </Typography>
         <Divider />
-        <form onSubmit={handleSubmit} className={classes.root}>
+        <form onSubmit={handleSubmit} className="root">
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>

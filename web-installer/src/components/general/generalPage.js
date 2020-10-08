@@ -1,5 +1,4 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
@@ -15,26 +14,7 @@ import {
 import PeriodicFormContainer from '../../containers/general/periodicContainer';
 import Data from '../../data/general';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
-
 function GeneralsPage() {
-  const classes = useStyles();
 
   return (
     <div>
@@ -44,7 +24,7 @@ function GeneralsPage() {
       <MainText
         text={Data.general.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

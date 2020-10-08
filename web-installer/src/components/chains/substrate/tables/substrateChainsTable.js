@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Box,
@@ -10,15 +9,8 @@ import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
 import { SUBSTRATE_SETUP_PAGE } from '../../../../constants/constants';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
   removeChainDetails, removeNodeDetails, removeRepositoryDetails}) => {
-  const classes = useStyles();
 
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -54,7 +46,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
   }
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="table" aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Grid, FormControlLabel, Checkbox, List, ListItem, Typography, Box,
 } from '@material-ui/core';
@@ -10,33 +9,26 @@ import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
   emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
   addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
   addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
   removeOpsGenieDetails}) => {
-  const classes = useStyles();
 
   const currentConfig = config.byId[currentChain];
 
   return (
-    <Grid container className={classes.root} spacing={2}>
+    <Grid container className="root" spacing={2}>
       {telegrams.allIds.length !== 0 && (
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
-              <Paper className={classes.paper}>
+              <Paper className="paper">
                 <Typography>
                   Telegram
                 </Typography>
                 <div
-                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                  className="tableColumn"
                 >
                   <List>
                     {telegrams.allIds.map((id) => (
@@ -76,7 +68,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
-              <Paper className={classes.paper}>
+              <Paper className="paper">
                 <Typography>
                   Twilio
                 </Typography>
@@ -121,7 +113,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
-              <Paper className={classes.paper}>
+              <Paper className="paper">
                 <Typography>
                   Email
                 </Typography>
@@ -166,7 +158,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
-              <Paper className={classes.paper}>
+              <Paper className="paper">
                 <Typography>
                   PagerDuty
                 </Typography>
@@ -211,12 +203,12 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
         <Grid item xs={4}>
           <Grid container justify="center" spacing={3}>
             <Grid item>
-              <Paper className={classes.paper}>
+              <Paper className="paper">
                 <Typography>
                   OpsGenie
                 </Typography>
                 <div
-                  style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
+                  className="tableColumn"
                 >
                   <List>
                     {opsgenies.allIds.map((id) => (

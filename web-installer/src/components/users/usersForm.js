@@ -2,23 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { TextField, Typography, Grid } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import { AddAccount } from '../../utils/buttons';
 
-const useStyles = makeStyles(() => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-}));
-
 const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
-  const classes = useStyles();
-
   return (
     <div>
-      <form onSubmit={handleSubmit} className={classes.root}>
+      <form onSubmit={handleSubmit} className="root">
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={2}>
             <Typography> Username: </Typography>

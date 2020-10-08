@@ -1,28 +1,9 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
 import StepManager from '../../../containers/chains/common/stepManager';
 import Data from '../../../data/general';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
 
 /*
  * Main general setup page, this will be constant through out the general
@@ -32,8 +13,6 @@ const useStyles = makeStyles((theme) => ({
  * be rendered.
 */
 function GeneralSetupPage() {
-  const classes = useStyles();
-
   return (
     <div>
       <Title
@@ -42,7 +21,7 @@ function GeneralSetupPage() {
       <MainText
         text={Data.general.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

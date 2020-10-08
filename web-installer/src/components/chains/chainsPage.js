@@ -1,5 +1,4 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
@@ -18,31 +17,11 @@ import {
 } from '../../constants/constants';
 import Data from '../../data/chains';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.primary,
-  },
-  icon: {
-    paddingRight: '1rem',
-  },
-  heading: {
-    fontSize: theme.typography.pxToRem(15),
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-}));
-
 /*
  * This page holds all the chain accordions, configured to load a chain setup
  * and the chains already setup.
  */
 function Chains() {
-  const classes = useStyles();
-
   return (
     <div>
       <Title
@@ -51,7 +30,7 @@ function Chains() {
       <MainText
         text={Data.chains.description}
       />
-      <Box p={2} className={classes.root}>
+      <Box p={2} className="flex_root">
         <Box
           p={3}
           border={1}

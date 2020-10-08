@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button,
@@ -12,23 +11,15 @@ import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 import { GLOBAL } from '../../../../constants/constants';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
-
 const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
-  const classes = useStyles();
-
   const currentConfig = config.byId[GLOBAL];
-
+  
   if (currentConfig.systems.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className="table" aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
