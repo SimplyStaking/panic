@@ -1,9 +1,9 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import RepositoriesForm from
-  '../../../components/chains/general/forms/repositoriesForm';
+  '../../../components/chains/common/forms/repositoriesForm';
 import RepositoriesTable from
-  '../../../components/chains/general/tables/repositoriesTable';
+  '../../../components/chains/common/tables/repositoriesTable';
 import { addRepository, removeRepository } from
   '../../../redux/actions/generalActions';
 import { GLOBAL } from '../../../constants/constants';

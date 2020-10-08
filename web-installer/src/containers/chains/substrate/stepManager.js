@@ -1,13 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsSubstrateTableContainer } from '../general/alertsContainer';
-import { SubstrateChainFormContainer } from '../general/chainContainer';
-import { ChannelsSubstrateTableContainer } from '../general/channelsContainer';
+import { AlertsSubstrateTableContainer } from '../common/alertsContainer';
+import { SubstrateChainFormContainer } from '../common/chainContainer';
+import { ChannelsSubstrateTableContainer } from '../common/channelsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import {
   RepositoriesSubstrateFormContainer, RepositoriesSubstrateTableContainer,
-} from '../general/repositoriesContainer';
+} from '../common/repositoriesContainer';
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, NODES_STEP,
   REPOSITORIES_STEP,

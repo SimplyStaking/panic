@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Box } from '@material-ui/core';
 import Title from '../../global/title';
 import MainText from '../../global/mainText';
-import StepManager from '../../../containers/chains/general/stepManager';
+import StepManager from '../../../containers/chains/common/stepManager';
 import Data from '../../../data/general';
 
 const useStyles = makeStyles((theme) => ({

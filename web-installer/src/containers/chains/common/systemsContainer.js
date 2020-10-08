@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import SystemForm from '../../../components/chains/general/forms/systemForm';
-import SystemTable from '../../../components/chains/general/tables/systemTable';
+import SystemForm from '../../../components/chains/common/forms/systemForm';
+import SystemTable from '../../../components/chains/common/tables/systemTable';
 import { addSystem, removeSystem } from '../../../redux/actions/generalActions';
 import { changeStep, changePage } from '../../../redux/actions/pageActions';
 import { GLOBAL } from '../../../constants/constants';

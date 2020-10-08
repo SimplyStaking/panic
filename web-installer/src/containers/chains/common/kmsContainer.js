@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import KmsForm from '../../../components/chains/general/forms/kmsForm';
-import KmsTable from '../../../components/chains/general/tables/kmsTable';
+import KmsForm from '../../../components/chains/common/forms/kmsForm';
+import KmsTable from '../../../components/chains/common/tables/kmsTable';
 import { addKms, removeKms } from '../../../redux/actions/generalActions';
 import KmsSchema from './schemas/kmsSchema';
 import CosmosData from '../../../data/cosmos';

@@ -6,10 +6,10 @@ import {
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from
-  '../../../../containers/chains/general/stepButtonContainer';
+  '../../../../containers/chains/common/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import {
-  CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP,
+  DONE, BACK, CHANNELS_STEP, CHAINS_STEP, GENERAL_PAGE
 } from '../../../../constants/constants';
 
 /*
@@ -228,7 +228,7 @@ const AlertsTable = (props) => {
               disabled={false}
               nextPage={nextPage}
               buttonText={DONE}
-              navigation={CHAINS_PAGE}
+              navigation={GENERAL_PAGE}
             />
           </Box>
         </Grid>

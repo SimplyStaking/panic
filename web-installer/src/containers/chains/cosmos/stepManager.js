@@ -1,15 +1,15 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsCosmosTableContainer } from '../general/alertsContainer';
-import { CosmosChainFormContainer } from '../general/chainContainer';
-import { ChannelsCosmosTableContainer } from '../general/channelsContainer';
+import { AlertsCosmosTableContainer } from '../common/alertsContainer';
+import { CosmosChainFormContainer } from '../common/chainContainer';
+import { ChannelsCosmosTableContainer } from '../common/channelsContainer';
 import { KmsCosmosFormContainer, KmsCosmosTableContainer } from
-  '../general/kmsContainer';
+  '../common/kmsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import {
   RepositoriesCosmosFormContainer, RepositoriesCosmosTableContainer,
-} from '../general/repositoriesContainer';
+} from '../common/repositoriesContainer';
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, KMS_STEP, NODES_STEP,
   REPOSITORIES_STEP,

@@ -1,11 +1,16 @@
 import React from 'react';
-import { Grid, Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import { Box } from '@material-ui/core';
 import Title from '../global/title';
 import MainText from '../global/mainText';
-import NavigationButtonContainer from '../../containers/global/navigationButtonContainer';
+import NavigationButtonContainer from
+  '../../containers/global/navigationButtonContainer';
+import GeneralAccordion from './generalAccordion';
+import SystemIcon from '../../assets/icons/system.svg';
+import TimeIcon from '../../assets/icons/time.svg';
 import {
-  USERS_PAGE, CHAINS_PAGE, NEXT, BACK,
+  CONFIGURE, GENERAL_SETUP_PAGE, GENERAL, PERIODIC, NEXT, USERS_PAGE,
+  CHAINS_PAGE, BACK,
 } from '../../constants/constants';
 import PeriodicFormContainer from '../../containers/general/periodicContainer';
 import Data from '../../data/general';
@@ -46,11 +51,23 @@ function GeneralsPage() {
           borderRadius="borderRadius"
           borderColor="grey.300"
         >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <PeriodicFormContainer />
-            </Grid>
-          </Grid>
+          <GeneralAccordion
+            icon={TimeIcon}
+            name={PERIODIC}
+            button={( <div />)}
+            form={(<PeriodicFormContainer />)}
+          />
+          <GeneralAccordion
+            icon={SystemIcon}
+            name={GENERAL}
+            button={(
+              <NavigationButtonContainer
+                text={CONFIGURE}
+                navigation={GENERAL_SETUP_PAGE}
+              />
+            )}
+            form={(<div />)}
+          />
         </Box>
       </Box>
       <NavigationButtonContainer

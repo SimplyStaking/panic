@@ -8,15 +8,16 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
 import StepButtonContainer from
-  '../../../../containers/chains/general/stepButtonContainer';
-import { PingNodeExpoter } from '../../../../utils/buttons';
+  '../../../../containers/chains/common/stepButtonContainer';
+import { PingRepoButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
 /*
- * Contains the details to setup a KMS configuration to be monitored, this also
- * has the functionality to test the Node Exporter IP address that will be given.
+ * Repositories form contains all the information and structure needed to setup
+ * a repo configuration. Contains functionality to test if the provided repo
+ * is correct.
  */
-const KmsForm = (props) => {
+const RepositoriesForm = (props) => {
   const classes = useStyles();
 
   const {
@@ -33,7 +34,7 @@ const KmsForm = (props) => {
       <div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{data.kmsForm.description}</p>
+            <p>{data.repoForm.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -41,16 +42,16 @@ const KmsForm = (props) => {
           <form onSubmit={handleSubmit} className={classes.root}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> KMS Name: </Typography>
+                <Typography> Repository Name: </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.kmsName}
-                  value={values.kmsName}
+                  error={errors.repoName}
+                  value={values.repoName}
                   type="text"
-                  name="kmsName"
-                  placeholder={data.kmsForm.nameHolder}
-                  helperText={errors.kmsName ? errors.kmsName : ''}
+                  name="repoName"
+                  placeholder={data.repoForm.nameHolder}
+                  helperText={errors.repoName ? errors.repoName : ''}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -58,51 +59,24 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={data.kmsForm.nameTip} placement="left">
+                    <Tooltip title={data.repoForm.nameTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
-              </Grid>
-              <Grid item xs={9}>
-                <TextField
-                  error={errors.exporterUrl}
-                  value={values.exporterUrl}
-                  type="text"
-                  name="exporterUrl"
-                  placeholder={data.kmsForm.exporterUrlHolder}
-                  helperText={errors.exporterUrl ? errors.exporterUrl : ''}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={1}>
-                <Grid container justify="center">
-                  <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.exporterUrlTip}
-                      placement="left"
-                    >
-                      <InfoIcon />
-                    </Tooltip>
-                  </MuiThemeProvider>
-                </Grid>
-              </Grid>
-              <Grid item xs={2}>
-                <Typography> Monitor KMS: </Typography>
+                <Typography> Monitor Repository: </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorKms}
+                      checked={values.monitorRepo}
                       onClick={() => {
-                        setFieldValue('monitorKms', !values.monitorKms);
+                        setFieldValue('monitorRepo', !values.monitorRepo);
                       }}
-                      name="monitorKms"
+                      name="monitorRepo"
                       color="primary"
                     />
                   )}
@@ -111,10 +85,7 @@ const KmsForm = (props) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.monitorKmsTip}
-                      placement="left"
-                    >
+                    <Tooltip title={data.repoForm.monitorTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -130,9 +101,9 @@ const KmsForm = (props) => {
                   alignItems="center"
                 >
                   <Box px={2}>
-                    <PingNodeExpoter
+                    <PingRepoButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      exporterUrl={values.exporterUrl}
+                      repo={values.repoName}
                     />
                     <Button
                       variant="outlined"
@@ -141,7 +112,7 @@ const KmsForm = (props) => {
                       type="submit"
                     >
                       <Box px={2}>
-                        Add KMS
+                        Add Repository
                       </Box>
                     </Button>
                   </Box>
@@ -152,7 +123,7 @@ const KmsForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={BACK}
-                    navigation={data.kmsForm.backStep}
+                    navigation={data.repoForm.backStep}
                   />
                 </Box>
               </Grid>
@@ -162,7 +133,7 @@ const KmsForm = (props) => {
                   <StepButtonContainer
                     disabled={false}
                     text={NEXT}
-                    navigation={data.kmsForm.nextStep}
+                    navigation={data.repoForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -174,31 +145,27 @@ const KmsForm = (props) => {
   );
 };
 
-KmsForm.propTypes = {
+RepositoriesForm.propTypes = {
   errors: PropTypes.shape({
-    kmsName: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    repoName: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    kmsName: PropTypes.string.isRequired,
-    exporterUrl: PropTypes.string.isRequired,
-    monitorKms: PropTypes.bool.isRequired,
+    repoName: PropTypes.string.isRequired,
+    monitorRepo: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
-    kmsForm: PropTypes.shape({
+    repoForm: PropTypes.shape({
       description: PropTypes.string.isRequired,
-      exporterUrlHolder: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
-      exporterUrlTip: PropTypes.string.isRequired,
-      monitorKmsTip: PropTypes.string.isRequired,
+      monitorTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
 };
 
-export default KmsForm;
+export default RepositoriesForm;

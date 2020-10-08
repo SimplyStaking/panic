@@ -10,7 +10,7 @@ import {
   NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
 } from '../../../../constants/constants';
 import StepButtonContainer from
-  '../../../../containers/chains/general/stepButtonContainer';
+  '../../../../containers/chains/common/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
 import { PingNodeExpoter } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';

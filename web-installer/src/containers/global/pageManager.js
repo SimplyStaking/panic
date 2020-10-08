@@ -7,7 +7,7 @@ import ChannelsPage from '../../components/channels/channelsPage';
 import ChainsPage from '../../components/chains/chainsPage';
 import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
 import SubstrateSetupPage from '../../components/chains/substrate/substrateSetupPage';
-import GeneralSetupPage from '../../components/chains/general/generalSetupPage';
+import GeneralSetupPage from '../../components/general/generalSetupPage';
 import GeneralPage from '../../components/general/generalPage';
 import UsersPage from '../../components/users/usersPage';
 import {

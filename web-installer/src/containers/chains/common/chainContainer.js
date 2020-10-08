@@ -1,6 +1,6 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import ChainForm from '../../../components/chains/general/forms/chainForm';
+import ChainForm from '../../../components/chains/common/forms/chainForm';
 import {
   addChainCosmos, updateChainCosmos, resetCurrentChainIdCosmos,
 } from '../../../redux/actions/cosmosActions';

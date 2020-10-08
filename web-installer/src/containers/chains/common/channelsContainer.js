@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import ChannelsTable from
-  '../../../components/chains/general/tables/channelsTable';
+  '../../../components/chains/common/tables/channelsTable';
 import { GLOBAL } from '../../../constants/constants';
 import {
   addTelegramChannel, removeTelegramChannel, addTwilioChannel,
