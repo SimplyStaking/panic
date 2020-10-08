@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -15,16 +16,11 @@ const useStyles = makeStyles({
   },
 });
 
-const SubstrateChainsTable = (props) => {
+const SubstrateChainsTable = (config, loadConfigDetails, pageChanger,
+  removeChainDetails, removeNodeDetails, removeRepositoryDetails) => {
   const classes = useStyles();
 
-  const {
-    config,
-    loadConfigDetails,
-  } = props;
-
   const loadConfiguration = (page, id) => {
-    const { pageChanger } = props;
     loadConfigDetails({ id });
     pageChanger({ page });
   };
@@ -32,11 +28,6 @@ const SubstrateChainsTable = (props) => {
   // We have to clean up all the other reducers once a chain configuration
   // is completely removed
   function clearAllChainDetails(chainID) {
-    const {
-      removeChainDetails,
-      removeNodeDetails,
-      removeRepositoryDetails,
-    } = props;
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
     const payload = { parentId: chainID, id: '' };
@@ -100,7 +91,7 @@ const SubstrateChainsTable = (props) => {
   );
 };
 
-SubstrateChainsTable.propTypes = {
+SubstrateChainsTable.propTypes = forbidExtraProps({
   config: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -113,6 +104,6 @@ SubstrateChainsTable.propTypes = {
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
-};
+});
 
 export default SubstrateChainsTable;

@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
 } from '@material-ui/core';
@@ -17,17 +18,9 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  * a repo configuration. Contains functionality to test if the provided repo
  * is correct.
  */
-const RepositoriesForm = (props) => {
+const RepositoriesForm = (errors, values, handleSubmit, handleChange,
+  setFieldValue, data) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-    data,
-  } = props;
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -145,7 +138,7 @@ const RepositoriesForm = (props) => {
   );
 };
 
-RepositoriesForm.propTypes = {
+RepositoriesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     repoName: PropTypes.string,
   }).isRequired,
@@ -166,6 +159,6 @@ RepositoriesForm.propTypes = {
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-};
+});
 
 export default RepositoriesForm;

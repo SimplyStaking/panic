@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
 } from '@material-ui/core';
@@ -16,17 +17,9 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  * Contains the details to setup a KMS configuration to be monitored, this also
  * has the functionality to test the Node Exporter IP address that will be given.
  */
-const KmsForm = (props) => {
+const KmsForm = (errors, values, handleSubmit, handleChange, setFieldValue,
+  data) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-    data,
-  } = props;
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -174,7 +167,7 @@ const KmsForm = (props) => {
   );
 };
 
-KmsForm.propTypes = {
+KmsForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     kmsName: PropTypes.string,
     exporterUrl: PropTypes.string,
@@ -199,6 +192,6 @@ KmsForm.propTypes = {
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-};
+});
 
 export default KmsForm;

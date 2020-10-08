@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   FormControlLabel, Checkbox, Typography, TextField, Grid, Box, MenuItem,
@@ -17,15 +18,9 @@ import {
  * AlertsTable will show display all the 4 alert types together with the
  * functions to directly edit them.
 */
-const AlertsTable = (props) => {
-  const {
-    config,
-    currentChain,
-    updateRepeatAlertDetails,
-    updateTimeWindowAlertDetails,
-    updateThresholdAlertDetails,
-    updateSeverityAlertDetails,
-  } = props;
+const AlertsTable = (config, currentChain, updateRepeatAlertDetails,
+  updateTimeWindowAlertDetails, updateThresholdAlertDetails,
+  updateSeverityAlertDetails, pageChanger, stepChanger, clearChainId) => {
 
   // Assigning buffer values as they become too long
   const RepeatAlerts = config.byId[currentChain].repeatAlerts;
@@ -34,10 +29,6 @@ const AlertsTable = (props) => {
   const SeverityAlerts = config.byId[currentChain].severityAlerts;
 
   const nextPage = (page) => {
-    const {
-      pageChanger, stepChanger, clearChainId,
-    } = props;
-
     const payload = {
       step: CHAINS_STEP,
     };
@@ -725,7 +716,7 @@ const AlertsTable = (props) => {
   );
 };
 
-AlertsTable.propTypes = {
+AlertsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
   config: PropTypes.shape({
@@ -796,6 +787,6 @@ AlertsTable.propTypes = {
   updateTimeWindowAlertDetails: PropTypes.func.isRequired,
   updateThresholdAlertDetails: PropTypes.func.isRequired,
   updateSeverityAlertDetails: PropTypes.func.isRequired,
-};
+});
 
 export default AlertsTable;

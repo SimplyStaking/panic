@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { Accordion } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
@@ -25,13 +26,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function ChannelAccordion(props) {
+function ChannelAccordion(icon, name, form) {
   const classes = useStyles();
-  const {
-    icon,
-    name,
-    form,
-  } = props;
 
   return (
     <div className={classes.root}>
@@ -63,10 +59,10 @@ function ChannelAccordion(props) {
   );
 }
 
-ChannelAccordion.propTypes = {
+ChannelAccordion.propTypes = forbidExtraProps({
   icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   form: PropTypes.element.isRequired,
-};
+});
 
 export default ChannelAccordion;

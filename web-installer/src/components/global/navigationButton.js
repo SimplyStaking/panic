@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 
-const NavigationButton = (props) => {
-  const { navigation, nextPage, buttonText } = props;
+const NavigationButton = (navigation, nextPage, buttonText) => {
 
   function triggerNextPage(e) {
     e.preventDefault();
@@ -24,10 +24,10 @@ const NavigationButton = (props) => {
   );
 };
 
-NavigationButton.propTypes = {
+NavigationButton.propTypes = forbidExtraProps({
   navigation: PropTypes.string.isRequired,
   nextPage: PropTypes.func.isRequired,
   buttonText: PropTypes.string.isRequired,
-};
+});
 
 export default NavigationButton;

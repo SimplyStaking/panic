@@ -9,12 +9,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const PagerDutyTable = (props) => {
-  const {
-    pagerDuties,
-    removePagerDutyDetails,
-  } = props;
-
+const PagerDutyTable = (pagerDuties, removePagerDutyDetails) => {
   if (pagerDuties.allIds.length === 0) {
     return <div />;
   }

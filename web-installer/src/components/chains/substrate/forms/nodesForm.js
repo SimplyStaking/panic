@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
 } from '@material-ui/core';
@@ -11,17 +12,9 @@ import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
-const NodesForm = (props) => {
+const NodesForm = (errors, values, handleSubmit, handleChange, setFieldValue,
+  data) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-    data,
-  } = props;
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -362,7 +355,7 @@ const NodesForm = (props) => {
   );
 };
 
-NodesForm.propTypes = {
+NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     substrateNodeName: PropTypes.string,
   }).isRequired,
@@ -404,6 +397,6 @@ NodesForm.propTypes = {
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-};
+});
 
 export default NodesForm;

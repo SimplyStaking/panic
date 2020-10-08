@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
 } from '@material-ui/core';
@@ -11,16 +12,9 @@ import { SendTestEmailButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const EmailForm = (props) => {
+const EmailForm = (errors, values, handleSubmit, handleChange, setFieldValue
+  ) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-  } = props;
 
   const updateToEmails = (event, emailsTo) => {
     setFieldValue('emailsTo', emailsTo);
@@ -283,7 +277,7 @@ const EmailForm = (props) => {
   );
 };
 
-EmailForm.propTypes = {
+EmailForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     configName: PropTypes.string,
     smtp: PropTypes.string,
@@ -307,6 +301,6 @@ EmailForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-};
+});
 
 export default EmailForm;

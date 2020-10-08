@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Typography from '@material-ui/core/Typography';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import Box from '@material-ui/core/Box';
 
-const Title = (props) => {
-  const { text } = props;
+const Title = (text) => {
   return (
     <Box pt={3}>
       <Typography
@@ -19,8 +19,8 @@ const Title = (props) => {
   );
 };
 
-Title.propTypes = {
+Title.propTypes = forbidExtraProps({
   text: PropTypes.string.isRequired,
-};
+});
 
 export default Title;

@@ -10,12 +10,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const EmailTable = (props) => {
-  const {
-    emails,
-    removeEmailDetails,
-  } = props;
-
+const EmailTable = (emails, removeEmailDetails) => {
   if (emails.allIds.length === 0) {
     return <div />;
   }

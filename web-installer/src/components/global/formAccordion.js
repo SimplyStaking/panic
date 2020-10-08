@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { Accordion, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
@@ -25,14 +26,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function FormAccordion(props) {
+function FormAccordion(icon, name, form, table) {
   const classes = useStyles();
-  const {
-    icon,
-    name,
-    form,
-    table,
-  } = props;
 
   return (
     <div className={classes.root}>
@@ -71,11 +66,11 @@ function FormAccordion(props) {
   );
 }
 
-FormAccordion.propTypes = {
+FormAccordion.propTypes = forbidExtraProps({
   icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   form: PropTypes.element.isRequired,
   table: PropTypes.element.isRequired,
-};
+});
 
 export default FormAccordion;

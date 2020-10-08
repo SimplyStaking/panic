@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Box, Typography, Grid, Tooltip,
 } from '@material-ui/core';
@@ -10,17 +11,9 @@ import { CHANNELS_PAGE } from '../../constants/constants';
 import { defaultTheme, theme, useStyles } from '../theme/default';
 import Data from '../../data/welcome';
 
-const LoginForm = (props) => {
+const LoginForm = (errors, values, handleSubmit, handleChange, pageChanger,
+  authenticate) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    pageChanger,
-    authenticate,
-  } = props;
 
   // If authenetication is accepted by the backend, change the page
   // to the channels setup and set authenticated.
@@ -105,7 +98,7 @@ const LoginForm = (props) => {
   );
 };
 
-LoginForm.propTypes = {
+LoginForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     username: PropTypes.string,
     password: PropTypes.string,
@@ -118,6 +111,6 @@ LoginForm.propTypes = {
   handleChange: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
   authenticate: PropTypes.func.isRequired,
-};
+});
 
 export default LoginForm;

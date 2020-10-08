@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
 } from '@material-ui/core';
@@ -10,15 +11,8 @@ import { SendTestOpsGenieButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const OpsGenieForm = (props) => {
+const OpsGenieForm = (errors, values, handleSubmit, handleChange) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-  } = props;
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -197,7 +191,7 @@ const OpsGenieForm = (props) => {
   );
 };
 
-OpsGenieForm.propTypes = {
+OpsGenieForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     configName: PropTypes.string,
     apiToken: PropTypes.string,
@@ -213,6 +207,6 @@ OpsGenieForm.propTypes = {
     error: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
-};
+});
 
 export default OpsGenieForm;

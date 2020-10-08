@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { TextField, Typography, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { AddAccount } from '../../utils/buttons';
@@ -12,15 +13,8 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const UsersForm = (props) => {
+const UsersForm = (errors, values, handleSubmit, handleChange) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-  } = props;
 
   return (
     <div>
@@ -72,7 +66,7 @@ const UsersForm = (props) => {
   );
 };
 
-UsersForm.propTypes = {
+UsersForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     username: PropTypes.string,
     password: PropTypes.string,
@@ -83,6 +77,6 @@ UsersForm.propTypes = {
     password: PropTypes.string.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
-};
+});
 
 export default UsersForm;

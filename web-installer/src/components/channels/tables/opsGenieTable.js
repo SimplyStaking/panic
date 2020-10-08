@@ -9,12 +9,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const OpsGenieTable = (props) => {
-  const {
-    opsGenies,
-    removeOpsGenieDetails,
-  } = props;
-
+const OpsGenieTable = (opsGenies, removeOpsGenieDetails) => {
   if (opsGenies.allIds.length === 0) {
     return <div />;
   }

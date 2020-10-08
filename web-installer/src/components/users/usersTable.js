@@ -14,13 +14,8 @@ const useStyles = makeStyles({
   },
 });
 
-const UsersTable = (props) => {
+const UsersTable = (users, removeUserDetails) => {
   const classes = useStyles();
-
-  const {
-    users,
-    removeUserDetails,
-  } = props;
 
   // Do not show users table if there are no users
   if (users.length === 0) {

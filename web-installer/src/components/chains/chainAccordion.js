@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { Accordion, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
@@ -29,14 +30,8 @@ const useStyles = makeStyles((theme) => ({
  * Accordion, drop down that contains the chain icon, name, table containing
  * all the setup chains which can be loaded.
 */
-function ChainAccordion(props) {
+function ChainAccordion(icon, name, button, table) {
   const classes = useStyles();
-  const {
-    icon,
-    name,
-    button,
-    table,
-  } = props;
 
   return (
     <div className={classes.root}>
@@ -76,11 +71,11 @@ function ChainAccordion(props) {
   );
 }
 
-ChainAccordion.propTypes = {
+ChainAccordion.propTypes = forbidExtraProps({
   icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   button: PropTypes.element.isRequired,
   table: PropTypes.element.isRequired,
-};
+});
 
 export default ChainAccordion;

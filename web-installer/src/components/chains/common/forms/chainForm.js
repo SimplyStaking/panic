@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Box, Grid, Tooltip,
 } from '@material-ui/core';
@@ -13,21 +14,13 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
 /*
  * This form allows for the input of a chain name.
  */
-const ChainNameForm = (props) => {
+const ChainNameForm = (errors, handleChange, values, data, stepChanger,
+  saveChainDetails, currentChain, updateChainDetails, pageChanger,
+  clearChainId ) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    handleChange,
-    values,
-    data,
-  } = props;
 
   // NextStep function will save the chain name, step changer
   function nextStep(step) {
-    const {
-      stepChanger, saveChainDetails, currentChain, updateChainDetails,
-    } = props;
     // If there is a current chain assigned already, overwrite the value
     // Otherwise add a new chain name.
     if (currentChain) {
@@ -48,7 +41,6 @@ const ChainNameForm = (props) => {
   // Next page is infact returning back to the Chains Setings Page
   // but keeping the name the same for consistency
   function nextPage(page) {
-    const { pageChanger, clearChainId } = props;
     // Clear the current chain, id we are working on.
     clearChainId();
     // Change page
@@ -127,7 +119,7 @@ const ChainNameForm = (props) => {
   );
 };
 
-ChainNameForm.propTypes = {
+ChainNameForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     chainName: PropTypes.string,
   }).isRequired,
@@ -150,6 +142,6 @@ ChainNameForm.propTypes = {
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-};
+});
 
 export default ChainNameForm;

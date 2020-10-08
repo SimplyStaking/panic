@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Typography, Grid, Tooltip,
 } from '@material-ui/core';
@@ -11,16 +12,9 @@ import { TestCallButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const TwilioForm = (props) => {
+const TwilioForm = (errors, values, handleSubmit, handleChange, setFieldValue
+  ) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-  } = props;
 
   const updateTwilioNumbers = (events, phoneNums) => {
     setFieldValue('twilioPhoneNumbersToDialValid', phoneNums);
@@ -203,7 +197,7 @@ const TwilioForm = (props) => {
   );
 };
 
-TwilioForm.propTypes = {
+TwilioForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     configName: PropTypes.string,
     accountSid: PropTypes.string,
@@ -223,6 +217,6 @@ TwilioForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-};
+});
 
 export default TwilioForm;

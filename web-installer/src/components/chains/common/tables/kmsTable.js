@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -16,15 +17,8 @@ const useStyles = makeStyles({
   },
 });
 
-const KmsTable = (props) => {
+const KmsTable = (currentChain, chainConfig, kmsConfig, removeKmsDetails) => {
   const classes = useStyles();
-
-  const {
-    currentChain,
-    chainConfig,
-    kmsConfig,
-    removeKmsDetails,
-  } = props;
 
   if (chainConfig.byId[currentChain].kmses.length === 0) {
     return <div />;
@@ -68,7 +62,7 @@ const KmsTable = (props) => {
   );
 };
 
-KmsTable.propTypes = {
+KmsTable.propTypes = forbidExtraProps({
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -87,6 +81,6 @@ KmsTable.propTypes = {
   }).isRequired,
   removeKmsDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-};
+});
 
 export default KmsTable;

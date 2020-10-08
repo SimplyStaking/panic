@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
 } from '@material-ui/core';
@@ -21,21 +22,13 @@ import Data from '../../../../data/chains';
  * a system configuration. Contains functionality to test if the provided system
  * is correct.
  */
-const SystemForm = (props) => {
+const SystemForm = ( errors, values, handleSubmit, handleChange, setFieldValue,
+  pageChanger) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-  } = props;
 
   // Next page is infact returning back to the Chains Setings Page
   // but keeping the name the same for consistency
   function nextPage(page) {
-    const { pageChanger } = props;
     // Clear the current chain, id we are working on.
     pageChanger({ page });
   }
@@ -184,7 +177,7 @@ const SystemForm = (props) => {
   );
 };
 
-SystemForm.propTypes = {
+SystemForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     name: PropTypes.string,
     exporterUrl: PropTypes.string,
@@ -198,6 +191,6 @@ SystemForm.propTypes = {
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
-};
+});
 
 export default SystemForm;

@@ -1,19 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Typography, Grid, Switch, FormControlLabel,
 } from '@material-ui/core';
 import { useStyles } from '../../theme/default';
 import MainText from '../../global/mainText';
 
-const PeriodicForm = (props) => {
+const PeriodicForm = (values, periodic, savePeriodicDetails) => {
   const classes = useStyles();
-
-  const {
-    values,
-    periodic,
-    savePeriodicDetails,
-  } = props;
 
   return (
     <div>
@@ -68,7 +63,7 @@ const PeriodicForm = (props) => {
   );
 };
 
-PeriodicForm.propTypes = {
+PeriodicForm.propTypes = forbidExtraProps({
   periodic: PropTypes.shape({
     time: PropTypes.string,
     enabled: PropTypes.bool,
@@ -78,6 +73,6 @@ PeriodicForm.propTypes = {
     enabled: PropTypes.bool,
   }).isRequired,
   savePeriodicDetails: PropTypes.func.isRequired,
-};
+});
 
 export default PeriodicForm;

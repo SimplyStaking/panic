@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -17,14 +18,8 @@ const useStyles = makeStyles({
   },
 });
 
-const SystemTable = (props) => {
+const SystemTable = (config, systemConfig, removeSystemDetails) => {
   const classes = useStyles();
-
-  const {
-    config,
-    systemConfig,
-    removeSystemDetails,
-  } = props;
 
   const currentConfig = config.byId[GLOBAL];
 
@@ -71,7 +66,7 @@ const SystemTable = (props) => {
   );
 };
 
-SystemTable.propTypes = {
+SystemTable.propTypes = forbidExtraProps({
   config: PropTypes.shape({
     byId: PropTypes.shape({
       systems: PropTypes.arrayOf(PropTypes.string),
@@ -88,6 +83,6 @@ SystemTable.propTypes = {
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeSystemDetails: PropTypes.func.isRequired,
-};
+});
 
 export default SystemTable;

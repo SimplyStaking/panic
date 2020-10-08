@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Grid, FormControlLabel, Checkbox, List, ListItem, Typography, Box,
@@ -15,29 +16,12 @@ const useStyles = makeStyles({
   },
 });
 
-const ChannelsTable = (props) => {
+const ChannelsTable = (data, config, currentChain, telegrams, opsgenies,
+  emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
+  addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
+  addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
+  removeOpsGenieDetails) => {
   const classes = useStyles();
-
-  const {
-    data,
-    config,
-    currentChain,
-    telegrams,
-    opsgenies,
-    emails,
-    pagerduties,
-    twilios,
-    addTelegramDetails,
-    removeTelegramDetails,
-    addTwilioDetails,
-    removeTwilioDetails,
-    addEmailDetails,
-    removeEmailDetails,
-    addPagerDutyDetails,
-    removePagerDutyDetails,
-    addOpsGenieDetails,
-    removeOpsGenieDetails,
-  } = props;
 
   const currentConfig = config.byId[currentChain];
 
@@ -292,7 +276,7 @@ const ChannelsTable = (props) => {
   );
 };
 
-ChannelsTable.propTypes = {
+ChannelsTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -354,6 +338,6 @@ ChannelsTable.propTypes = {
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-};
+});
 
 export default ChannelsTable;

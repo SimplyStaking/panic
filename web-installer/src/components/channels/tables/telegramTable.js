@@ -10,12 +10,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const TelegramTable = (props) => {
-  const {
-    telegrams,
-    removeTelegramDetails,
-  } = props;
-
+const TelegramTable = (telegrams, removeTelegramDetails) => {
   if (telegrams.allIds.length === 0) {
     return <div />;
   }

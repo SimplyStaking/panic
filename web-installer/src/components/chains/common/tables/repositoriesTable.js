@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -16,15 +17,9 @@ const useStyles = makeStyles({
   },
 });
 
-const RepositoriesTable = (props) => {
+const RepositoriesTable = (currentChain, config, reposConfig,
+  removeRepositoryDetails) => {
   const classes = useStyles();
-
-  const {
-    currentChain,
-    config,
-    reposConfig,
-    removeRepositoryDetails,
-  } = props;
 
   if (config.byId[currentChain].repositories.length === 0) {
     return <div />;
@@ -65,7 +60,7 @@ const RepositoriesTable = (props) => {
   );
 };
 
-RepositoriesTable.propTypes = {
+RepositoriesTable.propTypes = forbidExtraProps({
   config: PropTypes.shape({
     byId: PropTypes.shape({
       repositories: PropTypes.arrayOf(PropTypes.string),
@@ -82,6 +77,6 @@ RepositoriesTable.propTypes = {
   }).isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-};
+});
 
 export default RepositoriesTable;

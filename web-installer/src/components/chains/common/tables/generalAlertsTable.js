@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   FormControlLabel, Checkbox, Typography, TextField, Grid, Box,
@@ -16,21 +17,12 @@ import {
  * AlertsTable will show display the alert types needed for general
  * configuration together with the function to directly edit them.
 */
-const AlertsTable = (props) => {
-  const {
-    config,
-    currentChain,
-    updateThresholdAlertDetails,
-  } = props;
-
+const AlertsTable = (config, currentChain, updateThresholdAlertDetails, 
+  pageChanger, stepChanger) => {
   // Assigning buffer values as they become too long
   const ThresholdAlerts = config.byId[currentChain].thresholdAlerts;
 
   const nextPage = (page) => {
-    const {
-      pageChanger, stepChanger,
-    } = props;
-
     const payload = {
       step: CHAINS_STEP,
     };
@@ -237,7 +229,7 @@ const AlertsTable = (props) => {
   );
 };
 
-AlertsTable.propTypes = {
+AlertsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
   config: PropTypes.shape({
@@ -261,6 +253,6 @@ AlertsTable.propTypes = {
   }).isRequired,
   updateThresholdAlertDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-};
+});
 
 export default AlertsTable;

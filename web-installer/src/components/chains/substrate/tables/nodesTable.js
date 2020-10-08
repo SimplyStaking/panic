@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -20,15 +21,9 @@ const useStyles = makeStyles({
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
-const NodesTable = (props) => {
+const NodesTable = (chainConfig, nodesConfig, currentChain, removeNodeDetails
+  ) => {
   const classes = useStyles();
-
-  const {
-    chainConfig,
-    nodesConfig,
-    currentChain,
-    removeNodeDetails,
-  } = props;
 
   if (chainConfig.byId[currentChain].nodes.length === 0) {
     return <div />;
@@ -104,7 +99,7 @@ const NodesTable = (props) => {
   );
 };
 
-NodesTable.propTypes = {
+NodesTable.propTypes = forbidExtraProps({
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -130,6 +125,6 @@ NodesTable.propTypes = {
   }).isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-};
+});
 
 export default NodesTable;

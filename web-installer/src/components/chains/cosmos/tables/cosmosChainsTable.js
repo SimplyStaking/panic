@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -20,16 +21,12 @@ const useStyles = makeStyles({
  * Has functionality to load a chains configuration as well as clear all data
  * setup for a chain.
 */
-const CosmosChainsTable = (props) => {
+const CosmosChainsTable = (config, loadConfigDetails, pageChanger,
+  removeChainDetails, removeNodeDetails, removeRepositoryDetails,
+  removeKmsDetails) => {
   const classes = useStyles();
 
-  const {
-    config,
-    loadConfigDetails,
-  } = props;
-
   const loadConfiguration = (page, id) => {
-    const { pageChanger } = props;
     loadConfigDetails({ id });
     pageChanger({ page });
   };
@@ -37,12 +34,6 @@ const CosmosChainsTable = (props) => {
   // We have to clean up all the other reducers once a chain configuration
   // is completely removed
   function clearAllChainDetails(chainID) {
-    const {
-      removeChainDetails,
-      removeNodeDetails,
-      removeRepositoryDetails,
-      removeKmsDetails,
-    } = props;
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
     const payload = { parentId: chainID, id: '' };
@@ -115,7 +106,7 @@ const CosmosChainsTable = (props) => {
   );
 };
 
-CosmosChainsTable.propTypes = {
+CosmosChainsTable.propTypes = forbidExtraProps({
   config: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -129,6 +120,6 @@ CosmosChainsTable.propTypes = {
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
   removeKmsDetails: PropTypes.func.isRequired,
-};
+});
 
 export default CosmosChainsTable;

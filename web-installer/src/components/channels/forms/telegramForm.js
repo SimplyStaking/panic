@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Button, Box, Checkbox, FormControlLabel, Typography,
   Switch, Grid, Tooltip,
@@ -11,16 +12,9 @@ import { SendTestAlertButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const TelegramForm = (props) => {
+const TelegramForm = (errors, values, handleSubmit, handleChange, setFieldValue
+  ) => {
   const classes = useStyles();
-
-  const {
-    errors,
-    values,
-    handleSubmit,
-    handleChange,
-    setFieldValue,
-  } = props;
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -249,7 +243,7 @@ const TelegramForm = (props) => {
   );
 };
 
-TelegramForm.propTypes = {
+TelegramForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     botName: PropTypes.string,
     botToken: PropTypes.string,
@@ -269,6 +263,6 @@ TelegramForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-};
+});
 
 export default TelegramForm;
