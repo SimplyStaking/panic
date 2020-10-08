@@ -59,7 +59,14 @@ class Monitor:
     def monitor(self) -> None:
         # TODO: Must add error handling on the calling function. Also the
         #       calling function must first connect with RabbitMQ, and perform
-        #       the RabbitMQ initializations (like queue creation)
+        #       the RabbitMQ initializations (like queue creation). The calling
+        #       function must also perform all error handling due to errors that
+        #       may occur in the 3 functions below (such as urlib3 errors). We
+        #       must also handle the case when a metric name changes (although
+        #       this might be handled inside the prometheus get function, but
+        #       still reminder to keep a general exception handler, and rabbit
+        #       specific errors. On the outside we must also post the status to
+        #       the logs
         self.get_data()
         self.process_data()
         self.send_data()

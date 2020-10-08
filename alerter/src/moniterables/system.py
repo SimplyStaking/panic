@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class SystemType(Enum):
-    NODE_SYSTEM = 1,
+    BLOCKCHAIN_NODE_SYSTEM = 1,
     GENERAL_SYSTEM = 2,
 
 
@@ -17,13 +17,16 @@ class System:
         self._system_type = system_type
 
         # Data fields
-        self._process_cpu_seconds_total = None
-        self._process_memory_usage = None
-        self._virtual_memory_usage = None
-        self._open_file_descriptors = None
-        self._system_cpu_usage = None
-        self._system_ram_usage = None
-        self._system_storage_usage = None
+        self._process_cpu_seconds_total = None   # Seconds
+        self._process_memory_usage = None        # Percentage
+        self._virtual_memory_usage = None        # Bytes
+        self._open_file_descriptors = None       # Percentage
+        self._system_cpu_usage = None            # Percentage
+        self._system_ram_usage = None            # Percentage
+        self._system_storage_usage = None        # Percentage
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def name(self) -> str:
@@ -38,8 +41,8 @@ class System:
         return self._system_type == SystemType.GENERAL_SYSTEM
 
     @property
-    def is_node_system(self) -> bool:
-        return self._system_type == SystemType.NODE_SYSTEM
+    def is_blockchain_node_system(self) -> bool:
+        return self._system_type == SystemType.BLOCKCHAIN_NODE_SYSTEM
 
     @property
     def chain(self) -> Optional[str]:
