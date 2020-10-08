@@ -3,9 +3,9 @@
 }
 
 .root{
-  display: 'flex';
-  flex-wrap: 'wrap';
-  width: '100%';
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .table{
@@ -14,23 +14,23 @@
 
 .paper{
   padding: 2;
-  text-align: 'center';
-  color: '#000000';
+  text-align: center;
+  color: #000000;
 }
 
 .heading{
-  font-size: '0.9375rem';
+  font-size: 0.9375rem;
   font-weight: normal;
 }
 
 .icon{
-  padding-right: '1rem';
+  padding-right: 1rem;
 }
 
 .tableColumn{
   max-height: 300;
   min-height: 300;
-  overflow: 'auto';
+  overflow: auto;
 }
 
 .flex_root{
@@ -38,9 +38,9 @@
 }
 
 .width_root{
-  width: '100%';
+  width: 100%;
 }
 
 .button_float_right{
-  float: 'right';
+  float: right;
 }
