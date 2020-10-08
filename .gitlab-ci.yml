@@ -20,7 +20,7 @@ install:
       - node_modules/
 
 include:
-  - template: Code-Quality.gitlab-ci.yml
+  - template: .eslintrc.yml
 
 code_quality:
   rules:
