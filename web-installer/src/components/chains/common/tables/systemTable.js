@@ -18,7 +18,7 @@ const useStyles = makeStyles({
   },
 });
 
-const SystemTable = (config, systemConfig, removeSystemDetails) => {
+const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
   const classes = useStyles();
 
   const currentConfig = config.byId[GLOBAL];

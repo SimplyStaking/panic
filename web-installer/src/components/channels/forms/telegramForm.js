@@ -12,8 +12,8 @@ import { SendTestAlertButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const TelegramForm = (errors, values, handleSubmit, handleChange, setFieldValue
-  ) => {
+const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
+  }) => {
   const classes = useStyles();
 
   return (

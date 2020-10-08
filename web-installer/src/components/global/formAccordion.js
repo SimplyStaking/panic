@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function FormAccordion(icon, name, form, table) {
+function FormAccordion({icon, name, form, table}) {
   const classes = useStyles();
 
   return (

@@ -22,8 +22,8 @@ import Data from '../../../../data/chains';
  * a system configuration. Contains functionality to test if the provided system
  * is correct.
  */
-const SystemForm = (errors, values, handleSubmit, handleChange, setFieldValue,
-  pageChanger,) => {
+const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
+  pageChanger}) => {
   const classes = useStyles();
 
   // Next page is infact returning back to the Chains Setings Page

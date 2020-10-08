@@ -14,9 +14,9 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
 /*
  * This form allows for the input of a chain name.
  */
-const ChainNameForm = (errors, handleChange, values, data, stepChanger,
+const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
   saveChainDetails, currentChain, updateChainDetails, pageChanger,
-  clearChainId ) => {
+  clearChainId}) => {
   const classes = useStyles();
 
   // NextStep function will save the chain name, step changer

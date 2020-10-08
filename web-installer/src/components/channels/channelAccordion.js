@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function ChannelAccordion(icon, name, form) {
+function ChannelAccordion({icon, name, form}) {
   const classes = useStyles();
 
   return (

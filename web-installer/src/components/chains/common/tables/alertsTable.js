@@ -18,9 +18,9 @@ import {
  * AlertsTable will show display all the 4 alert types together with the
  * functions to directly edit them.
 */
-const AlertsTable = (config, currentChain, updateRepeatAlertDetails,
+const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
   updateTimeWindowAlertDetails, updateThresholdAlertDetails,
-  updateSeverityAlertDetails, pageChanger, stepChanger, clearChainId) => {
+  updateSeverityAlertDetails, pageChanger, stepChanger, clearChainId}) => {
 
   // Assigning buffer values as they become too long
   const RepeatAlerts = config.byId[currentChain].repeatAlerts;

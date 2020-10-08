@@ -12,8 +12,8 @@ import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
-const NodesForm = (errors, values, handleSubmit, handleChange, setFieldValue,
-  data) => {
+const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
+  data}) => {
   const classes = useStyles();
 
   return (

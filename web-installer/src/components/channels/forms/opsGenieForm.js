@@ -11,7 +11,7 @@ import { SendTestOpsGenieButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const OpsGenieForm = (errors, values, handleSubmit, handleChange) => {
+const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
   const classes = useStyles();
 
   return (

@@ -17,8 +17,8 @@ const useStyles = makeStyles({
   },
 });
 
-const RepositoriesTable = (currentChain, config, reposConfig,
-  removeRepositoryDetails) => {
+const RepositoriesTable = ({currentChain, config, reposConfig,
+  removeRepositoryDetails}) => {
   const classes = useStyles();
 
   if (config.byId[currentChain].repositories.length === 0) {

@@ -11,7 +11,7 @@ import { SendTestPagerDutyButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const PagerDutyForm = (errors, values, handleSubmit, handleChange) => {
+const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
   const classes = useStyles();
 
   return (

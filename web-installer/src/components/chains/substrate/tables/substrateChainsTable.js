@@ -16,8 +16,8 @@ const useStyles = makeStyles({
   },
 });
 
-const SubstrateChainsTable = (config, loadConfigDetails, pageChanger,
-  removeChainDetails, removeNodeDetails, removeRepositoryDetails) => {
+const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
+  removeChainDetails, removeNodeDetails, removeRepositoryDetails}) => {
   const classes = useStyles();
 
   const loadConfiguration = (page, id) => {

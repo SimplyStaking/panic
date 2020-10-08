@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { Button, Box } from '@material-ui/core';
 
-const NavigationButton = (navigation, nextPage, buttonText) => {
+const NavigationButton = ({navigation, nextPage, buttonText}) => {
 
   function triggerNextPage(e) {
     e.preventDefault();

@@ -17,8 +17,8 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  * Contains the details to setup a KMS configuration to be monitored, this also
  * has the functionality to test the Node Exporter IP address that will be given.
  */
-const KmsForm = (errors, values, handleSubmit, handleChange, setFieldValue,
-  data) => {
+const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
+  data}) => {
   const classes = useStyles();
 
   return (

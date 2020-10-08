@@ -12,8 +12,8 @@ import { TestCallButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const TwilioForm = (errors, values, handleSubmit, handleChange, setFieldValue
-  ) => {
+const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
+  }) => {
   const classes = useStyles();
 
   const updateTwilioNumbers = (events, phoneNums) => {

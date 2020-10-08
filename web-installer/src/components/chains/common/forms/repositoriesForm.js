@@ -18,8 +18,8 @@ import { defaultTheme, theme, useStyles } from '../../../theme/default';
  * a repo configuration. Contains functionality to test if the provided repo
  * is correct.
  */
-const RepositoriesForm = (errors, values, handleSubmit, handleChange,
-  setFieldValue, data) => {
+const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
+  setFieldValue, data}) => {
   const classes = useStyles();
 
   return (

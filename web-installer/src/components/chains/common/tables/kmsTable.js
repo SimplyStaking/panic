@@ -17,7 +17,7 @@ const useStyles = makeStyles({
   },
 });
 
-const KmsTable = (currentChain, chainConfig, kmsConfig, removeKmsDetails) => {
+const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
   const classes = useStyles();
 
   if (chainConfig.byId[currentChain].kmses.length === 0) {

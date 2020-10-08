@@ -13,8 +13,8 @@ import StepButtonContainer from
 import { PingCosmosButton } from '../../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../../theme/default';
 
-const NodesForm = (errors, values, handleSubmit, handleChange, setFieldValue,
-  data) => {
+const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
+  data}) => {
   const classes = useStyles();
 
   return (

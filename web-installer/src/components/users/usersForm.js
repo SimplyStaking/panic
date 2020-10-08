@@ -13,7 +13,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const UsersForm = (errors, values, handleSubmit, handleChange) => {
+const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
   const classes = useStyles();
 
   return (

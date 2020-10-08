@@ -8,7 +8,7 @@ import {
 import Paper from '@material-ui/core/Paper';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const TwilioTable = (twilios, removeTwilioDetails) => {
+const TwilioTable = ({twilios, removeTwilioDetails}) => {
   if (twilios.allIds.length === 0) {
     return <div />;
   }
@@ -31,22 +31,32 @@ const TwilioTable = (twilios, removeTwilioDetails) => {
               <TableCell align="center">
                 {twilios.byId[twilio].configName}
               </TableCell>
-              <TableCell align="center">{twilios.byId[twilio].accountSid}</TableCell>
-              <TableCell align="center">{twilios.byId[twilio].authToken}</TableCell>
-              <TableCell align="center">{twilios.byId[twilio].twilioPhoneNo}</TableCell>
+              <TableCell align="center">
+                {twilios.byId[twilio].accountSid}
+              </TableCell>
+              <TableCell align="center">
+                {twilios.byId[twilio].authToken}
+              </TableCell>
+              <TableCell align="center">
+                {twilios.byId[twilio].twilioPhoneNo}
+              </TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {twilios.byId[twilio].twilioPhoneNumbersToDialValid.map((number) => (
-                      <ListItem key={number}>
-                        { number }
-                      </ListItem>
+                    {twilios.byId[twilio].twilioPhoneNumbersToDialValid.map(
+                      (number) => (
+                        <ListItem key={number}>
+                          { number }
+                        </ListItem>
                     ))}
                   </List>
                 </div>
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeTwilioDetails(twilios.byId[twilio]); }}>
+                <Button onClick={() => {
+                    removeTwilioDetails(twilios.byId[twilio]);
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

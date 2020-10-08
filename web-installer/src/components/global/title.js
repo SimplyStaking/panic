@@ -4,7 +4,7 @@ import Typography from '@material-ui/core/Typography';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import Box from '@material-ui/core/Box';
 
-const Title = (text) => {
+const Title = ({text}) => {
   return (
     <Box pt={3}>
       <Typography

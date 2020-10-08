@@ -16,11 +16,11 @@ const useStyles = makeStyles({
   },
 });
 
-const ChannelsTable = (data, config, currentChain, telegrams, opsgenies,
+const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
   emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
   addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
   addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
-  removeOpsGenieDetails) => {
+  removeOpsGenieDetails}) => {
   const classes = useStyles();
 
   const currentConfig = config.byId[currentChain];

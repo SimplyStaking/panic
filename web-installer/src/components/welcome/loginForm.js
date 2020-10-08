@@ -11,8 +11,8 @@ import { CHANNELS_PAGE } from '../../constants/constants';
 import { defaultTheme, theme, useStyles } from '../theme/default';
 import Data from '../../data/welcome';
 
-const LoginForm = (errors, values, handleSubmit, handleChange, pageChanger,
-  authenticate) => {
+const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
+  authenticate}) => {
   const classes = useStyles();
 
   // If authenetication is accepted by the backend, change the page

@@ -21,8 +21,8 @@ const useStyles = makeStyles({
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
-const NodesTable = (chainConfig, nodesConfig, currentChain, removeNodeDetails
-  ) => {
+const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
+  }) => {
   const classes = useStyles();
 
   if (chainConfig.byId[currentChain].nodes.length === 0) {

@@ -10,7 +10,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const TelegramTable = (telegrams, removeTelegramDetails) => {
+const TelegramTable = ({telegrams, removeTelegramDetails}) => {
   if (telegrams.allIds.length === 0) {
     return <div />;
   }
@@ -38,28 +38,41 @@ const TelegramTable = (telegrams, removeTelegramDetails) => {
                 <TableCell align="center">
                   {telegrams.byId[telegram].botName}
                 </TableCell>
-                <TableCell align="center">{telegrams.byId[telegram].botToken}</TableCell>
-                <TableCell align="center">{telegrams.byId[telegram].chatID}</TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].info ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].botToken}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].warning ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].chatID}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].critical ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].info
+                    ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].error ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].warning
+                    ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].alerts ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].critical
+                    ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].commands ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].error
+                    ? <CheckIcon /> : <ClearIcon />}
                 </TableCell>
                 <TableCell align="center">
-                  <Button onClick={() => { removeTelegramDetails(telegrams.byId[telegram]); }}>
+                  {telegrams.byId[telegram].alerts
+                    ? <CheckIcon /> : <ClearIcon />}
+                </TableCell>
+                <TableCell align="center">
+                  {telegrams.byId[telegram].commands
+                    ? <CheckIcon /> : <ClearIcon />}
+                </TableCell>
+                <TableCell align="center">
+                  <Button onClick={() => {
+                      removeTelegramDetails(telegrams.byId[telegram]); 
+                      }}
+                  >
                     <CancelIcon />
                   </Button>
                 </TableCell>

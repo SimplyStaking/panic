@@ -7,7 +7,7 @@ import {
 import { useStyles } from '../../theme/default';
 import MainText from '../../global/mainText';
 
-const PeriodicForm = (values, periodic, savePeriodicDetails) => {
+const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
   const classes = useStyles();
 
   return (

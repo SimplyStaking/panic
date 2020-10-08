@@ -21,9 +21,9 @@ const useStyles = makeStyles({
  * Has functionality to load a chains configuration as well as clear all data
  * setup for a chain.
 */
-const CosmosChainsTable = (config, loadConfigDetails, pageChanger,
+const CosmosChainsTable = ({config, loadConfigDetails, pageChanger,
   removeChainDetails, removeNodeDetails, removeRepositoryDetails,
-  removeKmsDetails) => {
+  removeKmsDetails}) => {
   const classes = useStyles();
 
   const loadConfiguration = (page, id) => {

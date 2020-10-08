@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
  * Accordion, drop down that contains the chain icon, name, table containing
  * all the setup chains which can be loaded.
 */
-function GeneralAccordion(icon, name, button, form) {
+function GeneralAccordion({icon, name, button, form}) {
   const classes = useStyles();
 
   return (

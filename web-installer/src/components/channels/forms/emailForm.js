@@ -12,8 +12,8 @@ import { SendTestEmailButton } from '../../../utils/buttons';
 import { defaultTheme, theme, useStyles } from '../../theme/default';
 import Data from '../../../data/channels';
 
-const EmailForm = (errors, values, handleSubmit, handleChange, setFieldValue
-  ) => {
+const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
+  }) => {
   const classes = useStyles();
 
   const updateToEmails = (event, emailsTo) => {
