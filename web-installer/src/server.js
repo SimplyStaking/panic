@@ -159,7 +159,7 @@ async function saveRefreshTokenToDB(username, refreshToken) {
   } catch (err) {
     // If the error is already a mongo error no need to wrap it again as a mongo
     // error
-    if (err.code === 442) {
+    if (err.code === C_442) {
       throw err;
     }
     throw new errors.MongoError(err.message);
@@ -363,7 +363,7 @@ app.post('/server/account/save', verify, async (req, res) => {
     // If the record is already present in the database return a username
     // already exists error so that the error is more meaningful. Otherwise
     // return whatever error is thrown.
-    if (err.code === 446) {
+    if (err.code === C_446) {
       const error = new errors.UsernameAlreadyExists(username);
       console.log(error);
       res.status(error.code).send(utils.errorJson(error.message));
@@ -397,7 +397,7 @@ app.post('/server/account/delete', verify, async (req, res) => {
     // If the record is already present in the database return a username
     // already exists error so that the error is more meaningful. Otherwise
     // return whatever error is thrown.
-    if (err.code === 446) {
+    if (err.code === C_446) {
       const error = new errors.UsernameDoesNotExists(username);
       console.log(error);
       res.status(error.code).send(utils.errorJson(error.message));
