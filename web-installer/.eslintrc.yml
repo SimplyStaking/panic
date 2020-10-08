@@ -24,10 +24,7 @@
         argsIgnorePattern: _
         ignoreRestSiblings: true
   
-    no-underscore-dangle:
-      - error
-      - allowAfterThis: true
-        enforceInMethodNames: true
+    no-underscore-dangle: off
   
     # React Specific
     react/jsx-filename-extension:
