@@ -20,7 +20,7 @@ install:
       - node_modules/
 
 include:
-  - template: .eslintrc.yml
+  - template: web-installer/.eslintrc.yml
 
 code_quality:
   rules:
