@@ -31,12 +31,28 @@ function AccountSavedSuccessfully() {
   this.message = 'Account saved successfully.';
 }
 
+function AccountRemovedSuccessfully() {
+  this.message = 'Account removed successfully.';
+}
+
 function CollectionDropped(collection) {
   this.message = `Collection '${collection}' dropped from database.`;
 }
 
 function DirectoryNotCreated(directory) {
   this.message = `Directory '${directory}' was not created.`;
+}
+
+function MessagePong() {
+  this.message = 'PONG';
+}
+
+function MessageNoConnection() {
+  this.message = 'No connection.';
+}
+
+function ConnectionError() {
+  this.message = 'Connection Error.';
 }
 
 module.exports = {
@@ -48,6 +64,10 @@ module.exports = {
   TestAlertSubmitted,
   AuthenticationSuccessful,
   AccountSavedSuccessfully,
+  AccountRemovedSuccessfully,
   CollectionDropped,
   DirectoryNotCreated,
+  MessagePong,
+  MessageNoConnection,
+  ConnectionError,
 };

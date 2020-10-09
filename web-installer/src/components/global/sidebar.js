@@ -11,10 +11,12 @@ import ListItemText from '@material-ui/core/ListItemText';
 import MailIcon from '@material-ui/icons/Mail';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 
+// IGNORE FOR NOW, TO BE BROUGHT BACK WHEN DOING CSS
+
 const drawerWidth = 240;
 
 const useStyles = makeStyles((theme) => ({
-    root: {
+  root: {
         display: 'flex',
     },
     drawer: {
