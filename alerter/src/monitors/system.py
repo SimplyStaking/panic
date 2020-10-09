@@ -141,4 +141,6 @@ class SystemMonitor(Monitor):
 
         self._data = processed_data
 
-# TODO: Include network usage also to counter DDOS
+# TODO: Include network usage also to counter DDOS (receive_bytes add 3,
+#     : transmit_bytes add 3)
+#     : (current-old)/(time period)

@@ -67,18 +67,3 @@ metrics_to_monitor = ['process_cpu_seconds_total',
                               'node_memory_MemTotal_bytes',
                               'node_memory_MemAvailable_bytes']
 data = get_prometheus_metrics_data('http://172.16.152.35:9100/metrics', metrics_to_monitor, DUMMY_LOGGER)
-node_cpu_seconds_idle = 0
-node_cpu_seconds_total = 0
-node_filesystem_avail_bytes = 0
-node_filesystem_size_bytes = 0
-print(data['node_filesystem_avail_bytes'])
-print(data['node_filesystem_size_bytes'])
-for i, j in enumerate(data['node_filesystem_avail_bytes']):
-    node_filesystem_avail_bytes += \
-        data['node_filesystem_avail_bytes'][j]
-
-for i, j in enumerate(data['node_filesystem_size_bytes']):
-    node_filesystem_size_bytes += \
-        data['node_filesystem_size_bytes'][j]
-print(node_cpu_seconds_idle)
-print(node_cpu_seconds_total)

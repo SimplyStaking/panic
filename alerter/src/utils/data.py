@@ -25,6 +25,7 @@ def get_prometheus_metrics_data(endpoint: str, requested_metrics: list,
     metrics = get_prometheus(endpoint, logger)
     for family in text_string_to_metric_families(metrics):
         for sample in family.samples:
+            print(sample.name, sample.labels, sample.value)
             if sample.name in requested_metrics:
                 if sample.name not in response:
                     if sample.labels != {}:
