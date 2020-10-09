@@ -38,14 +38,6 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
 
         self._callback(event)
 
-    def on_deleted(self, event):
-        super().on_deleted(event)
-
-        what = 'directory' if event.is_directory else 'file'
-        logging.debug(f"Event triggered: Deleted {what}: {event.src_path}")
-
-        self._callback(event)
-
     def on_modified(self, event):
         super().on_modified(event)
 
