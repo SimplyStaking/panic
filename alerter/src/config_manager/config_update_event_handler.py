@@ -18,10 +18,10 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
         """
 
         :param callback: The function to call when a created, deleted or modified event is fired
-        :param patterns: The file patterns to monitor
-        :param ignore_patterns:
-        :param ignore_directories:
-        :param case_sensitive:
+        :param patterns: A list of file patterns to monitor.
+        :param ignore_patterns: The file patterns to ignore. Defaults to None
+        :param ignore_directories: Whether to ignore directories or not. Defaults to True
+        :param case_sensitive: Whether the patterns given are case sensitive or not. Defaults to False
         """
         logging.debug(f"Instancing Config Update Event Handler with parameters: callback = {callback}, "
                       f"patterns = {patterns}, ignore_patterns = {ignore_patterns}, "
