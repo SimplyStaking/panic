@@ -70,3 +70,5 @@ class Monitor:
         self.get_data()
         self.process_data()
         self.send_data()
+
+        # TODO: Mark will second configs through RABBITMQ NOT REDIS
