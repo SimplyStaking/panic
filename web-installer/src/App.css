@@ -1,0 +1,46 @@
+.greyBackground{
+  background: rgba(203, 203, 203, 0.2);
+}
+
+.root{
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.table{
+  min-width: 650;
+}
+
+.paper{
+  padding: 2;
+  text-align: center;
+  color: #000000;
+}
+
+.heading{
+  font-size: 0.9375rem;
+  font-weight: normal;
+}
+
+.icon{
+  padding-right: 1rem;
+}
+
+.tableColumn{
+  max-height: 300;
+  min-height: 300;
+  overflow: auto;
+}
+
+.flex_root{
+  flex-grow: 1;
+}
+
+.width_root{
+  width: 100%;
+}
+
+.button_float_right{
+  float: right;
+}

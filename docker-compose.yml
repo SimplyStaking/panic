@@ -1,0 +1,52 @@
+version: '3.7'
+
+services:
+  installer:
+    environment:
+      - 'ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}'
+      - 'ACCESS_TOKEN_LIFE=${ACCESS_TOKEN_LIFE}'
+      - 'REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}'
+      - 'REFRESH_TOKEN_LIFE=${REFRESH_TOKEN_LIFE}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'INSTALLER_USERNAME=${INSTALLER_USERNAME}'
+      - 'INSTALLER_PASSWORD=${INSTALLER_PASSWORD}'
+      - 'DB_HOST=${DB_HOST}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'INSTALLER_AUTH_COLLECTION=${INSTALLER_AUTH_COLLECTION}'
+      - 'ACCOUNTS_COLLECTION=${ACCOUNTS_COLLECTION}'
+      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}'
+    build:
+      context: './'
+      dockerfile: './web-installer/Dockerfile'
+    image: 'simplyvc/panic_installer:1.0.0'
+    volumes:
+      - './config:/opt/panic/config'
+      - './certificates:/opt/panic/certificates'
+    ports:
+      - '${INSTALLER_PORT}:8000'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${INSTALLER_HOST}'
+    depends_on:
+      - mongo
+
+  mongo:
+    image: 'mongo'
+    networks:
+      panic_net:
+        ipv4_address: '${DB_HOST}'
+    restart: always
+    container_name: 'mongo'
+    volumes:
+      - 'db-data:/data/db'
+
+networks:
+  panic_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/24
+
+volumes:
+  db-data:
