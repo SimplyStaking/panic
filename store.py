@@ -4,32 +4,35 @@ import pika.exceptions
 import sys
 import time
 
+from configparser import ConfigParser
 from alerter.src.utils.logging import DUMMY_LOGGER
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
+from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body)
 
 if __name__ == '__main__':
-
-    # Testing rabbit
-    # Sending message through RABBIT
+    # Testing rabbit with Rabbit Interface
     rabbit_host = os.environ["RABBIT_HOST"]
-    connection = pika.BlockingConnection(pika.ConnectionParameters(rabbit_host))
-    channel = connection.channel()
-    channel.queue_declare(queue='hello')
-    channel.basic_publish(exchange='', routing_key='hello', body='Hello World!')
-    print(" [x] Sent 'Hello World!'")
-    connection.close()
+    rabbitAPI = RabbitMQApi(DUMMY_LOGGER, rabbit_host)
+    rabbitAPI.connect()
+    rabbitAPI.confirm_delivery()
+    rabbitAPI.exchange_declare(exchange='config', exchange_type='topic')
 
-    # Receving message from RABBIT
-    connection2 = pika.BlockingConnection(
-        pika.ConnectionParameters(rabbit_host))
-    channel2 = connection2.channel()
-    channel2.queue_declare(queue='hello')
-    channel2.basic_consume(queue='hello', auto_ack=True, on_message_callback=callback)
-    channel2.start_consuming()
-
-    # In the API we need to always open a connection and close it
-    connection2.close()
+    try:
+        # Load the configuration file.
+        config = ConfigParser()
+        config.read('config/channels/email_config.ini')
+        config_dict = {key: dict(config[key]) for key in config}
+        config_dict.pop('DEFAULT', None)
+        rabbitAPI.basic_publish_confirm(
+            exchange='config', routing_key='config.email', body=config_dict,
+            mandatory=True
+        )
+        # print('Message was published')
+    except pika.exceptions.UnroutableError:
+        print('Message was returned')
+    print(" [x] Sent Messages ")
+    rabbitAPI.disconnect()

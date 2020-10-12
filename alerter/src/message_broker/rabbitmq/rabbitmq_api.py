@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 from typing import List, Optional, Union
+import json
 
 import pika
 import pika.exceptions
@@ -231,7 +232,7 @@ class RabbitMQApi:
                       mandatory=False) -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
-        args = [exchange, routing_key, body, properties, mandatory]
+        args = [exchange, routing_key, json.dumps(body), properties, mandatory]
         if self._connection_initialized():
             return self._safe(self.channel.basic_publish, args, -1)
 

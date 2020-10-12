@@ -1,7 +1,6 @@
 image: node:latest
 
 before_script:
-  - docker info
   - cd web-installer
 
 stages:
