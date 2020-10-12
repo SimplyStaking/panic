@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 
 import pika
 import pika.exceptions
+import json
 
 from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
@@ -227,24 +228,27 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.queue_bind, args, -1)
 
-    def basic_publish(self, exchange, routing_key, body, properties=None,
-                      mandatory=False) -> Optional[int]:
+    def basic_publish(self, exchange, routing_key, body, is_body_dict=False,
+                      properties=None, mandatory=False) -> Optional[int]:
+        # If the message to be published is a Dict, serialize to json first
+        args = [exchange, routing_key,
+                json.dumps(body) if is_body_dict else body,
+                properties, mandatory]
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
-        args = [exchange, routing_key, body, properties, mandatory]
         if self._connection_initialized():
             return self._safe(self.channel.basic_publish, args, -1)
 
     def basic_publish_confirm(self, exchange, routing_key, body,
-                              properties=None, mandatory=False) \
-            -> Optional[int]:
+                              is_body_dict=False, properties=None,
+                              mandatory=False) -> Optional[int]:
         # Attempt a publish and wait until a message is sent to an exchange. If
         # mandatory is set to true, this function will block until the consumer
         # receives the message. Note: self.confirm_delivery() must be called
         # once on a channel for this function to work as expected.
         try:
-            return self.basic_publish(exchange, routing_key, body, properties,
-                                      mandatory)
+            return self.basic_publish(exchange, routing_key, body, is_body_dict,
+                                      properties, mandatory)
         except pika.exceptions.UnroutableError as e:
             # If a message is not delivered, the exception below is raised.
             raise MessageWasNotDeliveredException(e)
