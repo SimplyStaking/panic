@@ -6,6 +6,8 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers import Observer
 
 from alerter.src.config_manager.config_update_event_handler import ConfigFileEventHandler
+from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from alerter.src.utils.exceptions import MessageWasNotDeliveredException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,8 +36,22 @@ class ConfigManager:
         self._observer = Observer()
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
+        self._rabbit = RabbitMQApi()
+
     def __send_config_to_rabbit_mq(self, config: Dict[str, Any]):
-        pass
+        LOGGER.debug("Connecting to RabbitMQ")
+        self._rabbit.connect_till_successful()
+        LOGGER.debug("Connection successful")
+
+        try:
+            LOGGER.debug("Attempting to send config")
+            # We need to definitely send this
+            self._rabbit.basic_publish_confirm("config", "config", config, mandatory=True)
+        except MessageWasNotDeliveredException as mwnde:
+            LOGGER.info("Config was not successfully sent")  # Should not get here
+            raise mwnde
+        self._rabbit.disconnect()
+        LOGGER.debug("Disconnected form RabbitMQ")
 
     def __on_event_thrown(self, event: FileSystemEvent) -> None:
         config = ConfigParser()
