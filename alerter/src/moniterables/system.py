@@ -92,7 +92,7 @@ class System:
                "open_file_descriptors={}, system_cpu_usage={}, " \
                "system_ram_usage={}, system_storage_usage={}, " \
                "network_transmit_bytes_per_second={}, " \
-               "network_receive_bytes_per_second={} " \
+               "network_receive_bytes_per_second={}" \
                "".format(self.process_cpu_seconds_total,
                          self.process_memory_usage, self.virtual_memory_usage,
                          self.open_file_descriptors, self.system_cpu_usage,
@@ -130,3 +130,7 @@ class System:
             self, network_receive_bytes_per_second) -> None:
         self._network_receive_bytes_per_second = \
             network_receive_bytes_per_second
+
+    # TODO: For data transformer we may need to add a load function here. We
+    #     : could also specify a moniterables abstract class that contains
+    #     : this function and any other common code.

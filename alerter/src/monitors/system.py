@@ -1,16 +1,14 @@
 # TODO: Do not save in Redis from here (even is_alive key etc) these must be
 #       sent to the data store through a channel. The timeout should then be
 #       sent with the alive key by the data transformer to the data store.
-#       loading from redis can still be done by some monitors (node)
 
-# TODO: In other monitors we must deal with how we are going to handle Redis
-#     : hashes
 import json
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from alerter.src.data_store.redis.redis_api import RedisApi
+from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.moniterables.system import System
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
@@ -18,7 +16,7 @@ from alerter.src.utils.data import get_prometheus_metrics_data
 
 class SystemMonitor(Monitor):
     def __init__(self, monitor_name: str, system: System,
-                 logger: logging.Logger, redis: Optional[RedisApi] = None) -> None:
+                 logger: logging.Logger, redis: RedisApi) -> None:
         super().__init__(monitor_name, logger, redis)
         self._system = system
         self._metrics_to_monitor = ['process_cpu_seconds_total',
@@ -34,8 +32,9 @@ class SystemMonitor(Monitor):
                                     'node_memory_MemAvailable_bytes',
                                     'node_network_transmit_bytes_total',
                                     'node_network_receive_bytes_total']
-        self._network_inspection_period = None
-        # TODO: We might need to store the total bytes here,  and rate in system
+        self._last_network_inspection = None
+        self._network_receive_bytes_total = None
+        self._network_transmit_bytes_total = None
 
         # Load the monitor state from Redis on start-up
         self.load_monitor_state()
@@ -44,17 +43,45 @@ class SystemMonitor(Monitor):
     def system(self) -> System:
         return self._system
 
+    @property
+    def metrics_to_monitor(self) -> List:
+        return self._metrics_to_monitor
+
+    @property
+    def last_network_inspection(self) -> Optional[float]:
+        return self._last_network_inspection
+
+    @property
+    def network_receive_bytes_total(self) -> Optional[float]:
+        return self._network_receive_bytes_total
+
+    @property
+    def network_transmit_bytes_total(self) -> Optional[float]:
+        return self._network_transmit_bytes_total
+
     def status(self) -> str:
         return self.system.status()
 
     def load_monitor_state(self) -> None:
-        # TODO: Here load monitor state, total bytes received/transmitted and
-        #     : inspection period
-        pass
+        key_lni = Keys.get_system_monitor_last_network_inspection(
+            self.monitor_name)
+        self._last_network_inspection = self.redis.get(key_lni, None)
+        key_rbt = Keys.get_system_monitor_network_receive_bytes_total(
+            self.monitor_name)
+        self._network_receive_bytes_total = self.redis.get(key_rbt, None)
+        key_tbt = Keys.get_system_monitor_network_transmit_bytes_total(
+            self.monitor_name)
+        self._network_transmit_bytes_total = self.redis.get(key_tbt, None)
+
+        self.logger.debug(
+            'Restored %s state: %s=%s, %s=%s, %s=%s', self.monitor_name,
+            key_lni, self.last_network_inspection, key_rbt,
+            self.network_receive_bytes_total, key_tbt,
+            self.network_transmit_bytes_total)
 
     def get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
-            self.system.node_exporter_url, self._metrics_to_monitor,
+            self.system.node_exporter_url, self.metrics_to_monitor,
             self.logger)
 
     def process_data(self) -> None:
@@ -148,9 +175,54 @@ class SystemMonitor(Monitor):
         self.system.set_system_storage_usage(system_storage_usage)
         processed_data['system_storage_usage'] = system_storage_usage
 
+        # Add the node network transmit/received bytes total and their per
+        # second variants to the processed data
+        receive_bytes_total = 0
+        transmit_bytes_total = 0
+        for i, j in enumerate(self.data['node_network_receive_bytes_total']):
+            receive_bytes_total += \
+                self.data['node_network_receive_bytes_total'][j]
+
+        for i, j in enumerate(self.data['node_network_transmit_bytes_total']):
+            transmit_bytes_total += \
+                self.data['node_network_transmit_bytes_total'][j]
+
+        last_network_inspection = datetime.now().timestamp()
+        network_transmit_bytes_per_second = None
+        network_receive_bytes_per_second = None
+
+        # If we have values to compare to (i.e. not the first monitoring round)
+        # compute the bytes per second transmitted/received
+        if self.last_network_inspection is not None:
+            network_transmit_bytes_per_second = \
+                (transmit_bytes_total - self.network_transmit_bytes_total) \
+                / (last_network_inspection - self.last_network_inspection)
+            network_receive_bytes_per_second = \
+                (receive_bytes_total - self.network_receive_bytes_total) \
+                / (last_network_inspection - self.last_network_inspection)
+
+        self._last_network_inspection = last_network_inspection
+        self._network_receive_bytes_total = receive_bytes_total
+        self._network_transmit_bytes_total = transmit_bytes_total
+        self.system.set_network_receive_bytes_per_second(
+            network_receive_bytes_per_second)
+        self.system.set_network_transmit_bytes_per_second(
+            network_transmit_bytes_per_second)
+        processed_data['last_network_inspection'] = last_network_inspection
+        processed_data['network_receive_bytes_total'] = receive_bytes_total
+        processed_data['network_transmit_bytes_total'] = transmit_bytes_total
+        processed_data['network_receive_bytes_per_second'] = \
+            network_receive_bytes_per_second
+        processed_data['network_transmit_bytes_per_second'] = \
+            network_transmit_bytes_per_second
+        self.logger.debug('%s last_network_inspection: %s, '
+                          'network_receive_bytes_total: %s, '
+                          'network_transmit_bytes_total: %s, '
+                          'network_transmit_bytes_per_second: %s, '
+                          'network_receive_bytes_per_second: %s', self.system,
+                          last_network_inspection,
+                          receive_bytes_total, transmit_bytes_total,
+                          network_transmit_bytes_per_second,
+                          network_receive_bytes_per_second)
+
         self._data = processed_data
-
-# TODO: Include network usage also to counter DDOS (receive_bytes add 3,
-#     : transmit_bytes add 3)
-#     : (current-old)/(time period)
-

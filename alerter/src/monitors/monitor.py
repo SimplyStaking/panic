@@ -18,8 +18,8 @@ class Monitor:
         self._logger = logger
         self._redis = redis
         self._data = {}
-        rabbit_host = os.environ["RABBIT_HOST"]
-        self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_host)
+        rabbit_ip = os.environ["RABBIT_IP"]
+        self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
 
     @property
     def logger(self) -> logging.Logger:

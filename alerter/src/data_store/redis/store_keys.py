@@ -9,8 +9,9 @@ _hash_blockchain = "hash_bc1"
 
 # smX_<monitor_name>
 _key_system_monitor_alive = "sm1"
-_key_system_monitor_network_inspection_period = "sm2"
-# TODO: Add the transmitted/received bytes here
+_key_system_monitor_last_network_inspection = "sm2"
+_key_system_monitor_network_receive_bytes_total = "sm3"
+_key_system_monitor_network_transmit_bytes_total = "sm4"
 
 # sX_<system_name>
 _key_system_process_cpu_seconds_total = "s1"
@@ -20,7 +21,8 @@ _key_system_open_file_descriptors = "s4"
 _key_system_system_cpu_usage = "s5"
 _key_system_system_ram_usage = "s6"
 _key_system_system_storage_usage = "s7"
-# TODO: Add the network rates here
+_key_system_network_transmit_bytes_per_second = "s8"
+_key_system_network_receive_bytes_per_second = "s9"
 
 
 def _as_prefix(key) -> str:
@@ -66,6 +68,28 @@ class Keys:
         return _as_prefix(_key_system_system_storage_usage) + system_name
 
     @staticmethod
-    def get_system_monitor_network_inspection_period(monitor_name: str) -> str:
-        return _as_prefix(_key_system_monitor_network_inspection_period) \
+    def get_system_network_transmit_bytes_per_second(system_name: str) -> str:
+        return _as_prefix(_key_system_network_transmit_bytes_per_second) \
+               + system_name
+
+    @staticmethod
+    def get_system_network_receive_bytes_per_second(system_name: str) -> str:
+        return _as_prefix(_key_system_network_receive_bytes_per_second) \
+               + system_name
+
+    @staticmethod
+    def get_system_monitor_last_network_inspection(monitor_name: str) -> str:
+        return _as_prefix(_key_system_monitor_last_network_inspection) \
+               + monitor_name
+
+    @staticmethod
+    def get_system_monitor_network_receive_bytes_total(monitor_name: str) \
+            -> str:
+        return _as_prefix(_key_system_monitor_network_receive_bytes_total) \
+               + monitor_name
+
+    @staticmethod
+    def get_system_monitor_network_transmit_bytes_total(monitor_name: str) \
+            -> str:
+        return _as_prefix(_key_system_monitor_network_transmit_bytes_total) \
                + monitor_name
