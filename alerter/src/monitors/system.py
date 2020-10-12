@@ -8,8 +8,9 @@
 import json
 import logging
 from datetime import datetime
-from typing import List
+from typing import Optional
 
+from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.moniterables.system import System
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
@@ -17,8 +18,8 @@ from alerter.src.utils.data import get_prometheus_metrics_data
 
 class SystemMonitor(Monitor):
     def __init__(self, monitor_name: str, system: System,
-                 logger: logging.Logger) -> None:
-        super().__init__(monitor_name, logger)
+                 logger: logging.Logger, redis: Optional[RedisApi] = None) -> None:
+        super().__init__(monitor_name, logger, redis)
         self._system = system
         self._metrics_to_monitor = ['process_cpu_seconds_total',
                                     'go_memstats_alloc_bytes',
@@ -30,18 +31,26 @@ class SystemMonitor(Monitor):
                                     'node_filesystem_avail_bytes',
                                     'node_filesystem_size_bytes',
                                     'node_memory_MemTotal_bytes',
-                                    'node_memory_MemAvailable_bytes']
+                                    'node_memory_MemAvailable_bytes',
+                                    'node_network_transmit_bytes_total',
+                                    'node_network_receive_bytes_total']
+        self._network_inspection_period = None
+        # TODO: We might need to store the total bytes here,  and rate in system
+
+        # Load the monitor state from Redis on start-up
+        self.load_monitor_state()
 
     @property
     def system(self) -> System:
         return self._system
 
-    @property
-    def metrics_to_monitor(self) -> List:
-        return self._metrics_to_monitor
-
     def status(self) -> str:
         return self.system.status()
+
+    def load_monitor_state(self) -> None:
+        # TODO: Here load monitor state, total bytes received/transmitted and
+        #     : inspection period
+        pass
 
     def get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
@@ -144,3 +153,4 @@ class SystemMonitor(Monitor):
 # TODO: Include network usage also to counter DDOS (receive_bytes add 3,
 #     : transmit_bytes add 3)
 #     : (current-old)/(time period)
+

@@ -17,13 +17,15 @@ class System:
         self._system_type = system_type
 
         # Data fields
-        self._process_cpu_seconds_total = None   # Seconds
-        self._process_memory_usage = None        # Percentage
-        self._virtual_memory_usage = None        # Bytes
-        self._open_file_descriptors = None       # Percentage
-        self._system_cpu_usage = None            # Percentage
-        self._system_ram_usage = None            # Percentage
-        self._system_storage_usage = None        # Percentage
+        self._process_cpu_seconds_total = None     # Seconds
+        self._process_memory_usage = None          # Percentage
+        self._virtual_memory_usage = None          # Bytes
+        self._open_file_descriptors = None         # Percentage
+        self._system_cpu_usage = None              # Percentage
+        self._system_ram_usage = None              # Percentage
+        self._system_storage_usage = None          # Percentage
+        self._network_transmit_bytes_per_second = None
+        self._network_receive_bytes_per_second = None
 
     def __str__(self) -> str:
         return self.name
@@ -76,15 +78,27 @@ class System:
     def system_storage_usage(self) -> Optional[float]:
         return self._system_storage_usage
 
+    @property
+    def network_transmit_bytes_per_second(self) -> Optional[float]:
+        return self._network_transmit_bytes_per_second
+
+    @property
+    def network_receive_bytes_per_second(self) -> Optional[float]:
+        return self._network_receive_bytes_per_second
+
     def status(self) -> str:
         return "process_cpu_seconds_total={}, " \
                "process_memory_usage={}, virtual_memory_usage={}, " \
                "open_file_descriptors={}, system_cpu_usage={}, " \
                "system_ram_usage={}, system_storage_usage={}, " \
-               "".format(self._process_cpu_seconds_total,
-                         self._process_memory_usage, self._virtual_memory_usage,
-                         self._open_file_descriptors, self._system_cpu_usage,
-                         self._system_ram_usage, self._system_storage_usage)
+               "network_transmit_bytes_per_second={}, " \
+               "network_receive_bytes_per_second={} " \
+               "".format(self.process_cpu_seconds_total,
+                         self.process_memory_usage, self.virtual_memory_usage,
+                         self.open_file_descriptors, self.system_cpu_usage,
+                         self.system_ram_usage, self.system_storage_usage,
+                         self.network_transmit_bytes_per_second,
+                         self.network_receive_bytes_per_second)
 
     def set_process_cpu_seconds_total(self, process_cpu_seconds_total) -> None:
         self._process_cpu_seconds_total = process_cpu_seconds_total
@@ -106,3 +120,13 @@ class System:
 
     def set_system_storage_usage(self, system_storage_usage) -> None:
         self._system_storage_usage = system_storage_usage
+
+    def set_network_transmit_bytes_per_second(
+            self, network_transmit_bytes_per_second) -> None:
+        self._network_transmit_bytes_per_second = \
+            network_transmit_bytes_per_second
+
+    def set_network_receive_bytes_per_second(
+            self, network_receive_bytes_per_second) -> None:
+        self._network_receive_bytes_per_second = \
+            network_receive_bytes_per_second
