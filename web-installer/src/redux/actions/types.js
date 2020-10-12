@@ -1,3 +1,66 @@
-// Used in PageActions.js
+// Channel related actions
+export const ADD_TELEGRAM = 'ADD_TELEGRAM';
+export const REMOVE_TELEGRAM = 'REMOVE_TELEGRAM';
+export const ADD_TWILIO = 'ADD_TWILIO';
+export const REMOVE_TWILIO = 'REMOVE_TWILIO';
+export const ADD_EMAIL = 'ADD_EMAIL';
+export const REMOVE_EMAIL = 'REMOVE_EMAIL';
+export const ADD_PAGERDUTY = 'ADD_PAGERDUTY';
+export const REMOVE_PAGERDUTY = 'REMOVE_PAGERDUTY';
+export const ADD_OPSGENIE = 'ADD_OPSGENIE';
+export const REMOVE_OPSGENIE = 'REMOVE_OPSGENIE';
 
-export const CHANGE_PAGE = "CHANGE_PAGE";
+// Page related actions
+export const CHANGE_PAGE = 'CHANGE_PAGE';
+export const CHANGE_STEP = 'CHANGE_STEP';
+
+// Cosmos chains related actions
+export const ADD_CHAIN_COSMOS = 'ADD_CHAIN_COSMOS';
+export const REMOVE_CHAIN_COSMOS = 'REMOVE_CHAIN_COSMOS';
+export const ADD_NODE_COSMOS = 'ADD_NODE_COSMOS';
+export const REMOVE_NODE_COSMOS = 'REMOVE_NODE_COSMOS';
+export const RESET_CHAIN_COSMOS = 'RESET_CHAIN_COSMOS';
+export const LOAD_CONFIG_COSMOS = 'LOAD_CONFIG_COSMOS';
+
+// Substrate chains related actions
+export const ADD_CHAIN_SUBSTRATE = 'ADD_CHAIN_SUBSTRATE';
+export const REMOVE_CHAIN_SUBSTRATE = 'REMOVE_CHAIN_SUBSTRATE';
+export const ADD_NODE_SUBSTRATE = 'ADD_NODE_SUBSTRATE';
+export const REMOVE_NODE_SUBSTRATE = 'REMOVE_NODE_SUBSTRATE';
+export const RESET_CHAIN_SUBSTRATE = 'RESET_CHAIN_SUBSTRATE';
+export const LOAD_CONFIG_SUBSTRATE = 'LOAD_CONFIG_SUBSTRATE';
+
+// General aka not chain specific actions
+export const UPDATE_PERIODIC = 'UPDATE_PERIODIC';
+export const ADD_REPOSITORY = 'ADD_REPOSITORY';
+export const ADD_SYSTEM = 'ADD_SYSTEM';
+export const REMOVE_REPOSITORY = 'REMOVE_REPOSITORY';
+export const REMOVE_SYSTEM = 'REMOVE_SYSTEM';
+export const ADD_KMS = 'ADD_KMS';
+export const REMOVE_KMS = 'REMOVE_KMS';
+export const ADD_TELEGRAM_CHANNEL = 'ADD_TELEGRAM_CHANNEL';
+export const REMOVE_TELEGRAM_CHANNEL = 'REMOVE_TELEGRAM_CHANNEL';
+export const ADD_TWILIO_CHANNEL = 'ADD_TWILIO_CHANNEL';
+export const REMOVE_TWILIO_CHANNEL = 'REMOVE_TWILIO_CHANNEL';
+export const ADD_EMAIL_CHANNEL = 'ADD_EMAIL_CHANNEL';
+export const REMOVE_EMAIL_CHANNEL = 'REMOVE_EMAIL_CHANNEL';
+export const ADD_OPSGENIE_CHANNEL = 'ADD_OPSGENIE_CHANNEL';
+export const REMOVE_OPSGENIE_CHANNEL = 'REMOVE_OPSGENIE_CHANNEL';
+export const ADD_PAGERDUTY_CHANNEL = 'ADD_PAGERDUTY_CHANNEL';
+export const REMOVE_PAGERDUTY_CHANNEL = 'REMOVE_PAGERDUTY_CHANNEL';
+
+// General alert configuration action types
+export const UPDATE_CHAIN_NAME = 'UPDATE_CHAIN_NAME';
+export const UPDATE_REPEAT_ALERT = 'UPDATE_REPEAT_ALERT';
+export const UPDATE_TIMEWINDOW_ALERT = 'UPDATE_TIMEWINDOW_ALERT';
+export const UPDATE_THRESHOLD_ALERT = 'UPDATE_THRESHOLD_ALERT';
+export const UPDATE_SEVERITY_ALERT = 'UPDATE_SEVERITY_ALERT';
+
+// Users Page, containing only actions to set and remove users
+export const ADD_USER = 'ADD_USER';
+export const REMOVE_USER = 'REMOVE_USER';
+
+// Login actions
+export const LOGIN = 'LOGIN';
+export const LOGOUT = 'LOGOUT';
+export const SET_AUTHENTICATED = 'SET_AUTHENTICATED';

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const axios = require('axios');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
@@ -17,6 +18,7 @@ const configs = require('./server/configs');
 const msgs = require('./server/msgs');
 const files = require('./server/files');
 const mongo = require('./server/mongo');
+const constants = require('./server/constants');
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
@@ -50,7 +52,6 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
-
 
 // This function confirms that the authentication of the installer are in the
 // .env file.
@@ -159,7 +160,7 @@ async function saveRefreshTokenToDB(username, refreshToken) {
   } catch (err) {
     // If the error is already a mongo error no need to wrap it again as a mongo
     // error
-    if (err.code === 442) {
+    if (err.code === constants.C_442) {
       throw err;
     }
     throw new errors.MongoError(err.message);
@@ -363,8 +364,42 @@ app.post('/server/account/save', verify, async (req, res) => {
     // If the record is already present in the database return a username
     // already exists error so that the error is more meaningful. Otherwise
     // return whatever error is thrown.
-    if (err.code === 446) {
+    if (err.code === constants.C_446) {
       const error = new errors.UsernameAlreadyExists(username);
+      console.log(error);
+      res.status(error.code).send(utils.errorJson(error.message));
+      return;
+    }
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// This should remove an account by username from the database
+app.post('/server/account/delete', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { username } = req.body;
+  // Check if username is missing
+  const missingParamsList = utils.missingValues({ username });
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  try {
+    // Remove an account from the collection
+    await mongo.removeFromCollection(mongoDBUrl, dbname,
+      accountsCollection, { username });
+    const msg = new msgs.AccountRemovedSuccessfully();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (err) {
+    // If the record is already present in the database return a username
+    // already exists error so that the error is more meaningful. Otherwise
+    // return whatever error is thrown.
+    if (err.code === constants.C_446) {
+      const error = new errors.UsernameDoesNotExists(username);
       console.log(error);
       res.status(error.code).send(utils.errorJson(error.message));
       return;
@@ -406,6 +441,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
 app.post('/server/database/drop', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { collection } = req.body;
+
   // Check if the collection parameter is missing
   const missingParamsList = utils.missingValues({ collection });
   // If some required parameters are missing inform the user.
@@ -425,7 +461,6 @@ app.post('/server/database/drop', verify, async (req, res) => {
     res.status(err.code).send(utils.errorJson(err.message));
   }
 });
-
 
 // ---------------------------------------- Configs
 
@@ -487,7 +522,7 @@ app.post('/server/config', verify, async (req, res) => {
     configType, fileName, chainName, baseChain,
   } = req.query;
   const { config } = req.body;
-
+  console.log(config);
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
   const missingParamsList = utils.missingValues({
@@ -586,7 +621,6 @@ app.post('/server/email/test', verify, async (req, res) => {
   const {
     smtp, from, to, user, pass,
   } = req.body;
-
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
 
@@ -685,7 +719,6 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
 app.post('/server/opsgenie/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { apiKey, eu } = req.body;
-
   // Check if apiKey is missing.
   const missingParamsList = utils.missingValues({ apiKey });
 
@@ -725,6 +758,122 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     }
   });
+});
+
+// ---------------------------------------- Cosmos
+
+app.post('/server/cosmos/tendermint', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { tendermintRpcUrl } = req.body;
+
+  // Check if tendermintRpcUrl is missing.
+  const missingParamsList = utils.missingValues({ tendermintRpcUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${tendermintRpcUrl}/health?`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing)
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+app.post('/server/cosmos/prometheus', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { prometheusUrl } = req.body;
+
+  // Check if prometheusUrl is missing.
+  const missingParamsList = utils.missingValues({ prometheusUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${prometheusUrl}`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing
+        // or prometheus is not enabled)
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+// ---------------------------------------- System (Node Exporter)
+
+app.post('/server/system/exporter', async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { exporterUrl } = req.body;
+
+  // Check if exporterUrl is missing.
+  const missingParamsList = utils.missingValues({ exporterUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  const url = `${exporterUrl}/metrics`;
+
+  axios.get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS)
+        .send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred node exporter is not installed
+        res.status(utils.ERR_STATUS)
+          .send(utils.errorJson(msg.message));
+      }
+    });
 });
 
 // ---------------------------------------- Server defaults
@@ -769,4 +918,4 @@ const port = process.env.INSTALLER_PORT || 8000;
   const server = https.createServer(httpsOptions, app);
   // Listen for requests
   server.listen(port, () => console.log('Listening on %s', port));
-})().catch(err => console.log(err));
+})().catch((err) => console.log(err));
