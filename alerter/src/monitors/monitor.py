@@ -19,7 +19,10 @@ class Monitor:
         self._redis = redis
         self._data = {}
         rabbit_ip = os.environ["RABBIT_IP"]
-        self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+    def __str__(self) -> str:
+        return self.monitor_name
 
     @property
     def logger(self) -> logging.Logger:
@@ -47,16 +50,16 @@ class Monitor:
     def load_monitor_state(self) -> None:
         pass
 
-    def get_data(self) -> None:
+    def _get_data(self) -> None:
         pass
 
-    def process_data(self) -> None:
+    def _process_data(self) -> None:
         pass
 
-    def send_data(self) -> None:
+    def _send_data(self) -> None:
         pass
 
-    def monitor(self) -> None:
+    def _monitor(self) -> None:
         # TODO: Must add error handling on the calling function. Also the
         #       calling function must first connect with RabbitMQ, and perform
         #       the RabbitMQ initializations (like queue creation). The calling
@@ -67,8 +70,16 @@ class Monitor:
         #       still reminder to keep a general exception handler, and rabbit
         #       specific errors. On the outside we must also post the status to
         #       the logs
-        self.get_data()
-        self.process_data()
-        self.send_data()
+        self._get_data()
+        self._process_data()
+        self._send_data()
+
+    def start(self) -> None:
+        # TODO: Must perform good error handling for everything
+        pass
+
+    def stop(self) -> None:
+        # TODO: Must do proper cleaning and closing
+        pass
 
         # TODO: Mark will send configs through RABBITMQ NOT REDIS

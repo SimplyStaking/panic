@@ -15,8 +15,10 @@ from alerter.src.moniterables.system import System
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
 
+# TODO: Go line by line and start removing things as make sense
 
 class SystemMonitor(Monitor):
+    # TODO: We do not need a system object, only a system url
     def __init__(self, monitor_name: str, system: System,
                  logger: logging.Logger, redis: RedisApi) -> None:
         super().__init__(monitor_name, logger, redis)
@@ -37,9 +39,14 @@ class SystemMonitor(Monitor):
         self._last_network_inspection = None
         self._network_receive_bytes_total = None
         self._network_transmit_bytes_total = None
+        # TODO: Here add fields that were monitored, these are only used for the
+        #     : status of the monitor
+        # TODO: Remove loading function, not needed
+        # TODO: send error is unreachable if system not reachable
+        # TODO: Discuss with other how would you wrap the error, error and result?
 
         # Load the monitor state from Redis on start-up
-        self.load_monitor_state()
+        self.load_monitor_state() # TODO: Will be removed
 
     @property
     def system(self) -> System:
@@ -81,12 +88,12 @@ class SystemMonitor(Monitor):
             self.network_receive_bytes_total, key_tbt,
             self.network_transmit_bytes_total)
 
-    def get_data(self) -> None:
+    def _get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
             self.system.node_exporter_url, self.metrics_to_monitor,
             self.logger)
 
-    def process_data(self) -> None:
+    def _process_data(self) -> None:
         # Add some meta-data to the processed data
         processed_data = {
             'monitor_name': self.monitor_name,
@@ -229,7 +236,7 @@ class SystemMonitor(Monitor):
 
         self._data = processed_data
 
-    def send_data(self) -> None:
+    def _send_data(self) -> None:
         # TODO: Do not sleep on the outside if message not delivered. Or do it
         #     : inside
         # TODO: On the outside, need to connect, qos settings etc
@@ -237,3 +244,10 @@ class SystemMonitor(Monitor):
             exchange='raw_data', routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
+
+    def start(self) -> None:
+
+        pass
+
+    def stop(self) -> None:
+        pass
