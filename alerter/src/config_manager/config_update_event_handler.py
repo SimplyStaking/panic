@@ -23,9 +23,9 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
         :param ignore_directories: Whether to ignore directories or not. Defaults to True
         :param case_sensitive: Whether the patterns given are case sensitive or not. Defaults to False
         """
-        logging.debug(f"Instancing Config Update Event Handler with parameters: callback = {callback}, "
-                      f"patterns = {patterns}, ignore_patterns = {ignore_patterns}, "
-                      f"ignore_directories={ignore_directories}, case_sensitive={case_sensitive}")
+        LOGGER.debug(f"Instancing Config Update Event Handler with parameters: callback = {callback}, "
+                     f"patterns = {patterns}, ignore_patterns = {ignore_patterns}, "
+                     f"ignore_directories={ignore_directories}, case_sensitive={case_sensitive}")
 
         self._callback = callback
         super().__init__(patterns, ignore_patterns, ignore_directories, case_sensitive)
@@ -34,7 +34,7 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
         super().on_created(event)
 
         what = 'directory' if event.is_directory else 'file'
-        logging.debug(f"Event triggered: Created {what}: {event.src_path}")
+        LOGGER.debug("Event triggered: Created %s: %s", what, event.src_path)
 
         self._callback(event)
 
@@ -42,6 +42,6 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
         super().on_modified(event)
 
         what = 'directory' if event.is_directory else 'file'
-        logging.debug(f"Event triggered: Modified {what}: {event.src_path}")
+        LOGGER.debug("Event triggered: Modified %s: %s", what, event.src_path)
 
         self._callback(event)
