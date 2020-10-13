@@ -19,16 +19,44 @@ if __name__ == '__main__':
     rabbitAPI = RabbitMQApi(DUMMY_LOGGER, rabbit_host)
     rabbitAPI.connect()
     rabbitAPI.confirm_delivery()
-    rabbitAPI.exchange_declare(exchange='config', exchange_type='topic')
-
+    rabbitAPI.exchange_declare(exchange='store', exchange_type='topic')
     try:
-        # Load the configuration file.
-        config = ConfigParser()
-        config.read('config/channels/email_config.ini')
-        config_dict = {key: dict(config[key]) for key in config}
-        config_dict.pop('DEFAULT', None)
+        github_dict = {
+            'repo_name': 'cosmos/cosmos',
+            'prev_no_of_releases': '20',
+        }
+        data_dict = {
+            'name': 'system_e5af2f6a-6e50-4dc8-aa6f-6b5ad61875a3',
+            'process_cpu_seconds_total': '123412',
+            'process_memory_usage': '65',
+            'virtual_memory_usage': '600',
+            'open_file_descriptors': '70',
+            'system_cpu_usage': '90',
+            'system_ram_usage': '32',
+            'system_storage_usage': '54',
+            'system_network_transmit_bytes_per_second': '10',
+            'system_network_receive_bytes_per_second': '20',
+        }
+        system_monitor_dict = {
+            'name': 'system_e5af2f6a-6e50-4dc8-aa6f-6b5ad61875a3',
+            'system_monitor_alive': '20',
+            'system_monitor_last_network_inspection': '20',
+            'system_monitor_network_receive_bytes_total': '3000',
+            'system_monitor_network_transmit_bytes_total': '3000',
+        }
         rabbitAPI.basic_publish_confirm(
-            exchange='config', routing_key='config.email', body=config_dict,
+            exchange='store', routing_key='transformer.system.state',
+            body=data_dict,
+            mandatory=True
+        )
+        rabbitAPI.basic_publish_confirm(
+            exchange='store', routing_key='transformer.github.state',
+            body=github_dict,
+            mandatory=True
+        )
+        rabbitAPI.basic_publish_confirm(
+            exchange='store', routing_key='transformer.system.monitor',
+            body=system_monitor_dict,
             mandatory=True
         )
         # print('Message was published')
