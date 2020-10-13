@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Callable
 
 import pika
 import pika.exceptions
@@ -88,7 +88,7 @@ class RabbitMQApi:
             self.live_check_limiter.did_task()
         self._is_connected = False
 
-    def _do_not_use_if_recently_disconnected(self) -> bool:
+    def _is_recently_disconnected(self) -> bool:
         # If currently not connected with RabbitMQ and cannot check the
         # connection status return true
         return not self.is_connected and not self.live_check_limiter \
@@ -99,7 +99,7 @@ class RabbitMQApi:
         # handling as well as returns a specified default if RabbtiMQ is running
         # into difficulties. Exceptions are raised to the calling function.
         try:
-            if self._do_not_use_if_recently_disconnected():
+            if self._is_recently_disconnected():
                 self.logger.debug('RabbitMQ: Could not execute %s as RabbitMQ '
                                   'is temporarily unusable to improve '
                                   'performance', function.__name__)
@@ -212,24 +212,27 @@ class RabbitMQApi:
                 self.logger.info('Attempting another connection')
                 continue
 
-    def queue_declare(self, queue, passive=False, durable=False,
-                      exclusive=False, auto_delete=False) \
-            -> Optional[Union[int, str]]:
+    def queue_declare(self, queue: str, passive: bool = False,
+                      durable: bool = False, exclusive: bool = False,
+                      auto_delete: bool = False) -> Optional[Union[int, str]]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
         args = [queue, passive, durable, exclusive, auto_delete]
         if self._connection_initialized():
             return self._safe(self.channel.queue_declare, args, -1)
 
-    def queue_bind(self, queue, exchange, routing_key=None) -> Optional[int]:
+    def queue_bind(self, queue: str, exchange: str, routing_key: str = None) \
+            -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
         args = [queue, exchange, routing_key]
         if self._connection_initialized():
             return self._safe(self.channel.queue_bind, args, -1)
 
-    def basic_publish(self, exchange, routing_key, body, is_body_dict=False,
-                      properties=None, mandatory=False) -> Optional[int]:
+    def basic_publish(self, exchange: str, routing_key: str,
+                      body: Union[str, Dict, bytes], is_body_dict: bool = False,
+                      properties: pika.spec.BasicProperties = None,
+                      mandatory: bool = False) -> Optional[int]:
         # If the message to be published is a Dict, serialize to json first
         args = [exchange, routing_key,
                 json.dumps(body) if is_body_dict else body,
@@ -239,9 +242,11 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.basic_publish, args, -1)
 
-    def basic_publish_confirm(self, exchange, routing_key, body,
-                              is_body_dict=False, properties=None,
-                              mandatory=False) -> Optional[int]:
+    def basic_publish_confirm(self, exchange: str, routing_key: str,
+                              body: Union[str, Dict, bytes],
+                              is_body_dict: bool = False,
+                              properties: pika.spec.BasicProperties = None,
+                              mandatory: bool = False) -> Optional[int]:
         # Attempt a publish and wait until a message is sent to an exchange. If
         # mandatory is set to true, this function will block until the consumer
         # receives the message. Note: self.confirm_delivery() must be called
@@ -253,8 +258,9 @@ class RabbitMQApi:
             # If a message is not delivered, the exception below is raised.
             raise MessageWasNotDeliveredException(e)
 
-    def basic_consume(self, queue, on_message_callback, auto_ack=False,
-                      exclusive=False, consumer_tag=None) -> Optional[int]:
+    def basic_consume(self, queue: str, on_message_callback: Callable,
+                      auto_ack: bool = False, exclusive: bool = False,
+                      consumer_tag: str = None) -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
         args = [queue, on_message_callback, auto_ack, exclusive, consumer_tag]
@@ -267,23 +273,25 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.start_consuming, [], -1)
 
-    def basic_ack(self, delivery_tag=0, multiple=False) -> Optional[int]:
+    def basic_ack(self, delivery_tag: int = 0, multiple: bool = False) \
+            -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
         args = [delivery_tag, multiple]
         if self._connection_initialized():
             return self._safe(self.channel.basic_ack, args, -1)
 
-    def basic_qos(self, prefetch_size=0, prefetch_count=0, global_qos=False) \
-            -> Optional[int]:
+    def basic_qos(self, prefetch_size: int = 0, prefetch_count: int = 0,
+                  global_qos: bool = False) -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
         args = [prefetch_size, prefetch_count, global_qos]
         if self._connection_initialized():
             return self._safe(self.channel.basic_qos, args, -1)
 
-    def exchange_declare(self, exchange, exchange_type='direct', passive=False,
-                         durable=False, auto_delete=False, internal=False) \
+    def exchange_declare(self, exchange: str, exchange_type: str = 'direct',
+                         passive: bool = False, durable: bool = False,
+                         auto_delete: bool = False, internal: bool = False) \
             -> Optional[int]:
         # Perform operation only if a connection has been initialized,
         # otherwise, this function will throw a not initialized exception
