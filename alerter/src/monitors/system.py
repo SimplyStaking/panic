@@ -7,6 +7,8 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 
+import pika
+
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.moniterables.system import System
@@ -226,3 +228,12 @@ class SystemMonitor(Monitor):
                           network_receive_bytes_per_second)
 
         self._data = processed_data
+
+    def send_data(self) -> None:
+        # TODO: Do not sleep on the outside if message not delivered. Or do it
+        #     : inside
+        # TODO: On the outside, need to connect, qos settings etc
+        self.rabbitmq.basic_publish_confirm(
+            exchange='raw_data', routing_key='system', body=self.data,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
