@@ -1,7 +1,3 @@
-# TODO: Do not save in Redis from here (even is_alive key etc) these must be
-#       sent to the data store through a channel. The timeout should then be
-#       sent with the alive key by the data transformer to the data store.
-
 import json
 import logging
 from datetime import datetime
@@ -9,20 +5,16 @@ from typing import Optional, List
 
 import pika
 
-from alerter.src.data_store.redis.redis_api import RedisApi
-from alerter.src.data_store.redis.store_keys import Keys
-from alerter.src.moniterables.system import System
+from alerter.src.configs.system import SystemConfig
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
 
-# TODO: Go line by line and start removing things as make sense
 
 class SystemMonitor(Monitor):
-    # TODO: We do not need a system object, only a system url
-    def __init__(self, monitor_name: str, system: System,
-                 logger: logging.Logger, redis: RedisApi) -> None:
-        super().__init__(monitor_name, logger, redis)
-        self._system = system
+    def __init__(self, monitor_name: str, system_config: SystemConfig,
+                 logger: logging.Logger) -> None:
+        super().__init__(monitor_name, logger)
+        self._system_config = system_config
         self._metrics_to_monitor = ['process_cpu_seconds_total',
                                     'go_memstats_alloc_bytes',
                                     'go_memstats_alloc_bytes_total',
@@ -36,29 +28,51 @@ class SystemMonitor(Monitor):
                                     'node_memory_MemAvailable_bytes',
                                     'node_network_transmit_bytes_total',
                                     'node_network_receive_bytes_total']
-        self._last_network_inspection = None
+        self._process_cpu_seconds_total = None  # Seconds
+        self._process_memory_usage = None  # Percentage
+        self._virtual_memory_usage = None  # Bytes
+        self._open_file_descriptors = None  # Percentage
+        self._system_cpu_usage = None  # Percentage
+        self._system_ram_usage = None  # Percentage
+        self._system_storage_usage = None  # Percentage
         self._network_receive_bytes_total = None
         self._network_transmit_bytes_total = None
-        # TODO: Here add fields that were monitored, these are only used for the
-        #     : status of the monitor
-        # TODO: Remove loading function, not needed
-        # TODO: send error is unreachable if system not reachable
-        # TODO: Discuss with other how would you wrap the error, error and result?
-
-        # Load the monitor state from Redis on start-up
-        self.load_monitor_state() # TODO: Will be removed
 
     @property
-    def system(self) -> System:
-        return self._system
+    def system_config(self) -> SystemConfig:
+        return self._system_config
 
     @property
     def metrics_to_monitor(self) -> List:
         return self._metrics_to_monitor
 
     @property
-    def last_network_inspection(self) -> Optional[float]:
-        return self._last_network_inspection
+    def process_cpu_seconds_total(self) -> Optional[float]:
+        return self._process_cpu_seconds_total
+
+    @property
+    def process_memory_usage(self) -> Optional[float]:
+        return self._process_memory_usage
+
+    @property
+    def virtual_memory_usage(self) -> Optional[float]:
+        return self._virtual_memory_usage
+
+    @property
+    def open_file_descriptors(self) -> Optional[float]:
+        return self._open_file_descriptors
+
+    @property
+    def system_cpu_usage(self) -> Optional[float]:
+        return self._system_cpu_usage
+
+    @property
+    def system_ram_usage(self) -> Optional[float]:
+        return self._system_ram_usage
+
+    @property
+    def system_storage_usage(self) -> Optional[float]:
+        return self._system_storage_usage
 
     @property
     def network_receive_bytes_total(self) -> Optional[float]:
@@ -69,72 +83,67 @@ class SystemMonitor(Monitor):
         return self._network_transmit_bytes_total
 
     def status(self) -> str:
-        return self.system.status()
-
-    def load_monitor_state(self) -> None:
-        key_lni = Keys.get_system_monitor_last_network_inspection(
-            self.monitor_name)
-        self._last_network_inspection = self.redis.get(key_lni, None)
-        key_rbt = Keys.get_system_monitor_network_receive_bytes_total(
-            self.monitor_name)
-        self._network_receive_bytes_total = self.redis.get(key_rbt, None)
-        key_tbt = Keys.get_system_monitor_network_transmit_bytes_total(
-            self.monitor_name)
-        self._network_transmit_bytes_total = self.redis.get(key_tbt, None)
-
-        self.logger.debug(
-            'Restored %s state: %s=%s, %s=%s, %s=%s', self.monitor_name,
-            key_lni, self.last_network_inspection, key_rbt,
-            self.network_receive_bytes_total, key_tbt,
-            self.network_transmit_bytes_total)
+        return "process_cpu_seconds_total={}, " \
+               "process_memory_usage={}, virtual_memory_usage={}, " \
+               "open_file_descriptors={}, system_cpu_usage={}, " \
+               "system_ram_usage={}, system_storage_usage={}, " \
+               "network_transmit_bytes_total={}, " \
+               "network_receive_bytes_total={}" \
+               "".format(self.process_cpu_seconds_total,
+                         self.process_memory_usage, self.virtual_memory_usage,
+                         self.open_file_descriptors, self.system_cpu_usage,
+                         self.system_ram_usage, self.system_storage_usage,
+                         self.network_transmit_bytes_total,
+                         self.network_receive_bytes_total)
 
     def _get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
-            self.system.node_exporter_url, self.metrics_to_monitor,
+            self.system_config.node_exporter_url, self.metrics_to_monitor,
             self.logger)
 
     def _process_data(self) -> None:
         # Add some meta-data to the processed data
+        # TODO: Wrap with error or result. The meta-data send always even with
+        #     : error
         processed_data = {
             'monitor_name': self.monitor_name,
-            'system_type':
-                'general' if self.system.is_general_system
-                else 'blockchain_node',
-            'chain': self.system.chain,
+            'system_name': self.system_config.system_name,
+            'system_id': self.system_config.system_id,
+            'system_parent_id': self.system_config.parent_id,
             'time': str(datetime.now().timestamp())
         }
 
         # Add process CPU seconds total to the processed data
         process_cpu_seconds_total = self.data['process_cpu_seconds_total']
-        self.logger.debug('%s process_cpu_seconds_total: %s', self.system,
-                          process_cpu_seconds_total)
-        self.system.set_process_cpu_seconds_total(process_cpu_seconds_total)
+        self.logger.debug('%s process_cpu_seconds_total: %s',
+                          self.system_config, process_cpu_seconds_total)
         processed_data['process_cpu_seconds_total'] = process_cpu_seconds_total
+        self._process_cpu_seconds_total = process_cpu_seconds_total
 
         # Add process memory usage percentage to the processed data
         process_memory_usage = (self.data['go_memstats_alloc_bytes'] /
                                 self.data[
                                     'go_memstats_alloc_bytes_total']) * 100
         process_memory_usage = float("{:.2f}".format(process_memory_usage))
-        self.logger.debug('%s process_memory_usage: %s', self.system,
+        self.logger.debug('%s process_memory_usage: %s', self.system_config,
                           process_memory_usage)
-        self.system.set_process_memory_usage(process_memory_usage)
         processed_data['process_memory_usage'] = process_memory_usage
+        self._process_memory_usage = process_memory_usage
 
         # Add virtual memory usage to the processed data
         virtual_memory_usage = self.data['process_virtual_memory_bytes']
-        self.logger.debug('%s virtual_memory_usage: %s', self.system,
+        self.logger.debug('%s virtual_memory_usage: %s', self.system_config,
                           virtual_memory_usage)
-        self.system.set_virtual_memory_usage(virtual_memory_usage)
         processed_data['virtual_memory_usage'] = virtual_memory_usage
+        self._virtual_memory_usage = virtual_memory_usage
 
         # Add open file descriptors percentage to the processed data
         open_file_descriptors = \
             (self.data['process_open_fds'] / self.data['process_max_fds']) * 100
-        self.logger.debug('%s open_file_descriptors: %s', self.system,
+        self.logger.debug('%s open_file_descriptors: %s', self.system_config,
                           open_file_descriptors)
-        self.system.set_open_file_descriptors(open_file_descriptors)
         processed_data['open_file_descriptors'] = open_file_descriptors
+        self._open_file_descriptors = open_file_descriptors
 
         # Add system CPU usage percentage to processed data
         # Find the system cpu usage by subtracting 100 from the percentage of
@@ -149,20 +158,20 @@ class SystemMonitor(Monitor):
         system_cpu_usage = 100 - (
                 (node_cpu_seconds_idle / node_cpu_seconds_total) * 100)
         system_cpu_usage = float("{:.2f}".format(system_cpu_usage))
-        self.logger.debug('%s system_cpu_usage: %s', self.system,
+        self.logger.debug('%s system_cpu_usage: %s', self.system_config,
                           system_cpu_usage)
-        self.system.set_system_cpu_usage(system_cpu_usage)
         processed_data['system_cpu_usage'] = system_cpu_usage
+        self._system_cpu_usage = system_cpu_usage
 
         # Add system RAM usage percentage to processed data
         system_ram_usage = ((self.data['node_memory_MemTotal_bytes'] -
                              self.data['node_memory_MemAvailable_bytes']) /
                             self.data['node_memory_MemTotal_bytes']) * 100
         system_ram_usage = float("{:.2f}".format(system_ram_usage))
-        self.logger.debug('%s system_ram_usage: %s', self.system,
+        self.logger.debug('%s system_ram_usage: %s', self.system_config,
                           system_ram_usage)
-        self.system.set_system_ram_usage(system_ram_usage)
         processed_data['system_ram_usage'] = system_ram_usage
+        self._system_ram_usage = system_ram_usage
 
         # Add system storage usage percentage to processed data
         node_filesystem_avail_bytes = 0
@@ -179,11 +188,12 @@ class SystemMonitor(Monitor):
                 (node_filesystem_avail_bytes / node_filesystem_size_bytes)
                 * 100)
         system_storage_usage = float("{:.2f}".format(system_storage_usage))
-        self.logger.debug('%s system_storage_usage: %s', self.system,
+        self.logger.debug('%s system_storage_usage: %s', self.system_config,
                           system_storage_usage)
-        self.system.set_system_storage_usage(system_storage_usage)
         processed_data['system_storage_usage'] = system_storage_usage
+        self._system_storage_usage = system_storage_usage
 
+        # TODO: Need to change how this works as above
         # Add the node network transmit/received bytes total and their per
         # second variants to the processed data
         receive_bytes_total = 0
@@ -251,3 +261,6 @@ class SystemMonitor(Monitor):
 
     def stop(self) -> None:
         pass
+
+ # TODO: send error is unreachable if system not reachable
+# TODO: Discuss with other how would you wrap the error, error and result?
