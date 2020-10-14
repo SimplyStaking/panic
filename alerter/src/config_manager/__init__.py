@@ -1,4 +1,5 @@
 import logging
+import os
 from configparser import ConfigParser
 from typing import List, Union, Optional, Dict, Any
 
@@ -31,14 +32,14 @@ class ConfigManager:
         if not file_patterns:
             file_patterns = ["*.ini"]
 
-        self._event_handler = ConfigFileEventHandler(self.__on_event_thrown, file_patterns, ignore_file_patterns,
+        self._event_handler = ConfigFileEventHandler(self._on_event_thrown, file_patterns, ignore_file_patterns,
                                                      ignore_directories, case_sensitive)
         self._observer = Observer()
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
         self._rabbit = RabbitMQApi()
 
-    def __send_config_to_rabbit_mq(self, config: Dict[str, Any]):
+    def _send_config_to_rabbit_mq(self, config: Dict[str, Any], routing_key: str) -> None:
         LOGGER.debug("Connecting to RabbitMQ")
         self._rabbit.connect_till_successful()
         LOGGER.debug("Connection successful")
@@ -46,19 +47,27 @@ class ConfigManager:
         try:
             LOGGER.debug("Attempting to send config")
             # We need to definitely send this
-            self._rabbit.basic_publish_confirm("config", "config", config, mandatory=True)
+            self._rabbit.basic_publish_confirm("config", routing_key, config, mandatory=True)
         except MessageWasNotDeliveredException as mwnde:
             LOGGER.info("Config was not successfully sent")  # Should not get here
             raise mwnde
         self._rabbit.disconnect()
         LOGGER.debug("Disconnected form RabbitMQ")
 
-    def __on_event_thrown(self, event: FileSystemEvent) -> None:
+    def _on_event_thrown(self, event: FileSystemEvent) -> None:
         config = ConfigParser()
         config.read(event.src_path)
         config_dict = {key: dict(config[key]) for key in config}
 
-        self.__send_config_to_rabbit_mq(config_dict)
+        split_src = os.path.split(event.src_path)
+
+        # if "config" in split_src:
+        #     os.path.
+        #
+        # routing_key =
+        print(event.src_path)
+        print(split_src)
+        # self._send_config_to_rabbit_mq(config_dict)
 
     def start_watching_config_files(self) -> None:
         """
