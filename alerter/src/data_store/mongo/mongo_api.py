@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from pymongo import MongoClient
 from pymongo.results import InsertOneResult, InsertManyResult
@@ -62,7 +62,7 @@ class MongoApi:
         # If Mongo is not live and cannot check if it is live return true
         return not self._is_live and not self._live_check_limiter.can_do_task()
 
-    def _safe(self, function, args: List, default_return):
+    def _safe(self, function, args: List[Any], default_return: Any):
         # Calls the function with the provided arguments and performs exception
         # handling as well as returns a specified default if mongo is running
         # into difficulties. Exceptions are raised to the calling function.
