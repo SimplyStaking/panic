@@ -39,9 +39,9 @@ const installerCredentials = {
   INSTALLER_PASSWORD: process.env.INSTALLER_PASSWORD,
 };
 const dbname = process.env.DB_NAME;
-const dbhost = process.env.DB_HOST;
+const dbip = process.env.DB_IP;
 const dbport = process.env.DB_PORT;
-const mongoDBUrl = `mongodb://${dbhost}:${dbport}/${dbname}`;
+const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
