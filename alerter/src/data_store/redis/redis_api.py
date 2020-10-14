@@ -1,8 +1,9 @@
 import logging
 from datetime import timedelta
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 
 import redis
+import distutils.util
 
 from alerter.src.utils.timing import TimedTaskLimiter
 from alerter.src.utils.types import RedisType
@@ -66,7 +67,7 @@ class RedisApi:
         # If Redis is not live and cannot check if it is live return true
         return not self._is_live and not self._live_check_limiter.can_do_task()
 
-    def _safe(self, function, args: List, default_return):
+    def _safe(self, function, args: List[Any], default_return: Any):
         # Given an "unsafe" function from below and its arguments, safe calls
         # the function with the provided arguments and performs exception
         # handling as well as returns a specified default upon failure
@@ -95,7 +96,7 @@ class RedisApi:
 
     def set_multiple_unsafe(self, key_values: Dict[str, RedisType]):
         # Add namespace to keys
-        keys = key_values.keys()
+        keys = list(key_values.keys())
         namespaced_keys = [self._add_namespace(k) for k in keys]
         for k, uk in zip(keys, namespaced_keys):
             key_values[uk] = key_values.pop(k)
@@ -193,16 +194,22 @@ class RedisApi:
     def get_bool_unsafe(self, key: str, default: Optional[bool] = None) \
             -> Optional[bool]:
         key = self._add_namespace(key)
-
         get_ret = self.get_unsafe(key, None)
-        return (get_ret.decode() == 'True') if get_ret is not None else default
+
+        if get_ret is not None and get_ret.decode() in ['True', 'False']:
+            return bool(distutils.util.strtobool(get_ret.decode()))
+
+        return default
 
     def hget_bool_unsafe(self, name: str, key: str,
                          default: Optional[bool] = None) -> Optional[bool]:
         name = self._add_namespace(name)
-
         get_ret = self.hget_unsafe(name, key, None)
-        return (get_ret.decode() == 'True') if get_ret is not None else default
+
+        if get_ret is not None and get_ret.decode() in ['True', 'False']:
+            return bool(distutils.util.strtobool(get_ret.decode()))
+
+        return default
 
     def exists_unsafe(self, key: str) -> bool:
         key = self._add_namespace(key)

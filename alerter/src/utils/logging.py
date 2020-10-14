@@ -3,16 +3,15 @@ import logging.config
 import logging.handlers
 import sys
 
-DUMMY_LOGGER = logging.getLogger('dummy')
 
-
-def create_logger(file: str, name: str, level: str, rotating: bool = False) \
-        -> logging.Logger:
+def create_logger(file: str, name: str, level: str, rotating: bool = False,
+                  propagate: bool = True) -> logging.Logger:
     logger = logging.getLogger(name)
+    logger.propagate = propagate
     logger.setLevel(level)
 
     # If logger already has handler, assume it was already created
-    if len(logger.handlers) == 1:
+    if len(logger.handlers) >= 1:
         return logger
 
     if rotating:
