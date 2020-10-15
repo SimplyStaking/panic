@@ -1,8 +1,9 @@
 import logging
 from datetime import timedelta
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 
 import redis
+import distutils.util
 
 from alerter.src.utils.timing import TimedTaskLimiter
 from alerter.src.utils.types import RedisType
@@ -66,7 +67,7 @@ class RedisApi:
         # If Redis is not live and cannot check if it is live return true
         return not self._is_live and not self._live_check_limiter.can_do_task()
 
-    def _safe(self, function, args: List, default_return):
+    def _safe(self, function, args: List[Any], default_return: Any):
         # Given an "unsafe" function from below and its arguments, safe calls
         # the function with the provided arguments and performs exception
         # handling as well as returns a specified default upon failure
@@ -96,8 +97,8 @@ class RedisApi:
     def set_multiple_unsafe(self, key_values: Dict[str, RedisType]):
         # Add namespace to keys
         keys = list(key_values.keys())
-        unique_keys = [self._add_namespace(k) for k in keys]
-        for k, uk in zip(keys, unique_keys):
+        namespaced_keys = [self._add_namespace(k) for k in keys]
+        for k, uk in zip(keys, namespaced_keys):
             key_values[uk] = key_values.pop(k)
 
         # Set multiple
@@ -138,7 +139,8 @@ class RedisApi:
         else:
             return time_to_live
 
-    def get_unsafe(self, key: str, default=None) -> Optional[bytes]:
+    def get_unsafe(self, key: str, default: Optional[bytes] = None) \
+            -> Optional[bytes]:
         key = self._add_namespace(key)
 
         if self.exists_unsafe(key):
@@ -150,7 +152,8 @@ class RedisApi:
         else:
             return default
 
-    def hget_unsafe(self, name: str, key: str, default=None) -> Optional[bytes]:
+    def hget_unsafe(self, name: str, key: str,
+                    default: Optional[bytes] = None) -> Optional[bytes]:
         name = self._add_namespace(name)
 
         if self.hexists_unsafe(name, key):
@@ -162,20 +165,21 @@ class RedisApi:
         else:
             return default
 
-    def get_int_unsafe(self, key: str, default=None) -> Optional[int]:
-        key = self._add_namespace(key)
-
-        get_ret = self.get_unsafe(key, None)
-        try:
-            return int(get_ret) if get_ret is not None else default
-        except ValueError:
-            self._logger.error(
-                'Could not convert value %s of key %s to an integer. '
-                'Defaulting to value %s.', get_ret, key, default)
-            return default
-
-    def hget_int_unsafe(self, name: str, key: str, default=None) \
+    def get_int_unsafe(self, key: str, default: Optional[int] = None) \
             -> Optional[int]:
+        key = self._add_namespace(key)
+
+        get_ret = self.get_unsafe(key, None)
+        try:
+            return int(get_ret) if get_ret is not None else default
+        except ValueError:
+            self._logger.error(
+                'Could not convert value %s of key %s to an integer. '
+                'Defaulting to value %s.', get_ret, key, default)
+            return default
+
+    def hget_int_unsafe(self, name: str, key: str,
+                        default: Optional[int] = None) -> Optional[int]:
         name = self._add_namespace(name)
 
         get_ret = self.hget_unsafe(name, key, None)
@@ -187,18 +191,25 @@ class RedisApi:
                 'Defaulting to value %s.', get_ret, key, default)
             return default
 
-    def get_bool_unsafe(self, key: str, default=None) -> Optional[bool]:
-        key = self._add_namespace(key)
-
-        get_ret = self.get_unsafe(key, None)
-        return (get_ret.decode() == 'True') if get_ret is not None else default
-
-    def hget_bool_unsafe(self, name: str, key: str, default=None) \
+    def get_bool_unsafe(self, key: str, default: Optional[bool] = None) \
             -> Optional[bool]:
-        name = self._add_namespace(name)
+        key = self._add_namespace(key)
+        get_ret = self.get_unsafe(key, None)
 
+        if get_ret is not None and get_ret.decode() in ['True', 'False']:
+            return bool(distutils.util.strtobool(get_ret.decode()))
+
+        return default
+
+    def hget_bool_unsafe(self, name: str, key: str,
+                         default: Optional[bool] = None) -> Optional[bool]:
+        name = self._add_namespace(name)
         get_ret = self.hget_unsafe(name, key, None)
-        return (get_ret.decode() == 'True') if get_ret is not None else default
+
+        if get_ret is not None and get_ret.decode() in ['True', 'False']:
+            return bool(distutils.util.strtobool(get_ret.decode()))
+
+        return default
 
     def exists_unsafe(self, key: str) -> bool:
         key = self._add_namespace(key)
@@ -243,22 +254,26 @@ class RedisApi:
     def time_to_live(self, key: str):
         return self._safe(self.time_to_live_unsafe, [key], None)
 
-    def get(self, key: str, default=None) -> Optional[bytes]:
+    def get(self, key: str, default: Optional[bytes] = None) -> Optional[bytes]:
         return self._safe(self.get_unsafe, [key, default], default)
 
-    def hget(self, name: str, key: str, default=None) -> Optional[bytes]:
+    def hget(self, name: str, key: str, default: Optional[bytes] = None) \
+            -> Optional[bytes]:
         return self._safe(self.hget_unsafe, [name, key, default], default)
 
-    def get_int(self, key: str, default=None) -> Optional[int]:
+    def get_int(self, key: str, default: Optional[int] = None) -> Optional[int]:
         return self._safe(self.get_int_unsafe, [key, default], default)
 
-    def hget_int(self, name: str, key: str, default=None) -> Optional[int]:
+    def hget_int(self, name: str, key: str, default: Optional[int] = None) \
+            -> Optional[int]:
         return self._safe(self.hget_int_unsafe, [name, key, default], default)
 
-    def get_bool(self, key: str, default=None) -> Optional[bool]:
+    def get_bool(self, key: str, default: Optional[bool] = None) \
+            -> Optional[bool]:
         return self._safe(self.get_bool_unsafe, [key, default], default)
 
-    def hget_bool(self, name: str, key: str, default=None) -> Optional[bool]:
+    def hget_bool(self, name: str, key: str, default: Optional[bool] = None) \
+            -> Optional[bool]:
         return self._safe(self.hget_bool_unsafe, [name, key, default], default)
 
     def exists(self, key: str) -> bool:
@@ -270,7 +285,7 @@ class RedisApi:
     def get_keys(self, pattern: str = "*") -> List[str]:
         return self._safe(self.get_keys_unsafe, [pattern], [])
 
-    def remove(self, *keys):
+    def remove(self, *keys: List[str]):
         return self._safe(self.remove_unsafe, [keys], None)
 
     def delete_all(self):

@@ -10,11 +10,11 @@ services:
       - 'DB_NAME=${DB_NAME}'
       - 'INSTALLER_USERNAME=${INSTALLER_USERNAME}'
       - 'INSTALLER_PASSWORD=${INSTALLER_PASSWORD}'
-      - 'DB_HOST=${DB_HOST}'
+      - 'DB_IP=${DB_IP}'
       - 'DB_PORT=${DB_PORT}'
       - 'INSTALLER_AUTH_COLLECTION=${INSTALLER_AUTH_COLLECTION}'
       - 'ACCOUNTS_COLLECTION=${ACCOUNTS_COLLECTION}'
-      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}'
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
@@ -27,7 +27,7 @@ services:
     restart: always
     networks:
       panic_net:
-        ipv4_address: '${INSTALLER_HOST}'
+        ipv4_address: '${INSTALLER_IP}'
     depends_on:
       - mongo
 
@@ -35,7 +35,7 @@ services:
     image: 'mongo'
     networks:
       panic_net:
-        ipv4_address: '${DB_HOST}'
+        ipv4_address: '${DB_IP}'
     restart: always
     container_name: 'mongo'
     volumes:
@@ -45,7 +45,7 @@ services:
     image: 'redis'
     networks:
       panic_net:
-        ipv4_address: '${REDIS_HOST}'
+        ipv4_address: '${REDIS_IP}'
     restart: always
     container_name: 'redis'
 
@@ -53,7 +53,7 @@ services:
     image: 'rabbitmq:3-management'
     networks:
       panic_net:
-        ipv4_address: '${RABBIT_HOST}'
+        ipv4_address: '${RABBIT_IP}'
     restart: always
     container_name: 'rabbitmq'
 
@@ -61,13 +61,13 @@ services:
   alerter:
     environment:
       - 'DB_NAME=${DB_NAME}'
-      - 'DB_HOST=${DB_HOST}'
+      - 'DB_IP=${DB_IP}'
       - 'DB_PORT=${DB_PORT}'
       - 'REDIS_DB=${REDIS_DB}'
-      - 'REDIS_HOST=${REDIS_HOST}'
+      - 'REDIS_IP=${REDIS_IP}'
       - 'REDIS_PORT=${REDIS_PORT}'
-      - 'RABBIT_HOST=${RABBIT_HOST}'
-      - 'WAIT_HOSTS=${DB_HOST}:${DB_PORT}, ${REDIS_HOST}:${REDIS_PORT}, ${RABBIT_HOST}:${RABBIT_PORT}'
+      - 'RABBIT_IP=${RABBIT_IP}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
     build: .
     image: 'simplyvc/panic_alerter:1.0.0'
     volumes:
@@ -76,7 +76,7 @@ services:
     restart: always
     networks:
       panic_net:
-        ipv4_address: '${ALERTER_HOST}'
+        ipv4_address: '${ALERTER_IP}'
     depends_on:
       - mongo
       - redis
