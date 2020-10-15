@@ -1,25 +1,24 @@
 import logging
 import os
-from typing import Optional, Dict
+from typing import Dict
 
-from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from alerter.src.utils.exceptions import PANICException
 
-
-# TODO: A monitor starters process which manages processes
 
 class Monitor:
 
     def __init__(self, monitor_name: str, logger: logging.Logger,
-                 redis: Optional[RedisApi] = None) -> None:
+                 monitor_period: int) -> None:
         super().__init__()
 
         self._monitor_name = monitor_name
         self._logger = logger
-        self._redis = redis
+        self._monitor_period = monitor_period
         self._data = {}
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._data_retrieval_failed = False
 
     def __str__(self) -> str:
         return self.monitor_name
@@ -29,8 +28,8 @@ class Monitor:
         return self._logger
 
     @property
-    def redis(self) -> Optional[RedisApi]:
-        return self._redis
+    def monitor_period(self) -> int:
+        return self._monitor_period
 
     @property
     def monitor_name(self) -> str:
@@ -44,42 +43,45 @@ class Monitor:
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
+    @property
+    def data_retrieval_failed(self) -> bool:
+        return self._data_retrieval_failed
+
     def status(self) -> str:
         pass
 
     def load_monitor_state(self) -> None:
         pass
 
+    def _initialize_rabbitmq(self) -> None:
+        pass
+
     def _get_data(self) -> None:
         pass
 
-    def _process_data(self) -> None:
+    def _process_data(self, error: PANICException) -> None:
+        if self.data_retrieval_failed:
+            self._process_data_retrieval_failed(error)
+        else:
+            self._process_data_retrieval_successful()
+
+    def _process_data_retrieval_failed(self, error: PANICException) -> None:
+        pass
+
+    def _process_data_retrieval_successful(self) -> None:
         pass
 
     def _send_data(self) -> None:
         pass
 
     def _monitor(self) -> None:
-        # TODO: Must add error handling on the calling function. Also the
-        #       calling function must first connect with RabbitMQ, and perform
-        #       the RabbitMQ initializations (like queue creation). The calling
-        #       function must also perform all error handling due to errors that
-        #       may occur in the 3 functions below (such as urlib3 errors). We
-        #       must also handle the case when a metric name changes (although
-        #       this might be handled inside the prometheus get function, but
-        #       still reminder to keep a general exception handler, and rabbit
-        #       specific errors. On the outside we must also post the status to
-        #       the logs
-        self._get_data()
-        self._process_data()
-        self._send_data()
+        pass
 
     def start(self) -> None:
-        # TODO: Must perform good error handling for everything
         pass
 
-    def stop(self) -> None:
-        # TODO: Must do proper cleaning and closing
+    def close_rabbitmq_connection(self) -> None:
         pass
 
-        # TODO: Mark will send configs through RABBITMQ NOT REDIS
+# TODO: There are some monitors which may require redis. Therefore consider
+#     : adding redis here in the future.

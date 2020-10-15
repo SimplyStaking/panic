@@ -48,6 +48,3 @@ def get_prometheus_metrics_data(endpoint: str, requested_metrics: list,
         raise MetricNotFoundException(metric, endpoint)
 
     return response
-
-# TODO: May raise response errors and custom exceptions to the outside. So need
-#     : to do proper error handling for these

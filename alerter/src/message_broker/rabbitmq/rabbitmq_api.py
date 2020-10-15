@@ -1,10 +1,11 @@
+import json
 import logging
+import time
 from datetime import timedelta
 from typing import List, Optional, Union, Dict, Callable, Any
 
 import pika
 import pika.exceptions
-import json
 
 from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
@@ -205,11 +206,10 @@ class RabbitMQApi:
         # this case.
         while True:
             try:
-                ret = self.connect()
-                # If None is returned, Rabbit is not experiencing issues,
-                # therefore the API must have connected to Rabbit.
-                if ret is None:
-                    break
+                # If function returns, the operation was successful, therefore
+                # stop the loop
+                self.perform_operation_till_successful(self.connect, [], -1)
+                break
             except Exception:
                 self.logger.info('Attempting another connection')
                 continue
@@ -323,3 +323,10 @@ class RabbitMQApi:
         # this function will throw a ConnectionNotInitialized exception
         if self._connection_initialized():
             return self._safe(self.new_channel_unsafe, [], -1)
+
+    # Perform an operation with sleeping period in between until successful
+    @staticmethod
+    def perform_operation_till_successful(function, args: List[Any],
+                                          default_return: Any) -> None:
+        while function(*args) == default_return:
+            time.sleep(5)

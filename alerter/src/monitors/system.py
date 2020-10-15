@@ -1,19 +1,28 @@
 import json
 import logging
+import time
 from datetime import datetime
+from http.client import IncompleteRead
 from typing import Optional, List
 
 import pika
+import pika.exceptions
+from requests.exceptions import ConnectionError as ReqConnectionError, \
+    ReadTimeout, ChunkedEncodingError
+from urllib3.exceptions import ProtocolError
 
 from alerter.src.configs.system import SystemConfig
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
+from alerter.src.utils.exceptions import MetricNotFoundException, \
+    SystemIsDownException, DataReadingException, PANICException, \
+    MessageWasNotDeliveredException
 
 
 class SystemMonitor(Monitor):
     def __init__(self, monitor_name: str, system_config: SystemConfig,
-                 logger: logging.Logger) -> None:
-        super().__init__(monitor_name, logger)
+                 logger: logging.Logger, monitor_period: int) -> None:
+        super().__init__(monitor_name, logger, monitor_period)
         self._system_config = system_config
         self._metrics_to_monitor = ['process_cpu_seconds_total',
                                     'go_memstats_alloc_bytes',
@@ -96,28 +105,54 @@ class SystemMonitor(Monitor):
                          self.network_transmit_bytes_total,
                          self.network_receive_bytes_total)
 
+    def _initialize_rabbitmq(self) -> None:
+        self.rabbitmq.connect_till_successful()
+        self.rabbitmq.confirm_delivery()
+        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
+                                       False)
+
     def _get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
             self.system_config.node_exporter_url, self.metrics_to_monitor,
             self.logger)
 
-    def _process_data(self) -> None:
-        # Add some meta-data to the processed data
-        # TODO: Wrap with error or result. The meta-data send always even with
-        #     : error
+    def _process_data_retrieval_failed(self, error: PANICException) -> None:
         processed_data = {
-            'monitor_name': self.monitor_name,
-            'system_name': self.system_config.system_name,
-            'system_id': self.system_config.system_id,
-            'system_parent_id': self.system_config.parent_id,
-            'time': str(datetime.now().timestamp())
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'system_name': self.system_config.system_name,
+                    'system_id': self.system_config.system_id,
+                    'system_parent_id': self.system_config.parent_id,
+                    'time': str(datetime.now().timestamp())
+                },
+                'message': error.message,
+                'code': error.code,
+            }
+        }
+
+        self._data = processed_data
+
+    def _process_data_retrieval_successful(self) -> None:
+        # Add some meta-data to the processed data
+        processed_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'system_name': self.system_config.system_name,
+                    'system_id': self.system_config.system_id,
+                    'system_parent_id': self.system_config.parent_id,
+                    'time': str(datetime.now().timestamp())
+                }
+            }
         }
 
         # Add process CPU seconds total to the processed data
         process_cpu_seconds_total = self.data['process_cpu_seconds_total']
         self.logger.debug('%s process_cpu_seconds_total: %s',
                           self.system_config, process_cpu_seconds_total)
-        processed_data['process_cpu_seconds_total'] = process_cpu_seconds_total
+        processed_data['result']['data']['process_cpu_seconds_total'] = \
+            process_cpu_seconds_total
         self._process_cpu_seconds_total = process_cpu_seconds_total
 
         # Add process memory usage percentage to the processed data
@@ -127,14 +162,16 @@ class SystemMonitor(Monitor):
         process_memory_usage = float("{:.2f}".format(process_memory_usage))
         self.logger.debug('%s process_memory_usage: %s', self.system_config,
                           process_memory_usage)
-        processed_data['process_memory_usage'] = process_memory_usage
+        processed_data['result']['data']['process_memory_usage'] = \
+            process_memory_usage
         self._process_memory_usage = process_memory_usage
 
         # Add virtual memory usage to the processed data
         virtual_memory_usage = self.data['process_virtual_memory_bytes']
         self.logger.debug('%s virtual_memory_usage: %s', self.system_config,
                           virtual_memory_usage)
-        processed_data['virtual_memory_usage'] = virtual_memory_usage
+        processed_data['result']['data']['virtual_memory_usage'] = \
+            virtual_memory_usage
         self._virtual_memory_usage = virtual_memory_usage
 
         # Add open file descriptors percentage to the processed data
@@ -142,7 +179,8 @@ class SystemMonitor(Monitor):
             (self.data['process_open_fds'] / self.data['process_max_fds']) * 100
         self.logger.debug('%s open_file_descriptors: %s', self.system_config,
                           open_file_descriptors)
-        processed_data['open_file_descriptors'] = open_file_descriptors
+        processed_data['result']['data']['open_file_descriptors'] = \
+            open_file_descriptors
         self._open_file_descriptors = open_file_descriptors
 
         # Add system CPU usage percentage to processed data
@@ -160,7 +198,8 @@ class SystemMonitor(Monitor):
         system_cpu_usage = float("{:.2f}".format(system_cpu_usage))
         self.logger.debug('%s system_cpu_usage: %s', self.system_config,
                           system_cpu_usage)
-        processed_data['system_cpu_usage'] = system_cpu_usage
+        processed_data['result']['data']['system_cpu_usage'] = \
+            system_cpu_usage
         self._system_cpu_usage = system_cpu_usage
 
         # Add system RAM usage percentage to processed data
@@ -170,7 +209,7 @@ class SystemMonitor(Monitor):
         system_ram_usage = float("{:.2f}".format(system_ram_usage))
         self.logger.debug('%s system_ram_usage: %s', self.system_config,
                           system_ram_usage)
-        processed_data['system_ram_usage'] = system_ram_usage
+        processed_data['result']['data']['system_ram_usage'] = system_ram_usage
         self._system_ram_usage = system_ram_usage
 
         # Add system storage usage percentage to processed data
@@ -190,10 +229,10 @@ class SystemMonitor(Monitor):
         system_storage_usage = float("{:.2f}".format(system_storage_usage))
         self.logger.debug('%s system_storage_usage: %s', self.system_config,
                           system_storage_usage)
-        processed_data['system_storage_usage'] = system_storage_usage
+        processed_data['result']['data']['system_storage_usage'] = \
+            system_storage_usage
         self._system_storage_usage = system_storage_usage
 
-        # TODO: Need to change how this works as above
         # Add the node network transmit/received bytes total and their per
         # second variants to the processed data
         receive_bytes_total = 0
@@ -206,61 +245,77 @@ class SystemMonitor(Monitor):
             transmit_bytes_total += \
                 self.data['node_network_transmit_bytes_total'][j]
 
-        last_network_inspection = datetime.now().timestamp()
-        network_transmit_bytes_per_second = None
-        network_receive_bytes_per_second = None
-
-        # If we have values to compare to (i.e. not the first monitoring round)
-        # compute the bytes per second transmitted/received
-        if self.last_network_inspection is not None:
-            network_transmit_bytes_per_second = \
-                (transmit_bytes_total - self.network_transmit_bytes_total) \
-                / (last_network_inspection - self.last_network_inspection)
-            network_receive_bytes_per_second = \
-                (receive_bytes_total - self.network_receive_bytes_total) \
-                / (last_network_inspection - self.last_network_inspection)
-
-        self._last_network_inspection = last_network_inspection
+        self.logger.debug('%s network_receive_bytes_total: %s, '
+                          'network_transmit_bytes_total: %s',
+                          self.system_config, receive_bytes_total,
+                          transmit_bytes_total)
+        processed_data['result']['data']['network_receive_bytes_total'] = \
+            receive_bytes_total
+        processed_data['result']['data']['network_transmit_bytes_total'] = \
+            transmit_bytes_total
         self._network_receive_bytes_total = receive_bytes_total
         self._network_transmit_bytes_total = transmit_bytes_total
-        self.system.set_network_receive_bytes_per_second(
-            network_receive_bytes_per_second)
-        self.system.set_network_transmit_bytes_per_second(
-            network_transmit_bytes_per_second)
-        processed_data['last_network_inspection'] = last_network_inspection
-        processed_data['network_receive_bytes_total'] = receive_bytes_total
-        processed_data['network_transmit_bytes_total'] = transmit_bytes_total
-        processed_data['network_receive_bytes_per_second'] = \
-            network_receive_bytes_per_second
-        processed_data['network_transmit_bytes_per_second'] = \
-            network_transmit_bytes_per_second
-        self.logger.debug('%s last_network_inspection: %s, '
-                          'network_receive_bytes_total: %s, '
-                          'network_transmit_bytes_total: %s, '
-                          'network_transmit_bytes_per_second: %s, '
-                          'network_receive_bytes_per_second: %s', self.system,
-                          last_network_inspection,
-                          receive_bytes_total, transmit_bytes_total,
-                          network_transmit_bytes_per_second,
-                          network_receive_bytes_per_second)
 
         self._data = processed_data
 
     def _send_data(self) -> None:
-        # TODO: Do not sleep on the outside if message not delivered. Or do it
-        #     : inside
-        # TODO: On the outside, need to connect, qos settings etc
         self.rabbitmq.basic_publish_confirm(
             exchange='raw_data', routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
 
+    def _monitor(self) -> None:
+        data_retrieval_exception = Exception()
+        try:
+            self._get_data()
+            self._data_retrieval_failed = False
+        except (ReqConnectionError, ReadTimeout):
+            self._data_retrieval_failed = True
+            data_retrieval_exception = SystemIsDownException(
+                self.monitor_name)
+            self.logger.exception(data_retrieval_exception)
+        except (IncompleteRead, ChunkedEncodingError, ProtocolError):
+            self._data_retrieval_failed = True
+            data_retrieval_exception = DataReadingException(
+                self.monitor_name, self.system_config.system_name)
+            self.logger.exception(data_retrieval_exception)
+        except MetricNotFoundException as e:
+            self._data_retrieval_failed = True
+            data_retrieval_exception = e
+            self.logger.exception(data_retrieval_exception)
+        self._process_data(data_retrieval_exception)
+        self._send_data()
+
     def start(self) -> None:
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                self._monitor()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another monitoring round without
+                # sleeping
+                continue
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
 
-        pass
+            self.status()
 
-    def stop(self) -> None:
-        pass
+            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
+            time.sleep(self.monitor_period)
 
- # TODO: send error is unreachable if system not reachable
-# TODO: Discuss with other how would you wrap the error, error and result?
+    def close_rabbitmq_connection(self) -> None:
+        # Wait until RabbitMQ is available
+        self.rabbitmq.perform_operation_till_successful(
+            self.rabbitmq.disconnect, [], -1)
