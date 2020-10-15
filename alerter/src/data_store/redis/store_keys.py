@@ -29,8 +29,6 @@ _key_github_releases = "gh1"
 
 def _as_prefix(key) -> str:
     return key + "_"
-
-
 class Keys:
 
     @staticmethod

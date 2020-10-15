@@ -10,9 +10,8 @@ from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.data_store.store.store import Store
 
-def callback(ch, method, properties, body):
-    print(" [x] Received %r" % body)
-
+# TODO this file is to be removed after the alert_router is implemented
+# together with the datastore, until then it is used to test the store
 if __name__ == '__main__':
     # Initialize Mongo with environmental variables
     mongo_host = os.environ["DB_HOST"]
@@ -37,8 +36,7 @@ if __name__ == '__main__':
     rabbitAPI = RabbitMQApi(DUMMY_LOGGER, rabbit_host)
     rabbitAPI.connect()
     rabbitAPI.confirm_delivery()
+
+    # Create the datastore and begin listening to incoming requests from rabbit
     store = Store(DUMMY_LOGGER, redis_api, mongo_api, rabbitAPI)
-    store.store()
-    # rabbitAPI.connect()
-    # rabbitAPI.confirm_delivery()
-    # rabbitAPI.exchange_declare(exchange='topic_logs', exchange_type='topic')
+    store.start_store()

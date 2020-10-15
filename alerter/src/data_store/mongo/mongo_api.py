@@ -3,7 +3,7 @@ from datetime import timedelta
 from typing import Dict, List, Optional
 
 from pymongo import MongoClient
-from pymongo.results import InsertOneResult, InsertManyResult
+from pymongo.results import InsertOneResult, InsertManyResult, UpdateResult
 
 from alerter.src.utils.timing import TimedTaskLimiter
 
@@ -88,6 +88,12 @@ class MongoApi:
         return self._safe(
             lambda col, doc: self._db[col].insert_many(doc),
             [collection, documents], None)
+
+    def update_one(self, collection: str, query: Dict, document: Dict) \
+          -> Optional[UpdateResult]:
+        return self._safe(
+            lambda col, q, doc: self._db[col].update_one(q, doc, upsert=True),
+                [collection, query, document], None)
 
     def get_all(self, collection: str) -> Optional[List[Dict]]:
         return self._safe(
