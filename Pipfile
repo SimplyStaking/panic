@@ -7,11 +7,12 @@ verify_ssl = true
 coverage = "*"
 
 [packages]
-requests = "*"
 configparser = "*"
-twilio = "*"
+pika = "*"
+pymongo = "*"
 python-telegram-bot = "*"
 python-dateutil = "*"
 redis = "*"
-pymongo = "*"
-pika = "*"
+requests = "*"
+twilio = "*"
+watchdog = "*"
