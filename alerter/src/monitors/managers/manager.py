@@ -6,6 +6,8 @@
 # TODO: Must tackle if parent dies, children must die also
 import logging
 import os
+from typing import Dict
+
 import pika.exceptions
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
@@ -13,8 +15,8 @@ from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 
 class MonitorManager:
     def __init__(self, logger: logging.Logger):
-        # TODO: Must have a process [id, name] and chain general configs field
         self._logger = logger  # TODO: General logger to be passed from outside
+        self._config_process_dict = {}
 
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
@@ -27,6 +29,10 @@ class MonitorManager:
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
+    @property
+    def config_process_dict(self) -> Dict:
+        return self._config_process_dict
+
     def _initialize_rabbitmq(self) -> None:
         pass
 
@@ -36,7 +42,6 @@ class MonitorManager:
     def _process_configs(
             self, ch, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
-        # TODO: From the chain and general configs infer systems
         pass
 
     def manage(self) -> None:
