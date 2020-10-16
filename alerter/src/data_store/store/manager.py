@@ -42,10 +42,12 @@ class StoreManager:
         processes = []
         stores = [self.system_store, self.github_store, self.alert_store]
         for instance in stores:
+            print("Initializing store")
             instance._initialize_store()
             process = Process(target=instance._start_listening, args=())
             process.start()
-            processes[len(processes)] = (process, instance)
+            print("Started process")
+            processes.append((process, instance))
 
         while len(processes) > 0:
             for n in processes:
@@ -53,10 +55,16 @@ class StoreManager:
                 sleep(0.5)
                 if process.exitcode is None and not process.is_alive():
                     sleep(10)
+                    process.join()
+                    del processes[n]
                     print("Restart process after 10 seconds")
-                elif process.exitcode < 0:
-                    sleep(10)
-                    print("Restart process after 10 seconds")
+                # elif process.exitcode < 0:
+                #     sleep(10)
+                #     process.join()
+                #     del processes[n]
+                #     print("Restart process after 10 seconds")
                 else:
+                    process.join()
+                    del processes[n]
                     print("Processes exited internally should be removed")
                     print("This shouldnt ever happen")

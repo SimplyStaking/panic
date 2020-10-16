@@ -33,7 +33,7 @@ if __name__ == '__main__':
     try:
         github_dict = {
             'name': 'cosmos/cosmos',
-            'prev_no_of_releases': '20',
+            'prev_no_of_releases': '80',
         }
         data_dict_1 = {
             'chain_name': 'akash',
@@ -55,7 +55,7 @@ if __name__ == '__main__':
             'process_memory_usage': '65',
             'virtual_memory_usage': '600',
             'open_file_descriptors': '70',
-            'system_cpu_usage': '90',
+            'system_cpu_usage': '20',
             'system_ram_usage': '32',
             'system_storage_usage': '54',
             'system_network_transmit_bytes_per_second': '10',
