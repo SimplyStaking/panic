@@ -230,6 +230,13 @@ class RabbitMQApi:
         args = [queue, exchange, routing_key]
         if self._connection_initialized():
             return self._safe(self.channel.queue_bind, args, -1)
+    
+    def queue_purge(self, queue: str) -> Optional[int]:
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        args = [queue]
+        if self._connection_initialized():
+            return self._safe(self.channel.queue_purge, args, -1)
 
     def basic_publish(self, exchange: str, routing_key: str,
                       body: Union[str, Dict, bytes], is_body_dict: bool = False,
