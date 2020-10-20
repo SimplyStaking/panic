@@ -41,6 +41,8 @@ class ConfigManager:
 
         self._config_directory = config_directory
         self._rabbit = rabbit_api
+        self._watching = False
+        self._connected_to_rabbit = False
 
         self._event_handler = ConfigFileEventHandler(self._on_event_thrown, file_patterns, ignore_file_patterns,
                                                      ignore_directories, case_sensitive)
@@ -48,39 +50,54 @@ class ConfigManager:
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
         try:
-            self._rabbit.connect_till_successful()
+            self._connected_to_rabbit()
             LOGGER.debug("Connected to Rabbit")
             self._rabbit.exchange_declare(output_rabbit_channel, "topic", False, True, False, False)
             LOGGER.debug("Declared exchange in Rabbit")
         except ConnectionNotInitializedException as cnie:
-            # This should not happen at all, but since exchange_declare and disconnect can throw it
+            # This should not happen at all, but since exchange_declare and can throw it
             # we shall ensure to log that the error passed through here too.
             LOGGER.error("Something went wrong that meant a connection was not made")
             LOGGER.error(cnie.message)
             raise cnie
 
+    def __del__(self):
+        self.stop_watching_config_files()
+
+    def _conenct_to_rabbit(self):
+        if not self._connected_to_rabbit:
+            LOGGER.info("Connecting to RabbitMQ")
+            self._rabbit.connect_till_successful()
+            self._connected_to_rabbit = True
+            LOGGER.info("Connected to RabbitMQ")
+        else:
+            LOGGER.info("Already connected to RabbitMQ, will not connect again")
+
+    def _disconnect_from_rabbit(self):
+        if self._connected_to_rabbit:
+            LOGGER.info("Disconnecting from RabbitMQ")
+            self._rabbit.disconnect()
+            self._connected_to_rabbit = False
+            LOGGER.info("Disconnceted from RabbitMQ")
+        else:
+            LOGGER.info("Already disconnected from RabbitMQ")
+
     def _send_config_to_rabbit_mq(self, config: Dict[str, Any], routing_key: str) -> None:
         LOGGER.debug("Sending %s to routing key %s", config, routing_key)
-        LOGGER.debug("Connecting to RabbitMQ just in case connection dropped")
-        self._rabbit.connect_till_successful()
-        LOGGER.debug("Connection successful")
 
         try:
             LOGGER.debug("Attempting to send config to routing key %s", routing_key)
             # We need to definitely send this
             self._rabbit.basic_publish_confirm("config", routing_key, config, mandatory=False, is_body_dict=True)
             LOGGER.info("Configuration update sent")
-            self._rabbit.disconnect()
         except MessageWasNotDeliveredException as mwnde:
             LOGGER.error("Config was not successfully sent: %s", mwnde.message)  # Should not get here
             raise mwnde
         except ConnectionNotInitializedException as cnie:
             # This should not happen but it can be thrown
-            LOGGER.error("Something went wrong that meant a connection was not made")
+            LOGGER.error("The connection to RabbitMQ is down")
             LOGGER.error(cnie.message)
             raise cnie
-
-        LOGGER.debug("Disconnected form RabbitMQ")
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         LOGGER.debug("Event thrown: %s", event)
@@ -125,19 +142,38 @@ class ConfigManager:
     def config_directory(self):
         return self._config_directory
 
+    @property
+    def watching(self):
+        return self._watching
+
+    @property
+    def connected_to_rabbit(self):
+        return self._connected_to_rabbit
+
     def start_watching_config_files(self) -> None:
         """
         This method is used to start the observer and begin watching the files
         """
-        LOGGER.info("Starting config file observer")
-        self._observer.start()
+        if not self._watching:
+            LOGGER.info("Starting config file observer")
+            self._observer.start()
+            self._watching = True
+        else:
+            LOGGER.info("File observer is already running")
+
         LOGGER.debug("Config file observer started")
+        self._conenct_to_rabbit()
 
     def stop_watching_config_files(self) -> None:
         """
         This method is used to stop the observer and join the threads
         """
-        LOGGER.info("Stopping config file observer")
-        self._observer.stop()
-        self._observer.join()
-        LOGGER.debug("Config file observer stopped")
+        if self._watching:
+            LOGGER.info("Stopping config file observer")
+            self._observer.stop()
+            self._observer.join()
+            self._watching = False
+            LOGGER.debug("Config file observer stopped")
+        else:
+            LOGGER.info("Config file observer already stopped")
+        self._disconnect_from_rabbit()
