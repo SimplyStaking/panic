@@ -41,7 +41,16 @@ class AlertStore(Store):
         self.rabbitmq.basic_consume(queue='alerts_store_queue', \
             on_message_callback=self._process_data, auto_ack=False, \
                 exclusive=False, consumer_tag=None)
-        self.rabbitmq.start_consuming()
+        while True:
+            try:
+                self.rabbitmq.start_consuming()       
+            except pika.exceptions.AMQPChannelError:
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                raise e
+            except Exception as e:
+                self.logger.error(e)
+                raise e
 
     """
         Processes the data being received, from the queue. There is only one

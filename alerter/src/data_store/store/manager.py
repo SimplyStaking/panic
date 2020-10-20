@@ -1,5 +1,4 @@
 import logging
-from time import sleep
 from multiprocessing import Process
 from alerter.src.data_store.store.alert import AlertStore
 from alerter.src.data_store.store.github import GithubStore
