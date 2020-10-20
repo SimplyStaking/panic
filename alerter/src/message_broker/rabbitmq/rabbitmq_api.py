@@ -6,10 +6,13 @@ import pika
 import pika.exceptions
 import json
 
+from pika.adapters.blocking_connection import BlockingChannel
+
 from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
 from alerter.src.utils.timing import TimedTaskLimiter
 
+LOGGER = logging.getLogger(__name__)
 
 # The producer/consumer must perform the error handling himself. For example
 # if a basic_publish fails with a connection error, the user must re-connect
@@ -17,12 +20,11 @@ from alerter.src.utils.timing import TimedTaskLimiter
 # differently
 
 class RabbitMQApi:
-    def __init__(self, logger: logging.Logger, host: str = 'localhost',
+    def __init__(self, host: str = 'localhost',
                  port: int = 5672, username: str = '', password: str = '',
                  connection_check_time_interval: timedelta = timedelta(
                      seconds=60)) \
             -> None:
-        self._logger = logger
         self._host = host
         self._connection = None
         # TODO: We may need two channels, one for outputting and one for
@@ -46,10 +48,6 @@ class RabbitMQApi:
         return self._is_connected
 
     @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
     def host(self) -> str:
         return self._host
 
@@ -60,7 +58,7 @@ class RabbitMQApi:
     # The output type is Optional[pika.BlockingConnection.BlockingChannel].
     # Strangely, pika.BlockingConnection.BlockingChannel cannot be imported
     @property
-    def channel(self):
+    def channel(self) -> BlockingChannel:
         return self._channel
 
     @property
@@ -81,12 +79,12 @@ class RabbitMQApi:
 
     def _set_as_connected(self) -> None:
         if not self.is_connected:
-            self.logger.info('Marking RabbitMQ connection as live.')
+            LOGGER.info('Marking RabbitMQ connection as live.')
         self._is_connected = True
 
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self.live_check_limiter.can_do_task():
-            self.logger.info('Marking RabbitMQ connection as down.')
+            LOGGER.info('Marking RabbitMQ connection as down.')
             self.live_check_limiter.did_task()
         self._is_connected = False
 
@@ -102,7 +100,7 @@ class RabbitMQApi:
         # into difficulties. Exceptions are raised to the calling function.
         try:
             if self._is_recently_disconnected():
-                self.logger.debug('RabbitMQ: Could not execute %s as RabbitMQ '
+                LOGGER.debug('RabbitMQ: Could not execute %s as RabbitMQ '
                                   'is temporarily unusable to improve '
                                   'performance', function.__name__)
                 return default_return
@@ -111,7 +109,7 @@ class RabbitMQApi:
         except pika.exceptions.AMQPChannelError as e:
             # Channel errors do not reflect a connection error, therefore
             # do not set as disconnected
-            self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            LOGGER.error('RabbitMQ error in %s: %r', function.__name__, e)
             # If the channel error closed the communication channel, open
             # another channel using the same connection
             if self.channel.is_closed:
@@ -120,14 +118,14 @@ class RabbitMQApi:
         except pika.exceptions.AMQPConnectionError as e:
             # For connection related errors, if a connection has been
             # initialized, disconnect and mark the connection as down.
-            self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            LOGGER.error('RabbitMQ error in %s: %r', function.__name__, e)
             if self.connection is not None:
                 self.disconnect_unsafe()
             raise e
         except Exception as e:
             # For any other exception, if the connection is broken mark it as
             # down. Also, raise the exception.
-            self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
+            LOGGER.error('RabbitMQ error in %s: %r', function.__name__, e)
             if self.connection is not None and self.connection.is_closed:
                 self.disconnect_unsafe()
             raise e
@@ -138,7 +136,7 @@ class RabbitMQApi:
         if self.connection is not None:
             return True
         else:
-            self.logger.info(ConnectionNotInitializedException(
+            LOGGER.info(ConnectionNotInitializedException(
                 'RabbitMQ').message)
             raise ConnectionNotInitializedException('RabbitMQ')
 
@@ -146,12 +144,12 @@ class RabbitMQApi:
         if self.is_connected and self.connection.is_open:
             # If the connection status is 'connected' and the connection socket
             # is open do not re-connect to avoid memory issues.
-            self.logger.info('Already connected with RabbitMQ, no need to '
+            LOGGER.info('Already connected with RabbitMQ, no need to '
                              're-connect!')
         else:
             # Open a new connection depending on whether authentication is
             # needed, and set the connection status as 'connected'
-            self.logger.info('Connecting with RabbitMQ...')
+            LOGGER.info('Connecting with RabbitMQ...')
             if self.password == '':
                 self._connection = pika.BlockingConnection(
                     pika.ConnectionParameters(host=self.host))
@@ -163,7 +161,7 @@ class RabbitMQApi:
                     self.host, self.port, '/', credentials)
                 self._connection = pika.BlockingConnection(parameters)
                 self._channel = self.connection.channel()
-            self.logger.info('Connected with RabbitMQ')
+            LOGGER.info('Connected with RabbitMQ')
             self._set_as_connected()
 
     def connect(self) -> Optional[int]:
@@ -174,25 +172,25 @@ class RabbitMQApi:
         # Perform disconnection based on the connection status and the
         # connection socket.
         if self.is_connected and self.connection.is_open:
-            self.logger.info('Closing connection with RabbitMQ')
+            LOGGER.info('Closing connection with RabbitMQ')
             self.connection.close()
-            self.logger.info('Connection with RabbitMQ closed. RabbitMQ '
+            LOGGER.info('Connection with RabbitMQ closed. RabbitMQ '
                              'cannot be used temporarily to improve '
                              'performance')
             self._set_as_disconnected()
         elif not self.is_connected and self.connection.is_open:
             # This case was done only for the sake of completion.
-            self.logger.info('Closing connection with RabbitMQ')
+            LOGGER.info('Closing connection with RabbitMQ')
             self.connection.close()
-            self.logger.info('Connection with RabbitMQ closed')
+            LOGGER.info('Connection with RabbitMQ closed')
         elif self.is_connected and self.connection.is_closed:
-            self.logger.info('Closing connection with RabbitMQ')
+            LOGGER.info('Closing connection with RabbitMQ')
             self._set_as_disconnected()
-            self.logger.info('Connection with RabbitMQ closed. RabbitMQ '
+            LOGGER.info('Connection with RabbitMQ closed. RabbitMQ '
                              'cannot be used temporarily to improve '
                              'performance')
         else:
-            self.logger.info('Already disconnected.')
+            LOGGER.info('Already disconnected.')
 
     def disconnect(self) -> Optional[int]:
         # Perform operation only if a connection has been initialized,
@@ -211,7 +209,7 @@ class RabbitMQApi:
                 if ret is None:
                     break
             except Exception:
-                self.logger.info('Attempting another connection')
+                LOGGER.info('Attempting another connection')
                 continue
 
     def queue_declare(self, queue: str, passive: bool = False,
@@ -313,9 +311,9 @@ class RabbitMQApi:
         # If a channel is open, close it and create a new channel from the
         # current connection
         if self.channel.is_open:
-            self.logger.info('Closing RabbitMQ Channel')
+            LOGGER.info('Closing RabbitMQ Channel')
             self.channel.close()
-        self.logger.info('Created a new RabbitMQ Channel')
+        LOGGER.info('Created a new RabbitMQ Channel')
         self._channel = self.connection.channel()
 
     def new_channel(self) -> Optional[int]:

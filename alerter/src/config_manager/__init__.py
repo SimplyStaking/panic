@@ -21,6 +21,7 @@ LOGGER = logging.getLogger(__name__)
 class ConfigManager:
     def __init__(self,
                  config_directory: str,
+                 rabbit_api: RabbitMQApi,
                  file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True,
@@ -39,17 +40,18 @@ class ConfigManager:
             file_patterns = ["*.ini"]
 
         self._config_directory = config_directory
+        self._rabbit = rabbit_api
+
         self._event_handler = ConfigFileEventHandler(self._on_event_thrown, file_patterns, ignore_file_patterns,
                                                      ignore_directories, case_sensitive)
         self._observer = Observer()
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
-        self._rabbit = RabbitMQApi(logging.getLogger(RabbitMQApi.__name__))
-
         try:
             self._rabbit.connect_till_successful()
-            self._rabbit.exchange_declare(output_rabbit_channel, 'topic', False, True, False, False)
-            self._rabbit.disconnect()
+            LOGGER.debug("Connected to Rabbit")
+            self._rabbit.exchange_declare(output_rabbit_channel, "topic", False, True, False, False)
+            LOGGER.debug("Declared exchange in Rabbit")
         except ConnectionNotInitializedException as cnie:
             # This should not happen at all, but since exchange_declare and disconnect can throw it
             # we shall ensure to log that the error passed through here too.
@@ -59,14 +61,14 @@ class ConfigManager:
 
     def _send_config_to_rabbit_mq(self, config: Dict[str, Any], routing_key: str) -> None:
         LOGGER.debug("Sending %s to routing key %s", config, routing_key)
-        LOGGER.debug("Connecting to RabbitMQ")
+        LOGGER.debug("Connecting to RabbitMQ just in case connection dropped")
         self._rabbit.connect_till_successful()
         LOGGER.debug("Connection successful")
 
         try:
             LOGGER.debug("Attempting to send config to routing key %s", routing_key)
             # We need to definitely send this
-            self._rabbit.basic_publish_confirm("config", routing_key, config, mandatory=True, is_body_dict=True)
+            self._rabbit.basic_publish_confirm("config", routing_key, config, mandatory=False, is_body_dict=True)
             LOGGER.info("Configuration update sent")
             self._rabbit.disconnect()
         except MessageWasNotDeliveredException as mwnde:
@@ -118,6 +120,10 @@ class ConfigManager:
         routing_key = ".".join(reversed(path_list))
         LOGGER.debug("Sending config %s to RabbitMQ with routing key %s", config_dict, routing_key)
         self._send_config_to_rabbit_mq(config_dict, routing_key)
+
+    @property
+    def config_directory(self):
+        return self._config_directory
 
     def start_watching_config_files(self) -> None:
         """
