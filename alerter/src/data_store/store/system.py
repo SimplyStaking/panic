@@ -5,14 +5,14 @@ import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.utils.exceptions import ( SavingMetricsToMongoException,
-    UnknownRoutingKeyException)
+from alerter.src.utils.exceptions import UnknownRoutingKeyException
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.types import SystemDataType, SystemMonitorDataType
 from alerter.src.data_store.store.store import Store
+from alerter.src.utils.logging import log_and_print
 
 class SystemStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
@@ -149,30 +149,26 @@ class SystemStore(Store):
         $inc increments n_alerts by one each time an alert is added
     """
     def _process_mongo_store(self, system: SystemDataType) -> None:
-        try:
-            time_now = datetime.now()
-            self.mongo.update_one(system['chain_name'],
-                {'doc_type': 'system', 'd': time_now.hour },
-                {'$push': { system['name'] : {
-                    'process_cpu_seconds_total': \
-                        system['process_cpu_seconds_total'],
-                    'process_memory_usage': system['process_memory_usage'],
-                    'virtual_memory_usage': system['virtual_memory_usage'],
-                    'open_file_descriptors': system['open_file_descriptors'],
-                    'system_cpu_usage': system['system_cpu_usage'],
-                    'system_ram_usage': system['system_ram_usage'],
-                    'system_storage_usage': system['system_storage_usage'],
-                    'system_network_transmit_bytes_per_second': \
-                        system['system_network_transmit_bytes_per_second'],
-                    'system_network_receive_bytes_per_second': \
-                        system['system_network_receive_bytes_per_second'],
-                    'timestamp': time_now.timestamp(),
-                    }
-                },
-                    '$inc': {'n_metrics': 1},
+        time_now = datetime.now()
+        self.mongo.update_one(system['chain_name'],
+            {'doc_type': 'system', 'd': time_now.hour },
+            {'$push': { system['name'] : {
+                'process_cpu_seconds_total': \
+                    system['process_cpu_seconds_total'],
+                'process_memory_usage': system['process_memory_usage'],
+                'virtual_memory_usage': system['virtual_memory_usage'],
+                'open_file_descriptors': \
+                    system['open_file_descriptors'],
+                'system_cpu_usage': system['system_cpu_usage'],
+                'system_ram_usage': system['system_ram_usage'],
+                'system_storage_usage': system['system_storage_usage'],
+                'system_network_transmit_bytes_per_second': \
+                    system['system_network_transmit_bytes_per_second'],
+                'system_network_receive_bytes_per_second': \
+                    system['system_network_receive_bytes_per_second'],
+                'timestamp': time_now.timestamp(),
                 }
-            )
-        except Exception as e:
-            self.logger.error(e)
-            raise SavingMetricsToMongoException(
-                'Failed to save system metrics to mongo.')
+            },
+                '$inc': {'n_metrics': 1},
+            }
+        )

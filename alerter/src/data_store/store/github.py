@@ -5,8 +5,7 @@ import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.utils.exceptions import ( SavingMetricsToMongoException,
-    UnknownRoutingKeyException)
+from alerter.src.utils.exceptions import UnknownRoutingKeyException
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys

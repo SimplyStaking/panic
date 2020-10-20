@@ -9,11 +9,6 @@ class MessageWasNotDeliveredException(Exception):
         self.message = "Message could not be delivered. Error: {}".format(err)
         super().__init__(self.message)
 
-class SavingMetricsToMongoException(Exception):
-    def __init__(self, err):
-        self.message = "Message could not be delivered. Error: {}".format(err)
-        super().__init__(self.message)
-
 class UnknownRoutingKeyException(Exception):
     def __init__(self, err):
         self.message = "Message could not be delivered. Error: {}".format(err)

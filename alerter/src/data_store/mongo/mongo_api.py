@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from pymongo.results import InsertOneResult, InsertManyResult, UpdateResult
 
 from alerter.src.utils.timing import TimedTaskLimiter
+from alerter.src.utils.logging import log_and_print
 
 
 class MongoApi:
@@ -75,7 +76,7 @@ class MongoApi:
         except Exception as e:
             self._logger.error('Mongo error in %s: %s', function.__name__, e)
             self._set_as_down()
-            raise e
+            return default_return
 
     def insert_one(self, collection: str, document: Dict) \
             -> Optional[InsertOneResult]:

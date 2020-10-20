@@ -7,7 +7,7 @@ import distutils.util
 
 from alerter.src.utils.timing import TimedTaskLimiter
 from alerter.src.utils.types import RedisType
-
+from alerter.src.utils.logging import log_and_print
 
 class RedisApi:
 

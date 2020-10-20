@@ -22,6 +22,7 @@ if __name__ == '__main__':
     mongo_db = os.environ["DB_NAME"]
     mongo_api = MongoApi(DUMMY_LOGGER, mongo_db, mongo_host, mongo_port)
 
+    # print(mongo_api.ping_unsafe())
     # Testing rabbit with Rabbit Interface
     rabbit_host = os.environ["RABBIT_IP"]
     rabbitAPI = RabbitMQApi(DUMMY_LOGGER, rabbit_host)

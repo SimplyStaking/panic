@@ -5,7 +5,6 @@ import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.utils.exceptions import SavingMetricsToMongoException
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
@@ -74,23 +73,18 @@ class AlertStore(Store):
         $inc increments n_alerts by one each time an alert is added
     """
     def _process_mongo_store(self, alert: AlertDataType) -> None:
-        try:
-            self.mongo.update_one(alert['chain_name'],
-                {'doc_type': 'alert', 'n_alerts': {'$lt': 1000}},
-                {'$push': { 'alerts': {
-                    'origin': alert['origin'],  
-                    'alert_name': alert['alert_name'],
-                    'severity': alert['severity'],
-                    'message': alert['message'],
-                    'timestamp': alert['timestamp'],
-                    }
-                },
-                    '$min': {'first': alert['timestamp']},
-                    '$max': {'last': alert['timestamp']},
-                    '$inc': {'n_alerts': 1},
+        self.mongo.update_one(alert['chain_name'],
+            {'doc_type': 'alert', 'n_alerts': {'$lt': 1000}},
+            {'$push': { 'alerts': {
+                'origin': alert['origin'],  
+                'alert_name': alert['alert_name'],
+                'severity': alert['severity'],
+                'message': alert['message'],
+                'timestamp': alert['timestamp'],
                 }
-            )
-        except Exception as e:
-            self.logger.error(e)
-            raise SavingMetricsToMongoException(
-                'Failed to save alert to Mongo.')
+            },
+                '$min': {'first': alert['timestamp']},
+                '$max': {'last': alert['timestamp']},
+                '$inc': {'n_alerts': 1},
+            }
+        )
