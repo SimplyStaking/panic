@@ -14,7 +14,7 @@ from watchdog.observers import Observer
 from alerter.src.config_manager.config_update_event_handler import ConfigFileEventHandler
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.exceptions import MessageWasNotDeliveredException, ConnectionNotInitializedException
-from alerter.src.utils.routing_key import _get_routing_key, get_routing_key
+from alerter.src.utils.routing_key import get_routing_key, get_routing_key
 
 LOGGER = logging.getLogger(__name__)
 
