@@ -50,7 +50,7 @@ class ConfigManager:
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
         try:
-            self._connected_to_rabbit()
+            self._conenct_to_rabbit()
             LOGGER.debug("Connected to Rabbit")
             self._rabbit.exchange_declare(output_rabbit_channel, "topic", False, True, False, False)
             LOGGER.debug("Declared exchange in Rabbit")
