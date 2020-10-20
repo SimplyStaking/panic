@@ -143,7 +143,10 @@ class SystemMonitor(Monitor):
                     'system_id': self.system_config.system_id,
                     'system_parent_id': self.system_config.parent_id,
                     'time': str(datetime.now().timestamp())
-                }
+                },
+                'data': {
+
+                },
             }
         }
 
@@ -310,12 +313,7 @@ class SystemMonitor(Monitor):
                 self.logger.exception(e)
                 raise e
 
-            self.status()
+            self.logger.info(self.status())
 
             self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
             time.sleep(self.monitor_period)
-
-    def close_rabbitmq_connection(self) -> None:
-        # Wait until RabbitMQ is available
-        self.rabbitmq.perform_operation_till_successful(
-            self.rabbitmq.disconnect, [], -1)

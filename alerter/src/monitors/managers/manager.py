@@ -1,9 +1,3 @@
-# TODO: A system monitor starter -> Handling all errors from monitoring and
-#     : always restarting on error
-# TODO: A configs manager communicator, determining how many processes to start
-#     : according to the configs manager message. We must kill and create
-#     : processes dynamically
-# TODO: Must tackle if parent dies, children must die also
 import logging
 import os
 from typing import Dict
@@ -14,12 +8,16 @@ from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 
 
 class MonitorManager:
-    def __init__(self, logger: logging.Logger):
-        self._logger = logger  # TODO: General logger to be passed from outside
+    def __init__(self, logger: logging.Logger, name: str):
+        self._logger = logger
         self._config_process_dict = {}
+        self._name = name
 
-        rabbit_ip = os.environ["RABBIT_IP"]
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host='localhost')
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def logger(self) -> logging.Logger:
@@ -32,6 +30,10 @@ class MonitorManager:
     @property
     def config_process_dict(self) -> Dict:
         return self._config_process_dict
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def _initialize_rabbitmq(self) -> None:
         pass

@@ -82,12 +82,13 @@ class RabbitMQApi:
 
     def _set_as_connected(self) -> None:
         if not self.is_connected:
-            self.logger.info('Marking RabbitMQ connection as live.')
+            self.logger.info('RabbitMQ connection is live.')
         self._is_connected = True
 
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self.live_check_limiter.can_do_task():
-            self.logger.info('Marking RabbitMQ connection as down.')
+            self.logger.info('RabbitMQ is unusable right now. Stopping usage '
+                             'temporarily to improve performance')
             self.live_check_limiter.did_task()
         self._is_connected = False
 
@@ -172,28 +173,15 @@ class RabbitMQApi:
 
     # Should not be used if connection has not yet been initialized
     def disconnect_unsafe(self) -> None:
-        # Perform disconnection based on the connection status and the
-        # connection socket.
-        if self.is_connected and self.connection.is_open:
+        # If the connection is open, close it and mark connection as
+        # disconnected to limit usage. Otherwise, just mark as disconnected to
+        # try and limit usage.
+        if self.connection.is_open:
             self.logger.info('Closing connection with RabbitMQ')
             self.connection.close()
-            self.logger.info('Connection with RabbitMQ closed. RabbitMQ '
-                             'cannot be used temporarily to improve '
-                             'performance')
-            self._set_as_disconnected()
-        elif not self.is_connected and self.connection.is_open:
-            # This case was done only for the sake of completion.
-            self.logger.info('Closing connection with RabbitMQ')
-            self.connection.close()
-            self.logger.info('Connection with RabbitMQ closed')
-        elif self.is_connected and self.connection.is_closed:
-            self.logger.info('Closing connection with RabbitMQ')
-            self._set_as_disconnected()
-            self.logger.info('Connection with RabbitMQ closed. RabbitMQ '
-                             'cannot be used temporarily to improve '
-                             'performance')
-        else:
-            self.logger.info('Already disconnected.')
+            self.logger.info('Connection with RabbitMQ closed.')
+
+        self._set_as_disconnected()
 
     def disconnect(self) -> Optional[int]:
         # Perform operation only if a connection has been initialized,
@@ -204,6 +192,7 @@ class RabbitMQApi:
     def connect_till_successful(self) -> None:
         # Try to connect until successful. All exceptions will be ignored in
         # this case.
+        self.logger.info('Attempting to connect with RabbitMQ.')
         while True:
             try:
                 # If function returns, the operation was successful, therefore
@@ -211,7 +200,21 @@ class RabbitMQApi:
                 self.perform_operation_till_successful(self.connect, [], -1)
                 break
             except Exception:
-                self.logger.info('Attempting another connection')
+                self.logger.info('Attempting another connection when '
+                                 'RabbitMQ becomes usable again.')
+                continue
+
+    def disconnect_till_successful(self) -> None:
+        # Try to disconnect until successful. All exceptions will be ignored in
+        # this case.
+        while True:
+            try:
+                # If function returns, the operation was successful, therefore
+                # stop the loop
+                self.perform_operation_till_successful(self.disconnect, [], -1)
+                break
+            except Exception:
+                self.logger.info('Attempting another disconnection')
                 continue
 
     def queue_declare(self, queue: str, passive: bool = False,

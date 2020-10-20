@@ -16,8 +16,8 @@ class Monitor:
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        rabbit_ip = os.environ["RABBIT_IP"]
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host='localhost')
         self._data_retrieval_failed = False
 
     def __str__(self) -> str:
@@ -78,9 +78,6 @@ class Monitor:
         pass
 
     def start(self) -> None:
-        pass
-
-    def close_rabbitmq_connection(self) -> None:
         pass
 
 # TODO: There are some monitors which may require redis. Therefore consider
