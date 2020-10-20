@@ -44,7 +44,7 @@ class SystemStore(Store):
         self.rabbitmq.basic_consume(queue='system_store_queue', \
             on_message_callback=self._process_data, auto_ack=False, \
                 exclusive=False, consumer_tag=None)
-        self.rabbitmq.start_consuming()
+        self.rabbitmq.start_consuming()            
 
     """
         Processes the data being received, from the queue.
