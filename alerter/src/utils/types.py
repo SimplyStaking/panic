@@ -1,4 +1,10 @@
-from typing import Union, TypedDict
+import sys
+from typing import Union
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict, Union
+else:
+    from typing_extensions import TypedDict
 
 RedisType = Union[bytes, str, int, float]
 
