@@ -14,6 +14,7 @@ from watchdog.observers import Observer
 from alerter.src.config_manager.config_update_event_handler import ConfigFileEventHandler
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.exceptions import MessageWasNotDeliveredException, ConnectionNotInitializedException
+from alerter.src.utils.routing_key import _get_routing_key, get_routing_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,6 +101,11 @@ class ConfigManager:
             raise cnie
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
+        """
+        When an event is thrown, it reads the config and sends it as a dict via rabbitmq to the topic exchange "config"
+        with the routing key determined by the relative file path.
+        """
+
         LOGGER.debug("Event thrown: %s", event)
         LOGGER.info("Detected a config %s in %s", event.event_type, event.src_path)
 
@@ -124,17 +130,7 @@ class ConfigManager:
         # We only need check that
         config_folder = os.path.normpath(self._config_directory)
 
-        path_list = []
-        head = (os.path.normpath(event.src_path).split(config_folder, 1))[1]
-
-        while True:
-            head, tail = os.path.split(head)
-            if not tail:
-                break
-
-            path_list.append(tail)
-
-        routing_key = ".".join(reversed(path_list))
+        routing_key = get_routing_key(event.src_path, config_folder)
         LOGGER.debug("Sending config %s to RabbitMQ with routing key %s", config_dict, routing_key)
         self._send_config_to_rabbit_mq(config_dict, routing_key)
 
@@ -177,3 +173,5 @@ class ConfigManager:
         else:
             LOGGER.info("Config file observer already stopped")
         self._disconnect_from_rabbit()
+
+
