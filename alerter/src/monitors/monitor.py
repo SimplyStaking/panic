@@ -1,9 +1,12 @@
 import logging
 import os
+import pika.exceptions
+import time
 from typing import Dict
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.utils.exceptions import PANICException
+from alerter.src.utils.exceptions import PANICException, \
+    MessageWasNotDeliveredException
 
 
 class Monitor:
@@ -54,7 +57,12 @@ class Monitor:
         pass
 
     def _initialize_rabbitmq(self) -> None:
-        pass
+        self.rabbitmq.connect_till_successful()
+        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.rabbitmq.confirm_delivery()
+        self.logger.info('Creating \'raw_data\' exchange')
+        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
+                                       False)
 
     def _get_data(self) -> None:
         pass
@@ -78,7 +86,33 @@ class Monitor:
         pass
 
     def start(self) -> None:
-        pass
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                self._monitor()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another monitoring round without
+                # sleeping
+                continue
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
+
+            self.logger.info(self.status())
+
+            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
+            time.sleep(self.monitor_period)
 
 # TODO: There are some monitors which may require redis. Therefore consider
 #     : adding redis here in the future.

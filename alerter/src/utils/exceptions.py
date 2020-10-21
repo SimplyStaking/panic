@@ -47,8 +47,24 @@ class SystemIsDownException(PANICException):
 
 class DataReadingException(PANICException):
 
-    def __init__(self, system_monitor_name, system_name) -> None:
+    def __init__(self, monitor_name, source) -> None:
         message = "{} experienced errors when reading data from {}" \
-            .format(system_monitor_name, system_name)
+            .format(monitor_name, source)
         code = 5005
+        super().__init__(message, code)
+
+
+class CannotAccessGitHubPageException(PANICException):
+
+    def __init__(self, page) -> None:
+        message = "Cannot access GitHub page {}".format(page)
+        code = 5006
+        super().__init__(message, code)
+
+
+class GitHubAPICallException(PANICException):
+
+    def __init__(self, err) -> None:
+        message = "Error in API Call: {}".format(err)
+        code = 5007
         super().__init__(message, code)

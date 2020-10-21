@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from datetime import datetime
 from http.client import IncompleteRead
 from typing import Optional, List
@@ -15,8 +14,7 @@ from alerter.src.configs.system import SystemConfig
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_prometheus_metrics_data
 from alerter.src.utils.exceptions import MetricNotFoundException, \
-    SystemIsDownException, DataReadingException, PANICException, \
-    MessageWasNotDeliveredException
+    SystemIsDownException, DataReadingException, PANICException
 
 
 class SystemMonitor(Monitor):
@@ -104,14 +102,6 @@ class SystemMonitor(Monitor):
                          self.system_ram_usage, self.system_storage_usage,
                          self.network_transmit_bytes_total,
                          self.network_receive_bytes_total)
-
-    def _initialize_rabbitmq(self) -> None:
-        self.rabbitmq.connect_till_successful()
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
-        self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
 
     def _get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
@@ -266,7 +256,7 @@ class SystemMonitor(Monitor):
             exchange='raw_data', routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to raw_data exchange')
+        self.logger.debug('Sent data to \'raw_data\' exchange')
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
@@ -295,32 +285,3 @@ class SystemMonitor(Monitor):
             self.logger.exception(data_retrieval_exception)
         self._process_data(data_retrieval_exception)
         self._send_data()
-
-    def start(self) -> None:
-        self._initialize_rabbitmq()
-        while True:
-            try:
-                self._monitor()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another monitoring round without
-                # sleeping
-                continue
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
-                self.logger.exception(e)
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
-                raise e
-            except Exception as e:
-                self.logger.exception(e)
-                raise e
-
-            self.logger.info(self.status())
-
-            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
-            time.sleep(self.monitor_period)

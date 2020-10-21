@@ -9,6 +9,14 @@ from alerter.src.utils.exceptions import NoMetricsGivenException, \
     MetricNotFoundException
 
 
+def get_json(endpoint: str, logger: logging.Logger, params=None):
+    if params is None:
+        params = {}
+    get_ret = requests.get(url=endpoint, params=params, timeout=15)
+    logger.debug('get_json: get_ret: %s', get_ret)
+    return json.loads(get_ret.content.decode('UTF-8'))
+
+
 def get_prometheus(endpoint: str, logger: logging.Logger):
     metrics = requests.get(endpoint, timeout=10).content
     logger.debug('Retrieved prometheus data from endpoint: ' + endpoint)
