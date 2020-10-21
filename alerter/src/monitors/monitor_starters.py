@@ -1,5 +1,6 @@
-import time
 import logging
+import os
+import time
 
 import pika.exceptions
 
@@ -17,13 +18,9 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     # attempt to use it.
     while True:
         try:
-            SYSTEM_MONITOR_LOG_FILE_TEMPLATE = 'logs/monitors/{}.log'
-            LOGGING_LEVEL = 'INFO'
-            SYSTEM_MONITOR_PERIOD_SECONDS = '60'
             system_monitor_logger = create_logger(
-                SYSTEM_MONITOR_LOG_FILE_TEMPLATE.format(monitor_name),
-                monitor_name,
-                LOGGING_LEVEL, rotating=True)
+                os.environ["MONITORS_LOG_FILE_TEMPLATE"].format(monitor_name),
+                monitor_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!'.format(
@@ -38,7 +35,7 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
         try:
             system_monitor = SystemMonitor(
                 monitor_name, system_config, system_monitor_logger,
-                int(SYSTEM_MONITOR_PERIOD_SECONDS))
+                int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"]))
             log_and_print("Successfully initialized {}".format(monitor_name),
                           system_monitor_logger)
             break

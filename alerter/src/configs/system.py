@@ -1,6 +1,3 @@
-from alerter.src.moniterables.system import SystemType
-
-
 class SystemConfig:
     def __init__(self, system_id: str, parent_id: str, system_name: str,
                  monitor_system: bool, node_exporter_url: str) -> None:

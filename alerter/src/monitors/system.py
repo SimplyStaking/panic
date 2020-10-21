@@ -109,7 +109,7 @@ class SystemMonitor(Monitor):
         self.rabbitmq.connect_till_successful()
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating raw_data exchange')
+        self.logger.info('Creating \'raw_data\' exchange')
         self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
                                        False)
 
@@ -276,7 +276,7 @@ class SystemMonitor(Monitor):
         except (ReqConnectionError, ReadTimeout):
             self._data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
-                self.monitor_name)
+                self.system_config.system_name)
             self.logger.error('Error when retrieving data from {}'
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)

@@ -128,7 +128,8 @@ class RabbitMQApi:
             raise e
         except Exception as e:
             # For any other exception, if the connection is broken mark it as
-            # down. Also, raise the exception.
+            # down. Also, raise the exception. If connection is not broken, it
+            # is up to the user of the class to close it if need be.
             self.logger.error('RabbitMQ error in %s: %r', function.__name__, e)
             if self.connection is not None and self.connection.is_closed:
                 self.disconnect_unsafe()

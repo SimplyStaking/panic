@@ -17,13 +17,13 @@ class System:
         self._system_type = system_type
 
         # Data fields
-        self._process_cpu_seconds_total = None     # Seconds
-        self._process_memory_usage = None          # Percentage
-        self._virtual_memory_usage = None          # Bytes
-        self._open_file_descriptors = None         # Percentage
-        self._system_cpu_usage = None              # Percentage
-        self._system_ram_usage = None              # Percentage
-        self._system_storage_usage = None          # Percentage
+        self._process_cpu_seconds_total = None  # Seconds
+        self._process_memory_usage = None  # Percentage
+        self._virtual_memory_usage = None  # Bytes
+        self._open_file_descriptors = None  # Percentage
+        self._system_cpu_usage = None  # Percentage
+        self._system_ram_usage = None  # Percentage
+        self._system_storage_usage = None  # Percentage
         self._network_transmit_bytes_per_second = None
         self._network_receive_bytes_per_second = None
 

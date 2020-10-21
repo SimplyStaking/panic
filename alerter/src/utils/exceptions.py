@@ -40,7 +40,7 @@ class MetricNotFoundException(PANICException):
 class SystemIsDownException(PANICException):
 
     def __init__(self, system_name) -> None:
-        message = "System {] is unreachable".format(system_name)
+        message = "System {} is unreachable".format(system_name)
         code = 5004
         super().__init__(message, code)
 
@@ -48,7 +48,7 @@ class SystemIsDownException(PANICException):
 class DataReadingException(PANICException):
 
     def __init__(self, system_monitor_name, system_name) -> None:
-        message = "System monitor {} experienced errors when reading " \
-                  "data from {}".format(system_monitor_name, system_name)
+        message = "{} experienced errors when reading data from {}" \
+            .format(system_monitor_name, system_name)
         code = 5005
         super().__init__(message, code)

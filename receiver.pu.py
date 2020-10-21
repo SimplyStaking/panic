@@ -59,7 +59,7 @@ import pika
 import sys
 
 DUMMY_LOGGER = logging.getLogger('dummy')
-rabbit_api = RabbitMQApi(DUMMY_LOGGER)
+rabbit_api = RabbitMQApi(DUMMY_LOGGER, '172.18.0.6')
 # config = {
 #     'system_57bd37d6-5829-4f7d-85d8-3643eec50d2b': {
 #         'id': 'system_57bd37d6-5829-4f7d-85d8-3643eec50d2b',

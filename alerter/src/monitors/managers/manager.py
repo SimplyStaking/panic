@@ -13,8 +13,8 @@ class MonitorManager:
         self._config_process_dict = {}
         self._name = name
 
-        # rabbit_ip = os.environ["RABBIT_IP"]
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host='localhost')
+        rabbit_ip = os.environ["RABBIT_IP"]
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
     def __str__(self) -> str:
         return self.name

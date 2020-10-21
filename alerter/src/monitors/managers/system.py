@@ -16,8 +16,8 @@ from alerter.src.utils.logging import log_and_print
 
 class SystemMonitorsManager(MonitorManager):
 
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger, 'System Monitors Manager')
+    def __init__(self, logger: logging.Logger, manager_name: str) -> None:
+        super().__init__(logger, manager_name)
         self._systems_configs = {}
 
     @property
@@ -26,23 +26,23 @@ class SystemMonitorsManager(MonitorManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating exchange config')
+        self.logger.info('Creating exchange \'config\'')
         self.rabbitmq.exchange_declare('config', 'topic', False, True,
                                        False, False)
-        self.logger.info('Creating queue monitor_manager_configs_queue')
+        self.logger.info('Creating queue \'monitor_manager_configs_queue\'')
         self.rabbitmq.queue_declare('monitor_manager_configs_queue', False,
                                     True, False, False)
-        self.logger.info('Binding queue monitor_manager_configs_queue to'
-                         'exchange config with routing key '
-                         'chains.*.*.systems_config.ini')
+        self.logger.info('Binding queue \'monitor_manager_configs_queue\' to '
+                         'exchange \'config\' with routing key '
+                         '\'chains.*.*.systems_config.ini\'')
         self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
                                  'chains.*.*.systems_config.ini')
-        self.logger.info('Binding queue monitor_manager_configs_queue to'
-                         'exchange config with routing key '
-                         'general.systems_config.ini')
+        self.logger.info('Binding queue \'monitor_manager_configs_queue\' to '
+                         'exchange \'config\' with routing key '
+                         '\'general.systems_config.ini\'')
         self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
                                  'general.systems_config.ini')
-        self.logger.info('Declare consuming intentions')
+        self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('monitor_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
