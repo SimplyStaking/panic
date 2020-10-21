@@ -1,4 +1,6 @@
 import multiprocessing
+import logging
+import time
 
 import pika.exceptions
 
@@ -7,13 +9,26 @@ from alerter.src.utils.logging import create_logger, log_and_print
 
 
 def run_system_monitors_manager() -> None:
-    # Create the loggers
-    # TODO: Change like .env file accoridng to manager
-    GENERAL_LOG_FILE = 'logs/managers/{}.log'
-    LOGGING_LEVEL = 'INFO'
-    logger_general = create_logger(
-        GENERAL_LOG_FILE.format('System Monitors Manager'),
-        'System Monitors Manager', LOGGING_LEVEL, rotating=True)
+    # Try initializing the logger until successful. This had to be done
+    # separately to avoid instances when the logger creation failed and we
+    # attempt to use it.
+    while True:
+        try:
+            # Create the loggers
+            # TODO: Change like .env file accoridng to manager
+            GENERAL_LOG_FILE = 'logs/managers/{}.log'
+            LOGGING_LEVEL = 'INFO'
+            logger_general = create_logger(
+                GENERAL_LOG_FILE.format('System Monitors Manager'),
+                'System Monitors Manager', LOGGING_LEVEL, rotating=True)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising System Monitors Manager: ' \
+                  '{} !!!'.format(e)
+            # Use a dummy logger in this case because we cannot create the
+            # managers's logger.
+            log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
+            time.sleep(10)  # sleep 10 seconds before trying again
 
     system_monitors_manager = SystemMonitorsManager(logger_general)
 
@@ -42,7 +57,8 @@ if __name__ == '__main__':
     # If we don't wait for the processes to terminate the root process will exit
     system_monitors_manager_process.join()
 
+    print('The alerter is stopping.')
+
 # TODO: Put environment variables again, run alerter, monitors and managers
 # TODO: Continue testing, for example connection errors, throw exceptions custom
 #     : etc to see what happens
-# TODO: Check IF logging is enough, possibly improve it

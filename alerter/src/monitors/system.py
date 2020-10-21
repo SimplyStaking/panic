@@ -107,7 +107,9 @@ class SystemMonitor(Monitor):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
+        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
+        self.logger.info('Creating raw_data exchange')
         self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
                                        False)
 
@@ -144,9 +146,7 @@ class SystemMonitor(Monitor):
                     'system_parent_id': self.system_config.parent_id,
                     'time': str(datetime.now().timestamp())
                 },
-                'data': {
-
-                },
+                'data': {},
             }
         }
 
@@ -266,6 +266,7 @@ class SystemMonitor(Monitor):
             exchange='raw_data', routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
+        self.logger.debug('Sent data to raw_data exchange')
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
@@ -276,15 +277,21 @@ class SystemMonitor(Monitor):
             self._data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
                 self.monitor_name)
+            self.logger.error('Error when retrieving data from {}'
+                              .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
+            self.logger.error('Error when retrieving data from {}'
+                              .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
             self._data_retrieval_failed = True
             data_retrieval_exception = e
+            self.logger.error('Error when retrieving data from {}'
+                              .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         self._process_data(data_retrieval_exception)
         self._send_data()

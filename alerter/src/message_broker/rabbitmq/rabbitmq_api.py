@@ -207,6 +207,7 @@ class RabbitMQApi:
     def disconnect_till_successful(self) -> None:
         # Try to disconnect until successful. All exceptions will be ignored in
         # this case.
+        self.logger.info('Attempting to disconnect with RabbitMQ.')
         while True:
             try:
                 # If function returns, the operation was successful, therefore

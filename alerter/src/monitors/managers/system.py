@@ -26,14 +26,23 @@ class SystemMonitorsManager(MonitorManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
+        self.logger.info('Creating exchange config')
         self.rabbitmq.exchange_declare('config', 'topic', False, True,
                                        False, False)
+        self.logger.info('Creating queue monitor_manager_configs_queue')
         self.rabbitmq.queue_declare('monitor_manager_configs_queue', False,
                                     True, False, False)
+        self.logger.info('Binding queue monitor_manager_configs_queue to'
+                         'exchange config with routing key '
+                         'chains.*.*.systems_config.ini')
         self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
                                  'chains.*.*.systems_config.ini')
+        self.logger.info('Binding queue monitor_manager_configs_queue to'
+                         'exchange config with routing key '
+                         'general.systems_config.ini')
         self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
                                  'general.systems_config.ini')
+        self.logger.info('Declare consuming intentions')
         self.rabbitmq.basic_consume('monitor_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -44,6 +53,8 @@ class SystemMonitorsManager(MonitorManager):
             self, ch, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
+
+        self.logger.info('Received configs {}'.format(sent_configs))
 
         if method.routing_key == 'general.systems_config.ini':
             if 'general' in self.systems_configs:
@@ -77,6 +88,8 @@ class SystemMonitorsManager(MonitorManager):
                                               args=[system_config])
             # Kill children if parent is killed
             process.daemon = True
+            log_and_print('Creating a new process for the monitor of {}'
+                          .format(system_config.system_name), self.logger)
             process.start()
             self._config_process_dict[system_id] = process
 
@@ -160,6 +173,3 @@ class SystemMonitorsManager(MonitorManager):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
-
-# TODO: Add more logging in manager and _rabbitmq_initialization function of
-#     : the system monitor

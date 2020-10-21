@@ -1,4 +1,5 @@
 import time
+import logging
 
 import pika.exceptions
 
@@ -11,7 +12,9 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     # Monitor name based on system
     monitor_name = 'System monitor ({})'.format(system_config.system_name)
 
-    # Try initializing a monitor until successful
+    # Try initializing the logger until successful. This had to be done
+    # separately to avoid instances when the logger creation failed and we
+    # attempt to use it.
     while True:
         try:
             SYSTEM_MONITOR_LOG_FILE_TEMPLATE = 'logs/monitors/{}.log'
@@ -21,16 +24,28 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
                 SYSTEM_MONITOR_LOG_FILE_TEMPLATE.format(monitor_name),
                 monitor_name,
                 LOGGING_LEVEL, rotating=True)
-            system_monitor = SystemMonitor(
-                monitor_name, system_config, system_monitor_logger,
-                int(SYSTEM_MONITOR_PERIOD_SECONDS))
-            log_and_print("Successfully initialized {}".format(monitor_name),
-                          system_monitor.logger)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!'.format(
                 monitor_name, e)
-            log_and_print(msg, system_monitor.logger)
+            # Use a dummy logger in this case because we cannot create the
+            # monitor's logger.
+            log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    # Try initializing a monitor until successful
+    while True:
+        try:
+            system_monitor = SystemMonitor(
+                monitor_name, system_config, system_monitor_logger,
+                int(SYSTEM_MONITOR_PERIOD_SECONDS))
+            log_and_print("Successfully initialized {}".format(monitor_name),
+                          system_monitor_logger)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising {}: {} !!!'.format(
+                monitor_name, e)
+            log_and_print(msg, system_monitor_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return system_monitor
