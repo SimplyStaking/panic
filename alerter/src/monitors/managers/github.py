@@ -80,8 +80,9 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
-                .format(repo_name)
+            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            #     .format(repo_name)
+            releases_page = "https://api.github.com/repos/{}releases".format(repo_name)
 
             # If we should not monitor the repo, move to the next config
             if not monitor_repo:
@@ -96,7 +97,7 @@ class GitHubMonitorsManager(MonitorsManager):
             log_and_print('Creating a new process for the monitor of {}'
                           .format(repo_config.repo_name), self.logger)
             process.start()
-            self._config_process_dict[repo_id] = process
+            self._config_process_dict[config_id] = process
 
         modified_configs = get_modified_configs(sent_configs, current_configs)
         for config_id in modified_configs:
@@ -110,41 +111,42 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
-                .format(repo_name)
+            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            #     .format(repo_name)
+            releases_page = "https://api.github.com/repos/{}releases".format(
+                repo_name)
             repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                      monitor_repo, releases_page)
-            previous_process = self.config_process_dict[repo_id]
+            previous_process = self.config_process_dict[config_id]
             previous_process.terminate()
             previous_process.join()
 
             # If we should not monitor the system, delete the previous process
             # from the system and move to the next config
             if not monitor_repo:
-                del self.config_process_dict[repo_id]
+                del self.config_process_dict[config_id]
                 log_and_print('Killed the monitor of {} '
-                              .format(repo_name), self.logger)
+                              .format(config_id), self.logger)
                 continue
 
             log_and_print('Restarting the monitor of {} with latest '
-                          'configuration'.format(repo_name), self.logger)
+                          'configuration'.format(config_id), self.logger)
 
             process = multiprocessing.Process(target=start_github_monitor,
                                               args=[repo_config])
             # Kill children if parent is killed
             process.daemon = True
             process.start()
-            self._config_process_dict[repo_id] = process
+            self._config_process_dict[config_id] = process
 
         removed_configs = get_removed_configs(sent_configs, current_configs)
         for config_id in removed_configs:
             config = removed_configs[config_id]
-            repo_id = config['id']
             repo_name = config['repo_name']
-            previous_process = self.config_process_dict[repo_id]
+            previous_process = self.config_process_dict[config_id]
             previous_process.terminate()
             previous_process.join()
-            del self.config_process_dict[repo_id]
+            del self.config_process_dict[config_id]
             log_and_print('Killed the monitor of {} '
                           .format(repo_name), self.logger)
 
@@ -163,3 +165,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 if sent_configs[config_id]['monitor_repo']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+# TODO: Test manager exceptions
+# TODO: Test deleted (Start from here tomorrow, then below)
+# TODO: Test chains repos as well

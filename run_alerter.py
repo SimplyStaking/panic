@@ -18,8 +18,12 @@ def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
     while True:
         try:
             monitors_manager_logger = create_logger(
-                os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
-                manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                'logs/managers/{}.log'.format(manager_name),
+                # os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
+                manager_name,
+                # os.environ["LOGGING_LEVEL"],
+                "INFO",
+                rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -106,13 +110,21 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
 
 
 if __name__ == '__main__':
+    # # Start the managers in a separate process
+    # system_monitors_manager_process = multiprocessing.Process(
+    #     target=run_system_monitors_manager, args=[])
+    # system_monitors_manager_process.start()
+    #
+    # # If we don't wait for the processes to terminate the root process will exit
+    # system_monitors_manager_process.join()
+
     # Start the managers in a separate process
-    system_monitors_manager_process = multiprocessing.Process(
-        target=run_system_monitors_manager, args=[])
-    system_monitors_manager_process.start()
+    github_monitors_manager_process = multiprocessing.Process(
+        target=run_github_monitors_manager, args=[])
+    github_monitors_manager_process.start()
 
     # If we don't wait for the processes to terminate the root process will exit
-    system_monitors_manager_process.join()
+    github_monitors_manager_process.join()
 
     print('The alerter is stopping.')
 
@@ -120,8 +132,10 @@ if __name__ == '__main__':
 #     : run alerter before start sending configs, as otherwise configs manager
 #     : would not be able to send configs on start-up
 
-# TODO: Test GitHub monitor alone
 # TODO: Test Github monitor process creation/deletion
-# TODO: Test GitHub monitor exceptions
-# TODO: Test GitHub monitor with system monitor
+# TODO: Test GitHub monitor manager exceptions
+# TODO: Test GitHub monitor with system monitor on docker and source
 # TODO: Add disk/io usage metrics
+
+# TODO: Change env variables in run alerter, both managers, both specific
+#     : managers, monitor, both specific monitors and monitor starters

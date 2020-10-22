@@ -16,7 +16,7 @@ def create_logger(file: str, name: str, level: str, rotating: bool = False,
 
     if rotating:
         handler = logging.handlers.RotatingFileHandler(
-            file, maxBytes=10000000, backupCount=3)
+            file, maxBytes=10000000, backupCount=3, encoding='utf-8')
     else:
         handler = logging.FileHandler(file)
 

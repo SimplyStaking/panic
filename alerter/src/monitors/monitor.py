@@ -19,7 +19,8 @@ class Monitor:
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        rabbit_ip = os.environ["RABBIT_IP"]
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = "localhost"
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
 
@@ -108,8 +109,6 @@ class Monitor:
             except Exception as e:
                 self.logger.exception(e)
                 raise e
-
-            self.logger.info(self.status())
 
             self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
             time.sleep(self.monitor_period)

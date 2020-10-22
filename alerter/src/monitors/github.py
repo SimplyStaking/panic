@@ -23,7 +23,7 @@ class GitHubMonitor(Monitor):
                  logger: logging.Logger, monitor_period: int) -> None:
         super().__init__(monitor_name, logger, monitor_period)
         self._repo_config = repo_config
-        self._releases_info = None
+        self._releases_info = {}
 
     @property
     def repo_config(self) -> RepoConfig:
@@ -34,7 +34,10 @@ class GitHubMonitor(Monitor):
         return self._releases_info
 
     def status(self) -> str:
-        return json.dumps(self.releases_info)
+        # To ensure no releases have unicode characters we must first encode
+        # as utf-8 and then decode
+        return json.dumps(self.releases_info, ensure_ascii=False)\
+            .encode('utf8').decode()
 
     def _get_data(self) -> None:
         self._data = get_json(self.repo_config.releases_page, self.logger)
@@ -71,23 +74,24 @@ class GitHubMonitor(Monitor):
             }
         }
 
-        for release in self.data:
-            release_data = self.data[release]
-            processed_data['data'][release] = {}
-            processed_data['data'][release]['release_name'] = \
+        for i in range(len(self.data)):
+            release_data = self.data[i]
+            processed_data['result']['data'][i] = {}
+            processed_data['result']['data'][i]['release_name'] = \
                 release_data['name']
-            processed_data['data'][release]['tag_name'] = \
+            processed_data['result']['data'][i]['tag_name'] = \
                 release_data['tag_name']
             self.logger.debug('%s releases_info: %s',
                               self.repo_config,
-                              json.dumps(processed_data['data'][release]))
-            self._releases_info[release] = release_data
+                              json.dumps(
+                                  processed_data['result']['data'][i]))
+            self._releases_info[i] = processed_data['result']['data'][i]
 
         self._data = processed_data
 
     def _send_data(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange='raw_data', routing_key='repo', body=self.data,
+            exchange='raw_data', routing_key='github', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug('Sent data to \'raw_data\' exchange')
@@ -103,9 +107,10 @@ class GitHubMonitor(Monitor):
                 self._data_retrieval_failed = True
                 data_retrieval_exception = GitHubAPICallException(
                     self.data['message'])
-                self.logger.error('Error when retrieving data from {}'
-                                  .format(self.repo_config.releases_page))
-                self.logger.exception(data_retrieval_exception)
+                self.logger.error('Error when retrieving data from {}: ({}, {})'
+                                  .format(self.repo_config.releases_page,
+                                          data_retrieval_exception.message,
+                                          data_retrieval_exception.code))
             else:
                 self._data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
@@ -130,3 +135,7 @@ class GitHubMonitor(Monitor):
             self.logger.exception(data_retrieval_exception)
         self._process_data(data_retrieval_exception)
         self._send_data()
+
+        # Only output the gathered data if there was no error
+        if not self.data_retrieval_failed:
+            self.logger.info(self.status())

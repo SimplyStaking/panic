@@ -285,3 +285,7 @@ class SystemMonitor(Monitor):
             self.logger.exception(data_retrieval_exception)
         self._process_data(data_retrieval_exception)
         self._send_data()
+
+        # Only output the gathered data if there was no error
+        if not self.data_retrieval_failed:
+            self.logger.info(self.status())
