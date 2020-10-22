@@ -5,9 +5,10 @@ from typing import Dict
 import pika.exceptions
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from alerter.src.utils.logging import log_and_print
 
 
-class MonitorManager:
+class MonitorsManager:
     def __init__(self, logger: logging.Logger, name: str):
         self._logger = logger
         self._config_process_dict = {}
@@ -39,7 +40,7 @@ class MonitorManager:
         pass
 
     def _listen_for_configs(self) -> None:
-        pass
+        self.rabbitmq.start_consuming()
 
     def _process_configs(
             self, ch, method: pika.spec.Basic.Deliver,
@@ -47,4 +48,21 @@ class MonitorManager:
         pass
 
     def manage(self) -> None:
-        pass
+        log_and_print('{} started.'.format(self), self.logger)
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                self._listen_for_configs()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another managing round without
+                # sleeping
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e

@@ -3,18 +3,17 @@ import logging
 import multiprocessing
 from typing import Dict
 
-import pika
 import pika.exceptions
 
 from alerter.src.configs.system import SystemConfig
-from alerter.src.monitors.managers.manager import MonitorManager
+from alerter.src.monitors.managers.manager import MonitorsManager
 from alerter.src.monitors.monitor_starters import start_system_monitor
 from alerter.src.utils.configs import get_newly_added_configs, \
     get_modified_configs, get_removed_configs
 from alerter.src.utils.logging import log_and_print
 
 
-class SystemMonitorsManager(MonitorManager):
+class SystemMonitorsManager(MonitorsManager):
 
     def __init__(self, logger: logging.Logger, manager_name: str) -> None:
         super().__init__(logger, manager_name)
@@ -29,25 +28,25 @@ class SystemMonitorsManager(MonitorManager):
         self.logger.info('Creating exchange \'config\'')
         self.rabbitmq.exchange_declare('config', 'topic', False, True,
                                        False, False)
-        self.logger.info('Creating queue \'monitor_manager_configs_queue\'')
-        self.rabbitmq.queue_declare('monitor_manager_configs_queue', False,
-                                    True, False, False)
-        self.logger.info('Binding queue \'monitor_manager_configs_queue\' to '
-                         'exchange \'config\' with routing key '
-                         '\'chains.*.*.systems_config.ini\'')
-        self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
-                                 'chains.*.*.systems_config.ini')
-        self.logger.info('Binding queue \'monitor_manager_configs_queue\' to '
-                         'exchange \'config\' with routing key '
-                         '\'general.systems_config.ini\'')
-        self.rabbitmq.queue_bind('monitor_manager_configs_queue', 'config',
-                                 'general.systems_config.ini')
+        self.logger.info(
+            'Creating queue \'system_monitors_manager_configs_queue\'')
+        self.rabbitmq.queue_declare(
+            'system_monitors_manager_configs_queue', False, True, False, False)
+        self.logger.info(
+            'Binding queue \'system_monitors_manager_configs_queue\' to '
+            'exchange \'config\' with routing key '
+            '\'chains.*.*.systems_config.ini\'')
+        self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
+                                 'config', 'chains.*.*.systems_config.ini')
+        self.logger.info(
+            'Binding queue \'system_monitors_manager_configs_queue\' to '
+            'exchange \'config\' with routing key '
+            '\'general.systems_config.ini\'')
+        self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
+                                 'config', 'general.systems_config.ini')
         self.logger.info('Declaring consuming intentions')
-        self.rabbitmq.basic_consume('monitor_manager_configs_queue',
+        self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
-
-    def _listen_for_configs(self) -> None:
-        self.rabbitmq.start_consuming()
 
     def _process_configs(
             self, ch, method: pika.spec.Basic.Deliver,
@@ -153,23 +152,3 @@ class SystemMonitorsManager(MonitorManager):
                 if sent_configs[config_id]['monitor_system']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-    def manage(self) -> None:
-        log_and_print('{} started.'.format(self), self.logger)
-        self._initialize_rabbitmq()
-        while True:
-            try:
-                self._listen_for_configs()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
-                raise e
-            except Exception as e:
-                self.logger.exception(e)
-                raise e

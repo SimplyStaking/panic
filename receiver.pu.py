@@ -104,7 +104,7 @@ config2 = {
 rabbit_api.connect_till_successful()
 rabbit_api.confirm_delivery()
 rabbit_api.exchange_declare('config', 'topic', False, True, False, False)
-rabbit_api.queue_declare('monitor_manager_configs_queue', False, True, False, False)
+rabbit_api.queue_declare('system_monitors_manager_configs_queue', False, True, False, False)
 rabbit_api.exchange_declare('raw_data', 'direct', False, True, False, False)
 result = rabbit_api.queue_declare(queue='', exclusive=True)
 rabbit_api.queue_bind(exchange='raw_data', queue=result.method.queue,
@@ -120,6 +120,7 @@ rabbit_api.basic_publish_confirm('config', 'chains.substrate.polkadot.systems_co
                                  True)
 
 print(' [*] Waiting for messages. To exit press CTRL+C')
+sys.stdout.flush()
 
 
 def callback(ch, method, properties, body):
@@ -130,3 +131,7 @@ def callback(ch, method, properties, body):
 rabbit_api.basic_consume(queue=result.method.queue,
                          on_message_callback=callback, auto_ack=True)
 rabbit_api.start_consuming()
+# from alerter.src.utils.data import get_prometheus
+#
+# print(get_prometheus('http://172.16.151.31:9100/metrics', logging.getLogger('DUMMY_LOGGER')))
+#
