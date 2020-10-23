@@ -1,3 +1,4 @@
+import fnmatch
 import logging
 import os
 from configparser import ConfigParser, \
@@ -6,7 +7,7 @@ from configparser import ConfigParser, \
                          InterpolationError, \
                          ParsingError, \
                          MissingSectionHeaderError
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
@@ -14,12 +15,15 @@ from watchdog.observers.polling import PollingObserver
 from alerter.src.config_manager.config_update_event_handler import ConfigFileEventHandler
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.exceptions import MessageWasNotDeliveredException, ConnectionNotInitializedException
-from alerter.src.utils.routing_key import get_routing_key, get_routing_key
+from alerter.src.utils.routing_key import get_routing_key
 
 LOGGER = logging.getLogger(__name__)
 
 
 class ConfigManager:
+    """
+    This class reads all configurations and sends them over to the "config" topic in Rabbit MQ. Updated configs are sent as well
+    """
     def __init__(self,
                  config_directory: str,
                  rabbit_api: RabbitMQApi,
@@ -41,6 +45,7 @@ class ConfigManager:
             file_patterns = ["*.ini"]
 
         self._config_directory = config_directory
+        self._file_patterns = file_patterns
         self._rabbit = rabbit_api
         self._watching = False
         self._connected_to_rabbit = False
@@ -149,7 +154,16 @@ class ConfigManager:
     def start_watching_config_files(self) -> None:
         """
         This method is used to start the observer and begin watching the files
+        It also sends the configuration files for the first time
         """
+        def do_first_run_event(name: str) -> None:
+            event = FileSystemEvent(name)
+            event.event_type = "first run"
+            self._on_event_thrown(event)
+
+        LOGGER.info("Throwing first run event for all config files")
+        self.foreach_config_file(do_first_run_event)
+
         if not self._watching:
             LOGGER.info("Starting config file observer")
             self._observer.start()
@@ -174,4 +188,13 @@ class ConfigManager:
             LOGGER.info("Config file observer already stopped")
         self._disconnect_from_rabbit()
 
-
+    def foreach_config_file(self, callback: Callable[[str], None]) -> None:
+        """
+        Runs a function over all the files being watched by this class
+        :param callback: The function to watch. Must accept a string for the file path as {config_directory} + {file path}
+        :return: Nothing
+        """
+        for root, dirs, files in os.walk(self.config_directory):
+            for name in files:
+                if any([fnmatch.fnmatch(name, pattern) for pattern in self._file_patterns]):
+                    callback(os.path.join(root, name))
