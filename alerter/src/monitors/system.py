@@ -34,8 +34,10 @@ class SystemMonitor(Monitor):
                                     'node_memory_MemTotal_bytes',
                                     'node_memory_MemAvailable_bytes',
                                     'node_network_transmit_bytes_total',
-                                    'node_network_receive_bytes_total']
-        self._process_cpu_seconds_total = None  # Seconds
+                                    'node_network_receive_bytes_total',
+                                    'node_disk_io_time_seconds_total'
+                                    ]
+        self._process_cpu_seconds_total = None
         self._process_memory_usage = None  # Percentage
         self._virtual_memory_usage = None  # Bytes
         self._open_file_descriptors = None  # Percentage
@@ -44,6 +46,7 @@ class SystemMonitor(Monitor):
         self._system_storage_usage = None  # Percentage
         self._network_receive_bytes_total = None
         self._network_transmit_bytes_total = None
+        self._disk_io_time_seconds_total = None
 
     @property
     def system_config(self) -> SystemConfig:
@@ -89,19 +92,24 @@ class SystemMonitor(Monitor):
     def network_transmit_bytes_total(self) -> Optional[float]:
         return self._network_transmit_bytes_total
 
+    @property
+    def disk_io_time_seconds_total(self) -> Optional[float]:
+        return self._disk_io_time_seconds_total
+
     def status(self) -> str:
         return "process_cpu_seconds_total={}, " \
                "process_memory_usage={}, virtual_memory_usage={}, " \
                "open_file_descriptors={}, system_cpu_usage={}, " \
                "system_ram_usage={}, system_storage_usage={}, " \
                "network_transmit_bytes_total={}, " \
-               "network_receive_bytes_total={}" \
+               "network_receive_bytes_total={}, disk_io_time_seconds_total={}" \
                "".format(self.process_cpu_seconds_total,
                          self.process_memory_usage, self.virtual_memory_usage,
                          self.open_file_descriptors, self.system_cpu_usage,
                          self.system_ram_usage, self.system_storage_usage,
                          self.network_transmit_bytes_total,
-                         self.network_receive_bytes_total)
+                         self.network_receive_bytes_total,
+                         self.disk_io_time_seconds_total)
 
     def _get_data(self) -> None:
         self._data = get_prometheus_metrics_data(
@@ -248,6 +256,18 @@ class SystemMonitor(Monitor):
             transmit_bytes_total
         self._network_receive_bytes_total = receive_bytes_total
         self._network_transmit_bytes_total = transmit_bytes_total
+
+        # Add the time spent in seconds doing disk i/o to the processed data.
+        disk_io_time_seconds_total = 0
+        for i, j in enumerate(self.data['node_disk_io_time_seconds_total']):
+            disk_io_time_seconds_total += \
+                self.data['node_disk_io_time_seconds_total'][j]
+
+        self.logger.debug('%s disk_io_time_seconds_total: %s',
+                          self.system_config, disk_io_time_seconds_total)
+        processed_data['result']['data']['disk_io_time_seconds_total'] = \
+            disk_io_time_seconds_total
+        self._disk_io_time_seconds_total = disk_io_time_seconds_total
 
         self._data = processed_data
 

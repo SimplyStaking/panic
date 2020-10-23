@@ -19,12 +19,8 @@ def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
     while True:
         try:
             monitor_logger = create_logger(
-                # os.environ["MONITORS_LOG_FILE_TEMPLATE"].format(monitor_name),
-                "logs/managers/{}.log".format(monitor_name),
-                monitor_name,
-                # os.environ["LOGGING_LEVEL"],
-                "INFO",
-                rotating=True)
+                os.environ["MONITORS_LOG_FILE_TEMPLATE"].format(monitor_name),
+                monitor_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!'.format(
@@ -48,9 +44,7 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
         try:
             system_monitor = SystemMonitor(
                 monitor_name, system_config, system_monitor_logger,
-                # int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"])
-                60,
-            )
+                int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"]))
             log_and_print("Successfully initialized {}".format(monitor_name),
                           system_monitor_logger)
             break
@@ -76,9 +70,7 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
         try:
             github_monitor = GitHubMonitor(
                 monitor_name, repo_config, github_monitor_logger,
-                # int(os.environ["GITHUB_MONITOR_PERIOD_SECONDS"])
-                60,
-            )
+                int(os.environ["GITHUB_MONITOR_PERIOD_SECONDS"]))
             log_and_print("Successfully initialized {}".format(monitor_name),
                           github_monitor_logger)
             break

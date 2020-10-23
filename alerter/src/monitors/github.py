@@ -36,7 +36,7 @@ class GitHubMonitor(Monitor):
     def status(self) -> str:
         # To ensure no releases have unicode characters we must first encode
         # as utf-8 and then decode
-        return json.dumps(self.releases_info, ensure_ascii=False)\
+        return json.dumps(self.releases_info, ensure_ascii=False) \
             .encode('utf8').decode()
 
     def _get_data(self) -> None:

@@ -27,6 +27,9 @@ class System:
         self._network_transmit_bytes_per_second = None
         self._network_receive_bytes_per_second = None
 
+        # Time in seconds spent doing i/o between monitoring rounds
+        self._disk_io_time_seconds_in_interval = None
+
     def __str__(self) -> str:
         return self.name
 
@@ -86,19 +89,25 @@ class System:
     def network_receive_bytes_per_second(self) -> Optional[float]:
         return self._network_receive_bytes_per_second
 
+    @property
+    def disk_io_time_seconds_in_interval(self) -> Optional[float]:
+        return self._disk_io_time_seconds_in_interval
+
     def status(self) -> str:
         return "process_cpu_seconds_total={}, " \
                "process_memory_usage={}, virtual_memory_usage={}, " \
                "open_file_descriptors={}, system_cpu_usage={}, " \
                "system_ram_usage={}, system_storage_usage={}, " \
                "network_transmit_bytes_per_second={}, " \
-               "network_receive_bytes_per_second={}" \
+               "network_receive_bytes_per_second={}," \
+               "disk_io_time_seconds_in_interval={}" \
                "".format(self.process_cpu_seconds_total,
                          self.process_memory_usage, self.virtual_memory_usage,
                          self.open_file_descriptors, self.system_cpu_usage,
                          self.system_ram_usage, self.system_storage_usage,
                          self.network_transmit_bytes_per_second,
-                         self.network_receive_bytes_per_second)
+                         self.network_receive_bytes_per_second,
+                         self.disk_io_time_seconds_in_interval)
 
     def set_process_cpu_seconds_total(self, process_cpu_seconds_total) -> None:
         self._process_cpu_seconds_total = process_cpu_seconds_total
@@ -130,6 +139,11 @@ class System:
             self, network_receive_bytes_per_second) -> None:
         self._network_receive_bytes_per_second = \
             network_receive_bytes_per_second
+
+    def set_disk_io_time_seconds_in_interval(
+            self, disk_io_time_seconds_in_interval) -> None:
+        self._disk_io_time_seconds_in_interval = \
+            disk_io_time_seconds_in_interval
 
     # TODO: For data transformer we may need to add a load function here. We
     #     : could also specify a moniterables abstract class that contains

@@ -80,9 +80,8 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
-            #     .format(repo_name)
-            releases_page = "https://api.github.com/repos/{}releases".format(repo_name)
+            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+                .format(repo_name)
 
             # If we should not monitor the repo, move to the next config
             if not monitor_repo:
@@ -111,10 +110,8 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
-            #     .format(repo_name)
-            releases_page = "https://api.github.com/repos/{}releases".format(
-                repo_name)
+            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+                .format(repo_name)
             repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                      monitor_repo, releases_page)
             previous_process = self.config_process_dict[config_id]
@@ -165,7 +162,3 @@ class GitHubMonitorsManager(MonitorsManager):
                 if sent_configs[config_id]['monitor_repo']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-# TODO: Test manager exceptions
-# TODO: Test deleted (Start from here tomorrow, then below)
-# TODO: Test chains repos as well

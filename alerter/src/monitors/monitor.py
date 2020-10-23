@@ -1,8 +1,9 @@
 import logging
 import os
-import pika.exceptions
 import time
 from typing import Dict
+
+import pika.exceptions
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.exceptions import PANICException, \
@@ -19,8 +20,7 @@ class Monitor:
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        # rabbit_ip = os.environ["RABBIT_IP"]
-        rabbit_ip = "localhost"
+        rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
 

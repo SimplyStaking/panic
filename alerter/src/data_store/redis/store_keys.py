@@ -22,6 +22,8 @@ _key_system_network_transmit_bytes_per_second = "s8"
 _key_system_network_receive_bytes_per_second = "s9"
 _key_system_network_receive_bytes_total = "s10"
 _key_system_network_transmit_bytes_total = "s11"
+_key_system_disk_io_time_seconds_total = "s12"
+_key_system_disk_io_time_seconds_in_interval = "s13"
 
 
 def _as_prefix(key) -> str:
@@ -85,4 +87,15 @@ class Keys:
     @staticmethod
     def get_system_network_transmit_bytes_total(system_name: str) -> str:
         return _as_prefix(_key_system_network_transmit_bytes_total) \
+               + system_name
+
+    @staticmethod
+    def get_system_disk_io_time_seconds_total(system_name: str) -> str:
+        return _as_prefix(_key_system_disk_io_time_seconds_total) \
+               + system_name
+
+    @staticmethod
+    def get_system_disk_io_time_seconds_total_in_interval(
+            system_name: str) -> str:
+        return _as_prefix(_key_system_disk_io_time_seconds_in_interval) \
                + system_name
