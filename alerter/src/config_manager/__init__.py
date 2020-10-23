@@ -9,7 +9,7 @@ from configparser import ConfigParser, \
 from typing import Any, Dict, List, Optional
 
 from watchdog.events import FileSystemEvent
-from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 
 from alerter.src.config_manager.config_update_event_handler import ConfigFileEventHandler
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
@@ -47,7 +47,7 @@ class ConfigManager:
 
         self._event_handler = ConfigFileEventHandler(self._on_event_thrown, file_patterns, ignore_file_patterns,
                                                      ignore_directories, case_sensitive)
-        self._observer = Observer()
+        self._observer = PollingObserver()
         self._observer.schedule(self._event_handler, config_directory, recursive=True)
 
         try:
