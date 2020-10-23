@@ -14,11 +14,11 @@ from alerter.src.utils.timing import TimedTaskLimiter
 
 LOGGER = logging.getLogger(__name__)
 
+
 # The producer/consumer must perform the error handling himself. For example
 # if a basic_publish fails with a connection error, the user must re-connect
 # first. This had to be done because a producer/consumer may treat an error
 # differently
-
 class RabbitMQApi:
     def __init__(self, host: str = 'localhost',
                  port: int = 5672, username: str = '', password: str = '',
@@ -101,8 +101,8 @@ class RabbitMQApi:
         try:
             if self._is_recently_disconnected():
                 LOGGER.debug('RabbitMQ: Could not execute %s as RabbitMQ '
-                                  'is temporarily unusable to improve '
-                                  'performance', function.__name__)
+                             'is temporarily unusable to improve '
+                             'performance', function.__name__)
                 return default_return
             ret = function(*args)
             return ret
@@ -145,7 +145,7 @@ class RabbitMQApi:
             # If the connection status is 'connected' and the connection socket
             # is open do not re-connect to avoid memory issues.
             LOGGER.info('Already connected with RabbitMQ, no need to '
-                             're-connect!')
+                        're-connect!')
         else:
             # Open a new connection depending on whether authentication is
             # needed, and set the connection status as 'connected'
@@ -175,8 +175,8 @@ class RabbitMQApi:
             LOGGER.info('Closing connection with RabbitMQ')
             self.connection.close()
             LOGGER.info('Connection with RabbitMQ closed. RabbitMQ '
-                             'cannot be used temporarily to improve '
-                             'performance')
+                        'cannot be used temporarily to improve '
+                        'performance')
             self._set_as_disconnected()
         elif not self.is_connected and self.connection.is_open:
             # This case was done only for the sake of completion.
@@ -187,8 +187,8 @@ class RabbitMQApi:
             LOGGER.info('Closing connection with RabbitMQ')
             self._set_as_disconnected()
             LOGGER.info('Connection with RabbitMQ closed. RabbitMQ '
-                             'cannot be used temporarily to improve '
-                             'performance')
+                        'cannot be used temporarily to improve '
+                        'performance')
         else:
             LOGGER.info('Already disconnected.')
 
