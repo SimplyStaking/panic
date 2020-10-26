@@ -6,6 +6,7 @@ from typing import List, Optional, Union, Dict, Callable, Any
 
 import pika
 import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
 
 from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
@@ -61,7 +62,7 @@ class RabbitMQApi:
     # The output type is Optional[pika.BlockingConnection.BlockingChannel].
     # Strangely, pika.BlockingConnection.BlockingChannel cannot be imported
     @property
-    def channel(self):
+    def channel(self) -> BlockingChannel:
         return self._channel
 
     @property
