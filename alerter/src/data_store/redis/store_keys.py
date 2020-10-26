@@ -8,12 +8,9 @@
 _hash_blockchain = "hash_bc1"
 
 # smX_<monitor_name>
-_key_system_monitor_alive = "sm1"
-_key_system_monitor_last_network_inspection = "sm2"
-_key_system_monitor_network_receive_bytes_total = "sm3"
-_key_system_monitor_network_transmit_bytes_total = "sm4"
+_key_system_monitor_last_monitoring_round = "sm1"
 
-# sX_<system_name>
+sX_<system_name>
 _key_system_process_cpu_seconds_total = "s1"
 _key_system_process_memory_usage = "s2"
 _key_system_virtual_memory_usage = "s3"
@@ -23,17 +20,27 @@ _key_system_system_ram_usage = "s6"
 _key_system_system_storage_usage = "s7"
 _key_system_network_transmit_bytes_per_second = "s8"
 _key_system_network_receive_bytes_per_second = "s9"
+_key_system_network_receive_bytes_total = "s10"
+_key_system_network_transmit_bytes_total = "s11"
+_key_system_disk_io_time_seconds_total = "s12"
+_key_system_disk_io_time_seconds_in_interval = "s13"
 
 # ghX_<repo_name>
 _key_github_releases = "gh1"
 
 def _as_prefix(key) -> str:
     return key + "_"
+
 class Keys:
 
     @staticmethod
     def get_hash_blockchain(chain_name: str) -> str:
         return _as_prefix(_hash_blockchain) + chain_name
+
+    @staticmethod
+    def get_system_monitor_last_monitoring_round(monitor_name: str) -> str:
+        return _as_prefix(_key_system_monitor_last_monitoring_round) \
+              + monitor_name
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_name: str) -> str:
@@ -74,25 +81,26 @@ class Keys:
               + system_name
 
     @staticmethod
-    def get_system_monitor_alive(monitor_name: str) -> str:
-        return _as_prefix(_key_system_monitor_alive) + monitor_name
+    def get_system_network_receive_bytes_total(system_name: str) -> str:
+        return _as_prefix(_key_system_network_receive_bytes_total) \
+              + system_name
 
     @staticmethod
-    def get_system_monitor_last_network_inspection(monitor_name: str) -> str:
-        return _as_prefix(_key_system_monitor_last_network_inspection) \
-              + monitor_name
+    def get_system_network_transmit_bytes_total(system_name: str) -> str:
+        return _as_prefix(_key_system_network_transmit_bytes_total) \
+              + system_name
 
     @staticmethod
-    def get_system_monitor_network_receive_bytes_total(monitor_name: str) \
-            -> str:
-        return _as_prefix(_key_system_monitor_network_receive_bytes_total) \
-              + monitor_name
+    def get_system_disk_io_time_seconds_total(system_name: str) -> str:
+        return _as_prefix(_key_system_disk_io_time_seconds_total) \
+              + system_name
 
     @staticmethod
-    def get_system_monitor_network_transmit_bytes_total(monitor_name: str) \
-            -> str:
-        return _as_prefix(_key_system_monitor_network_transmit_bytes_total) \
-              + monitor_name
+    def get_system_disk_io_time_seconds_total_in_interval(
+            system_name: str) -> str:
+        return _as_prefix(_key_system_disk_io_time_seconds_in_interval) \
+              + system_name
+
 
     @staticmethod
     def get_github_releases(repo_name: str) -> str:

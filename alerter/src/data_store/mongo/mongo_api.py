@@ -65,8 +65,8 @@ class MongoApi:
 
     def _safe(self, function, args: List[Any], default_return: Any):
         # Calls the function with the provided arguments and performs exception
-        # handling as well as returns a specified default if mongo is running
-        # into difficulties. Exceptions are raised to the calling function.
+        # logging as well as returns a specified default if mongo is running
+        # into difficulties.
         try:
             if self._do_not_use_if_recently_went_down():
                 return default_return
