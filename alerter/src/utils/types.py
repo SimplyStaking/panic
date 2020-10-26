@@ -1,8 +1,10 @@
+# TODO Needs updating in the future.
+
 import sys
 from typing import Union
 
 if sys.version_info >= (3, 8):
-    from typing import TypedDict, Union
+    from typing import TypedDict
 else:
     from typing_extensions import TypedDict
 
@@ -10,7 +12,11 @@ RedisType = Union[bytes, str, int, float]
 
 class GithubDataType(TypedDict):
     name: str
-    prev_no_of_releases: int
+    current_no_of_releases: int
+
+class GithubMonitorDataType(TypedDict):
+    name: str
+    github_monitor_last_monitoring_round: int
 
 class SystemDataType(TypedDict):
     name: str
@@ -24,13 +30,14 @@ class SystemDataType(TypedDict):
     system_storage_usage: int
     system_network_transmit_bytes_per_second: int
     system_network_receive_bytes_per_second: int
+    system_network_receive_bytes_total: int
+    system_network_transmit_bytes_total: int
+    system_disk_io_time_seconds_total: int
+    system_disk_io_time_seconds_in_interval: int
 
 class SystemMonitorDataType(TypedDict):
     name: str
-    system_monitor_alive: int
-    system_monitor_last_network_inspection: int
-    system_monitor_network_receive_bytes_total: int
-    system_monitor_network_transmit_bytes_total: int
+    system_monitor_last_monitoring_round: int
 
 class AlertDataType(TypedDict):
     chain_name: str

@@ -10,7 +10,7 @@ _hash_blockchain = "hash_bc1"
 # smX_<monitor_name>
 _key_system_monitor_last_monitoring_round = "sm1"
 
-sX_<system_name>
+# sX_<system_name>
 _key_system_process_cpu_seconds_total = "s1"
 _key_system_process_memory_usage = "s2"
 _key_system_virtual_memory_usage = "s3"

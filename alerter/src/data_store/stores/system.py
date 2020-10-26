@@ -22,7 +22,7 @@ class SystemStore(Store):
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates an exchange named `store` of type `topic`
+        Creates an exchange named `store` of type `direct`
         Declares a queue named `system_store_queue` and binds it to exchange
         `store` with a routing key `transformer.system.*` meaning anything
         coming from the transformer with regads to a system will be received 
@@ -30,13 +30,12 @@ class SystemStore(Store):
     """
     def _initialize_store(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='topic',
+        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
             passive=False, durable=True, auto_delete=False, internal=False)
         self.rabbitmq.queue_declare('system_store_queue', passive=False, \
             durable=True, exclusive=False, auto_delete=False)
         self.rabbitmq.queue_bind(queue='system_store_queue', exchange='store',
-            routing_key='transformer.system.*')
-        self.rabbitmq.queue_purge(queue='system_store_queue')
+            routing_key='system.*')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
@@ -66,39 +65,26 @@ class SystemStore(Store):
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         system_data = json.loads(body.decode())
         self.rabbitmq.basic_ack(method.delivery_tag, False)
-        if method.routing_key == 'transformer.system.metrics':
-            self._process_redis_metrics_store(system_data)
-            self._process_mongo_store(system_data)
-        elif method.routing_key == 'transformer.system.monitor':
-            self._process_redis_monitor_store(system_data)
+        if method.routing_key == 'system':
+            self._process_redis_monitor_store( \
+                system_data['result']['meta_data'])
+            self._process_redis_metrics_store(system_data['result']['data'])
+            self._process_mongo_store(system_data['result']['data'])
         else:
             raise UnknownRoutingKeyException(
                 'Received an unknown routing key {} from the transformer.' \
                     .format(method.routing_key))
 
-    def _process_redis_monitor_store(self, monitor: SystemMonitorDataType) -> None:
+    def _process_redis_monitor_store(self, monitor: SystemMonitorDataType) \
+        -> None:
         self.logger.debug(
-            'Saving %s state: _system_monitor_alive=%s, '
-            '_system_monitor_last_network_inspection=%s, '
-            '_system_monitor_network_receive_bytes_total=%s, '
-            '_system_monitor_network_transmit_bytes_total=%s',
-            monitor['name'], monitor['system_monitor_alive'],
-            monitor['system_monitor_last_network_inspection'],
-            monitor['system_monitor_network_receive_bytes_total'],
-            monitor['system_monitor_network_transmit_bytes_total']
+            'Saving %s state: _system_monitor_last_monitoring_round=%s',
+            monitor['name'], monitor['system_monitor_last_monitoring_round']
         )
 
         self.redis.set_multiple({
-            Keys.get_system_monitor_alive(monitor['name']):
-                monitor['system_monitor_alive'],
-            Keys.get_system_monitor_last_network_inspection(monitor['name']):
-                monitor['system_monitor_last_network_inspection'],
-            Keys.get_system_monitor_network_receive_bytes_total( 
-                monitor['name']): \
-                    monitor['system_monitor_network_receive_bytes_total'],
-            Keys.get_system_monitor_network_transmit_bytes_total(
-                monitor['name']): \
-                    monitor['system_monitor_network_transmit_bytes_total']
+            Keys.get_system_monitor_last_monitoring_round(monitor['name']):
+                monitor['system_monitor_last_monitoring_round']
         })
 
     def _process_redis_metrics_store(self, system: SystemDataType) -> None:
@@ -106,15 +92,23 @@ class SystemStore(Store):
             'Saving %s state: _process_cpu_seconds_total=%s, '
             '_process_memory_usage=%s, _virtual_memory_usage=%s, '
             '_open_file_descriptors=%s, _system_cpu_usage=%s, '
-            '_system_ram_usage=%s, _system_storage_usage=%s'
-            '_system_network_transmit_bytes_per_second=%s'
-            '_system_network_receive_bytes_per_second=%s',
+            '_system_ram_usage=%s, _system_storage_usage=%s, '
+            '_system_network_transmit_bytes_per_second=%s, '
+            '_system_network_receive_bytes_per_second=%s, '
+            '_system_network_receive_bytes_total=%s, '
+            '_system_network_transmit_bytes_total=%s, '
+            '_system_disk_io_time_seconds_total=%s, ',
+            '_system_disk_io_time_seconds_in_interval=%s',
             system['name'], system['process_cpu_seconds_total'],
             system['process_memory_usage'], system['virtual_memory_usage'],
             system['open_file_descriptors'], system['system_cpu_usage'],
             system['system_ram_usage'], system['system_storage_usage'],
             system['system_network_transmit_bytes_per_second'],
-            system['system_network_receive_bytes_per_second']
+            system['system_network_receive_bytes_per_second'],
+            system['system_network_receive_bytes_total'],
+            system['system_network_transmit_bytes_total'],
+            system['system_disk_io_time_seconds_total'],
+            system['system_disk_io_time_seconds_in_interval']
         )
 
         self.redis.set_multiple({
@@ -135,7 +129,16 @@ class SystemStore(Store):
             Keys.get_system_network_transmit_bytes_per_second(system['name']):
                 system['system_network_transmit_bytes_per_second'],
             Keys.get_system_network_receive_bytes_per_second(system['name']):
-                system['system_network_receive_bytes_per_second']
+                system['system_network_receive_bytes_per_second'],
+            Keys.get_system_network_receive_bytes_total(system['name']):
+                system['system_network_receive_bytes_total'],
+            Keys.get_system_network_transmit_bytes_total(system['name']):
+                system['system_network_transmit_bytes_total'],
+            Keys.get_system_disk_io_time_seconds_total(system['name']):
+                system['system_disk_io_time_seconds_total'],
+            Keys.get_system_disk_io_time_seconds_total_in_interval( \
+                system['name']):
+                system['system_disk_io_time_seconds_in_interval'],
         })
 
     """
@@ -152,10 +155,7 @@ class SystemStore(Store):
 
         Timestamp is the time of when the metric was saved into the database.
 
-        $min/$max are used for data aggregation
-        $min is the timestamp of the first alert
-        $max is the timestamp of the last alert entered
-        $inc increments n_alerts by one each time an alert is added
+        $inc increments n_metrics by one each time a metric is added
     """
     def _process_mongo_store(self, system: SystemDataType) -> None:
         time_now = datetime.now()

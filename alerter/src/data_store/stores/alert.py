@@ -20,20 +20,18 @@ class AlertStore(Store):
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates an exchange named `store` of type `topic`
+        Creates an exchange named `store` of type `direct`
         Declares a queue named `alerts_store_queue` and binds it to exchange
-        `store` with a routing key `alert_route` meaning anything
-        coming from the alert_router containing an alert will be stored.
+        `store` with a routing key `alerter`.
     """
     def _initialize_store(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='topic',
+        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
             passive=False, durable=True, auto_delete=False, internal=False)
         self.rabbitmq.queue_declare('alerts_store_queue', passive=False, \
             durable=True, exclusive=False, auto_delete=False)
         self.rabbitmq.queue_bind(queue='alerts_store_queue', exchange='store',
-            routing_key='alert_route')
-        self.rabbitmq.queue_purge(queue='alerts_store_queue')
+            routing_key='alerter')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
@@ -61,7 +59,7 @@ class AlertStore(Store):
     def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         alert_data = json.loads(body.decode())
-        self._process_mongo_store(alert_data)
+        self._process_mongo_store(alert_data['result']['data'])
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     """
