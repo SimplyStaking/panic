@@ -36,15 +36,15 @@ class GitHubMonitorsManager(MonitorsManager):
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
             'exchange \'config\' with routing key '
-            '\'chains.*.*.repos_config.ini\'')
+            '\'chains.*.*.repos_config\'')
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
-                                 'config', 'chains.*.*.repos_config.ini')
+                                 'config', 'chains.*.*.repos_config')
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
             'exchange \'config\' with routing key '
-            '\'general.repos_config.ini\'')
+            '\'general.repos_config\'')
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
-                                 'config', 'general.repos_config.ini')
+                                 'config', 'general.repos_config')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
@@ -56,7 +56,7 @@ class GitHubMonitorsManager(MonitorsManager):
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
-        if method.routing_key == 'general.repos_config.ini':
+        if method.routing_key == 'general.repos_config':
             if 'general' in self.repos_configs:
                 current_configs = self.repos_configs['general']
             else:
@@ -148,7 +148,7 @@ class GitHubMonitorsManager(MonitorsManager):
                           .format(repo_name), self.logger)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == 'general.repos_config.ini':
+        if method.routing_key == 'general.repos_config':
             # To avoid non-moniterable repos
             self._repos_configs['general'] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs

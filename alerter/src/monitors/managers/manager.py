@@ -1,5 +1,6 @@
 import logging
 import os
+from abc import ABC, abstractmethod
 from typing import Dict
 
 import pika.exceptions
@@ -8,7 +9,7 @@ from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.logging import log_and_print
 
 
-class MonitorsManager:
+class MonitorsManager(ABC):
     def __init__(self, logger: logging.Logger, name: str):
         self._logger = logger
         self._config_process_dict = {}
@@ -36,12 +37,14 @@ class MonitorsManager:
     def name(self) -> str:
         return self._name
 
+    @abstractmethod
     def _initialize_rabbitmq(self) -> None:
         pass
 
     def _listen_for_configs(self) -> None:
         self.rabbitmq.start_consuming()
 
+    @abstractmethod
     def _process_configs(
             self, ch, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:

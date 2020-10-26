@@ -51,7 +51,7 @@ def get_prometheus_metrics_data(endpoint: str, requested_metrics: list,
 
     # Raises a meaningful exception if some requested metrics are not found at
     # the endpoint
-    missing_metrics = set(requested_metrics).difference(set(response))
+    missing_metrics = set(requested_metrics) - set(response)
     for metric in missing_metrics:
         raise MetricNotFoundException(metric, endpoint)
 

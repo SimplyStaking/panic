@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from abc import ABC, abstractmethod
 from typing import Dict
 
 import pika.exceptions
@@ -10,7 +11,7 @@ from alerter.src.utils.exceptions import PANICException, \
     MessageWasNotDeliveredException
 
 
-class Monitor:
+class Monitor(ABC):
 
     def __init__(self, monitor_name: str, logger: logging.Logger,
                  monitor_period: int) -> None:
@@ -51,6 +52,7 @@ class Monitor:
     def data_retrieval_failed(self) -> bool:
         return self._data_retrieval_failed
 
+    @abstractmethod
     def status(self) -> str:
         pass
 
@@ -65,6 +67,7 @@ class Monitor:
         self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
                                        False)
 
+    @abstractmethod
     def _get_data(self) -> None:
         pass
 
@@ -74,15 +77,19 @@ class Monitor:
         else:
             self._process_data_retrieval_successful()
 
+    @abstractmethod
     def _process_data_retrieval_failed(self, error: PANICException) -> None:
         pass
 
+    @abstractmethod
     def _process_data_retrieval_successful(self) -> None:
         pass
 
+    @abstractmethod
     def _send_data(self) -> None:
         pass
 
+    @abstractmethod
     def _monitor(self) -> None:
         pass
 

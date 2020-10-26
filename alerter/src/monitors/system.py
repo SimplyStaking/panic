@@ -189,10 +189,12 @@ class SystemMonitor(Monitor):
         # the time in idle mode
         node_cpu_seconds_idle = 0
         node_cpu_seconds_total = 0
-        for i, j in enumerate(self.data['node_cpu_seconds_total']):
-            if json.loads(j)['mode'] == 'idle':
-                node_cpu_seconds_idle += self.data['node_cpu_seconds_total'][j]
-            node_cpu_seconds_total += self.data['node_cpu_seconds_total'][j]
+        for _, data_subset in enumerate(self.data['node_cpu_seconds_total']):
+            if json.loads(data_subset)['mode'] == 'idle':
+                node_cpu_seconds_idle +=\
+                    self.data['node_cpu_seconds_total'][data_subset]
+            node_cpu_seconds_total +=\
+                self.data['node_cpu_seconds_total'][data_subset]
 
         system_cpu_usage = 100 - (
                 (node_cpu_seconds_idle / node_cpu_seconds_total) * 100)
@@ -216,13 +218,15 @@ class SystemMonitor(Monitor):
         # Add system storage usage percentage to processed data
         node_filesystem_avail_bytes = 0
         node_filesystem_size_bytes = 0
-        for i, j in enumerate(self.data['node_filesystem_avail_bytes']):
+        for _, data_subset in enumerate(
+                self.data['node_filesystem_avail_bytes']):
             node_filesystem_avail_bytes += \
-                self.data['node_filesystem_avail_bytes'][j]
+                self.data['node_filesystem_avail_bytes'][data_subset]
 
-        for i, j in enumerate(self.data['node_filesystem_size_bytes']):
+        for _, data_subset in enumerate(
+                self.data['node_filesystem_size_bytes']):
             node_filesystem_size_bytes += \
-                self.data['node_filesystem_size_bytes'][j]
+                self.data['node_filesystem_size_bytes'][data_subset]
 
         system_storage_usage = 100 - (
                 (node_filesystem_avail_bytes / node_filesystem_size_bytes)
@@ -238,13 +242,15 @@ class SystemMonitor(Monitor):
         # second variants to the processed data
         receive_bytes_total = 0
         transmit_bytes_total = 0
-        for i, j in enumerate(self.data['node_network_receive_bytes_total']):
+        for _, data_subset in enumerate(
+                self.data['node_network_receive_bytes_total']):
             receive_bytes_total += \
-                self.data['node_network_receive_bytes_total'][j]
+                self.data['node_network_receive_bytes_total'][data_subset]
 
-        for i, j in enumerate(self.data['node_network_transmit_bytes_total']):
+        for _, data_subset in enumerate(
+                self.data['node_network_transmit_bytes_total']):
             transmit_bytes_total += \
-                self.data['node_network_transmit_bytes_total'][j]
+                self.data['node_network_transmit_bytes_total'][data_subset]
 
         self.logger.debug('%s network_receive_bytes_total: %s, '
                           'network_transmit_bytes_total: %s',
@@ -259,9 +265,10 @@ class SystemMonitor(Monitor):
 
         # Add the time spent in seconds doing disk i/o to the processed data.
         disk_io_time_seconds_total = 0
-        for i, j in enumerate(self.data['node_disk_io_time_seconds_total']):
+        for _, data_subset in enumerate(
+                self.data['node_disk_io_time_seconds_total']):
             disk_io_time_seconds_total += \
-                self.data['node_disk_io_time_seconds_total'][j]
+                self.data['node_disk_io_time_seconds_total'][data_subset]
 
         self.logger.debug('%s disk_io_time_seconds_total: %s',
                           self.system_config, disk_io_time_seconds_total)

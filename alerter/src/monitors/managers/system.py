@@ -35,15 +35,15 @@ class SystemMonitorsManager(MonitorsManager):
         self.logger.info(
             'Binding queue \'system_monitors_manager_configs_queue\' to '
             'exchange \'config\' with routing key '
-            '\'chains.*.*.systems_config.ini\'')
+            '\'chains.*.*.systems_config\'')
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
-                                 'config', 'chains.*.*.systems_config.ini')
+                                 'config', 'chains.*.*.systems_config')
         self.logger.info(
             'Binding queue \'system_monitors_manager_configs_queue\' to '
             'exchange \'config\' with routing key '
-            '\'general.systems_config.ini\'')
+            '\'general.systems_config\'')
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
-                                 'config', 'general.systems_config.ini')
+                                 'config', 'general.systems_config')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
@@ -55,7 +55,7 @@ class SystemMonitorsManager(MonitorsManager):
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
-        if method.routing_key == 'general.systems_config.ini':
+        if method.routing_key == 'general.systems_config':
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']
             else:
@@ -137,7 +137,7 @@ class SystemMonitorsManager(MonitorsManager):
                           .format(system_name), self.logger)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == 'general.systems_config.ini':
+        if method.routing_key == 'general.systems_config':
             # To avoid non-moniterable systems
             self._systems_configs['general'] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs

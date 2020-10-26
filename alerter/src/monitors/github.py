@@ -14,8 +14,7 @@ from alerter.src.configs.repo import RepoConfig
 from alerter.src.monitors.monitor import Monitor
 from alerter.src.utils.data import get_json
 from alerter.src.utils.exceptions import DataReadingException, PANICException, \
-    CannotAccessGitHubPageException, \
-    GitHubAPICallException
+    CannotAccessGitHubPageException, GitHubAPICallException
 
 
 class GitHubMonitor(Monitor):
