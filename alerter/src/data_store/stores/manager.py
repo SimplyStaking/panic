@@ -10,13 +10,9 @@ from alerter.src.data_store.stores.store import Store
 class StoreManager:
     def __init__(self, logger: logging.Logger):
         self._logger = logger
-        self._system_store = SystemStore(self.logger)
-        self._github_store = GithubStore(self.logger)
-        self._alert_store = AlertStore(self.logger)
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
+        self._system_store = SystemStore(self._logger)
+        self._github_store = GithubStore(self._logger)
+        self._alert_store = AlertStore(self._logger)
 
     @property
     def system_store(self) -> SystemStore:
@@ -46,12 +42,12 @@ class StoreManager:
             store.rabbitmq.disconnect_till_successful()
             log_and_print('{} stopped. {}'.format(store, e), store.logger)
 
-    """
+    def start_store_manager(self) -> None:
+        """
         Starts all the store processes, these will initialize all the rabbitmq
         interfaces together with mongo client connections. All rabbit instances
         will then begin listening for incoming messages.
-    """
-    def start_store_manager(self) -> None:
+        """
         processes = []
         stores = [self.system_store, self.github_store, self.alert_store]
         for instance in stores:

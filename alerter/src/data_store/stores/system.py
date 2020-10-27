@@ -17,7 +17,8 @@ class SystemStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger)
 
-    """
+    def _initialize_store(self) -> None:
+        """
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
@@ -26,8 +27,7 @@ class SystemStore(Store):
         `store` with a routing key `transformer.system.*` meaning anything
         coming from the transformer with regads to a system will be received 
         here.
-    """
-    def _initialize_store(self) -> None:
+        """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
             passive=False, durable=True, auto_delete=False, internal=False)
@@ -44,15 +44,17 @@ class SystemStore(Store):
                 exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
 
-    """ 
+    def _process_data(self,
+        ch: pika.adapters.blocking_connection.BlockingChannel,
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """ 
         Processes the data being received, from the queue.
         Two types of metrics are going to be received, the system metrics
         of the system being monitored and the metrics of the monitor currently
         monitoring the system. System metrics need to be stored in redis and
         mongo while monitor metrics only need to be stored in redis.
-    """
-    def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """
         system_data = json.loads(body.decode())
         try:
             self._process_redis_monitor_store(
@@ -142,7 +144,9 @@ class SystemStore(Store):
                 system['system_disk_io_time_seconds_in_interval'],
         })
 
-    """
+    def _process_mongo_store(self, system: SystemDataType, monitor_data: \
+        SystemMonitorDataType) -> None:
+        """
         Updating mongo with system metrics using a time-based document with 60
         entries per hour per system, assuming each system monitoring round is
         60 seconds.
@@ -157,9 +161,7 @@ class SystemStore(Store):
         Timestamp is the time of when the metric was saved into the database.
 
         $inc increments n_metrics by one each time a metric is added
-    """
-    def _process_mongo_store(self, system: SystemDataType, monitor_data: \
-        SystemMonitorDataType) -> None:
+        """
         time_now = datetime.now()
         self.mongo.update_one(monitor_data['system_parent_id'],
             {'doc_type': 'system', 'd': time_now.hour },

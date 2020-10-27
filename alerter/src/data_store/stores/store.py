@@ -18,9 +18,9 @@ class Store(ABC):
         redis_port = os.environ["REDIS_PORT"]
 
         self._logger = logger
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
-        self._redis = RedisApi(logger=self.logger, db=redis_db, \
+        self._redis = RedisApi(logger=self._logger, db=redis_db, \
             host=redis_ip, port=redis_port, namespace='panic_alerter')
 
     @property

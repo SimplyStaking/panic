@@ -1,7 +1,6 @@
 
 import logging
 import json
-import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -17,15 +16,15 @@ class AlertStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger)
 
-    """
+    def _initialize_store(self) -> None:
+        """
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
         Creates an exchange named `store` of type `direct`
         Declares a queue named `alerts_store_queue` and binds it to exchange
         `store` with a routing key `alert`.
-    """
-    def _initialize_store(self) -> None:
+        """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
             passive=False, durable=True, auto_delete=False, internal=False)
@@ -42,14 +41,16 @@ class AlertStore(Store):
                 exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
 
-    """
+    def _process_data(self,
+        ch: pika.adapters.blocking_connection.BlockingChannel,
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """
         Processes the data being received, from the queue. There is only one
         type of data that is going to be received which is an alert. All
         alerts will be stored in mongo, there isn't a need to store them in
         redis.
-    """
-    def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """
         alert_data = json.loads(body.decode())
         try:
             self._process_mongo_store(alert_data['result']['data'])
@@ -61,7 +62,8 @@ class AlertStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    """
+    def _process_mongo_store(self, alert: AlertDataType) -> None:
+        """
         Updating mongo with alerts using a size-based document with 1000 entries
         Collection is the name of the chain, with document type alert as only
         alerts will be stored. Mongo will keep adding new alerts to a document
@@ -77,8 +79,7 @@ class AlertStore(Store):
         $min is the timestamp of the first alert
         $max is the timestamp of the last alert entered
         $inc increments n_alerts by one each time an alert is added
-    """
-    def _process_mongo_store(self, alert: AlertDataType) -> None:
+        """
         self.mongo.update_one(alert['parent_id'],
             {'doc_type': 'alert', 'n_alerts': {'$lt': 1000}},
             {'$push': { 'alerts': {

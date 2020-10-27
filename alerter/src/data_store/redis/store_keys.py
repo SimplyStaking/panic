@@ -32,7 +32,7 @@ _key_github_monitor_last_monitoring_round = "gm1"
 _key_github_release_name = "gh1"
 _key_github_tag_name = "gh2"
 
-def _as_prefix(key) -> str:
+def _as_prefix(key: str) -> str:
     return key + "_"
 
 class Keys:

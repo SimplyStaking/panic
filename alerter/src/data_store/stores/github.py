@@ -18,7 +18,8 @@ class GithubStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger)
 
-    """
+    def _initialize_store(self) -> None:
+        """
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
@@ -27,8 +28,7 @@ class GithubStore(Store):
         `store` with a routing key `github` meaning anything
         coming from the transformer with regads to github updates will be
         received here.
-    """
-    def _initialize_store(self) -> None:
+        """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
             passive=False, durable=True, auto_delete=False, internal=False)
@@ -45,14 +45,16 @@ class GithubStore(Store):
                 exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
 
-    """
+    def _process_data(self,
+        ch: pika.adapters.blocking_connection.BlockingChannel,
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """
         Processes the data being received, from the queue. One type of metric
         will be received here which is a github update if a new release
         of a repository has been detected and monitored. This only needs
         to be stored in redis.
-    """
-    def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
+        """
         github_data = json.loads(body.decode())
         try:
             self._process_redis_metrics_store(
