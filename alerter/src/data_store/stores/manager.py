@@ -37,7 +37,7 @@ class StoreManager:
         stores = [self.system_store, self.github_store, self.alert_store]
         for instance in stores:
             instance._initialize_store()
-            process = Process(target=instance._start_listening, args=())
+            process = Process(target=instance.manage, args=())
             process.daemon = True
             process.start()
             processes.append(process)

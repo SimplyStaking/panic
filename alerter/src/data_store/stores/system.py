@@ -43,16 +43,7 @@ class SystemStore(Store):
         self.rabbitmq.basic_consume(queue='system_store_queue', \
             on_message_callback=self._process_data, auto_ack=False, \
                 exclusive=False, consumer_tag=None)
-        while True:
-          try:
-            self.rabbitmq.start_consuming()       
-          except pika.exceptions.AMQPChannelError:
-              continue
-          except pika.exceptions.AMQPConnectionError as e:
-              raise e
-          except Exception as e:
-              self.logger.error(e)
-              raise e
+        self.rabbitmq.start_consuming()
 
     """ 
         Processes the data being received, from the queue.
@@ -66,10 +57,19 @@ class SystemStore(Store):
         system_data = json.loads(body.decode())
         self.rabbitmq.basic_ack(method.delivery_tag, False)
         if method.routing_key == 'system':
-            self._process_redis_monitor_store( \
-                system_data['result']['meta_data'])
-            self._process_redis_metrics_store(system_data['result']['data'])
-            self._process_mongo_store(system_data['result']['data'])
+            self._process_redis_monitor_store(
+                system_data['result']['meta_data']
+            )
+            self._process_redis_metrics_store(
+              system_data['result']['data'],
+              system_data['result']['meta_data']['system_parent_id'],
+              system_data['result']['meta_data']['system_id'],
+            )
+            self._process_mongo_store(
+                system_data['result']['data'],
+                system_data['result']['meta_data']['system_parent_id'],
+                system_data['result']['meta_data']['system_id'],
+            )
         else:
             raise UnknownRoutingKeyException(
                 'Received an unknown routing key {} from the transformer.' \
@@ -79,15 +79,17 @@ class SystemStore(Store):
         -> None:
         self.logger.debug(
             'Saving %s state: _system_monitor_last_monitoring_round=%s',
-            monitor['name'], monitor['system_monitor_last_monitoring_round']
+            monitor['monitor_name'], monitor['time']
         )
 
         self.redis.set_multiple({
-            Keys.get_system_monitor_last_monitoring_round(monitor['name']):
-                monitor['system_monitor_last_monitoring_round']
+            Keys.get_system_monitor_last_monitoring_round(
+                monitor['monitor_name']): monitor['time']
         })
 
-    def _process_redis_metrics_store(self, system: SystemDataType) -> None:
+    def _process_redis_metrics_store(self, system: SystemDataType,
+        parent_id: str, system_id: str) -> None:
+
         self.logger.debug(
             'Saving %s state: _process_cpu_seconds_total=%s, '
             '_process_memory_usage=%s, _virtual_memory_usage=%s, '
@@ -99,7 +101,7 @@ class SystemStore(Store):
             '_system_network_transmit_bytes_total=%s, '
             '_system_disk_io_time_seconds_total=%s, ',
             '_system_disk_io_time_seconds_in_interval=%s',
-            system['name'], system['process_cpu_seconds_total'],
+            system_id, system['process_cpu_seconds_total'],
             system['process_memory_usage'], system['virtual_memory_usage'],
             system['open_file_descriptors'], system['system_cpu_usage'],
             system['system_ram_usage'], system['system_storage_usage'],
@@ -111,33 +113,32 @@ class SystemStore(Store):
             system['system_disk_io_time_seconds_in_interval']
         )
 
-        self.redis.set_multiple({
-            Keys.get_system_process_cpu_seconds_total(system['name']):
+        self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
+            Keys.get_system_process_cpu_seconds_total(system_id):
                 system['process_cpu_seconds_total'],
-            Keys.get_system_process_memory_usage(system['name']):
+            Keys.get_system_process_memory_usage(system_id):
                 system['process_memory_usage'],
-            Keys.get_system_virtual_memory_usage(system['name']):
+            Keys.get_system_virtual_memory_usage(system_id):
                 system['virtual_memory_usage'],
-            Keys.get_system_open_file_descriptors(system['name']):
+            Keys.get_system_open_file_descriptors(system_id):
                 system['open_file_descriptors'],
-            Keys.get_system_system_cpu_usage(system['name']):
+            Keys.get_system_system_cpu_usage(system_id):
                 system['system_cpu_usage'],
-            Keys.get_system_system_ram_usage(system['name']):
+            Keys.get_system_system_ram_usage(system_id):
                 system['system_ram_usage'],
-            Keys.get_system_system_storage_usage(system['name']):
+            Keys.get_system_system_storage_usage(system_id):
                 system['system_storage_usage'],
-            Keys.get_system_network_transmit_bytes_per_second(system['name']):
+            Keys.get_system_network_transmit_bytes_per_second(system_id):
                 system['system_network_transmit_bytes_per_second'],
-            Keys.get_system_network_receive_bytes_per_second(system['name']):
+            Keys.get_system_network_receive_bytes_per_second(system_id):
                 system['system_network_receive_bytes_per_second'],
-            Keys.get_system_network_receive_bytes_total(system['name']):
+            Keys.get_system_network_receive_bytes_total(system_id):
                 system['system_network_receive_bytes_total'],
-            Keys.get_system_network_transmit_bytes_total(system['name']):
+            Keys.get_system_network_transmit_bytes_total(system_id):
                 system['system_network_transmit_bytes_total'],
-            Keys.get_system_disk_io_time_seconds_total(system['name']):
+            Keys.get_system_disk_io_time_seconds_total(system_id):
                 system['system_disk_io_time_seconds_total'],
-            Keys.get_system_disk_io_time_seconds_total_in_interval( \
-                system['name']):
+            Keys.get_system_disk_io_time_seconds_total_in_interval(system_id):
                 system['system_disk_io_time_seconds_in_interval'],
         })
 
@@ -146,9 +147,9 @@ class SystemStore(Store):
         entries per hour per system, assuming each system monitoring round is
         60 seconds.
 
-        Collection is the name of the chain, a document will keep incrementing
-        with new system metrics until it's the next hour at which point mongo
-        will create a new document and repeat the process.
+        Collection is the parent identifier of the system, a document will keep
+        incrementing with new system metrics until it's the next hour at which
+        point mongo will create a new document and repeat the process.
 
         Document type will always be system, as only system metrics are going
         to be stored in this document.
@@ -157,11 +158,12 @@ class SystemStore(Store):
 
         $inc increments n_metrics by one each time a metric is added
     """
-    def _process_mongo_store(self, system: SystemDataType) -> None:
+    def _process_mongo_store(self, system: SystemDataType, parent_id: str,
+        system_id: str) -> None:
         time_now = datetime.now()
-        self.mongo.update_one(system['chain_name'],
+        self.mongo.update_one(parent_id,
             {'doc_type': 'system', 'd': time_now.hour },
-            {'$push': { system['name'] : {
+            {'$push': { system_id: {
                 'process_cpu_seconds_total': \
                     system['process_cpu_seconds_total'],
                 'process_memory_usage': system['process_memory_usage'],
@@ -181,3 +183,22 @@ class SystemStore(Store):
                 '$inc': {'n_metrics': 1},
             }
         )
+
+    def manage(self) -> None:
+        log_and_print('{} started.'.format(self), self.logger)
+        while True:
+            try:
+                self._start_listening()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another managing round without
+                # sleeping
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e

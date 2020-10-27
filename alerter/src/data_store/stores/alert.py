@@ -10,6 +10,7 @@ from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.types import AlertDataType
+from alerter.src.utils.logging import log_and_print
 from alerter.src.data_store.store.store import Store
 
 class AlertStore(Store):
@@ -22,7 +23,7 @@ class AlertStore(Store):
 
         Creates an exchange named `store` of type `direct`
         Declares a queue named `alerts_store_queue` and binds it to exchange
-        `store` with a routing key `alerter`.
+        `store` with a routing key `alert`.
     """
     def _initialize_store(self) -> None:
         self.rabbitmq.connect_till_successful()
@@ -31,7 +32,7 @@ class AlertStore(Store):
         self.rabbitmq.queue_declare('alerts_store_queue', passive=False, \
             durable=True, exclusive=False, auto_delete=False)
         self.rabbitmq.queue_bind(queue='alerts_store_queue', exchange='store',
-            routing_key='alerter')
+            routing_key='alert')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
@@ -39,16 +40,7 @@ class AlertStore(Store):
         self.rabbitmq.basic_consume(queue='alerts_store_queue', \
             on_message_callback=self._process_data, auto_ack=False, \
                 exclusive=False, consumer_tag=None)
-        while True:
-            try:
-                self.rabbitmq.start_consuming()       
-            except pika.exceptions.AMQPChannelError:
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                raise e
-            except Exception as e:
-                self.logger.error(e)
-                raise e
+        self.rabbitmq.start_consuming()
 
     """
         Processes the data being received, from the queue. There is only one
@@ -80,7 +72,7 @@ class AlertStore(Store):
         $inc increments n_alerts by one each time an alert is added
     """
     def _process_mongo_store(self, alert: AlertDataType) -> None:
-        self.mongo.update_one(alert['chain_name'],
+        self.mongo.update_one(alert['parent_id'],
             {'doc_type': 'alert', 'n_alerts': {'$lt': 1000}},
             {'$push': { 'alerts': {
                 'origin': alert['origin'],  
@@ -95,3 +87,22 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
+
+    def manage(self) -> None:
+        log_and_print('{} started.'.format(self), self.logger)
+        while True:
+            try:
+                self._start_listening()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another managing round without
+                # sleeping
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e

@@ -42,16 +42,7 @@ class GithubStore(Store):
         self.rabbitmq.basic_consume(queue='github_store_queue', \
             on_message_callback=self._process_data, auto_ack=False, \
                 exclusive=False, consumer_tag=None)
-        while True:
-            try:
-                self.rabbitmq.start_consuming()       
-            except pika.exceptions.AMQPChannelError:
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                raise e
-            except Exception as e:
-                self.logger.error(e)
-                raise e
+        self.rabbitmq.start_consuming()
 
     """
         Processes the data being received, from the queue. One type of metric
@@ -63,7 +54,15 @@ class GithubStore(Store):
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         github_data = json.loads(body.decode())
         if method.routing_key == 'github':
-            self._process_redis_metrics_store(github_data['result']['data'])
+            self._process_redis_metrics_store(
+                github_data['result']['data'],
+                github_data['result']['meta_data']['repo_parent_id'],
+                github_data['result']['meta_data']['repo_id']
+            )
+            self._process_mongo_metrics_store(
+                github_data['result']['data'],
+                github_data['result']['meta_data']
+            )
             self._process_redis_monitor_store( \
                 github_data['result']['meta_data'])
         else:
@@ -72,61 +71,63 @@ class GithubStore(Store):
                     .format(method.routing_key))
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_metrics_store(self,  github_data: GithubDataType) \
-        -> None:
-        key = Keys.get_github_releases(github_data['name'])
-        self.logger.debug('Saving github monitor state: %s=%s', key,
-            github_data['current_no_of_releases'])
-        self.redis.set(key, github_data['current_no_of_releases'])
-    
+    def _process_redis_metrics_store(self,  github_data: GithubDataType,
+        parent_id: str, repo_id: str) -> None:
+        self.logger.debug(
+            'Saving %s state: release_name=%s, tag_name=%s', repo_id,
+            github_data['release_name'], github_data['tag_name']
+        )
+        self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
+            Keys.get_github_release_name(repo_id):
+                github_data['release_name'],
+            Keys.get_github_tag_name(repo_id):
+                github_data['tag_name'],
+        })
+
     def _process_redis_monitor_store(self, monitor_data: \
         GithubMonitorDataType) -> None:
         self.logger.debug(
             'Saving %s state: _github_monitor_last_monitoring_round=%s',
-            monitor_data['name'],
-            monitor_data['github_monitor_last_monitoring_round']
+            monitor_data['monitor_name'],
+            monitor_data['time']
         )
 
         self.redis.set_multiple({
-            Keys.get_github_monitor_last_monitoring_round(monitor_data['name']):
-                monitor_data['github_monitor_last_monitoring_round']
+            Keys.get_github_monitor_last_monitoring_round(
+                monitor_data['monitor_name']): monitor_data['time']
         })
 
-    """
-        Updating mongo with github metrics using a time-based document with 60
-        entries per hour per github, assuming each github monitoring round is
-        60 seconds.
-
-        Collection is the name of the chain, a document will keep incrementing
-        with new github metrics until it's the next hour at which point mongo
-        will create a new document and repeat the process.
-
-        Document type will always be github, as only github metrics are going
-        to be stored in this document.
-
-        $inc increments n_metrics by one each time a metric is added
-    """
-    def _process_mongo_store(self, github_data: GithubDataType) -> None:
-        time_now = datetime.now()
-        self.mongo.update_one(github_data['chain_name'],
-            {'doc_type': 'github', 'd': time_now.hour },
-            {'$push': { github_data['name'] : {
-                'process_cpu_seconds_total': \
-                    github_data['process_cpu_seconds_total'],
-                'process_memory_usage': system['process_memory_usage'],
-                'virtual_memory_usage': system['virtual_memory_usage'],
-                'open_file_descriptors': \
-                    system['open_file_descriptors'],
-                'system_cpu_usage': system['system_cpu_usage'],
-                'system_ram_usage': system['system_ram_usage'],
-                'system_storage_usage': system['system_storage_usage'],
-                'system_network_transmit_bytes_per_second': \
-                    system['system_network_transmit_bytes_per_second'],
-                'system_network_receive_bytes_per_second': \
-                    system['system_network_receive_bytes_per_second'],
-                'timestamp': time_now.timestamp(),
+    def _process_mongo_store(self,  github_data: GithubDataType, monitor_data:
+        GithubMonitorDataType) -> None:
+        self.mongo.update_one(monitor_data['repo_parent_id'],
+            {'doc_type': 'github', 'n_releases': {'$lt': 1000}},
+            {'$push': { monitor_data['repo_id']: {
+                'release_name': github_data['release_name'],
+                'tag_name': github_data['tag_name'],
+                'timestamp': monitor_data['time'],
                 }
             },
-                '$inc': {'n_metrics': 1},
+                '$min': {'first': monitor_data['time']},
+                '$max': {'last': monitor_data['time']},
+                '$inc': {'n_releases': 1},
             }
         )
+
+    def manage(self) -> None:
+        log_and_print('{} started.'.format(self), self.logger)
+        while True:
+            try:
+                self._start_listening()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore perform another managing round without
+                # sleeping
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
