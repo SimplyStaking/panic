@@ -105,8 +105,7 @@ class Keys:
               + system_id
 
     @staticmethod
-    def get_system_disk_io_time_seconds_total_in_interval(
-            system_id: str) -> str:
+    def get_system_disk_io_time_seconds_in_interval(system_id: str) -> str:
         return _as_prefix(_key_system_disk_io_time_seconds_in_interval) \
               + system_id
 

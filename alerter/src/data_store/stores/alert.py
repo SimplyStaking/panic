@@ -11,7 +11,7 @@ from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.types import AlertDataType
 from alerter.src.utils.logging import log_and_print
-from alerter.src.data_store.store.store import Store
+from alerter.src.data_store.stores.store import Store
 
 class AlertStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
@@ -51,7 +51,14 @@ class AlertStore(Store):
     def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         alert_data = json.loads(body.decode())
-        self._process_mongo_store(alert_data['result']['data'])
+        try:
+            self._process_mongo_store(alert_data['result']['data'])
+        except KeyError as e:
+            self.logger.error('Error when reading alert data, in data store.')
+            self.logger.exception(e)
+        except Exception as e:
+            self.logger.exception(e)
+            raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     """
@@ -88,7 +95,8 @@ class AlertStore(Store):
             }
         )
 
-    def manage(self) -> None:
+    def _begin_store(self) -> None:
+        self._initialize_store()
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
@@ -103,6 +111,11 @@ class AlertStore(Store):
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
                 raise e
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
             except Exception as e:
                 self.logger.exception(e)
                 raise e

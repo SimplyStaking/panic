@@ -15,8 +15,11 @@ class GithubDataType(TypedDict):
     current_no_of_releases: int
 
 class GithubMonitorDataType(TypedDict):
-    name: str
-    github_monitor_last_monitoring_round: int
+    monitor_name: str
+    repo_name: str
+    repo_id: str
+    repo_parent_id: str
+    time: str
 
 class SystemDataType(TypedDict):
     name: str
@@ -36,11 +39,14 @@ class SystemDataType(TypedDict):
     system_disk_io_time_seconds_in_interval: int
 
 class SystemMonitorDataType(TypedDict):
-    name: str
-    system_monitor_last_monitoring_round: int
+    monitor_name: str
+    system_name: str
+    system_id: str
+    system_parent_id: str
+    time: str
 
 class AlertDataType(TypedDict):
-    chain_name: str
+    parent_id: str
     origin: str
     alert_name: str
     severity: str

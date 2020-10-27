@@ -5,13 +5,14 @@ import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.utils.exceptions import UnknownRoutingKeyException
+from alerter.src.utils.logging import log_and_print
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.types import GithubDataType, GithubMonitorDataType
-from alerter.src.data_store.store.store import Store
+from alerter.src.data_store.stores.store import Store
+from alerter.src.utils.exceptions import MessageWasNotDeliveredException
 
 class GithubStore(Store):
     def __init__(self, logger: logging.Logger) -> None:
@@ -53,22 +54,24 @@ class GithubStore(Store):
     def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         github_data = json.loads(body.decode())
-        if method.routing_key == 'github':
+        try:
             self._process_redis_metrics_store(
                 github_data['result']['data'],
                 github_data['result']['meta_data']['repo_parent_id'],
                 github_data['result']['meta_data']['repo_id']
             )
-            self._process_mongo_metrics_store(
+            self._process_mongo_store(
                 github_data['result']['data'],
                 github_data['result']['meta_data']
             )
             self._process_redis_monitor_store( \
                 github_data['result']['meta_data'])
-        else:
-            raise UnknownRoutingKeyException(
-                'Received an unknown routing key {} from the transformer.' \
-                    .format(method.routing_key))
+        except KeyError as e:
+            self.logger.error('Error when reading github data, in data store.')
+            self.logger.exception(e)
+        except Exception as e:
+            self.logger.exception(e)
+            raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_redis_metrics_store(self,  github_data: GithubDataType,
@@ -113,7 +116,8 @@ class GithubStore(Store):
             }
         )
 
-    def manage(self) -> None:
+    def _begin_store(self) -> None:
+        self._initialize_store()
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
@@ -128,6 +132,12 @@ class GithubStore(Store):
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
                 raise e
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+

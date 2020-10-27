@@ -5,13 +5,12 @@ import pika
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.utils.exceptions import UnknownRoutingKeyException
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.data_store.redis.store_keys import Keys
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.utils.types import SystemDataType, SystemMonitorDataType
-from alerter.src.data_store.store.store import Store
+from alerter.src.data_store.stores.store import Store
 from alerter.src.utils.logging import log_and_print
 
 class SystemStore(Store):
@@ -35,7 +34,7 @@ class SystemStore(Store):
         self.rabbitmq.queue_declare('system_store_queue', passive=False, \
             durable=True, exclusive=False, auto_delete=False)
         self.rabbitmq.queue_bind(queue='system_store_queue', exchange='store',
-            routing_key='system.*')
+            routing_key='system')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
@@ -55,8 +54,7 @@ class SystemStore(Store):
     def _process_data(self, ch, method: pika.spec.Basic.Deliver, \
         properties: pika.spec.BasicProperties, body: bytes) -> None:
         system_data = json.loads(body.decode())
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
-        if method.routing_key == 'system':
+        try:
             self._process_redis_monitor_store(
                 system_data['result']['meta_data']
             )
@@ -67,24 +65,26 @@ class SystemStore(Store):
             )
             self._process_mongo_store(
                 system_data['result']['data'],
-                system_data['result']['meta_data']['system_parent_id'],
-                system_data['result']['meta_data']['system_id'],
+                system_data['result']['meta_data'],
             )
-        else:
-            raise UnknownRoutingKeyException(
-                'Received an unknown routing key {} from the transformer.' \
-                    .format(method.routing_key))
+        except KeyError as e:
+            self.logger.error('Error when reading system data, in data store.')
+            self.logger.exception(e)
+        except Exception as e:
+            self.logger.exception(e)
+            raise e
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_monitor_store(self, monitor: SystemMonitorDataType) \
-        -> None:
+    def _process_redis_monitor_store(self, monitor_data: SystemMonitorDataType \
+        ) -> None:
         self.logger.debug(
             'Saving %s state: _system_monitor_last_monitoring_round=%s',
-            monitor['monitor_name'], monitor['time']
+            monitor_data['monitor_name'], monitor_data['time']
         )
 
         self.redis.set_multiple({
             Keys.get_system_monitor_last_monitoring_round(
-                monitor['monitor_name']): monitor['time']
+                monitor_data['monitor_name']): monitor_data['time']
         })
 
     def _process_redis_metrics_store(self, system: SystemDataType,
@@ -138,7 +138,7 @@ class SystemStore(Store):
                 system['system_network_transmit_bytes_total'],
             Keys.get_system_disk_io_time_seconds_total(system_id):
                 system['system_disk_io_time_seconds_total'],
-            Keys.get_system_disk_io_time_seconds_total_in_interval(system_id):
+            Keys.get_system_disk_io_time_seconds_in_interval(system_id):
                 system['system_disk_io_time_seconds_in_interval'],
         })
 
@@ -158,12 +158,12 @@ class SystemStore(Store):
 
         $inc increments n_metrics by one each time a metric is added
     """
-    def _process_mongo_store(self, system: SystemDataType, parent_id: str,
-        system_id: str) -> None:
+    def _process_mongo_store(self, system: SystemDataType, monitor_data: \
+        SystemMonitorDataType) -> None:
         time_now = datetime.now()
-        self.mongo.update_one(parent_id,
+        self.mongo.update_one(monitor_data['system_parent_id'],
             {'doc_type': 'system', 'd': time_now.hour },
-            {'$push': { system_id: {
+            {'$push': { monitor_data['system_id']: {
                 'process_cpu_seconds_total': \
                     system['process_cpu_seconds_total'],
                 'process_memory_usage': system['process_memory_usage'],
@@ -177,14 +177,23 @@ class SystemStore(Store):
                     system['system_network_transmit_bytes_per_second'],
                 'system_network_receive_bytes_per_second': \
                     system['system_network_receive_bytes_per_second'],
-                'timestamp': time_now.timestamp(),
+                'system_network_receive_bytes_total': \
+                    system['system_network_receive_bytes_total'],
+                'system_network_transmit_bytes_total':
+                    system['system_network_transmit_bytes_total'],
+                'system_disk_io_time_seconds_total':
+                    system['system_disk_io_time_seconds_total'],
+                'system_disk_io_time_seconds_in_interval':
+                    system['system_disk_io_time_seconds_in_interval'],
+                'timestamp': monitor_data['time'],
                 }
             },
                 '$inc': {'n_metrics': 1},
             }
         )
 
-    def manage(self) -> None:
+    def _begin_store(self) -> None:
+        self._initialize_store()
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
@@ -199,6 +208,12 @@ class SystemStore(Store):
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
                 raise e
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+

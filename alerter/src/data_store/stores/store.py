@@ -5,8 +5,9 @@ import pika.exceptions
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
+from abc import ABC
 
-class Store:
+class Store(ABC):
     def __init__(self, logger: logging.Logger):
         rabbit_ip = os.environ["RABBIT_IP"]
         self._mongo_ip = os.environ["DB_IP"]
@@ -55,7 +56,7 @@ class Store:
 
     def _process_redis_metrics_store(self) -> None:
         pass
-    
+
     def _process_redis_monitor_store(self) -> None:
         pass
     
@@ -64,4 +65,6 @@ class Store:
 
     def _process_data(self) -> None:
         pass
-
+    
+    def _begin_store(self) -> None:
+        pass

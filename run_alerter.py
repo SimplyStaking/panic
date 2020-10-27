@@ -9,7 +9,7 @@ from alerter.src.utils.logging import create_logger
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.data_store.store.manager import StoreManager
+from alerter.src.data_store.stores.manager import StoreManager
 from alerter.src.utils.logging import log_and_print
 
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
@@ -36,7 +36,7 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     return data_store_logger
 
 def run_data_store() -> None:
-    store_logger =_initialize_data_store_logger('data_store_name')
+    store_logger =_initialize_data_store_logger('data_store')
 
     store_manager = StoreManager(store_logger)
     store_manager.start_store_manager()
