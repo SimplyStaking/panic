@@ -7,10 +7,7 @@
 # Hashes
 _hash_blockchain = "hash_bc1"
 
-# smX_<monitor_name>
-_key_system_monitor_last_monitoring_round = "sm1"
-
-# sX_<system_name>
+# sX_<system_id>
 _key_system_process_cpu_seconds_total = "s1"
 _key_system_process_memory_usage = "s2"
 _key_system_virtual_memory_usage = "s3"
@@ -24,6 +21,7 @@ _key_system_network_receive_bytes_total = "s10"
 _key_system_network_transmit_bytes_total = "s11"
 _key_system_disk_io_time_seconds_total = "s12"
 _key_system_disk_io_time_seconds_in_interval = "s13"
+_key_system_last_monitoring_round = "s14"
 
 
 def _as_prefix(key) -> str:
@@ -33,69 +31,68 @@ def _as_prefix(key) -> str:
 class Keys:
 
     @staticmethod
-    def get_hash_blockchain(chain_name: str) -> str:
-        return _as_prefix(_hash_blockchain) + chain_name
+    def get_hash_blockchain(parent_id: str) -> str:
+        return _as_prefix(_hash_blockchain) + parent_id
 
     @staticmethod
-    def get_system_monitor_last_monitoring_round(monitor_name: str) -> str:
-        return _as_prefix(_key_system_monitor_last_monitoring_round) \
-               + monitor_name
+    def get_system_process_cpu_seconds_total(system_id: str) -> str:
+        return _as_prefix(_key_system_process_cpu_seconds_total) + system_id
 
     @staticmethod
-    def get_system_process_cpu_seconds_total(system_name: str) -> str:
-        return _as_prefix(_key_system_process_cpu_seconds_total) + system_name
+    def get_system_process_memory_usage(system_id: str) -> str:
+        return _as_prefix(_key_system_process_memory_usage) + system_id
 
     @staticmethod
-    def get_system_process_memory_usage(system_name: str) -> str:
-        return _as_prefix(_key_system_process_memory_usage) + system_name
+    def get_system_virtual_memory_usage(system_id: str) -> str:
+        return _as_prefix(_key_system_virtual_memory_usage) + system_id
 
     @staticmethod
-    def get_system_virtual_memory_usage(system_name: str) -> str:
-        return _as_prefix(_key_system_virtual_memory_usage) + system_name
+    def get_system_open_file_descriptors(system_id: str) -> str:
+        return _as_prefix(_key_system_open_file_descriptors) + system_id
 
     @staticmethod
-    def get_system_open_file_descriptors(system_name: str) -> str:
-        return _as_prefix(_key_system_open_file_descriptors) + system_name
+    def get_system_system_cpu_usage(system_id: str) -> str:
+        return _as_prefix(_key_system_system_cpu_usage) + system_id
 
     @staticmethod
-    def get_system_system_cpu_usage(system_name: str) -> str:
-        return _as_prefix(_key_system_system_cpu_usage) + system_name
+    def get_system_system_ram_usage(system_id: str) -> str:
+        return _as_prefix(_key_system_system_ram_usage) + system_id
 
     @staticmethod
-    def get_system_system_ram_usage(system_name: str) -> str:
-        return _as_prefix(_key_system_system_ram_usage) + system_name
+    def get_system_system_storage_usage(system_id: str) -> str:
+        return _as_prefix(_key_system_system_storage_usage) + system_id
 
     @staticmethod
-    def get_system_system_storage_usage(system_name: str) -> str:
-        return _as_prefix(_key_system_system_storage_usage) + system_name
-
-    @staticmethod
-    def get_system_network_transmit_bytes_per_second(system_name: str) -> str:
+    def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
         return _as_prefix(_key_system_network_transmit_bytes_per_second) \
-               + system_name
+               + system_id
 
     @staticmethod
-    def get_system_network_receive_bytes_per_second(system_name: str) -> str:
+    def get_system_network_receive_bytes_per_second(system_id: str) -> str:
         return _as_prefix(_key_system_network_receive_bytes_per_second) \
-               + system_name
+               + system_id
 
     @staticmethod
-    def get_system_network_receive_bytes_total(system_name: str) -> str:
+    def get_system_network_receive_bytes_total(system_id: str) -> str:
         return _as_prefix(_key_system_network_receive_bytes_total) \
-               + system_name
+               + system_id
 
     @staticmethod
-    def get_system_network_transmit_bytes_total(system_name: str) -> str:
+    def get_system_network_transmit_bytes_total(system_id: str) -> str:
         return _as_prefix(_key_system_network_transmit_bytes_total) \
-               + system_name
+               + system_id
 
     @staticmethod
-    def get_system_disk_io_time_seconds_total(system_name: str) -> str:
+    def get_system_disk_io_time_seconds_total(system_id: str) -> str:
         return _as_prefix(_key_system_disk_io_time_seconds_total) \
-               + system_name
+               + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_total_in_interval(
-            system_name: str) -> str:
+            system_id: str) -> str:
         return _as_prefix(_key_system_disk_io_time_seconds_in_interval) \
-               + system_name
+               + system_id
+
+    @staticmethod
+    def get_system_last_monitoring_round(system_id: str) -> str:
+        return _as_prefix(_key_system_last_monitoring_round) + system_id
