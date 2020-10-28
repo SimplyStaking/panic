@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import logging.handlers
+import sys
 
 
 def create_logger(file: str, name: str, level: str, rotating: bool = False,
@@ -15,7 +16,7 @@ def create_logger(file: str, name: str, level: str, rotating: bool = False,
 
     if rotating:
         handler = logging.handlers.RotatingFileHandler(
-            file, maxBytes=10000000, backupCount=3)
+            file, maxBytes=10000000, backupCount=3, encoding='utf-8')
     else:
         handler = logging.FileHandler(file)
 
@@ -28,3 +29,9 @@ def create_logger(file: str, name: str, level: str, rotating: bool = False,
     logger.addHandler(handler)
 
     return logger
+
+
+def log_and_print(text: str, logger: logging.Logger):
+    logger.info(text)
+    print(text)
+    sys.stdout.flush()
