@@ -3,21 +3,19 @@
 ##################################
 
 import logging
-
-# For it to work with __name__ it must be in the alerter folder and not in the
-# main script.
 import os
 import time
+import sys
+from os import environ
 
+from alerter.src.config_manager import ConfigManager
+from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+
+# For it to work with __name__ it must be in the alerter folder and not in the
+# main script
 LOGGER = logging.getLogger("alerter")
 
 if __name__ == '__main__':
-    import sys
-    from os import environ
-
-    from alerter.src.config_manager import ConfigManager
-    from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-
     # If this will be configurable we'll need this in the .env probably
     LOGGER.setLevel(logging.DEBUG)
     console_handler = logging.StreamHandler(sys.stdout)
@@ -41,7 +39,11 @@ if __name__ == '__main__':
 
     LOGGER.info("Starting config manager")
     LOGGER.info("Starting at %s", os.getcwd())
-    cm = ConfigManager("./config", rabbit_pub)
+    cm = ConfigManager(
+        LOGGER.getChild(ConfigManager.__name__),
+        "./config",
+        rabbit_pub
+    )
     cm.start_watching_config_files()
     LOGGER.info("Logs reading from %s: %s", cm.config_directory,
                 os.path.abspath(cm.config_directory))
