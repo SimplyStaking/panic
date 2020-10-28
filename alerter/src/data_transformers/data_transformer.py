@@ -3,9 +3,12 @@ from typing import Dict
 import logging
 import os
 
-from alerter.src.data_store.redis.redis_api import RedisApi
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.moniterables.system import System
+import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
+
+from src.data_store.redis.redis_api import RedisApi
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.moniterables.system import System
 
 
 class DataTransformer(ABC):
@@ -54,9 +57,8 @@ class DataTransformer(ABC):
     def _initialize_rabbitmq(self) -> None:
         pass
 
-    # TODO: Need to change output type to Union[System, Repo]
     @abstractmethod
-    def load_state(self, moniterable: System) -> None:
+    def load_transformer_state(self) -> None:
         pass
 
     @abstractmethod
@@ -72,7 +74,18 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _transform_data(self) -> None:
+    def _send_data_for_saving(self) -> None:
+        pass
+
+    @abstractmethod
+    def _send_data_for_alerting(self) -> None:
+        pass
+
+    @abstractmethod
+    def _transform_data(self, ch: BlockingChannel,
+                        method: pika.spec.Basic.Deliver,
+                        properties: pika.spec.BasicProperties, body: bytes) \
+            -> None:
         pass
 
     def start(self) -> None:
@@ -90,3 +103,5 @@ class DataTransformer(ABC):
 # TODO: In case we decrease per interval, make sure the data is not smaller
 #     : but should be this handled in the alerter? It will be handled in the
 #     : installer but if this is the case is should be handled in the alerter
+# TODO: Must do proper error handling including errors in processing, getting
+#     : data etc
