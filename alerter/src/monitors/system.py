@@ -310,7 +310,16 @@ class SystemMonitor(Monitor):
             self.logger.error('Error when retrieving data from {}'
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
-        self._process_data(data_retrieval_exception)
+
+        try:
+            self._process_data(data_retrieval_exception)
+        except Exception as error:
+            self.logger.error('Error when processing data obtained from {}'
+                              .format(self.system_config.node_exporter_url))
+            self.logger.exception(error)
+            # Do not send data if we experienced processing errors
+            return
+
         self._send_data()
 
         # Only output the gathered data if there was no error
