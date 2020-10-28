@@ -23,6 +23,9 @@ class System:
         self._network_transmit_bytes_per_second = None
         self._network_receive_bytes_per_second = None
 
+        # TODO: May need an is_down variable which signals that a system is
+        #     : down. This may be caught when the monitors send an is down error
+
         # Time in seconds spent doing i/o between monitoring rounds
         self._disk_io_time_seconds_in_interval = None
 

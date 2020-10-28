@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -38,7 +39,7 @@ class SystemDataTransformer(DataTransformer):
                                  'raw_data', 'system')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('system_data_transformer_raw_data_queue',
-                                    self._transform_data, False, False, None)
+                                    self._process_raw_data, False, False, None)
 
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
@@ -186,11 +187,31 @@ class SystemDataTransformer(DataTransformer):
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 
-    def _transform_data_for_storage(self) -> None:
+    def _update_system_state(self, system: System) -> None:
+        # This function performs the update based on the transformed data for
+        # storage
         pass
 
-    def _transform_data_for_alerting(self) -> None:
+    def _process_transformed_data_for_storage(self, data: Dict) -> None:
+        # TODO: Need to cater when result in received data. Need to cater when
+        #     : error in receive data (and need to handle different types of
+        #     : errors in a different way). Need to cater for when neither
+        #     : result nor error are sent (unlikely)
         pass
+
+    def _process_transformed_data_for_alerting(self, data: Dict) -> None:
+        # TODO: Need to cater when result in received data. Need to cater when
+        #     : error in receive data (and need to handle different types of
+        #     : errors in a different way). Need to cater for when neither
+        #     : result nor error are sent (unlikely)
+        if 'result' in data:
+            pass
+        elif 'error' in data:
+            pass
+        else:
+            # TODO: Raise an appropriate error? What should we do here? And
+            #     : where should we handle errors from monitors?
+            pass
 
     def _send_data_for_saving(self) -> None:
         pass
@@ -198,10 +219,32 @@ class SystemDataTransformer(DataTransformer):
     def _send_data_for_alerting(self) -> None:
         pass
 
+    # TODO: Tomorrow continue from here
+    # TODO: We might remove the transform data for alerting functions and storing
+    #     : tomorrow and put everything here and setting fields also, to avoid
+    #     : having to many ifs elifs and else
+    def _transform_data(self, data: Dict) -> None:
+        # TODO: Need to cater when result in received data. Need to cater when
+        #     : error in receive data (and need to handle different types of
+        #     : errors in a different way). Need to cater for when neither
+        #     : result nor error are sent (unlikely)
+        if 'result' in data:
+            # TODO: Cater when metrics are usual
+            pass
+        elif 'error' in data:
+            # TODO: See what type of PANICExceptions can be raised. We should
+            #     : Only handle isDownExceptions as they signal an alertable
+            #     : and storing condition only. Do not wrap in error, but result
+            pass
+        else:
+            # TODO: Raise an appropriate error? We should catch, log it and
+            #     : continue without sending the data
+            pass
+
     # TODO: This is what should be done next
-    def _transform_data(self, ch: BlockingChannel,
-                        method: pika.spec.Basic.Deliver,
-                        properties: pika.spec.BasicProperties, body: bytes) \
+    def _process_raw_data(self, ch: BlockingChannel,
+                          method: pika.spec.Basic.Deliver,
+                          properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         # TODO: When getting data, we need to always set the parent_id just
         #     : in case it changes. When creating also pass the parent_id. Note
@@ -212,3 +255,7 @@ class SystemDataTransformer(DataTransformer):
 
     def start(self) -> None:
         pass
+
+
+# TODO: If the transformation fails, data should not be sent but logged. This
+#     : also includes the update system state.

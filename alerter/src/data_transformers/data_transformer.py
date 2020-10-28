@@ -66,11 +66,11 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _transform_data_for_storage(self) -> None:
+    def _process_transformed_data_for_storage(self, data: Dict) -> None:
         pass
 
     @abstractmethod
-    def _transform_data_for_alerting(self) -> None:
+    def _process_transformed_data_for_alerting(self, data: Dict) -> None:
         pass
 
     @abstractmethod
@@ -82,9 +82,13 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _transform_data(self, ch: BlockingChannel,
-                        method: pika.spec.Basic.Deliver,
-                        properties: pika.spec.BasicProperties, body: bytes) \
+    def _transform_data(self, data: Dict) -> None:
+        pass
+
+    @abstractmethod
+    def _process_raw_data(self, ch: BlockingChannel,
+                          method: pika.spec.Basic.Deliver,
+                          properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         pass
 
