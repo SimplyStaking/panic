@@ -7,6 +7,7 @@ from configparser import ConfigParser, DuplicateSectionError, \
 from typing import Any, Dict, List, Optional, Callable
 
 from pika import BasicProperties
+from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
@@ -110,24 +111,38 @@ class ConfigManager:
                                   routing_key: str) -> None:
         self._logger.debug("Sending %s to routing key %s", config, routing_key)
 
-        try:
-            self._logger.debug("Attempting to send config to routing key %s",
-                               routing_key)
-            # We need to definitely send this
-            self._rabbit.basic_publish_confirm(
-                "config", routing_key, config, mandatory=False,
-                is_body_dict=True, properties=BasicProperties(delivery_mode=2)
-            )
-            self._logger.info("Configuration update sent")
-        except MessageWasNotDeliveredException as mwnde:
-            self._logger.error("Config was not successfully sent: %s",
-                               mwnde.message)  # Should not get here
-            raise mwnde
-        except ConnectionNotInitializedException as cnie:
-            # This should not happen but it can be thrown
-            self._logger.error("The connection to RabbitMQ is down")
-            self._logger.error(cnie.message)
-            raise cnie
+        while True:
+            try:
+                self._logger.debug(
+                    "Attempting to send config to routing key %s", routing_key
+                )
+                # We need to definitely send this
+                self._rabbit.basic_publish_confirm(
+                    "config", routing_key, config, mandatory=True,
+                    is_body_dict=True,
+                    properties=BasicProperties(delivery_mode=2)
+                )
+                self._logger.info("Configuration update sent")
+                break
+            except MessageWasNotDeliveredException as mwnde:
+                self._logger.error("Config was not successfully sent")
+                self._logger.exception(mwnde)
+                self._logger.info("Will attempt sending the log again")
+            except (
+                    ConnectionNotInitializedException, AMQPConnectionError
+            ) as connection_error:
+                # This should not happen but it can be thrown
+                self._logger.error("There has been a connection error")
+                self._logger.exception(connection_error)
+                self._logger.info("Restarting the connection")
+                self._connected_to_rabbit = False
+                self._connect_to_rabbit()
+                self._logger.info("Connection restored, will attempt again")
+            except AMQPChannelError as ace:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. As a result we don't need to
+                # anything here, just re-try.
+                continue
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
