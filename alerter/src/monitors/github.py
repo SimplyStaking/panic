@@ -93,7 +93,7 @@ class GitHubMonitor(Monitor):
             exchange='raw_data', routing_key='github', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to \'raw_data\' exchange')
+        self.logger.debug('Sent data to \'raw_data\' exchange.')
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()

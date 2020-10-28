@@ -87,7 +87,7 @@ class RabbitMQApi:
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self.live_check_limiter.can_do_task():
             self.logger.info('RabbitMQ is unusable right now. Stopping usage '
-                             'temporarily to improve performance')
+                             'temporarily to improve performance.')
             self.live_check_limiter.did_task()
         self._is_connected = False
 
@@ -177,7 +177,7 @@ class RabbitMQApi:
         # disconnected to limit usage. Otherwise, just mark as disconnected to
         # try and limit usage.
         if self.connection.is_open:
-            self.logger.info('Closing connection with RabbitMQ')
+            self.logger.info('Closing connection with RabbitMQ.')
             self.connection.close()
             self.logger.info('Connection with RabbitMQ closed.')
 
