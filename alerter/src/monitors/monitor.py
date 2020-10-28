@@ -104,10 +104,10 @@ class Monitor(ABC):
                 # sleeping
                 continue
             except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
+                # Log the fact that the message could not be sent. Sleep just
+                # because there is no use in consuming a lot of resources until
+                # the problem is fixed.
                 self.logger.exception(e)
-                continue
             except pika.exceptions.AMQPConnectionError as e:
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
