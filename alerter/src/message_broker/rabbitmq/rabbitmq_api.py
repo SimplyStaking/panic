@@ -8,9 +8,9 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
+from src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
-from alerter.src.utils.timing import TimedTaskLimiter
+from src.utils.timing import TimedTaskLimiter
 
 
 # The producer/consumer must perform the error handling himself. For example
@@ -59,10 +59,8 @@ class RabbitMQApi:
     def connection(self) -> Optional[pika.BlockingConnection]:
         return self._connection
 
-    # The output type is Optional[pika.BlockingConnection.BlockingChannel].
-    # Strangely, pika.BlockingConnection.BlockingChannel cannot be imported
     @property
-    def channel(self) -> BlockingChannel:
+    def channel(self) -> Optional[BlockingChannel]:
         return self._channel
 
     @property

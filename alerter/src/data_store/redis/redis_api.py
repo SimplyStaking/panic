@@ -5,8 +5,8 @@ from typing import Dict, Optional, List, Any
 
 import redis
 
-from alerter.src.utils.timing import TimedTaskLimiter
-from alerter.src.utils.types import RedisType
+from src.utils.timing import TimedTaskLimiter
+from src.utils.types import RedisType
 
 
 class RedisApi:

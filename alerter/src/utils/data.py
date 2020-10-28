@@ -5,7 +5,7 @@ from typing import Dict
 import requests
 from prometheus_client.parser import text_string_to_metric_families
 
-from alerter.src.utils.exceptions import NoMetricsGivenException, \
+from src.utils.exceptions import NoMetricsGivenException, \
     MetricNotFoundException
 
 

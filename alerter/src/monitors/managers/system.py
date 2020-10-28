@@ -4,13 +4,14 @@ import multiprocessing
 from typing import Dict
 
 import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
 
-from alerter.src.configs.system import SystemConfig
-from alerter.src.monitors.managers.manager import MonitorsManager
-from alerter.src.monitors.monitor_starters import start_system_monitor
-from alerter.src.utils.configs import get_newly_added_configs, \
-    get_modified_configs, get_removed_configs
-from alerter.src.utils.logging import log_and_print
+from src.configs.system import SystemConfig
+from src.monitors.managers.manager import MonitorsManager
+from src.monitors.monitor_starters import start_system_monitor
+from src.utils.configs import get_newly_added_configs, get_modified_configs, \
+    get_removed_configs
+from src.utils.logging import log_and_print
 
 
 class SystemMonitorsManager(MonitorsManager):
@@ -49,7 +50,7 @@ class SystemMonitorsManager(MonitorsManager):
                                     self._process_configs, False, False, None)
 
     def _process_configs(
-            self, ch, method: pika.spec.Basic.Deliver,
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 

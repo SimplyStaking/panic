@@ -10,10 +10,10 @@ from requests.exceptions import ConnectionError as ReqConnectionError, \
     ReadTimeout, ChunkedEncodingError
 from urllib3.exceptions import ProtocolError
 
-from alerter.src.configs.repo import RepoConfig
-from alerter.src.monitors.monitor import Monitor
-from alerter.src.utils.data import get_json
-from alerter.src.utils.exceptions import DataReadingException, PANICException, \
+from src.configs.repo import RepoConfig
+from src.monitors.monitor import Monitor
+from src.utils.data import get_json
+from src.utils.exceptions import DataReadingException, PANICException, \
     CannotAccessGitHubPageException, GitHubAPICallException
 
 

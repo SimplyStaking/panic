@@ -5,10 +5,10 @@ import time
 
 import pika.exceptions
 
-from alerter.src.monitors.managers.github import GitHubMonitorsManager
-from alerter.src.monitors.managers.manager import MonitorsManager
-from alerter.src.monitors.managers.system import SystemMonitorsManager
-from alerter.src.utils.logging import create_logger, log_and_print
+from src.monitors.managers.github import GitHubMonitorsManager
+from src.monitors.managers.manager import MonitorsManager
+from src.monitors.managers.system import SystemMonitorsManager
+from src.utils.logging import create_logger, log_and_print
 
 
 def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:

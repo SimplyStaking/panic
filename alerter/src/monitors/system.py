@@ -10,10 +10,10 @@ from requests.exceptions import ConnectionError as ReqConnectionError, \
     ReadTimeout, ChunkedEncodingError
 from urllib3.exceptions import ProtocolError
 
-from alerter.src.configs.system import SystemConfig
-from alerter.src.monitors.monitor import Monitor
-from alerter.src.utils.data import get_prometheus_metrics_data
-from alerter.src.utils.exceptions import MetricNotFoundException, \
+from src.configs.system import SystemConfig
+from src.monitors.monitor import Monitor
+from src.utils.data import get_prometheus_metrics_data
+from src.utils.exceptions import MetricNotFoundException, \
     SystemIsDownException, DataReadingException, PANICException
 
 

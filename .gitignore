@@ -16,10 +16,11 @@ web-installer/node_modules
 __pycache__/
 
 # logs
-logs/*.log*
-logs/*/*.log*
-!logs/alerts/.gitkeep
-!logs/general/.gitkeep
+alerter/logs/*.log*
+alerter/logs/*/*.log*
+!alerter/logs/managers/.gitkeep
+!alerter/logs/monitors/.gitkeep
+!alerter/logs/.gitkeep
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
