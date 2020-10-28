@@ -44,9 +44,6 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare('alert', 'topic', False, True, False,
                                        False)
 
-    # TODO: Tomorrow continue from below here. Most probably easy to start from
-    #     : listen for data.
-
     # TODO: Need to change output type to Union[System, Repo]
     def load_state(self, moniterable: System) -> None:
         pass
