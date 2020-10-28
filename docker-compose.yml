@@ -74,11 +74,13 @@ services:
       - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
       - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
-    build: .
+    build:
+      context: './'
+      dockerfile: './alerter/Dockerfile'
     image: 'simplyvc/panic_alerter:1.0.0'
     volumes:
       - './config:/opt/panic/config'
-      - './logs:/opt/panic/logs'
+      - './alerter/logs:/opt/panic/alerter/logs'
     restart: always
     networks:
       panic_net:

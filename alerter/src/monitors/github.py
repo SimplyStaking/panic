@@ -10,10 +10,10 @@ from requests.exceptions import ConnectionError as ReqConnectionError, \
     ReadTimeout, ChunkedEncodingError
 from urllib3.exceptions import ProtocolError
 
-from alerter.src.configs.repo import RepoConfig
-from alerter.src.monitors.monitor import Monitor
-from alerter.src.utils.data import get_json
-from alerter.src.utils.exceptions import DataReadingException, PANICException, \
+from src.configs.repo import RepoConfig
+from src.monitors.monitor import Monitor
+from src.utils.data import get_json
+from src.utils.exceptions import DataReadingException, PANICException, \
     CannotAccessGitHubPageException, GitHubAPICallException
 
 
@@ -93,7 +93,7 @@ class GitHubMonitor(Monitor):
             exchange='raw_data', routing_key='github', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to \'raw_data\' exchange')
+        self.logger.debug('Sent data to \'raw_data\' exchange.')
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()

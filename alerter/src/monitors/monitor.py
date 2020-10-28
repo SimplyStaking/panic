@@ -6,9 +6,8 @@ from typing import Dict
 
 import pika.exceptions
 
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.utils.exceptions import PANICException, \
-    MessageWasNotDeliveredException
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 
 
 class Monitor(ABC):

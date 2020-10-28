@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from queue import Queue
 from typing import Optional
 
-from alerter.src.utils.datetime import strfdelta
+from src.utils.datetime import strfdelta
 
 
 class TimedTaskLimiter:

@@ -4,9 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
 
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.utils.logging import log_and_print
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.logging import log_and_print
 
 
 class MonitorsManager(ABC):
@@ -46,7 +47,7 @@ class MonitorsManager(ABC):
 
     @abstractmethod
     def _process_configs(
-            self, ch, method: pika.spec.Basic.Deliver,
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 

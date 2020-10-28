@@ -4,12 +4,12 @@ import time
 
 import pika.exceptions
 
-from alerter.src.configs.repo import RepoConfig
-from alerter.src.configs.system import SystemConfig
-from alerter.src.monitors.github import GitHubMonitor
-from alerter.src.monitors.monitor import Monitor
-from alerter.src.monitors.system import SystemMonitor
-from alerter.src.utils.logging import create_logger, log_and_print
+from src.configs.repo import RepoConfig
+from src.configs.system import SystemConfig
+from src.monitors.github import GitHubMonitor
+from src.monitors.monitor import Monitor
+from src.monitors.system import SystemMonitor
+from src.utils.logging import create_logger, log_and_print
 
 
 def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:

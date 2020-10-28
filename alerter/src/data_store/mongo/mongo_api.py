@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Any
 from pymongo import MongoClient
 from pymongo.results import InsertOneResult, InsertManyResult
 
-from alerter.src.utils.timing import TimedTaskLimiter
+from src.utils.timing import TimedTaskLimiter
 
 
 class MongoApi:
