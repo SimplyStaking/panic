@@ -1,12 +1,12 @@
+import distutils.util
 import logging
 from datetime import timedelta
 from typing import Dict, Optional, List, Any
 
 import redis
-import distutils.util
 
-from alerter.src.utils.timing import TimedTaskLimiter
-from alerter.src.utils.types import RedisType
+from src.utils.timing import TimedTaskLimiter
+from src.utils.types import RedisType
 
 
 class RedisApi:

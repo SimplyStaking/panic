@@ -3,9 +3,6 @@ FROM node:12
 # Create app directory
 WORKDIR /opt/panic
 
-# Copy the shell script used to run the installer
-COPY ./run_installer_server.sh ./
-
 # Change directory, and copy all installer contents from the host to the
 # container.
 WORKDIR ./web-installer
@@ -16,9 +13,6 @@ RUN npm ci --only=production
 
 # Build installer
 RUN npm run-script build --only=production
-
-# Change directory to run the installer
-WORKDIR ../
 
 # Expose port
 EXPOSE 8000

@@ -9,6 +9,7 @@ coverage = "*"
 [packages]
 configparser = "*"
 pika = "*"
+prometheus_client = "*"
 pymongo = "*"
 python-telegram-bot = "*"
 python-dateutil = "*"
