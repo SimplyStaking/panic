@@ -25,6 +25,9 @@ _key_network_transmit_bytes_total = "s12"
 _key_disk_io_time_seconds_total = "s13"
 _key_disk_io_time_seconds_in_interval = "s14"
 
+# seX_<system_id>
+_key_system_error_system_is_down = "se1"
+
 # gmX_<monitor_name>
 _key_github_monitor_last_monitoring_round = "gm1"
 
@@ -45,16 +48,17 @@ class Keys:
     @staticmethod
     def get_system_monitor_last_monitoring_round(monitor_name: str) -> str:
         return Keys._as_prefix(_key_system_monitor_last_monitoring_round) \
-              + monitor_name
+            + monitor_name
 
     @staticmethod
     def get_github_monitor_last_monitoring_round(monitor_name: str) -> str:
         return Keys._as_prefix(_key_github_monitor_last_monitoring_round) \
-              + monitor_name
+            + monitor_name
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
-        return Keys._as_prefix(_key_system_process_cpu_seconds_total) + system_id
+        return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
+            + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
@@ -83,32 +87,36 @@ class Keys:
     @staticmethod
     def get_network_transmit_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_network_transmit_bytes_per_second) \
-              + system_id
+            + system_id
 
     @staticmethod
     def get_network_receive_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_network_receive_bytes_per_second) \
-              + system_id
+            + system_id
 
     @staticmethod
     def get_network_receive_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_network_receive_bytes_total) \
-              + system_id
+            + system_id
 
     @staticmethod
     def get_network_transmit_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_network_transmit_bytes_total) \
-              + system_id
+            + system_id
 
     @staticmethod
     def get_disk_io_time_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_disk_io_time_seconds_total) \
-              + system_id
+            + system_id
 
     @staticmethod
     def get_disk_io_time_seconds_in_interval(system_id: str) -> str:
         return Keys._as_prefix(_key_disk_io_time_seconds_in_interval) \
-              + system_id
+            + system_id
+
+    @staticmethod
+    def get_system_error_system_is_down(system_id: str) -> str:
+        return Keys._as_prefix(_key_system_error_system_is_down) + system_id
 
     @staticmethod
     def get_github_release_name(repo_id: str) -> str:

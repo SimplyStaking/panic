@@ -32,6 +32,19 @@ if __name__ == '__main__':
             passive=False, durable=True, auto_delete=False, internal=False)
         
     try:
+        system_error = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': 'monitor_name_1',
+                    'system_name': 'system_config_1',
+                    'system_id': '1231-2321-120312031-3213213',
+                    'system_parent_id': 'parent_id_12',
+                    'time': str(datetime.now().timestamp())
+                },
+                'message': 'This is an error message',
+                'code': '5002',
+            }
+        }
         github_dict = {
           'result':{
             'data' : {
@@ -87,7 +100,7 @@ if __name__ == '__main__':
         }
         rabbitAPI.basic_publish_confirm(
             exchange='store', routing_key='system',
-            body=data_dict_1,
+            body=system_error,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True

@@ -57,19 +57,25 @@ class SystemStore(Store):
         mongo while monitor metrics only need to be stored in redis.
         """
         system_data = json.loads(body.decode())
-        try:
-            self._process_redis_monitor_store(
-                system_data['result']['meta_data']
-            )
-            self._process_redis_metrics_store(
-              system_data['result']['data'],
-              system_data['result']['meta_data']['system_parent_id'],
-              system_data['result']['meta_data']['system_id'],
-            )
-            self._process_mongo_store(
-                system_data['result']['data'],
-                system_data['result']['meta_data'],
-            )
+        try: 
+            if 'error' not in system_data:
+                self._process_redis_monitor_store(
+                    system_data['result']['meta_data']
+                )
+                self._process_redis_metrics_store(
+                  system_data['result']['data'],
+                  system_data['result']['meta_data']['system_parent_id'],
+                  system_data['result']['meta_data']['system_id'],
+                )
+                self._process_mongo_store(
+                    system_data['result']['data'],
+                    system_data['result']['meta_data'],
+                )
+            else:
+                if int(system_data['error']['code']) == 5004:
+                    self._process_redis_error_store( \
+                        system_data['error']['meta_data'])
+
         except KeyError as e:
             self.logger.error('Error when reading system data, in data store.')
             self.logger.exception(e)
@@ -78,6 +84,19 @@ class SystemStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
+    def _process_redis_error_store(self, monitor_data: SystemMonitorDataType) \
+        -> None:
+        self.logger.debug(
+            'Saving %s state: _system_error_system_is_down=%s, at=%s',
+            monitor_data['monitor_name'], str(True), monitor_data['time']
+        )
+
+        self.redis.hset(
+            Keys.get_hash_parent(monitor_data['system_parent_id']),
+            Keys.get_system_error_system_is_down(monitor_data['system_id']),
+            str(True)
+        )
+
     def _process_redis_monitor_store(self, monitor_data: SystemMonitorDataType \
         ) -> None:
         self.logger.debug(
@@ -85,11 +104,11 @@ class SystemStore(Store):
             monitor_data['monitor_name'], monitor_data['last_monitored']
         )
 
-        self.redis.set_multiple({
+        self.redis.set(
             Keys.get_system_monitor_last_monitoring_round(
-                monitor_data['monitor_name']): \
+                monitor_data['monitor_name']), \
                     str(monitor_data['last_monitored'])
-        })
+        )
 
     def _process_redis_metrics_store(self, system: SystemDataType,
         parent_id: str, system_id: str) -> None:
@@ -103,8 +122,9 @@ class SystemStore(Store):
             '_network_receive_bytes_per_second=%s, '
             '_network_receive_bytes_total=%s, '
             '_network_transmit_bytes_total=%s, '
-            '_disk_io_time_seconds_total=%s, ',
-            '_disk_io_time_seconds_in_interval=%s',
+            '_disk_io_time_seconds_total=%s, '
+            '_disk_io_time_seconds_in_interval=%s'
+            '_system_error_system_is_down=False',
             system_id, system['process_cpu_seconds_total'],
             system['process_memory_usage'], system['virtual_memory_usage'],
             system['open_file_descriptors'], system['system_cpu_usage'],
@@ -144,6 +164,7 @@ class SystemStore(Store):
                 str(system['disk_io_time_seconds_total']),
             Keys.get_disk_io_time_seconds_in_interval(system_id):
                 str(system['disk_io_time_seconds_in_interval']),
+            Keys.get_system_error_system_is_down(system_id): str(False),
         })
 
     def _process_mongo_store(self, system: SystemDataType, monitor_data: \
