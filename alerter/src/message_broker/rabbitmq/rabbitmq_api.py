@@ -329,6 +329,13 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.confirm_delivery, [], -1)
 
+    def queue_purge(self, queue: str) -> Optional[int]:
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        args = [queue]
+        if self._connection_initialized():
+            return self._safe(self.channel.queue_purge, args, -1)
+
     # Should not be used if connection has not yet been initialized
     def new_channel_unsafe(self) -> None:
         # If a channel is open, close it and create a new channel from the
