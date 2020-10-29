@@ -27,16 +27,11 @@ class ConfigManager:
     topic in Rabbit MQ. Updated configs are sent as well
     """
 
-    def __init__(self,
-                 logger: logging.Logger,
-                 config_directory: str,
-                 rabbit_api: RabbitMQApi,
-                 file_patterns: Optional[List[str]] = None,
+    def __init__(self, logger: logging.Logger, config_directory: str,
+                 rabbit_ip: str, file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
-                 ignore_directories: bool = True,
-                 case_sensitive: bool = False,
-                 output_rabbit_channel: str = "config"
-                 ):
+                 ignore_directories: bool = True, case_sensitive: bool = False,
+                 output_rabbit_channel: str = "config"):
         """
         Constructs the ConfigManager instance
         :param config_directory: The root config directory to watch.
@@ -56,9 +51,10 @@ class ConfigManager:
         self._logger = logger
         self._config_directory = config_directory
         self._file_patterns = file_patterns
-        self._rabbit = rabbit_api
         self._watching = False
         self._connected_to_rabbit = False
+
+        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
 
         self._event_handler = ConfigFileEventHandler(
             self._logger.getChild(ConfigFileEventHandler.__name__),

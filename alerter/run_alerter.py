@@ -5,6 +5,7 @@ import time
 
 import pika.exceptions
 
+from src.config_manager import ConfigManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
@@ -80,6 +81,16 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
     return github_monitors_manager
 
 
+def _initialize_config_manager() -> ConfigManager:
+    config_manager_logger = create_logger(
+        os.environ["CONFIG_MANAGER_LOG_FILE"], ConfigManager.__name__,
+        os.environ["LOGGING_LEVEL"], rotating=True
+    )
+
+    rabbit_ip = os.environ["RABBIT_IP"]
+    return ConfigManager(config_manager_logger, "./config", rabbit_ip)
+
+
 def run_system_monitors_manager() -> None:
     system_monitors_manager = _initialize_system_monitors_manager()
     run_monitors_manager(system_monitors_manager)
@@ -105,19 +116,42 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 
+def run_config_manager(command_queue: multiprocessing.Queue) -> None:
+    config_manager = _initialize_config_manager()
+    config_manager.start_watching_config_files()
+
+    # We wait until something is sent to this queue
+    command_queue.get()
+    config_manager.stop_watching_config_files()
+
+
 if __name__ == '__main__':
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
-        target=run_system_monitors_manager, args=[])
+        target=run_system_monitors_manager, args=())
     system_monitors_manager_process.start()
 
     github_monitors_manager_process = multiprocessing.Process(
-        target=run_github_monitors_manager, args=[])
+        target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
+
+    # Config manager must be the last to start since it immediately begins by
+    # sending the configs. That being said, all previous processes need to wait
+    # for the config manager too.
+    config_stop_queue = multiprocessing.Queue()
+    config_manager_runner_process = multiprocessing.Process(
+        target=run_config_manager, args=(config_stop_queue,)
+    )
+    config_manager_runner_process.start()
 
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
+
+    # To stop the config watcher, we send something in the stop queue, this way
+    # We can ensure the watchers and connections are stopped properly
+    config_stop_queue.put("STOP")
+    config_manager_runner_process.join()
 
     print('The alerter is stopping.')
 
