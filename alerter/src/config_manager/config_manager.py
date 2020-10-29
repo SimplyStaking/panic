@@ -1,6 +1,7 @@
 import fnmatch
 import logging
 import os
+import time
 from configparser import ConfigParser, DuplicateSectionError, \
     DuplicateOptionError, InterpolationError, ParsingError, \
     MissingSectionHeaderError
@@ -12,10 +13,12 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from .config_update_event_handler import ConfigFileEventHandler
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from alerter.src.message_broker.rabbitmq import RabbitMQApi
 from alerter.src.utils.exceptions import MessageWasNotDeliveredException, \
     ConnectionNotInitializedException
 from alerter.src.utils.routing_key import get_routing_key
+
+_FIRST_RUN_EVENT = "first run"
 
 
 class ConfigManager:
@@ -131,12 +134,17 @@ class ConfigManager:
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
-                # This should not happen but it can be thrown
+                # If the connection is not initalized or there is a connection
+                # error, we need to restart the connection and try it again
                 self._logger.error("There has been a connection error")
                 self._logger.exception(connection_error)
                 self._logger.info("Restarting the connection")
                 self._connected_to_rabbit = False
+
+                # Wait 5 seconds before reconnecting and then retrying
+                time.sleep(5)
                 self._connect_to_rabbit()
+
                 self._logger.info("Connection restored, will attempt again")
             except AMQPChannelError as ace:
                 # This error would have already been logged by the RabbitMQ
@@ -206,7 +214,7 @@ class ConfigManager:
 
         def do_first_run_event(name: str) -> None:
             event = FileSystemEvent(name)
-            event.event_type = "first run"
+            event.event_type = _FIRST_RUN_EVENT
             self._on_event_thrown(event)
 
         self._logger.info("Throwing first run event for all config files")
