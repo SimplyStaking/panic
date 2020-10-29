@@ -6,6 +6,8 @@ WORKDIR /opt/panic
 # Copy everything from host into the container except the ignored files
 COPY ./ ./
 
+WORKDIR ./alerter
+
 # Install app dependencies
 RUN pip3 install pipenv
 RUN pipenv sync

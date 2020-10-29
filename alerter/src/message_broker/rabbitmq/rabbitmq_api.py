@@ -8,9 +8,9 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from alerter.src.utils.exceptions import ConnectionNotInitializedException, \
+from src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
-from alerter.src.utils.timing import TimedTaskLimiter
+from src.utils.timing import TimedTaskLimiter
 
 
 # The producer/consumer must perform the error handling himself. For example
@@ -39,6 +39,8 @@ class RabbitMQApi:
         # into problems so that recovery is faster.
         self._connection_check_limiter = TimedTaskLimiter(
             connection_check_time_interval)
+        self._connection_check_time_interval_seconds = \
+            connection_check_time_interval.total_seconds()
         # A boolean variable which keeps track of the connection status with
         # RabbitMQ
         self._is_connected = False
@@ -59,10 +61,8 @@ class RabbitMQApi:
     def connection(self) -> Optional[pika.BlockingConnection]:
         return self._connection
 
-    # The output type is Optional[pika.BlockingConnection.BlockingChannel].
-    # Strangely, pika.BlockingConnection.BlockingChannel cannot be imported
     @property
-    def channel(self) -> BlockingChannel:
+    def channel(self) -> Optional[BlockingChannel]:
         return self._channel
 
     @property
@@ -81,6 +81,10 @@ class RabbitMQApi:
     def live_check_limiter(self) -> TimedTaskLimiter:
         return self._connection_check_limiter
 
+    @property
+    def connection_check_time_interval_seconds(self) -> float:
+        return self._connection_check_time_interval_seconds
+
     def _set_as_connected(self) -> None:
         if not self.is_connected:
             self.logger.info('RabbitMQ connection is live.')
@@ -89,7 +93,7 @@ class RabbitMQApi:
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self.live_check_limiter.can_do_task():
             self.logger.info('RabbitMQ is unusable right now. Stopping usage '
-                             'temporarily to improve performance')
+                             'temporarily to improve performance.')
             self.live_check_limiter.did_task()
         self._is_connected = False
 
@@ -179,7 +183,7 @@ class RabbitMQApi:
         # disconnected to limit usage. Otherwise, just mark as disconnected to
         # try and limit usage.
         if self.connection.is_open:
-            self.logger.info('Closing connection with RabbitMQ')
+            self.logger.info('Closing connection with RabbitMQ.')
             self.connection.close()
             self.logger.info('Connection with RabbitMQ closed.')
 
@@ -201,9 +205,14 @@ class RabbitMQApi:
                 # stop the loop
                 self.perform_operation_till_successful(self.connect, [], -1)
                 break
-            except Exception:
-                self.logger.info('Attempting another connection when '
-                                 'RabbitMQ becomes usable again.')
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    'Could not connect. Will attempt to connect in {} '
+                    'seconds'.format(
+                        self.connection_check_time_interval_seconds))
+                time.sleep(self.connection_check_time_interval_seconds)
+                self.logger.info('Attempting another connection ...')
                 continue
 
     def disconnect_till_successful(self) -> None:
@@ -216,8 +225,14 @@ class RabbitMQApi:
                 # stop the loop
                 self.perform_operation_till_successful(self.disconnect, [], -1)
                 break
-            except Exception:
-                self.logger.info('Attempting another disconnection')
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    'Could not disconnect. Will attempt to disconnect in {} '
+                    'seconds'.format(
+                        self.connection_check_time_interval_seconds))
+                time.sleep(self.connection_check_time_interval_seconds)
+                self.logger.info('Attempting another disconnection ...')
                 continue
 
     def queue_declare(self, queue: str, passive: bool = False,
@@ -342,4 +357,4 @@ class RabbitMQApi:
     def perform_operation_till_successful(function, args: List[Any],
                                           default_return: Any) -> None:
         while function(*args) == default_return:
-            time.sleep(5)
+            time.sleep(10)
