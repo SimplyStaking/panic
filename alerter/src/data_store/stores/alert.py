@@ -4,13 +4,13 @@ import json
 import pika.exceptions
 from datetime import datetime
 from typing import Dict, List, Optional
-from alerter.src.data_store.mongo.mongo_api import MongoApi
-from alerter.src.data_store.redis.redis_api import RedisApi
-from alerter.src.data_store.redis.store_keys import Keys
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.utils.types import AlertDataType
-from alerter.src.utils.logging import log_and_print
-from alerter.src.data_store.stores.store import Store
+from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.redis_api import RedisApi
+from src.data_store.redis.store_keys import Keys
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.types import AlertDataType
+from src.utils.logging import log_and_print
+from src.data_store.stores.store import Store
 
 class AlertStore(Store):
     def __init__(self, logger: logging.Logger) -> None:

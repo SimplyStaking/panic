@@ -6,9 +6,9 @@ import time
 import logging
 from datetime import datetime
 from configparser import ConfigParser
-from alerter.src.data_store.mongo.mongo_api import MongoApi
-from alerter.src.data_store.redis.redis_api import RedisApi
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.redis_api import RedisApi
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 
 # TODO this file should be removed after the alert_router is implemented
 # together with the data store, until then this should be kept as reference

@@ -3,9 +3,9 @@ import os
 import pika
 import pika.exceptions
 
-from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from alerter.src.data_store.mongo.mongo_api import MongoApi
-from alerter.src.data_store.redis.redis_api import RedisApi
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.redis_api import RedisApi
 from abc import ABC, abstractmethod
 
 class Store(ABC):
