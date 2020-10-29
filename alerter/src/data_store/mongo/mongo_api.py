@@ -3,9 +3,9 @@ from datetime import timedelta
 from typing import Dict, List, Optional, Any
 
 from pymongo import MongoClient
-from pymongo.results import InsertOneResult, InsertManyResult
+from pymongo.results import InsertOneResult, InsertManyResult, UpdateResult
 
-from alerter.src.utils.timing import TimedTaskLimiter
+from src.utils.timing import TimedTaskLimiter
 
 
 class MongoApi:
@@ -64,8 +64,8 @@ class MongoApi:
 
     def _safe(self, function, args: List[Any], default_return: Any):
         # Calls the function with the provided arguments and performs exception
-        # handling as well as returns a specified default if mongo is running
-        # into difficulties. Exceptions are raised to the calling function.
+        # logging as well as returns a specified default if mongo is running
+        # into difficulties.
         try:
             if self._do_not_use_if_recently_went_down():
                 return default_return
@@ -75,7 +75,7 @@ class MongoApi:
         except Exception as e:
             self._logger.error('Mongo error in %s: %s', function.__name__, e)
             self._set_as_down()
-            raise e
+            return default_return
 
     def insert_one(self, collection: str, document: Dict) \
             -> Optional[InsertOneResult]:
@@ -88,6 +88,12 @@ class MongoApi:
         return self._safe(
             lambda col, doc: self._db[col].insert_many(doc),
             [collection, documents], None)
+
+    def update_one(self, collection: str, query: Dict, document: Dict) \
+          -> Optional[UpdateResult]:
+        return self._safe(
+            lambda col, q, doc: self._db[col].update_one(q, doc, upsert=True),
+                [collection, query, document], None)
 
     def get_all(self, collection: str) -> Optional[List[Dict]]:
         return self._safe(
