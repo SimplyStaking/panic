@@ -152,3 +152,9 @@ class SystemMonitorsManager(MonitorsManager):
                 if sent_configs[config_id]['monitor_system']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+# TODO: In case bad config is sent by the config manager, what should happen is
+#     : that the message is acknowledged so that it is released from the queue,
+#     : but the message should not be processed. The config manager must also
+#     : send the configs periodically, say every 60 seconds for us to avoid
+#     : errors

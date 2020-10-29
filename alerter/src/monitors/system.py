@@ -124,7 +124,7 @@ class SystemMonitor(Monitor):
                     'system_name': self.system_config.system_name,
                     'system_id': self.system_config.system_id,
                     'system_parent_id': self.system_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'message': error.message,
                 'code': error.code,
@@ -142,7 +142,7 @@ class SystemMonitor(Monitor):
                     'system_name': self.system_config.system_name,
                     'system_id': self.system_config.system_id,
                     'system_parent_id': self.system_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'data': {},
             }
@@ -238,8 +238,8 @@ class SystemMonitor(Monitor):
             system_storage_usage
         self._system_storage_usage = system_storage_usage
 
-        # Add the node network transmit/received bytes total and their per
-        # second variants to the processed data
+        # Add the node network transmit/received bytes total to the processed
+        # data
         receive_bytes_total = 0
         transmit_bytes_total = 0
         for _, data_subset in enumerate(

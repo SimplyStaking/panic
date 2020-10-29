@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 
 
 class System:
@@ -13,6 +14,7 @@ class System:
         self._parent_id = parent_id
 
         # Data fields
+        self._went_down_at = None # TODO: Store in keys and load it in data trans tomorrw. start from here
         self._process_cpu_seconds_total = None  # Seconds
         self._process_memory_usage = None  # Percentage
         self._virtual_memory_usage = None  # Bytes
@@ -21,13 +23,14 @@ class System:
         self._system_ram_usage = None  # Percentage
         self._system_storage_usage = None  # Percentage
         self._network_transmit_bytes_per_second = None
+        self._network_transmit_bytes_total = None
         self._network_receive_bytes_per_second = None
-
-        # TODO: May need an is_down variable which signals that a system is
-        #     : down. This may be caught when the monitors send an is down error
+        self._network_receive_bytes_total = None
 
         # Time in seconds spent doing i/o between monitoring rounds
         self._disk_io_time_seconds_in_interval = None
+        self._disk_io_time_seconds_total = None
+        self._last_monitored = None
 
     def __str__(self) -> str:
         return self.system_name
@@ -43,6 +46,10 @@ class System:
     @property
     def parent_id(self) -> str:
         return self._parent_id
+
+    @property
+    def is_down(self) -> bool:
+        return self._went_down_at is not None
 
     @property
     def process_cpu_seconds_total(self) -> Optional[float]:
@@ -77,18 +84,40 @@ class System:
         return self._network_transmit_bytes_per_second
 
     @property
+    def network_transmit_bytes_total(self) -> Optional[float]:
+        return self._network_transmit_bytes_total
+
+    @property
     def network_receive_bytes_per_second(self) -> Optional[float]:
         return self._network_receive_bytes_per_second
 
     @property
+    def network_receive_bytes_total(self) -> Optional[float]:
+        return self._network_receive_bytes_total
+
+    @property
     def disk_io_time_seconds_in_interval(self) -> Optional[float]:
         return self._disk_io_time_seconds_in_interval
+
+    @property
+    def disk_io_time_seconds_total(self) -> Optional[float]:
+        return self._disk_io_time_seconds_total
+
+    @property
+    def last_monitored(self) -> Optional[float]:
+        return self._last_monitored
 
     def set_system_name(self, system_name: str) -> None:
         self._system_name = system_name
 
     def set_parent_id(self, parent_id: str) -> None:
         self._parent_id = parent_id
+
+    def set_as_down(self) -> None:
+        self._went_down_at = datetime.now().timestamp
+
+    def set_as_up(self) -> None:
+        self._went_down_at = None
 
     def set_process_cpu_seconds_total(self, process_cpu_seconds_total: float) \
             -> None:
@@ -117,12 +146,27 @@ class System:
         self._network_transmit_bytes_per_second = \
             network_transmit_bytes_per_second
 
+    def set_network_transmit_bytes_total(
+            self, network_transmit_bytes_total: float) -> None:
+        self._network_transmit_bytes_total = network_transmit_bytes_total
+
     def set_network_receive_bytes_per_second(
             self, network_receive_bytes_per_second: float) -> None:
         self._network_receive_bytes_per_second = \
             network_receive_bytes_per_second
 
+    def set_network_receive_bytes_total(
+            self, network_receive_bytes_total: float) -> None:
+        self._network_receive_bytes_total = network_receive_bytes_total
+
     def set_disk_io_time_seconds_in_interval(
             self, disk_io_time_seconds_in_interval: float) -> None:
         self._disk_io_time_seconds_in_interval = \
             disk_io_time_seconds_in_interval
+
+    def set_disk_io_time_seconds_total(
+            self, disk_io_time_seconds_total: float) -> None:
+        self._disk_io_time_seconds_total = disk_io_time_seconds_total
+
+    def set_last_monitored(self, last_monitored: float) -> None:
+        self._last_monitored = last_monitored

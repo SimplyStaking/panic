@@ -21,7 +21,7 @@ _key_system_network_receive_bytes_total = "s10"
 _key_system_network_transmit_bytes_total = "s11"
 _key_system_disk_io_time_seconds_total = "s12"
 _key_system_disk_io_time_seconds_in_interval = "s13"
-_key_system_last_monitoring_round = "s14"
+_key_system_last_monitored = "s14"
 
 
 def _as_prefix(key) -> str:
@@ -94,5 +94,5 @@ class Keys:
                + system_id
 
     @staticmethod
-    def get_system_last_monitoring_round(system_id: str) -> str:
-        return _as_prefix(_key_system_last_monitoring_round) + system_id
+    def get_system_last_monitored(system_id: str) -> str:
+        return _as_prefix(_key_system_last_monitored) + system_id

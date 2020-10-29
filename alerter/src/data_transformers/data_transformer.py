@@ -17,6 +17,7 @@ class DataTransformer(ABC):
         self._transformer_name = transformer_name
         self._logger = logger
         self._redis = redis
+        self._transformed_data = {}
         self._data_for_saving = {}
         self._data_for_alerting = {}
         self._state = {}
@@ -35,6 +36,10 @@ class DataTransformer(ABC):
     @property
     def redis(self) -> RedisApi:
         return self._redis
+
+    @property
+    def transformed_data(self) -> Dict:
+        return self._transformed_data
 
     @property
     def data_for_saving(self) -> Dict:
@@ -58,19 +63,15 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def load_transformer_state(self) -> None:
-        pass
-
-    @abstractmethod
     def _listen_for_data(self) -> None:
         pass
 
     @abstractmethod
-    def _process_transformed_data_for_storage(self, data: Dict) -> None:
+    def _process_transformed_data_for_storage(self) -> None:
         pass
 
     @abstractmethod
-    def _process_transformed_data_for_alerting(self, data: Dict) -> None:
+    def _process_transformed_data_for_alerting(self) -> None:
         pass
 
     @abstractmethod
