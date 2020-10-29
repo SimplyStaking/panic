@@ -43,7 +43,7 @@ if __name__ == '__main__':
               'repo_name': 'chicken/tendermint',
               'repo_id': '1231-2321-120312031-3213213',
               'repo_parent_id': 'parent_id_12',
-              'time': str(datetime.now().timestamp())
+              'last_monitored': str(datetime.now().timestamp())
             }
           }
         }
@@ -57,19 +57,19 @@ if __name__ == '__main__':
                 'system_cpu_usage': '90',
                 'system_ram_usage': '32',
                 'system_storage_usage': '54',
-                'system_network_transmit_bytes_per_second': '10',
-                'system_network_receive_bytes_per_second': '20',
-                'system_network_receive_bytes_total': '32',
-                'system_network_transmit_bytes_total': '43',
-                'system_disk_io_time_seconds_total': '65',
-                'system_disk_io_time_seconds_in_interval': '76',
+                'network_transmit_bytes_per_second': '10',
+                'network_receive_bytes_per_second': '20',
+                'network_receive_bytes_total': '32',
+                'network_transmit_bytes_total': '43',
+                'disk_io_time_seconds_total': '65',
+                'disk_io_time_seconds_in_interval': '76',
             },
             'meta_data': {
               'monitor_name': 'monitor_name_1',
               'system_name': 'system_config_1',
               'system_id': '1231-2321-120312031-3213213',
               'system_parent_id': 'parent_id_12',
-              'time': str(datetime.now().timestamp())
+              'last_monitored': str(datetime.now().timestamp())
             }
           }
         }

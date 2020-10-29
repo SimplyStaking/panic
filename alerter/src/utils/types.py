@@ -31,12 +31,12 @@ class SystemDataType(TypedDict):
     system_cpu_usage: int
     system_ram_usage: int
     system_storage_usage: int
-    system_network_transmit_bytes_per_second: int
-    system_network_receive_bytes_per_second: int
-    system_network_receive_bytes_total: int
-    system_network_transmit_bytes_total: int
-    system_disk_io_time_seconds_total: int
-    system_disk_io_time_seconds_in_interval: int
+    network_transmit_bytes_per_second: int
+    network_receive_bytes_per_second: int
+    network_receive_bytes_total: int
+    network_transmit_bytes_total: int
+    disk_io_time_seconds_total: int
+    disk_io_time_seconds_in_interval: int
 
 class SystemMonitorDataType(TypedDict):
     monitor_name: str

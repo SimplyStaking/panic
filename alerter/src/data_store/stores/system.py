@@ -81,12 +81,13 @@ class SystemStore(Store):
         ) -> None:
         self.logger.debug(
             'Saving %s state: _system_monitor_last_monitoring_round=%s',
-            monitor_data['monitor_name'], monitor_data['time']
+            monitor_data['monitor_name'], monitor_data['last_monitored']
         )
 
         self.redis.set_multiple({
             Keys.get_system_monitor_last_monitoring_round(
-                monitor_data['monitor_name']): monitor_data['time']
+                monitor_data['monitor_name']): \
+                    str(monitor_data['last_monitored'])
         })
 
     def _process_redis_metrics_store(self, system: SystemDataType,
@@ -97,51 +98,51 @@ class SystemStore(Store):
             '_process_memory_usage=%s, _virtual_memory_usage=%s, '
             '_open_file_descriptors=%s, _system_cpu_usage=%s, '
             '_system_ram_usage=%s, _system_storage_usage=%s, '
-            '_system_network_transmit_bytes_per_second=%s, '
-            '_system_network_receive_bytes_per_second=%s, '
-            '_system_network_receive_bytes_total=%s, '
-            '_system_network_transmit_bytes_total=%s, '
-            '_system_disk_io_time_seconds_total=%s, ',
-            '_system_disk_io_time_seconds_in_interval=%s',
+            '_network_transmit_bytes_per_second=%s, '
+            '_network_receive_bytes_per_second=%s, '
+            '_network_receive_bytes_total=%s, '
+            '_network_transmit_bytes_total=%s, '
+            '_disk_io_time_seconds_total=%s, ',
+            '_disk_io_time_seconds_in_interval=%s',
             system_id, system['process_cpu_seconds_total'],
             system['process_memory_usage'], system['virtual_memory_usage'],
             system['open_file_descriptors'], system['system_cpu_usage'],
             system['system_ram_usage'], system['system_storage_usage'],
-            system['system_network_transmit_bytes_per_second'],
-            system['system_network_receive_bytes_per_second'],
-            system['system_network_receive_bytes_total'],
-            system['system_network_transmit_bytes_total'],
-            system['system_disk_io_time_seconds_total'],
-            system['system_disk_io_time_seconds_in_interval']
+            system['network_transmit_bytes_per_second'],
+            system['network_receive_bytes_per_second'],
+            system['network_receive_bytes_total'],
+            system['network_transmit_bytes_total'],
+            system['disk_io_time_seconds_total'],
+            system['disk_io_time_seconds_in_interval']
         )
 
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
             Keys.get_system_process_cpu_seconds_total(system_id):
-                system['process_cpu_seconds_total'],
+                str(system['process_cpu_seconds_total']),
             Keys.get_system_process_memory_usage(system_id):
-                system['process_memory_usage'],
+                str(system['process_memory_usage']),
             Keys.get_system_virtual_memory_usage(system_id):
-                system['virtual_memory_usage'],
+                str(system['virtual_memory_usage']),
             Keys.get_system_open_file_descriptors(system_id):
-                system['open_file_descriptors'],
+                str(system['open_file_descriptors']),
             Keys.get_system_system_cpu_usage(system_id):
-                system['system_cpu_usage'],
+                str(system['system_cpu_usage']),
             Keys.get_system_system_ram_usage(system_id):
-                system['system_ram_usage'],
+                str(system['system_ram_usage']),
             Keys.get_system_system_storage_usage(system_id):
-                system['system_storage_usage'],
-            Keys.get_system_network_transmit_bytes_per_second(system_id):
-                system['system_network_transmit_bytes_per_second'],
-            Keys.get_system_network_receive_bytes_per_second(system_id):
-                system['system_network_receive_bytes_per_second'],
-            Keys.get_system_network_receive_bytes_total(system_id):
-                system['system_network_receive_bytes_total'],
-            Keys.get_system_network_transmit_bytes_total(system_id):
-                system['system_network_transmit_bytes_total'],
-            Keys.get_system_disk_io_time_seconds_total(system_id):
-                system['system_disk_io_time_seconds_total'],
-            Keys.get_system_disk_io_time_seconds_in_interval(system_id):
-                system['system_disk_io_time_seconds_in_interval'],
+                str(system['system_storage_usage']),
+            Keys.get_network_transmit_bytes_per_second(system_id):
+                str(system['network_transmit_bytes_per_second']),
+            Keys.get_network_receive_bytes_per_second(system_id):
+                str(system['network_receive_bytes_per_second']),
+            Keys.get_network_receive_bytes_total(system_id):
+                str(system['network_receive_bytes_total']),
+            Keys.get_network_transmit_bytes_total(system_id):
+                str(system['network_transmit_bytes_total']),
+            Keys.get_disk_io_time_seconds_total(system_id):
+                str(system['disk_io_time_seconds_total']),
+            Keys.get_disk_io_time_seconds_in_interval(system_id):
+                str(system['disk_io_time_seconds_in_interval']),
         })
 
     def _process_mongo_store(self, system: SystemDataType, monitor_data: \
@@ -167,27 +168,27 @@ class SystemStore(Store):
             {'doc_type': 'system', 'd': time_now.hour },
             {'$push': { monitor_data['system_id']: {
                 'process_cpu_seconds_total': \
-                    system['process_cpu_seconds_total'],
-                'process_memory_usage': system['process_memory_usage'],
-                'virtual_memory_usage': system['virtual_memory_usage'],
+                    str(system['process_cpu_seconds_total']),
+                'process_memory_usage': str(system['process_memory_usage']),
+                'virtual_memory_usage': str(system['virtual_memory_usage']),
                 'open_file_descriptors': \
-                    system['open_file_descriptors'],
-                'system_cpu_usage': system['system_cpu_usage'],
-                'system_ram_usage': system['system_ram_usage'],
-                'system_storage_usage': system['system_storage_usage'],
-                'system_network_transmit_bytes_per_second': \
-                    system['system_network_transmit_bytes_per_second'],
-                'system_network_receive_bytes_per_second': \
-                    system['system_network_receive_bytes_per_second'],
-                'system_network_receive_bytes_total': \
-                    system['system_network_receive_bytes_total'],
-                'system_network_transmit_bytes_total':
-                    system['system_network_transmit_bytes_total'],
-                'system_disk_io_time_seconds_total':
-                    system['system_disk_io_time_seconds_total'],
-                'system_disk_io_time_seconds_in_interval':
-                    system['system_disk_io_time_seconds_in_interval'],
-                'timestamp': monitor_data['time'],
+                    str(system['open_file_descriptors']),
+                'system_cpu_usage': str(system['system_cpu_usage']),
+                'system_ram_usage': str(system['system_ram_usage']),
+                'system_storage_usage': str(system['system_storage_usage']),
+                'network_transmit_bytes_per_second': \
+                    str(system['network_transmit_bytes_per_second']),
+                'network_receive_bytes_per_second': \
+                    str(system['network_receive_bytes_per_second']),
+                'network_receive_bytes_total': \
+                    str(system['network_receive_bytes_total']),
+                'network_transmit_bytes_total':
+                    str(system['network_transmit_bytes_total']),
+                'disk_io_time_seconds_total':
+                    str(system['disk_io_time_seconds_total']),
+                'disk_io_time_seconds_in_interval':
+                    str(system['disk_io_time_seconds_in_interval']),
+                'timestamp': str(monitor_data['last_monitored']),
                 }
             },
                 '$inc': {'n_metrics': 1},

@@ -84,9 +84,9 @@ class GithubStore(Store):
         )
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
             Keys.get_github_release_name(repo_id):
-                github_data['release_name'],
+                str(github_data['release_name']),
             Keys.get_github_tag_name(repo_id):
-                github_data['tag_name'],
+                str(github_data['tag_name']),
         })
 
     def _process_redis_monitor_store(self, monitor_data: \
@@ -94,12 +94,13 @@ class GithubStore(Store):
         self.logger.debug(
             'Saving %s state: _github_monitor_last_monitoring_round=%s',
             monitor_data['monitor_name'],
-            monitor_data['time']
+            monitor_data['last_monitored']
         )
 
         self.redis.set_multiple({
             Keys.get_github_monitor_last_monitoring_round(
-                monitor_data['monitor_name']): monitor_data['time']
+                monitor_data['monitor_name']): \
+                    str(monitor_data['last_monitored'])
         })
 
     def _process_mongo_store(self,  github_data: GithubDataType, monitor_data:
@@ -107,13 +108,13 @@ class GithubStore(Store):
         self.mongo.update_one(monitor_data['repo_parent_id'],
             {'doc_type': 'github', 'n_releases': {'$lt': 1000}},
             {'$push': { monitor_data['repo_id']: {
-                'release_name': github_data['release_name'],
-                'tag_name': github_data['tag_name'],
-                'timestamp': monitor_data['time'],
+                'release_name': str(github_data['release_name']),
+                'tag_name': str(github_data['tag_name']),
+                'timestamp': str(monitor_data['last_monitored']),
                 }
             },
-                '$min': {'first': monitor_data['time']},
-                '$max': {'last': monitor_data['time']},
+                '$min': {'first': str(monitor_data['last_monitored'])},
+                '$max': {'last': str(monitor_data['last_monitored'])},
                 '$inc': {'n_releases': 1},
             }
         )

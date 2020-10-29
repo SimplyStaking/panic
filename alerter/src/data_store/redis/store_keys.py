@@ -18,12 +18,12 @@ _key_system_open_file_descriptors = "s4"
 _key_system_system_cpu_usage = "s5"
 _key_system_system_ram_usage = "s6"
 _key_system_system_storage_usage = "s7"
-_key_system_network_transmit_bytes_per_second = "s8"
-_key_system_network_receive_bytes_per_second = "s9"
-_key_system_network_receive_bytes_total = "s10"
-_key_system_network_transmit_bytes_total = "s11"
-_key_system_disk_io_time_seconds_total = "s12"
-_key_system_disk_io_time_seconds_in_interval = "s13"
+_key_network_transmit_bytes_per_second = "s8"
+_key_network_receive_bytes_per_second = "s9"
+_key_network_receive_bytes_total = "s10"
+_key_network_transmit_bytes_total = "s11"
+_key_disk_io_time_seconds_total = "s12"
+_key_disk_io_time_seconds_in_interval = "s13"
 
 # gmX_<monitor_name>
 _key_github_monitor_last_monitoring_round = "gm1"
@@ -32,87 +32,88 @@ _key_github_monitor_last_monitoring_round = "gm1"
 _key_github_release_name = "gh1"
 _key_github_tag_name = "gh2"
 
-def _as_prefix(key: str) -> str:
-    return key + "_"
-
 class Keys:
 
     @staticmethod
+    def _as_prefix(key: str) -> str:
+        return key + "_"
+
+    @staticmethod
     def get_hash_parent(parent_id: str) -> str:
-        return _as_prefix(_hash_parent) + parent_id
+        return Keys._as_prefix(_hash_parent) + parent_id
 
     @staticmethod
     def get_system_monitor_last_monitoring_round(monitor_name: str) -> str:
-        return _as_prefix(_key_system_monitor_last_monitoring_round) \
+        return Keys._as_prefix(_key_system_monitor_last_monitoring_round) \
               + monitor_name
 
     @staticmethod
     def get_github_monitor_last_monitoring_round(monitor_name: str) -> str:
-        return _as_prefix(_key_github_monitor_last_monitoring_round) \
+        return Keys._as_prefix(_key_github_monitor_last_monitoring_round) \
               + monitor_name
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
-        return _as_prefix(_key_system_process_cpu_seconds_total) + system_id
+        return Keys._as_prefix(_key_system_process_cpu_seconds_total) + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
-        return _as_prefix(_key_system_process_memory_usage) + system_id
+        return Keys._as_prefix(_key_system_process_memory_usage) + system_id
 
     @staticmethod
     def get_system_virtual_memory_usage(system_id: str) -> str:
-        return _as_prefix(_key_system_virtual_memory_usage) + system_id
+        return Keys._as_prefix(_key_system_virtual_memory_usage) + system_id
 
     @staticmethod
     def get_system_open_file_descriptors(system_id: str) -> str:
-        return _as_prefix(_key_system_open_file_descriptors) + system_id
+        return Keys._as_prefix(_key_system_open_file_descriptors) + system_id
 
     @staticmethod
     def get_system_system_cpu_usage(system_id: str) -> str:
-        return _as_prefix(_key_system_system_cpu_usage) + system_id
+        return Keys._as_prefix(_key_system_system_cpu_usage) + system_id
 
     @staticmethod
     def get_system_system_ram_usage(system_id: str) -> str:
-        return _as_prefix(_key_system_system_ram_usage) + system_id
+        return Keys._as_prefix(_key_system_system_ram_usage) + system_id
 
     @staticmethod
     def get_system_system_storage_usage(system_id: str) -> str:
-        return _as_prefix(_key_system_system_storage_usage) + system_id
+        return Keys._as_prefix(_key_system_system_storage_usage) + system_id
 
     @staticmethod
-    def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
-        return _as_prefix(_key_system_network_transmit_bytes_per_second) \
+    def get_network_transmit_bytes_per_second(system_id: str) -> str:
+        return Keys._as_prefix(_key_network_transmit_bytes_per_second) \
               + system_id
 
     @staticmethod
-    def get_system_network_receive_bytes_per_second(system_id: str) -> str:
-        return _as_prefix(_key_system_network_receive_bytes_per_second) \
+    def get_network_receive_bytes_per_second(system_id: str) -> str:
+        return Keys._as_prefix(_key_network_receive_bytes_per_second) \
               + system_id
 
     @staticmethod
-    def get_system_network_receive_bytes_total(system_id: str) -> str:
-        return _as_prefix(_key_system_network_receive_bytes_total) \
+    def get_network_receive_bytes_total(system_id: str) -> str:
+        return Keys._as_prefix(_key_network_receive_bytes_total) \
               + system_id
 
     @staticmethod
-    def get_system_network_transmit_bytes_total(system_id: str) -> str:
-        return _as_prefix(_key_system_network_transmit_bytes_total) \
+    def get_network_transmit_bytes_total(system_id: str) -> str:
+        return Keys._as_prefix(_key_network_transmit_bytes_total) \
               + system_id
 
     @staticmethod
-    def get_system_disk_io_time_seconds_total(system_id: str) -> str:
-        return _as_prefix(_key_system_disk_io_time_seconds_total) \
+    def get_disk_io_time_seconds_total(system_id: str) -> str:
+        return Keys._as_prefix(_key_disk_io_time_seconds_total) \
               + system_id
 
     @staticmethod
-    def get_system_disk_io_time_seconds_in_interval(system_id: str) -> str:
-        return _as_prefix(_key_system_disk_io_time_seconds_in_interval) \
+    def get_disk_io_time_seconds_in_interval(system_id: str) -> str:
+        return Keys._as_prefix(_key_disk_io_time_seconds_in_interval) \
               + system_id
 
     @staticmethod
     def get_github_release_name(repo_id: str) -> str:
-        return _as_prefix(_key_github_release_name) + repo_id
+        return Keys._as_prefix(_key_github_release_name) + repo_id
 
     @staticmethod
     def get_github_tag_name(repo_id: str) -> str:
-        return _as_prefix(_key_github_tag_name) + repo_id
+        return Keys._as_prefix(_key_github_tag_name) + repo_id

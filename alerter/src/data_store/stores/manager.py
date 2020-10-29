@@ -38,7 +38,6 @@ class StoreManager:
         except Exception as e:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            print(e)
             store.rabbitmq.disconnect_till_successful()
             log_and_print('{} stopped. {}'.format(store, e), store.logger)
 

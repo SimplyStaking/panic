@@ -1,11 +1,12 @@
 import logging
 import os
+import pika
 import pika.exceptions
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from alerter.src.data_store.mongo.mongo_api import MongoApi
 from alerter.src.data_store.redis.redis_api import RedisApi
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class Store(ABC):
     def __init__(self, logger: logging.Logger):
@@ -51,6 +52,7 @@ class Store(ABC):
     def mongo(self) -> MongoApi:
       return self._mongo
 
+    @abstractmethod
     def _initialize_store(self) -> None:
         pass
 
@@ -59,12 +61,17 @@ class Store(ABC):
 
     def _process_redis_monitor_store(self) -> None:
         pass
-    
+
     def _process_mongo_store(self) -> None:
         pass
 
-    def _process_data(self) -> None:
+    @abstractmethod
+    def _process_data(self,
+        ch: pika.adapters.blocking_connection.BlockingChannel,
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
-    
+
+    @abstractmethod
     def _begin_store(self) -> None:
         pass
