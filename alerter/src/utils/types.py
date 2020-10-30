@@ -19,11 +19,17 @@ def convert_to_float_if_not_none(value: Optional[int, str, float, bytes],
 
 
 class GithubDataType(TypedDict):
+    def __init__(self):
+        pass
+
     name: str
     current_no_of_releases: int
 
 
 class GithubMonitorDataType(TypedDict):
+    def __init__(self):
+        pass
+
     monitor_name: str
     repo_name: str
     repo_id: str
@@ -32,6 +38,9 @@ class GithubMonitorDataType(TypedDict):
 
 
 class SystemDataType(TypedDict):
+    def __init__(self):
+        pass
+
     name: str
     chain_name: str
     process_cpu_seconds_total: int
@@ -50,6 +59,9 @@ class SystemDataType(TypedDict):
 
 
 class SystemMonitorDataType(TypedDict):
+    def __init__(self):
+        pass
+
     monitor_name: str
     system_name: str
     system_id: str
@@ -58,6 +70,9 @@ class SystemMonitorDataType(TypedDict):
 
 
 class AlertDataType(TypedDict):
+    def __init__(self):
+        pass
+
     parent_id: str
     origin: str
     alert_name: str

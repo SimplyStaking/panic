@@ -27,6 +27,7 @@ _key_system_last_monitored = "s14"
 _key_system_error_system_is_down = "se1"
 
 # gmX_<monitor_name>
+# TODO: This key may be moved to GitHub
 _key_github_monitor_last_monitoring_round = "gm1"
 
 # ghX_<repo_id>
@@ -125,3 +126,4 @@ class Keys:
     def get_github_tag_name(repo_id: str) -> str:
         return Keys._as_prefix(_key_github_tag_name) + repo_id
 
+# TODO: Need to update the data store when some of these keys are updated
