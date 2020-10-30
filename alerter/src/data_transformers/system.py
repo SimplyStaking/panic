@@ -9,7 +9,8 @@ from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.moniterables.system import System
-from src.utils.exceptions import ReceivedUnexpectedDataException
+from src.utils.exceptions import ReceivedUnexpectedDataException, \
+    SystemIsDownException
 from src.utils.types import convert_to_float_if_not_none
 
 
@@ -61,7 +62,7 @@ class SystemDataTransformer(DataTransformer):
         # the system state.
 
         self.logger.info('Loading the state of {} from Redis'.format(system))
-        redis_hash = Keys.get_hash_blockchain(system.parent_id)
+        redis_hash = Keys.get_hash_parent(system.parent_id)
         system_id = system.system_id
 
         # Below, we will try and get the data stored in redis and store it
@@ -208,6 +209,14 @@ class SystemDataTransformer(DataTransformer):
                                                       None)
         system.set_last_monitored(last_monitored)
 
+        # Load went_down_at from Redis
+        state_went_down_at = system.went_down_at
+        redis_went_down_at = self.redis.hget(
+            redis_hash, Keys.get_system_went_down_at(system_id),
+            state_went_down_at)
+        went_down_at = convert_to_float_if_not_none(redis_went_down_at, None)
+        system.set_went_down_at(went_down_at)
+
         self.logger.info(
             'Restored %s state: _process_cpu_seconds_total=%s, '
             '_process_memory_usage=%s, _virtual_memory_usage=%s, '
@@ -218,28 +227,89 @@ class SystemDataTransformer(DataTransformer):
             '_network_transmit_bytes_total=%s, '
             '_network_receive_bytes_total=%s, '
             '_disk_io_time_seconds_in_interval=%s, '
-            '_disk_io_time_seconds_total=%s, _last_monitored=%s', system,
-            process_cpu_seconds_total, process_memory_usage,
-            virtual_memory_usage, open_file_descriptors, system_cpu_usage,
-            system_ram_usage, system_storage_usage,
-            network_transmit_bytes_per_second,
-            network_receive_bytes_per_second,
+            '_disk_io_time_seconds_total=%s, _last_monitored=%s, '
+            '_went_down_at=%s', system, process_cpu_seconds_total,
+            process_memory_usage, virtual_memory_usage, open_file_descriptors,
+            system_cpu_usage, system_ram_usage, system_storage_usage,
+            network_transmit_bytes_per_second, network_receive_bytes_per_second,
             network_transmit_bytes_total, network_receive_bytes_total,
             disk_io_time_seconds_in_interval, disk_io_time_seconds_total,
-            last_monitored)
+            last_monitored, went_down_at)
 
-    def _update_system_state(self, system: System) -> None:
-        # This function performs the update based on the transformed data for
-        # storage
-        # TODO: Must set is_down as False here
-        pass
+    def _update_state(self) -> None:
+        if 'result' in self.transformed_data:
+            meta_data = self.transformed_data['result']['meta_data']
+            metrics = self.transformed_data['result']['data']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            system_name = meta_data['system_name']
+            system = self.state[system_id]
+
+            # Set system details just in case the configs have changed
+            system.set_parent_id(parent_id)
+            system.set_system_name(system_name)
+
+            # Save the new metrics
+            system.set_last_monitored(meta_data['last_monitored'])
+            system.set_process_cpu_seconds_total(
+                metrics['process_cpu_seconds_total'])
+            system.set_process_memory_usage(metrics['process_memory_usage'])
+            system.set_virtual_memory_usage(metrics['virtual_memory_usage'])
+            system.set_open_file_descriptors(metrics['open_file_descriptors'])
+            system.set_system_cpu_usage(metrics['system_cpu_usage'])
+            system.set_system_ram_usage(metrics['system_ram_usage'])
+            system.set_system_storage_usage(metrics['system_storage_usage'])
+            system.set_network_receive_bytes_total(
+                metrics['network_receive_bytes_total'])
+            system.set_network_transmit_bytes_total(
+                metrics['network_transmit_bytes_total'])
+            system.set_disk_io_time_seconds_total(
+                metrics['disk_io_time_seconds_total'])
+            system.set_network_transmit_bytes_per_second(
+                metrics['network_transmit_bytes_per_second'])
+            system.set_network_receive_bytes_per_second(
+                metrics['network_receive_bytes_per_second'])
+            system.set_disk_io_time_seconds_in_interval(
+                metrics['disk_io_time_seconds_in_interval'])
+            system.set_as_up()
+        elif 'error' in self.transformed_data:
+            meta_data = self.transformed_data['error']['meta_data']
+            system_name = meta_data['system_name']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            time_of_error = meta_data['time']
+            downtime_exception = SystemIsDownException(system_name)
+            system = self.state[system_id]
+
+            # Set system details just in case the configs have changed
+            system.set_parent_id(parent_id)
+            system.set_system_name(system_name)
+
+            if self.transformed_data['code'] == downtime_exception.code:
+                system.set_as_down(time_of_error)
+        else:
+            raise ReceivedUnexpectedDataException(
+                '{}: _update_state'.format(self))
 
     def _process_transformed_data_for_storage(self) -> None:
-        # TODO: Need to cater when result in received data. Need to cater when
-        #     : error in receive data (and need to handle different types of
-        #     : errors in a different way). Need to cater for when neither
-        #     : result nor error are sent (unlikely)
-        pass
+        if 'result' in self.transformed_data:
+            processed_data = copy.deepcopy(self.transformed_data)
+        elif 'error' in self.transformed_data:
+            meta_data = self.transformed_data['error']['meta_data']
+            system_name = meta_data['system_name']
+            time_of_error = meta_data['time']
+            downtime_exception = SystemIsDownException(system_name)
+
+            processed_data = copy.deepcopy(self.transformed_data)
+
+            if self.transformed_data['code'] == downtime_exception.code:
+                processed_data['data'] = {}
+                processed_data['data']['went_down_at'] = time_of_error
+        else:
+            raise ReceivedUnexpectedDataException(
+                '{}: _process_transformed_data_for_storage'.format(self))
+
+        self._data_for_storage = processed_data
 
     def _process_transformed_data_for_alerting(self) -> None:
         if 'result' in self.transformed_data:
@@ -288,23 +358,28 @@ class SystemDataTransformer(DataTransformer):
                 'previous'] = system.network_receive_bytes_per_second
             processed_data_metrics['disk_io_time_seconds_in_interval'][
                 'previous'] = system.disk_io_time_seconds_in_interval
+            processed_data_metrics['went_down_at'][
+                'previous'] = system.went_down_at
         elif 'error' in self.transformed_data:
             meta_data = self.transformed_data['error']['meta_data']
             system_id = meta_data['system_id']
+            system_name = meta_data['system_name']
+            time_of_error = meta_data['time']
             system = self.state[system_id]
+            downtime_exception = SystemIsDownException(system_name)
+
             processed_data = copy.deepcopy(self.transformed_data)
-            # TODO: send is down and went_down_at. These need to be stored in
-            #     : store keys and state. These must be loaded also
+
+            if self.transformed_data['code'] == downtime_exception.code:
+                processed_data['data'] = {}
+                processed_data['data']['went_down_at'] = {}
+                processed_data['data']['current'] = time_of_error
+                processed_data['data']['previous'] = system.went_down_at
         else:
-            raise ReceivedUnexpectedDataException(self)
+            raise ReceivedUnexpectedDataException(
+                '{}: _process_transformed_data_for_alerting'.format(self))
 
         self._data_for_alerting = processed_data
-
-    def _send_data_for_saving(self) -> None:
-        pass
-
-    def _send_data_for_alerting(self) -> None:
-        pass
 
     def _transform_data(self, data: Dict) -> None:
         if 'result' in data:
@@ -326,10 +401,10 @@ class SystemDataTransformer(DataTransformer):
                 network_transmit_bytes_per_second = \
                     (transmit_bytes_total -
                      system.network_transmit_bytes_total) \
-                    / (meta_data['last_monitored'] - system.last_monitored)
+                    / (meta_data['time'] - system.last_monitored)
                 network_receive_bytes_per_second = \
                     (receive_bytes_total - system.network_receive_bytes_total) \
-                    / (meta_data['last_monitored'] - system.last_monitored)
+                    / (meta_data['time'] - system.last_monitored)
 
             # Compute the time spent doing io since the last time we received
             # data for this system
@@ -346,38 +421,46 @@ class SystemDataTransformer(DataTransformer):
                     system.disk_io_time_seconds_total
 
             transformed_data = copy.deepcopy(data)
+            td_meta_data = transformed_data['result']['meta_data']
+            td_metrics = transformed_data['result']['data']
 
             # Transform the meta_data by deleting the monitor_name and changing
             # the time key to last_monitored key
-            del transformed_data['result']['meta_data']['monitor_name']
-            del transformed_data['result']['meta_data']['time']
-            transformed_data['result']['meta_data']['last_monitored'] = \
-                meta_data['time']
+            del td_meta_data['monitor_name']
+            del td_meta_data['time']
+            td_meta_data['last_monitored'] = meta_data['time']
 
             # Transform the data by adding the new processed data.
-            transformed_data['result']['data'][
-                'network_transmit_bytes_per_second'] = \
+            td_metrics['network_transmit_bytes_per_second'] = \
                 network_transmit_bytes_per_second
-            transformed_data['result']['data'][
-                'network_receive_bytes_per_second'] = \
+            td_metrics['network_receive_bytes_per_second'] = \
                 network_receive_bytes_per_second
-            transformed_data['result']['data'][
-                'disk_io_time_seconds_in_interval'] = \
+            td_metrics['disk_io_time_seconds_in_interval'] = \
                 disk_io_time_seconds_in_interval
-
+            td_metrics['went_down_at'] = None
         elif 'error' in data:
             # In case of errors in the sent messages only remove the
             # monitor_name from the data
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
         else:
-            raise ReceivedUnexpectedDataException(self)
+            raise ReceivedUnexpectedDataException(
+                '{}: _transform_data'.format(self))
 
         self._transformed_data = transformed_data
         self._process_transformed_data_for_alerting()
         self._process_transformed_data_for_storage()
 
-    # TODO: This is what should be done next
+    def _send_data_for_saving(self) -> None:
+        pass
+
+    def _send_data_for_alerting(self) -> None:
+        pass
+
+    def _send_data(self) -> None:
+        # TODO: Must catch all exceptions here also
+        pass
+
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
@@ -386,8 +469,9 @@ class SystemDataTransformer(DataTransformer):
         #     : in case it changes. When creating also pass the parent_id. Note
         #     : loading is done only once, so it does not effect if the
         #     : parent_id changes eventually. But this is done just in case,
-        #     : same for system_name
+        #     : same for system_name.
         # if loading fails do not send data also
+        # TODO: Upon good processing add sending of data to the publisher queue
         pass
 
     def start(self) -> None:

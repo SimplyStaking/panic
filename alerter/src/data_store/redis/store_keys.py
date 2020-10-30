@@ -22,9 +22,7 @@ _key_system_network_transmit_bytes_total = "s11"
 _key_system_disk_io_time_seconds_total = "s12"
 _key_system_disk_io_time_seconds_in_interval = "s13"
 _key_system_last_monitored = "s14"
-
-# seX_<system_id>
-_key_system_error_system_is_down = "se1"
+_key_system_went_down_at = "s15"
 
 # gmX_<monitor_name>
 # TODO: This key may be moved to GitHub
@@ -111,12 +109,12 @@ class Keys:
                + system_id
 
     @staticmethod
-    def get_system_last_monitored(system_id: str) -> str:
-        return Keys._as_prefix(_key_system_last_monitored) + system_id
+    def get_system_went_down_at(system_id: str) -> str:
+        return Keys._as_prefix(_key_system_went_down_at) + system_id
 
     @staticmethod
-    def get_system_error_system_is_down(system_id: str) -> str:
-        return Keys._as_prefix(_key_system_error_system_is_down) + system_id
+    def get_system_last_monitored(system_id: str) -> str:
+        return Keys._as_prefix(_key_system_last_monitored) + system_id
 
     @staticmethod
     def get_github_release_name(repo_id: str) -> str:
@@ -127,3 +125,6 @@ class Keys:
         return Keys._as_prefix(_key_github_tag_name) + repo_id
 
 # TODO: Need to update the data store when some of these keys are updated
+
+# TODO: In data store infer is_down from went_down_at for mongo, and store
+#     : went_down_at in redis.
