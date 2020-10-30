@@ -10,6 +10,7 @@ from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.data_store.stores.manager import StoreManager
+from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
@@ -111,7 +112,17 @@ def _initialize_config_manager() -> ConfigManager:
     )
 
     rabbit_ip = os.environ["RABBIT_IP"]
-    return ConfigManager(config_manager_logger, "./config", rabbit_ip)
+    while True:
+        try:
+            cm = ConfigManager(config_manager_logger, "./config", rabbit_ip)
+            return cm
+        except ConnectionNotInitializedException:
+            # This is already logged, we need to try again. This exception
+            # should not happen, but if it does the program can't fully start
+            # up
+            config_manager_logger.info("Trying to set up the configurations "
+                                       "manager again")
+            continue
 
 
 def run_data_store() -> None:
