@@ -3,7 +3,6 @@ import logging.config
 import logging.handlers
 import sys
 
-
 def create_logger(file: str, name: str, level: str, rotating: bool = False,
                   propagate: bool = True) -> logging.Logger:
     logger = logging.getLogger(name)
@@ -29,7 +28,6 @@ def create_logger(file: str, name: str, level: str, rotating: bool = False,
     logger.addHandler(handler)
 
     return logger
-
 
 def log_and_print(text: str, logger: logging.Logger):
     logger.info(text)
