@@ -13,6 +13,7 @@ from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
+
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
@@ -35,6 +36,7 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return data_store_logger
+
 
 def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done

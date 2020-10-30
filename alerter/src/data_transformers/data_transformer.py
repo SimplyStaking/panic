@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Dict
+from queue import Queue
 import logging
 import os
-from queue import Queue
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.moniterables.system import System
+from src.monitorables.system import System
 
 
 class DataTransformer(ABC):
@@ -22,7 +22,7 @@ class DataTransformer(ABC):
         self._data_for_saving = {}
         self._data_for_alerting = {}
         self._state = {}
-        self._publishing_queue = Queue()
+        self._publishing_queue = Queue(300)
 
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
@@ -92,16 +92,21 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _send_data_for_saving(self) -> None:
-        pass
-
-    @abstractmethod
-    def _send_data_for_alerting(self) -> None:
-        pass
-
-    @abstractmethod
     def _send_data(self) -> None:
-        # TODO: Use queues and concurrent.futures
+        # TODO: We need to handle with qos etc (no queues), and re-try sending
+        #     : after 5 seconds etc (in case of non-routed). What if there was a
+        #     : another error for example connection error and we need
+        #     : to re-send? This is pertained only to the data transformer. On
+        #     : sending error add the data to the list/queue and upon restart
+        #     : send the data before start listening again. We could also solve
+        #     : the problem of unroutable error by adding to a list, and when
+        #     : a new message is processed we first send the pending messages.
+        #     : keep a limit of 200 on the consumer maybe and max size queue 200
+        # TODO: QOS NOT NEED ESSAC (ATI KAS DIN) because we will process and add
+        #     : to our own quueue. If this fills up remove that from the front
+        #     : an insert at back (Din liktar pdated). WE NEED QOS 200, just in
+        #     : case we keep on receiving data and we cannot send the data in
+        #     : the queue
         pass
 
     @abstractmethod

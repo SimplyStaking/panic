@@ -8,7 +8,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
-from src.moniterables.system import System
+from src.monitorables.system import System
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException
 from src.utils.types import convert_to_float_if_not_none
@@ -451,15 +451,42 @@ class SystemDataTransformer(DataTransformer):
         self._process_transformed_data_for_alerting()
         self._process_transformed_data_for_storage()
 
-    def _send_data_for_saving(self) -> None:
-        pass
-
-    def _send_data_for_alerting(self) -> None:
-        pass
-
     def _send_data(self) -> None:
-        # TODO: Must catch all exceptions here also
-        pass
+        # Try to send both pieces of transformed data. If one the sending
+        # procedures fail, add that piece of data to the queue so that it can
+        # be sent at a later stage and raise the exception which was sent
+        try:
+            self.rabbitmq.basic_publish_confirm(
+                exchange='store', routing_key='system',
+                body=self.data_for_saving, is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug('Sent data to \'store\' exchange')
+        except Exception as e:
+            # If the queue is full, no use storing old pieces of data, therefore
+            # remove old data an insert the new.
+            if self.publishing_queue.full():
+                self.publishing_queue.get()
+            self.publishing_queue.put({
+                'type': 'saving', 'data': copy.deepcopy(self.data_for_saving)})
+            raise e
+
+        try:
+            self.rabbitmq.basic_publish_confirm(
+                exchange='alert', routing_key='alerter.system',
+                body=self.data_for_alerting, is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug('Sent data to \'alert\' exchange')
+        except Exception as e:
+            # If the queue is full, no use storing old pieces of data, therefore
+            # remove old data an insert the new.
+            if self.publishing_queue.full():
+                self.publishing_queue.get()
+            self.publishing_queue.put({
+                'type': 'alerting',
+                'data': copy.deepcopy(self.data_for_alerting)})
+            raise e
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
@@ -471,7 +498,9 @@ class SystemDataTransformer(DataTransformer):
         #     : parent_id changes eventually. But this is done just in case,
         #     : same for system_name.
         # if loading fails do not send data also
-        # TODO: Upon good processing add sending of data to the publisher queue
+        # TODO: Need to cater when there is data in the publishing queue,
+        #     : we need to send the data in the queue before sending the
+        #     : currently processed
         pass
 
     def start(self) -> None:
@@ -484,5 +513,9 @@ class SystemDataTransformer(DataTransformer):
 # TODO: In case UnexpectedDataException, handle it, log it and continue.
 #     : Therefore do not send the data
 
-# TODO: If the sending fails, should we spawn a new process which sends the
-#     : data by consuming from a python queue?
+# TODO: Add more logging where necessary, for example in the data transofrmation
+
+# TODO: Need to test if new processed data received, but sending from queue fails,
+#     : does the processing start again from the unacknowledged piece of data? Check
+#     : what happens in the manager also coz we do not acknowledge if processing fails. I think we either need to send a nack. With basic nack it worked on receiver, sender examples
+#     :
