@@ -517,5 +517,6 @@ class SystemDataTransformer(DataTransformer):
 
 # TODO: Need to test if new processed data received, but sending from queue fails,
 #     : does the processing start again from the unacknowledged piece of data? Check
-#     : what happens in the manager also coz we do not acknowledge if processing fails. I think we either need to send a nack. With basic nack it worked on receiver, sender examples
+#     : what happens in the manager also coz we do not acknowledge if processing fails. I think we either need to send a nack. With basic nack it worked on receiver, sender examples. Most probably we need to add it
+#     : to the manager as well
 #     :
