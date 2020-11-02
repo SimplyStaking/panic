@@ -10,9 +10,13 @@ else:
 
 RedisType = Union[bytes, str, int, float]
 
+
 class GithubDataType(TypedDict):
     name: str
     current_no_of_releases: int
+    release_name: str
+    tag_name: str
+
 
 class GithubMonitorDataType(TypedDict):
     monitor_name: str
@@ -20,6 +24,8 @@ class GithubMonitorDataType(TypedDict):
     repo_id: str
     repo_parent_id: str
     time: str
+    last_monitored: str
+
 
 class SystemDataType(TypedDict):
     name: str
@@ -38,12 +44,15 @@ class SystemDataType(TypedDict):
     disk_io_time_seconds_total: int
     disk_io_time_seconds_in_interval: int
 
+
 class SystemMonitorDataType(TypedDict):
     monitor_name: str
     system_name: str
     system_id: str
     system_parent_id: str
     time: str
+    last_monitored: str
+
 
 class AlertDataType(TypedDict):
     parent_id: str
