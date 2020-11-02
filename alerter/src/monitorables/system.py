@@ -146,5 +146,5 @@ class System:
             disk_io_time_seconds_in_interval
 
     # TODO: For data transformer we may need to add a load function here. We
-    #     : could also specify a moniterables abstract class that contains
+    #     : could also specify a monitorables abstract class that contains
     #     : this function and any other common code.
