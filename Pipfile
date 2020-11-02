@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+coverage = "*"
+
+[packages]
+configparser = "*"
+pika = "*"
+prometheus_client = "*"
+pymongo = "*"
+python-telegram-bot = "*"
+python-dateutil = "*"
+redis = "*"
+requests = "*"
+twilio = "*"
+watchdog = "*"
