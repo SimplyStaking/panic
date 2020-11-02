@@ -46,6 +46,8 @@ class GitHubMonitorsManager(MonitorsManager):
             '\'general.repos_config\'')
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  'config', 'general.repos_config')
+        # TODO remove purge for production, keep right now for testing
+        self.rabbitmq.queue_purge('github_monitors_manager_configs_queue')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
@@ -54,7 +56,7 @@ class GitHubMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-
+        print(sent_config)
         self.logger.info('Received configs {}'.format(sent_configs))
 
         if method.routing_key == 'general.repos_config':

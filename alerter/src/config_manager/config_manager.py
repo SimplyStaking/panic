@@ -117,8 +117,8 @@ class ConfigManager:
                 )
                 # We need to definitely send this
                 self._rabbit.basic_publish_confirm(
-                    "config", routing_key, config, mandatory=True,
-                    is_body_dict=True,
+                    exchange='config', routing_key=routing_key, body=config,
+                    is_body_dict=True, mandatory=True,
                     properties=BasicProperties(delivery_mode=2)
                 )
                 self._logger.info("Configuration update sent")
@@ -178,8 +178,8 @@ class ConfigManager:
         self._logger.debug("Config read successfully")
 
         config_dict = {key: dict(config[key]) for key in config}
+        del config_dict['DEFAULT']
         self._logger.debug("Config converted to dict: %s", config_dict)
-
         # Since the watcher is configured to watch files in
         # self._config_directory we only need check that (for get_routing_key)
         config_folder = os.path.normpath(self._config_directory)

@@ -45,6 +45,8 @@ class SystemMonitorsManager(MonitorsManager):
             '\'general.systems_config\'')
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  'config', 'general.systems_config')
+        # TODO remove purge for production, keep right now for testing
+        self.rabbitmq.queue_purge('system_monitors_manager_configs_queue')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
@@ -52,6 +54,7 @@ class SystemMonitorsManager(MonitorsManager):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
+
         sent_configs = json.loads(body)
         self.logger.info('Received configs {}'.format(sent_configs))
         print(sent_configs)
