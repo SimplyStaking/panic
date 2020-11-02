@@ -57,7 +57,6 @@ class SystemMonitorsManager(MonitorsManager):
 
         sent_configs = json.loads(body)
         self.logger.info('Received configs {}'.format(sent_configs))
-        print(sent_configs)
         if method.routing_key == 'general.systems_config':
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']

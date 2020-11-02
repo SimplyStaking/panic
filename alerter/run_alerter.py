@@ -2,7 +2,6 @@ import logging
 import multiprocessing
 import os
 import time
-
 import pika.exceptions
 
 from src.config_manager import ConfigManager
@@ -13,20 +12,20 @@ from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
-def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
+def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
-            data_store_logger = create_logger(
-                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format( \
-                    data_store_name),
-                data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
+            new_logger = create_logger(
+                os.environ[os_env_name].format(log_name), log_name,
+                os.environ["LOGGING_LEVEL"], rotating=True
+            )
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
-                .format(data_store_name, e)
+                .format(log_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -34,36 +33,21 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
                           logging.getLogger('DUMMY_LOGGER'))
             time.sleep(10)  # sleep 10 seconds before trying again
 
-    return data_store_logger
+    return new_logger
 
-def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
-    # separately to avoid instances when the logger creation failed and we
-    # attempt to use it.
-    while True:
-        try:
-            monitors_manager_logger = create_logger(
-                os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
-                manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
-            break
-        except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
-            # Use a dummy logger in this case because we cannot create the
-            # managers's logger.
-            log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            log_and_print('Re-attempting the initialization procedure',
-                          logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+# def _initialize_system_alerters_manager() -> SystemAlertersManager:
+#     alerter_name = "System Alerters Manager"
 
-    return monitors_manager_logger
-
+#     system_monitors_manager_logger = _initialize_alerters_manager_logger(
+#         manager_name)
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = "System Monitors Manager"
 
-    system_monitors_manager_logger = _initialize_monitors_manager_logger(
-        manager_name)
+    system_monitors_manager_logger = _initialize_logger(
+        manager_name,
+        "MANAGERS_LOG_FILE_TEMPLATE"
+    )
 
     # Attempt to initialize the system monitors manager
     while True:
@@ -85,8 +69,10 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
     manager_name = "GitHub Monitors Manager"
 
-    github_monitors_manager_logger = _initialize_monitors_manager_logger(
-        manager_name)
+    github_monitors_manager_logger = _initialize_logger(
+        manager_name,
+        "MANAGERS_LOG_FILE_TEMPLATE"
+    )
 
     # Attempt to initialize the github monitors manager
     while True:
@@ -106,9 +92,9 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
 
 
 def _initialize_config_manager() -> ConfigManager:
-    config_manager_logger = create_logger(
-        os.environ["CONFIG_MANAGER_LOG_FILE"], ConfigManager.__name__,
-        os.environ["LOGGING_LEVEL"], rotating=True
+    config_manager_logger = _initialize_logger(
+        ConfigManager.__name__,
+        "CONFIG_MANAGER_LOG_FILE"
     )
 
     rabbit_ip = os.environ["RABBIT_IP"]
@@ -127,7 +113,10 @@ def _initialize_config_manager() -> ConfigManager:
 def _initialize_data_store_manager() -> StoreManager:
     manager_name = "Data Store Manager"
 
-    data_store_manager_logger = _initialize_data_store_logger(manager_name)
+    data_store_manager_logger = _initialize_logger(
+        manager_name,
+        "DATA_STORE_LOG_FILE_TEMPLATE"
+    )
 
     # Attempt to initialize the github monitors manager
     while True:
