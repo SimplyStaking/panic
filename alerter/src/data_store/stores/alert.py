@@ -13,8 +13,8 @@ from src.utils.logging import log_and_print
 from src.data_store.stores.store import Store
 
 class AlertStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, logger: logging.Logger, store_name: str) -> None:
+        super().__init__(logger, store_name)
 
     def _initialize_store(self) -> None:
         """

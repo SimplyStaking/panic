@@ -124,11 +124,29 @@ def _initialize_config_manager() -> ConfigManager:
                                        "manager again")
             continue
 
+def _initialize_data_store_manager() -> StoreManager:
+    manager_name = "Data Store Manager"
+
+    data_store_manager_logger = _initialize_data_store_logger(manager_name)
+
+    # Attempt to initialize the github monitors manager
+    while True:
+        try:
+            data_store_manager = StoreManager(
+                data_store_manager_logger, manager_name)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising {}: {} !!!' \
+                .format(manager_name, e)
+            log_and_print(msg, data_store_manager_logger)
+            log_and_print('Re-attempting the initialization procedure',
+                          data_store_manager_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return data_store_manager
 
 def run_data_store() -> None:
-    store_logger =_initialize_data_store_logger('data_store')
-
-    store_manager = StoreManager(store_logger)
+    store_manager = _initialize_data_store_manager()
     store_manager.start_store_manager()
 
 

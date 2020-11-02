@@ -8,11 +8,19 @@ from src.data_store.stores.system import SystemStore
 from src.data_store.stores.store import Store
 
 class StoreManager:
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, name: str):
+        self._name = name
         self._logger = logger
-        self._system_store = SystemStore(self._logger)
-        self._github_store = GithubStore(self._logger)
-        self._alert_store = AlertStore(self._logger)
+        self._system_store = SystemStore(self._logger, "System Store")
+        self._github_store = GithubStore(self._logger, "Github Store")
+        self._alert_store = AlertStore(self._logger, "Alert Store")
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def system_store(self) -> SystemStore:

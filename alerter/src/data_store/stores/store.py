@@ -9,7 +9,10 @@ from src.data_store.redis.redis_api import RedisApi
 from abc import ABC, abstractmethod
 
 class Store(ABC):
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, store_name: str) -> None:
+        super().__init__()
+
+        self._store_name = store_name
         rabbit_ip = os.environ["RABBIT_IP"]
         self._mongo_ip = os.environ["DB_IP"]
         self._mongo_db = os.environ["DB_NAME"]
@@ -23,6 +26,13 @@ class Store(ABC):
         self._mongo = None
         self._redis = RedisApi(logger=self._logger, db=redis_db, \
             host=redis_ip, port=redis_port, namespace='panic_alerter')
+
+    def __str__(self) -> str:
+        return self.store_name
+
+    @property
+    def store_name(self) -> str:
+        return self._store_name
 
     @property
     def mongo_ip(self) -> str:
