@@ -8,6 +8,7 @@ from src.config_manager import ConfigManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
+from src.alerter.managers.system import SystemAlertersManager
 from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
@@ -35,11 +36,29 @@ def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
 
     return new_logger
 
-# def _initialize_system_alerters_manager() -> SystemAlertersManager:
-#     alerter_name = "System Alerters Manager"
+def _initialize_system_alerters_manager() -> SystemAlertersManager:
+    alerter_name = "System Alerters Manager"
 
-#     system_monitors_manager_logger = _initialize_alerters_manager_logger(
-#         manager_name)
+    system_alerters_manager_logger = _initialize_logger(
+        manager_name,
+        "ALERTERS_LOG_FILE_TEMPLATE"
+    )
+
+    # Attempt to initialize the system alerters manager
+    while True:
+        try:
+            system_alerters_manager = SystemAlertersManager(
+                system_alerters_manager_logger, manager_name)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising {}: {} !!!' \
+                .format(manager_name, e)
+            log_and_print(msg, system_alerters_manager_logger)
+            log_and_print('Re-attempting the initialization procedure',
+                          system_alerters_manager_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return system_alerters_manager
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = "System Monitors Manager"
