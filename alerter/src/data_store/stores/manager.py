@@ -7,6 +7,7 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.system import SystemStore
 from src.data_store.stores.store import Store
 
+
 class StoreManager:
     def __init__(self, logger: logging.Logger):
         self._logger = logger

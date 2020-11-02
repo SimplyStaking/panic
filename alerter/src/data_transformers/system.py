@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 from typing import Dict
 
@@ -10,7 +11,7 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.system import System
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException
+    SystemIsDownException, MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none
 
 
@@ -40,6 +41,11 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
                                  'raw_data', 'system')
         self.logger.info('Declaring consuming intentions')
+
+        # Pre-fetch count is 10 times less the maximum queue size
+        prefetch_count = round(self.publishing_queue.maxsize / 5)
+        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+
         self.rabbitmq.basic_consume('system_data_transformer_raw_data_queue',
                                     self._process_raw_data, False, False, None)
 
@@ -57,11 +63,11 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.start_consuming()
 
     # TODO: Need to change output type to Union[System, Repo]
-    def load_system_state(self, system: System) -> None:
+    def load_system_state(self, system: System) -> System:
         # If Redis is down, the data passed as default will be stored as
         # the system state.
 
-        self.logger.info('Loading the state of {} from Redis'.format(system))
+        self.logger.debug('Loading the state of {} from Redis'.format(system))
         redis_hash = Keys.get_hash_parent(system.parent_id)
         system_id = system.system_id
 
@@ -217,7 +223,7 @@ class SystemDataTransformer(DataTransformer):
         went_down_at = convert_to_float_if_not_none(redis_went_down_at, None)
         system.set_went_down_at(went_down_at)
 
-        self.logger.info(
+        self.logger.debug(
             'Restored %s state: _process_cpu_seconds_total=%s, '
             '_process_memory_usage=%s, _virtual_memory_usage=%s, '
             '_open_file_descriptors=%s, _system_cpu_usage=%s, '
@@ -236,7 +242,11 @@ class SystemDataTransformer(DataTransformer):
             disk_io_time_seconds_in_interval, disk_io_time_seconds_total,
             last_monitored, went_down_at)
 
+        return system
+
     def _update_state(self) -> None:
+        self.logger.debug("Updating state ...")
+
         if 'result' in self.transformed_data:
             meta_data = self.transformed_data['result']['meta_data']
             metrics = self.transformed_data['result']['data']
@@ -291,7 +301,11 @@ class SystemDataTransformer(DataTransformer):
             raise ReceivedUnexpectedDataException(
                 '{}: _update_state'.format(self))
 
+        self.logger.debug("State updated successfully")
+
     def _process_transformed_data_for_storage(self) -> None:
+        self.logger.debug("Performing further processing for storage ...")
+
         if 'result' in self.transformed_data:
             processed_data = copy.deepcopy(self.transformed_data)
         elif 'error' in self.transformed_data:
@@ -311,7 +325,11 @@ class SystemDataTransformer(DataTransformer):
 
         self._data_for_storage = processed_data
 
+        self.logger.debug("Processing successful")
+
     def _process_transformed_data_for_alerting(self) -> None:
+        self.logger.debug("Performing further processing for alerting ...")
+
         if 'result' in self.transformed_data:
             meta_data = self.transformed_data['result']['meta_data']
             system_id = meta_data['system_id']
@@ -381,7 +399,12 @@ class SystemDataTransformer(DataTransformer):
 
         self._data_for_alerting = processed_data
 
+        self.logger.debug("Processing successful.")
+
     def _transform_data(self, data: Dict) -> None:
+        self.logger.debug("Performing data transformation on {} ..."
+                          .format(data))
+
         if 'result' in data:
             meta_data = data['result']['meta_data']
             system_data = data['result']['data']
@@ -450,73 +473,122 @@ class SystemDataTransformer(DataTransformer):
         self._transformed_data = transformed_data
         self._process_transformed_data_for_alerting()
         self._process_transformed_data_for_storage()
+        self.logger.debug("Data transformation successful")
+
+    def _place_latest_data_on_queue(self) -> None:
+        self.logger.debug("Adding transformed data to the publishing queue ...")
+
+        # Place the latest transformed data on the publishing queue. If the
+        # queue is full, remove old data.
+        if self.publishing_queue.full():
+            self.publishing_queue.get()
+            self.publishing_queue.get()
+        self.publishing_queue.put({
+            'exchange': 'store', 'routing_key': 'system',
+            'data': copy.deepcopy(self.data_for_saving)})
+        self.publishing_queue.put({
+            'exchange': 'alert',
+            'routing_key': 'alerter.system',
+            'data': copy.deepcopy(self.data_for_alerting)})
+
+        self.logger.debug("Transformed data added to the publishing queue "
+                          "successfully.")
 
     def _send_data(self) -> None:
-        # Try to send both pieces of transformed data. If one the sending
-        # procedures fail, add that piece of data to the queue so that it can
-        # be sent at a later stage and raise the exception which was sent
-        try:
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
             self.rabbitmq.basic_publish_confirm(
-                exchange='store', routing_key='system',
-                body=self.data_for_saving, is_body_dict=True,
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
-            self.logger.debug('Sent data to \'store\' exchange')
-        except Exception as e:
-            # If the queue is full, no use storing old pieces of data, therefore
-            # remove old data an insert the new.
-            if self.publishing_queue.full():
-                self.publishing_queue.get()
-            self.publishing_queue.put({
-                'type': 'saving', 'data': copy.deepcopy(self.data_for_saving)})
-            raise e
-
-        try:
-            self.rabbitmq.basic_publish_confirm(
-                exchange='alert', routing_key='alerter.system',
-                body=self.data_for_alerting, is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.logger.debug('Sent data to \'alert\' exchange')
-        except Exception as e:
-            # If the queue is full, no use storing old pieces of data, therefore
-            # remove old data an insert the new.
-            if self.publishing_queue.full():
-                self.publishing_queue.get()
-            self.publishing_queue.put({
-                'type': 'alerting',
-                'data': copy.deepcopy(self.data_for_alerting)})
-            raise e
+            self.logger.debug('Sent {} to \'{}\' exchange'
+                              .format(data['data'], data['exchange']))
+            self.publishing_queue.get()
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
-        # TODO: When getting data, we need to always set the parent_id just
-        #     : in case it changes. When creating also pass the parent_id. Note
-        #     : loading is done only once, so it does not effect if the
-        #     : parent_id changes eventually. But this is done just in case,
-        #     : same for system_name.
-        # if loading fails do not send data also
-        # TODO: Need to cater when there is data in the publishing queue,
-        #     : we need to send the data in the queue before sending the
-        #     : currently processed
-        pass
+        raw_data = json.loads(body)
+        self.logger.info('Received {} from monitors'.format(raw_data))
+
+        self.logger.info('Processing {} ...'.format(raw_data))
+        try:
+            if 'result' in raw_data or 'error' in raw_data:
+                response_index_key = 'result' if 'result' in raw_data \
+                    else 'error'
+                meta_data = raw_data[response_index_key]['meta_data']
+                system_id = meta_data['system_id']
+                system_parent_id = meta_data['system_parent_id']
+                system_name = meta_data['system_name']
+
+                if system_id not in self.state:
+                    new_system = System(system_name, system_id,
+                                        system_parent_id)
+                    loaded_system = self.load_system_state(new_system)
+                    self._state['system_id'] = loaded_system
+
+                self._transform_data(raw_data)
+                self._update_state()
+                self._place_latest_data_on_queue()
+                self.logger.info('Successfully processed {}'.format(raw_data))
+            else:
+                raise ReceivedUnexpectedDataException
+        except Exception as e:
+            self.logger.error("Error when processing {}".format(raw_data))
+            self.logger.exception(e)
+
+        # Send any data waiting in the publisher queue
+        try:
+            self.logger.info('Attempting to send all data waiting in the '
+                             'publishing queue ...')
+            self._send_data()
+            self.logger.info('Successfully sent all data from the publishing '
+                             'queue'.format(raw_data))
+        except (pika.exceptions.AMQPChannelError,
+                pika.exceptions.AMQPConnectionError) as e:
+            # No need to acknowledge in this case as channel is closed. Logging
+            # would have also been done by RabbitMQ.
+            raise e
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise the exception so that the message
+            # can be acknowledged and removed from the rabbit queue. Note this
+            # message will still reside in the publisher queue.
+            self.logger.exception(e)
+        except Exception as e:
+            # For any other exception log it, acknowledge and raise it, so the
+            # message is removed from the rabbit queue as this message will now
+            # reside in the publisher queue
+            self.logger.exception(e)
+            self.rabbitmq.basic_ack(method.delivery_tag, False)
+            raise e
+
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def start(self) -> None:
-        pass
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                # Before listening for new data send the data waiting to be sent
+                # in the publishing queue
+                self._send_data()
+                self._listen_for_data()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore we can safely continue
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
 
-# TODO: If the transformation fails, data should not be sent but logged. This
-#     : also includes the update system state. We must make sure that the
-#     : message is acknowledged so that the message is removed from the queue
-
-# TODO: In case UnexpectedDataException, handle it, log it and continue.
-#     : Therefore do not send the data
-
-# TODO: Add more logging where necessary, for example in the data transofrmation
-
-# TODO: Need to test if new processed data received, but sending from queue fails,
-#     : does the processing start again from the unacknowledged piece of data? Check
-#     : what happens in the manager also coz we do not acknowledge if processing fails. I think we either need to send a nack. With basic nack it worked on receiver, sender examples. Most probably we need to add it
-#     : to the manager as well
-#     :
+# TODO: To the manager do not add a qos (since configs do not change a lot)
+#     : and we must do an exception to acknowledge bad configs

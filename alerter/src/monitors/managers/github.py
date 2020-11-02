@@ -9,7 +9,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.repo import RepoConfig
 from src.monitors.managers.manager import MonitorsManager
-from src.monitors.monitor_starters import start_github_monitor
+from src.monitors.starters import start_github_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.logging import log_and_print

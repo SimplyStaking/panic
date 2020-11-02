@@ -61,6 +61,12 @@ def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
     return monitors_manager_logger
 
 
+def _initialize_transformers_manager_logger(
+        transformer_name: str) -> logging.Logger:
+    # TODO: Must be done as a general function as _initialize_manager_logger, and we all use the same. Eventually this will be done to start the system data transformer's manager process.
+    pass
+
+
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = "System Monitors Manager"
 
@@ -178,6 +184,8 @@ if __name__ == '__main__':
         target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
 
+    # Start the data transformers in a separate process
+
     # Start the data store in a separate process
     data_store_process = multiprocessing.Process(target=run_data_store, args=[])
     data_store_process.start()
@@ -205,4 +213,5 @@ if __name__ == '__main__':
 
 # TODO: Make sure that all queues and configs are declared before hand in the
 #     : run alerter before start sending configs, as otherwise configs manager
-#     : would not be able to send configs on start-up
+#     : would not be able to send configs on start-up. Therefore start the
+#     : config manager last

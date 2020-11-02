@@ -100,7 +100,6 @@ def start_monitor(monitor: Monitor) -> None:
             monitor.start()
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
             log_and_print('{} stopped.'.format(monitor), monitor.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected

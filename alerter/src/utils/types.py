@@ -1,7 +1,7 @@
 # TODO Needs updating in the future.
 
 import sys
-from typing import Union, Optional, Any
+from typing import Union, Any
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -11,7 +11,7 @@ else:
 RedisType = Union[bytes, str, int, float]
 
 
-def convert_to_float_if_not_none(value: Optional[int, str, float, bytes],
+def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
                                  default_return: Any) -> Any:
     # This function converts a value to float if it is not None, otherwise it
     # returns a default return
