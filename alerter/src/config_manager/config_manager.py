@@ -178,7 +178,6 @@ class ConfigManager:
         self._logger.debug("Config read successfully")
 
         config_dict = {key: dict(config[key]) for key in config}
-        del config_dict['DEFAULT']
         self._logger.debug("Config converted to dict: %s", config_dict)
         # Since the watcher is configured to watch files in
         # self._config_directory we only need check that (for get_routing_key)
