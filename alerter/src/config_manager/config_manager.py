@@ -68,21 +68,30 @@ class ConfigManager:
         self._observer.schedule(self._event_handler, config_directory,
                                 recursive=True)
 
-        try:
-            self._connect_to_rabbit()
-            self._logger.debug("Connected to Rabbit")
-            self._rabbit.exchange_declare(
-                output_rabbit_channel, "topic", False, True, False, False
-            )
-
-            self._logger.debug("Declared exchange in Rabbit")
-        except ConnectionNotInitializedException as cnie:
-            # Should be impossible, but since exchange_declare can throw it we
-            # shall ensure to log that the error passed through here too.
-            self._logger.error(
-                "Something went wrong that meant a connection was not made")
-            self._logger.error(cnie.message)
-            raise cnie
+        # Looping due to some errors requiring a retry
+        while True:
+            try:
+                self._connect_to_rabbit()
+                self._logger.debug("Connected to Rabbit")
+                self._rabbit.exchange_declare(
+                    output_rabbit_channel, "topic", False, True, False, False
+                )
+                self._logger.debug("Declared exchange in Rabbit")
+                break
+            except (ConnectionNotInitializedException,
+                    AMQPConnectionError) as connection_error:
+                # Should be impossible, but since exchange_declare can throw
+                # it we shall ensure to log that the error passed through here
+                # too.
+                self._logger.error(
+                    "Something went wrong that meant a connection was not made")
+                self._logger.error(connection_error.message)
+                raise connection_error
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. As a result we don't need to
+                # anything here, just re-try.
+                continue
 
     def __del__(self):
         self.stop_watching_config_files()
