@@ -178,7 +178,7 @@ class ConfigManager:
             # TODO (Mark) PANIC-278 - Implement schema check
         except (
                 DuplicateSectionError, DuplicateOptionError, InterpolationError,
-                MissingSectionHeaderError, ParsingError
+                ParsingError
         ) as e:
             self._logger.error(e.message)
             # When the config is invalid, we do nothing and discard this event.
