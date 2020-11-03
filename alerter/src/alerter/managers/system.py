@@ -68,6 +68,21 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.basic_consume('system_alerters_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
+    def _attempt_to_strat_alerters(self) -> None:
+        print("Attempte to start alerters if you have both configs")
+
+    def _process_systems_alerts_config(self, sent_configs,
+                                       current_alert_configs) -> None:
+        print("Process the system alerts config and save it")
+        print(sent_configs)
+        print(current_alert_configs)
+
+    def _process_systems_config(self, sent_configs,
+                                current_configs) -> None:
+        print("Process the systems configuration and save")
+        print(sent_configs)
+        print(current_configs)
+
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -77,37 +92,77 @@ class SystemAlertersManager(AlertersManager):
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
-        if method.routing_key == 'general.threshold_alerts_config':
+        parsed_routing_key = method.routing_key.split('.')
+        if parsed_routing_key[0] == 'general' and parsed_routing_key[1] == \
+                'threshold_alerts_config':
             if 'general' in self.systems_alerts_configs:
-                current_alert_configs = self.systems_alerts_configs['general']
+                current_alert_configs = \
+                    self.systems_alerts_configs['general']
             else:
                 current_alert_configs = {}
-        else:
-            parsed_routing_key = method.routing_key.split('.')
+            self._process_systems_alerts_config(sent_configs,
+                                                current_alert_configs)
+        elif parsed_routing_key[0] == 'general' and parsed_routing_key[1] == \
+                'systems_config':
+            if 'general' in self.systems_configs:
+                current_configs = self.systems_configs['general']
+            else:
+                current_configs = {}
+            self._process_systems_config(sent_configs, current_configs)
+        elif parsed_routing_key[0] == 'chain' and parsed_routing_key[3] == \
+                'threshold_alerts_config':
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             if chain in self.systems_alerts_configs:
                 current_alert_configs = self.systems_alerts_configs[chain]
             else:
                 current_alert_configs = {}
-
-        if method.routing_key == 'general.systems_config':
-            if 'general' in self.systems_configs:
-                current_configs = self.systems_configs['general']
-            else:
-                current_configs = {}
-        else:
-            parsed_routing_key = method.routing_key.split('.')
+            self._process_systems_alerts_config(sent_configs,
+                                                current_alert_configs)
+        elif parsed_routing_key[0] == 'chain' and parsed_routing_key[3] == \
+                'systems_config':
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             if chain in self.systems_configs:
                 current_configs = self.systems_configs[chain]
             else:
                 current_configs = {}
+            self._process_systems_config(sent_configs, current_configs)
 
-        new_alert_configs = get_newly_added_configs(sent_configs,
-                                                    current_alert_configs)
-        for config_id in new_alert_configs:
-            config = new_alert_configs[config_id]
-            print(config)
+        # At the end of saving each process we should attempt to start
+        # an alerter
+
+        # if method.routing_key == 'general.threshold_alerts_config':
+        #     if 'general' in self.systems_alerts_configs:
+        #         current_alert_configs = self.systems_alerts_configs
+        # # ['general']
+        #     else:
+        #         current_alert_configs = {}
+        # else:
+        #     parsed_routing_key = method.routing_key.split('.')
+        #     print(parsed_routing_key)
+        #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        #     if chain in self.systems_alerts_configs:
+        #         current_alert_configs = self.systems_alerts_configs[chain]
+        #     else:
+        #         current_alert_configs = {}
+
+        # if method.routing_key == 'general.systems_config':
+        #     if 'general' in self.systems_configs:
+        #         current_configs = self.systems_configs['general']
+        #     else:
+        #         current_configs = {}
+        # else:
+        #     parsed_routing_key = method.routing_key.split('.')
+        #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        #     if chain in self.systems_configs:
+        #         current_configs = self.systems_configs[chain]
+        #     else:
+        #         current_configs = {}
+
+        # new_alert_configs = get_newly_added_configs(sent_configs,
+        #                                             current_alert_configs)
+        # for alert_id in new_alert_configs:
+        #     config = new_alert_configs[alert_id]
+        #     print(alert_id)
 
         # new_configs = get_newly_added_configs(sent_configs, current_configs)
         # for config_id in new_configs:
