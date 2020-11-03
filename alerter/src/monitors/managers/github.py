@@ -81,7 +81,9 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            #     .format(repo_name)
+            releases_page = 'https://api.github.com/repos/{}releases'\
                 .format(repo_name)
 
             # If we should not monitor the repo, move to the next config
@@ -111,7 +113,9 @@ class GitHubMonitorsManager(MonitorsManager):
                 repo_name = repo_name + '/'
 
             monitor_repo = config['monitor_repo']
-            releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            # releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+            #     .format(repo_name)
+            releases_page = 'https://api.github.com/repos/{}releases' \
                 .format(repo_name)
             repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                      monitor_repo, releases_page)

@@ -25,11 +25,13 @@ class DataTransformer(ABC):
 
         # Set a max queue size so that if the data transformer is not able to
         # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 "DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE"])
+        # max_queue_size = int(os.environ[
+        #                          "DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE"])
+        max_queue_size = 1000
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = 'localhost'
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
     def __str__(self) -> str:
@@ -85,7 +87,7 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _process_transformed_data_for_storage(self) -> None:
+    def _process_transformed_data_for_saving(self) -> None:
         pass
 
     @abstractmethod

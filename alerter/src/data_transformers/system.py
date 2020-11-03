@@ -40,12 +40,11 @@ class SystemDataTransformer(DataTransformer):
             'exchange \'raw_data\' with routing key \'system\'')
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
                                  'raw_data', 'system')
-        self.logger.info('Declaring consuming intentions')
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-
+        self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('system_data_transformer_raw_data_queue',
                                     self._process_raw_data, False, False, None)
 
@@ -284,10 +283,10 @@ class SystemDataTransformer(DataTransformer):
             system.set_as_up()
         elif 'error' in self.transformed_data:
             meta_data = self.transformed_data['error']['meta_data']
+            error_code = self.transformed_data['error']['code']
             system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
-            time_of_error = meta_data['time']
             downtime_exception = SystemIsDownException(system_name)
             system = self.state[system_id]
 
@@ -295,35 +294,27 @@ class SystemDataTransformer(DataTransformer):
             system.set_parent_id(parent_id)
             system.set_system_name(system_name)
 
-            if self.transformed_data['code'] == downtime_exception.code:
-                system.set_as_down(time_of_error)
+            if error_code == downtime_exception.code:
+                went_down_at = self.transformed_data['error']['data'][
+                    'went_down_at']
+                system.set_as_down(went_down_at)
         else:
             raise ReceivedUnexpectedDataException(
                 '{}: _update_state'.format(self))
 
         self.logger.debug("State updated successfully")
 
-    def _process_transformed_data_for_storage(self) -> None:
+    def _process_transformed_data_for_saving(self) -> None:
         self.logger.debug("Performing further processing for storage ...")
 
-        if 'result' in self.transformed_data:
+        if 'result' in self.transformed_data \
+                or 'error' in self.transformed_data:
             processed_data = copy.deepcopy(self.transformed_data)
-        elif 'error' in self.transformed_data:
-            meta_data = self.transformed_data['error']['meta_data']
-            system_name = meta_data['system_name']
-            time_of_error = meta_data['time']
-            downtime_exception = SystemIsDownException(system_name)
-
-            processed_data = copy.deepcopy(self.transformed_data)
-
-            if self.transformed_data['code'] == downtime_exception.code:
-                processed_data['data'] = {}
-                processed_data['data']['went_down_at'] = time_of_error
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_transformed_data_for_storage'.format(self))
+                '{}: _process_transformed_data_for_saving'.format(self))
 
-        self._data_for_storage = processed_data
+        self._data_for_saving = processed_data
 
         self.logger.debug("Processing successful")
 
@@ -331,14 +322,14 @@ class SystemDataTransformer(DataTransformer):
         self.logger.debug("Performing further processing for alerting ...")
 
         if 'result' in self.transformed_data:
-            meta_data = self.transformed_data['result']['meta_data']
-            system_id = meta_data['system_id']
-            system = self.state[system_id]
-            data = self.transformed_data['result']['data']
+            td_meta_data = self.transformed_data['result']['meta_data']
+            td_system_id = td_meta_data['system_id']
+            system = self.state[td_system_id]
+            td_metrics = self.transformed_data['result']['data']
 
             processed_data = {
                 'result': {
-                    'meta_data': meta_data,
+                    'meta_data': td_meta_data,
                     'data': {}
                 }
             }
@@ -346,7 +337,7 @@ class SystemDataTransformer(DataTransformer):
             # Reformat the data in such a way that both the previous and current
             # states are sent to the alerter
             processed_data_metrics = processed_data['result']['data']
-            for metric, value in data.items():
+            for metric, value in td_metrics.items():
                 processed_data_metrics[metric] = {}
                 processed_data_metrics[metric]['current'] = value
 
@@ -379,20 +370,25 @@ class SystemDataTransformer(DataTransformer):
             processed_data_metrics['went_down_at'][
                 'previous'] = system.went_down_at
         elif 'error' in self.transformed_data:
-            meta_data = self.transformed_data['error']['meta_data']
-            system_id = meta_data['system_id']
-            system_name = meta_data['system_name']
-            time_of_error = meta_data['time']
-            system = self.state[system_id]
-            downtime_exception = SystemIsDownException(system_name)
+            td_meta_data = self.transformed_data['error']['meta_data']
+            td_error_code = self.transformed_data['error']['code']
+            td_system_id = td_meta_data['system_id']
+            td_system_name = td_meta_data['system_name']
+            system = self.state[td_system_id]
+            downtime_exception = SystemIsDownException(td_system_name)
 
             processed_data = copy.deepcopy(self.transformed_data)
 
-            if self.transformed_data['code'] == downtime_exception.code:
-                processed_data['data'] = {}
-                processed_data['data']['went_down_at'] = {}
-                processed_data['data']['current'] = time_of_error
-                processed_data['data']['previous'] = system.went_down_at
+            if td_error_code == downtime_exception.code:
+                td_metrics = self.transformed_data['error']['data']
+                processed_data_metrics = processed_data['error']['data']
+
+                for metric, value in td_metrics.items():
+                    processed_data_metrics[metric] = {}
+                    processed_data_metrics[metric]['current'] = value
+
+                processed_data_metrics['went_down_at']['previous'] = \
+                    system.went_down_at
         else:
             raise ReceivedUnexpectedDataException(
                 '{}: _process_transformed_data_for_alerting'.format(self))
@@ -462,17 +458,31 @@ class SystemDataTransformer(DataTransformer):
                 disk_io_time_seconds_in_interval
             td_metrics['went_down_at'] = None
         elif 'error' in data:
+            meta_data = data['error']['meta_data']
+            error_code = data['error']['code']
+            system_id = meta_data['system_id']
+            system_name = meta_data['system_name']
+            time_of_error = meta_data['time']
+            system = self.state[system_id]
+            downtime_exception = SystemIsDownException(system_name)
+
             # In case of errors in the sent messages only remove the
             # monitor_name from the data
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
+
+            if error_code == downtime_exception.code:
+                transformed_data['error']['data'] = {}
+                td_metrics = transformed_data['error']['data']
+                td_metrics['went_down_at'] = \
+                    system.went_down_at if system.is_down else time_of_error
         else:
             raise ReceivedUnexpectedDataException(
                 '{}: _transform_data'.format(self))
 
         self._transformed_data = transformed_data
         self._process_transformed_data_for_alerting()
-        self._process_transformed_data_for_storage()
+        self._process_transformed_data_for_saving()
         self.logger.debug("Data transformation successful")
 
     def _place_latest_data_on_queue(self) -> None:
@@ -495,6 +505,12 @@ class SystemDataTransformer(DataTransformer):
                           "successfully.")
 
     def _send_data(self) -> None:
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info('Attempting to send all data waiting in the '
+                             'publishing queue ...')
+
         # Try sending the data in the publishing queue one by one. Important,
         # remove an item from the queue only if the sending was successful, so
         # that if an exception is raised, that message is not popped
@@ -508,6 +524,11 @@ class SystemDataTransformer(DataTransformer):
             self.logger.debug('Sent {} to \'{}\' exchange'
                               .format(data['data'], data['exchange']))
             self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info('Successfully sent all data from the publishing '
+                             'queue')
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
@@ -530,25 +551,22 @@ class SystemDataTransformer(DataTransformer):
                     new_system = System(system_name, system_id,
                                         system_parent_id)
                     loaded_system = self.load_system_state(new_system)
-                    self._state['system_id'] = loaded_system
+                    self._state[system_id] = loaded_system
 
                 self._transform_data(raw_data)
                 self._update_state()
                 self._place_latest_data_on_queue()
                 self.logger.info('Successfully processed {}'.format(raw_data))
             else:
-                raise ReceivedUnexpectedDataException
+                raise ReceivedUnexpectedDataException(
+                    '{}: _process_raw_data'.format(self))
         except Exception as e:
             self.logger.error("Error when processing {}".format(raw_data))
             self.logger.exception(e)
 
-        # Send any data waiting in the publisher queue
+        # Send any data waiting in the publisher queue, if any
         try:
-            self.logger.info('Attempting to send all data waiting in the '
-                             'publishing queue ...')
             self._send_data()
-            self.logger.info('Successfully sent all data from the publishing '
-                             'queue'.format(raw_data))
         except (pika.exceptions.AMQPChannelError,
                 pika.exceptions.AMQPConnectionError) as e:
             # No need to acknowledge in this case as channel is closed. Logging
@@ -560,10 +578,9 @@ class SystemDataTransformer(DataTransformer):
             # message will still reside in the publisher queue.
             self.logger.exception(e)
         except Exception as e:
-            # For any other exception log it, acknowledge and raise it, so the
+            # For any other exception acknowledge and raise it, so the
             # message is removed from the rabbit queue as this message will now
             # reside in the publisher queue
-            self.logger.exception(e)
             self.rabbitmq.basic_ack(method.delivery_tag, False)
             raise e
 
@@ -574,8 +591,13 @@ class SystemDataTransformer(DataTransformer):
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
-                # in the publishing queue
-                self._send_data()
+                # in the publishing queue. If the message is not routed, start
+                # consuming and perform sending later.
+                try:
+                    self._send_data()
+                except MessageWasNotDeliveredException as e:
+                    self.logger.exception(e)
+
                 self._listen_for_data()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If

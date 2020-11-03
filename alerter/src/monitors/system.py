@@ -7,14 +7,15 @@ from typing import Optional, List
 import pika
 import pika.exceptions
 from requests.exceptions import ConnectionError as ReqConnectionError, \
-    ReadTimeout, ChunkedEncodingError
+    ReadTimeout, ChunkedEncodingError, MissingSchema, InvalidSchema, InvalidURL
 from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
 from src.monitors.monitor import Monitor
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import MetricNotFoundException, \
-    SystemIsDownException, DataReadingException, PANICException
+    SystemIsDownException, DataReadingException, PANICException, \
+    InvalidUrlException
 
 
 class SystemMonitor(Monitor):
@@ -301,6 +302,13 @@ class SystemMonitor(Monitor):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
+            self.logger.error('Error when retrieving data from {}'
+                              .format(self.system_config.node_exporter_url))
+            self.logger.exception(data_retrieval_exception)
+        except (InvalidURL, InvalidSchema, MissingSchema):
+            self._data_retrieval_failed = True
+            data_retrieval_exception = InvalidUrlException(
+                self.system_config.node_exporter_url)
             self.logger.error('Error when retrieving data from {}'
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)

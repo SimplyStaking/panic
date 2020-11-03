@@ -16,7 +16,8 @@ class MonitorsManager(ABC):
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = 'localhost'
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
     def __str__(self) -> str:

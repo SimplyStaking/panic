@@ -47,8 +47,12 @@ def _initialize_manager_logger(manager_name: str) -> logging.Logger:
     while True:
         try:
             manager_logger = create_logger(
-                os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
-                manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                # os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
+                'logs/managers/{}.log'.format(manager_name),
+                manager_name,
+                # os.environ["LOGGING_LEVEL"],
+                'INFO',
+                rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -220,32 +224,40 @@ if __name__ == '__main__':
         target=run_data_transformers_manager, args=())
     data_transformers_manager_process.start()
 
-    # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_store, args=[])
-    data_store_process.start()
-
-    # Config manager must be the last to start since it immediately begins by
-    # sending the configs. That being said, all previous processes need to wait
-    # for the config manager too.
-    config_stop_queue = multiprocessing.Queue()
-    config_manager_runner_process = multiprocessing.Process(
-        target=run_config_manager, args=(config_stop_queue,)
-    )
-    config_manager_runner_process.start()
+    # # Start the data store in a separate process
+    # data_store_process = multiprocessing.Process(target=run_data_store, args=[])
+    # data_store_process.start()
+    #
+    # # Config manager must be the last to start since it immediately begins by
+    # # sending the configs. That being said, all previous processes need to wait
+    # # for the config manager too.
+    # config_stop_queue = multiprocessing.Queue()
+    # config_manager_runner_process = multiprocessing.Process(
+    #     target=run_config_manager, args=(config_stop_queue,)
+    # )
+    # config_manager_runner_process.start()
 
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
-    data_store_process.join()
+    # data_store_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
-    config_stop_queue.put("STOP")
-    config_manager_runner_process.join()
+    # config_stop_queue.put("STOP")
+    # config_manager_runner_process.join()
 
     print('The alerter is stopping.')
 
 # TODO: Make sure that all queues and configs are declared before hand in the
 #     : run alerter before start sending configs, as otherwise configs manager
 #     : would not be able to send configs on start-up. Therefore start the
-#     : config manager last
+#     : config manager last. Similarly, components must be started from left
+#     : to right accoriding to the design (to avoid message not delivered
+#     : exceptions). Also, to fully solve these problems, we should perform
+#     : checks in the run alerter to see if a queue/exchange has been created
+
+# TODO: Test system data transformer integrated with the data
+#     : store, configs manager and monitor. Test both from source and docker.
+
+# TODO: On thursday start from testing point above.

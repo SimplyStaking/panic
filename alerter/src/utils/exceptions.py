@@ -76,3 +76,11 @@ class ReceivedUnexpectedDataException(PANICException):
         message = "{} received unexpected data".format(receiver)
         code = 5008
         super().__init__(message, code)
+
+
+class InvalidUrlException(PANICException):
+
+    def __init__(self, url) -> None:
+        message = "Invalid URL \'{}\'".format(url)
+        code = 5009
+        super().__init__(message, code)
