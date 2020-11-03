@@ -5,12 +5,12 @@ from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
-
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.logging import log_and_print
 
+
 class AlertersManager(ABC):
-    def __init__(self, name: str, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, name: str):
         self._logger = logger
         self._config_process_dict = {}
         self._name = name
@@ -58,8 +58,8 @@ class AlertersManager(ABC):
                 self._listen_for_configs()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another managing round without
+                # there is a channel error, the RabbitMQ interface creates a
+                # new channel, therefore perform another managing round without
                 # sleeping
                 continue
             except pika.exceptions.AMQPConnectionError as e:

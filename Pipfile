@@ -5,6 +5,9 @@ verify_ssl = true
 
 [dev-packages]
 coverage = "*"
+flake8 = "*"
+pep8 = "*"
+rope = "*"
 
 [packages]
 configparser = "*"
@@ -17,3 +20,4 @@ redis = "*"
 requests = "*"
 twilio = "*"
 watchdog = "*"
+autopep8 = "*"

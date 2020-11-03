@@ -9,9 +9,11 @@ from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.alerter.managers.system import SystemAlertersManager
+from src.alerter.managers.manager import AlertersManager
 from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
+
 
 def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
@@ -36,8 +38,9 @@ def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
 
     return new_logger
 
+
 def _initialize_system_alerters_manager() -> SystemAlertersManager:
-    alerter_name = "System Alerters Manager"
+    manager_name = "System Alerters Manager"
 
     system_alerters_manager_logger = _initialize_logger(
         manager_name,
@@ -59,6 +62,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return system_alerters_manager
+
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = "System Monitors Manager"
@@ -129,6 +133,7 @@ def _initialize_config_manager() -> ConfigManager:
                                        "manager again")
             continue
 
+
 def _initialize_data_store_manager() -> StoreManager:
     manager_name = "Data Store Manager"
 
@@ -153,6 +158,7 @@ def _initialize_data_store_manager() -> StoreManager:
 
     return data_store_manager
 
+
 def run_data_store() -> None:
     store_manager = _initialize_data_store_manager()
     store_manager.start_store_manager()
@@ -168,7 +174,27 @@ def run_github_monitors_manager() -> None:
     run_monitors_manager(github_monitors_manager)
 
 
+def run_system_alerters_manager() -> None:
+    system_alerters_manager = _initialize_system_alerters_manager()
+    run_alerters_manager(system_alerters_manager)
+
+
 def run_monitors_manager(manager: MonitorsManager) -> None:
+    while True:
+        try:
+            manager.manage()
+        except pika.exceptions.AMQPConnectionError:
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-connect just break the loop.
+            log_and_print('{} stopped.'.format(manager), manager.logger)
+        except Exception:
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            manager.rabbitmq.disconnect_till_successful()
+            log_and_print('{} stopped.'.format(manager), manager.logger)
+
+
+def run_alerters_manager(manager: AlertersManager) -> None:
     while True:
         try:
             manager.manage()
@@ -202,8 +228,14 @@ if __name__ == '__main__':
         target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
 
+    # Start the alerters in a separate process
+    system_alerters_manager_process = multiprocessing.Process(
+        target=run_system_alerters_manager, args=())
+    system_alerters_manager_process.start()
+
     # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_store, args=[])
+    data_store_process = multiprocessing.Process(target=run_data_store,
+                                                 args=[])
     data_store_process.start()
 
     # Config manager must be the last to start since it immediately begins by
@@ -215,9 +247,11 @@ if __name__ == '__main__':
     )
     config_manager_runner_process.start()
 
-    # If we don't wait for the processes to terminate the root process will exit
+    # If we don't wait for the processes to terminate the root process will
+    # exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
+    system_alerters_manager_process.join()
     data_store_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way

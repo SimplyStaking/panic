@@ -5,9 +5,10 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import pika.exceptions
-
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  PANICException)
+
 
 class Alerter(ABC):
 
@@ -16,7 +17,6 @@ class Alerter(ABC):
 
         self._alerter_name = alerter_name
         self._logger = logger
-        self._data = {}
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
@@ -32,42 +32,39 @@ class Alerter(ABC):
         return self._alerter_name
 
     @property
-    def data(self) -> Dict:
-        return self._data
-
-    @property
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
     @abstractmethod
-    def status(self) -> str:
+    def _initialize_alerter(self) -> None:
         pass
-
-    def load_monitor_state(self) -> None:
-        pass
-
-    def _initialize_rabbitmq(self) -> None:
-        self.rabbitmq.connect_till_successful()
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
-        self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
 
     @abstractmethod
-    def _alert(self) -> None:
+    def _start_listening(self) -> None:
         pass
 
-    def start_alerting(self) -> None:
-        self._initialize_rabbitmq()
+    @abstractmethod
+    def _process_data(self, *args) -> None:
+        pass
+
+    @abstractmethod
+    def _send_data_to_alert_router(self, *args) -> None:
+        pass
+
+    @abstractmethod
+    def _alert_classifier_process(self) -> None:
+        pass
+
+    def start_alert_classification(self) -> None:
+        self._initialize_alerter()
         while True:
             try:
-                self._alert()
+                self._alert_classifier_process()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another monitoring round without
-                # sleeping
+                # there is a channel error, the RabbitMQ interface creates a
+                # new channel, therefore perform another monitoring round
+                # without sleeping
                 continue
             except MessageWasNotDeliveredException as e:
                 # Log the fact that the message could not be sent. Sleep just

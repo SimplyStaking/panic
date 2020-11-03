@@ -1,11 +1,13 @@
 import logging
-import pika.exceptions
 from multiprocessing import Process
-from src.utils.logging import log_and_print
+
+import pika.exceptions
 from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
-from src.data_store.stores.system import SystemStore
 from src.data_store.stores.store import Store
+from src.data_store.stores.system import SystemStore
+from src.utils.logging import log_and_print
+
 
 class StoreManager:
     def __init__(self, logger: logging.Logger, name: str):

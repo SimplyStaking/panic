@@ -1,16 +1,19 @@
 
-import logging
 import json
-import pika.exceptions
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional
+
+import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.types import AlertDataType
-from src.utils.logging import log_and_print
 from src.data_store.stores.store import Store
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
+from src.utils.types import AlertDataType
+
 
 class AlertStore(Store):
     def __init__(self, logger: logging.Logger, store_name: str) -> None:
@@ -104,8 +107,8 @@ class AlertStore(Store):
                 self._start_listening()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another managing round without
+                # there is a channel error, the RabbitMQ interface creates a
+                # new channel, therefore perform another managing round without
                 # sleeping
                 continue
             except pika.exceptions.AMQPConnectionError as e:

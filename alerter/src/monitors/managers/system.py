@@ -54,8 +54,9 @@ class SystemMonitorsManager(MonitorsManager):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
-
         sent_configs = json.loads(body)
+        del sent_configs['DEFAULT']
+
         self.logger.info('Received configs {}'.format(sent_configs))
         if method.routing_key == 'general.systems_config':
             if 'general' in self.systems_configs:
@@ -142,14 +143,16 @@ class SystemMonitorsManager(MonitorsManager):
         if method.routing_key == 'general.systems_config':
             # To avoid non-moniterable systems
             self._systems_configs['general'] = {
-                config_id: sent_configs[config_id] for config_id in sent_configs
+                config_id:
+                    sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_system']}
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             # To avoid non-moniterable systems
             self._systems_configs[chain] = {
-                config_id: sent_configs[config_id] for config_id in sent_configs
+                config_id:
+                    sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_system']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)

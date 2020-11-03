@@ -1,12 +1,13 @@
 import logging
 import os
+from abc import ABC, abstractmethod
+
 import pika
 import pika.exceptions
-
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
-from abc import ABC, abstractmethod
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+
 
 class Store(ABC):
     def __init__(self, logger: logging.Logger, store_name: str) -> None:
@@ -24,8 +25,10 @@ class Store(ABC):
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
-        self._redis = RedisApi(logger=self._logger, db=redis_db, \
-            host=redis_ip, port=redis_port, namespace='panic_alerter')
+        self._redis = RedisApi(
+            logger=self._logger, db=redis_db, host=redis_ip,
+            port=redis_port, namespace='panic_alerter'
+        )
 
     def __str__(self) -> str:
         return self.store_name
@@ -56,11 +59,11 @@ class Store(ABC):
 
     @property
     def redis(self) -> RedisApi:
-      return self._redis
+        return self._redis
 
     @property
     def mongo(self) -> MongoApi:
-      return self._mongo
+        return self._mongo
 
     @abstractmethod
     def _initialize_store(self) -> None:
@@ -77,9 +80,10 @@ class Store(ABC):
 
     @abstractmethod
     def _process_data(self,
-        ch: pika.adapters.blocking_connection.BlockingChannel,
-        method: pika.spec.Basic.Deliver,
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
+                      ch: pika.adapters.blocking_connection.BlockingChannel,
+                      method: pika.spec.Basic.Deliver,
+                      properties: pika.spec.BasicProperties,
+                      body: bytes) -> None:
         pass
 
     @abstractmethod
