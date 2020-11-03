@@ -33,5 +33,3 @@ class DataTransformersManager:
 
         # Wait for all the processes to terminate before re-starting
         system_data_transformer_process.join()
-
-        log_and_print('{} stopped.'.format(self), self.logger)
