@@ -260,4 +260,5 @@ if __name__ == '__main__':
 # TODO: Test system data transformer integrated with the data
 #     : store, configs manager and monitor. Test both from source and docker.
 
-# TODO: On thursday start from testing point above.
+# TODO: On thursday start from testing point above. But before testing modify
+#     : the system store so that it is compatible with the latest data

@@ -9,8 +9,8 @@ from src.utils.types import AlertDataType
 
 
 class AlertStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """

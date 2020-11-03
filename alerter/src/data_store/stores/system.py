@@ -7,12 +7,13 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.utils.exceptions import ReceivedUnexpectedDataException
 from src.utils.types import SystemDataType, SystemMonitorDataType
 
 
 class SystemStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -58,8 +59,8 @@ class SystemStore(Store):
         """
         system_data = json.loads(body.decode())
         try:
-            if 'error' not in system_data:
-                self._process_redis_monitor_store(
+            if 'result' in system_data:
+                self._process_redis_meta_data_store(
                     system_data['result']['meta_data']
                 )
                 self._process_redis_metrics_store(
@@ -71,33 +72,32 @@ class SystemStore(Store):
                     system_data['result']['data'],
                     system_data['result']['meta_data'],
                 )
-            else:
+            elif 'error' in system_data:
                 if int(system_data['error']['code']) == 5004:
                     self._process_redis_error_store(
                         system_data['error']['meta_data'])
-
+            else:
+                raise ReceivedUnexpectedDataException(
+                    '{}: _process_data'.format(self))
         except KeyError as e:
-            self.logger.error('Error when reading system data, in data store.')
+            self.logger.error('Error when parsing {}.'.format(system_data))
+            self.logger.exception(e)
+        except ReceivedUnexpectedDataException as e:
+            self.logger.error("Error when processing {}".format(system_data))
             self.logger.exception(e)
         except Exception as e:
             self.logger.exception(e)
+            # When an exception is raised we must acknowledge the message so
+            # that it is removed from the queue, since it won't be re-delivered
+            self.rabbitmq.basic_ack(method.delivery_tag, False)
             raise e
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_error_store(self, monitor_data: SystemMonitorDataType) \
-            -> None:
-        self.logger.debug(
-            'Saving %s state: _system_error_system_is_down=%s, at=%s',
-            monitor_data['monitor_name'], str(True), monitor_data['time']
-        )
-
-        self.redis.hset(
-            Keys.get_hash_parent(monitor_data['system_parent_id']),
-            Keys.get_system_error_system_is_down(monitor_data['system_id']),
-            str(True)
-        )
-
-    def _process_redis_monitor_store(
+    # TODO: On thursday continue from here by first chanfing the
+    #     : SystemMonitorDataType to MetaDataType as I have just renamed the
+    #     : function from _process_redis_meta_data_store
+    def _process_redis_meta_data_store(
             self, monitor_data: SystemMonitorDataType) -> None:
         self.logger.debug(
             'Saving %s state: _system_monitor_last_monitoring_round=%s',
@@ -166,6 +166,19 @@ class SystemStore(Store):
                 str(system['disk_io_time_seconds_in_interval']),
             Keys.get_system_error_system_is_down(system_id): str(False),
         })
+
+    def _process_redis_error_store(self, monitor_data: SystemMonitorDataType) \
+            -> None:
+        self.logger.debug(
+            'Saving %s state: _system_error_system_is_down=%s, at=%s',
+            monitor_data['monitor_name'], str(True), monitor_data['time']
+        )
+
+        self.redis.hset(
+            Keys.get_hash_parent(monitor_data['system_parent_id']),
+            Keys.get_system_error_system_is_down(monitor_data['system_id']),
+            str(True)
+        )
 
     def _process_mongo_store(self, system: SystemDataType,
                              monitor_data: SystemMonitorDataType) -> None:

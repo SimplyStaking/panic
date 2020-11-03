@@ -10,13 +10,12 @@ from src.data_store.stores.system import SystemStore
 from src.utils.logging import log_and_print
 
 
-
 class StoreManager:
     def __init__(self, logger: logging.Logger):
         self._logger = logger
-        self._system_store = SystemStore(self._logger)
-        self._github_store = GithubStore(self._logger)
-        self._alert_store = AlertStore(self._logger)
+        self._system_store = SystemStore('System Store', self._logger)
+        self._github_store = GithubStore('GitHub Store', self._logger)
+        self._alert_store = AlertStore('Alert Store', self._logger)
 
     @property
     def system_store(self) -> SystemStore:

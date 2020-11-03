@@ -10,8 +10,8 @@ from src.utils.types import GithubDataType, GithubMonitorDataType
 
 
 class GithubStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -88,7 +88,7 @@ class GithubStore(Store):
                 str(github_data['tag_name']),
         })
 
-    def _process_redis_monitor_store(
+    def _process_redis_meta_data_store(
             self, monitor_data: GithubMonitorDataType) -> None:
         self.logger.debug(
             'Saving %s state: _github_monitor_last_monitoring_round=%s',
