@@ -46,12 +46,12 @@ class Keys:
     @staticmethod
     def get_github_monitor_last_monitoring_round(monitor_name: str) -> str:
         return Keys._as_prefix(_key_github_monitor_last_monitoring_round) \
-            + monitor_name
+               + monitor_name
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
-        return Keys._as_prefix(_key_system_process_cpu_seconds_total) + \
-               system_id
+        return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
+               + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:

@@ -142,7 +142,7 @@ class ConfigManager:
                 self._connect_to_rabbit()
 
                 self._logger.info("Connection restored, will attempt again")
-            except AMQPChannelError as ace:
+            except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. As a result we don't need to
                 # anything here, just re-try.
@@ -166,7 +166,7 @@ class ConfigManager:
         self._logger.debug("Reading configuration")
         try:
             config.read(event.src_path)
-            # TODO (Mark) PANIC-278 - Implment schema check
+            # TODO (Mark) PANIC-278 - Implement schema check
         except (
                 DuplicateSectionError, DuplicateOptionError, InterpolationError,
                 MissingSectionHeaderError, ParsingError

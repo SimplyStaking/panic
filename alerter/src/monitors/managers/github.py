@@ -93,7 +93,7 @@ class GitHubMonitorsManager(MonitorsManager):
             repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                      monitor_repo, releases_page)
             process = multiprocessing.Process(target=start_github_monitor,
-                                              args=[repo_config])
+                                              args=(repo_config,))
             # Kill children if parent is killed
             process.daemon = True
             log_and_print('Creating a new process for the monitor of {}'
@@ -135,7 +135,7 @@ class GitHubMonitorsManager(MonitorsManager):
                           'configuration'.format(config_id), self.logger)
 
             process = multiprocessing.Process(target=start_github_monitor,
-                                              args=[repo_config])
+                                              args=(repo_config,))
             # Kill children if parent is killed
             process.daemon = True
             process.start()
@@ -154,14 +154,14 @@ class GitHubMonitorsManager(MonitorsManager):
 
         # Must be done at the end in case of errors while processing
         if method.routing_key == 'general.repos_config':
-            # To avoid non-moniterable repos
+            # To avoid non-monitorable repos
             self._repos_configs['general'] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_repo']}
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            # To avoid non-moniterable repos
+            # To avoid non-monitorable repos
             self._repos_configs[chain] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_repo']}

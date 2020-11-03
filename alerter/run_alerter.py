@@ -22,7 +22,7 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format( \
+                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
                     data_store_name),
                 data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
@@ -158,7 +158,7 @@ def _initialize_config_manager() -> ConfigManager:
 
 
 def run_data_store() -> None:
-    store_logger =_initialize_data_store_logger('data_store')
+    store_logger = _initialize_data_store_logger('data_store')
 
     store_manager = StoreManager(store_logger)
     store_manager.start_store_manager()
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     data_transformers_manager_process.start()
 
     # # Start the data store in a separate process
-    # data_store_process = multiprocessing.Process(target=run_data_store, args=[])
+    # data_store_process = multiprocessing.Process(target=run_data_store, args=())
     # data_store_process.start()
     #
     # # Config manager must be the last to start since it immediately begins by

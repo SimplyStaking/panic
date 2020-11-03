@@ -24,6 +24,8 @@ class GithubDataType(TypedDict):
 
     name: str
     current_no_of_releases: int
+    release_name: str
+    tag_name: str
 
 
 class GithubMonitorDataType(TypedDict):
@@ -35,6 +37,7 @@ class GithubMonitorDataType(TypedDict):
     repo_id: str
     repo_parent_id: str
     time: str
+    last_monitored: str
 
 
 class SystemDataType(TypedDict):
@@ -67,6 +70,7 @@ class SystemMonitorDataType(TypedDict):
     system_id: str
     system_parent_id: str
     time: str
+    last_monitored: str
 
 
 class AlertDataType(TypedDict):

@@ -85,7 +85,7 @@ class SystemMonitorsManager(MonitorsManager):
             system_config = SystemConfig(system_id, parent_id, system_name,
                                          monitor_system, node_exporter_url)
             process = multiprocessing.Process(target=start_system_monitor,
-                                              args=[system_config])
+                                              args=(system_config,))
             # Kill children if parent is killed
             process.daemon = True
             log_and_print('Creating a new process for the monitor of {}'
@@ -120,7 +120,7 @@ class SystemMonitorsManager(MonitorsManager):
                           'configuration'.format(config_id), self.logger)
 
             process = multiprocessing.Process(target=start_system_monitor,
-                                              args=[system_config])
+                                              args=(system_config,))
             # Kill children if parent is killed
             process.daemon = True
             process.start()
@@ -139,14 +139,14 @@ class SystemMonitorsManager(MonitorsManager):
 
         # Must be done at the end in case of errors while processing
         if method.routing_key == 'general.systems_config':
-            # To avoid non-moniterable systems
+            # To avoid non-monitorable systems
             self._systems_configs['general'] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_system']}
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            # To avoid non-moniterable systems
+            # To avoid non-monitorable systems
             self._systems_configs[chain] = {
                 config_id: sent_configs[config_id] for config_id in sent_configs
                 if sent_configs[config_id]['monitor_system']}

@@ -1,11 +1,14 @@
 import logging
-import pika.exceptions
 from multiprocessing import Process
-from src.utils.logging import log_and_print
+
+import pika.exceptions
+
 from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
-from src.data_store.stores.system import SystemStore
 from src.data_store.stores.store import Store
+from src.data_store.stores.system import SystemStore
+from src.utils.logging import log_and_print
+
 
 
 class StoreManager:
@@ -27,11 +30,12 @@ class StoreManager:
     def alert_store(self) -> AlertStore:
         return self._alert_store
 
-    def start_store(self, store: Store) -> None:
+    @staticmethod
+    def start_store(store: Store) -> None:
         # while True:
         try:
             log_and_print('{} started.'.format(store), store.logger)
-            store._begin_store()
+            store.begin_store()
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
@@ -51,7 +55,7 @@ class StoreManager:
         processes = []
         stores = [self.system_store, self.github_store, self.alert_store]
         for instance in stores:
-            process = Process(target=self.start_store, args=[instance])
+            process = Process(target=self.start_store, args=(instance,))
             process.daemon = True
             process.start()
             processes.append(process)
