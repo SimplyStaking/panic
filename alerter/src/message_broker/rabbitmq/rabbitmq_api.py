@@ -88,7 +88,7 @@ class RabbitMQApi:
     def _set_as_disconnected(self) -> None:
         if self.is_connected or self.live_check_limiter.can_do_task():
             self._logger.info('RabbitMQ is unusable right now. Stopping usage '
-                             'temporarily to improve performance.')
+                              'temporarily to improve performance.')
             self.live_check_limiter.did_task()
         self._is_connected = False
 
@@ -105,8 +105,8 @@ class RabbitMQApi:
         try:
             if self._is_recently_disconnected():
                 self._logger.debug('RabbitMQ: Could not execute %s as RabbitMQ '
-                                  'is temporarily unusable to improve '
-                                  'performance', function.__name__)
+                                   'is temporarily unusable to improve '
+                                   'performance', function.__name__)
                 return default_return
             ret = function(*args)
             return ret
@@ -150,7 +150,7 @@ class RabbitMQApi:
             # If the connection status is 'connected' and the connection socket
             # is open do not re-connect to avoid memory issues.
             self._logger.info('Already connected with RabbitMQ, no need to '
-                             're-connect!')
+                              're-connect!')
         else:
             # Open a new connection depending on whether authentication is
             # needed, and set the connection status as 'connected'

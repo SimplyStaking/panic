@@ -13,6 +13,7 @@ from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
+
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
@@ -20,7 +21,7 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format( \
+                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
                     data_store_name),
                 data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
@@ -35,6 +36,7 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return data_store_logger
+
 
 def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
@@ -126,7 +128,7 @@ def _initialize_config_manager() -> ConfigManager:
 
 
 def run_data_store() -> None:
-    store_logger =_initialize_data_store_logger('data_store')
+    store_logger = _initialize_data_store_logger('data_store')
 
     store_manager = StoreManager(store_logger)
     store_manager.start_store_manager()
@@ -177,7 +179,7 @@ if __name__ == '__main__':
     github_monitors_manager_process.start()
 
     # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_store, args=[])
+    data_store_process = multiprocessing.Process(target=run_data_store, args=())
     data_store_process.start()
 
     # Config manager must be the last to start since it immediately begins by
