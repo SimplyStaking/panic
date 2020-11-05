@@ -56,6 +56,9 @@ class SystemMonitorsManager(MonitorsManager):
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
+
         if method.routing_key == 'general.systems_config':
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']

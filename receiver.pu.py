@@ -59,7 +59,7 @@ import pika
 import sys
 
 DUMMY_LOGGER = logging.getLogger('dummy')
-rabbit_api = RabbitMQApi(DUMMY_LOGGER, host='localhost')
+rabbit_api = RabbitMQApi(DUMMY_LOGGER, host='172.18.0.6')
 config = {
     'system_57bd37d6-5829-4f7d-85d8-3643eec50d2b': {
         'id': 'system_57bd37d6-5829-4f7d-85d8-3643eec50d2b',
@@ -68,13 +68,13 @@ config = {
         'exporter_url': 'http://172.16.152.36:9100/metrics',
         'monitor_system': True,
     },
-    'system_5675765-5829-4f7d-85d8-9d8fghd8ghdf8': {
-        'id': 'system_5675765-5829-4f7d-85d8-9d8fghd8ghdf8',
-        'parent_id': 'Cosmos',
-        'name': 'test_system_2',
-        'exporter_url': 'http://172.16.151.31:9100/metrics',
-        'monitor_system': True,
-    },
+    # 'system_5675765-5829-4f7d-85d8-9d8fghd8ghdf8': {
+    #     'id': 'system_5675765-5829-4f7d-85d8-9d8fghd8ghdf8',
+    #     'parent_id': 'Cosmos',
+    #     'name': 'test_system_2',
+    #     'exporter_url': 'http://172.16.151.31:9100/metrics',
+    #     'monitor_system': True,
+    # },
 }
 # config1 = {
 #     'system_57bd37d6-5829-cosmos1-85d8-3643eec50d2b': {

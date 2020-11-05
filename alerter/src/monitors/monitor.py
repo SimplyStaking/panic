@@ -20,8 +20,7 @@ class Monitor(ABC):
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        # rabbit_ip = os.environ["RABBIT_IP"]
-        rabbit_ip = 'localhost'
+        rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
 

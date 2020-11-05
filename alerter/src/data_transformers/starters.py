@@ -17,13 +17,9 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
     while True:
         try:
             transformer_logger = create_logger(
-                # os.environ["TRANSFORMERS_LOG_FILE_TEMPLATE"].format(
-                #     transformer_name),
-                'logs/data_transformers/{}.log'.format(transformer_name),
-                transformer_name,
-                # os.environ["LOGGING_LEVEL"],
-                'INFO',
-                rotating=True)
+                os.environ["TRANSFORMERS_LOG_FILE_TEMPLATE"].format(
+                    transformer_name),
+                transformer_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!'.format(
@@ -43,14 +39,10 @@ def _initialize_transformer_redis(
     # attempt to use it.
     while True:
         try:
-            # redis_db = int(os.environ['REDIS_DB'])
-            # redis_port = int(os.environ['REDIS_PORT'])
-            # redis_host = os.environ['REDIS_IP']
-            # unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
-            redis_db = 10
-            redis_port = 6379
-            redis_host = 'localhost'
-            unique_alerter_identifier = 'test_panic_alerter'
+            redis_db = int(os.environ['REDIS_DB'])
+            redis_port = int(os.environ['REDIS_PORT'])
+            redis_host = os.environ['REDIS_IP']
+            unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
             redis = RedisApi(logger=transformer_logger, db=redis_db,
                              host=redis_host, port=redis_port,
                              namespace=unique_alerter_identifier)

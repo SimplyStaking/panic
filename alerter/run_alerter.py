@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import os
 import time
+import sys
 
 import pika.exceptions
 
@@ -22,13 +23,9 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                # os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
-                #     data_store_name),
-                'logs/stores/{}.log'.format(data_store_name),
-                data_store_name,
-                # os.environ["LOGGING_LEVEL"],
-                'INFO',
-                rotating=True)
+                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
+                    data_store_name),
+                data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -51,12 +48,8 @@ def _initialize_manager_logger(manager_name: str) -> logging.Logger:
     while True:
         try:
             manager_logger = create_logger(
-                # os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
-                'logs/managers/{}.log'.format(manager_name),
-                manager_name,
-                # os.environ["LOGGING_LEVEL"],
-                'INFO',
-                rotating=True)
+                os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
+                manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -150,7 +143,7 @@ def _initialize_config_manager() -> ConfigManager:
     rabbit_ip = os.environ["RABBIT_IP"]
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, "./config", rabbit_ip)
+            cm = ConfigManager(config_manager_logger, "../config", rabbit_ip)
             return cm
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
@@ -231,27 +224,28 @@ if __name__ == '__main__':
     # Start the data store in a separate process
     data_store_process = multiprocessing.Process(target=run_data_store, args=())
     data_store_process.start()
-    #
-    # # Config manager must be the last to start since it immediately begins by
-    # # sending the configs. That being said, all previous processes need to wait
-    # # for the config manager too.
-    # config_stop_queue = multiprocessing.Queue()
-    # config_manager_runner_process = multiprocessing.Process(
-    #     target=run_config_manager, args=(config_stop_queue,)
-    # )
-    # config_manager_runner_process.start()
+
+    # Config manager must be the last to start since it immediately begins by
+    # sending the configs. That being said, all previous processes need to wait
+    # for the config manager too.
+    config_stop_queue = multiprocessing.Queue()
+    config_manager_runner_process = multiprocessing.Process(
+        target=run_config_manager, args=(config_stop_queue,)
+    )
+    config_manager_runner_process.start()
 
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
-    # data_store_process.join()
+    data_store_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
-    # config_stop_queue.put("STOP")
-    # config_manager_runner_process.join()
+    config_stop_queue.put("STOP")
+    config_manager_runner_process.join()
 
     print('The alerter is stopping.')
+    sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the
 #     : run alerter before start sending configs, as otherwise configs manager
