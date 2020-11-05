@@ -14,13 +14,21 @@ from src.utils.logging import log_and_print
 class Store(ABC):
     def __init__(self, store_name: str, logger: logging.Logger):
         self._store_name = store_name
-        rabbit_ip = os.environ["RABBIT_IP"]
-        self._mongo_ip = os.environ["DB_IP"]
-        self._mongo_db = os.environ["DB_NAME"]
-        self._mongo_port = int(os.environ["DB_PORT"])
-        redis_ip = os.environ["REDIS_IP"]
-        redis_db = os.environ["REDIS_DB"]
-        redis_port = os.environ["REDIS_PORT"]
+        # rabbit_ip = os.environ["RABBIT_IP"]
+        # self._mongo_ip = os.environ["DB_IP"]
+        # self._mongo_db = os.environ["DB_NAME"]
+        # self._mongo_port = int(os.environ["DB_PORT"])
+        # redis_ip = os.environ["REDIS_IP"]
+        # redis_db = os.environ["REDIS_DB"]
+        # redis_port = os.environ["REDIS_PORT"]
+
+        rabbit_ip = 'localhost'
+        self._mongo_ip = 'localhost'
+        self._mongo_db = 'testdb'
+        self._mongo_port = 27017
+        redis_ip = 'localhost'
+        redis_db = 10
+        redis_port = 6379
 
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)

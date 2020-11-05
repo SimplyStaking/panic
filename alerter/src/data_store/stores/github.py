@@ -6,7 +6,8 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.types import GithubDataType, GithubMonitorDataType
+
+from typing import Dict
 
 
 class GithubStore(Store):
@@ -75,7 +76,7 @@ class GithubStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_metrics_store(self, github_data: GithubDataType,
+    def _process_redis_metrics_store(self, github_data: Dict,
                                      parent_id: str, repo_id: str) -> None:
         self.logger.debug(
             'Saving %s state: release_name=%s, tag_name=%s', repo_id,
@@ -89,7 +90,7 @@ class GithubStore(Store):
         })
 
     def _process_redis_meta_data_store(
-            self, monitor_data: GithubMonitorDataType) -> None:
+            self, monitor_data: Dict) -> None:
         self.logger.debug(
             'Saving %s state: _github_monitor_last_monitoring_round=%s',
             monitor_data['monitor_name'],
@@ -102,8 +103,8 @@ class GithubStore(Store):
             ): str(monitor_data['last_monitored'])
         })
 
-    def _process_mongo_store(self, github_data: GithubDataType,
-                             monitor_data: GithubMonitorDataType) -> None:
+    def _process_mongo_store(self, github_data: Dict,
+                             monitor_data: Dict) -> None:
         self.mongo.update_one(
             monitor_data['repo_parent_id'],
             {

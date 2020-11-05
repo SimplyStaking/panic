@@ -22,9 +22,13 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
-                    data_store_name),
-                data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                # os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
+                #     data_store_name),
+                'logs/stores/{}.log'.format(data_store_name),
+                data_store_name,
+                # os.environ["LOGGING_LEVEL"],
+                'INFO',
+                rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -224,9 +228,9 @@ if __name__ == '__main__':
         target=run_data_transformers_manager, args=())
     data_transformers_manager_process.start()
 
-    # # Start the data store in a separate process
-    # data_store_process = multiprocessing.Process(target=run_data_store, args=())
-    # data_store_process.start()
+    # Start the data store in a separate process
+    data_store_process = multiprocessing.Process(target=run_data_store, args=())
+    data_store_process.start()
     #
     # # Config manager must be the last to start since it immediately begins by
     # # sending the configs. That being said, all previous processes need to wait
