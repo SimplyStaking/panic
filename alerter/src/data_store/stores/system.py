@@ -1,14 +1,14 @@
 import json
 import logging
 from datetime import datetime
+from typing import Dict
 
 import pika.exceptions
-
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
+from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import MessageWasNotDeliveredException
-from src.data_store.stores.store import Store
 
 
 class SystemStore(Store):
