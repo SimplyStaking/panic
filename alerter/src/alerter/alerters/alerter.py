@@ -28,6 +28,10 @@ class Alerter(ABC):
         return self._logger
 
     @property
+    def alerts_configs(self) -> None:
+        pass
+
+    @property
     def alerter_name(self) -> str:
         return self._alerter_name
 

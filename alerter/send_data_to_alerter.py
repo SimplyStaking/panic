@@ -88,7 +88,7 @@ if __name__ == '__main__':
           }
         }
         alert_type_dict = {
-          'result':{
+          'result': {
             'data': {
                 'parent_id': 'parent_id_12',
                 'origin': 'system_config_2',
@@ -100,8 +100,9 @@ if __name__ == '__main__':
           }
         }
         rabbitAPI.basic_publish_confirm(
-            exchange='alerter', routing_key='alerter.system.general',
-            body=system_error,
+            exchange='alerter',
+            routing_key='alerter.system.general',
+            body=data_dict_1,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True
@@ -113,13 +114,13 @@ if __name__ == '__main__':
         #     properties=pika.BasicProperties(delivery_mode=2),
         #     mandatory=True
         # )
-        rabbitAPI.basic_publish_confirm(
-            exchange='store', routing_key='github',
-            body=github_dict,
-            is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=1),
-            mandatory=True
-        )
+        # rabbitAPI.basic_publish_confirm(
+        #     exchange='store', routing_key='github',
+        #     body=github_dict,
+        #     is_body_dict=True,
+        #     properties=pika.BasicProperties(delivery_mode=1),
+        #     mandatory=True
+        # )
         # rabbitAPI.basic_publish_confirm(
         #     exchange='store', routing_key='transformer.system.monitor',
         #     body=system_monitor_dict,
@@ -127,13 +128,13 @@ if __name__ == '__main__':
         #     properties=pika.BasicProperties(delivery_mode=2),
         #     mandatory=True
         # )
-        rabbitAPI.basic_publish_confirm(
-            exchange='store', routing_key='alert',
-            body=alert_type_dict,
-            is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True
-        )
+        # rabbitAPI.basic_publish_confirm(
+        #     exchange='store', routing_key='alert',
+        #     body=alert_type_dict,
+        #     is_body_dict=True,
+        #     properties=pika.BasicProperties(delivery_mode=2),
+        #     mandatory=True
+        # )
 
         # mongo_coll = mongo_api.get_all("akash")
         # for i in mongo_coll:
