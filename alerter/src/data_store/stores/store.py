@@ -68,10 +68,7 @@ class Store(ABC):
     def _initialize_store(self) -> None:
         pass
 
-    def _process_redis_metrics_store(self, *args) -> None:
-        pass
-
-    def _process_redis_meta_data_store(self, *args) -> None:
+    def _process_redis_store(self, *args) -> None:
         pass
 
     def _process_mongo_store(self, *args) -> None:

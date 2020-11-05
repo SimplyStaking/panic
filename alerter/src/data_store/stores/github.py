@@ -122,3 +122,5 @@ class GithubStore(Store):
                 '$inc': {'n_releases': 1},
             }
         )
+
+# TODO: Need to update like system store
