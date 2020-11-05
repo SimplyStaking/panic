@@ -8,6 +8,7 @@ from src.alerter.alerters.alerter import Alerter
 from src.configs.system import SystemConfig
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import log_and_print
+from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class SystemAlerter(Alerter):
