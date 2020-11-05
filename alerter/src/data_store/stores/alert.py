@@ -1,4 +1,3 @@
-
 import json
 import logging
 from datetime import datetime
@@ -28,25 +27,30 @@ class AlertStore(Store):
         `store` with a routing key `alert`.
         """
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
-            passive=False, durable=True, auto_delete=False, internal=False)
-        self.rabbitmq.queue_declare('alerts_store_queue', passive=False, \
-            durable=True, exclusive=False, auto_delete=False)
+        self.rabbitmq.exchange_declare(exchange='store',
+                                       exchange_type='direct',
+                                       passive=False, durable=True,
+                                       auto_delete=False, internal=False)
+        self.rabbitmq.queue_declare('alerts_store_queue', passive=False,
+                                    durable=True, exclusive=False,
+                                    auto_delete=False)
         self.rabbitmq.queue_bind(queue='alerts_store_queue', exchange='store',
-            routing_key='alert')
+                                 routing_key='alert')
 
     def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
-            host=self.mongo_ip, port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue='alerts_store_queue', \
-            on_message_callback=self._process_data, auto_ack=False, \
-                exclusive=False, consumer_tag=None)
+        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
+                               host=self.mongo_ip, port=self.mongo_port)
+        self.rabbitmq.basic_consume(queue='alerts_store_queue',
+                                    on_message_callback=self._process_data,
+                                    auto_ack=False,
+                                    exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
 
     def _process_data(self,
-        ch: pika.adapters.blocking_connection.BlockingChannel,
-        method: pika.spec.Basic.Deliver,
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
+                      ch: pika.adapters.blocking_connection.BlockingChannel,
+                      method: pika.spec.Basic.Deliver,
+                      properties: pika.spec.BasicProperties,
+                      body: bytes) -> None:
         """
         Processes the data being received, from the queue. There is only one
         type of data that is going to be received which is an alert. All
@@ -66,11 +70,11 @@ class AlertStore(Store):
 
     def _process_mongo_store(self, alert: Dict) -> None:
         """
-        Updating mongo with alerts using a size-based document with 1000 entries
-        Collection is the name of the chain, with document type alert as only
-        alerts will be stored. Mongo will keep adding new alerts to a document
-        until it's reached 1000 entries at which point mongo will create a new
-        document and repeat the process.
+        Updating mongo with alerts using a size-based document with 1000
+        entries. Collection is the name of the chain, with document type alert
+        as only alerts will be stored. Mongo will keep adding new alerts to a
+        document until it's reached 1000 entries at which point mongo will
+        create a new document and repeat the process.
 
         Origin is the object the alert is associated with e.g cosmos_node_2.
         Alert name is the configured alerts e.g Validator Missing Blocks
@@ -82,16 +86,21 @@ class AlertStore(Store):
         $max is the timestamp of the last alert entered
         $inc increments n_alerts by one each time an alert is added
         """
-        self.mongo.update_one(alert['parent_id'],
-            {'doc_type': 'alert', 'n_alerts': {'$lt': 1000}},
-            {'$push': { 'alerts': {
-                'origin': alert['origin'],  
-                'alert_name': alert['alert_name'],
-                'severity': alert['severity'],
-                'message': alert['message'],
-                'timestamp': alert['timestamp'],
-                }
-            },
+        self.mongo.update_one(
+            alert['parent_id'],
+            {
+                'doc_type': 'alert',
+                'n_alerts': {'$lt': 1000}
+            }, {
+                '$push': {
+                    'alerts': {
+                        'origin': alert['origin'],
+                        'alert_name': alert['alert_name'],
+                        'severity': alert['severity'],
+                        'message': alert['message'],
+                        'timestamp': alert['timestamp'],
+                    }
+                },
                 '$min': {'first': alert['timestamp']},
                 '$max': {'last': alert['timestamp']},
                 '$inc': {'n_alerts': 1},

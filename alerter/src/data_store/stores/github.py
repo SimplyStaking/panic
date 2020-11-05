@@ -1,4 +1,3 @@
-
 import json
 import logging
 from datetime import datetime
@@ -7,7 +6,6 @@ from typing import Dict, List, Optional
 import pika
 import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
-from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
@@ -27,7 +25,7 @@ class GithubStore(Store):
         Creates an exchange named `store` of type `direct`
         Declares a queue named `github_store_queue` and binds it to exchange
         `store` with a routing key `github` meaning anything
-        coming from the transformer with regads to github updates will be
+        coming from the transformer with regards to github updates will be
         received here.
         """
         self.rabbitmq.connect_till_successful()

@@ -7,6 +7,8 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 
 class Store(ABC):
@@ -25,10 +27,8 @@ class Store(ABC):
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
-        self._redis = RedisApi(
-            logger=self._logger, db=redis_db, host=redis_ip,
-            port=redis_port, namespace='panic_alerter'
-        )
+        self._redis = RedisApi(logger=self._logger, db=redis_db, host=redis_ip,
+                               port=redis_port, namespace='panic_alerter')
 
     def __str__(self) -> str:
         return self.store_name
@@ -46,7 +46,7 @@ class Store(ABC):
         return self._mongo_db
 
     @property
-    def mongo_port(self) -> str:
+    def mongo_port(self) -> int:
         return self._mongo_port
 
     @property
@@ -69,13 +69,13 @@ class Store(ABC):
     def _initialize_store(self) -> None:
         pass
 
-    def _process_redis_metrics_store(self) -> None:
+    def _process_redis_metrics_store(self, *args) -> None:
         pass
 
-    def _process_redis_monitor_store(self) -> None:
+    def _process_redis_monitor_store(self, *args) -> None:
         pass
 
-    def _process_mongo_store(self) -> None:
+    def _process_mongo_store(self, *args) -> None:
         pass
 
     @abstractmethod
@@ -87,5 +87,30 @@ class Store(ABC):
         pass
 
     @abstractmethod
-    def _begin_store(self) -> None:
+    def _start_listening(self):
         pass
+
+    def begin_store(self) -> None:
+        self._initialize_store()
+        log_and_print('{} started.'.format(self), self.logger)
+        while True:
+            try:
+                self._start_listening()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a
+                # new channel, therefore perform another managing round without
+                # sleeping
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except MessageWasNotDeliveredException as e:
+                # Log the fact that the message could not be sent and re-try
+                # another monitoring round without sleeping
+                self.logger.exception(e)
+                continue
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
