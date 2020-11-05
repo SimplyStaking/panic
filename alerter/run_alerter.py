@@ -44,7 +44,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
 
     system_alerters_manager_logger = _initialize_logger(
         manager_name,
-        "ALERTERS_LOG_FILE_TEMPLATE"
+        "MANAGERS_LOG_FILE_TEMPLATE"
     )
 
     # Attempt to initialize the system alerters manager

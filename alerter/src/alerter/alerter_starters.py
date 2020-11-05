@@ -17,7 +17,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     while True:
         try:
             monitor_logger = create_logger(
-                os.environ["MONITORS_LOG_FILE_TEMPLATE"].format(alerter_name),
+                os.environ["ALERTERS_LOG_FILE_TEMPLATE"].format(alerter_name),
                 alerter_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
@@ -64,7 +64,7 @@ def start_alerter(alerter: Alerter) -> None:
     while True:
         try:
             log_and_print('{} started.'.format(alerter), alerter.logger)
-            alerter.start()
+            alerter.start_alert_classification()
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.

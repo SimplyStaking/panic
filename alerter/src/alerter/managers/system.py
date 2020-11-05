@@ -7,7 +7,7 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
-from src.configs.system import SystemConfig
+from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.configs import (get_modified_configs, get_newly_added_configs,
                                get_removed_configs)
 from src.utils.logging import log_and_print
@@ -63,6 +63,7 @@ class SystemAlertersManager(AlertersManager):
                 current_configs = self.systems_configs['general']
             else:
                 current_configs = {}
+            system_parent = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -70,90 +71,91 @@ class SystemAlertersManager(AlertersManager):
                 current_configs = self.systems_configs[chain]
             else:
                 current_configs = {}
+            system_parent = chain
 
         new_configs = get_newly_added_configs(sent_configs, current_configs)
-        print(new_configs)
-        # for config_id in new_configs:
-        #     config = new_configs[config_id]
-        #     system_id = config['id']
-        #     parent_id = config['parent_id']
-        #     system_name = config['name']
-        #     node_exporter_url = config['exporter_url']
-        #     monitor_system = config['monitor_system']
+        if new_configs:
+            filtered = {}
+            for i in new_configs:
+                filtered[new_configs[i]['name']] = new_configs[i]
 
-        #     # If we should not monitor the system, move to the next config
-        #     if not monitor_system:
-        #         continue
+            system_alerts_config = SystemAlertsConfig(
+                parent=system_parent,
+                open_file_descriptors=filtered['open_file_descriptors'],
+                system_cpu_usage=filtered['system_cpu_usage'],
+                system_storage_usage=filtered['system_storage_usage'],
+                system_ram_usage=filtered['system_ram_usage'],
+                system_network_usage=filtered['system_network_usage'],
+            )
 
-        #     system_config = SystemConfig(system_id, parent_id, system_name,
-        #                                  monitor_system, node_exporter_url)
-        #     process = multiprocessing.Process(target=start_system_monitor,
-        #                                       args=[system_config])
-        #     # Kill children if parent is killed
-        #     process.daemon = True
-        #     log_and_print('Creating a new process for the monitor of {}'
-        #                   .format(system_config.system_name), self.logger)
-        #     process.start()
-        #     self._config_process_dict[config_id] = process
+            process = multiprocessing.Process(target=start_system_alerter,
+                                              args=[system_alerts_config])
+            process.daemon = True
+            log_and_print('Creating a new process for the system alerter of {}'
+                          .format(system_alerts_config.parent),
+                          self.logger)
+            process.start()
+            self._config_process_dict[system_parent] = process
 
-        # modified_configs = get_modified_configs(sent_configs, current_configs)
-        # for config_id in modified_configs:
-        #     # Get the latest updates
-        #     config = sent_configs[config_id]
-        #     system_id = config['id']
-        #     parent_id = config['parent_id']
-        #     system_name = config['name']
-        #     node_exporter_url = config['exporter_url']
-        #     monitor_system = config['monitor_system']
-        #     system_config = SystemConfig(system_id, parent_id, system_name,
-        #                                  monitor_system, node_exporter_url)
-        #     previous_process = self.config_process_dict[config_id]
-        #     previous_process.terminate()
-        #     previous_process.join()
+        modified_configs = get_modified_configs(sent_configs, current_configs)
+        if modified_configs:
+            filtered = {}
+            for i in modified_configs:
+                filtered[modified_configs[i]['name']] = modified_configs[i]
 
-        #     # If we should not monitor the system, delete the previous process
-        #     # from the system and move to the next config
-        #     if not monitor_system:
-        #         del self.config_process_dict[config_id]
-        #         log_and_print('Killed the monitor of {} '
-        #                       .format(config_id), self.logger)
-        #         continue
+            system_alerts_config = SystemAlertsConfig(
+                parent=system_parent,
+                open_file_descriptors=filtered['open_file_descriptors'],
+                system_cpu_usage=filtered['system_cpu_usage'],
+                system_storage_usage=filtered['system_storage_usage'],
+                system_ram_usage=filtered['system_ram_usage'],
+                system_network_usage=filtered['system_network_usage'],
+            )
 
-        #     log_and_print('Restarting the monitor of {} with latest '
-        #                   'configuration'.format(config_id), self.logger)
+            previous_process = self.config_process_dict[system_parent]
+            previous_process.terminate()
+            previous_process.join()
 
-        #     process = multiprocessing.Process(target=start_system_monitor,
-        #                                       args=[system_config])
-        #     # Kill children if parent is killed
-        #     process.daemon = True
-        #     process.start()
-        #     self._config_process_dict[config_id] = process
+            log_and_print('Restarting the system alerter of {} with latest '
+                          'configuration'.format(system_parent), self.logger)
 
-        # removed_configs = get_removed_configs(sent_configs, current_configs)
-        # for config_id in removed_configs:
-        #     config = removed_configs[config_id]
-        #     system_name = config['name']
-        #     previous_process = self.config_process_dict[config_id]
-        #     previous_process.terminate()
-        #     previous_process.join()
-        #     del self.config_process_dict[config_id]
-        #     log_and_print('Killed the monitor of {} '
-        #                   .format(system_name), self.logger)
+            process = multiprocessing.Process(target=start_system_alerter,
+                                              args=[system_alerts_config])
+            # Kill children if parent is killed
+            process.daemon = True
+            process.start()
+            self._config_process_dict[config_id] = process
 
-        # # Must be done at the end in case of errors while processing
-        # if method.routing_key == 'general.systems_config':
-        #     # To avoid non-moniterable systems
-        #     self._systems_configs['general'] = {
-        #         config_id:
-        #             sent_configs[config_id] for config_id in sent_configs
-        #         if sent_configs[config_id]['monitor_system']}
-        # else:
-        #     parsed_routing_key = method.routing_key.split('.')
-        #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-        #     # To avoid non-moniterable systems
-        #     self._systems_configs[chain] = {
-        #         config_id:
-        #             sent_configs[config_id] for config_id in sent_configs
-        #         if sent_configs[config_id]['monitor_system']}
+            process = multiprocessing.Process(target=start_system_alerter,
+                                              args=[system_alerts_config])
+            process.daemon = True
+            log_and_print('Creating a new process for the system alerter of {}'
+                          .format(system_alerts_config.parent),
+                          self.logger)
+            process.start()
+            self._config_process_dict[system_parent] = process
+
+        removed_configs = get_removed_configs(sent_configs, current_configs)
+        if removed_configs:
+            previous_process = self.config_process_dict[system_parent]
+            previous_process.terminate()
+            previous_process.join()
+            del self.config_process_dict[system_parent]
+            log_and_print('Killed the monitor of {} '
+                          .format(system_parent), self.logger)
+
+        # Must be done at the end in case of errors while processing
+        if method.routing_key == 'general.threshold_alerts_config':
+            # To avoid non-moniterable systems
+            self._systems_configs['general'] = {
+                'general':  sent_configs}
+        else:
+            parsed_routing_key = method.routing_key.split('.')
+            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            # To avoid non-moniterable systems
+            self._systems_configs[chain] = {
+                config_id:
+                    sent_configs[config_id] for config_id in sent_configs
+                if sent_configs[config_id]['monitor_system']}
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)

@@ -42,7 +42,6 @@ class SystemAlerter(Alerter):
                                     consumer_tag=None)
         self.rabbitmq.start_consuming()
 
-    # TODO VITALY continue the two functions below
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
                       method: pika.spec.Basic.Deliver,
