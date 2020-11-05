@@ -251,6 +251,6 @@ if __name__ == '__main__':
 #     : run alerter before start sending configs, as otherwise configs manager
 #     : would not be able to send configs on start-up. Therefore start the
 #     : config manager last. Similarly, components must be started from left
-#     : to right accoriding to the design (to avoid message not delivered
+#     : to right according to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
