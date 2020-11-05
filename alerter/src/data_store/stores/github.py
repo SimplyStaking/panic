@@ -13,7 +13,6 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import GithubDataType, GithubMonitorDataType
 
 
 class GithubStore(Store):
@@ -83,7 +82,7 @@ class GithubStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_metrics_store(self,  github_data: GithubDataType,
+    def _process_redis_metrics_store(self,  github_data: Dict,
                                      parent_id: str, repo_id: str) -> None:
         self.logger.debug(
             'Saving %s state: release_name=%s, tag_name=%s', repo_id,
@@ -96,8 +95,7 @@ class GithubStore(Store):
                 str(github_data['tag_name']),
         })
 
-    def _process_redis_monitor_store(self, monitor_data:
-                                     GithubMonitorDataType) -> None:
+    def _process_redis_monitor_store(self, monitor_data: Dict) -> None:
         self.logger.debug(
             'Saving %s state: _github_monitor_last_monitoring_round=%s',
             monitor_data['monitor_name'],
@@ -110,8 +108,8 @@ class GithubStore(Store):
             str(monitor_data['last_monitored'])
         })
 
-    def _process_mongo_store(self,  github_data: GithubDataType, monitor_data:
-                             GithubMonitorDataType) -> None:
+    def _process_mongo_store(self,  github_data: Dict, monitor_data:
+                             Dict) -> None:
         self.mongo.update_one(
             monitor_data['repo_parent_id'],
             {'doc_type': 'github', 'n_releases': {'$lt': 1000}},

@@ -9,10 +9,10 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.types import SystemDataType, SystemMonitorDataType
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.data_store.stores.store import Store
 from src.utils.logging import log_and_print
+
 
 class SystemStore(Store):
     def __init__(self, logger: logging.Logger, store_name: str) -> None:
@@ -26,30 +26,37 @@ class SystemStore(Store):
         Creates an exchange named `store` of type `direct`
         Declares a queue named `system_store_queue` and binds it to exchange
         `store` with a routing key `transformer.system.*` meaning anything
-        coming from the transformer with regads to a system will be received 
+        coming from the transformer with regads to a system will be received
         here.
         """
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
-            passive=False, durable=True, auto_delete=False, internal=False)
-        self.rabbitmq.queue_declare('system_store_queue', passive=False, \
-            durable=True, exclusive=False, auto_delete=False)
+        self.rabbitmq.exchange_declare(exchange='store',
+                                       exchange_type='direct',
+                                       passive=False,
+                                       durable=True,
+                                       auto_delete=False,
+                                       internal=False)
+        self.rabbitmq.queue_declare('system_store_queue', passive=False,
+                                    durable=True, exclusive=False,
+                                    auto_delete=False)
         self.rabbitmq.queue_bind(queue='system_store_queue', exchange='store',
-            routing_key='system')
+                                 routing_key='system')
 
     def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db, \
-            host=self.mongo_ip, port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue='system_store_queue', \
-            on_message_callback=self._process_data, auto_ack=False, \
-                exclusive=False, consumer_tag=None)
+        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
+                               host=self.mongo_ip, port=self.mongo_port)
+        self.rabbitmq.basic_consume(queue='system_store_queue',
+                                    on_message_callback=self._process_data,
+                                    auto_ack=False, exclusive=False,
+                                    consumer_tag=None)
         self.rabbitmq.start_consuming()
 
     def _process_data(self,
-        ch: pika.adapters.blocking_connection.BlockingChannel,
-        method: pika.spec.Basic.Deliver,
-        properties: pika.spec.BasicProperties, body: bytes) -> None:
-        """ 
+                      ch: pika.adapters.blocking_connection.BlockingChannel,
+                      method: pika.spec.Basic.Deliver,
+                      properties: pika.spec.BasicProperties,
+                      body: bytes) -> None:
+        """
         Processes the data being received, from the queue.
         Two types of metrics are going to be received, the system metrics
         of the system being monitored and the metrics of the monitor currently
@@ -57,7 +64,7 @@ class SystemStore(Store):
         mongo while monitor metrics only need to be stored in redis.
         """
         system_data = json.loads(body.decode())
-        try: 
+        try:
             if 'error' not in system_data:
                 self._process_redis_monitor_store(
                     system_data['result']['meta_data']
@@ -84,8 +91,7 @@ class SystemStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_error_store(self, monitor_data: SystemMonitorDataType) \
-        -> None:
+    def _process_redis_error_store(self, monitor_data: Dict) -> None:
         self.logger.debug(
             'Saving %s state: _system_error_system_is_down=%s, at=%s',
             monitor_data['monitor_name'], str(True), monitor_data['time']
@@ -97,8 +103,7 @@ class SystemStore(Store):
             str(True)
         )
 
-    def _process_redis_monitor_store(self, monitor_data: SystemMonitorDataType \
-        ) -> None:
+    def _process_redis_monitor_store(self, monitor_data: Dict) -> None:
         self.logger.debug(
             'Saving %s state: _system_monitor_last_monitoring_round=%s',
             monitor_data['monitor_name'], monitor_data['last_monitored']
@@ -106,12 +111,12 @@ class SystemStore(Store):
 
         self.redis.set(
             Keys.get_system_monitor_last_monitoring_round(
-                monitor_data['monitor_name']), \
-                    str(monitor_data['last_monitored'])
+                monitor_data['monitor_name']), str(
+                    monitor_data['last_monitored'])
         )
 
-    def _process_redis_metrics_store(self, system: SystemDataType,
-        parent_id: str, system_id: str) -> None:
+    def _process_redis_metrics_store(self, system: Dict, parent_id: str,
+                                     system_id: str) -> None:
 
         self.logger.debug(
             'Saving %s state: _process_cpu_seconds_total=%s, '
@@ -167,8 +172,7 @@ class SystemStore(Store):
             Keys.get_system_error_system_is_down(system_id): str(False),
         })
 
-    def _process_mongo_store(self, system: SystemDataType, monitor_data: \
-        SystemMonitorDataType) -> None:
+    def _process_mongo_store(self, system: Dict, monitor_data: Dict) -> None:
         """
         Updating mongo with system metrics using a time-based document with 60
         entries per hour per system, assuming each system monitoring round is

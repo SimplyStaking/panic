@@ -35,18 +35,6 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info(
             'Binding queue \'system_alerters_manager_configs_queue\' to '
             'exchange \'config\' with routing key '
-            '\'chains.*.*.systems_config\'')
-        self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
-                                 'config', 'chains.*.*.systems_config')
-        self.logger.info(
-            'Binding queue \'system_alerters_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
-            '\'general.systems_config\'')
-        self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
-                                 'config', 'general.systems_config')
-        self.logger.info(
-            'Binding queue \'system_alerters_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
             '\'chains.*.*.threshold_alerts_config\'')
         self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
                                  'config',
@@ -67,65 +55,24 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-
         del sent_configs['DEFAULT']
 
         self.logger.info('Received configs {}'.format(sent_configs))
-        processed_configs = {}
-        current_configs = {}
-        parsed_routing_key = method.routing_key.split('.')
-        if parsed_routing_key[0] == 'general' and parsed_routing_key[1] == \
-                'threshold_alerts_config':
+        if method.routing_key == 'general.threshold_alerts_config':
             if 'general' in self.systems_configs:
-                current_configs['general'] = self.systems_configs['general']
+                current_configs = self.systems_configs['general']
             else:
-                self._systems_configs['general'] = {}
                 current_configs = {}
-            processed_configs['general'] = {}
-            processed_configs['general']['alerts'] = sent_configs
-            self._systems_configs['general']['alerts'] = \
-                processed_configs['general']['alerts']
-        elif parsed_routing_key[0] == 'general' and parsed_routing_key[1] == \
-                'systems_config':
-            if 'general' in self.systems_configs:
-                current_configs['general'] = self.systems_configs['general']
-            else:
-                self._systems_configs['general'] = {}
-                current_configs = {}
-            processed_configs['general'] = {}
-            processed_configs['general']['systems'] = sent_configs
-            self._systems_configs['general']['systems'] = \
-                processed_configs['general']['systems']
-        elif parsed_routing_key[0] == 'chains' and parsed_routing_key[3] == \
-                'threshold_alerts_config':
-            chain = parsed_routing_key[1] + '_' + parsed_routing_key[2]
-            if chain in self.systems_configs:
-                current_configs[chain] = self.systems_configs[chain]
-            else:
-                self._systems_configs[chain] = {}
-                current_configs = {}
-            processed_configs[chain] = {}
-            processed_configs[chain]['alerts'] = sent_configs
-            self._systems_configs[chain]['alerts'] = \
-                processed_configs[chain]['alerts']
-        elif parsed_routing_key[0] == 'chains' and parsed_routing_key[3] == \
-                'systems_config':
-            chain = parsed_routing_key[1] + '_' + parsed_routing_key[2]
+        else:
+            parsed_routing_key = method.routing_key.split('.')
+            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             if chain in self.systems_configs:
                 current_configs = self.systems_configs[chain]
             else:
-                self._systems_configs[chain] = {}
                 current_configs = {}
-            processed_configs[chain] = {}
-            processed_configs[chain]['systems'] = sent_configs
-            self._systems_configs[chain]['systems'] = \
-                processed_configs[chain]['systems']
 
-        new_configs = get_newly_added_configs(processed_configs,
-                                              current_configs)
+        new_configs = get_newly_added_configs(sent_configs, current_configs)
         print(new_configs)
-        print(current_configs)
-        # for config_id in new_configs['general']['systems']:
         # for config_id in new_configs:
         #     config = new_configs[config_id]
         #     system_id = config['id']
@@ -140,17 +87,16 @@ class SystemAlertersManager(AlertersManager):
 
         #     system_config = SystemConfig(system_id, parent_id, system_name,
         #                                  monitor_system, node_exporter_url)
-        #     process = multiprocessing.Process(target=start_system_alerter,
+        #     process = multiprocessing.Process(target=start_system_monitor,
         #                                       args=[system_config])
         #     # Kill children if parent is killed
         #     process.daemon = True
-        #     log_and_print('Creating a new process for the alerter of {}'
+        #     log_and_print('Creating a new process for the monitor of {}'
         #                   .format(system_config.system_name), self.logger)
         #     process.start()
         #     self._config_process_dict[config_id] = process
 
-        # modified_configs = get_modified_configs(sent_configs,
-        #                                         current_configs)
+        # modified_configs = get_modified_configs(sent_configs, current_configs)
         # for config_id in modified_configs:
         #     # Get the latest updates
         #     config = sent_configs[config_id]
@@ -165,8 +111,7 @@ class SystemAlertersManager(AlertersManager):
         #     previous_process.terminate()
         #     previous_process.join()
 
-        #     # If we should not monitor the system, delete the previous
-        #     # process
+        #     # If we should not monitor the system, delete the previous process
         #     # from the system and move to the next config
         #     if not monitor_system:
         #         del self.config_process_dict[config_id]
@@ -177,7 +122,7 @@ class SystemAlertersManager(AlertersManager):
         #     log_and_print('Restarting the monitor of {} with latest '
         #                   'configuration'.format(config_id), self.logger)
 
-        #     process = multiprocessing.Process(target=start_system_alerter,
+        #     process = multiprocessing.Process(target=start_system_monitor,
         #                                       args=[system_config])
         #     # Kill children if parent is killed
         #     process.daemon = True
@@ -195,6 +140,7 @@ class SystemAlertersManager(AlertersManager):
         #     log_and_print('Killed the monitor of {} '
         #                   .format(system_name), self.logger)
 
+        # # Must be done at the end in case of errors while processing
         # if method.routing_key == 'general.systems_config':
         #     # To avoid non-moniterable systems
         #     self._systems_configs['general'] = {

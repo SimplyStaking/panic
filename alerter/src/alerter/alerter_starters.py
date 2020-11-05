@@ -6,7 +6,6 @@ import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.repo import RepoConfig
-from src.configs.system import SystemConfig
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import create_logger, log_and_print
 
@@ -32,19 +31,17 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     return monitor_logger
 
 
-def _initialize_system_alerter(system_config: SystemConfig,
-                               system_alerts_config: SystemAlertsConfig) \
+def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
                                -> SystemAlerter:
     # Alerter name based on system
-    alerter_name = 'System alerter ({})'.format(system_config.system_name)
+    alerter_name = 'System alerter ({})'.format(system_alerts_config.parent)
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 
     # Try initializing a monitor until successful
     while True:
         try:
-            system_alerter = SystemAlerter(alerter_name, system_config,
-                                           system_alerts_config,
+            system_alerter = SystemAlerter(alerter_name, system_alerts_config,
                                            system_alerter_logger)
             log_and_print("Successfully initialized {}".format(alerter_name),
                           system_alerter_logger)
@@ -58,10 +55,8 @@ def _initialize_system_alerter(system_config: SystemConfig,
     return system_alerter
 
 
-def start_system_alerter(system_config: SystemConfig,
-                         system_alerts_config: SystemAlertsConfig) -> None:
-    system_alerter = _initialize_system_alerter(system_config,
-                                                system_alerts_config)
+def start_system_alerter(system_alerts_config: SystemAlertsConfig) -> None:
+    system_alerter = _initialize_system_alerter(system_alerts_config)
     start_alerter(system_alerter)
 
 

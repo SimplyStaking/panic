@@ -12,7 +12,6 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import AlertDataType
 
 
 class AlertStore(Store):
@@ -65,7 +64,7 @@ class AlertStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_mongo_store(self, alert: AlertDataType) -> None:
+    def _process_mongo_store(self, alert: Dict) -> None:
         """
         Updating mongo with alerts using a size-based document with 1000 entries
         Collection is the name of the chain, with document type alert as only

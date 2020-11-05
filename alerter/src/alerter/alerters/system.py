@@ -5,23 +5,17 @@ from typing import Dict
 import pika
 import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
-from src.configs.system import SystemConfig
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import log_and_print
 from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class SystemAlerter(Alerter):
-    def __init__(self, alerts_config_name: str, system_config: SystemConfig,
+    def __init__(self, alerts_config_name: str,
                  system_alerts_config: SystemAlertsConfig,
                  logger: logging.Logger) -> None:
         super().__init__(alerts_config_name, logger)
-        self._system_config = system_config
         self._system_alerts_config = system_alerts_config
-
-    @property
-    def system_config(self) -> SystemConfig:
-        return self._system_config
 
     @property
     def system_alerts_config(self) -> SystemAlertsConfig:
