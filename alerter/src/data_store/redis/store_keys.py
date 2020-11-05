@@ -125,6 +125,3 @@ class Keys:
         return Keys._as_prefix(_key_github_tag_name) + repo_id
 
 # TODO: Need to update the data store when some of these keys are updated
-
-# TODO: In data store infer is_down from went_down_at for mongo, and store
-#     : went_down_at in redis.

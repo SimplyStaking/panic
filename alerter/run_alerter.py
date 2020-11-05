@@ -254,6 +254,3 @@ if __name__ == '__main__':
 #     : to right accoriding to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
-
-# TODO: Test system data transformer integrated with the data
-#     : store, configs manager and monitor. Test both from source and docker.
