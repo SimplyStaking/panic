@@ -101,4 +101,5 @@ class AlertStore(Store):
             }
         )
 
-# TODO: Need to update like system store
+# TODO: Need to update like system and github store. This must be done during
+#     : the alert routing phase.
