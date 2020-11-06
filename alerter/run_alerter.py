@@ -255,8 +255,6 @@ if __name__ == '__main__':
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
 
-# TODO: Modify store and test saving
-
 # TODO: We may need graceful termination in managers of both transformer and
 #     : and monitor. And we may need to restart without waiting for all
 #     : processes to finish (Example see data transformer manager)
