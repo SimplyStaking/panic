@@ -47,8 +47,8 @@ if __name__ == '__main__':
             }
         }
         github_dict = {
-          'result':{
-            'data' : {
+          'result': {
+            'data': {
               'release_name': 'newest_release',
               'tag_name': 'newest_tag',
             },
@@ -83,7 +83,8 @@ if __name__ == '__main__':
               'system_name': 'system_config_1',
               'system_id': '1231-2321-120312031-3213213',
               'system_parent_id': 'parent_id_12',
-              'last_monitored': str(datetime.now().timestamp())
+              'last_monitored': str(datetime.now().timestamp()),
+              'timestamp': datetime.now().timestamp(),
             }
           }
         }
@@ -99,10 +100,96 @@ if __name__ == '__main__':
             }
           }
         }
+        transformer_data_increase = {
+          'result': {
+              'meta_data': {
+                  'monitor_name': 'monitor_name_1',
+                  'system_name': 'system_config_1',
+                  'system_id': '1231-2321-120312031-3213213',
+                  'system_parent_id': 'parent_id_12',
+                  'timestamp': str(datetime.now().timestamp())
+              },
+              'data': {
+                  'process_cpu_seconds_total':
+                      {'current': 120, 'previous': 110},
+                  'process_memory_usage':
+                      {'current': 120, 'previous': 110},
+                  'virtual_memory_usage':
+                      {'current': 120, 'previous': 110},
+                  'open_file_descriptors':
+                      {'current': 120, 'previous': 110},
+                  'system_cpu_usage':
+                      {'current': 120, 'previous': 110},
+                  'system_ram_usage':
+                      {'current': 120, 'previous': 110},
+                  'network_receive_bytes_total':
+                      {'current': 120, 'previous': 110},
+                  'network_transmit_bytes_total':
+                      {'current': 120, 'previous': 110},
+                  'disk_io_time_seconds_total':
+                      {'current': 120, 'previous': 110},
+                  'network_transmit_bytes_per_second':
+                      {'current': 120, 'previous': 110},
+                  'network_receive_bytes_per_second':
+                      {'current': 120, 'previous': 110},
+                  'disk_io_time_seconds_in_interval':
+                      {'current': 120, 'previous': 110},
+                  'went_down_at':
+                      {'current': 120, 'previous': 110},
+              }
+            }
+        }
+        transformer_data_decrease = {
+          'result': {
+              'meta_data': {
+                  'monitor_name': 'monitor_name_1',
+                  'system_name': 'system_config_1',
+                  'system_id': '1231-2321-120312031-3213213',
+                  'system_parent_id': 'parent_id_12',
+                  'timestamp': str(datetime.now().timestamp())
+              },
+              'data': {
+                  'process_cpu_seconds_total':
+                      {'current': 60, 'previous': 110},
+                  'process_memory_usage':
+                      {'current': 60, 'previous': 110},
+                  'virtual_memory_usage':
+                      {'current': 60, 'previous': 110},
+                  'open_file_descriptors':
+                      {'current': 60, 'previous': 110},
+                  'system_cpu_usage':
+                      {'current': 60, 'previous': 110},
+                  'system_ram_usage':
+                      {'current': 60, 'previous': 110},
+                  'network_receive_bytes_total':
+                      {'current': 60, 'previous': 110},
+                  'network_transmit_bytes_total':
+                      {'current': 60, 'previous': 110},
+                  'disk_io_time_seconds_total':
+                      {'current': 60, 'previous': 110},
+                  'network_transmit_bytes_per_second':
+                      {'current': 60, 'previous': 110},
+                  'network_receive_bytes_per_second':
+                      {'current': 60, 'previous': 110},
+                  'disk_io_time_seconds_in_interval':
+                      {'current': 60, 'previous': 110},
+                  'went_down_at':
+                      {'current': 60, 'previous': 110},
+              }
+            }
+        }
         rabbitAPI.basic_publish_confirm(
             exchange='alerter',
             routing_key='alerter.system.general',
-            body=data_dict_1,
+            body=transformer_data_decrease,
+            is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True
+        )
+        rabbitAPI.basic_publish_confirm(
+            exchange='alerter',
+            routing_key='alerter.system.general',
+            body=transformer_data_increase,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True

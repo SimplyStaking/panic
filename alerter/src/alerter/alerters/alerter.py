@@ -52,7 +52,7 @@ class Alerter(ABC):
         pass
 
     @abstractmethod
-    def _send_data_to_alert_router(self, *args) -> None:
+    def _send_alert_to_alert_router(self, *args) -> None:
         pass
 
     @abstractmethod
