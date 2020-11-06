@@ -1,7 +1,7 @@
 import copy
 import json
 import logging
-from typing import Dict
+from typing import Dict, Union
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -9,6 +9,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
+from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException, MessageWasNotDeliveredException
@@ -58,11 +59,8 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare('alert', 'topic', False, True, False,
                                        False)
 
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
-
-    # TODO: Need to change output type to Union[System, Repo]
-    def load_system_state(self, system: System) -> System:
+    def load_state(self, system: Union[System, GitHubRepo]) \
+            -> Union[System, GitHubRepo]:
         # If Redis is down, the data passed as default will be stored as
         # the system state.
 
@@ -329,7 +327,7 @@ class SystemDataTransformer(DataTransformer):
 
             processed_data = {
                 'result': {
-                    'meta_data': td_meta_data,
+                    'meta_data': copy.deepcopy(td_meta_data),
                     'data': {}
                 }
             }
@@ -403,14 +401,15 @@ class SystemDataTransformer(DataTransformer):
 
         if 'result' in data:
             meta_data = data['result']['meta_data']
-            system_data = data['result']['data']
+            system_metrics = data['result']['data']
             system_id = meta_data['system_id']
             system = self.state[system_id]
 
             # Compute the network receive/transmit bytes per second based on the
             # totals and the saved last monitoring round
-            transmit_bytes_total = system_data['network_transmit_bytes_total']
-            receive_bytes_total = system_data['network_receive_bytes_total']
+            transmit_bytes_total = system_metrics[
+                'network_transmit_bytes_total']
+            receive_bytes_total = system_metrics['network_receive_bytes_total']
             network_transmit_bytes_per_second = None
             network_receive_bytes_per_second = None
 
@@ -427,7 +426,7 @@ class SystemDataTransformer(DataTransformer):
 
             # Compute the time spent doing io since the last time we received
             # data for this system
-            disk_io_time_seconds_total = system_data[
+            disk_io_time_seconds_total = system_metrics[
                 'disk_io_time_seconds_total']
             disk_io_time_seconds_in_interval = None
 
@@ -467,10 +466,13 @@ class SystemDataTransformer(DataTransformer):
             downtime_exception = SystemIsDownException(system_name)
 
             # In case of errors in the sent messages only remove the
-            # monitor_name from the data
+            # monitor_name from the meta data
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
 
+            # If we have a downtime error, set went_down_at to the time of error
+            # if the system was up. Otherwise, leave went_down_at as stored in
+            # the system state
             if error_code == downtime_exception.code:
                 transformed_data['error']['data'] = {}
                 td_metrics = transformed_data['error']['data']
@@ -504,32 +506,6 @@ class SystemDataTransformer(DataTransformer):
         self.logger.debug("Transformed data added to the publishing queue "
                           "successfully.")
 
-    def _send_data(self) -> None:
-        empty = True
-        if not self.publishing_queue.empty():
-            empty = False
-            self.logger.info('Attempting to send all data waiting in the '
-                             'publishing queue ...')
-
-        # Try sending the data in the publishing queue one by one. Important,
-        # remove an item from the queue only if the sending was successful, so
-        # that if an exception is raised, that message is not popped
-        while not self.publishing_queue.empty():
-            data = self.publishing_queue.queue[0]
-            self.rabbitmq.basic_publish_confirm(
-                exchange=data['exchange'], routing_key=data['routing_key'],
-                body=data['data'], is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.logger.debug('Sent {} to \'{}\' exchange'
-                              .format(data['data'], data['exchange']))
-            self.publishing_queue.get()
-            self.publishing_queue.task_done()
-
-        if not empty:
-            self.logger.info('Successfully sent all data from the publishing '
-                             'queue')
-
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
@@ -550,7 +526,7 @@ class SystemDataTransformer(DataTransformer):
                 if system_id not in self.state:
                     new_system = System(system_name, system_id,
                                         system_parent_id)
-                    loaded_system = self.load_system_state(new_system)
+                    loaded_system = self.load_state(new_system)
                     self._state[system_id] = loaded_system
 
                 self._transform_data(raw_data)
@@ -585,32 +561,6 @@ class SystemDataTransformer(DataTransformer):
             raise e
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-    def start(self) -> None:
-        self._initialize_rabbitmq()
-        while True:
-            try:
-                # Before listening for new data send the data waiting to be sent
-                # in the publishing queue. If the message is not routed, start
-                # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
-
-                self._listen_for_data()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore we can safely continue
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
-                raise e
-            except Exception as e:
-                self.logger.exception(e)
-                raise e
 
 # TODO: To the manager do not add a qos (since configs do not change a lot)
 #     : and we must do an exception to acknowledge bad configs

@@ -24,13 +24,9 @@ _key_system_disk_io_time_seconds_in_interval = "s13"
 _key_system_last_monitored = "s14"
 _key_system_went_down_at = "s15"
 
-# gmX_<monitor_name>
-# TODO: This key may be moved to GitHub
-_key_github_monitor_last_monitoring_round = "gm1"
-
 # ghX_<repo_id>
-_key_github_release_name = "gh1"
-_key_github_tag_name = "gh2"
+_key_github_no_of_releases = "gh1"
+_key_github_last_monitored = "gh2"
 
 
 class Keys:
@@ -42,11 +38,6 @@ class Keys:
     @staticmethod
     def get_hash_parent(parent_id: str) -> str:
         return Keys._as_prefix(_hash_parent) + parent_id
-
-    @staticmethod
-    def get_github_monitor_last_monitoring_round(monitor_name: str) -> str:
-        return Keys._as_prefix(_key_github_monitor_last_monitoring_round) \
-               + monitor_name
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
@@ -117,11 +108,11 @@ class Keys:
         return Keys._as_prefix(_key_system_last_monitored) + system_id
 
     @staticmethod
-    def get_github_release_name(repo_id: str) -> str:
-        return Keys._as_prefix(_key_github_release_name) + repo_id
+    def get_github_no_of_releases(repo_id: str) -> str:
+        return Keys._as_prefix(_key_github_no_of_releases) + repo_id
 
     @staticmethod
-    def get_github_tag_name(repo_id: str) -> str:
-        return Keys._as_prefix(_key_github_tag_name) + repo_id
+    def get_github_last_monitored(repo_id: str) -> str:
+        return Keys._as_prefix(_key_github_last_monitored) + repo_id
 
 # TODO: Need to update the data store when some of these keys are updated

@@ -6,6 +6,7 @@ import pika.exceptions
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.data_transformer import DataTransformer
+from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.utils.logging import create_logger, log_and_print
 
@@ -79,9 +80,37 @@ def _initialize_system_data_transformer() -> SystemDataTransformer:
     return system_data_transformer
 
 
+def _initialize_github_data_transformer() -> GitHubDataTransformer:
+    transformer_name = 'GitHub Data Transformer'
+
+    transformer_logger = _initialize_transformer_logger(transformer_name)
+    redis = _initialize_transformer_redis(transformer_name, transformer_logger)
+
+    # Try initializing the github data transformer until successful
+    while True:
+        try:
+            github_data_transformer = GitHubDataTransformer(
+                transformer_name, transformer_logger, redis)
+            log_and_print("Successfully initialized {}"
+                          .format(transformer_name), transformer_logger)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising {}: {} !!!'.format(
+                transformer_name, e)
+            log_and_print(msg, transformer_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return github_data_transformer
+
+
 def start_system_data_transformer() -> None:
     system_data_transformer = _initialize_system_data_transformer()
     start_transformer(system_data_transformer)
+
+
+def start_github_data_transformer() -> None:
+    github_data_transformer = _initialize_github_data_transformer()
+    start_transformer(github_data_transformer)
 
 
 def start_transformer(transformer: DataTransformer) -> None:

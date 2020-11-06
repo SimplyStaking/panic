@@ -254,3 +254,9 @@ if __name__ == '__main__':
 #     : to right according to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
+
+# TODO: Test github monitor individually, integrated and test mutability on queue
+
+# TODO: We may need graceful termination in managers of both transformer and
+#     : and monitor. And we may need to restart without waiting for all
+#     : processes to finish (Example see data transformer manager)

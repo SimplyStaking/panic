@@ -2,14 +2,16 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Dict
+from typing import Dict, Union
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class DataTransformer(ABC):
@@ -59,9 +61,8 @@ class DataTransformer(ABC):
     def data_for_alerting(self) -> Dict:
         return self._data_for_alerting
 
-    # TODO: Need to change output type to Dict[str, Union[System, Repo]]
     @property
-    def state(self) -> Dict[str, System]:
+    def state(self) -> Dict[str, Union[System, GitHubRepo]]:
         return self._state
 
     @property
@@ -77,8 +78,12 @@ class DataTransformer(ABC):
         pass
 
     @abstractmethod
-    def _listen_for_data(self) -> None:
+    def load_state(self, monitorable: Union[System, GitHubRepo]) \
+            -> Union[System, GitHubRepo]:
         pass
+
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.start_consuming()
 
     @abstractmethod
     def _update_state(self) -> None:
@@ -100,9 +105,31 @@ class DataTransformer(ABC):
     def _place_latest_data_on_queue(self) -> None:
         pass
 
-    @abstractmethod
     def _send_data(self) -> None:
-        pass
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info('Attempting to send all data waiting in the '
+                             'publishing queue ...')
+
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug('Sent {} to \'{}\' exchange'
+                              .format(data['data'], data['exchange']))
+            self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info('Successfully sent all data from the publishing '
+                             'queue')
 
     @abstractmethod
     def _process_raw_data(self, ch: BlockingChannel,
@@ -112,4 +139,27 @@ class DataTransformer(ABC):
         pass
 
     def start(self) -> None:
-        pass
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                # Before listening for new data send the data waiting to be sent
+                # in the publishing queue. If the message is not routed, start
+                # consuming and perform sending later.
+                try:
+                    self._send_data()
+                except MessageWasNotDeliveredException as e:
+                    self.logger.exception(e)
+
+                self._listen_for_data()
+            except pika.exceptions.AMQPChannelError:
+                # Error would have already been logged by RabbitMQ logger. If
+                # there is a channel error, the RabbitMQ interface creates a new
+                # channel, therefore we can safely continue
+                continue
+            except pika.exceptions.AMQPConnectionError as e:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e

@@ -9,11 +9,12 @@ class System:
 
     def __init__(self, system_name: str, system_id: str, parent_id: str) \
             -> None:
+        # System identifiers
         self._system_name = system_name
         self._system_id = system_id
         self._parent_id = parent_id
 
-        # Data fields
+        # Metrics
         self._went_down_at = None
         self._process_cpu_seconds_total = None  # Seconds
         self._process_memory_usage = None  # Percentage
