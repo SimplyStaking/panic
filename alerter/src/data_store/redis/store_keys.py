@@ -114,5 +114,3 @@ class Keys:
     @staticmethod
     def get_github_last_monitored(repo_id: str) -> str:
         return Keys._as_prefix(_key_github_last_monitored) + repo_id
-
-# TODO: Need to update the data store when some of these keys are updated

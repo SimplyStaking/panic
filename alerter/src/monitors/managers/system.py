@@ -160,4 +160,6 @@ class SystemMonitorsManager(MonitorsManager):
 #     : that the message is acknowledged so that it is released from the queue,
 #     : but the message should not be processed. The config manager must also
 #     : send the configs periodically, say every 60 seconds for us to avoid
-#     : errors
+#     : errors. To the manager do not add a qos
+#     : (since configs do not change a lot)
+#     : and we must do an exception to acknowledge bad configs

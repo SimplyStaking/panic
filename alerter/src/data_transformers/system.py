@@ -561,6 +561,3 @@ class SystemDataTransformer(DataTransformer):
             raise e
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-# TODO: To the manager do not add a qos (since configs do not change a lot)
-#     : and we must do an exception to acknowledge bad configs
