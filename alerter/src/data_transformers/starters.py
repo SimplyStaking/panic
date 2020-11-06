@@ -19,8 +19,8 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
         try:
             transformer_logger = create_logger(
                 os.environ["TRANSFORMERS_LOG_FILE_TEMPLATE"].format(
-                    transformer_name),
-                transformer_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                    transformer_name), transformer_name,
+                os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!'.format(
@@ -44,6 +44,7 @@ def _initialize_transformer_redis(
             redis_port = int(os.environ['REDIS_PORT'])
             redis_host = os.environ['REDIS_IP']
             unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
+
             redis = RedisApi(logger=transformer_logger, db=redis_db,
                              host=redis_host, port=redis_port,
                              namespace=unique_alerter_identifier)

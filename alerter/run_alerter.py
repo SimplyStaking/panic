@@ -24,8 +24,8 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
         try:
             data_store_logger = create_logger(
                 os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
-                    data_store_name),
-                data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                    data_store_name), data_store_name,
+                os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
@@ -255,7 +255,7 @@ if __name__ == '__main__':
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
 
-# TODO: Test github monitor individually, integrated and test mutability on queue
+# TODO: Modify store and test saving
 
 # TODO: We may need graceful termination in managers of both transformer and
 #     : and monitor. And we may need to restart without waiting for all
