@@ -340,7 +340,7 @@ class SystemMonitor(Monitor):
 
     @staticmethod
     def on_terminate(signum, stack):
-        print("Terminating")
+        print("Terminating") # THIS PIECE OF CODE TERMIANTES SUCCESFULLY
         sys.stdout.flush()
         exit(0)
         # TODO: close connections, handle SIGNINT SIGTERM AND EVERY SIGNAL WHICH
@@ -351,4 +351,6 @@ class SystemMonitor(Monitor):
         #     : the child processes joins, the manager must detect it and
         #     : restart it if need be. Therefore we cannot wait for a processes
         #     : to stop sequentially with join. Note try this on docker for it
-        #     : to work, not from src.
+        #     : to work, not from src. Do not catch SIGKILL. Se article to see
+        #     : which signals kill a process. Read on how such errors should be
+        #     : handled, to see if you should incldue coredumps etc
