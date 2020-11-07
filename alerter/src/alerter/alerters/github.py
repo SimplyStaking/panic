@@ -47,15 +47,38 @@ class GithubAlerter:
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
         if self.alerts_configs.parent in parsed_routing_key:
-            metrics = data_received['result']['data']
-            self._process_results(data_received['result']['data'],
-                                  data_received['result']['meta_data'])
-
+            if 'result' in data_received:
+                self._process_results(data_received['result']['data'],
+                                      data_received['result']['meta_data'])
+            elif 'error' in data_received:
+                meta_data = data_received['error']['meta_data']
+                alert = CannotAccessGitHubPageAlert(
+                            meta_data['repo_name'], 'ERROR',
+                            meta_data['last_monitored'],
+                            meta_data['repo_parent_id'], meta_data['repo_id']
+                        )
+                self._send_data(alert.alert_data)
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
         print(metrics)
         print(meta_data)
+
+    def _process_errors(self, data_received: Dict) -> None:
+        meta_data = data_received['error']['meta_data']
+        alert = CannotAccessGitHubPageAlert(
+            meta_data['repo_name'], 'ERROR', meta_data['last_monitored'],
+            meta_data['repo_parent_id'], meta_data['repo_id']
+        )
+
+    def _send_data(self, alert: Dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange='alert_router', routing_key='alert_router.github',
+            body=alert,
+            is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self.logger.debug('Sent data to \'alert_router\' exchange.')
 
     def _alert_classifier_process(self) -> None:
         self._initialize_alerter()

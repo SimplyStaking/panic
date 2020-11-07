@@ -141,6 +141,20 @@ if __name__ == '__main__':
               }
             }
         }
+        github_transformer_data = {
+          'result': {
+              'meta_data': {
+                  'repo_id': 'repo_id_1',
+                  'repo_parent_id': 'repo_parent_id',
+                  'repo_name': 'repo_name',
+                  'last_monitored': str(datetime.now().timestamp())
+              },
+              'data': {
+                'no_of_releases': 12,
+                'releases': 10,
+              }
+          }
+        }
         transformer_data_decrease = {
           'result': {
               'meta_data': {
