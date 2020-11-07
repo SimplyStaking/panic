@@ -36,7 +36,6 @@ class SystemAlerter(Alerter):
                  logger: logging.Logger) -> None:
         super().__init__(alerts_config_name, logger)
         self._system_alerts_config = system_alerts_config
-        self._chicken = 0
 
     @property
     def alerts_configs(self) -> SystemAlertsConfig:
@@ -82,6 +81,11 @@ class SystemAlerter(Alerter):
 
     def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
         open_fd = self.alerts_configs.open_file_descriptors
+        cpu_use = self.alerts_configs.system_cpu_usage
+        storage = self.alerts_configs.system_storage_usage
+        ram_use = self.alerts_configs.system_ram_usage
+        net_use = self.alerts_configs.system_network_usage
+
         if open_fd['enabled']:
             current = float(metrics['open_file_descriptors']['current'])
             previous = float(metrics['open_file_descriptors']['previous'])
@@ -129,6 +133,198 @@ class SystemAlerter(Alerter):
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 self._send_alert_to_alert_router(alert.alert_data)
+
+        if storage['enabled']:
+            current = float(metrics['system_storage_usage']['current'])
+            previous = float(metrics['system_storage_usage']['previous'])
+            if current > previous:
+                if (int(storage['warning_threshold']) < current <
+                        int(storage['critical_threshold']) and
+                        storage['warning_enabled']):
+                    alert = \
+                        SystemStorageUsageIncreasedAboveWarningThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'WARNING',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                elif (int(storage['critical_threshold']) < current and
+                        storage['critical_enabled']):
+                    alert = \
+                      SystemStorageUsageIncreasedAboveCriticalThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'CRITICAL',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                else:
+                    alert = \
+                      SystemStorageUsageIncreasedAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'INFO',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+            elif current < previous:
+                alert = SystemStorageUsageDecreasedAlert(
+                    self.alerts_configs.parent, meta_data['system_name'],
+                    previous, current, 'INFO', meta_data['timestamp'],
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                self._send_alert_to_alert_router(alert.alert_data)
+
+        if cpu_use['enabled']:
+            current = float(metrics['system_cpu_usage']['current'])
+            previous = float(metrics['system_cpu_usage']['previous'])
+            if current > previous:
+                if (int(cpu_use['warning_threshold']) < current <
+                        int(cpu_use['critical_threshold']) and
+                        cpu_use['warning_enabled']):
+                    alert = \
+                        SystemCPUUsageIncreasedAboveWarningThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'WARNING',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                elif (int(cpu_use['critical_threshold']) < current and
+                        cpu_use['critical_enabled']):
+                    alert = \
+                      SystemCPUUsageIncreasedAboveCriticalThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'CRITICAL',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                else:
+                    alert = \
+                      SystemCPUUsageIncreasedAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'INFO',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+            elif current < previous:
+                alert = SystemCPUUsageDecreasedAlert(
+                    self.alerts_configs.parent, meta_data['system_name'],
+                    previous, current, 'INFO', meta_data['timestamp'],
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                self._send_alert_to_alert_router(alert.alert_data)
+
+        if ram_use['enabled']:
+            current = float(metrics['system_cpu_usage']['current'])
+            previous = float(metrics['system_cpu_usage']['previous'])
+            if current > previous:
+                if (int(ram_use['warning_threshold']) < current <
+                        int(ram_use['critical_threshold']) and
+                        ram_use['warning_enabled']):
+                    alert = \
+                        SystemRAMUsageIncreasedAboveWarningThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'WARNING',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                elif (int(ram_use['critical_threshold']) < current and
+                        ram_use['critical_enabled']):
+                    alert = \
+                      SystemRAMUsageIncreasedAboveCriticalThresholdAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'CRITICAL',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+                else:
+                    alert = \
+                      SystemRAMUsageIncreasedAlert(
+                            self.alerts_configs.parent,
+                            meta_data['system_name'],
+                            previous, current, 'INFO',
+                            meta_data['timestamp'],
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._send_alert_to_alert_router(alert.alert_data)
+            elif current < previous:
+                alert = SystemRAMUsageDecreasedAlert(
+                    self.alerts_configs.parent, meta_data['system_name'],
+                    previous, current, 'INFO', meta_data['timestamp'],
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                self._send_alert_to_alert_router(alert.alert_data)
+
+        # if net_use['enabled']:
+        #     current = float(metrics['system_network_usage']['current'])
+        #     previous = float(metrics['system_network_usage']['previous'])
+        #     if current > previous:
+        #         if (int(ram_use['warning_threshold']) < current <
+        #                 int(ram_use['critical_threshold']) and
+        #                 ram_use['warning_enabled']):
+        #             alert = \
+        #                 SystemRAMUsageIncreasedAboveWarningThresholdAlert(
+        #                     self.alerts_configs.parent,
+        #                     meta_data['system_name'],
+        #                     previous, current, 'WARNING',
+        #                     meta_data['timestamp'],
+        #                     meta_data['system_parent_id'],
+        #                     meta_data['system_id']
+        #                 )
+        #             self._send_alert_to_alert_router(alert.alert_data)
+        #         elif (int(ram_use['critical_threshold']) < current and
+        #                 ram_use['critical_enabled']):
+        #             alert = \
+        #               SystemRAMUsageIncreasedAboveCriticalThresholdAlert(
+        #                     self.alerts_configs.parent,
+        #                     meta_data['system_name'],
+        #                     previous, current, 'CRITICAL',
+        #                     meta_data['timestamp'],
+        #                     meta_data['system_parent_id'],
+        #                     meta_data['system_id']
+        #                 )
+        #             self._send_alert_to_alert_router(alert.alert_data)
+        #         else:
+        #             alert = \
+        #               SystemRAMUsageIncreasedAlert(
+        #                     self.alerts_configs.parent,
+        #                     meta_data['system_name'],
+        #                     previous, current, 'INFO',
+        #                     meta_data['timestamp'],
+        #                     meta_data['system_parent_id'],
+        #                     meta_data['system_id']
+        #                 )
+        #             self._send_alert_to_alert_router(alert.alert_data)
+        #     elif current < previous:
+        #         alert = SystemRAMUsageDecreasedAlert(
+        #             self.alerts_configs.parent, meta_data['system_name'],
+        #             previous, current, 'INFO', meta_data['timestamp'],
+        #             meta_data['system_parent_id'], meta_data['system_id']
+        #         )
+        #         self._send_alert_to_alert_router(alert.alert_data)
 
     def _send_alert_to_alert_router(self, alert: Dict) -> None:
         log_and_print('{} started.'.format(alert), self.logger)

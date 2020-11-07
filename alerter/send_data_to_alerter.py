@@ -122,6 +122,8 @@ if __name__ == '__main__':
                       {'current': 120, 'previous': 110},
                   'system_ram_usage':
                       {'current': 120, 'previous': 110},
+                  'system_storage_usage':
+                      {'current': 120, 'previous': 110},
                   'network_receive_bytes_total':
                       {'current': 120, 'previous': 110},
                   'network_transmit_bytes_total':
@@ -160,6 +162,8 @@ if __name__ == '__main__':
                   'system_cpu_usage':
                       {'current': 60, 'previous': 110},
                   'system_ram_usage':
+                      {'current': 60, 'previous': 110},
+                  'system_storage_usage':
                       {'current': 60, 'previous': 110},
                   'network_receive_bytes_total':
                       {'current': 60, 'previous': 110},
