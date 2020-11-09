@@ -2,11 +2,11 @@ import logging
 from multiprocessing import Process
 
 import pika.exceptions
-from src.alerters.alerter import GithubAlerter
+from src.alerter.alerters.github import GithubAlerter
 from src.utils.logging import log_and_print
 
 
-class GithubAlertsManager:
+class GithubAlerterManager:
     def __init__(self, logger: logging.Logger, name: str):
         self._name = name
         self._logger = logger
@@ -43,7 +43,8 @@ class GithubAlertsManager:
                           github_alerter.logger)
 
     def start_github_alerter_manager(self) -> None:
-        process = Process(target=self.start_alerter, args=(self.github_store,))
+        process = Process(target=self.start_alerter,
+                          args=(self.github_alerter,))
         process.daemon = True
         process.start()
         process.join()

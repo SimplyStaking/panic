@@ -27,6 +27,7 @@ from src.alerter.alerts.system_alerts import (
     SystemNetworkUsageIncreasedAlert, SystemNetworkUsageDecreasedAlert,
     SystemNetworkUsageIncreasedAboveCriticalThresholdAlert,
     SystemNetworkUsageIncreasedAboveWarningThresholdAlert,
+    ReceivedUnexpectedDataAlert, InvalidUrlAlert,
 )
 
 
@@ -73,11 +74,32 @@ class SystemAlerter(Alerter):
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
         if self.alerts_configs.parent in parsed_routing_key:
-            metrics = data_received['result']['data']
-            self._process_results(data_received['result']['data'],
-                                  data_received['result']['meta_data'])
-
+            if 'result' in data_received:
+                metrics = data_received['result']['data']
+                self._process_results(data_received['result']['data'],
+                                      data_received['result']['meta_data'])
+            elif 'error' in data_received:
+                self._process_errors(data_received)
+            else:
+                print("EXCEPTION")
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def _process_errors(self, error_data: Dict) -> None:
+        meta = error_data['error']['meta_data']
+        if int(error_data['error']['code']) == 5008:
+            alert = ReceivedUnexpectedDataAlert(
+                error_data['error']['message'], 'ERROR', meta['time'],
+                meta['system_parent_id'], meta['system_id']
+            )
+            self._send_alert_to_alert_router(alert.alert_data)
+        elif int(error_data['error']['code']) == 5009:
+            alert = InvalidUrlAlert(
+                error_data['error']['message'], 'ERROR', meta['time'],
+                meta['system_parent_id'], meta['system_id']
+            )
+            self._send_alert_to_alert_router(alert.alert_data)
+        else:
+            print("EXCEPTION")
 
     def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
         open_fd = self.alerts_configs.open_file_descriptors

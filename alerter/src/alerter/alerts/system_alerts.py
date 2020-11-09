@@ -28,6 +28,24 @@ class AlertCode(Enum):
     SystemNetworkUsageDecreasedAlert = next_id(),
     SystemNetworkUsageIncreasedAboveCriticalThresholdAlert = next_id(),
     SystemNetworkUsageIncreasedAboveWarningThresholdAlert = next_id(),
+    ReceivedUnexpectedDataAlert = next_id(),
+    InvalidUrlAlert = next_id(),
+
+
+class ReceivedUnexpectedDataAlert(Alert):
+    def __init__(self, message: str, severity: str, timestamp: str,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            AlertCode.ReceivedUnexpectedDataAlert,
+            message, severity, timestamp, parent_id, origin_id)
+
+
+class InvalidUrlAlert(Alert):
+    def __init__(self, message: str, severity: str, timestamp: str,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            AlertCode.InvalidUrlAlert, message, severity,
+            timestamp, parent_id, origin_id)
 
 
 class MemoryUsageIncreasedAlert(Alert):

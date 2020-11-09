@@ -1,6 +1,7 @@
 from enum import Enum
-from src.utils.alerts import next_id, SeverityCode
-from src.alerter.alerts import alert
+
+from src.alerter.alerts.alert import Alert
+from src.utils.alert import SeverityCode, next_id
 
 
 class AlertCode(Enum):
@@ -9,21 +10,20 @@ class AlertCode(Enum):
 
 
 class NewGitHubReleaseAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, release_name: str,
-                 tag_name: str, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, release_name: str, tag_name: str,
+                 severity: str, timestamp: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             AlertCode.NewGitHubReleaseAlert,
-            '{}: {} of {} has just been released tagged {}.'.format(
-                parent_name, origin_name, release_name, tag_name), severity,
+            'Repo: {} has a new release {} tagged {}.'.format(
+                origin_name, release_name, tag_name), severity,
             timestamp, parent_id, origin_id)
 
 
 class CannotAccessGitHubPageAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, severity: str,
-                 timestamp: str, parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, severity: str, timestamp: str,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.CannotAccessGitHubPageAlert,
-            '{}: Github page inaccessible {}.'.format(
-              parent_name, origin_name), severity, timestamp, parent_id,
-            origin_id)
+            'Github page inaccessible {}.'.format(origin_name), severity,
+            timestamp, parent_id, origin_id)
