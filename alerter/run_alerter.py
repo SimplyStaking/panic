@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import time
 import sys
+import signal
 
 import pika.exceptions
 
@@ -207,6 +208,31 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
     config_manager.stop_watching_config_files()
 
 
+# If termination signals are received, terminate all child process and exit
+# TODO: Why is docker container not restart on sys.exit?
+def on_terminate(signum, stack) -> None:
+    dummy_logger = logging.getLogger('Dummy')
+
+    log_and_print('The alerter is terminating. All components will be stopped '
+                  'gracefully.', dummy_logger)
+
+    log_and_print('Terminating the System Monitors Manager', dummy_logger)
+    system_monitors_manager_process.terminate()
+    system_monitors_manager_process.join()
+
+    log_and_print('Terminating the GitHub Monitors Manager', dummy_logger)
+    github_monitors_manager_process.terminate()
+    github_monitors_manager_process.join()
+
+    log_and_print('Terminating the Data Transformers Manager', dummy_logger)
+    data_transformers_manager_process.terminate()
+    data_transformers_manager_process.join()
+
+    log_and_print('The alerter process terminated.', dummy_logger)
+
+    sys.exit()
+
+
 if __name__ == '__main__':
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
@@ -234,6 +260,13 @@ if __name__ == '__main__':
     )
     config_manager_runner_process.start()
 
+    signal.signal(signal.SIGTERM, on_terminate)
+    signal.signal(signal.SIGINT, on_terminate)
+    signal.signal(signal.SIGHUP, on_terminate)
+
+    time.sleep(20)
+    os.kill(os.getpid(), signal.SIGTERM)
+
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
@@ -254,7 +287,3 @@ if __name__ == '__main__':
 #     : to right according to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
-
-# TODO: We may need graceful termination in managers of both transformer and
-#     : and monitor. And we may need to restart without waiting for all
-#     : processes to finish (Example see data transformer manager)

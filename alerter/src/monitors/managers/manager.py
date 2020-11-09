@@ -1,4 +1,6 @@
 import logging
+import signal
+import sys
 import os
 from abc import ABC, abstractmethod
 from typing import Dict
@@ -18,6 +20,11 @@ class MonitorsManager(ABC):
 
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+        # Handle termination signals by stopping the manager gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.name
@@ -70,3 +77,21 @@ class MonitorsManager(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    # If termination signals are received, terminate all child process and
+    # close the connection with rabbit mq before exiting
+    def on_terminate(self, signum, stack) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and any running monitors will be stopped '
+                      'gracefully. Afterwards the {} process will exit.'
+                      .format(self, self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+
+        for config_id, process in self.config_process_dict.items():
+            log_and_print('Terminating the process of {}'.format(config_id),
+                          self.logger)
+            process.terminate()
+            process.join()
+
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

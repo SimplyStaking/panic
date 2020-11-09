@@ -1,5 +1,7 @@
 import logging
 import os
+import signal
+import sys
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Dict, Union
@@ -12,6 +14,7 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 
 class DataTransformer(ABC):
@@ -33,6 +36,11 @@ class DataTransformer(ABC):
 
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+        # Handle termination signals by stopping the monitor gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.transformer_name
@@ -163,3 +171,11 @@ class DataTransformer(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def on_terminate(self, signum, stack) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and afterwards the process will exit.'
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

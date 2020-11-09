@@ -1,13 +1,11 @@
 import json
 import logging
-import sys
 from datetime import datetime
 from http.client import IncompleteRead
 from typing import Optional, List
 
 import pika
 import pika.exceptions
-import signal
 from requests.exceptions import ConnectionError as ReqConnectionError, \
     ReadTimeout, ChunkedEncodingError, MissingSchema, InvalidSchema, InvalidURL
 from urllib3.exceptions import ProtocolError
@@ -50,8 +48,6 @@ class SystemMonitor(Monitor):
         self._network_receive_bytes_total = None
         self._network_transmit_bytes_total = None
         self._disk_io_time_seconds_total = None
-
-        signal.signal(signal.SIGTERM, self.on_terminate)
 
     @property
     def system_config(self) -> SystemConfig:
@@ -337,20 +333,3 @@ class SystemMonitor(Monitor):
         # Only output the gathered data if there was no error
         if not self.data_retrieval_failed:
             self.logger.info(self.status())
-
-    @staticmethod
-    def on_terminate(signum, stack):
-        print("Terminating") # THIS PIECE OF CODE TERMIANTES SUCCESFULLY
-        sys.stdout.flush()
-        exit(0)
-        # TODO: close connections, handle SIGNINT SIGTERM AND EVERY SIGNAL WHICH
-        #     : MAY OCCUR ON UBUTNTU DOCKER. Do the same for the managers or
-        #     : something similar. See article, signals 1, 2, 9 ,15 must be
-        #     : handled. Managers should handle signals 1, 2, 9, 15 and
-        #     : terminate themselves and each other child gracefully. If one of
-        #     : the child processes joins, the manager must detect it and
-        #     : restart it if need be. Therefore we cannot wait for a processes
-        #     : to stop sequentially with join. Note try this on docker for it
-        #     : to work, not from src. Do not catch SIGKILL. Se article to see
-        #     : which signals kill a process. Read on how such errors should be
-        #     : handled, to see if you should incldue coredumps etc

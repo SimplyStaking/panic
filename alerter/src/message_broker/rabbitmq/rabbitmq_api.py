@@ -21,7 +21,7 @@ class RabbitMQApi:
     def __init__(self, logger: logging.Logger, host: str = 'localhost',
                  port: int = 5672, username: str = '', password: str = '',
                  connection_check_time_interval: timedelta = timedelta(
-                     seconds=60)) \
+                     seconds=30)) \
             -> None:
         self._logger = logger
         self._host = host
@@ -344,7 +344,9 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.new_channel_unsafe, [], -1)
 
-    # Perform an operation with sleeping period in between until successful
+    # Perform an operation with sleeping period in between until successful.
+    # This function only works if no exceptions are raised, i.e. till RabbitMQ
+    # becomes usable again
     @staticmethod
     def perform_operation_till_successful(function, args: List[Any],
                                           default_return: Any) -> None:

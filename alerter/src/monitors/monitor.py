@@ -1,6 +1,7 @@
 import logging
+import signal
+import sys
 import os
-import time
 from abc import ABC, abstractmethod
 from typing import Dict
 
@@ -8,6 +9,7 @@ import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 
 class Monitor(ABC):
@@ -23,6 +25,11 @@ class Monitor(ABC):
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
+
+        # Handle termination signals by stopping the monitor gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.monitor_name
@@ -117,7 +124,17 @@ class Monitor(ABC):
                 raise e
 
             self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
-            time.sleep(self.monitor_period)
+
+            # Use the BlockingConnection sleep to avoid dropped connections
+            self.rabbitmq.connection.sleep(self.monitor_period)
+
+    def on_terminate(self, signum, stack) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and afterwards the process will exit.'
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()
 
 # TODO: There are some monitors which may require redis. Therefore consider
 #     : adding redis here in the future.

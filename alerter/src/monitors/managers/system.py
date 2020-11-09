@@ -12,6 +12,7 @@ from src.monitors.starters import start_system_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.logging import log_and_print
+from src.utils.types import str_to_bool
 
 
 class SystemMonitorsManager(MonitorsManager):
@@ -80,7 +81,7 @@ class SystemMonitorsManager(MonitorsManager):
                 parent_id = config['parent_id']
                 system_name = config['name']
                 node_exporter_url = config['exporter_url']
-                monitor_system = config['monitor_system']
+                monitor_system = str_to_bool(config['monitor_system'])
 
                 # If we should not monitor the system, move to the next config
                 if not monitor_system:
@@ -106,7 +107,7 @@ class SystemMonitorsManager(MonitorsManager):
                 parent_id = config['parent_id']
                 system_name = config['name']
                 node_exporter_url = config['exporter_url']
-                monitor_system = config['monitor_system']
+                monitor_system = str_to_bool(config['monitor_system'])
                 system_config = SystemConfig(system_id, parent_id, system_name,
                                              monitor_system, node_exporter_url)
                 previous_process = self.config_process_dict[config_id]
@@ -148,7 +149,7 @@ class SystemMonitorsManager(MonitorsManager):
                 self._systems_configs['general'] = {
                     config_id: sent_configs[config_id] for config_id in
                     sent_configs
-                    if sent_configs[config_id]['monitor_system']}
+                    if str_to_bool(sent_configs[config_id]['monitor_system'])}
             else:
                 parsed_routing_key = method.routing_key.split('.')
                 chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -156,7 +157,7 @@ class SystemMonitorsManager(MonitorsManager):
                 self._systems_configs[chain] = {
                     config_id: sent_configs[config_id] for config_id in
                     sent_configs
-                    if sent_configs[config_id]['monitor_system']}
+                    if str_to_bool(sent_configs[config_id]['monitor_system'])}
         except Exception as e:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed

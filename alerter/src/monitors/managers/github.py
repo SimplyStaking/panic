@@ -13,6 +13,7 @@ from src.monitors.starters import start_github_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.logging import log_and_print
+from src.utils.types import str_to_bool
 
 
 class GitHubMonitorsManager(MonitorsManager):
@@ -84,7 +85,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 if not repo_name.endswith('/'):
                     repo_name = repo_name + '/'
 
-                monitor_repo = config['monitor_repo']
+                monitor_repo = str_to_bool(config['monitor_repo'])
                 releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
                     .format(repo_name)
 
@@ -115,7 +116,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 if not repo_name.endswith('/'):
                     repo_name = repo_name + '/'
 
-                monitor_repo = config['monitor_repo']
+                monitor_repo = str_to_bool(config['monitor_repo'])
                 releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
                     .format(repo_name)
                 repo_config = RepoConfig(repo_id, parent_id, repo_name,
@@ -159,7 +160,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 self._repos_configs['general'] = {
                     config_id: sent_configs[config_id] for config_id in
                     sent_configs
-                    if sent_configs[config_id]['monitor_repo']}
+                    if str_to_bool(sent_configs[config_id]['monitor_repo'])}
             else:
                 parsed_routing_key = method.routing_key.split('.')
                 chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -167,7 +168,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 self._repos_configs[chain] = {
                     config_id: sent_configs[config_id] for config_id in
                     sent_configs
-                    if sent_configs[config_id]['monitor_repo']}
+                    if str_to_bool(sent_configs[config_id]['monitor_repo'])}
         except Exception as e:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
