@@ -53,6 +53,7 @@ class ConfigManager:
         self._file_patterns = file_patterns
         self._watching = False
         self._connected_to_rabbit = False
+        self._output_rabbit_channel = output_rabbit_channel
 
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
 
@@ -126,8 +127,8 @@ class ConfigManager:
                 )
                 # We need to definitely send this
                 self._rabbit.basic_publish_confirm(
-                    "config", routing_key, config, mandatory=True,
-                    is_body_dict=True,
+                    self._output_rabbit_channel, routing_key, config,
+                    mandatory=True, is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
                 )
                 self._logger.info("Configuration update sent")
@@ -160,7 +161,7 @@ class ConfigManager:
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
         When an event is thrown, it reads the config and sends it as a dict via
-        rabbitmq to the topic exchange "config"
+        rabbitmq to the topic exchange given in the constructor
         with the routing key determined by the relative file path.
         :param event: The event passed by watchdog
         :return None
