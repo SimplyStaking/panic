@@ -209,7 +209,6 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 
 
 # If termination signals are received, terminate all child process and exit
-# TODO: Why is docker container not restart on sys.exit?
 def on_terminate(signum, stack) -> None:
     dummy_logger = logging.getLogger('Dummy')
 
@@ -227,6 +226,9 @@ def on_terminate(signum, stack) -> None:
     log_and_print('Terminating the Data Transformers Manager', dummy_logger)
     data_transformers_manager_process.terminate()
     data_transformers_manager_process.join()
+
+    # TODO: Need to add configs manager here when Mark finishes the
+    #     : modifications
 
     log_and_print('The alerter process terminated.', dummy_logger)
 
@@ -264,12 +266,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, on_terminate)
     signal.signal(signal.SIGHUP, on_terminate)
 
-    time.sleep(20)
-    os.kill(os.getpid(), signal.SIGTERM)
-
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
+    data_transformers_manager_process.join()
     data_store_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
