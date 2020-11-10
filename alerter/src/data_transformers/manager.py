@@ -38,28 +38,39 @@ class DataTransformersManager:
     def manage(self) -> None:
         log_and_print('{} started.'.format(self), self.logger)
 
-        # Start the data transformers in a separate process
-        log_and_print('Attempting to start the System Data Transformer.',
-                      self.logger)
-        system_data_transformer_process = multiprocessing.Process(
-            target=start_system_data_transformer, args=())
-        system_data_transformer_process.daemon = True
-        system_data_transformer_process.start()
-        self._transformer_process_dict['System Data Transformer'] = \
-            system_data_transformer_process
+        # Start the system data transformer in a separate process if it is not
+        # yet started or it is not alive. This must be done in case of a
+        # restart of the manager.
+        if 'System Data Transformer' not in self.transformer_process_dict or \
+            not self.transformer_process_dict[
+                'System Data Transformer'].is_alive():
+            log_and_print('Attempting to start the System Data Transformer.',
+                          self.logger)
+            system_data_transformer_process = multiprocessing.Process(
+                target=start_system_data_transformer, args=())
+            system_data_transformer_process.daemon = True
+            system_data_transformer_process.start()
+            self._transformer_process_dict['System Data Transformer'] = \
+                system_data_transformer_process
 
-        log_and_print('Attempting to start the GitHub Data Transformer.',
-                      self.logger)
-        github_data_transformer_process = multiprocessing.Process(
-            target=start_github_data_transformer, args=())
-        github_data_transformer_process.daemon = True
-        github_data_transformer_process.start()
-        self._transformer_process_dict['GitHub Data Transformer'] = \
-            github_data_transformer_process
+        # Start the github data transformer in a separate process if it is not
+        # yet started or it is not alive. This must be done in case of a
+        # restart of the manager.
+        if 'GitHub Data Transformer' not in self.transformer_process_dict or \
+                not self.transformer_process_dict[
+                    'System Data Transformer'].is_alive():
+            log_and_print('Attempting to start the GitHub Data Transformer.',
+                          self.logger)
+            github_data_transformer_process = multiprocessing.Process(
+                target=start_github_data_transformer, args=())
+            github_data_transformer_process.daemon = True
+            github_data_transformer_process.start()
+            self._transformer_process_dict['GitHub Data Transformer'] = \
+                github_data_transformer_process
 
         # Wait for all the processes to terminate before re-starting
-        system_data_transformer_process.join()
-        github_data_transformer_process.join()
+        self.transformer_process_dict['System Data Transformer'].join()
+        self.transformer_process_dict['GitHub Data Transformer'].join()
 
     # If termination signals are received, terminate all child process and exit
     def on_terminate(self, signum, stack) -> None:

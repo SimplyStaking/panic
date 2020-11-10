@@ -227,6 +227,8 @@ def on_terminate(signum, stack) -> None:
     data_transformers_manager_process.terminate()
     data_transformers_manager_process.join()
 
+    # TODO: Add data store here
+
     # TODO: Need to add configs manager here when Mark finishes the
     #     : modifications
 
