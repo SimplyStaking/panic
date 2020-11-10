@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 from typing import Dict
@@ -6,12 +7,11 @@ import pika
 import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.exceptions import (
+    ReceivedUnexpectedDataException, MessageWasNotDeliveredException
+)
 from src.utils.logging import log_and_print
 from src.alerter.alerts.system_alerts import (
-    MemoryUsageIncreasedAlert, MemoryUsageDecreasedAlert,
-    MemoryUsageIncreasedAboveCriticalThresholdAlert,
-    MemoryUsageIncreasedAboveWarningThresholdAlert,
     OpenFileDescriptorsIncreasedAlert, OpenFileDescriptorsDecreasedAlert,
     OpenFileDescriptorsIncreasedAboveCriticalThresholdAlert,
     OpenFileDescriptorsIncreasedAboveWarningThresholdAlert,
@@ -24,9 +24,6 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAlert, SystemStorageUsageDecreasedAlert,
     SystemStorageUsageIncreasedAboveCriticalThresholdAlert,
     SystemStorageUsageIncreasedAboveWarningThresholdAlert,
-    SystemNetworkUsageIncreasedAlert, SystemNetworkUsageDecreasedAlert,
-    SystemNetworkUsageIncreasedAboveCriticalThresholdAlert,
-    SystemNetworkUsageIncreasedAboveWarningThresholdAlert,
     ReceivedUnexpectedDataAlert, InvalidUrlAlert,
 )
 
@@ -44,18 +41,36 @@ class SystemAlerter(Alerter):
 
     def _initialize_alerter(self) -> None:
         self.rabbitmq.connect_till_successful()
+        self.logger.info('Creating \'alerter\' exchange')
         self.rabbitmq.exchange_declare(exchange='alerter',
                                        exchange_type='direct', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
+        self.logger.info('Creating queue \'system_alerter_queue\'')
         self.rabbitmq.queue_declare('system_alerter_queue', passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
         routing_key = 'alerter.system.' + self.alerts_configs.parent
+        self.logger.info('Binding queue \'system_alerter_queue\' to exchange '
+                         '\'alerter\' with routing key \'{}\''
+                         ''.format(routing_key))
         self.rabbitmq.queue_bind(queue='system_alerter_queue',
                                  exchange='alerter',
                                  routing_key=routing_key)
-        # TODO remove for production
+
+        # Pre-fetch count is 10 times less the maximum queue size
+        prefetch_count = round(self.publishing_queue.maxsize / 5)
+        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self.logger.info('Declaring consuming intentions')
+
+        # Set producing configuration
+        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.rabbitmq.confirm_delivery()
+        self.logger.info('Creating \'alert_router\' exchange')
+        self.rabbitmq.exchange_declare(exchange='alert_router',
+                                       exchange_type='direct', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.rabbitmq.queue_purge('system_alerter_queue')
 
     def _start_listening(self) -> None:
@@ -73,15 +88,41 @@ class SystemAlerter(Alerter):
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
-        if self.alerts_configs.parent in parsed_routing_key:
-            if 'result' in data_received:
-                metrics = data_received['result']['data']
-                self._process_results(data_received['result']['data'],
-                                      data_received['result']['meta_data'])
-            elif 'error' in data_received:
-                self._process_errors(data_received)
-            else:
-                print("EXCEPTION")
+        try:
+            if self.alerts_configs.parent in parsed_routing_key:
+                if 'result' in data_received:
+                    metrics = data_received['result']['data']
+                    self._process_results(data_received['result']['data'],
+                                          data_received['result']['meta_data'])
+                elif 'error' in data_received:
+                    self._process_errors(data_received)
+                else:
+                    raise ReceivedUnexpectedDataException(
+                        '{}: _process_data'.format(self))
+        except Exception as e:
+            self.logger.error("Error when processing {}".format(data_received))
+            self.logger.exception(e)
+
+        # Send any data waiting in the publisher queue, if any
+        try:
+            self._send_data()
+        except (pika.exceptions.AMQPChannelError,
+                pika.exceptions.AMQPConnectionError) as e:
+            # No need to acknowledge in this case as channel is closed. Logging
+            # would have also been done by RabbitMQ.
+            raise e
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise the exception so that the
+            # message can be acknowledged and removed from the rabbit queue.
+            # Note this message will still reside in the publisher queue.
+            self.logger.exception(e)
+        except Exception as e:
+            # For any other exception acknowledge and raise it, so the
+            # message is removed from the rabbit queue as this message will now
+            # reside in the publisher queue
+            self.rabbitmq.basic_ack(method.delivery_tag, False)
+            raise e
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_errors(self, error_data: Dict) -> None:
@@ -91,26 +132,32 @@ class SystemAlerter(Alerter):
                 error_data['error']['message'], 'ERROR', meta['time'],
                 meta['system_parent_id'], meta['system_id']
             )
-            self._send_alert_to_alert_router(alert.alert_data)
+            self._data_for_alert_router = alert.alert_data
+            self.logger.debug('Successfully classified alert {}'
+                              ''.format(alert.alert_data))
+            self._place_latest_data_on_queue()
         elif int(error_data['error']['code']) == 5009:
             alert = InvalidUrlAlert(
                 error_data['error']['message'], 'ERROR', meta['time'],
                 meta['system_parent_id'], meta['system_id']
             )
-            self._send_alert_to_alert_router(alert.alert_data)
+            self._data_for_alert_router = alert.alert_data
+            self.logger.debug('Successfully classified alert {}'
+                              ''.format(alert.alert_data))
+            self._place_latest_data_on_queue()
         else:
-            print("EXCEPTION")
+            raise ReceivedUnexpectedDataException(
+                        '{}: _process_errors'.format(self))
 
     def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
         open_fd = self.alerts_configs.open_file_descriptors
         cpu_use = self.alerts_configs.system_cpu_usage
         storage = self.alerts_configs.system_storage_usage
         ram_use = self.alerts_configs.system_ram_usage
-        net_use = self.alerts_configs.system_network_usage
 
         if open_fd['enabled']:
-            current = float(metrics['open_file_descriptors']['current'])
-            previous = float(metrics['open_file_descriptors']['previous'])
+            current = int(metrics['open_file_descriptors']['current'] or 0)
+            previous = int(metrics['open_file_descriptors']['previous'] or 0)
             if current > previous:
                 if (int(open_fd['warning_threshold']) < current <
                         int(open_fd['critical_threshold']) and
@@ -124,7 +171,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 elif (int(open_fd['critical_threshold']) < current and
                         open_fd['critical_enabled']):
                     alert = \
@@ -136,7 +186,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 else:
                     alert = \
                       OpenFileDescriptorsIncreasedAlert(
@@ -147,18 +200,24 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
             elif current < previous:
                 alert = OpenFileDescriptorsDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._send_alert_to_alert_router(alert.alert_data)
+                self._data_for_alert_router = alert.alert_data
+                self.logger.debug('Successfully classified alert {}'
+                                  ''.format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
         if storage['enabled']:
-            current = float(metrics['system_storage_usage']['current'])
-            previous = float(metrics['system_storage_usage']['previous'])
+            current = int(metrics['system_storage_usage']['current'] or 0)
+            previous = int(metrics['system_storage_usage']['previous'] or 0)
             if current > previous:
                 if (int(storage['warning_threshold']) < current <
                         int(storage['critical_threshold']) and
@@ -172,7 +231,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 elif (int(storage['critical_threshold']) < current and
                         storage['critical_enabled']):
                     alert = \
@@ -184,7 +246,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 else:
                     alert = \
                       SystemStorageUsageIncreasedAlert(
@@ -195,18 +260,24 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
             elif current < previous:
                 alert = SystemStorageUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._send_alert_to_alert_router(alert.alert_data)
+                self._data_for_alert_router = alert.alert_data
+                self.logger.debug('Successfully classified alert {}'
+                                  ''.format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
         if cpu_use['enabled']:
-            current = float(metrics['system_cpu_usage']['current'])
-            previous = float(metrics['system_cpu_usage']['previous'])
+            current = int(metrics['system_cpu_usage']['current'] or 0)
+            previous = int(metrics['system_cpu_usage']['previous'] or 0)
             if current > previous:
                 if (int(cpu_use['warning_threshold']) < current <
                         int(cpu_use['critical_threshold']) and
@@ -220,7 +291,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 elif (int(cpu_use['critical_threshold']) < current and
                         cpu_use['critical_enabled']):
                     alert = \
@@ -232,7 +306,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 else:
                     alert = \
                       SystemCPUUsageIncreasedAlert(
@@ -243,18 +320,24 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
             elif current < previous:
                 alert = SystemCPUUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._send_alert_to_alert_router(alert.alert_data)
+                self._data_for_alert_router = alert.alert_data
+                self.logger.debug('Successfully classified alert {}'
+                                  ''.format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
         if ram_use['enabled']:
-            current = float(metrics['system_cpu_usage']['current'])
-            previous = float(metrics['system_cpu_usage']['previous'])
+            current = int(metrics['system_cpu_usage']['current'] or 0)
+            previous = int(metrics['system_cpu_usage']['previous'] or 0)
             if current > previous:
                 if (int(ram_use['warning_threshold']) < current <
                         int(ram_use['critical_threshold']) and
@@ -268,7 +351,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 elif (int(ram_use['critical_threshold']) < current and
                         ram_use['critical_enabled']):
                     alert = \
@@ -280,7 +366,10 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
                 else:
                     alert = \
                       SystemRAMUsageIncreasedAlert(
@@ -291,65 +380,36 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._send_alert_to_alert_router(alert.alert_data)
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
             elif current < previous:
                 alert = SystemRAMUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._send_alert_to_alert_router(alert.alert_data)
+                self._data_for_alert_router = alert.alert_data
+                self.logger.debug('Successfully classified alert {}'
+                                  ''.format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
-        # if net_use['enabled']:
-        #     current = float(metrics['system_network_usage']['current'])
-        #     previous = float(metrics['system_network_usage']['previous'])
-        #     if current > previous:
-        #         if (int(ram_use['warning_threshold']) < current <
-        #                 int(ram_use['critical_threshold']) and
-        #                 ram_use['warning_enabled']):
-        #             alert = \
-        #                 SystemRAMUsageIncreasedAboveWarningThresholdAlert(
-        #                     self.alerts_configs.parent,
-        #                     meta_data['system_name'],
-        #                     previous, current, 'WARNING',
-        #                     meta_data['timestamp'],
-        #                     meta_data['system_parent_id'],
-        #                     meta_data['system_id']
-        #                 )
-        #             self._send_alert_to_alert_router(alert.alert_data)
-        #         elif (int(ram_use['critical_threshold']) < current and
-        #                 ram_use['critical_enabled']):
-        #             alert = \
-        #               SystemRAMUsageIncreasedAboveCriticalThresholdAlert(
-        #                     self.alerts_configs.parent,
-        #                     meta_data['system_name'],
-        #                     previous, current, 'CRITICAL',
-        #                     meta_data['timestamp'],
-        #                     meta_data['system_parent_id'],
-        #                     meta_data['system_id']
-        #                 )
-        #             self._send_alert_to_alert_router(alert.alert_data)
-        #         else:
-        #             alert = \
-        #               SystemRAMUsageIncreasedAlert(
-        #                     self.alerts_configs.parent,
-        #                     meta_data['system_name'],
-        #                     previous, current, 'INFO',
-        #                     meta_data['timestamp'],
-        #                     meta_data['system_parent_id'],
-        #                     meta_data['system_id']
-        #                 )
-        #             self._send_alert_to_alert_router(alert.alert_data)
-        #     elif current < previous:
-        #         alert = SystemRAMUsageDecreasedAlert(
-        #             self.alerts_configs.parent, meta_data['system_name'],
-        #             previous, current, 'INFO', meta_data['timestamp'],
-        #             meta_data['system_parent_id'], meta_data['system_id']
-        #         )
-        #         self._send_alert_to_alert_router(alert.alert_data)
+    def _place_latest_data_on_queue(self) -> None:
+        self.logger.debug("Adding alert data to the publishing queue ...")
 
-    def _send_alert_to_alert_router(self, alert: Dict) -> None:
-        log_and_print('{} started.'.format(alert), self.logger)
+        # Place the latest alert data on the publishing queue. If the
+        # queue is full, remove old data.
+        if self.publishing_queue.full():
+            self.publishing_queue.get()
+            self.publishing_queue.get()
+        self.publishing_queue.put({
+            'exchange': 'alert_router',
+            'routing_key': 'alert.system',
+            'data': copy.deepcopy(self.data_for_alert_router)})
+
+        self.logger.debug("Alert data added to the publishing queue "
+                          "successfully.")
 
     def _alert_classifier_process(self) -> None:
         self._initialize_alerter()

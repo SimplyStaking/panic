@@ -5,6 +5,7 @@ import time
 import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.system import SystemAlerter
+from src.alerter.alerters.github import GithubAlerter
 from src.configs.repo import RepoConfig
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import create_logger, log_and_print
@@ -53,6 +54,33 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return system_alerter
+
+
+def _initialize_github_alerter() -> GithubAlerter:
+
+    alerter_name = 'Github alerter'
+
+    github_alerter_logger = _initialize_alerter_logger(alerter_name)
+
+    # Try initializing a monitor until successful
+    while True:
+        try:
+            github_alerter = GithubAlerter(alerter_name, github_alerter_logger)
+            log_and_print("Successfully initialized {}".format(alerter_name),
+                          github_alerter_logger)
+            break
+        except Exception as e:
+            msg = '!!! Error when initialising {}: {} !!!'.format(
+                alerter_name, e)
+            log_and_print(msg, github_alerter_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return github_alerter
+
+
+def start_github_alerter() -> None:
+    github_alerter = _initialize_github_alerter()
+    start_alerter(github_alerter)
 
 
 def start_system_alerter(system_alerts_config: SystemAlertsConfig) -> None:

@@ -11,6 +11,7 @@ class Alert():
         self._severity = severity
         self._parent_id = parent_id
         self._origin_id = origin_id
+        self._timestamp = timestamp
 
     def __str__(self) -> str:
         return self.message
@@ -26,4 +27,5 @@ class Alert():
             'severity': self._severity,
             'parent_id': self._parent_id,
             'origin_id': self._origin_id,
+            'timestamp': self._timestamp
         }

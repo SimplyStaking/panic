@@ -208,33 +208,33 @@ if __name__ == '__main__':
               },
               'data': {
                   'process_cpu_seconds_total':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'process_memory_usage':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'virtual_memory_usage':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'open_file_descriptors':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'system_cpu_usage':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'system_ram_usage':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'system_storage_usage':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'network_receive_bytes_total':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'network_transmit_bytes_total':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'disk_io_time_seconds_total':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'network_transmit_bytes_per_second':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'network_receive_bytes_per_second':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'disk_io_time_seconds_in_interval':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
                   'went_down_at':
-                      {'current': 60, 'previous': 110},
+                      {'current': 60, 'previous': None},
               }
             }
         }
@@ -250,55 +250,15 @@ if __name__ == '__main__':
             "code": 5008
           }
         }
-        # rabbitAPI.basic_publish_confirm(
-        #     exchange='alerter',
-        #     routing_key='alerter.system.general',
-        #     body=transformer_data_decrease,
-        #     is_body_dict=True,
-        #     properties=pika.BasicProperties(delivery_mode=2),
-        #     mandatory=True
-        # )
+
         rabbitAPI.basic_publish_confirm(
             exchange='alerter',
             routing_key='alerter.system.general',
-            body=system_data_error,
+            body=transformer_data_decrease,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True
         )
-        # rabbitAPI.basic_publish_confirm(
-        #     exchange='store', routing_key='transformer.system.metrics',
-        #     body=data_dict_2,
-        #     is_body_dict=True,
-        #     properties=pika.BasicProperties(delivery_mode=2),
-        #     mandatory=True
-        # )
-        # rabbitAPI.basic_publish_confirm(
-        #     exchange='store', routing_key='github',
-        #     body=github_dict,
-        #     is_body_dict=True,
-        #     properties=pika.BasicProperties(delivery_mode=1),
-        #     mandatory=True
-        # )
-        # rabbitAPI.basic_publish_confirm(
-        #     exchange='store', routing_key='transformer.system.monitor',
-        #     body=system_monitor_dict,
-        #     is_body_dict=True,
-        #     properties=pika.BasicProperties(delivery_mode=2),
-        #     mandatory=True
-        # )
-        # rabbitAPI.basic_publish_confirm(
-        #     exchange='store', routing_key='alert',
-        #     body=alert_type_dict,
-        #     is_body_dict=True,
-        #     properties=pika.BasicProperties(delivery_mode=2),
-        #     mandatory=True
-        # )
-
-        # mongo_coll = mongo_api.get_all("akash")
-        # for i in mongo_coll:
-        #     print(mongo_coll)
-
         print('Message was published')
     except pika.exceptions.UnroutableError:
         print('Message was returned')

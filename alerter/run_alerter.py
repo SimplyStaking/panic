@@ -65,10 +65,10 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
     return system_alerters_manager
 
 
-def _initialize_github_alerters_manager() -> GithubAlerterManager:
-    manager_name = "Github Alerters Manager"
+def _initialize_github_alerter_manager() -> GithubAlerterManager:
+    manager_name = "Github Alerter Manager"
 
-    github_alerters_manager_logger = _initialize_logger(
+    github_alerter_manager_logger = _initialize_logger(
         manager_name,
         "MANAGERS_LOG_FILE_TEMPLATE"
     )
@@ -77,14 +77,14 @@ def _initialize_github_alerters_manager() -> GithubAlerterManager:
     while True:
         try:
             github_alerter_manager = GithubAlerterManager(
-                github_alerters_manager_logger, manager_name)
+                github_alerter_manager_logger, manager_name)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
                 .format(manager_name, e)
-            log_and_print(msg, github_alerters_manager_logger)
+            log_and_print(msg, github_alerter_manager_logger)
             log_and_print('Re-attempting the initialization procedure',
-                          github_alerters_manager_logger)
+                          github_alerter_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return github_alerter_manager
@@ -206,7 +206,7 @@ def run_system_alerters_manager() -> None:
 
 
 def run_github_alerters_manager() -> None:
-    manager = _initialize_github_alerters_manager()
+    manager = _initialize_github_alerter_manager()
     while True:
         try:
             manager.start_github_alerter_manager()
