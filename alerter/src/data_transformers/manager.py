@@ -1,6 +1,6 @@
 import logging
-import signal
 import multiprocessing
+import signal
 import sys
 from typing import Dict
 
@@ -42,8 +42,8 @@ class DataTransformersManager:
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
         if 'System Data Transformer' not in self.transformer_process_dict or \
-            not self.transformer_process_dict[
-                'System Data Transformer'].is_alive():
+                not self.transformer_process_dict[
+                    'System Data Transformer'].is_alive():
             log_and_print('Attempting to start the System Data Transformer.',
                           self.logger)
             system_data_transformer_process = multiprocessing.Process(

@@ -1,18 +1,18 @@
 import logging
 import multiprocessing
 import os
-import time
-import sys
 import signal
+import sys
+import time
 
 import pika.exceptions
 
 from src.config_manager import ConfigManager
+from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
-from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 

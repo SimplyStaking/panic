@@ -1,7 +1,7 @@
 import logging
+import os
 import signal
 import sys
-import os
 from abc import ABC, abstractmethod
 from typing import Dict
 

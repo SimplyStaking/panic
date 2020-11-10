@@ -192,9 +192,9 @@ class SystemMonitor(Monitor):
         node_cpu_seconds_total = 0
         for _, data_subset in enumerate(self.data['node_cpu_seconds_total']):
             if json.loads(data_subset)['mode'] == 'idle':
-                node_cpu_seconds_idle +=\
+                node_cpu_seconds_idle += \
                     self.data['node_cpu_seconds_total'][data_subset]
-            node_cpu_seconds_total +=\
+            node_cpu_seconds_total += \
                 self.data['node_cpu_seconds_total'][data_subset]
 
         system_cpu_usage = 100 - (

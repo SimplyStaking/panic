@@ -1,15 +1,12 @@
 import json
 import logging
-import sys
+from typing import Dict
 
 import pika.exceptions
 
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-
-from typing import Dict
-
 from src.utils.exceptions import ReceivedUnexpectedDataException
 
 

@@ -12,11 +12,11 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
-from .config_update_event_handler import ConfigFileEventHandler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.exceptions import MessageWasNotDeliveredException, \
     ConnectionNotInitializedException
 from src.utils.routing_key import get_routing_key
+from .config_update_event_handler import ConfigFileEventHandler
 
 _FIRST_RUN_EVENT = "first run"
 
