@@ -292,24 +292,17 @@ class GitHubDataTransformer(DataTransformer):
             self.logger.error("Error when processing {}".format(raw_data))
             self.logger.exception(e)
 
+        # If the data is processed, it now resides in the queue, thus it can
+        # be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
-        except (pika.exceptions.AMQPChannelError,
-                pika.exceptions.AMQPConnectionError) as e:
-            # No need to acknowledge in this case as channel is closed. Logging
-            # would have also been done by RabbitMQ.
-            raise e
         except MessageWasNotDeliveredException as e:
-            # Log the message and do not raise the exception so that the message
-            # can be acknowledged and removed from the rabbit queue. Note this
-            # message will still reside in the publisher queue.
+            # Log the message and do not raise it as message is residing in the
+            # publisher queue.
             self.logger.exception(e)
         except Exception as e:
-            # For any other exception acknowledge and raise it, so the
-            # message is removed from the rabbit queue as this message will now
-            # reside in the publisher queue
-            self.rabbitmq.basic_ack(method.delivery_tag, False)
+            # For any other exception raise it.
             raise e
-
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
