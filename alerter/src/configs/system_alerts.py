@@ -6,12 +6,14 @@ class SystemAlertsConfig:
                  open_file_descriptors: Dict,
                  system_cpu_usage: Dict,
                  system_storage_usage: Dict,
-                 system_ram_usage: Dict) -> None:
+                 system_ram_usage: Dict,
+                 system_is_down: Dict) -> None:
         self._parent = parent
         self._open_file_descriptors = open_file_descriptors
         self._system_cpu_usage = system_cpu_usage
         self._system_storage_usage = system_storage_usage
         self._system_ram_usage = system_ram_usage
+        self._system_is_down = system_is_down
 
     @property
     def parent(self) -> str:
@@ -33,6 +35,10 @@ class SystemAlertsConfig:
     def system_ram_usage(self) -> Dict:
         return self._system_ram_usage
 
+    @property
+    def system_is_down(self) -> Dict:
+        return self._system_is_down
+
     def set_parent(self, parent: str) -> None:
         self._parent = parent
 
@@ -47,3 +53,6 @@ class SystemAlertsConfig:
     def set_system_storage_usage(self, system_storage_usage:
                                  Dict) -> None:
         self._system_storage_usage = system_storage_usage
+
+    def set_system_is_down(self, system_is_down: Dict) -> None:
+        self._system_is_down = system_is_down

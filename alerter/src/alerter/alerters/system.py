@@ -24,7 +24,8 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAlert, SystemStorageUsageDecreasedAlert,
     SystemStorageUsageIncreasedAboveCriticalThresholdAlert,
     SystemStorageUsageIncreasedAboveWarningThresholdAlert,
-    ReceivedUnexpectedDataAlert, InvalidUrlAlert,
+    ReceivedUnexpectedDataAlert, InvalidUrlAlert, SystemWentUpAt,
+    SystemWentDownAt
 )
 
 
@@ -34,6 +35,7 @@ class SystemAlerter(Alerter):
                  logger: logging.Logger) -> None:
         super().__init__(alerts_config_name, logger)
         self._system_alerts_config = system_alerts_config
+        self._down_time_counter = 0
 
     @property
     def alerts_configs(self) -> SystemAlertsConfig:
@@ -95,7 +97,7 @@ class SystemAlerter(Alerter):
                     self._process_results(data_received['result']['data'],
                                           data_received['result']['meta_data'])
                 elif 'error' in data_received:
-                    self._process_errors(data_received)
+                    self._process_errors(data_received['error'])
                 else:
                     raise ReceivedUnexpectedDataException(
                         '{}: _process_data'.format(self))
@@ -126,25 +128,75 @@ class SystemAlerter(Alerter):
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_errors(self, error_data: Dict) -> None:
-        meta = error_data['error']['meta_data']
-        if int(error_data['error']['code']) == 5008:
+        is_down = self.alerts_configs.system_is_down
+        meta_data = error_data['meta_data']
+        if int(error_data['code']) == 5008:
             alert = ReceivedUnexpectedDataAlert(
-                error_data['error']['message'], 'ERROR', meta['time'],
-                meta['system_parent_id'], meta['system_id']
+                error_data['message'], 'ERROR', meta_data['time'],
+                meta_data['system_parent_id'], meta_data['system_id']
             )
             self._data_for_alert_router = alert.alert_data
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
             self._place_latest_data_on_queue()
-        elif int(error_data['error']['code']) == 5009:
+        elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
-                error_data['error']['message'], 'ERROR', meta['time'],
-                meta['system_parent_id'], meta['system_id']
+                error_data['message'], 'ERROR', meta_data['time'],
+                meta_data['system_parent_id'], meta_data['system_id']
             )
             self._data_for_alert_router = alert.alert_data
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
             self._place_latest_data_on_queue()
+        elif int(error_data['code']) == 5004:
+            if is_down['enabled']:
+                current = int(error_data['went_down_at']['current'] or 0)
+                previous = int(error_data['went_down_at']['previous'] or 0)
+                difference = current-previous
+                self._down_time_counter += difference
+                if (int(is_down['warning_threshold']) < self._down_time_counter
+                    < int(is_down['critical_threshold']) and
+                        is_down['warning_enabled']):
+                    alert = SystemWentDownAt(
+                                self.alerts_configs.parent,
+                                meta_data['system_name'],
+                                self._down_time_counter, 'WARNING',
+                                meta_data['time'],
+                                meta_data['system_parent_id'],
+                                meta_data['system_id']
+                            )
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+                elif (self._down_time_counter >
+                      int(is_down['critical_threshold'])
+                      and is_down['critical_enabled']):
+                    alert = SystemWentDownAt(
+                        self.alerts_configs.parent,
+                        meta_data['system_name'],
+                        self._down_time_counter, 'CRITICAL',
+                        meta_data['time'],
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+                else:
+                    alert = SystemWentDownAt(
+                        self.alerts_configs.parent,
+                        meta_data['system_name'],
+                        self._down_time_counter, 'INFO',
+                        meta_data['time'],
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                    self._data_for_alert_router = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
         else:
             raise ReceivedUnexpectedDataException(
                         '{}: _process_errors'.format(self))
@@ -154,6 +206,25 @@ class SystemAlerter(Alerter):
         cpu_use = self.alerts_configs.system_cpu_usage
         storage = self.alerts_configs.system_storage_usage
         ram_use = self.alerts_configs.system_ram_usage
+        is_down = self.alerts_configs.system_is_down
+
+        if is_down['enabled']:
+            current = int(metrics['went_down_at']['current'] or 0)
+            previous = int(metrics['went_down_at']['previous'] or 0)
+            difference = current-previous
+            self._down_time_counter = 0
+            alert = SystemWentUpAt(
+                        self.alerts_configs.parent,
+                        meta_data['system_name'],
+                        difference, 'INFO',
+                        meta_data['timestamp'],
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+            self._data_for_alert_router = alert.alert_data
+            self.logger.debug('Successfully classified alert {}'
+                              ''.format(alert.alert_data))
+            self._place_latest_data_on_queue()
 
         if open_fd['enabled']:
             current = int(metrics['open_file_descriptors']['current'] or 0)

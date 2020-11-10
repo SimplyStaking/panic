@@ -4,10 +4,6 @@ from src.alerter.alerts.alert import Alert
 
 
 class AlertCode(Enum):
-    MemoryUsageIncreasedAlert = next_id(),
-    MemoryUsageDecreasedAlert = next_id(),
-    MemoryUsageIncreasedAboveCriticalThresholdAlert = next_id(),
-    MemoryUsageIncreasedAboveWarningThresholdAlert = next_id(),
     OpenFileDescriptorsIncreasedAlert = next_id(),
     OpenFileDescriptorsDecreasedAlert = next_id(),
     OpenFileDescriptorsIncreasedAboveCriticalThresholdAlert = next_id(),
@@ -24,12 +20,10 @@ class AlertCode(Enum):
     SystemStorageUsageDecreasedAlert = next_id(),
     SystemStorageUsageIncreasedAboveCriticalThresholdAlert = next_id(),
     SystemStorageUsageIncreasedAboveWarningThresholdAlert = next_id(),
-    SystemNetworkUsageIncreasedAlert = next_id(),
-    SystemNetworkUsageDecreasedAlert = next_id(),
-    SystemNetworkUsageIncreasedAboveCriticalThresholdAlert = next_id(),
-    SystemNetworkUsageIncreasedAboveWarningThresholdAlert = next_id(),
     ReceivedUnexpectedDataAlert = next_id(),
     InvalidUrlAlert = next_id(),
+    SystemWentDownAt = next_id(),
+    SystemWentUpAt = next_id(),
 
 
 class ReceivedUnexpectedDataAlert(Alert):
@@ -40,58 +34,34 @@ class ReceivedUnexpectedDataAlert(Alert):
             message, severity, timestamp, parent_id, origin_id)
 
 
+class SystemWentDownAt(Alert):
+    def __init__(self, parent_name: str, origin_name: str, difference: str,
+                 severity: str, timestamp: str, parent_id: str,
+                 origin_id: str) -> None:
+        super().__init__(
+            AlertCode.SystemWentDownAt,
+            '{}: {} System is down, total current downtime: {}s.'.format(
+                parent_name, origin_name, difference),
+            severity, timestamp, parent_id, origin_id)
+
+
+class SystemWentUpAt(Alert):
+    def __init__(self, parent_name: str, origin_name: str, difference: str,
+                 severity: str, timestamp: str, parent_id: str,
+                 origin_id: str) -> None:
+        super().__init__(
+            AlertCode.SystemWentUpAt,
+            '{}: {} System is back up, it was down for {}s.'.format(
+                parent_name, origin_name, difference),
+            severity, timestamp, parent_id, origin_id)
+
+
 class InvalidUrlAlert(Alert):
     def __init__(self, message: str, severity: str, timestamp: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.InvalidUrlAlert, message, severity,
             timestamp, parent_id, origin_id)
-
-
-class MemoryUsageIncreasedAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.MemoryUsageIncreasedAlert,
-            '{}: {} memory usage INCREASED from {}% to {}%.'.format(
-                parent_name, origin_name, old_value, new_value), severity,
-            timestamp, parent_id, origin_id)
-
-
-class MemoryUsageDecreasedAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.MemoryUsageDecreasedAlert,
-            '{}: {} memory usage DECREASED from {}% to {}%.'.format(
-                parent_name, origin_name, old_value, new_value), severity,
-            timestamp, parent_id, origin_id)
-
-
-class MemoryUsageIncreasedAboveCriticalThresholdAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.MemoryUsageIncreasedAboveCriticalThresholdAlert,
-            '{}: {} memory usage INCREASED above CRITICAL threshold from '
-            '{}% to {}%.'.format(parent_name, origin_name, old_value,
-                                 new_value), severity, timestamp, parent_id,
-            origin_id)
-
-
-class MemoryUsageIncreasedAboveWarningThresholdAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.MemoryUsageIncreasedAboveCriticalThresholdAlert,
-            '{}: {} memory usage INCREASED above WARNING threshold from '
-            '{}% to {}%.'.format(parent_name, origin_name, old_value,
-                                 new_value), severity, timestamp, parent_id,
-            origin_id)
 
 
 class OpenFileDescriptorsIncreasedAlert(Alert):
@@ -273,52 +243,6 @@ class SystemStorageUsageIncreasedAboveWarningThresholdAlert(Alert):
         super().__init__(
             AlertCode.SystemStorageUsageIncreasedAboveWarningThresholdAlert,
             '{}: {} system storage usage INCREASED above WARNING threshold '
-            'from {}% to {}%.'.format(parent_name, origin_name, old_value,
-                                      new_value), severity, timestamp,
-            parent_id, origin_id)
-
-
-class SystemNetworkUsageIncreasedAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.SystemNetworkUsageIncreasedAlert,
-            '{}: {} system network usage INCREASED from {}% to {}%.'.format(
-                parent_name, origin_name, old_value, new_value), severity,
-            timestamp, parent_id, origin_id)
-
-
-class SystemNetworkUsageDecreasedAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.SystemNetworkUsageDecreasedAlert,
-            '{}: {} system network usage DECREASED from {}% to {}%.'.format(
-                parent_name, origin_name, old_value, new_value), severity,
-            timestamp, parent_id, origin_id)
-
-
-class SystemNetworkUsageIncreasedAboveCriticalThresholdAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.SystemNetworkUsageIncreasedAboveCriticalThresholdAlert,
-            '{}: {} system network usage INCREASED above CRITICAL threshold '
-            'from {}% to {}%.'.format(parent_name, origin_name, old_value,
-                                      new_value), severity, timestamp,
-            parent_id, origin_id)
-
-
-class SystemNetworkUsageIncreasedAboveWarningThresholdAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, old_value: float,
-                 new_value: float, severity: str, timestamp: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            AlertCode.SystemNetworkUsageIncreasedAboveWarningThresholdAlert,
-            '{}: {} system network usage INCREASED above WARNING threshold '
             'from {}% to {}%.'.format(parent_name, origin_name, old_value,
                                       new_value), severity, timestamp,
             parent_id, origin_id)

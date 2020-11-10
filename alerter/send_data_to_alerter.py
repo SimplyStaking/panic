@@ -221,20 +221,9 @@ if __name__ == '__main__':
                       {'current': 60, 'previous': None},
                   'system_storage_usage':
                       {'current': 60, 'previous': None},
-                  'network_receive_bytes_total':
-                      {'current': 60, 'previous': None},
-                  'network_transmit_bytes_total':
-                      {'current': 60, 'previous': None},
-                  'disk_io_time_seconds_total':
-                      {'current': 60, 'previous': None},
-                  'network_transmit_bytes_per_second':
-                      {'current': 60, 'previous': None},
-                  'network_receive_bytes_per_second':
-                      {'current': 60, 'previous': None},
-                  'disk_io_time_seconds_in_interval':
-                      {'current': 60, 'previous': None},
                   'went_down_at':
-                      {'current': 60, 'previous': None},
+                      {'current': 1604783539.751823,
+                       'previous': 1604783539.751823},
               }
             }
         }
@@ -246,8 +235,10 @@ if __name__ == '__main__':
               "system_parent_id": "GLOBAL",
               "time": 1604783549.751823
             },
-            "message": "Invalid URL http://172.16.151.40:91100/metrics",
-            "code": 5008
+            'went_down_at':
+                {'current': 1604783539.751823, 'previous': 1604783239.751823},
+            "message": "System is down.",
+            "code": 5004
           }
         }
 

@@ -85,6 +85,7 @@ class SystemAlertersManager(AlertersManager):
                 system_cpu_usage=filtered['system_cpu_usage'],
                 system_storage_usage=filtered['system_storage_usage'],
                 system_ram_usage=filtered['system_ram_usage'],
+                system_is_down=filtered['system_is_down'],
             )
 
             process = multiprocessing.Process(target=start_system_alerter,
@@ -108,6 +109,7 @@ class SystemAlertersManager(AlertersManager):
                 system_cpu_usage=filtered['system_cpu_usage'],
                 system_storage_usage=filtered['system_storage_usage'],
                 system_ram_usage=filtered['system_ram_usage'],
+                system_is_down=filtered['system_is_down'],
             )
 
             previous_process = self.config_process_dict[system_parent]
