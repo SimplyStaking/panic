@@ -1,6 +1,14 @@
 from typing import Union, Any
+from enum import Enum
 
 RedisType = Union[bytes, str, int, float]
+
+
+class OpsgenieSeverities(Enum):
+    CRITICAL = 'P1'
+    ERROR = 'P3'
+    WARNING = 'P3'
+    INFO = 'P5'
 
 
 def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
