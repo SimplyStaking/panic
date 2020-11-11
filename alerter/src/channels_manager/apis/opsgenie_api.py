@@ -66,10 +66,6 @@ class OpsgenieApi:
     def get_request_status(self, request_id: str):
         return self._alert_api.get_request_status(request_id=request_id)
 
-# TODO: We can keep a list of open alerts with their aliases and source, and
-#     : keep on adding to them. If the situation is fixed, we close the alert
-#     : and inform via an info alert
-
 # TODO: Request might not have been processed immediately, therefore get status
 #     : may fail. Hence appropriate error handling must be doen around
 #     : get_status
