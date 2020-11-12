@@ -1,6 +1,9 @@
 import logging
 import os
+import signal
+import sys
 from abc import ABC, abstractmethod
+from types import FrameType
 from typing import Dict
 
 import pika.exceptions
@@ -17,6 +20,10 @@ class AlertersManager(ABC):
 
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        # Handle termination signals by stopping the manager gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.name
@@ -69,3 +76,18 @@ class AlertersManager(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    # If termination signals are received, terminate all child process and exit
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print('{} is terminating. All the alerters will be '
+                      'stopped gracefully and then the {} process will '
+                      'exit.'.format(self, self), self.logger)
+
+        for alerter, process in self.config_process_dict.items():
+            log_and_print('Terminating the process of {}'.format(alerter),
+                          self.logger)
+            process.terminate()
+            process.join()
+
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

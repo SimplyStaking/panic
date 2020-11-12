@@ -1,14 +1,18 @@
 import logging
 import os
+import signal
+import sys
 import time
 from abc import ABC, abstractmethod
 from queue import Queue
+from types import FrameType
 from typing import Dict
 
 import pika.exceptions
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   PANICException)
+from src.utils.logging import log_and_print
 
 
 class Alerter(ABC):
@@ -26,6 +30,10 @@ class Alerter(ABC):
         self._publishing_queue = Queue(max_queue_size)
         rabbit_ip = os.environ["RABBIT_IP"]
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        # Handle termination signals by stopping the monitor gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.alerter_name
@@ -130,3 +138,11 @@ class Alerter(ABC):
 
             self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
             time.sleep(self.monitor_period)
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and afterwards the process will exit.'
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

@@ -72,7 +72,7 @@ class SystemAlertersManager(AlertersManager):
             else:
                 current_configs = {}
             system_parent = chain
-
+################## TODO TODO TODO CHANGE THESE
         new_configs = get_newly_added_configs(sent_configs, current_configs)
         if new_configs:
             filtered = {}

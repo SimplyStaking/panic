@@ -1,9 +1,12 @@
 import logging
 import multiprocessing
+import signal
+import sys
 import os
 import time
 import pika.exceptions
 
+from types import FrameType
 from src.config_manager import ConfigManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
@@ -260,6 +263,37 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
     config_manager.stop_watching_config_files()
 
 
+# If termination signals are received, terminate all child process and exit
+def on_terminate(signum: int, stack: FrameType) -> None:
+    dummy_logger = logging.getLogger('Dummy')
+
+    log_and_print('PANIC is terminating. All components will be stopped '
+                  'gracefully.', dummy_logger)
+
+    log_and_print('Terminating the System Monitors Manager', dummy_logger)
+    system_monitors_manager_process.terminate()
+    system_monitors_manager_process.join()
+
+    log_and_print('Terminating the GitHub Monitors Manager', dummy_logger)
+    github_monitors_manager_process.terminate()
+    github_monitors_manager_process.join()
+
+    log_and_print('Terminating the System Alerters Manager', dummy_logger)
+    system_alerters_manager_process.terminate()
+    system_alerters_manager_process.join()
+
+    log_and_print('Terminating the Github Alerter Manager', dummy_logger)
+    github_alerter_manager_process.terminate()
+    github_alerter_manager_process.join()
+
+    log_and_print('Terminating the Data Store Process', dummy_logger)
+    data_store_process.terminate()
+    data_store_process.join()
+
+    log_and_print('PANIC process terminated.', dummy_logger)
+    sys.exit()
+
+
 if __name__ == '__main__':
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
@@ -293,6 +327,10 @@ if __name__ == '__main__':
     )
     config_manager_runner_process.start()
 
+    signal.signal(signal.SIGTERM, on_terminate)
+    signal.signal(signal.SIGINT, on_terminate)
+    signal.signal(signal.SIGHUP, on_terminate)
+
     # If we don't wait for the processes to terminate the root process will
     # exit
     github_monitors_manager_process.join()
@@ -307,6 +345,7 @@ if __name__ == '__main__':
     config_manager_runner_process.join()
 
     print('The alerter is stopping.')
+    sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the
 #     : run alerter before start sending configs, as otherwise configs manager
