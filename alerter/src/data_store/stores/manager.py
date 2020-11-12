@@ -1,5 +1,8 @@
 import logging
+import signal
+import sys
 from multiprocessing import Process
+from types import FrameType
 
 import pika.exceptions
 from src.data_store.stores.alert import AlertStore
@@ -16,6 +19,12 @@ class StoreManager:
         self._system_store = SystemStore(self._logger, "System Store")
         self._github_store = GithubStore(self._logger, "Github Store")
         self._alert_store = AlertStore(self._logger, "Alert Store")
+        self._stores = [self.system_store, self.github_store, self.alert_store]
+        self._process = {}
+        # Handle termination signals by stopping the manager gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.name
@@ -31,6 +40,10 @@ class StoreManager:
     @property
     def github_store(self) -> GithubStore:
         return self._github_store
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     @property
     def alert_store(self) -> AlertStore:
@@ -59,12 +72,27 @@ class StoreManager:
         will then begin listening for incoming messages.
         """
         processes = []
-        stores = [self.system_store, self.github_store, self.alert_store]
-        for instance in stores:
+        for instance in self._stores:
             process = Process(target=self.start_store, args=(instance,))
             process.daemon = True
             process.start()
+            self._process[instance] = process
             processes.append(process)
 
         for process in processes:
             process.join()
+
+    # If termination signals are received, terminate all child process and exit
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print('{} is terminating. All the data store will be '
+                      'stopped gracefully and then the {} process will '
+                      'exit.'.format(self, self), self.logger)
+
+        for store, process in self._process.items():
+            log_and_print('Terminating the process of {}'.format(store),
+                          self.logger)
+            process.terminate()
+            process.join()
+
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()
