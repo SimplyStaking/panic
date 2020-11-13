@@ -28,10 +28,10 @@ class ConfigManager:
     """
 
     def __init__(self, logger: logging.Logger, config_directory: str,
-                 rabbit_ip: str, file_patterns: Optional[List[str]] = None,
+                 rabbit_ip: str, output_rabbit_channel: str,
+                 file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
-                 ignore_directories: bool = True, case_sensitive: bool = False,
-                 output_rabbit_channel: str = "config"):
+                 ignore_directories: bool = True, case_sensitive: bool = False):
         """
         Constructs the ConfigManager instance
         :param config_directory: The root config directory to watch.
@@ -110,7 +110,7 @@ class ConfigManager:
     def _disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from RabbitMQ")
-            self._rabbit.disconnect()
+            self._rabbit.disconnect_till_successful()
             self._connected_to_rabbit = False
             self._logger.info("Disconnected from RabbitMQ")
         else:

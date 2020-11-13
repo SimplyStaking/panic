@@ -2,6 +2,7 @@ import json
 from configparser import ConfigParser, NoOptionError, NoSectionError, \
     ParsingError
 from logging import Logger
+from threading import RLock
 from typing import Dict
 
 import pika
@@ -18,17 +19,25 @@ ALERT_ROUTER_INPUT_QUEUE_NAME = "alert_router_input_queue"
 
 
 class AlertRouter:
-    def __init__(self, logger: Logger, alert_input_channel: str,
-                 alert_output_channel: str, config_input_channel: str,
-                 rabbit_ip: str):
+    def __init__(self, logger: Logger, rabbit_ip: str, alert_input_channel: str,
+                 alert_output_channel: str, config_input_channel: str):
 
+        # We need to ensure that the config is not read when it is written to.
+        # The GIL helps that, but making it explicit is also nice
+        self._config_lock = RLock()
         self._config = {}
+
         self._logger = logger
         self._alert_input_channel = alert_input_channel
         self._alert_output_channel = alert_output_channel
         self._config_input_channel = config_input_channel
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
         self._initialise_rabbit()
+
+    def __del__(self):
+        self._logger.info("Disconnecting from RabbitMQ")
+        self._rabbit.disconnect_till_successful()
+        self._logger.info("Disconnected from RabbitMQ")
 
     def _initialise_rabbit(self) -> None:
         """
@@ -118,34 +127,56 @@ class AlertRouter:
                           config_filename)
         self._logger.debug("recv_config = %s", recv_config)
 
-        previous_config = self._config[config_filename]
-        self._config[config_filename] = {}
-        # Taking what we need, and checking types
-        try:
-            for key in recv_config:
-                self._config[config_filename][key] = {
-                    'id': recv_config.get(key, 'id'),
-                    'info': recv_config.getboolean(key, 'info'),
-                    'warning': recv_config.getboolean(key, 'warning'),
-                    'critical': recv_config.getboolean(key, 'critical'),
-                    'error': recv_config.getboolean(key, 'error')
-                }
-        except (NoOptionError, NoSectionError) as missing_error:
-            self._logger.error(
-                "The configuration file %s is missing some configs",
-                config_filename)
-            self._logger.error(missing_error.message)
-            self._logger.warning(
-                "The previous configuration will be used instead")
-            self._config[config_filename] = previous_config
-        except (ParsingError, ValueError) as parsing_error:
-            self._logger.error(
-                "The configuration file %s has an incorrect entry",
-                config_filename)
-            self._logger.error(parsing_error.message)
-            self._logger.warning(
-                "The previous configuration will be used instead")
-            self._config[config_filename] = previous_config
+        with self._config_lock:
+            previous_config = self._config[config_filename]
+            self._config[config_filename] = {}
+
+            # Only take from the config if it is not empty
+            if not recv_config:
+                # Taking what we need, and checking types
+                try:
+                    for key in recv_config:
+                        self._config[config_filename][key] = {
+                            'id': recv_config.get(key, 'id'),
+                            'info': recv_config.getboolean(key, 'info'),
+                            'warning': recv_config.getboolean(key, 'warning'),
+                            'critical': recv_config.getboolean(key, 'critical'),
+                            'error': recv_config.getboolean(key, 'error')
+                        }
+                except (NoOptionError, NoSectionError) as missing_error:
+                    self._logger.error(
+                        "The configuration file %s is missing some configs",
+                        config_filename)
+                    self._logger.error(missing_error.message)
+                    self._logger.warning(
+                        "The previous configuration will be used instead")
+                    self._config[config_filename] = previous_config
+                except (ParsingError, ValueError) as parsing_error:
+                    self._logger.error(
+                        "The configuration file %s has an incorrect entry",
+                        config_filename)
+                    self._logger.error(parsing_error.message)
+                    self._logger.warning(
+                        "The previous configuration will be used instead")
+                    self._config[config_filename] = previous_config
+        while True:
+            try:
+                self._rabbit.basic_ack(method.delivery_tag, False)
+                break
+            except (ConnectionNotInitializedException,
+                    AMQPConnectionError) as connection_error:
+                # Should be impossible, but since exchange_declare can throw
+                # it we shall ensure to log that the error passed through here
+                # too.
+                self._logger.error("Something went wrong when trying to send "
+                                   "an acknowledgement")
+                self._logger.error(connection_error.message)
+                raise connection_error
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. As a result we don't need to
+                # anything here, just re-try.
+                continue
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
@@ -154,11 +185,13 @@ class AlertRouter:
         recv_alert: Dict = json.loads(body)
 
         # Where to route this alert to
-        send_to_ids = [
-            channel.get('id') for channel_type in self._config.values()
-            for channel in channel_type.values()
-            if channel.get(recv_alert.get('severity').lower())
-        ]
+        with self._config_lock:
+            send_to_ids = [
+                channel.get('id') for channel_type in self._config.values()
+                for channel in channel_type.values()
+                if channel.get(recv_alert.get('severity').lower())
+            ]
+
         while True:
             try:
                 for channel_id in send_to_ids:
@@ -195,6 +228,7 @@ class AlertRouter:
                 continue
 
     def start_listening(self) -> None:
+        self._logger.info("Starting the alert router listeners")
         while True:
             try:
                 self._rabbit.start_consuming()
@@ -205,7 +239,7 @@ class AlertRouter:
                 # too.
                 self._logger.error(
                     "Something went wrong that meant a connection was not made")
-                self._logger.error(connection_error.message)
+                self._logger.exception(connection_error)
                 raise connection_error
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ

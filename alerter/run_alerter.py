@@ -4,7 +4,9 @@ import os
 import time
 
 import pika.exceptions
+from typing import Tuple
 
+from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
@@ -12,6 +14,17 @@ from src.monitors.managers.system import SystemMonitorsManager
 from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
+
+# Internal Communication  Names (Exchanges)
+CONFIG_EXCHANGE = "config"
+ALERTER_OUTPUT_EXCHANGE = ""
+ALERT_ROUTER_OUTPUT_EXCHANGE = ""
+
+REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
+
+
+def _get_initialisation_error_message(name: str, exception: Exception) -> str:
+    return f"'!!! Error when initialising {name}: {exception} !!!"
 
 
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
@@ -26,12 +39,11 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
                 data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(data_store_name, e)
+            msg = _get_initialisation_error_message(data_store_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print(REATTEMPTING_MESSAGE,
                           logging.getLogger('DUMMY_LOGGER'))
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -49,12 +61,11 @@ def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
                 manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
+            msg = _get_initialisation_error_message(manager_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print(REATTEMPTING_MESSAGE,
                           logging.getLogger('DUMMY_LOGGER'))
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -74,10 +85,9 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
                 system_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
+            msg = _get_initialisation_error_message(manager_name, e)
             log_and_print(msg, system_monitors_manager_logger)
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print(REATTEMPTING_MESSAGE,
                           system_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -97,14 +107,37 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
                 github_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
+            msg = _get_initialisation_error_message(manager_name, e)
             log_and_print(msg, github_monitors_manager_logger)
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print(REATTEMPTING_MESSAGE,
                           github_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return github_monitors_manager
+
+
+def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
+    alert_router_logger = create_logger(
+        os.environ["ALERT_ROUTER_LOG_FILE"], AlertRouter.__name__,
+        os.environ["LOGGING_LEVEL"], rotating=True
+    )
+
+    rabbit_ip = os.environ["RABBIT_IP"]
+
+    while True:
+        try:
+            alert_router = AlertRouter(alert_router_logger, rabbit_ip,
+                                       ALERTER_OUTPUT_EXCHANGE,
+                                       ALERT_ROUTER_OUTPUT_EXCHANGE,
+                                       CONFIG_EXCHANGE)
+            return alert_router, alert_router_logger
+        except (ConnectionNotInitializedException,
+                pika.exceptions.AMQPConnectionError):
+            # This is already logged, we need to try again. This exception
+            # should not happen, but if it does the program can't fully start
+            # up
+            alert_router_logger.info("Trying to set up the alert router again")
+            continue
 
 
 def _initialize_config_manager() -> ConfigManager:
@@ -116,7 +149,8 @@ def _initialize_config_manager() -> ConfigManager:
     rabbit_ip = os.environ["RABBIT_IP"]
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, "./config", rabbit_ip)
+            cm = ConfigManager(config_manager_logger, "./config", rabbit_ip,
+                               CONFIG_EXCHANGE)
             return cm
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
@@ -159,6 +193,16 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 
+def run_alert_router() -> None:
+    alert_router, alert_router_logger = _initialize_alert_router()
+
+    while True:
+        try:
+            alert_router.start_listening()
+        except Exception:
+            log_and_print(f"{alert_router} stopped", alert_router_logger)
+
+
 def run_config_manager(command_queue: multiprocessing.Queue) -> None:
     config_manager = _initialize_config_manager()
     config_manager.start_watching_config_files()
@@ -182,6 +226,11 @@ if __name__ == '__main__':
     data_store_process = multiprocessing.Process(target=run_data_store, args=())
     data_store_process.start()
 
+    # Start the alert router in a separate process
+    alert_router_process = multiprocessing.Process(target=run_alert_router,
+                                                   args=())
+    alert_router_process.start()
+
     # Config manager must be the last to start since it immediately begins by
     # sending the configs. That being said, all previous processes need to wait
     # for the config manager too.
@@ -195,6 +244,7 @@ if __name__ == '__main__':
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
     data_store_process.join()
+    alert_router_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
