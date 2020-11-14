@@ -16,8 +16,8 @@ web-installer/node_modules
 __pycache__/
 
 # logs
-alerter/logs/*.log*
-alerter/logs/*/*.log*
+**/*.log
+**/*.log*
 !alerter/logs/managers/.gitkeep
 !alerter/logs/monitors/.gitkeep
 !alerter/logs/.gitkeep
@@ -26,7 +26,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # configs
-config/*
+config/**
 !config/.gitkeep
 
 # dependencies
