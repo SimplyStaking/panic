@@ -77,6 +77,7 @@ class AlertRouter:
                     self._alert_output_channel, "topic", False, True, False,
                     False
                 )
+                break
             except (ConnectionNotInitializedException,
                     AMQPConnectionError) as connection_error:
                 # Should be impossible, but since exchange_declare can throw
@@ -128,14 +129,15 @@ class AlertRouter:
         self._logger.debug("recv_config = %s", recv_config)
 
         with self._config_lock:
-            previous_config = self._config[config_filename]
+            self._logger.debug("Got a lock on the config")
+            previous_config = self._config.get(config_filename, None)
             self._config[config_filename] = {}
 
             # Only take from the config if it is not empty
-            if not recv_config:
+            if recv_config:
                 # Taking what we need, and checking types
                 try:
-                    for key in recv_config:
+                    for key in recv_config.sections():
                         self._config[config_filename][key] = {
                             'id': recv_config.get(key, 'id'),
                             'info': recv_config.getboolean(key, 'info'),
@@ -159,6 +161,9 @@ class AlertRouter:
                     self._logger.warning(
                         "The previous configuration will be used instead")
                     self._config[config_filename] = previous_config
+            self._logger.debug(self._config)
+        self._logger.debug("Removed the lock from the config dict")
+
         while True:
             try:
                 self._rabbit.basic_ack(method.delivery_tag, False)
@@ -183,33 +188,45 @@ class AlertRouter:
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
         recv_alert: Dict = json.loads(body)
+        self._logger.debug("recv_alert = %s", recv_alert)
 
         # Where to route this alert to
         with self._config_lock:
+            self._logger.debug("Got a lock on the config")
+            self._logger.debug("Obtaining list of channels to alert")
+            self._logger.debug(
+                [channel.get('id') for channel_type in self._config.values()
+                 for channel in channel_type.values()])
             send_to_ids = [
                 channel.get('id') for channel_type in self._config.values()
                 for channel in channel_type.values()
                 if channel.get(recv_alert.get('severity').lower())
             ]
+        self._logger.debug("Removed the lock from the config dict")
+        self._logger.debug("send_to_ids = %s", send_to_ids)
 
         while True:
             try:
+                print(len(send_to_ids))
                 for channel_id in send_to_ids:
+                    print(channel_id)
                     send_alert: Dict = {**recv_alert,
                                         'destination_id': channel_id}
 
+                    self._logger.debug("Sending %s to %s", send_alert,
+                                       channel_id)
                     self._rabbit.basic_publish_confirm(
                         self._alert_output_channel, f"channel.{channel_id}",
                         send_alert,
                         mandatory=True, is_body_dict=True,
                         properties=BasicProperties(delivery_mode=2)
                     )
-                    self._logger.info("Configuration update sent")
+                    self._logger.info("Routed Alert sent")
                 break
             except MessageWasNotDeliveredException as mwnde:
-                self._logger.error("Config was not successfully sent")
+                self._logger.error("Alert was not successfully sent")
                 self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the log again")
+                self._logger.info("Will attempt sending the alert again")
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
@@ -221,6 +238,25 @@ class AlertRouter:
                 self._rabbit.connect_till_successful()
 
                 self._logger.info("Connection restored, will attempt again")
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. As a result we don't need to
+                # anything here, just re-try.
+                continue
+
+        while True:
+            try:
+                self._rabbit.basic_ack(method.delivery_tag, False)
+                break
+            except (ConnectionNotInitializedException,
+                    AMQPConnectionError) as connection_error:
+                # Should be impossible, but since exchange_declare can throw
+                # it we shall ensure to log that the error passed through here
+                # too.
+                self._logger.error("Something went wrong when trying to send "
+                                   "an acknowledgement")
+                self._logger.error(connection_error.message)
+                raise connection_error
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. As a result we don't need to

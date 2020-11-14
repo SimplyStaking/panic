@@ -15,10 +15,10 @@ from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
-# Internal Communication  Names (Exchanges)
+# Internal Communication Names (Exchanges)
 CONFIG_EXCHANGE = "config"
-ALERTER_OUTPUT_EXCHANGE = ""
-ALERT_ROUTER_OUTPUT_EXCHANGE = ""
+ALERTER_OUTPUT_EXCHANGE = "alerter"
+ALERT_ROUTER_OUTPUT_EXCHANGE = "channel_input"
 
 REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
 
@@ -149,7 +149,7 @@ def _initialize_config_manager() -> ConfigManager:
     rabbit_ip = os.environ["RABBIT_IP"]
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, "./config", rabbit_ip,
+            cm = ConfigManager(config_manager_logger, "../config", rabbit_ip,
                                CONFIG_EXCHANGE)
             return cm
         except ConnectionNotInitializedException:
