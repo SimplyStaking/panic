@@ -5,6 +5,7 @@ import sys
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Dict, Union
+from types import FrameType
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -150,7 +151,7 @@ class DataTransformer(ABC):
                 self.logger.exception(e)
                 raise e
 
-    def on_terminate(self, signum, stack) -> None:
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print('{} is terminating. Connections with RabbitMQ will be '
                       'closed, and afterwards the process will exit.'
                       .format(self), self.logger)

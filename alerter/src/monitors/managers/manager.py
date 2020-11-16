@@ -4,6 +4,7 @@ import signal
 import sys
 from abc import ABC, abstractmethod
 from typing import Dict
+from types import FrameType
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -80,7 +81,7 @@ class MonitorsManager(ABC):
 
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum, stack) -> None:
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print('{} is terminating. Connections with RabbitMQ will be '
                       'closed, and any running monitors will be stopped '
                       'gracefully. Afterwards the {} process will exit.'

@@ -4,6 +4,7 @@ import signal
 import sys
 from abc import ABC, abstractmethod
 from typing import Dict
+from types import FrameType
 
 import pika.exceptions
 
@@ -129,7 +130,7 @@ class Monitor(ABC):
             # Use the BlockingConnection sleep to avoid dropped connections
             self.rabbitmq.connection.sleep(self.monitor_period)
 
-    def on_terminate(self, signum, stack) -> None:
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print('{} is terminating. Connections with RabbitMQ will be '
                       'closed, and afterwards the process will exit.'
                       .format(self), self.logger)

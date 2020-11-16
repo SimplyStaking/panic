@@ -3,6 +3,7 @@ import multiprocessing
 import signal
 import sys
 from typing import Dict
+from types import FrameType
 
 from src.data_transformers.starters import start_system_data_transformer, \
     start_github_data_transformer
@@ -73,7 +74,7 @@ class DataTransformersManager:
         self.transformer_process_dict['GitHub Data Transformer'].join()
 
     # If termination signals are received, terminate all child process and exit
-    def on_terminate(self, signum, stack) -> None:
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print('{} is terminating. All the data transformers will be '
                       'stopped gracefully and then the {} process will '
                       'exit.'.format(self, self), self.logger)

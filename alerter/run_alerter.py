@@ -6,6 +6,7 @@ import sys
 import time
 
 import pika.exceptions
+from types import FrameType
 
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
@@ -209,7 +210,7 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 
 
 # If termination signals are received, terminate all child process and exit
-def on_terminate(signum, stack) -> None:
+def on_terminate(signum: int, stack: FrameType) -> None:
     dummy_logger = logging.getLogger('Dummy')
 
     log_and_print('The alerter is terminating. All components will be stopped '
@@ -232,8 +233,7 @@ def on_terminate(signum, stack) -> None:
     # TODO: Need to add configs manager here when Mark finishes the
     #     : modifications
 
-    log_and_print('The alerter process terminated.', dummy_logger)
-
+    log_and_print('The alerter is stopping.', dummy_logger)
     sys.exit()
 
 
