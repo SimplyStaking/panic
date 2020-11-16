@@ -110,10 +110,8 @@ class RabbitMQApi:
             # Channel errors do not reflect a connection error, therefore
             # do not set as disconnected
             self._logger.error('RabbitMQ error in %s: %r', function.__name__, e)
-            # If the channel error closed the communication channel, open
-            # another channel using the same connection
-            if self.channel.is_closed:
-                self.new_channel_unsafe()
+            # Create a new channel on a channel error
+            self.new_channel_unsafe()
             raise e
         except pika.exceptions.AMQPConnectionError as e:
             # For connection related errors, if a connection has been
