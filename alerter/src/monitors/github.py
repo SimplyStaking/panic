@@ -132,6 +132,7 @@ class GitHubMonitor(Monitor):
             self.logger.error('Error when retrieving data from {}'
                               .format(self.repo_config.releases_page))
             self.logger.exception(data_retrieval_exception)
+
         try:
             self._process_data(data_retrieval_exception)
         except Exception as error:

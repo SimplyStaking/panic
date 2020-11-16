@@ -2,12 +2,14 @@ import logging
 import multiprocessing
 import os
 import time
+import sys
 
 import pika.exceptions
 from typing import Tuple
 
 from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
+from src.data_transformers.manager import DataTransformersManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
@@ -27,6 +29,10 @@ def _get_initialisation_error_message(name: str, exception: Exception) -> str:
     return f"'!!! Error when initialising {name}: {exception} !!!"
 
 
+def _get_reattempting_message(reattempting_what: str) -> str:
+    return f"Re-attempting initialization procedure of {reattempting_what}"
+
+
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
@@ -35,48 +41,49 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
         try:
             data_store_logger = create_logger(
                 os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
-                    data_store_name),
-                data_store_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                    data_store_name), data_store_name,
+                os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
-            msg = _get_initialisation_error_message(data_store_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
-            log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            log_and_print(REATTEMPTING_MESSAGE,
-                          logging.getLogger('DUMMY_LOGGER'))
+            dummy_logger = logging.getLogger('DUMMY_LOGGER')
+            log_and_print(_get_initialisation_error_message(data_store_name, e),
+                          dummy_logger)
+            log_and_print(_get_reattempting_message(data_store_name),
+                          dummy_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return data_store_logger
 
 
-def _initialize_monitors_manager_logger(manager_name: str) -> logging.Logger:
+def _initialize_manager_logger(manager_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
-            monitors_manager_logger = create_logger(
+            manager_logger = create_logger(
                 os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
                 manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
         except Exception as e:
-            msg = _get_initialisation_error_message(manager_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
-            log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            log_and_print(REATTEMPTING_MESSAGE,
-                          logging.getLogger('DUMMY_LOGGER'))
+            dummy_logger = logging.getLogger('DUMMY_LOGGER')
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          dummy_logger)
+            log_and_print(_get_reattempting_message(manager_name),
+                          dummy_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
-    return monitors_manager_logger
+    return manager_logger
 
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = "System Monitors Manager"
 
-    system_monitors_manager_logger = _initialize_monitors_manager_logger(
-        manager_name)
+    system_monitors_manager_logger = _initialize_manager_logger(manager_name)
 
     # Attempt to initialize the system monitors manager
     while True:
@@ -85,9 +92,9 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
                 system_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = _get_initialisation_error_message(manager_name, e)
-            log_and_print(msg, system_monitors_manager_logger)
-            log_and_print(REATTEMPTING_MESSAGE,
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          system_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           system_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -97,8 +104,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
     manager_name = "GitHub Monitors Manager"
 
-    github_monitors_manager_logger = _initialize_monitors_manager_logger(
-        manager_name)
+    github_monitors_manager_logger = _initialize_manager_logger(manager_name)
 
     # Attempt to initialize the github monitors manager
     while True:
@@ -107,13 +113,34 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
                 github_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = _get_initialisation_error_message(manager_name, e)
-            log_and_print(msg, github_monitors_manager_logger)
-            log_and_print(REATTEMPTING_MESSAGE,
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          github_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           github_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return github_monitors_manager
+
+
+def _initialize_data_transformers_manager() -> DataTransformersManager:
+    manager_name = "Data Transformers Manager"
+
+    data_transformers_manager_logger = _initialize_manager_logger(manager_name)
+
+    # Attempt to initialize the data transformers manager
+    while True:
+        try:
+            data_transformers_manager = DataTransformersManager(
+                data_transformers_manager_logger, manager_name)
+            break
+        except Exception as e:
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          data_transformers_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
+                          data_transformers_manager_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return data_transformers_manager
 
 
 def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
@@ -193,6 +220,18 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 
+def run_data_transformers_manager() -> None:
+    data_transformers_manager = _initialize_data_transformers_manager()
+
+    while True:
+        try:
+            data_transformers_manager.manage()
+        except Exception as e:
+            data_transformers_manager.logger.exception(e)
+            log_and_print('{} stopped.'.format(data_transformers_manager),
+                          data_transformers_manager.logger)
+
+
 def run_alert_router() -> None:
     alert_router, alert_router_logger = _initialize_alert_router()
 
@@ -221,6 +260,10 @@ if __name__ == '__main__':
     github_monitors_manager_process = multiprocessing.Process(
         target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
+
+    data_transformers_manager_process = multiprocessing.Process(
+        target=run_data_transformers_manager, args=())
+    data_transformers_manager_process.start()
 
     # Start the data store in a separate process
     data_store_process = multiprocessing.Process(target=run_data_store, args=())
@@ -252,7 +295,16 @@ if __name__ == '__main__':
     config_manager_runner_process.join()
 
     print('The alerter is stopping.')
+    sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the
 #     : run alerter before start sending configs, as otherwise configs manager
-#     : would not be able to send configs on start-up
+#     : would not be able to send configs on start-up. Therefore start the
+#     : config manager last. Similarly, components must be started from left
+#     : to right according to the design (to avoid message not delivered
+#     : exceptions). Also, to fully solve these problems, we should perform
+#     : checks in the run alerter to see if a queue/exchange has been created
+
+# TODO: We may need graceful termination in managers of both transformer and
+#     : and monitor. And we may need to restart without waiting for all
+#     : processes to finish (Example see data transformer manager)

@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import multiprocessing
@@ -8,7 +9,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.system import SystemConfig
 from src.monitors.managers.manager import MonitorsManager
-from src.monitors.monitor_starters import start_system_monitor
+from src.monitors.starters import start_system_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.logging import log_and_print
@@ -56,6 +57,9 @@ class SystemMonitorsManager(MonitorsManager):
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
+
         if method.routing_key == 'general.systems_config':
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']
@@ -69,86 +73,98 @@ class SystemMonitorsManager(MonitorsManager):
             else:
                 current_configs = {}
 
-        new_configs = get_newly_added_configs(sent_configs, current_configs)
-        for config_id in new_configs:
-            config = new_configs[config_id]
-            system_id = config['id']
-            parent_id = config['parent_id']
-            system_name = config['name']
-            node_exporter_url = config['exporter_url']
-            monitor_system = config['monitor_system']
+        # This contains all the correct latest system configs. All current
+        # configs are correct configs, therefore start from the current and
+        # modify as we go along according to the updates. This is done just in
+        # case an error occurs.
+        correct_systems_configs = copy.deepcopy(current_configs)
 
-            # If we should not monitor the system, move to the next config
-            if not monitor_system:
-                continue
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                system_id = config['id']
+                parent_id = config['parent_id']
+                system_name = config['name']
+                node_exporter_url = config['exporter_url']
+                monitor_system = config['monitor_system']
 
-            system_config = SystemConfig(system_id, parent_id, system_name,
-                                         monitor_system, node_exporter_url)
-            process = multiprocessing.Process(target=start_system_monitor,
-                                              args=(system_config,))
-            # Kill children if parent is killed
-            process.daemon = True
-            log_and_print('Creating a new process for the monitor of {}'
-                          .format(system_config.system_name), self.logger)
-            process.start()
-            self._config_process_dict[config_id] = process
+                # If we should not monitor the system, move to the next config
+                if not monitor_system:
+                    continue
 
-        modified_configs = get_modified_configs(sent_configs, current_configs)
-        for config_id in modified_configs:
-            # Get the latest updates
-            config = sent_configs[config_id]
-            system_id = config['id']
-            parent_id = config['parent_id']
-            system_name = config['name']
-            node_exporter_url = config['exporter_url']
-            monitor_system = config['monitor_system']
-            system_config = SystemConfig(system_id, parent_id, system_name,
-                                         monitor_system, node_exporter_url)
-            previous_process = self.config_process_dict[config_id]
-            previous_process.terminate()
-            previous_process.join()
+                system_config = SystemConfig(system_id, parent_id, system_name,
+                                             monitor_system, node_exporter_url)
+                process = multiprocessing.Process(target=start_system_monitor,
+                                                  args=(system_config,))
+                # Kill children if parent is killed
+                process.daemon = True
+                log_and_print('Creating a new process for the monitor of {}'
+                              .format(system_config.system_name), self.logger)
+                process.start()
+                self._config_process_dict[config_id] = process
+                correct_systems_configs[config_id] = config
 
-            # If we should not monitor the system, delete the previous process
-            # from the system and move to the next config
-            if not monitor_system:
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                system_id = config['id']
+                parent_id = config['parent_id']
+                system_name = config['name']
+                node_exporter_url = config['exporter_url']
+                monitor_system = config['monitor_system']
+                system_config = SystemConfig(system_id, parent_id, system_name,
+                                             monitor_system, node_exporter_url)
+                previous_process = self.config_process_dict[config_id]
+                previous_process.terminate()
+                previous_process.join()
+
+                # If we should not monitor the system, delete the previous process
+                # from the system and move to the next config
+                if not monitor_system:
+                    del self.config_process_dict[config_id]
+                    del correct_systems_configs[config_id]
+                    log_and_print('Killed the monitor of {} '
+                                  .format(config_id), self.logger)
+                    continue
+
+                log_and_print('Restarting the monitor of {} with latest '
+                              'configuration'.format(config_id), self.logger)
+
+                process = multiprocessing.Process(target=start_system_monitor,
+                                                  args=(system_config,))
+                # Kill children if parent is killed
+                process.daemon = True
+                process.start()
+                self._config_process_dict[config_id] = process
+                correct_systems_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                system_name = config['name']
+                previous_process = self.config_process_dict[config_id]
+                previous_process.terminate()
+                previous_process.join()
                 del self.config_process_dict[config_id]
+                del correct_systems_configs[config_id]
                 log_and_print('Killed the monitor of {} '
-                              .format(config_id), self.logger)
-                continue
-
-            log_and_print('Restarting the monitor of {} with latest '
-                          'configuration'.format(config_id), self.logger)
-
-            process = multiprocessing.Process(target=start_system_monitor,
-                                              args=(system_config,))
-            # Kill children if parent is killed
-            process.daemon = True
-            process.start()
-            self._config_process_dict[config_id] = process
-
-        removed_configs = get_removed_configs(sent_configs, current_configs)
-        for config_id in removed_configs:
-            config = removed_configs[config_id]
-            system_name = config['name']
-            previous_process = self.config_process_dict[config_id]
-            previous_process.terminate()
-            previous_process.join()
-            del self.config_process_dict[config_id]
-            log_and_print('Killed the monitor of {} '
-                          .format(system_name), self.logger)
+                              .format(system_name), self.logger)
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
         if method.routing_key == 'general.systems_config':
-            # To avoid non-monitorable systems
-            self._systems_configs['general'] = {
-                config_id: sent_configs[config_id] for config_id in sent_configs
-                if sent_configs[config_id]['monitor_system']}
+            self._systems_configs['general'] = correct_systems_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            # To avoid non-monitorable systems
-            self._systems_configs[chain] = {
-                config_id: sent_configs[config_id] for config_id in sent_configs
-                if sent_configs[config_id]['monitor_system']}
+            self._systems_configs[chain] = correct_systems_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)

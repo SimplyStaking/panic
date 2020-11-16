@@ -68,3 +68,19 @@ class GitHubAPICallException(PANICException):
         message = "Error in API Call: {}".format(err)
         code = 5007
         super().__init__(message, code)
+
+
+class ReceivedUnexpectedDataException(PANICException):
+
+    def __init__(self, receiver) -> None:
+        message = "{} received unexpected data".format(receiver)
+        code = 5008
+        super().__init__(message, code)
+
+
+class InvalidUrlException(PANICException):
+
+    def __init__(self, url) -> None:
+        message = "Invalid URL \'{}\'".format(url)
+        code = 5009
+        super().__init__(message, code)
