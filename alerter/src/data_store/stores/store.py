@@ -20,13 +20,14 @@ class Store(ABC):
         redis_ip = os.environ["REDIS_IP"]
         redis_db = os.environ["REDIS_DB"]
         redis_port = os.environ["REDIS_PORT"]
+        unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
 
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
         self._redis = RedisApi(logger=self._logger, db=redis_db,
                                host=redis_ip, port=redis_port,
-                               namespace='panic_alerter')
+                               namespace=unique_alerter_identifier)
 
     def __str__(self) -> str:
         return self.store_name

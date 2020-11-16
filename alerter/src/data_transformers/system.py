@@ -498,22 +498,61 @@ class SystemDataTransformer(DataTransformer):
         self.publishing_queue.put({
             'exchange': 'store', 'routing_key': 'system',
             'data': copy.deepcopy(self.data_for_saving)})
+
+        # Compute the routing key for alerting. The routing key will be in
+        # the format `alerter.system.parent_id
+        response_index_key = 'result' if 'result' in self.transformed_data \
+            else 'error'
+        meta_data = self.data_for_alerting[response_index_key]['meta_data']
+        system_parent_id = meta_data['system_parent_id']
+        alerting_routing_key = 'alerter.system' + '.{}'.format(system_parent_id)
+
         self.publishing_queue.put({
             'exchange': 'alert',
-            'routing_key': 'alerter.system',
+            'routing_key': alerting_routing_key,
             'data': copy.deepcopy(self.data_for_alerting)})
 
         self.logger.debug("Transformed data added to the publishing queue "
                           "successfully.")
+
+    def _send_data(self) -> None:
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info('Attempting to send all data waiting in the '
+                             'publishing queue ...')
+
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
+
+            # Set the mandatory flag to true if data is sent to the data store,
+            # and false otherwise as the System alerter queue may be deleted.
+            mandatory = data['exchange'] != 'alert'
+
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=mandatory)
+            self.logger.debug('Sent {} to \'{}\' exchange'
+                              .format(data['data'], data['exchange']))
+            self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info('Successfully sent all data from the publishing '
+                             'queue')
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info('Received {} from monitors'.format(raw_data))
-
-        self.logger.info('Processing {} ...'.format(raw_data))
+        self.logger.info('Received {} from monitors. Now processing this data.'
+                         .format(raw_data))
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
