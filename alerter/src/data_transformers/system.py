@@ -530,7 +530,7 @@ class SystemDataTransformer(DataTransformer):
 
             # Set the mandatory flag to true if data is sent to the data store,
             # and false otherwise as the System alerter queue may be deleted.
-            mandatory = data['exchange'] == 'alert'
+            mandatory = data['exchange'] != 'alert'
 
             self.rabbitmq.basic_publish_confirm(
                 exchange=data['exchange'], routing_key=data['routing_key'],
