@@ -259,14 +259,39 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.debug("Transformed data added to the publishing queue "
                           "successfully.")
 
+    def _send_data(self) -> None:
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info('Attempting to send all data waiting in the '
+                             'publishing queue ...')
+
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug('Sent {} to \'{}\' exchange'
+                              .format(data['data'], data['exchange']))
+            self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info('Successfully sent all data from the publishing '
+                             'queue')
+
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info('Received {} from monitors'.format(raw_data))
-
-        self.logger.info('Processing {} ...'.format(raw_data))
+        self.logger.info('Received {} from monitors. Now processing this data.'
+                         .format(raw_data))
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
