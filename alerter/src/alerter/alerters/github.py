@@ -87,7 +87,7 @@ class GithubAlerter(Alerter):
                           meta['last_monitored'], meta['repo_parent_id'],
                           meta['repo_id']
                         )
-                        self._alerts_for_alert_router = alert.alert_data
+                        self._data_for_alerting = alert.alert_data
                         self.logger.debug('Successfully classified alert {}'
                                           ''.format(alert.alert_data))
                         self._place_latest_data_on_queue()
@@ -98,7 +98,7 @@ class GithubAlerter(Alerter):
                             meta_data['time'],
                             meta_data['repo_parent_id'], meta_data['repo_id']
                         )
-                self._alerts_for_alert_router = alert.alert_data
+                self._data_for_alerting = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'.format(
                     alert.alert_data)
                 )
@@ -138,7 +138,7 @@ class GithubAlerter(Alerter):
         self.publishing_queue.put({
             'exchange': 'alert',
             'routing_key': 'alert.github',
-            'data': copy.deepcopy(self.alerts_for_alert_router)})
+            'data': copy.deepcopy(self.data_for_alerting)})
 
         self.logger.debug("Alert data added to the publishing queue "
                           "successfully.")

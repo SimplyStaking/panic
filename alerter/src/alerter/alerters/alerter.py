@@ -22,7 +22,7 @@ class Alerter(ABC):
 
         self._alerter_name = alerter_name
         self._logger = logger
-        self._alerts_for_alert_router = {}
+        self._data_for_alerting = {}
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
@@ -55,8 +55,8 @@ class Alerter(ABC):
         return self._rabbitmq
 
     @property
-    def alerts_for_alert_router(self) -> Dict:
-        return self._alerts_for_alert_router
+    def data_for_alerting(self) -> Dict:
+        return self._data_for_alerting
 
     @property
     def publishing_queue(self) -> Queue:
