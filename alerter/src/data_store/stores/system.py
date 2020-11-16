@@ -8,6 +8,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.utils.constants import STORE_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException
 
@@ -21,21 +22,22 @@ class SystemStore(Store):
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates an exchange named `store` of type `direct`
-        Declares a queue named `system_store_queue` and binds it to exchange
-        `store` with a routing key `transformer.system.*` meaning anything
+        Creates a store exchange of type `direct`
+        Declares a queue named `system_store_queue` and binds it to the store
+        exchange with a routing key `transformer.system.*` meaning anything
         coming from the transformer with regards to a system will be received
         here.
         """
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
+        self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
+                                       exchange_type='direct',
                                        passive=False, durable=True,
                                        auto_delete=False, internal=False)
         self.rabbitmq.queue_declare('system_store_queue', passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='system_store_queue', exchange='store',
-                                 routing_key='system')
+        self.rabbitmq.queue_bind(queue='system_store_queue',
+                                 exchange=STORE_EXCHANGE, routing_key='system')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,

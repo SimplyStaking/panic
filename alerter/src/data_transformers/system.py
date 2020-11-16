@@ -14,6 +14,8 @@ from src.monitorables.system import System
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException, MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none
+from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
+    RAW_DATA_EXCHANGE
 
 
 class SystemDataTransformer(DataTransformer):
@@ -28,9 +30,9 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
+        self.logger.info('Creating \'{}\' exchange'.format(RAW_DATA_EXCHANGE))
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+                                       False, False)
         self.logger.info(
             'Creating queue \'system_data_transformer_raw_data_queue\'')
         self.rabbitmq.queue_declare(
@@ -38,9 +40,10 @@ class SystemDataTransformer(DataTransformer):
             False)
         self.logger.info(
             'Binding queue \'system_data_transformer_raw_data_queue\' to '
-            'exchange \'raw_data\' with routing key \'system\'')
+            'exchange \'{}\' with routing key \'system\''.format(
+                RAW_DATA_EXCHANGE))
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
-                                 'raw_data', 'system')
+                                 RAW_DATA_EXCHANGE, 'system')
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -52,12 +55,12 @@ class SystemDataTransformer(DataTransformer):
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'store\' exchange')
-        self.rabbitmq.exchange_declare('store', 'direct', False, True, False,
-                                       False)
-        self.logger.info('Creating \'alert\' exchange')
-        self.rabbitmq.exchange_declare('alert', 'topic', False, True, False,
-                                       False)
+        self.logger.info('Creating \'{}\' exchange'.format(STORE_EXCHANGE))
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+                                       False, False)
+        self.logger.info('Creating \'{}\' exchange'.format(ALERT_EXCHANGE))
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+                                       False, False)
 
     def load_state(self, system: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
@@ -496,7 +499,7 @@ class SystemDataTransformer(DataTransformer):
             self.publishing_queue.get()
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'store', 'routing_key': 'system',
+            'exchange': STORE_EXCHANGE, 'routing_key': 'system',
             'data': copy.deepcopy(self.data_for_saving)})
 
         # Compute the routing key for alerting. The routing key will be in
@@ -508,7 +511,7 @@ class SystemDataTransformer(DataTransformer):
         alerting_routing_key = 'alerter.system' + '.{}'.format(system_parent_id)
 
         self.publishing_queue.put({
-            'exchange': 'alert',
+            'exchange': ALERT_EXCHANGE,
             'routing_key': alerting_routing_key,
             'data': copy.deepcopy(self.data_for_alerting)})
 
@@ -530,7 +533,7 @@ class SystemDataTransformer(DataTransformer):
 
             # Set the mandatory flag to true if data is sent to the data store,
             # and false otherwise as the System alerter queue may be deleted.
-            mandatory = data['exchange'] != 'alert'
+            mandatory = data['exchange'] != ALERT_EXCHANGE
 
             self.rabbitmq.basic_publish_confirm(
                 exchange=data['exchange'], routing_key=data['routing_key'],

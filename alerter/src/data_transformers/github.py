@@ -11,6 +11,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils.constants import RAW_DATA_EXCHANGE, STORE_EXCHANGE, \
+    ALERT_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none, \
@@ -29,9 +31,9 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
+        self.logger.info('Creating \'{}\' exchange'.format(RAW_DATA_EXCHANGE))
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+                                       False, False)
         self.logger.info(
             'Creating queue \'github_data_transformer_raw_data_queue\'')
         self.rabbitmq.queue_declare(
@@ -39,9 +41,10 @@ class GitHubDataTransformer(DataTransformer):
             False)
         self.logger.info(
             'Binding queue \'github_data_transformer_raw_data_queue\' to '
-            'exchange \'raw_data\' with routing key \'github\'')
+            'exchange \'{}\' with routing key \'github\''.format(
+                RAW_DATA_EXCHANGE))
         self.rabbitmq.queue_bind('github_data_transformer_raw_data_queue',
-                                 'raw_data', 'github')
+                                 RAW_DATA_EXCHANGE, 'github')
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -53,12 +56,12 @@ class GitHubDataTransformer(DataTransformer):
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'store\' exchange')
-        self.rabbitmq.exchange_declare('store', 'direct', False, True, False,
-                                       False)
-        self.logger.info('Creating \'alert\' exchange')
-        self.rabbitmq.exchange_declare('alert', 'topic', False, True, False,
-                                       False)
+        self.logger.info('Creating \'{}\' exchange'.format(STORE_EXCHANGE))
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+                                       False, False)
+        self.logger.info('Creating \'{}\' exchange'.format(ALERT_EXCHANGE))
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+                                       False, False)
 
     def load_state(self, repo: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
@@ -249,11 +252,10 @@ class GitHubDataTransformer(DataTransformer):
             self.publishing_queue.get()
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'store', 'routing_key': 'github',
+            'exchange': STORE_EXCHANGE, 'routing_key': 'github',
             'data': copy.deepcopy(self.data_for_saving)})
         self.publishing_queue.put({
-            'exchange': 'alert',
-            'routing_key': 'alerter.github',
+            'exchange': ALERT_EXCHANGE, 'routing_key': 'alerter.github',
             'data': copy.deepcopy(self.data_for_alerting)})
 
         self.logger.debug("Transformed data added to the publishing queue "

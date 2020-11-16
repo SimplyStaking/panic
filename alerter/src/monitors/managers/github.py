@@ -14,6 +14,7 @@ from src.monitors.starters import start_github_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.logging import log_and_print
+from src.utils.constants import CONFIG_EXCHANGE
 from src.utils.types import str_to_bool
 
 
@@ -29,8 +30,8 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating exchange \'config\'')
-        self.rabbitmq.exchange_declare('config', 'topic', False, True,
+        self.logger.info('Creating exchange \'{}\''.format(CONFIG_EXCHANGE))
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
             'Creating queue \'github_monitors_manager_configs_queue\'')
@@ -38,16 +39,16 @@ class GitHubMonitorsManager(MonitorsManager):
                                     False, True, False, False)
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
-            '\'chains.*.*.repos_config\'')
+            'exchange \'{}\' with routing key \'chains.*.*.repos_config\''
+            .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
-                                 'config', 'chains.*.*.repos_config')
+                                 CONFIG_EXCHANGE, 'chains.*.*.repos_config')
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
-            '\'general.repos_config\'')
+            'exchange \'{}\' with routing key \'general.repos_config\''
+            .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
-                                 'config', 'general.repos_config')
+                                 CONFIG_EXCHANGE, 'general.repos_config')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)

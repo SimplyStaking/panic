@@ -10,6 +10,7 @@ import pika.exceptions
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class Monitor(ABC):
@@ -69,9 +70,9 @@ class Monitor(ABC):
         self.rabbitmq.connect_till_successful()
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
+        self.logger.info('Creating \'{}\' exchange'.format(RAW_DATA_EXCHANGE))
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+                                       False, False)
 
     @abstractmethod
     def _get_data(self) -> None:

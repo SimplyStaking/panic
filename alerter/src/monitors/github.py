@@ -15,6 +15,7 @@ from src.monitors.monitor import Monitor
 from src.utils.data import get_json
 from src.utils.exceptions import DataReadingException, PANICException, \
     CannotAccessGitHubPageException, GitHubAPICallException
+from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class GitHubMonitor(Monitor):
@@ -90,10 +91,11 @@ class GitHubMonitor(Monitor):
 
     def _send_data(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange='raw_data', routing_key='github', body=self.data,
+            exchange=RAW_DATA_EXCHANGE, routing_key='github', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to \'raw_data\' exchange.')
+        self.logger.debug('Sent data to \'{}\' exchange.'.format(
+            RAW_DATA_EXCHANGE))
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()

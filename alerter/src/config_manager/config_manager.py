@@ -13,6 +13,7 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.constants import CONFIG_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException, \
     ConnectionNotInitializedException
 from src.utils.routing_key import get_routing_key
@@ -31,7 +32,7 @@ class ConfigManager:
                  rabbit_ip: str, file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True, case_sensitive: bool = False,
-                 output_rabbit_channel: str = "config"):
+                 output_rabbit_exchange: str = CONFIG_EXCHANGE):
         """
         Constructs the ConfigManager instance
         :param config_directory: The root config directory to watch.
@@ -72,10 +73,11 @@ class ConfigManager:
             self._connect_to_rabbit()
             self._logger.debug("Connected to Rabbit")
             self._rabbit.exchange_declare(
-                output_rabbit_channel, "topic", False, True, False, False
+                output_rabbit_exchange, "topic", False, True, False, False
             )
 
-            self._logger.debug("Declared exchange in Rabbit")
+            self._logger.debug("Declared {} exchange in Rabbit".format(
+                CONFIG_EXCHANGE))
         except ConnectionNotInitializedException as cnie:
             # Should be impossible, but since exchange_declare can throw it we
             # shall ensure to log that the error passed through here too.
@@ -117,7 +119,7 @@ class ConfigManager:
                 )
                 # We need to definitely send this
                 self._rabbit.basic_publish_confirm(
-                    "config", routing_key, config, mandatory=True,
+                    CONFIG_EXCHANGE, routing_key, config, mandatory=True,
                     is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
                 )
@@ -151,7 +153,7 @@ class ConfigManager:
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
         When an event is thrown, it reads the config and sends it as a dict via
-        rabbitmq to the topic exchange "config"
+        rabbitmq to the config exchange of type topic
         with the routing key determined by the relative file path.
         :param event: The event passed by watchdog
         :return None

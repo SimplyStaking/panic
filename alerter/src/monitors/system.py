@@ -16,6 +16,7 @@ from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import MetricNotFoundException, \
     SystemIsDownException, DataReadingException, PANICException, \
     InvalidUrlException
+from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class SystemMonitor(Monitor):
@@ -281,10 +282,11 @@ class SystemMonitor(Monitor):
 
     def _send_data(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange='raw_data', routing_key='system', body=self.data,
+            exchange=RAW_DATA_EXCHANGE, routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to \'raw_data\' exchange')
+        self.logger.debug('Sent data to \'{}\' exchange'.format(
+            RAW_DATA_EXCHANGE))
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
