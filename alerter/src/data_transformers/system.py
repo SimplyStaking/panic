@@ -11,11 +11,11 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
+    RAW_DATA_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException, MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none
-from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
-    RAW_DATA_EXCHANGE
 
 
 class SystemDataTransformer(DataTransformer):

@@ -2,8 +2,8 @@ import logging
 import multiprocessing
 import signal
 import sys
-from typing import Dict
 from types import FrameType
+from typing import Dict
 
 from src.data_transformers.starters import start_system_data_transformer, \
     start_github_data_transformer

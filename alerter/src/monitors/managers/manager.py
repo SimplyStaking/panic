@@ -3,8 +3,8 @@ import os
 import signal
 import sys
 from abc import ABC, abstractmethod
-from typing import Dict
 from types import FrameType
+from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel

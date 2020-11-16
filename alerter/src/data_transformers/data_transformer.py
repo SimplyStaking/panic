@@ -4,8 +4,8 @@ import signal
 import sys
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Dict, Union
 from types import FrameType
+from typing import Dict, Union
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel

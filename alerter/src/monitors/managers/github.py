@@ -13,8 +13,8 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
-from src.utils.logging import log_and_print
 from src.utils.constants import CONFIG_EXCHANGE
+from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
 
@@ -40,13 +40,13 @@ class GitHubMonitorsManager(MonitorsManager):
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
             'exchange \'{}\' with routing key \'chains.*.*.repos_config\''
-            .format(CONFIG_EXCHANGE))
+                .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.repos_config')
         self.logger.info(
             'Binding queue \'github_monitors_manager_configs_queue\' to '
             'exchange \'{}\' with routing key \'general.repos_config\''
-            .format(CONFIG_EXCHANGE))
+                .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.repos_config')
         self.logger.info('Declaring consuming intentions')

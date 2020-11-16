@@ -3,15 +3,15 @@ import os
 import signal
 import sys
 from abc import ABC, abstractmethod
-from typing import Dict
 from types import FrameType
+from typing import Dict
 
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class Monitor(ABC):

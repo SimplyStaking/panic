@@ -12,8 +12,8 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
-from src.utils.logging import log_and_print
 from src.utils.constants import CONFIG_EXCHANGE
+from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
 
@@ -39,13 +39,13 @@ class SystemMonitorsManager(MonitorsManager):
         self.logger.info(
             'Binding queue \'system_monitors_manager_configs_queue\' to '
             'exchange \'{}\' with routing key \'chains.*.*.systems_config\''
-            .format(CONFIG_EXCHANGE))
+                .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.systems_config')
         self.logger.info(
             'Binding queue \'system_monitors_manager_configs_queue\' to '
             'exchange \'{}\' with routing key \'general.systems_config\''
-            .format(CONFIG_EXCHANGE))
+                .format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.systems_config')
         self.logger.info('Declaring consuming intentions')

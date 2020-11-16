@@ -12,10 +12,10 @@ from urllib3.exceptions import ProtocolError
 
 from src.configs.repo import RepoConfig
 from src.monitors.monitor import Monitor
+from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_json
 from src.utils.exceptions import DataReadingException, PANICException, \
     CannotAccessGitHubPageException, GitHubAPICallException
-from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class GitHubMonitor(Monitor):

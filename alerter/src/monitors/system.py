@@ -12,11 +12,11 @@ from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
 from src.monitors.monitor import Monitor
+from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import MetricNotFoundException, \
     SystemIsDownException, DataReadingException, PANICException, \
     InvalidUrlException
-from src.utils.constants import RAW_DATA_EXCHANGE
 
 
 class SystemMonitor(Monitor):

@@ -4,9 +4,9 @@ import os
 import signal
 import sys
 import time
+from types import FrameType
 
 import pika.exceptions
-from types import FrameType
 
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
