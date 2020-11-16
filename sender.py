@@ -6,6 +6,7 @@ import logging
 
 from alerter.src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 
+# TODO: Remove for production
 
 def main():
     # Set durable to true so that if rabbitmq restarts the queue is not lost
