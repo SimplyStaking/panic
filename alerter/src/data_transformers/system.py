@@ -30,17 +30,17 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info('Creating \'{}\' exchange'.format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating \'{}\' exchange".format(RAW_DATA_EXCHANGE))
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
         self.logger.info(
-            'Creating queue \'system_data_transformer_raw_data_queue\'')
+            "Creating queue \'system_data_transformer_raw_data_queue\'")
         self.rabbitmq.queue_declare(
             'system_data_transformer_raw_data_queue', False, True, False,
             False)
         self.logger.info(
-            'Binding queue \'system_data_transformer_raw_data_queue\' to '
-            'exchange \'{}\' with routing key \'system\''.format(
+            "Binding queue \'system_data_transformer_raw_data_queue\' to "
+            "exchange \'{}\' with routing key \'system\'".format(
                 RAW_DATA_EXCHANGE))
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
                                  RAW_DATA_EXCHANGE, 'system')
@@ -48,17 +48,17 @@ class SystemDataTransformer(DataTransformer):
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info('Declaring consuming intentions')
+        self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume('system_data_transformer_raw_data_queue',
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'{}\' exchange'.format(STORE_EXCHANGE))
+        self.logger.info("Creating \'{}\' exchange".format(STORE_EXCHANGE))
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info('Creating \'{}\' exchange'.format(ALERT_EXCHANGE))
+        self.logger.info("Creating \'{}\' exchange".format(ALERT_EXCHANGE))
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
 
@@ -67,7 +67,7 @@ class SystemDataTransformer(DataTransformer):
         # If Redis is down, the data passed as default will be stored as
         # the system state.
 
-        self.logger.debug('Loading the state of {} from Redis'.format(system))
+        self.logger.debug("Loading the state of {} from Redis".format(system))
         redis_hash = Keys.get_hash_parent(system.parent_id)
         system_id = system.system_id
 
@@ -224,17 +224,17 @@ class SystemDataTransformer(DataTransformer):
         system.set_went_down_at(went_down_at)
 
         self.logger.debug(
-            'Restored %s state: _process_cpu_seconds_total=%s, '
-            '_process_memory_usage=%s, _virtual_memory_usage=%s, '
-            '_open_file_descriptors=%s, _system_cpu_usage=%s, '
-            '_system_ram_usage=%s, _system_storage_usage=%s, '
-            '_network_transmit_bytes_per_second=%s, '
-            '_network_receive_bytes_per_second=%s, '
-            '_network_transmit_bytes_total=%s, '
-            '_network_receive_bytes_total=%s, '
-            '_disk_io_time_seconds_in_interval=%s, '
-            '_disk_io_time_seconds_total=%s, _last_monitored=%s, '
-            '_went_down_at=%s', system, process_cpu_seconds_total,
+            "Restored %s state: _process_cpu_seconds_total=%s, "
+            "_process_memory_usage=%s, _virtual_memory_usage=%s, "
+            "_open_file_descriptors=%s, _system_cpu_usage=%s, "
+            "_system_ram_usage=%s, _system_storage_usage=%s, "
+            "_network_transmit_bytes_per_second=%s, "
+            "_network_receive_bytes_per_second=%s, "
+            "_network_transmit_bytes_total=%s, "
+            "_network_receive_bytes_total=%s, "
+            "_disk_io_time_seconds_in_interval=%s, "
+            "_disk_io_time_seconds_total=%s, _last_monitored=%s, "
+            "_went_down_at=%s", system, process_cpu_seconds_total,
             process_memory_usage, virtual_memory_usage, open_file_descriptors,
             system_cpu_usage, system_ram_usage, system_storage_usage,
             network_transmit_bytes_per_second, network_receive_bytes_per_second,
@@ -301,7 +301,7 @@ class SystemDataTransformer(DataTransformer):
                 system.set_as_down(went_down_at)
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _update_state'.format(self))
+                "{}: _update_state".format(self))
 
         self.logger.debug("State updated successfully")
 
@@ -313,7 +313,7 @@ class SystemDataTransformer(DataTransformer):
             processed_data = copy.deepcopy(self.transformed_data)
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_transformed_data_for_saving'.format(self))
+                "{}: _process_transformed_data_for_saving".format(self))
 
         self._data_for_saving = processed_data
 
@@ -392,7 +392,7 @@ class SystemDataTransformer(DataTransformer):
                     system.went_down_at
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_transformed_data_for_alerting'.format(self))
+                "{}: _process_transformed_data_for_alerting".format(self))
 
         self._data_for_alerting = processed_data
 
@@ -483,7 +483,7 @@ class SystemDataTransformer(DataTransformer):
                     system.went_down_at if system.is_down else time_of_error
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _transform_data'.format(self))
+                "{}: _transform_data".format(self))
 
         self._transformed_data = transformed_data
         self._process_transformed_data_for_alerting()
@@ -522,8 +522,8 @@ class SystemDataTransformer(DataTransformer):
         empty = True
         if not self.publishing_queue.empty():
             empty = False
-            self.logger.info('Attempting to send all data waiting in the '
-                             'publishing queue ...')
+            self.logger.info("Attempting to send all data waiting in the "
+                             "publishing queue ...")
 
         # Try sending the data in the publishing queue one by one. Important,
         # remove an item from the queue only if the sending was successful, so
@@ -540,21 +540,21 @@ class SystemDataTransformer(DataTransformer):
                 body=data['data'], is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=mandatory)
-            self.logger.debug('Sent {} to \'{}\' exchange'
+            self.logger.debug("Sent {} to \'{}\' exchange"
                               .format(data['data'], data['exchange']))
             self.publishing_queue.get()
             self.publishing_queue.task_done()
 
         if not empty:
-            self.logger.info('Successfully sent all data from the publishing '
-                             'queue')
+            self.logger.info("Successfully sent all data from the publishing "
+                             "queue")
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info('Received {} from monitors. Now processing this data.'
+        self.logger.info("Received {} from monitors. Now processing this data."
                          .format(raw_data))
         try:
             if 'result' in raw_data or 'error' in raw_data:
@@ -574,10 +574,10 @@ class SystemDataTransformer(DataTransformer):
                 self._transform_data(raw_data)
                 self._update_state()
                 self._place_latest_data_on_queue()
-                self.logger.info('Successfully processed {}'.format(raw_data))
+                self.logger.info("Successfully processed {}".format(raw_data))
             else:
                 raise ReceivedUnexpectedDataException(
-                    '{}: _process_raw_data'.format(self))
+                    "{}: _process_raw_data".format(self))
         except Exception as e:
             self.logger.error("Error when processing {}".format(raw_data))
             self.logger.exception(e)

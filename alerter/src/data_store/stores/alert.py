@@ -57,7 +57,7 @@ class AlertStore(Store):
         try:
             self._process_mongo_store(alert_data['result']['data'])
         except KeyError as e:
-            self.logger.error('Error when reading alert data, in data store.')
+            self.logger.error("Error when reading alert data, in data store.")
             self.logger.exception(e)
         except Exception as e:
             self.logger.exception(e)

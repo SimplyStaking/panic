@@ -32,10 +32,10 @@ class DataTransformer(ABC):
         # Set a max queue size so that if the data transformer is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
-                                 "DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE"])
+                                 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE'])
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
         # Handle termination signals by stopping the monitor gracefully
@@ -152,9 +152,9 @@ class DataTransformer(ABC):
                 raise e
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print('{} is terminating. Connections with RabbitMQ will be '
-                      'closed, and afterwards the process will exit.'
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
                       .format(self), self.logger)
         self.rabbitmq.disconnect_till_successful()
-        log_and_print('{} terminated.'.format(self), self.logger)
+        log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

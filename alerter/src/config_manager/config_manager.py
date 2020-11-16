@@ -19,7 +19,7 @@ from src.utils.exceptions import MessageWasNotDeliveredException, \
 from src.utils.routing_key import get_routing_key
 from .config_update_event_handler import ConfigFileEventHandler
 
-_FIRST_RUN_EVENT = "first run"
+_FIRST_RUN_EVENT = 'first run'
 
 
 class ConfigManager:
@@ -47,7 +47,7 @@ class ConfigManager:
             `ignore_file_patterns` are case sensitive. Defaults to False
         """
         if not file_patterns:
-            file_patterns = ["*.ini"]
+            file_patterns = ['*.ini']
 
         self._logger = logger
         self._config_directory = config_directory
@@ -55,7 +55,7 @@ class ConfigManager:
         self._watching = False
         self._connected_to_rabbit = False
 
-        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
+        self._rabbit = RabbitMQApi(logger.getChild('rabbitmq'), host=rabbit_ip)
 
         self._event_handler = ConfigFileEventHandler(
             self._logger.getChild(ConfigFileEventHandler.__name__),
@@ -73,7 +73,7 @@ class ConfigManager:
             self._connect_to_rabbit()
             self._logger.debug("Connected to Rabbit")
             self._rabbit.exchange_declare(
-                output_rabbit_exchange, "topic", False, True, False, False
+                output_rabbit_exchange, 'topic', False, True, False, False
             )
 
             self._logger.debug("Declared {} exchange in Rabbit".format(

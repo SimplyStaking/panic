@@ -62,7 +62,7 @@ class SystemStore(Store):
             self._process_redis_store(system_data)
             self._process_mongo_store(system_data)
         except KeyError as e:
-            self.logger.error('Error when parsing {}.'.format(system_data))
+            self.logger.error("Error when parsing {}.".format(system_data))
             self.logger.exception(e)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing {}".format(system_data))
@@ -83,7 +83,7 @@ class SystemStore(Store):
             self._process_redis_error_store(data['error'])
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_redis_store'.format(self))
+                "{}: _process_redis_store".format(self))
 
     def _process_redis_result_store(self, data: Dict) -> None:
         meta_data = data['meta_data']
@@ -93,17 +93,17 @@ class SystemStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            'Saving %s state: _process_cpu_seconds_total=%s, '
-            '_process_memory_usage=%s, _virtual_memory_usage=%s, '
-            '_open_file_descriptors=%s, _system_cpu_usage=%s, '
-            '_system_ram_usage=%s, _system_storage_usage=%s, '
-            '_network_transmit_bytes_per_second=%s, '
-            '_network_receive_bytes_per_second=%s, '
-            '_network_receive_bytes_total=%s, '
-            '_network_transmit_bytes_total=%s, '
-            '_disk_io_time_seconds_total=%s, '
-            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ',
-            '_last_monitored=%s', system_name,
+            "Saving %s state: _process_cpu_seconds_total=%s, "
+            "_process_memory_usage=%s, _virtual_memory_usage=%s, "
+            "_open_file_descriptors=%s, _system_cpu_usage=%s, "
+            "_system_ram_usage=%s, _system_storage_usage=%s, "
+            "_network_transmit_bytes_per_second=%s, "
+            "_network_receive_bytes_per_second=%s, "
+            "_network_receive_bytes_total=%s, "
+            "_network_transmit_bytes_total=%s, "
+            "_disk_io_time_seconds_total=%s, "
+            "_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ",
+            "_last_monitored=%s", system_name,
             metrics['process_cpu_seconds_total'],
             metrics['process_memory_usage'], metrics['virtual_memory_usage'],
             metrics['open_file_descriptors'], metrics['system_cpu_usage'],
@@ -162,7 +162,7 @@ class SystemStore(Store):
             metrics = data['data']
 
             self.logger.debug(
-                'Saving %s state: _went_down_at=%s', system_name,
+                "Saving %s state: _went_down_at=%s", system_name,
                 metrics['went_down_at']
             )
 
@@ -179,7 +179,7 @@ class SystemStore(Store):
             self._process_mongo_error_store(data['error'])
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_mongo_store'.format(self))
+                "{}: _process_mongo_store".format(self))
 
     def _process_mongo_result_store(self, data: Dict) -> None:
         """

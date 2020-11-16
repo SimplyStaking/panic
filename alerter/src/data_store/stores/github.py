@@ -59,7 +59,7 @@ class GithubStore(Store):
         try:
             self._process_redis_store(github_data)
         except KeyError as e:
-            self.logger.error('Error when parsing {}.'.format(github_data))
+            self.logger.error("Error when parsing {}.".format(github_data))
             self.logger.exception(e)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing {}".format(github_data))
@@ -81,7 +81,7 @@ class GithubStore(Store):
             return
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_redis_store'.format(self))
+                "{}: _process_redis_store".format(self))
 
     def _process_redis_result_store(self, data: Dict) -> None:
         meta_data = data['meta_data']
@@ -91,7 +91,7 @@ class GithubStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            'Saving %s state: _no_of_releases=%s, _last_monitored=%s',
+            "Saving %s state: _no_of_releases=%s, _last_monitored=%s",
             repo_name, metrics['no_of_releases'], meta_data['last_monitored']
         )
 
