@@ -1,18 +1,20 @@
 import json
 import logging
 from datetime import datetime
+from typing import Dict
 
 import pika.exceptions
 
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.types import SystemDataType, SystemMonitorDataType
+from src.utils.exceptions import ReceivedUnexpectedDataException, \
+    SystemIsDownException
 
 
 class SystemStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -50,68 +52,43 @@ class SystemStore(Store):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         """ 
-        Processes the data being received, from the queue.
-        Two types of metrics are going to be received, the system metrics
-        of the system being monitored and the metrics of the monitor currently
-        monitoring the system. System metrics need to be stored in redis and
-        mongo while monitor metrics only need to be stored in redis.
+        Processes the data being received, from the queue. This data will be
+        saved in Mongo and Redis as required.
         """
         system_data = json.loads(body.decode())
         try:
-            if 'error' not in system_data:
-                self._process_redis_monitor_store(
-                    system_data['result']['meta_data']
-                )
-                self._process_redis_metrics_store(
-                    system_data['result']['data'],
-                    system_data['result']['meta_data']['system_parent_id'],
-                    system_data['result']['meta_data']['system_id'],
-                )
-                self._process_mongo_store(
-                    system_data['result']['data'],
-                    system_data['result']['meta_data'],
-                )
-            else:
-                if int(system_data['error']['code']) == 5004:
-                    self._process_redis_error_store(
-                        system_data['error']['meta_data'])
-
+            self._process_redis_store(system_data)
+            self._process_mongo_store(system_data)
         except KeyError as e:
-            self.logger.error('Error when reading system data, in data store.')
+            self.logger.error('Error when parsing {}.'.format(system_data))
+            self.logger.exception(e)
+        except ReceivedUnexpectedDataException as e:
+            self.logger.error("Error when processing {}".format(system_data))
             self.logger.exception(e)
         except Exception as e:
             self.logger.exception(e)
+            # When an exception is raised we must acknowledge the message so
+            # that it is removed from the queue, since it won't be re-delivered
+            self.rabbitmq.basic_ack(method.delivery_tag, False)
             raise e
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_error_store(self, monitor_data: SystemMonitorDataType) \
-            -> None:
-        self.logger.debug(
-            'Saving %s state: _system_error_system_is_down=%s, at=%s',
-            monitor_data['monitor_name'], str(True), monitor_data['time']
-        )
+    def _process_redis_store(self, data: Dict) -> None:
+        if 'result' in data:
+            self._process_redis_result_store(data['result'])
+        elif 'error' in data:
+            self._process_redis_error_store(data['error'])
+        else:
+            raise ReceivedUnexpectedDataException(
+                '{}: _process_redis_store'.format(self))
 
-        self.redis.hset(
-            Keys.get_hash_parent(monitor_data['system_parent_id']),
-            Keys.get_system_error_system_is_down(monitor_data['system_id']),
-            str(True)
-        )
-
-    def _process_redis_monitor_store(
-            self, monitor_data: SystemMonitorDataType) -> None:
-        self.logger.debug(
-            'Saving %s state: _system_monitor_last_monitoring_round=%s',
-            monitor_data['monitor_name'], monitor_data['last_monitored']
-        )
-
-        self.redis.set(
-            Keys.get_system_monitor_last_monitoring_round(
-                monitor_data['monitor_name']),
-            str(monitor_data['last_monitored'])
-        )
-
-    def _process_redis_metrics_store(self, system: SystemDataType,
-                                     parent_id: str, system_id: str) -> None:
+    def _process_redis_result_store(self, data: Dict) -> None:
+        meta_data = data['meta_data']
+        system_name = meta_data['system_name']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['data']
 
         self.logger.debug(
             'Saving %s state: _process_cpu_seconds_total=%s, '
@@ -123,52 +100,86 @@ class SystemStore(Store):
             '_network_receive_bytes_total=%s, '
             '_network_transmit_bytes_total=%s, '
             '_disk_io_time_seconds_total=%s, '
-            '_disk_io_time_seconds_in_interval=%s'
-            '_system_error_system_is_down=False',
-            system_id, system['process_cpu_seconds_total'],
-            system['process_memory_usage'], system['virtual_memory_usage'],
-            system['open_file_descriptors'], system['system_cpu_usage'],
-            system['system_ram_usage'], system['system_storage_usage'],
-            system['network_transmit_bytes_per_second'],
-            system['network_receive_bytes_per_second'],
-            system['network_receive_bytes_total'],
-            system['network_transmit_bytes_total'],
-            system['disk_io_time_seconds_total'],
-            system['disk_io_time_seconds_in_interval']
+            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ',
+            '_last_monitored=%s', system_name,
+            metrics['process_cpu_seconds_total'],
+            metrics['process_memory_usage'], metrics['virtual_memory_usage'],
+            metrics['open_file_descriptors'], metrics['system_cpu_usage'],
+            metrics['system_ram_usage'], metrics['system_storage_usage'],
+            metrics['network_transmit_bytes_per_second'],
+            metrics['network_receive_bytes_per_second'],
+            metrics['network_receive_bytes_total'],
+            metrics['network_transmit_bytes_total'],
+            metrics['disk_io_time_seconds_total'],
+            metrics['disk_io_time_seconds_in_interval'],
+            metrics['went_down_at'], meta_data['last_monitored']
         )
 
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
             Keys.get_system_process_cpu_seconds_total(system_id):
-                str(system['process_cpu_seconds_total']),
+                str(metrics['process_cpu_seconds_total']),
             Keys.get_system_process_memory_usage(system_id):
-                str(system['process_memory_usage']),
+                str(metrics['process_memory_usage']),
             Keys.get_system_virtual_memory_usage(system_id):
-                str(system['virtual_memory_usage']),
+                str(metrics['virtual_memory_usage']),
             Keys.get_system_open_file_descriptors(system_id):
-                str(system['open_file_descriptors']),
+                str(metrics['open_file_descriptors']),
             Keys.get_system_system_cpu_usage(system_id):
-                str(system['system_cpu_usage']),
+                str(metrics['system_cpu_usage']),
             Keys.get_system_system_ram_usage(system_id):
-                str(system['system_ram_usage']),
+                str(metrics['system_ram_usage']),
             Keys.get_system_system_storage_usage(system_id):
-                str(system['system_storage_usage']),
-            Keys.get_network_transmit_bytes_per_second(system_id):
-                str(system['network_transmit_bytes_per_second']),
-            Keys.get_network_receive_bytes_per_second(system_id):
-                str(system['network_receive_bytes_per_second']),
-            Keys.get_network_receive_bytes_total(system_id):
-                str(system['network_receive_bytes_total']),
-            Keys.get_network_transmit_bytes_total(system_id):
-                str(system['network_transmit_bytes_total']),
-            Keys.get_disk_io_time_seconds_total(system_id):
-                str(system['disk_io_time_seconds_total']),
-            Keys.get_disk_io_time_seconds_in_interval(system_id):
-                str(system['disk_io_time_seconds_in_interval']),
-            Keys.get_system_error_system_is_down(system_id): str(False),
+                str(metrics['system_storage_usage']),
+            Keys.get_system_network_transmit_bytes_per_second(system_id):
+                str(metrics['network_transmit_bytes_per_second']),
+            Keys.get_system_network_receive_bytes_per_second(system_id):
+                str(metrics['network_receive_bytes_per_second']),
+            Keys.get_system_network_receive_bytes_total(system_id):
+                str(metrics['network_receive_bytes_total']),
+            Keys.get_system_network_transmit_bytes_total(system_id):
+                str(metrics['network_transmit_bytes_total']),
+            Keys.get_system_disk_io_time_seconds_total(system_id):
+                str(metrics['disk_io_time_seconds_total']),
+            Keys.get_system_disk_io_time_seconds_in_interval(system_id):
+                str(metrics['disk_io_time_seconds_in_interval']),
+            Keys.get_system_went_down_at(system_id):
+                str(metrics['went_down_at']),
+            Keys.get_system_last_monitored(system_id):
+                str(meta_data['last_monitored']),
         })
 
-    def _process_mongo_store(self, system: SystemDataType,
-                             monitor_data: SystemMonitorDataType) -> None:
+    def _process_redis_error_store(self, data: Dict) -> None:
+        meta_data = data['meta_data']
+        error_code = data['code']
+        system_name = meta_data['system_name']
+        downtime_exception = SystemIsDownException(system_name)
+
+        if error_code == downtime_exception.code:
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['data']
+
+            self.logger.debug(
+                'Saving %s state: _went_down_at=%s', system_name,
+                metrics['went_down_at']
+            )
+
+            self.redis.hset(
+                Keys.get_hash_parent(parent_id),
+                Keys.get_system_went_down_at(system_id),
+                str(metrics['went_down_at'])
+            )
+
+    def _process_mongo_store(self, data: Dict) -> None:
+        if 'result' in data:
+            self._process_mongo_result_store(data['result'])
+        elif 'error' in data:
+            self._process_mongo_error_store(data['error'])
+        else:
+            raise ReceivedUnexpectedDataException(
+                '{}: _process_mongo_store'.format(self))
+
+    def _process_mongo_result_store(self, data: Dict) -> None:
         """
         Updating mongo with system metrics using a time-based document with 60
         entries per hour per system, assuming each system monitoring round is
@@ -181,44 +192,92 @@ class SystemStore(Store):
         Document type will always be system, as only system metrics are going
         to be stored in this document.
 
-        Timestamp is the time of when the metric was saved into the database.
+        Timestamp is the time of when these metrics were extracted.
 
-        $inc increments n_metrics by one each time a metric is added
+        $inc increments n_entries by one each time an entry is added
         """
+
+        meta_data = data['meta_data']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['data']
         time_now = datetime.now()
         self.mongo.update_one(
-            monitor_data['system_parent_id'],
+            parent_id,
             {'doc_type': 'system', 'd': time_now.hour},
             {
                 '$push': {
-                    monitor_data['system_id']: {
+                    system_id: {
                         'process_cpu_seconds_total': str(
-                            system['process_cpu_seconds_total']),
+                            metrics['process_cpu_seconds_total']),
                         'process_memory_usage': str(
-                            system['process_memory_usage']),
+                            metrics['process_memory_usage']),
                         'virtual_memory_usage': str(
-                            system['virtual_memory_usage']),
+                            metrics['virtual_memory_usage']),
                         'open_file_descriptors': str(
-                            system['open_file_descriptors']),
-                        'system_cpu_usage': str(system['system_cpu_usage']),
-                        'system_ram_usage': str(system['system_ram_usage']),
+                            metrics['open_file_descriptors']),
+                        'system_cpu_usage': str(metrics['system_cpu_usage']),
+                        'system_ram_usage': str(metrics['system_ram_usage']),
                         'system_storage_usage': str(
-                            system['system_storage_usage']),
+                            metrics['system_storage_usage']),
                         'network_transmit_bytes_per_second': str(
-                            system['network_transmit_bytes_per_second']),
+                            metrics['network_transmit_bytes_per_second']),
                         'network_receive_bytes_per_second': str(
-                            system['network_receive_bytes_per_second']),
+                            metrics['network_receive_bytes_per_second']),
                         'network_receive_bytes_total': str(
-                            system['network_receive_bytes_total']),
+                            metrics['network_receive_bytes_total']),
                         'network_transmit_bytes_total': str(
-                            system['network_transmit_bytes_total']),
+                            metrics['network_transmit_bytes_total']),
                         'disk_io_time_seconds_total': str(
-                            system['disk_io_time_seconds_total']),
+                            metrics['disk_io_time_seconds_total']),
                         'disk_io_time_seconds_in_interval': str(
-                            system['disk_io_time_seconds_in_interval']),
-                        'timestamp': str(monitor_data['last_monitored']),
+                            metrics['disk_io_time_seconds_in_interval']),
+                        'went_down_at': str(metrics['went_down_at']),
+                        'timestamp': str(meta_data['last_monitored']),
                     }
                 },
-                '$inc': {'n_metrics': 1},
+                '$inc': {'n_entries': 1},
             }
         )
+
+    def _process_mongo_error_store(self, data: Dict) -> None:
+        """
+        Updating mongo with error metrics using a time-based document with 60
+        entries per hour per system, assuming each system monitoring round is
+        60 seconds.
+
+        Collection is the parent identifier of the system, a document will keep
+        incrementing with new system metrics until it's the next hour at which
+        point mongo will create a new document and repeat the process.
+
+        Document type will always be system, as only system metrics are going
+        to be stored in this document.
+
+        Timestamp is the time of when these metrics were extracted.
+
+        $inc increments n_entries by one each time an entry is added
+        """
+
+        meta_data = data['meta_data']
+        error_code = data['code']
+        system_name = meta_data['system_name']
+        downtime_exception = SystemIsDownException(system_name)
+
+        if error_code == downtime_exception.code:
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['data']
+            time_now = datetime.now()
+            self.mongo.update_one(
+                parent_id,
+                {'doc_type': 'system', 'd': time_now.hour},
+                {
+                    '$push': {
+                        system_id: {
+                            'went_down_at': str(metrics['went_down_at']),
+                            'timestamp': str(meta_data['time']),
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )

@@ -44,7 +44,8 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
         try:
             system_monitor = SystemMonitor(
                 monitor_name, system_config, system_monitor_logger,
-                int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"]))
+                int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"])
+            )
             log_and_print("Successfully initialized {}".format(monitor_name),
                           system_monitor_logger)
             break
@@ -70,7 +71,8 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
         try:
             github_monitor = GitHubMonitor(
                 monitor_name, repo_config, github_monitor_logger,
-                int(os.environ["GITHUB_MONITOR_PERIOD_SECONDS"]))
+                int(os.environ["GITHUB_MONITOR_PERIOD_SECONDS"])
+            )
             log_and_print("Successfully initialized {}".format(monitor_name),
                           github_monitor_logger)
             break
@@ -100,7 +102,6 @@ def start_monitor(monitor: Monitor) -> None:
             monitor.start()
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
             log_and_print('{} stopped.'.format(monitor), monitor.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected

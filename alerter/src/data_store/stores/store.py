@@ -8,11 +8,11 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import MessageWasNotDeliveredException
-from src.utils.logging import log_and_print
 
 
 class Store(ABC):
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, store_name: str, logger: logging.Logger):
+        self._store_name = store_name
         rabbit_ip = os.environ["RABBIT_IP"]
         self._mongo_ip = os.environ["DB_IP"]
         self._mongo_db = os.environ["DB_NAME"]
@@ -20,13 +20,21 @@ class Store(ABC):
         redis_ip = os.environ["REDIS_IP"]
         redis_db = os.environ["REDIS_DB"]
         redis_port = os.environ["REDIS_PORT"]
+        unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
 
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
         self._redis = RedisApi(logger=self._logger, db=redis_db,
                                host=redis_ip, port=redis_port,
-                               namespace='panic_alerter')
+                               namespace=unique_alerter_identifier)
+
+    def __str__(self) -> str:
+        return self.store_name
+
+    @property
+    def store_name(self) -> str:
+        return self._store_name
 
     @property
     def mongo_ip(self) -> str:
@@ -60,10 +68,7 @@ class Store(ABC):
     def _initialize_store(self) -> None:
         pass
 
-    def _process_redis_metrics_store(self, *args) -> None:
-        pass
-
-    def _process_redis_monitor_store(self, *args) -> None:
+    def _process_redis_store(self, *args) -> None:
         pass
 
     def _process_mongo_store(self, *args) -> None:
@@ -83,7 +88,6 @@ class Store(ABC):
 
     def begin_store(self) -> None:
         self._initialize_store()
-        log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
                 self._start_listening()

@@ -1,16 +1,16 @@
 import json
 import logging
+from typing import Dict
 
 import pika.exceptions
 
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.stores.store import Store
-from src.utils.types import AlertDataType
 
 
 class AlertStore(Store):
-    def __init__(self, logger: logging.Logger) -> None:
-        super().__init__(logger)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -62,7 +62,7 @@ class AlertStore(Store):
             raise e
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_mongo_store(self, alert: AlertDataType) -> None:
+    def _process_mongo_store(self, alert: Dict) -> None:
         """
         Updating mongo with alerts using a size-based document with 1000 entries
         Collection is the name of the chain, with document type alert as only
@@ -100,3 +100,6 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
+
+# TODO: Need to update like system and github store. This must be done during
+#     : the alert routing phase.

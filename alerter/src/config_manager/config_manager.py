@@ -13,10 +13,10 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from .config_update_event_handler import ConfigFileEventHandler
-from alerter.src.message_broker.rabbitmq import RabbitMQApi
-from alerter.src.utils.exceptions import MessageWasNotDeliveredException, \
+from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.exceptions import MessageWasNotDeliveredException, \
     ConnectionNotInitializedException
-from alerter.src.utils.routing_key import get_routing_key
+from src.utils.routing_key import get_routing_key
 
 _FIRST_RUN_EVENT = "first run"
 
