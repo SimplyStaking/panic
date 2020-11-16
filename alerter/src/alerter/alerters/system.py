@@ -43,21 +43,22 @@ class SystemAlerter(Alerter):
 
     def _initialize_alerter(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating \'alerter\' exchange')
-        self.rabbitmq.exchange_declare(exchange='alerter',
-                                       exchange_type='direct', passive=False,
+        self.logger.info('Creating \'alert\' exchange')
+        self.rabbitmq.exchange_declare(exchange='alert',
+                                       exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.logger.info('Creating queue \'system_alerter_queue\'')
-        self.rabbitmq.queue_declare('system_alerter_queue', passive=False,
+        queue_used = 'system_alerter_queue_' + self.alerts_configs.parent
+        self.logger.info('Creating queue \'{}\''.format(queue_used))
+        self.rabbitmq.queue_declare(queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
         routing_key = 'alerter.system.' + self.alerts_configs.parent
-        self.logger.info('Binding queue \'system_alerter_queue\' to exchange '
-                         '\'alerter\' with routing key \'{}\''
-                         ''.format(routing_key))
-        self.rabbitmq.queue_bind(queue='system_alerter_queue',
-                                 exchange='alerter',
+        self.logger.info('Binding queue \'{}\' to exchange '
+                         '\'alert\' with routing key \'{}\''
+                         ''.format(queue_used, routing_key))
+        self.rabbitmq.queue_bind(queue=queue_used,
+                                 exchange='alert',
                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
@@ -68,20 +69,13 @@ class SystemAlerter(Alerter):
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'alert_router\' exchange')
-        self.rabbitmq.exchange_declare(exchange='alert_router',
-                                       exchange_type='direct', passive=False,
-                                       durable=True, auto_delete=False,
-                                       internal=False)
-        self.rabbitmq.queue_purge('system_alerter_queue')
-
-    def _start_listening(self) -> None:
-        self.rabbitmq.basic_consume(queue='system_alerter_queue',
+        # TODO remove queue_purge for production
+        self.rabbitmq.queue_purge(queue_used)
+        self.rabbitmq.basic_consume(queue=queue_used,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False,
                                     consumer_tag=None)
-        self.rabbitmq.start_consuming()
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -105,6 +99,8 @@ class SystemAlerter(Alerter):
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)
 
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
@@ -122,10 +118,7 @@ class SystemAlerter(Alerter):
             # For any other exception acknowledge and raise it, so the
             # message is removed from the rabbit queue as this message will now
             # reside in the publisher queue
-            self.rabbitmq.basic_ack(method.delivery_tag, False)
             raise e
-
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_errors(self, error_data: Dict) -> None:
         is_down = self.alerts_configs.system_is_down
@@ -238,7 +231,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'WARNING',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -253,7 +246,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'CRITICAL',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -267,7 +260,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'INFO',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -278,7 +271,7 @@ class SystemAlerter(Alerter):
             elif current < previous:
                 alert = OpenFileDescriptorsDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['timestamp'],
+                    previous, current, 'INFO', meta_data['last_monitored'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 self._data_for_alerting = alert.alert_data
@@ -298,7 +291,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'WARNING',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -313,7 +306,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'CRITICAL',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -327,7 +320,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'INFO',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -338,7 +331,7 @@ class SystemAlerter(Alerter):
             elif current < previous:
                 alert = SystemStorageUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['timestamp'],
+                    previous, current, 'INFO', meta_data['last_monitored'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 self._data_for_alerting = alert.alert_data
@@ -358,7 +351,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'WARNING',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -373,7 +366,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'CRITICAL',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -387,7 +380,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'INFO',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -398,7 +391,7 @@ class SystemAlerter(Alerter):
             elif current < previous:
                 alert = SystemCPUUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['timestamp'],
+                    previous, current, 'INFO', meta_data['last_monitored'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 self._data_for_alerting = alert.alert_data
@@ -418,7 +411,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'WARNING',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -433,7 +426,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'CRITICAL',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -447,7 +440,7 @@ class SystemAlerter(Alerter):
                             self.alerts_configs.parent,
                             meta_data['system_name'],
                             previous, current, 'INFO',
-                            meta_data['timestamp'],
+                            meta_data['last_monitored'],
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -458,7 +451,7 @@ class SystemAlerter(Alerter):
             elif current < previous:
                 alert = SystemRAMUsageDecreasedAlert(
                     self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['timestamp'],
+                    previous, current, 'INFO', meta_data['last_monitored'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 self._data_for_alerting = alert.alert_data
@@ -473,10 +466,9 @@ class SystemAlerter(Alerter):
         # queue is full, remove old data.
         if self.publishing_queue.full():
             self.publishing_queue.get()
-            self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'alert_router',
-            'routing_key': 'alert.system',
+            'exchange': 'alert',
+            'routing_key': 'alert_router.system',
             'data': copy.deepcopy(self.data_for_alerting)})
 
         self.logger.debug("Alert data added to the publishing queue "
@@ -487,7 +479,7 @@ class SystemAlerter(Alerter):
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
-                self._start_listening()
+                self.rabbitmq.start_consuming()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
                 # there is a channel error, the RabbitMQ interface creates a
@@ -498,11 +490,6 @@ class SystemAlerter(Alerter):
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
                 raise e
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
-                self.logger.exception(e)
-                continue
             except Exception as e:
                 self.logger.exception(e)
                 raise e

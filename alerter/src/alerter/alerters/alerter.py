@@ -71,10 +71,6 @@ class Alerter(ABC):
         pass
 
     @abstractmethod
-    def _start_listening(self) -> None:
-        pass
-
-    @abstractmethod
     def _process_data(self, *args) -> None:
         pass
 
