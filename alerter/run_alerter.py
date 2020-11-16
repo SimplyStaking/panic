@@ -171,7 +171,7 @@ def _initialize_data_store_manager() -> StoreManager:
         "DATA_STORE_LOG_FILE_TEMPLATE"
     )
 
-    # Attempt to initialize the github monitors manager
+    # Attempt to initialize the data store manager
     while True:
         try:
             data_store_manager = StoreManager(
@@ -315,7 +315,7 @@ if __name__ == '__main__':
 
     # Start the data store in a separate process
     data_store_process = multiprocessing.Process(target=run_data_store,
-                                                 args=[])
+                                                 args=())
     data_store_process.start()
 
     # Config manager must be the last to start since it immediately begins by

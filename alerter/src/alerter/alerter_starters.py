@@ -17,7 +17,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     # attempt to use it.
     while True:
         try:
-            monitor_logger = create_logger(
+            alerter_logger = create_logger(
                 os.environ["ALERTERS_LOG_FILE_TEMPLATE"].format(alerter_name),
                 alerter_name, os.environ["LOGGING_LEVEL"], rotating=True)
             break
@@ -25,11 +25,11 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
             msg = '!!! Error when initialising {}: {} !!!'.format(
                 alerter_name, e)
             # Use a dummy logger in this case because we cannot create the
-            # monitor's logger.
+            # alerter's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             time.sleep(10)  # sleep 10 seconds before trying again
 
-    return monitor_logger
+    return alerter_logger
 
 
 def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
@@ -39,7 +39,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 
-    # Try initializing a monitor until successful
+    # Try initializing a alerter until successful
     while True:
         try:
             system_alerter = SystemAlerter(alerter_name, system_alerts_config,
@@ -62,7 +62,7 @@ def _initialize_github_alerter() -> GithubAlerter:
 
     github_alerter_logger = _initialize_alerter_logger(alerter_name)
 
-    # Try initializing a monitor until successful
+    # Try initializing a alerter until successful
     while True:
         try:
             github_alerter = GithubAlerter(alerter_name, github_alerter_logger)

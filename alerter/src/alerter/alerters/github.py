@@ -43,7 +43,6 @@ class GithubAlerter(Alerter):
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info('Declaring consuming intentions')
 
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
@@ -57,6 +56,7 @@ class GithubAlerter(Alerter):
         self.rabbitmq.queue_purge('github_alerter_queue')
 
     def _start_listening(self) -> None:
+        self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume(queue='github_alerter_queue',
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
@@ -87,7 +87,7 @@ class GithubAlerter(Alerter):
                           meta['last_monitored'], meta['repo_parent_id'],
                           meta['repo_id']
                         )
-                        self._data_for_alert_router = alert.alert_data
+                        self._alerts_for_alert_router = alert.alert_data
                         self.logger.debug('Successfully classified alert {}'
                                           ''.format(alert.alert_data))
                         self._place_latest_data_on_queue()
@@ -98,7 +98,7 @@ class GithubAlerter(Alerter):
                             meta_data['time'],
                             meta_data['repo_parent_id'], meta_data['repo_id']
                         )
-                self._data_for_alert_router = alert.alert_data
+                self._alerts_for_alert_router = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'.format(
                     alert.alert_data)
                 )
@@ -118,11 +118,6 @@ class GithubAlerter(Alerter):
             # No need to acknowledge in this case as channel is closed. Logging
             # would have also been done by RabbitMQ.
             raise e
-        except MessageWasNotDeliveredException as e:
-            # Log the message and do not raise the exception so that the
-            # message can be acknowledged and removed from the rabbit queue.
-            # Note this message will still reside in the publisher queue.
-            self.logger.exception(e)
         except Exception as e:
             # For any other exception acknowledge and raise it, so the
             # message is removed from the rabbit queue as this message will now
@@ -141,9 +136,9 @@ class GithubAlerter(Alerter):
             self.publishing_queue.get()
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'alert_router',
+            'exchange': 'alert',
             'routing_key': 'alert.github',
-            'data': copy.deepcopy(self.data_for_alert_router)})
+            'data': copy.deepcopy(self.alerts_for_alert_router)})
 
         self.logger.debug("Alert data added to the publishing queue "
                           "successfully.")

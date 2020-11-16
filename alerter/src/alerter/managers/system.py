@@ -89,7 +89,7 @@ class SystemAlertersManager(AlertersManager):
             )
 
             process = multiprocessing.Process(target=start_system_alerter,
-                                              args=[system_alerts_config])
+                                              args=(system_alerts_config,))
             process.daemon = True
             log_and_print('Creating a new process for the system alerter of {}'
                           .format(system_alerts_config.parent),
@@ -120,14 +120,14 @@ class SystemAlertersManager(AlertersManager):
                           'configuration'.format(system_parent), self.logger)
 
             process = multiprocessing.Process(target=start_system_alerter,
-                                              args=[system_alerts_config])
+                                              args=(system_alerts_config,))
             # Kill children if parent is killed
             process.daemon = True
             process.start()
             self._config_process_dict[config_id] = process
 
             process = multiprocessing.Process(target=start_system_alerter,
-                                              args=[system_alerts_config])
+                                              args=(system_alerts_config,))
             process.daemon = True
             log_and_print('Creating a new process for the system alerter of {}'
                           .format(system_alerts_config.parent),

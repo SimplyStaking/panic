@@ -22,7 +22,7 @@ class Alerter(ABC):
 
         self._alerter_name = alerter_name
         self._logger = logger
-        self._data_for_alert_router = {}
+        self._alerts_for_alert_router = {}
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
@@ -55,8 +55,8 @@ class Alerter(ABC):
         return self._rabbitmq
 
     @property
-    def data_for_alert_router(self) -> Dict:
-        return self._data_for_alert_router
+    def alerts_for_alert_router(self) -> Dict:
+        return self._alerts_for_alert_router
 
     @property
     def publishing_queue(self) -> Queue:
@@ -123,11 +123,6 @@ class Alerter(ABC):
                 # new channel, therefore perform another monitoring round
                 # without sleeping
                 continue
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent. Sleep just
-                # because there is no use in consuming a lot of resources until
-                # the problem is fixed.
-                self.logger.exception(e)
             except pika.exceptions.AMQPConnectionError as e:
                 # Error would have already been logged by RabbitMQ logger.
                 # Since we have to re-connect just break the loop.
@@ -135,9 +130,6 @@ class Alerter(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
-
-            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
-            time.sleep(self.monitor_period)
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print('{} is terminating. Connections with RabbitMQ will be '

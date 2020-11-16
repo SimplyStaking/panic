@@ -1,3 +1,5 @@
+# TODO Remove for production
+# TODO REMOVE pipfile.lock for production
 [[source]]
 name = "pypi"
 url = "https://pypi.org/simple"

@@ -135,7 +135,7 @@ class SystemAlerter(Alerter):
                 error_data['message'], 'ERROR', meta_data['time'],
                 meta_data['system_parent_id'], meta_data['system_id']
             )
-            self._data_for_alert_router = alert.alert_data
+            self._alerts_for_alert_router = alert.alert_data
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
             self._place_latest_data_on_queue()
@@ -144,7 +144,7 @@ class SystemAlerter(Alerter):
                 error_data['message'], 'ERROR', meta_data['time'],
                 meta_data['system_parent_id'], meta_data['system_id']
             )
-            self._data_for_alert_router = alert.alert_data
+            self._alerts_for_alert_router = alert.alert_data
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
             self._place_latest_data_on_queue()
@@ -165,7 +165,7 @@ class SystemAlerter(Alerter):
                                 meta_data['system_parent_id'],
                                 meta_data['system_id']
                             )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -180,7 +180,7 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -193,7 +193,7 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -221,7 +221,7 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-            self._data_for_alert_router = alert.alert_data
+            self._alerts_for_alert_router = alert.alert_data
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
             self._place_latest_data_on_queue()
@@ -242,7 +242,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -257,7 +257,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -271,7 +271,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -281,7 +281,7 @@ class SystemAlerter(Alerter):
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._data_for_alert_router = alert.alert_data
+                self._alerts_for_alert_router = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'
                                   ''.format(alert.alert_data))
                 self._place_latest_data_on_queue()
@@ -302,7 +302,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -317,7 +317,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -331,7 +331,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -341,7 +341,7 @@ class SystemAlerter(Alerter):
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._data_for_alert_router = alert.alert_data
+                self._alerts_for_alert_router = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'
                                   ''.format(alert.alert_data))
                 self._place_latest_data_on_queue()
@@ -362,7 +362,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -377,7 +377,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -391,7 +391,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -401,7 +401,7 @@ class SystemAlerter(Alerter):
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._data_for_alert_router = alert.alert_data
+                self._alerts_for_alert_router = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'
                                   ''.format(alert.alert_data))
                 self._place_latest_data_on_queue()
@@ -422,7 +422,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -437,7 +437,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -451,7 +451,7 @@ class SystemAlerter(Alerter):
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                    self._data_for_alert_router = alert.alert_data
+                    self._alerts_for_alert_router = alert.alert_data
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
@@ -461,7 +461,7 @@ class SystemAlerter(Alerter):
                     previous, current, 'INFO', meta_data['timestamp'],
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
-                self._data_for_alert_router = alert.alert_data
+                self._alerts_for_alert_router = alert.alert_data
                 self.logger.debug('Successfully classified alert {}'
                                   ''.format(alert.alert_data))
                 self._place_latest_data_on_queue()
@@ -477,7 +477,7 @@ class SystemAlerter(Alerter):
         self.publishing_queue.put({
             'exchange': 'alert_router',
             'routing_key': 'alert.system',
-            'data': copy.deepcopy(self.data_for_alert_router)})
+            'data': copy.deepcopy(self.alerts_for_alert_router)})
 
         self.logger.debug("Alert data added to the publishing queue "
                           "successfully.")
