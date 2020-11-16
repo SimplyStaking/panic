@@ -5,7 +5,7 @@ import time
 import sys
 
 import pika.exceptions
-from typing import Tuple
+from typing import Tuple, Any
 
 from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
@@ -31,6 +31,10 @@ def _get_initialisation_error_message(name: str, exception: Exception) -> str:
 
 def _get_reattempting_message(reattempting_what: str) -> str:
     return f"Re-attempting initialization procedure of {reattempting_what}"
+
+
+def _get_stopped_message(what_stopped: Any) -> str:
+    return f"{what_stopped} stopped."
 
 
 def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
@@ -212,12 +216,12 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
 
 
 def run_data_transformers_manager() -> None:
@@ -228,7 +232,7 @@ def run_data_transformers_manager() -> None:
             data_transformers_manager.manage()
         except Exception as e:
             data_transformers_manager.logger.exception(e)
-            log_and_print('{} stopped.'.format(data_transformers_manager),
+            log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
 
 
@@ -239,7 +243,8 @@ def run_alert_router() -> None:
         try:
             alert_router.start_listening()
         except Exception:
-            log_and_print(f"{alert_router} stopped", alert_router_logger)
+            log_and_print(_get_stopped_message(alert_router),
+                          alert_router_logger)
 
 
 def run_config_manager(command_queue: multiprocessing.Queue) -> None:
