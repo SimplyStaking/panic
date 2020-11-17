@@ -10,22 +10,20 @@ from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.exceptions import (
     ReceivedUnexpectedDataException, MessageWasNotDeliveredException
 )
+from src.utils.timing import TimedTaskLimiter
 from src.utils.logging import log_and_print
+from src.utils.alert import floaty
 from src.alerter.alerts.system_alerts import (
-    OpenFileDescriptorsIncreasedAlert, OpenFileDescriptorsDecreasedAlert,
-    OpenFileDescriptorsIncreasedAboveCriticalThresholdAlert,
-    OpenFileDescriptorsIncreasedAboveWarningThresholdAlert,
-    SystemCPUUsageIncreasedAlert, SystemCPUUsageDecreasedAlert,
-    SystemCPUUsageIncreasedAboveCriticalThresholdAlert,
-    SystemCPUUsageIncreasedAboveWarningThresholdAlert,
-    SystemRAMUsageIncreasedAlert, SystemRAMUsageDecreasedAlert,
-    SystemRAMUsageIncreasedAboveCriticalThresholdAlert,
-    SystemRAMUsageIncreasedAboveWarningThresholdAlert,
-    SystemStorageUsageIncreasedAlert, SystemStorageUsageDecreasedAlert,
-    SystemStorageUsageIncreasedAboveCriticalThresholdAlert,
-    SystemStorageUsageIncreasedAboveWarningThresholdAlert,
-    ReceivedUnexpectedDataAlert, InvalidUrlAlert, SystemWentUpAt,
-    SystemWentDownAt
+    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
+    SystemCPUUsageDecreasedBelowThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageDecreasedBelowThresholdAlert,
+    SystemStorageUsageIncreasedAboveThresholdAlert,
+    SystemStorageUsageDecreasedBelowThresholdAlert,
+    ReceivedUnexpectedDataAlert, InvalidUrlAlert, SystemWentDownAtAlert,
+    SystemBackUpAgainAlert, SystemStillDownAlert,
 )
 
 
@@ -201,27 +199,67 @@ class SystemAlerter(Alerter):
         ram_use = self.alerts_configs.system_ram_usage
         is_down = self.alerts_configs.system_is_down
 
-        if is_down['enabled']:
-            current = int(metrics['went_down_at']['current'] or 0)
-            previous = int(metrics['went_down_at']['previous'] or 0)
-            difference = current-previous
-            self._down_time_counter = 0
-            alert = SystemWentUpAt(
-                        self.alerts_configs.parent,
-                        meta_data['system_name'],
-                        difference, 'INFO',
-                        meta_data['timestamp'],
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
-            self._data_for_alerting = alert.alert_data
-            self.logger.debug('Successfully classified alert {}'
-                              ''.format(alert.alert_data))
-            self._place_latest_data_on_queue()
+        # if is_down['enabled']:
+        #     current = int(metrics['went_down_at']['current'] or 0)
+        #     previous = int(metrics['went_down_at']['previous'] or 0)
+        #     difference = current-previous
+        #     self._down_time_counter = 0
+        #     alert = SystemWentUpAt(
+        #                 self.alerts_configs.parent,
+        #                 meta_data['system_name'],
+        #                 difference, 'INFO',
+        #                 meta_data['timestamp'],
+        #                 meta_data['system_parent_id'],
+        #                 meta_data['system_id']
+        #             )
+        #     self._data_for_alerting = alert.alert_data
+        #     self.logger.debug('Successfully classified alert {}'
+        #                       ''.format(alert.alert_data))
+        #     self._place_latest_data_on_queue()
 
         if open_fd['enabled']:
-            current = int(metrics['open_file_descriptors']['current'] or 0)
-            previous = int(metrics['open_file_descriptors']['previous'] or 0)
+            current = metrics['open_file_descriptors']['current']
+            previous = metrics['open_file_descriptors']['previous']
+            if current not in [previous, None]:
+                if (int(open_fd['warning_threshold']) <= float(current) <
+                    int(open_fd['critical_threshold']) and
+                    open_fd['warning_enabled'] and not
+                    int(open_fd['warning_threshold']) <= floaty(previous) <
+                        int(open_fd['critical_threshold']) and
+                        TimedTaskLimiter(
+                            int(open_fd['warning_repeat'])
+                        ).time_to_do_task):
+                    alert = \
+                        OpenFileDescriptorsIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], float(current),
+                            floaty(previous), 'WARNING',
+                            meta_data['last_monitored'], 'WARNING',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+                elif (float(current) >= int(open_fd['critical_threshold']) and
+                      open_fd['critical_enabled'] and
+                      TimedTaskLimiter(
+                          int(open_fd['critical_repeat'])
+                      ).time_to_do_task):
+                    alert = \
+                        OpenFileDescriptorsIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], float(current),
+                            floaty(previous), 'CRITICAL',
+                            meta_data['last_monitored'], 'CRITICAL',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+
+
             if current > previous:
                 if (int(open_fd['warning_threshold']) < current <
                         int(open_fd['critical_threshold']) and

@@ -72,7 +72,7 @@ class GithubAlerter(Alerter):
                 current = data['no_of_releases']['current']
                 previous = data['no_of_releases']['previous']
                 if (current > previous):
-                    for i in range(previous, current):
+                    for i in range(0, current-previous):
                         alert = NewGitHubReleaseAlert(
                           meta['repo_name'],
                           data['releases'][i]['release_name'],

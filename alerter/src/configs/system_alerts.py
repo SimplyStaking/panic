@@ -2,13 +2,13 @@ from typing import Dict
 
 
 class SystemAlertsConfig:
-    def __init__(self, parent: str,
+    def __init__(self, parent_id: str,
                  open_file_descriptors: Dict,
                  system_cpu_usage: Dict,
                  system_storage_usage: Dict,
                  system_ram_usage: Dict,
                  system_is_down: Dict) -> None:
-        self._parent = parent
+        self._parent_id = parent_id
         self._open_file_descriptors = open_file_descriptors
         self._system_cpu_usage = system_cpu_usage
         self._system_storage_usage = system_storage_usage
@@ -16,8 +16,8 @@ class SystemAlertsConfig:
         self._system_is_down = system_is_down
 
     @property
-    def parent(self) -> str:
-        return self._parent
+    def parent_id(self) -> str:
+        return self._parent_id
 
     @property
     def open_file_descriptors(self) -> Dict:
@@ -39,8 +39,8 @@ class SystemAlertsConfig:
     def system_is_down(self) -> Dict:
         return self._system_is_down
 
-    def set_parent(self, parent: str) -> None:
-        self._parent = parent
+    def set_parent_id(self, parent_id: str) -> None:
+        self._parent_id = parent_id
 
     def set_open_file_descriptors(self, open_file_descriptors:
                                   Dict) -> None:
