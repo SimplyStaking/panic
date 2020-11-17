@@ -12,6 +12,7 @@ from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
 from src.monitors.monitor import Monitor
+from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import MetricNotFoundException, \
     SystemIsDownException, DataReadingException, PANICException, \
@@ -151,7 +152,7 @@ class SystemMonitor(Monitor):
 
         # Add process CPU seconds total to the processed data
         process_cpu_seconds_total = self.data['process_cpu_seconds_total']
-        self.logger.debug('%s process_cpu_seconds_total: %s',
+        self.logger.debug("%s process_cpu_seconds_total: %s",
                           self.system_config, process_cpu_seconds_total)
         processed_data['result']['data']['process_cpu_seconds_total'] = \
             process_cpu_seconds_total
@@ -162,7 +163,7 @@ class SystemMonitor(Monitor):
                                 self.data[
                                     'go_memstats_alloc_bytes_total']) * 100
         process_memory_usage = float("{:.2f}".format(process_memory_usage))
-        self.logger.debug('%s process_memory_usage: %s', self.system_config,
+        self.logger.debug("%s process_memory_usage: %s", self.system_config,
                           process_memory_usage)
         processed_data['result']['data']['process_memory_usage'] = \
             process_memory_usage
@@ -170,7 +171,7 @@ class SystemMonitor(Monitor):
 
         # Add virtual memory usage to the processed data
         virtual_memory_usage = self.data['process_virtual_memory_bytes']
-        self.logger.debug('%s virtual_memory_usage: %s', self.system_config,
+        self.logger.debug("%s virtual_memory_usage: %s", self.system_config,
                           virtual_memory_usage)
         processed_data['result']['data']['virtual_memory_usage'] = \
             virtual_memory_usage
@@ -179,7 +180,7 @@ class SystemMonitor(Monitor):
         # Add open file descriptors percentage to the processed data
         open_file_descriptors = \
             (self.data['process_open_fds'] / self.data['process_max_fds']) * 100
-        self.logger.debug('%s open_file_descriptors: %s', self.system_config,
+        self.logger.debug("%s open_file_descriptors: %s", self.system_config,
                           open_file_descriptors)
         processed_data['result']['data']['open_file_descriptors'] = \
             open_file_descriptors
@@ -200,7 +201,7 @@ class SystemMonitor(Monitor):
         system_cpu_usage = 100 - (
                 (node_cpu_seconds_idle / node_cpu_seconds_total) * 100)
         system_cpu_usage = float("{:.2f}".format(system_cpu_usage))
-        self.logger.debug('%s system_cpu_usage: %s', self.system_config,
+        self.logger.debug("%s system_cpu_usage: %s", self.system_config,
                           system_cpu_usage)
         processed_data['result']['data']['system_cpu_usage'] = \
             system_cpu_usage
@@ -211,7 +212,7 @@ class SystemMonitor(Monitor):
                              self.data['node_memory_MemAvailable_bytes']) /
                             self.data['node_memory_MemTotal_bytes']) * 100
         system_ram_usage = float("{:.2f}".format(system_ram_usage))
-        self.logger.debug('%s system_ram_usage: %s', self.system_config,
+        self.logger.debug("%s system_ram_usage: %s", self.system_config,
                           system_ram_usage)
         processed_data['result']['data']['system_ram_usage'] = system_ram_usage
         self._system_ram_usage = system_ram_usage
@@ -233,7 +234,7 @@ class SystemMonitor(Monitor):
                 (node_filesystem_avail_bytes / node_filesystem_size_bytes)
                 * 100)
         system_storage_usage = float("{:.2f}".format(system_storage_usage))
-        self.logger.debug('%s system_storage_usage: %s', self.system_config,
+        self.logger.debug("%s system_storage_usage: %s", self.system_config,
                           system_storage_usage)
         processed_data['result']['data']['system_storage_usage'] = \
             system_storage_usage
@@ -253,8 +254,8 @@ class SystemMonitor(Monitor):
             transmit_bytes_total += \
                 self.data['node_network_transmit_bytes_total'][data_subset]
 
-        self.logger.debug('%s network_receive_bytes_total: %s, '
-                          'network_transmit_bytes_total: %s',
+        self.logger.debug("%s network_receive_bytes_total: %s, "
+                          "network_transmit_bytes_total: %s",
                           self.system_config, receive_bytes_total,
                           transmit_bytes_total)
         processed_data['result']['data']['network_receive_bytes_total'] = \
@@ -271,7 +272,7 @@ class SystemMonitor(Monitor):
             disk_io_time_seconds_total += \
                 self.data['node_disk_io_time_seconds_total'][data_subset]
 
-        self.logger.debug('%s disk_io_time_seconds_total: %s',
+        self.logger.debug("%s disk_io_time_seconds_total: %s",
                           self.system_config, disk_io_time_seconds_total)
         processed_data['result']['data']['disk_io_time_seconds_total'] = \
             disk_io_time_seconds_total
@@ -281,10 +282,11 @@ class SystemMonitor(Monitor):
 
     def _send_data(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange='raw_data', routing_key='system', body=self.data,
+            exchange=RAW_DATA_EXCHANGE, routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug('Sent data to \'raw_data\' exchange')
+        self.logger.debug("Sent data to \'{}\' exchange".format(
+            RAW_DATA_EXCHANGE))
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
@@ -295,34 +297,34 @@ class SystemMonitor(Monitor):
             self._data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
                 self.system_config.system_name)
-            self.logger.error('Error when retrieving data from {}'
+            self.logger.error("Error when retrieving data from {}"
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
-            self.logger.error('Error when retrieving data from {}'
+            self.logger.error("Error when retrieving data from {}"
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         except (InvalidURL, InvalidSchema, MissingSchema):
             self._data_retrieval_failed = True
             data_retrieval_exception = InvalidUrlException(
                 self.system_config.node_exporter_url)
-            self.logger.error('Error when retrieving data from {}'
+            self.logger.error("Error when retrieving data from {}"
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
             self._data_retrieval_failed = True
             data_retrieval_exception = e
-            self.logger.error('Error when retrieving data from {}'
+            self.logger.error("Error when retrieving data from {}"
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)
 
         try:
             self._process_data(data_retrieval_exception)
         except Exception as error:
-            self.logger.error('Error when processing data obtained from {}'
+            self.logger.error("Error when processing data obtained from {}"
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(error)
             # Do not send data if we experienced processing errors

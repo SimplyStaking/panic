@@ -3,6 +3,7 @@ import os
 import signal
 import sys
 from abc import ABC, abstractmethod
+from types import FrameType
 from typing import Dict
 
 import pika.exceptions
@@ -18,7 +19,7 @@ class MonitorsManager(ABC):
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
@@ -59,20 +60,16 @@ class MonitorsManager(ABC):
         pass
 
     def manage(self) -> None:
-        log_and_print('{} started.'.format(self), self.logger)
+        log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:
             try:
                 self._listen_for_configs()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)
@@ -80,18 +77,18 @@ class MonitorsManager(ABC):
 
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum, stack) -> None:
-        log_and_print('{} is terminating. Connections with RabbitMQ will be '
-                      'closed, and any running monitors will be stopped '
-                      'gracefully. Afterwards the {} process will exit.'
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and any running monitors will be stopped "
+                      "gracefully. Afterwards the {} process will exit."
                       .format(self, self), self.logger)
         self.rabbitmq.disconnect_till_successful()
 
         for config_id, process in self.config_process_dict.items():
-            log_and_print('Terminating the process of {}'.format(config_id),
+            log_and_print("Terminating the process of {}".format(config_id),
                           self.logger)
             process.terminate()
             process.join()
 
-        log_and_print('{} terminated.'.format(self), self.logger)
+        log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

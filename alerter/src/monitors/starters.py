@@ -19,11 +19,11 @@ def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
     while True:
         try:
             monitor_logger = create_logger(
-                os.environ["MONITORS_LOG_FILE_TEMPLATE"].format(monitor_name),
-                monitor_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                os.environ['MONITORS_LOG_FILE_TEMPLATE'].format(monitor_name),
+                monitor_name, os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 monitor_name, e)
             # Use a dummy logger in this case because we cannot create the
             # monitor's logger.
@@ -44,13 +44,13 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
         try:
             system_monitor = SystemMonitor(
                 monitor_name, system_config, system_monitor_logger,
-                int(os.environ["SYSTEM_MONITOR_PERIOD_SECONDS"])
+                int(os.environ['SYSTEM_MONITOR_PERIOD_SECONDS'])
             )
             log_and_print("Successfully initialized {}".format(monitor_name),
                           system_monitor_logger)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 monitor_name, e)
             log_and_print(msg, system_monitor_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -71,13 +71,13 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
         try:
             github_monitor = GitHubMonitor(
                 monitor_name, repo_config, github_monitor_logger,
-                int(os.environ["GITHUB_MONITOR_PERIOD_SECONDS"])
+                int(os.environ['GITHUB_MONITOR_PERIOD_SECONDS'])
             )
             log_and_print("Successfully initialized {}".format(monitor_name),
                           github_monitor_logger)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 monitor_name, e)
             log_and_print(msg, github_monitor_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -98,13 +98,14 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
 def start_monitor(monitor: Monitor) -> None:
     while True:
         try:
-            log_and_print('{} started.'.format(monitor), monitor.logger)
+            log_and_print("{} started.".format(monitor), monitor.logger)
             monitor.start()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            log_and_print('{} stopped.'.format(monitor), monitor.logger)
+            log_and_print("{} stopped.".format(monitor), monitor.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             monitor.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(monitor), monitor.logger)
+            log_and_print("{} stopped.".format(monitor), monitor.logger)

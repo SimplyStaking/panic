@@ -11,6 +11,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils.constants import RAW_DATA_EXCHANGE, STORE_EXCHANGE, \
+    ALERT_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none, \
@@ -29,19 +31,20 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
+        self.logger.info("Creating \'{}\' exchange".format(RAW_DATA_EXCHANGE))
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+                                       False, False)
         self.logger.info(
-            'Creating queue \'github_data_transformer_raw_data_queue\'')
+            "Creating queue \'github_data_transformer_raw_data_queue\'")
         self.rabbitmq.queue_declare(
             'github_data_transformer_raw_data_queue', False, True, False,
             False)
         self.logger.info(
-            'Binding queue \'github_data_transformer_raw_data_queue\' to '
-            'exchange \'raw_data\' with routing key \'github\'')
+            "Binding queue \'github_data_transformer_raw_data_queue\' to "
+            "exchange \'{}\' with routing key \'github\'".format(
+                RAW_DATA_EXCHANGE))
         self.rabbitmq.queue_bind('github_data_transformer_raw_data_queue',
-                                 'raw_data', 'github')
+                                 RAW_DATA_EXCHANGE, 'github')
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -51,21 +54,21 @@ class GitHubDataTransformer(DataTransformer):
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'store\' exchange')
-        self.rabbitmq.exchange_declare('store', 'direct', False, True, False,
-                                       False)
-        self.logger.info('Creating \'alert\' exchange')
-        self.rabbitmq.exchange_declare('alert', 'topic', False, True, False,
-                                       False)
+        self.logger.info("Creating \'{}\' exchange".format(STORE_EXCHANGE))
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+                                       False, False)
+        self.logger.info("Creating \'{}\' exchange".format(ALERT_EXCHANGE))
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+                                       False, False)
 
     def load_state(self, repo: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
         # If Redis is down, the data passed as default will be stored as
         # the repo state.
 
-        self.logger.debug('Loading the state of {} from Redis'.format(repo))
+        self.logger.debug("Loading the state of {} from Redis".format(repo))
         redis_hash = Keys.get_hash_parent(repo.parent_id)
         repo_id = repo.repo_id
 
@@ -92,7 +95,7 @@ class GitHubDataTransformer(DataTransformer):
         repo.set_last_monitored(last_monitored)
 
         self.logger.debug(
-            'Restored %s state: _no_of_releases=%s, _last_monitored=%s', repo,
+            "Restored %s state: _no_of_releases=%s, _last_monitored=%s", repo,
             no_of_releases, last_monitored)
 
         return repo
@@ -127,7 +130,7 @@ class GitHubDataTransformer(DataTransformer):
             repo.set_repo_name(repo_name)
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _update_state'.format(self))
+                "{}: _update_state".format(self))
 
         self.logger.debug("State updated successfully")
 
@@ -151,7 +154,7 @@ class GitHubDataTransformer(DataTransformer):
             processed_data = copy.deepcopy(self.transformed_data)
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_transformed_data_for_saving'.format(self))
+                "{}: _process_transformed_data_for_saving".format(self))
 
         self._data_for_saving = processed_data
 
@@ -193,7 +196,7 @@ class GitHubDataTransformer(DataTransformer):
             processed_data = copy.deepcopy(self.transformed_data)
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_transformed_data_for_alerting'.format(self))
+                "{}: _process_transformed_data_for_alerting".format(self))
 
         self._data_for_alerting = processed_data
 
@@ -233,7 +236,7 @@ class GitHubDataTransformer(DataTransformer):
             del transformed_data['error']['meta_data']['monitor_name']
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _transform_data'.format(self))
+                "{}: _transform_data".format(self))
 
         self._transformed_data = transformed_data
         self._process_transformed_data_for_alerting()
@@ -249,24 +252,50 @@ class GitHubDataTransformer(DataTransformer):
             self.publishing_queue.get()
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'store', 'routing_key': 'github',
+            'exchange': STORE_EXCHANGE, 'routing_key': 'github',
             'data': copy.deepcopy(self.data_for_saving)})
         self.publishing_queue.put({
-            'exchange': 'alert',
-            'routing_key': 'alerter.github',
+            'exchange': ALERT_EXCHANGE, 'routing_key': 'alerter.github',
             'data': copy.deepcopy(self.data_for_alerting)})
 
         self.logger.debug("Transformed data added to the publishing queue "
                           "successfully.")
+
+    def _send_data(self) -> None:
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info("Attempting to send all data waiting in the "
+                             "publishing queue ...")
+
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug("Sent {} to \'{}\' exchange"
+                              .format(data['data'], data['exchange']))
+            self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info("Successfully sent all data from the publishing "
+                             "queue")
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info('Received {} from monitors'.format(raw_data))
+        self.logger.info("Received {} from monitors. Now processing this data."
+                         .format(raw_data))
 
-        self.logger.info('Processing {} ...'.format(raw_data))
+        processing_error = False
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
@@ -283,18 +312,24 @@ class GitHubDataTransformer(DataTransformer):
 
                 self._transform_data(raw_data)
                 self._update_state()
-                self._place_latest_data_on_queue()
-                self.logger.info('Successfully processed {}'.format(raw_data))
+                self.logger.info("Successfully processed {}".format(raw_data))
             else:
                 raise ReceivedUnexpectedDataException(
-                    '{}: _process_raw_data'.format(self))
+                    "{}: _process_raw_data".format(self))
         except Exception as e:
             self.logger.error("Error when processing {}".format(raw_data))
             self.logger.exception(e)
+            processing_error = True
 
-        # If the data is processed, it now resides in the queue, thus it can
-        # be acknowledged.
+        # If the data is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue
+        if not processing_error:
+            self._place_latest_data_on_queue()
 
         # Send any data waiting in the publisher queue, if any
         try:

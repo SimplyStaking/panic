@@ -7,26 +7,26 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class Store(ABC):
     def __init__(self, store_name: str, logger: logging.Logger):
         self._store_name = store_name
-        rabbit_ip = os.environ["RABBIT_IP"]
-        self._mongo_ip = os.environ["DB_IP"]
-        self._mongo_db = os.environ["DB_NAME"]
-        self._mongo_port = int(os.environ["DB_PORT"])
-        redis_ip = os.environ["REDIS_IP"]
-        redis_db = os.environ["REDIS_DB"]
-        redis_port = os.environ["REDIS_PORT"]
+        rabbit_ip = os.environ['RABBIT_IP']
+        self._mongo_ip = os.environ['DB_IP']
+        self._mongo_db = os.environ['DB_NAME']
+        self._mongo_port = int(os.environ['DB_PORT'])
+        redis_ip = os.environ['REDIS_IP']
+        redis_db = os.environ['REDIS_DB']
+        redis_port = os.environ['REDIS_PORT']
+        unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
 
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
         self._mongo = None
         self._redis = RedisApi(logger=self._logger, db=redis_db,
                                host=redis_ip, port=redis_port,
-                               namespace='panic_alerter')
+                               namespace=unique_alerter_identifier)
 
     def __str__(self) -> str:
         return self.store_name
@@ -90,21 +90,12 @@ class Store(ABC):
         while True:
             try:
                 self._start_listening()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
-                self.logger.exception(e)
-                continue
             except Exception as e:
                 self.logger.exception(e)
                 raise e
