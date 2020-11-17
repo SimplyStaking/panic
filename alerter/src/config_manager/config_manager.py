@@ -31,8 +31,7 @@ class ConfigManager:
     def __init__(self, logger: logging.Logger, config_directory: str,
                  rabbit_ip: str, file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
-                 ignore_directories: bool = True, case_sensitive: bool = False,
-                 output_rabbit_exchange: str = CONFIG_EXCHANGE):
+                 ignore_directories: bool = True, case_sensitive: bool = False):
         """
         Constructs the ConfigManager instance
         :param config_directory: The root config directory to watch.
@@ -69,13 +68,18 @@ class ConfigManager:
         self._observer.schedule(self._event_handler, config_directory,
                                 recursive=True)
 
+        self._initialize_rabbitmq()
+
+    def _initialize_rabbitmq(self) -> None:
         try:
             self._connect_to_rabbit()
             self._logger.debug("Connected to Rabbit")
+            self._rabbit.confirm_delivery()
+            self._logger.debug("Just set delivery confirmation on RabbitMQ "
+                               "channel")
             self._rabbit.exchange_declare(
-                output_rabbit_exchange, 'topic', False, True, False, False
+                CONFIG_EXCHANGE, 'topic', False, True, False, False
             )
-
             self._logger.debug("Declared {} exchange in Rabbit".format(
                 CONFIG_EXCHANGE))
         except ConnectionNotInitializedException as cnie:
@@ -146,8 +150,9 @@ class ConfigManager:
                 self._logger.info("Connection restored, will attempt again")
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
+                # logger and handled by RabbitMQ. Since a new channel is created
+                # we need to re-initialize RabbitMQ
+                self._initialize_rabbitmq()
                 continue
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
