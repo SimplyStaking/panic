@@ -119,7 +119,8 @@ def start_transformer(transformer: DataTransformer) -> None:
         try:
             log_and_print("{} started.".format(transformer), transformer.logger)
             transformer.start()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             log_and_print("{} stopped.".format(transformer), transformer.logger)
         except Exception:

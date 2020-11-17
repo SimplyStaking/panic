@@ -106,11 +106,15 @@ class RabbitMQApi:
                 return default_return
             ret = function(*args)
             return ret
+        except pika.exceptions.UnroutableError as e:
+            # Unroutable errors should be logged and raised
+            self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
+            raise e
         except pika.exceptions.AMQPChannelError as e:
             # Channel errors do not reflect a connection error, therefore
             # do not set as disconnected
             self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
-            # Create a new channel on a channel error
+            # On a channel error, create a new channel
             self.new_channel_unsafe()
             raise e
         except pika.exceptions.AMQPConnectionError as e:
@@ -332,7 +336,6 @@ class RabbitMQApi:
         if self.channel.is_open:
             self._logger.info("Closing RabbitMQ Channel")
             self.channel.close()
-        self._logger.info("Created a new RabbitMQ Channel")
         self._logger.info("Created a new RabbitMQ Channel")
         self._channel = self.connection.channel()
 

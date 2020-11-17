@@ -138,14 +138,11 @@ class DataTransformer(ABC):
                     self.logger.exception(e)
 
                 self._listen_for_data()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore we can safely continue
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)

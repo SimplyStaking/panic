@@ -100,7 +100,8 @@ def start_monitor(monitor: Monitor) -> None:
         try:
             log_and_print("{} started.".format(monitor), monitor.logger)
             monitor.start()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             log_and_print("{} stopped.".format(monitor), monitor.logger)
         except Exception:

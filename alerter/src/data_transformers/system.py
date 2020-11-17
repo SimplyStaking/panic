@@ -556,6 +556,8 @@ class SystemDataTransformer(DataTransformer):
         raw_data = json.loads(body)
         self.logger.info("Received {} from monitors. Now processing this data."
                          .format(raw_data))
+
+        processing_error = False
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
@@ -573,7 +575,6 @@ class SystemDataTransformer(DataTransformer):
 
                 self._transform_data(raw_data)
                 self._update_state()
-                self._place_latest_data_on_queue()
                 self.logger.info("Successfully processed {}".format(raw_data))
             else:
                 raise ReceivedUnexpectedDataException(
@@ -581,10 +582,17 @@ class SystemDataTransformer(DataTransformer):
         except Exception as e:
             self.logger.error("Error when processing {}".format(raw_data))
             self.logger.exception(e)
+            processing_error = True
 
-        # If the data is processed, it now resides in the queue, thus it can
-        # be acknowledged.
+        # If the data is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue
+        if not processing_error:
+            self._place_latest_data_on_queue()
 
         # Send any data waiting in the publisher queue, if any
         try:
