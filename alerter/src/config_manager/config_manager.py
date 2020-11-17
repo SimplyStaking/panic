@@ -153,7 +153,6 @@ class ConfigManager:
                 # logger and handled by RabbitMQ. Since a new channel is created
                 # we need to re-initialize RabbitMQ
                 self._initialize_rabbitmq()
-                continue
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
