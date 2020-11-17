@@ -35,9 +35,10 @@ class StoreManager:
             try:
                 log_and_print("{} started.".format(store), store.logger)
                 store.begin_store()
-            except pika.exceptions.AMQPConnectionError:
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError):
                 # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+                # Since we have to re-initialize just break the loop.
                 log_and_print("{} stopped.".format(store), store.logger)
             except Exception as e:
                 # Close the connection with RabbitMQ if we have an unexpected
