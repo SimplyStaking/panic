@@ -29,26 +29,26 @@ class SystemMonitorsManager(MonitorsManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating exchange \'{}\''.format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            'Creating queue \'system_monitors_manager_configs_queue\'')
+            "Creating queue \'system_monitors_manager_configs_queue\'")
         self.rabbitmq.queue_declare(
             'system_monitors_manager_configs_queue', False, True, False, False)
         self.logger.info(
-            'Binding queue \'system_monitors_manager_configs_queue\' to '
-            'exchange \'{}\' with routing key \'chains.*.*.systems_config\''
-                .format(CONFIG_EXCHANGE))
+            "Binding queue \'system_monitors_manager_configs_queue\' to "
+            "exchange \'{}\' with routing key "
+            "\'chains.*.*.systems_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.systems_config')
         self.logger.info(
-            'Binding queue \'system_monitors_manager_configs_queue\' to '
-            'exchange \'{}\' with routing key \'general.systems_config\''
-                .format(CONFIG_EXCHANGE))
+            "Binding queue \'system_monitors_manager_configs_queue\' to "
+            "exchange \'{}\' with routing key "
+            "\'general.systems_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.systems_config')
-        self.logger.info('Declaring consuming intentions')
+        self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -57,7 +57,7 @@ class SystemMonitorsManager(MonitorsManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info('Received configs {}'.format(sent_configs))
+        self.logger.info("Received configs {}".format(sent_configs))
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
@@ -101,7 +101,7 @@ class SystemMonitorsManager(MonitorsManager):
                                                   args=(system_config,))
                 # Kill children if parent is killed
                 process.daemon = True
-                log_and_print('Creating a new process for the monitor of {}'
+                log_and_print("Creating a new process for the monitor of {}"
                               .format(system_config.system_name), self.logger)
                 process.start()
                 self._config_process_dict[config_id] = process
@@ -128,12 +128,12 @@ class SystemMonitorsManager(MonitorsManager):
                 if not monitor_system:
                     del self.config_process_dict[config_id]
                     del correct_systems_configs[config_id]
-                    log_and_print('Killed the monitor of {} '
+                    log_and_print("Killed the monitor of {} "
                                   .format(config_id), self.logger)
                     continue
 
-                log_and_print('Restarting the monitor of {} with latest '
-                              'configuration'.format(config_id), self.logger)
+                log_and_print("Restarting the monitor of {} with latest "
+                              "configuration".format(config_id), self.logger)
 
                 process = multiprocessing.Process(target=start_system_monitor,
                                                   args=(system_config,))
@@ -152,7 +152,7 @@ class SystemMonitorsManager(MonitorsManager):
                 previous_process.join()
                 del self.config_process_dict[config_id]
                 del correct_systems_configs[config_id]
-                log_and_print('Killed the monitor of {} '
+                log_and_print("Killed the monitor of {} "
                               .format(system_name), self.logger)
         except Exception as e:
             # If we encounter an error during processing, this error must be

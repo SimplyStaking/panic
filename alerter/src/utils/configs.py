@@ -44,5 +44,6 @@ def get_non_modified_configs(new_config_file: Dict, current_config_file: Dict) \
     removed_keys_set = set(removed_configs.keys())
     current_keys_set = set(current_config_file.keys())
     retained_keys_set = current_keys_set.difference(removed_keys_set)
-    return {key: current_config_file[key] for key in retained_keys_set if not
-    config_is_modified(new_config_file[key], current_config_file[key])}
+    return {key: current_config_file[key] for key in retained_keys_set
+            if not config_is_modified(new_config_file[key],
+                                      current_config_file[key])}

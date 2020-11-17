@@ -30,26 +30,26 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating exchange \'{}\''.format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            'Creating queue \'github_monitors_manager_configs_queue\'')
+            "Creating queue \'github_monitors_manager_configs_queue\'")
         self.rabbitmq.queue_declare('github_monitors_manager_configs_queue',
                                     False, True, False, False)
         self.logger.info(
-            'Binding queue \'github_monitors_manager_configs_queue\' to '
-            'exchange \'{}\' with routing key \'chains.*.*.repos_config\''
-                .format(CONFIG_EXCHANGE))
+            "Binding queue \'github_monitors_manager_configs_queue\' to "
+            "exchange \'{}\' with routing key "
+            "\'chains.*.*.repos_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.repos_config')
         self.logger.info(
-            'Binding queue \'github_monitors_manager_configs_queue\' to '
-            'exchange \'{}\' with routing key \'general.repos_config\''
-                .format(CONFIG_EXCHANGE))
+            "Binding queue \'github_monitors_manager_configs_queue\' to "
+            "exchange \'{}\' with routing key "
+            "\'general.repos_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.repos_config')
-        self.logger.info('Declaring consuming intentions')
+        self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -58,7 +58,7 @@ class GitHubMonitorsManager(MonitorsManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info('Received configs {}'.format(sent_configs))
+        self.logger.info("Received configs {}".format(sent_configs))
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
@@ -93,7 +93,7 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+                releases_page = os.environ['GITHUB_RELEASES_TEMPLATE'] \
                     .format(repo_name)
 
                 # If we should not monitor the repo, move to the next config
@@ -106,7 +106,7 @@ class GitHubMonitorsManager(MonitorsManager):
                                                   args=(repo_config,))
                 # Kill children if parent is killed
                 process.daemon = True
-                log_and_print('Creating a new process for the monitor of {}'
+                log_and_print("Creating a new process for the monitor of {}"
                               .format(repo_config.repo_name), self.logger)
                 process.start()
                 self._config_process_dict[config_id] = process
@@ -125,7 +125,7 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                releases_page = os.environ["GITHUB_RELEASES_TEMPLATE"] \
+                releases_page = os.environ['GITHUB_RELEASES_TEMPLATE'] \
                     .format(repo_name)
                 repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                          monitor_repo, releases_page)
@@ -138,12 +138,12 @@ class GitHubMonitorsManager(MonitorsManager):
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
                     del correct_repos_configs[config_id]
-                    log_and_print('Killed the monitor of {} '
+                    log_and_print("Killed the monitor of {} "
                                   .format(config_id), self.logger)
                     continue
 
-                log_and_print('Restarting the monitor of {} with latest '
-                              'configuration'.format(config_id), self.logger)
+                log_and_print("Restarting the monitor of {} with latest "
+                              "configuration".format(config_id), self.logger)
 
                 process = multiprocessing.Process(target=start_github_monitor,
                                                   args=(repo_config,))
@@ -162,7 +162,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.join()
                 del self.config_process_dict[config_id]
                 del correct_repos_configs[config_id]
-                log_and_print('Killed the monitor of {} '
+                log_and_print("Killed the monitor of {} "
                               .format(repo_name), self.logger)
         except Exception as e:
             # If we encounter an error during processing, this error must be

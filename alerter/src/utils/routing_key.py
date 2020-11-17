@@ -23,4 +23,4 @@ def get_routing_key(src_path: str, root_dir: str = "./") -> str:
 
         path_list.append(tail)
 
-    return ".".join(reversed(path_list))
+    return '.'.join(reversed(path_list))

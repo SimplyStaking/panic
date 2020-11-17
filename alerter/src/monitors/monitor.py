@@ -24,7 +24,7 @@ class Monitor(ABC):
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
 
@@ -69,9 +69,9 @@ class Monitor(ABC):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'{}\' exchange'.format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating \'{}\' exchange".format(RAW_DATA_EXCHANGE))
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
 
@@ -125,17 +125,17 @@ class Monitor(ABC):
                 self.logger.exception(e)
                 raise e
 
-            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
+            self.logger.debug("Sleeping for %s seconds.", self.monitor_period)
 
             # Use the BlockingConnection sleep to avoid dropped connections
             self.rabbitmq.connection.sleep(self.monitor_period)
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print('{} is terminating. Connections with RabbitMQ will be '
-                      'closed, and afterwards the process will exit.'
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
                       .format(self), self.logger)
         self.rabbitmq.disconnect_till_successful()
-        log_and_print('{} terminated.'.format(self), self.logger)
+        log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
 # TODO: There are some monitors which may require redis. Therefore consider
