@@ -7,14 +7,15 @@ from typing import Optional, List
 import pika
 import pika.exceptions
 from requests.exceptions import ConnectionError as ReqConnectionError, \
-    ReadTimeout, ChunkedEncodingError
+    ReadTimeout, ChunkedEncodingError, MissingSchema, InvalidSchema, InvalidURL
 from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
 from src.monitors.monitor import Monitor
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import MetricNotFoundException, \
-    SystemIsDownException, DataReadingException, PANICException
+    SystemIsDownException, DataReadingException, PANICException, \
+    InvalidUrlException
 
 
 class SystemMonitor(Monitor):
@@ -124,7 +125,7 @@ class SystemMonitor(Monitor):
                     'system_name': self.system_config.system_name,
                     'system_id': self.system_config.system_id,
                     'system_parent_id': self.system_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'message': error.message,
                 'code': error.code,
@@ -142,7 +143,7 @@ class SystemMonitor(Monitor):
                     'system_name': self.system_config.system_name,
                     'system_id': self.system_config.system_id,
                     'system_parent_id': self.system_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'data': {},
             }
@@ -238,8 +239,8 @@ class SystemMonitor(Monitor):
             system_storage_usage
         self._system_storage_usage = system_storage_usage
 
-        # Add the node network transmit/received bytes total and their per
-        # second variants to the processed data
+        # Add the node network transmit/received bytes total to the processed
+        # data
         receive_bytes_total = 0
         transmit_bytes_total = 0
         for _, data_subset in enumerate(
@@ -301,6 +302,13 @@ class SystemMonitor(Monitor):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
+            self.logger.error('Error when retrieving data from {}'
+                              .format(self.system_config.node_exporter_url))
+            self.logger.exception(data_retrieval_exception)
+        except (InvalidURL, InvalidSchema, MissingSchema):
+            self._data_retrieval_failed = True
+            data_retrieval_exception = InvalidUrlException(
+                self.system_config.node_exporter_url)
             self.logger.error('Error when retrieving data from {}'
                               .format(self.system_config.node_exporter_url))
             self.logger.exception(data_retrieval_exception)

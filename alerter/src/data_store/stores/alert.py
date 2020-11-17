@@ -1,21 +1,17 @@
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
 
 import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import MessageWasNotDeliveredException
-from src.utils.logging import log_and_print
 
 
 class AlertStore(Store):
-    def __init__(self, logger: logging.Logger, store_name: str) -> None:
-        super().__init__(logger, store_name)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -107,27 +103,5 @@ class AlertStore(Store):
             }
         )
 
-    def _begin_store(self) -> None:
-        self._initialize_store()
-        log_and_print('{} started.'.format(self), self.logger)
-        while True:
-            try:
-                self._start_listening()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a
-                # new channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
-                raise e
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
-                self.logger.exception(e)
-                continue
-            except Exception as e:
-                self.logger.exception(e)
-                raise e
+# TODO: Need to update like system and github store. This must be done during
+#     : the alert routing phase.

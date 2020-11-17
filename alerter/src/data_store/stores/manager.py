@@ -16,11 +16,12 @@ class StoreManager:
     def __init__(self, logger: logging.Logger, name: str):
         self._name = name
         self._logger = logger
-        self._system_store = SystemStore(self._logger, "System Store")
-        self._github_store = GithubStore(self._logger, "Github Store")
-        self._alert_store = AlertStore(self._logger, "Alert Store")
+        self._system_store = SystemStore('System Store', self._logger)
+        self._github_store = GithubStore('GitHub Store', self._logger)
+        self._alert_store = AlertStore('Alert Store', self._logger)
         self._stores = [self.system_store, self.github_store, self.alert_store]
         self._process = {}
+
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -51,19 +52,19 @@ class StoreManager:
 
     @staticmethod
     def start_store(store: Store) -> None:
-        # while True:
-        try:
-            log_and_print('{} started.'.format(store), store.logger)
-            store.begin_store()
-        except pika.exceptions.AMQPConnectionError:
-            # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(store), store.logger)
-        except Exception as e:
-            # Close the connection with RabbitMQ if we have an unexpected
-            # exception, and start again
-            store.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped. {}'.format(store, e), store.logger)
+        while True:
+            try:
+                log_and_print('{} started.'.format(store), store.logger)
+                store.begin_store()
+            except pika.exceptions.AMQPConnectionError:
+                # Error would have already been logged by RabbitMQ logger.
+                # Since we have to re-connect just break the loop.
+                log_and_print('{} stopped.'.format(store), store.logger)
+            except Exception as e:
+                # Close the connection with RabbitMQ if we have an unexpected
+                # exception, and start again
+                store.rabbitmq.disconnect_till_successful()
+                log_and_print('{} stopped. {}'.format(store, e), store.logger)
 
     def start_store_manager(self) -> None:
         """

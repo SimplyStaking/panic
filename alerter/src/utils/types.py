@@ -1,5 +1,17 @@
-import sys
-from enum import Enum
-from typing import Union
+from typing import Union, Any
 
 RedisType = Union[bytes, str, int, float]
+
+
+def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
+                                 default_return: Any) -> Any:
+    # This function converts a value to float if it is not None, otherwise it
+    # returns a default return
+    return float(value) if value is not None else default_return
+
+
+def convert_to_int_if_not_none(value: Union[int, str, float, bytes, None],
+                               default_return: Any) -> Any:
+    # This function converts a value to int if it is not None, otherwise it
+    # returns a default return
+    return int(value) if value is not None else default_return

@@ -1,21 +1,19 @@
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional
+import sys
+from typing import Dict
 
 import pika
 import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import MessageWasNotDeliveredException
-from src.utils.logging import log_and_print
+from src.utils.exceptions import ReceivedUnexpectedDataException
 
 
 class GithubStore(Store):
-    def __init__(self, logger: logging.Logger, store_name: str) -> None:
-        super().__init__(logger, store_name)
+    def __init__(self, store_name: str, logger: logging.Logger) -> None:
+        super().__init__(store_name, logger)
 
     def _initialize_store(self) -> None:
         """
@@ -54,96 +52,52 @@ class GithubStore(Store):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         """
-        Processes the data being received, from the queue. One type of metric
-        will be received here which is a github update if a new release
-        of a repository has been detected and monitored. This only needs
-        to be stored in redis.
+        Processes the data being received, from the queue. This data will be
+        stored in Redis as required.
         """
         github_data = json.loads(body.decode())
         try:
-            self._process_redis_metrics_store(
-                github_data['result']['data'],
-                github_data['result']['meta_data']['repo_parent_id'],
-                github_data['result']['meta_data']['repo_id']
-            )
-            self._process_mongo_store(
-                github_data['result']['data'],
-                github_data['result']['meta_data']
-            )
-            self._process_redis_monitor_store(
-                github_data['result']['meta_data'])
+            self._process_redis_store(github_data)
         except KeyError as e:
-            self.logger.error('Error when reading github data, in data store.')
+            self.logger.error('Error when parsing {}.'.format(github_data))
+            self.logger.exception(e)
+        except ReceivedUnexpectedDataException as e:
+            self.logger.error("Error when processing {}".format(github_data))
             self.logger.exception(e)
         except Exception as e:
             self.logger.exception(e)
+            # When an exception is raised we must acknowledge the message so
+            # that it is removed from the queue, since it won't be re-delivered
+            self.rabbitmq.basic_ack(method.delivery_tag, False)
             raise e
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    def _process_redis_metrics_store(self,  github_data: Dict,
-                                     parent_id: str, repo_id: str) -> None:
+    def _process_redis_store(self, data: Dict) -> None:
+        if 'result' in data:
+            self._process_redis_result_store(data['result'])
+        elif 'error' in data:
+            # No need to store anything if the index key is `error`
+            return
+        else:
+            raise ReceivedUnexpectedDataException(
+                '{}: _process_redis_store'.format(self))
+
+    def _process_redis_result_store(self, data: Dict) -> None:
+        meta_data = data['meta_data']
+        repo_name = meta_data['repo_name']
+        repo_id = meta_data['repo_id']
+        parent_id = meta_data['repo_parent_id']
+        metrics = data['data']
+
         self.logger.debug(
-            'Saving %s state: release_name=%s, tag_name=%s', repo_id,
-            github_data['release_name'], github_data['tag_name']
+            'Saving %s state: _no_of_releases=%s, _last_monitored=%s',
+            repo_name, metrics['no_of_releases'], meta_data['last_monitored']
         )
+
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
-            Keys.get_github_release_name(repo_id):
-                str(github_data['release_name']),
-            Keys.get_github_tag_name(repo_id):
-                str(github_data['tag_name']),
+            Keys.get_github_no_of_releases(repo_id):
+                str(metrics['no_of_releases']),
+            Keys.get_github_last_monitored(repo_id):
+                str(meta_data['last_monitored']),
         })
-
-    def _process_redis_monitor_store(self, monitor_data: Dict) -> None:
-        self.logger.debug(
-            'Saving %s state: _github_monitor_last_monitoring_round=%s',
-            monitor_data['monitor_name'],
-            monitor_data['last_monitored']
-        )
-
-        self.redis.set_multiple({
-            Keys.get_github_monitor_last_monitoring_round(
-                monitor_data['monitor_name']):
-            str(monitor_data['last_monitored'])
-        })
-
-    def _process_mongo_store(self,  github_data: Dict, monitor_data:
-                             Dict) -> None:
-        self.mongo.update_one(
-            monitor_data['repo_parent_id'],
-            {'doc_type': 'github', 'n_releases': {'$lt': 1000}},
-            {'$push': {monitor_data['repo_id']: {
-                  'release_name': str(github_data['release_name']),
-                  'tag_name': str(github_data['tag_name']),
-                  'timestamp': str(monitor_data['last_monitored']),
-                }
-            },
-              '$min': {'first': str(monitor_data['last_monitored'])},
-              '$max': {'last': str(monitor_data['last_monitored'])},
-              '$inc': {'n_releases': 1},
-            }
-        )
-
-    def _begin_store(self) -> None:
-        self._initialize_store()
-        log_and_print('{} started.'.format(self), self.logger)
-        while True:
-            try:
-                self._start_listening()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a
-                # new channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
-                raise e
-            except MessageWasNotDeliveredException as e:
-                # Log the fact that the message could not be sent and re-try
-                # another monitoring round without sleeping
-                self.logger.exception(e)
-                continue
-            except Exception as e:
-                self.logger.exception(e)
-                raise e

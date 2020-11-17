@@ -26,10 +26,6 @@ class RabbitMQApi:
         self._logger = logger
         self._host = host
         self._connection = None
-        # TODO: We may need two channels, one for outputting and one for
-        #     : inputting. But it seems that this is not the case for now. If
-        #     : this will be the case, error handling must be improved to cater
-        #     : for two channels.
         self._channel = None
         self._port = port  # Port used by the AMQP 0-9-1 and 1.0 clients
         self._username = username

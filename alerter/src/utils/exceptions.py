@@ -78,8 +78,16 @@ class ReceivedUnexpectedDataException(PANICException):
         super().__init__(message, code)
 
 
+class InvalidUrlException(PANICException):
+
+    def __init__(self, url) -> None:
+        message = "Invalid URL \'{}\'".format(url)
+        code = 5009
+        super().__init__(message, code)
+
+
 class ParentIdsMissMatchInAlertsConfiguration(PANICException):
     def __init__(self, err) -> None:
         message = "{} Error alerts do not have the same parent_ids".format(err)
-        code = 5009
+        code = 5010
         super().__init__(message, code)
