@@ -9,6 +9,7 @@ from types import FrameType
 from typing import Dict
 
 import pika.exceptions
+from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   PANICException)
@@ -43,7 +44,7 @@ class Alerter(ABC):
         return self._logger
 
     @property
-    def alerts_configs(self) -> None:
+    def alerts_configs(self) -> SystemAlertsConfig:
         pass
 
     @property
@@ -108,29 +109,25 @@ class Alerter(ABC):
         self._initialize_alerter()
         while True:
             try:
+                # Before listening for new data send the data waiting to be
+                # in the publishing queue. If the message is not routed, start
+                # consuming and perform sending later.
                 try:
                     self._send_data()
                 except MessageWasNotDeliveredException as e:
                     self.logger.exception(e)
+
                 self._alert_classifier_process()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a
-                # new channel, therefore perform another monitoring round
-                # without sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel may be reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)
                 raise e
 
+    @abstractmethod
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print('{} is terminating. Connections with RabbitMQ will be '
-                      'closed, and afterwards the process will exit.'
-                      .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
-        log_and_print('{} terminated.'.format(self), self.logger)
-        sys.exit()
+        pass

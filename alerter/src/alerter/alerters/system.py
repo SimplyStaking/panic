@@ -1,30 +1,29 @@
 import copy
 import json
 import logging
+import sys
+from types import FrameType
 from typing import Dict
 
 import pika
 import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
-from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.exceptions import (
-    ReceivedUnexpectedDataException, MessageWasNotDeliveredException
-)
-from src.utils.timing import TimedTaskLimiter
-from src.utils.logging import log_and_print
-from src.utils.alert import floaty
 from src.alerter.alerts.system_alerts import (
+    InvalidUrlAlert, OpenFileDescriptorsDecreasedBelowThresholdAlert,
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
-    OpenFileDescriptorsDecreasedBelowThresholdAlert,
-    SystemCPUUsageIncreasedAboveThresholdAlert,
+    ReceivedUnexpectedDataAlert, SystemBackUpAgainAlert,
     SystemCPUUsageDecreasedBelowThresholdAlert,
-    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
     SystemRAMUsageDecreasedBelowThresholdAlert,
-    SystemStorageUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert, SystemStillDownAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert,
-    ReceivedUnexpectedDataAlert, InvalidUrlAlert, SystemWentDownAtAlert,
-    SystemBackUpAgainAlert, SystemStillDownAlert,
-)
+    SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert)
+from src.configs.system_alerts import SystemAlertsConfig
+from src.utils.alert import floaty
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ReceivedUnexpectedDataException)
+from src.utils.logging import log_and_print
+from src.utils.timing import TimedTaskLimiter
 
 
 class SystemAlerter(Alerter):
@@ -34,6 +33,7 @@ class SystemAlerter(Alerter):
         super().__init__(alerts_config_name, logger)
         self._system_alerts_config = system_alerts_config
         self._down_time_counter = 0
+        self._queue_used = ''
 
     @property
     def alerts_configs(self) -> SystemAlertsConfig:
@@ -46,16 +46,17 @@ class SystemAlerter(Alerter):
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        queue_used = 'system_alerter_queue_' + self.alerts_configs.parent_id
-        self.logger.info('Creating queue \'{}\''.format(queue_used))
-        self.rabbitmq.queue_declare(queue_used, passive=False,
+        self._queue_used = 'system_alerter_queue_' + \
+                           self.alerts_configs.parent_id
+        self.logger.info('Creating queue \'{}\''.format(self._queue_used))
+        self.rabbitmq.queue_declare(self._queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
         routing_key = 'alerter.system.' + self.alerts_configs.parent_id
         self.logger.info('Binding queue \'{}\' to exchange '
                          '\'alert\' with routing key \'{}\''
-                         ''.format(queue_used, routing_key))
-        self.rabbitmq.queue_bind(queue=queue_used,
+                         ''.format(self._queue_used, routing_key))
+        self.rabbitmq.queue_bind(queue=self._queue_used,
                                  exchange='alert',
                                  routing_key=routing_key)
 
@@ -68,8 +69,8 @@ class SystemAlerter(Alerter):
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
         self.rabbitmq.confirm_delivery()
         # TODO remove queue_purge for production
-        self.rabbitmq.queue_purge(queue_used)
-        self.rabbitmq.basic_consume(queue=queue_used,
+        self.rabbitmq.queue_purge(self._queue_used)
+        self.rabbitmq.basic_consume(queue=self._queue_used,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False,
@@ -82,6 +83,7 @@ class SystemAlerter(Alerter):
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
+        processing_error = False
         try:
             if self.alerts_configs.parent_id in parsed_routing_key:
                 if 'result' in data_received:
@@ -96,8 +98,17 @@ class SystemAlerter(Alerter):
         except Exception as e:
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)
+            processing_error = True
 
+        # If the data is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue.
+        if not processing_error:
+            self._place_latest_data_on_queue()
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -540,3 +551,13 @@ class SystemAlerter(Alerter):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and afterwards the process will exit.'
+                      .format(self), self.logger)
+
+        self.rabbitmq.queue_delete(self._queue_used)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

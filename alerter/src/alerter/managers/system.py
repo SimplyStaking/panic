@@ -68,7 +68,8 @@ class SystemAlertersManager(AlertersManager):
             parent_id = sent_configs['1']['parent_id']
             for i in sent_configs:
                 if parent_id != sent_configs[i]['parent_id']:
-                    raise ParentIdsMissMatchInAlertsConfiguration
+                    raise ParentIdsMissMatchInAlertsConfiguration(
+                          '{}: _process_data'.format(self))
 
             filtered = {}
             for i in sent_configs:
@@ -115,4 +116,6 @@ class SystemAlertersManager(AlertersManager):
             }
         except Exception as e:
             self.logger.exception(e)
+            raise e
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)

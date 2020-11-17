@@ -1,20 +1,20 @@
-import os
 import copy
 import json
 import logging
+import os
+import sys
+from types import FrameType
 from typing import Dict
 
 import pika
 import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
-from src.utils.exceptions import (
-    ReceivedUnexpectedDataException, MessageWasNotDeliveredException
-)
-from src.utils.logging import log_and_print
+from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
+                                              NewGitHubReleaseAlert)
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.alerter.alerts.github_alerts import (
-    NewGitHubReleaseAlert, CannotAccessGitHubPageAlert
-)
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ReceivedUnexpectedDataException)
+from src.utils.logging import log_and_print
 
 
 class GithubAlerter(Alerter):
@@ -37,7 +37,7 @@ class GithubAlerter(Alerter):
                          '\'alerter\' with routing key \'alerter.github\'')
         routing_key = 'alerter.github'
         self.rabbitmq.queue_bind(queue='github_alerter_queue',
-                                 exchange='alerter',
+                                 exchange='alert',
                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
@@ -70,7 +70,7 @@ class GithubAlerter(Alerter):
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
                 current = data['no_of_releases']['current']
-                previous = data['no_of_releases']['previous']
+                previous = int(data['no_of_releases']['previous'] or 0)
                 if (current > previous):
                     for i in range(0, current-previous):
                         alert = NewGitHubReleaseAlert(
@@ -158,3 +158,12 @@ class GithubAlerter(Alerter):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print('{} is terminating. Connections with RabbitMQ will be '
+                      'closed, and afterwards the process will exit.'
+                      .format(self), self.logger)
+
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print('{} terminated.'.format(self), self.logger)
+        sys.exit()

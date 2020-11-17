@@ -102,7 +102,7 @@ class SystemStore(Store):
             '_network_receive_bytes_total=%s, '
             '_network_transmit_bytes_total=%s, '
             '_disk_io_time_seconds_total=%s, '
-            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ',
+            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, '
             '_last_monitored=%s', system_name,
             metrics['process_cpu_seconds_total'],
             metrics['process_memory_usage'], metrics['virtual_memory_usage'],
