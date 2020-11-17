@@ -132,7 +132,7 @@ class ConfigManager:
             except MessageWasNotDeliveredException as mwnde:
                 self._logger.error("Config was not successfully sent")
                 self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the log again")
+                self._logger.info("Will attempt sending the config again")
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
