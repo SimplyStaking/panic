@@ -1,22 +1,24 @@
+from datetime import datetime
 from enum import Enum
-from src.utils.alert import next_id, SeverityCode
+
 from src.alerter.alerts.alert import Alert
+from src.utils.alert import SeverityCode
 
 
-class AlertCode(Enum):
-    OpenFileDescriptorsIncreasedAboveThresholdAlert = next_id(),
-    OpenFileDescriptorsDecreasedBelowThresholdAlert = next_id(),
-    SystemCPUUsageIncreasedAboveThresholdAlert = next_id(),
-    SystemCPUUsageDecreasedBelowThresholdAlert = next_id(),
-    SystemRAMUsageIncreasedAboveThresholdAlert = next_id(),
-    SystemRAMUsageDecreasedBelowThresholdAlert = next_id(),
-    SystemStorageUsageIncreasedAboveThresholdAlert = next_id(),
-    SystemStorageUsageDecreasedBelowThresholdAlert = next_id(),
-    ReceivedUnexpectedDataAlert = next_id(),
-    InvalidUrlAlert = next_id(),
-    SystemWentDownAtAlert = next_id(),
-    SystemBackUpAgainAlert = next_id(),
-    SystemStillDownAlert = next_id(),
+class AlertCode(str, Enum):
+    OpenFileDescriptorsIncreasedAboveThresholdAlert = 'system_alert_1',
+    OpenFileDescriptorsDecreasedBelowThresholdAlert = 'system_alert_2',
+    SystemCPUUsageIncreasedAboveThresholdAlert = 'system_alert_3',
+    SystemCPUUsageDecreasedBelowThresholdAlert = 'system_alert_4',
+    SystemRAMUsageIncreasedAboveThresholdAlert = 'system_alert_5',
+    SystemRAMUsageDecreasedBelowThresholdAlert = 'system_alert_6',
+    SystemStorageUsageIncreasedAboveThresholdAlert = 'system_alert_7',
+    SystemStorageUsageDecreasedBelowThresholdAlert = 'system_alert_8',
+    ReceivedUnexpectedDataAlert = 'system_alert_9',
+    InvalidUrlAlert = 'system_alert_10',
+    SystemWentDownAtAlert = 'system_alert_11',
+    SystemBackUpAgainAlert = 'system_alert_12',
+    SystemStillDownAlert = 'system_alert_13',
 
 
 class ReceivedUnexpectedDataAlert(Alert):
@@ -28,35 +30,32 @@ class ReceivedUnexpectedDataAlert(Alert):
 
 
 class SystemWentDownAtAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, difference: str,
-                 severity: str, timestamp: str, parent_id: str,
-                 origin_id: str) -> None:
+    def __init__(self, origin_name: str, severity: str, timestamp: str,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemWentDownAtAlert,
-            '{}: {} System is down, total current downtime: {}s.'.format(
-                parent_name, origin_name, difference),
+            '{} System is down, last time checked: {}.'.format(
+                origin_name, datetime.fromtimestamp(int(float(timestamp)))),
             severity, timestamp, parent_id, origin_id)
 
 
 class SystemBackUpAgainAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, difference: str,
-                 severity: str, timestamp: str, parent_id: str,
-                 origin_id: str) -> None:
+    def __init__(self, origin_name: str, severity: str, timestamp: str,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemBackUpAgainAlert,
-            '{}: {} System is back up, it was down for {}s.'.format(
-                parent_name, origin_name, difference),
+            '{} System is back up, last successful monitor at: {}.'.format(
+                origin_name, datetime.fromtimestamp(int(float(timestamp)))),
             severity, timestamp, parent_id, origin_id)
 
 
 class SystemStillDownAlert(Alert):
-    def __init__(self, parent_name: str, origin_name: str, difference: str,
-                 severity: str, timestamp: str, parent_id: str,
-                 origin_id: str) -> None:
+    def __init__(self, origin_name: str, difference: str, severity: str,
+                 timestamp: str, parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemStillDownAlert,
-            '{}: {} System is back up, it was down for {}s.'.format(
-                parent_name, origin_name, difference),
+            '{} System is still down, it has been down for {}s.'.format(
+                origin_name, int(float(difference))),
             severity, timestamp, parent_id, origin_id)
 
 
@@ -85,7 +84,7 @@ class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.OpenFileDescriptorsDecreasedBelowThresholdAlert,
-            '{} open file descriptors DECREASED above {} Threshold from {}% to'
+            '{} open file descriptors DECREASED below {} Threshold from {}% to'
             ' {}%.'.format(origin_name, threshold, old_value, new_value),
             severity, timestamp, parent_id, origin_id)
 
@@ -107,7 +106,7 @@ class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemCPUUsageDecreasedBelowThresholdAlert,
-            '{} system CPU usage DECREASED above {} Threshold from {}% to'
+            '{} system CPU usage DECREASED below {} Threshold from {}% to'
             ' {}%.'.format(origin_name, threshold, old_value, new_value),
             severity, timestamp, parent_id, origin_id)
 
@@ -129,7 +128,7 @@ class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemRAMUsageDecreasedBelowThresholdAlert,
-            '{} system RAM usage DECREASED above {} Threshold from {}% to'
+            '{} system RAM usage DECREASED below {} Threshold from {}% to'
             ' {}%.'.format(origin_name, threshold, old_value, new_value),
             severity, timestamp, parent_id, origin_id)
 
@@ -151,6 +150,6 @@ class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             AlertCode.SystemStorageUsageDecreasedBelowThresholdAlert,
-            '{} system storage usage DECREASED above {} Threshold from {}% to'
+            '{} system storage usage DECREASED below {} Threshold from {}% to'
             ' {}%.'.format(origin_name, threshold, old_value, new_value),
             severity, timestamp, parent_id, origin_id)

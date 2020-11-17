@@ -46,12 +46,12 @@ class SystemAlerter(Alerter):
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        queue_used = 'system_alerter_queue_' + self.alerts_configs.parent
+        queue_used = 'system_alerter_queue_' + self.alerts_configs.parent_id
         self.logger.info('Creating queue \'{}\''.format(queue_used))
         self.rabbitmq.queue_declare(queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        routing_key = 'alerter.system.' + self.alerts_configs.parent
+        routing_key = 'alerter.system.' + self.alerts_configs.parent_id
         self.logger.info('Binding queue \'{}\' to exchange '
                          '\'alert\' with routing key \'{}\''
                          ''.format(queue_used, routing_key))
@@ -83,7 +83,7 @@ class SystemAlerter(Alerter):
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
         try:
-            if self.alerts_configs.parent in parsed_routing_key:
+            if self.alerts_configs.parent_id in parsed_routing_key:
                 if 'result' in data_received:
                     metrics = data_received['result']['data']
                     self._process_results(data_received['result']['data'],
@@ -141,53 +141,59 @@ class SystemAlerter(Alerter):
             self._place_latest_data_on_queue()
         elif int(error_data['code']) == 5004:
             if is_down['enabled']:
-                current = int(error_data['went_down_at']['current'] or 0)
-                previous = int(error_data['went_down_at']['previous'] or 0)
-                difference = current-previous
-                self._down_time_counter += difference
-                if (int(is_down['warning_threshold']) < self._down_time_counter
-                    < int(is_down['critical_threshold']) and
-                        is_down['warning_enabled']):
-                    alert = SystemWentDownAt(
-                                self.alerts_configs.parent,
-                                meta_data['system_name'],
-                                self._down_time_counter, 'WARNING',
-                                meta_data['time'],
-                                meta_data['system_parent_id'],
-                                meta_data['system_id']
-                            )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
-                elif (self._down_time_counter >
-                      int(is_down['critical_threshold'])
-                      and is_down['critical_enabled']):
-                    alert = SystemWentDownAt(
-                        self.alerts_configs.parent,
-                        meta_data['system_name'],
-                        self._down_time_counter, 'CRITICAL',
-                        meta_data['time'],
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
+                current = float(error_data['went_down_at']['current'])
+                previous = error_data['went_down_at']['previous']
+                difference = float(meta_data['time']) - current
+                if previous is None:
+                    if (int(is_down['critical_repeat']) <= difference and
+                            is_down['critical_enabled']):
+                        alert = SystemWentDownAtAlert(
+                            meta_data['system_name'], 'CRITICAL',
+                            meta_data['time'], meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                        self._data_for_alerting = alert.alert_data
+                        self.logger.debug('Successfully classified alert {}'
+                                          ''.format(alert.alert_data))
+                        self._place_latest_data_on_queue()
+                    else:
+                        alert = SystemWentDownAtAlert(
+                            meta_data['system_name'], 'WARNING',
+                            meta_data['time'], meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                        self._data_for_alerting = alert.alert_data
+                        self.logger.debug('Successfully classified alert {}'
+                                          ''.format(alert.alert_data))
+                        self._place_latest_data_on_queue()
                 else:
-                    alert = SystemWentDownAt(
-                        self.alerts_configs.parent,
-                        meta_data['system_name'],
-                        self._down_time_counter, 'INFO',
-                        meta_data['time'],
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
+                    if (int(is_down['critical_repeat']) > difference >=
+                        int(is_down['warning_repeat']) and
+                        is_down['warning_enabled'] and
+                            is_down['warning_limiter'].can_do_task()):
+                        alert = SystemStillDownAlert(
+                            meta_data['system_name'], difference, 'WARNING',
+                            meta_data['time'], meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                        self._data_for_alerting = alert.alert_data
+                        self.logger.debug('Successfully classified alert {}'
+                                          ''.format(alert.alert_data))
+                        self._place_latest_data_on_queue()
+                        is_down['warning_limiter'].did_task()
+                    elif (int(is_down['critical_repeat']) <= difference and
+                          is_down['critical_enabled'] and
+                          is_down['critical_limiter'].can_do_task()):
+                        alert = SystemStillDownAlert(
+                            meta_data['system_name'], difference, 'CRITICAL',
+                            meta_data['time'], meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                        self._data_for_alerting = alert.alert_data
+                        self.logger.debug('Successfully classified alert {}'
+                                          ''.format(alert.alert_data))
+                        self._place_latest_data_on_queue()
+                        is_down['critical_limiter'].did_task()
         else:
             raise ReceivedUnexpectedDataException(
                         '{}: _process_errors'.format(self))
@@ -199,23 +205,18 @@ class SystemAlerter(Alerter):
         ram_use = self.alerts_configs.system_ram_usage
         is_down = self.alerts_configs.system_is_down
 
-        # if is_down['enabled']:
-        #     current = int(metrics['went_down_at']['current'] or 0)
-        #     previous = int(metrics['went_down_at']['previous'] or 0)
-        #     difference = current-previous
-        #     self._down_time_counter = 0
-        #     alert = SystemWentUpAt(
-        #                 self.alerts_configs.parent,
-        #                 meta_data['system_name'],
-        #                 difference, 'INFO',
-        #                 meta_data['timestamp'],
-        #                 meta_data['system_parent_id'],
-        #                 meta_data['system_id']
-        #             )
-        #     self._data_for_alerting = alert.alert_data
-        #     self.logger.debug('Successfully classified alert {}'
-        #                       ''.format(alert.alert_data))
-        #     self._place_latest_data_on_queue()
+        if is_down['enabled']:
+            previous = metrics['went_down_at']['previous']
+            if previous is not None:
+                alert = SystemBackUpAgainAlert(
+                    meta_data['system_name'], 'INFO',
+                    meta_data['last_monitored'], meta_data['system_parent_id'],
+                    meta_data['system_id']
+                )
+                self._data_for_alerting = alert.alert_data
+                self.logger.debug('Successfully classified alert {}'
+                                  ''.format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
         if open_fd['enabled']:
             current = metrics['open_file_descriptors']['current']
@@ -225,14 +226,13 @@ class SystemAlerter(Alerter):
                     int(open_fd['critical_threshold']) and
                     open_fd['warning_enabled'] and not
                     int(open_fd['warning_threshold']) <= floaty(previous) <
-                        int(open_fd['critical_threshold']) and
-                        TimedTaskLimiter(
-                            int(open_fd['warning_repeat'])
-                        ).time_to_do_task):
+                    int(open_fd['critical_threshold']) and not
+                    floaty(previous) >=
+                        int(open_fd['critical_threshold'])):
                     alert = \
                         OpenFileDescriptorsIncreasedAboveThresholdAlert(
-                            meta_data['system_name'], float(current),
-                            floaty(previous), 'WARNING',
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'WARNING',
                             meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
@@ -243,13 +243,44 @@ class SystemAlerter(Alerter):
                     self._place_latest_data_on_queue()
                 elif (float(current) >= int(open_fd['critical_threshold']) and
                       open_fd['critical_enabled'] and
-                      TimedTaskLimiter(
-                          int(open_fd['critical_repeat'])
-                      ).time_to_do_task):
+                      open_fd['limiter'].can_do_task()):
                     alert = \
                         OpenFileDescriptorsIncreasedAboveThresholdAlert(
-                            meta_data['system_name'], float(current),
-                            floaty(previous), 'CRITICAL',
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'CRITICAL',
+                            meta_data['last_monitored'], 'CRITICAL',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+                    open_fd['limiter'].did_task()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(open_fd['warning_threshold']) and
+                      float(current) < int(open_fd['warning_threshold']) and
+                      open_fd['warning_enabled']):
+                    alert = \
+                        OpenFileDescriptorsDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'WARNING',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(open_fd['critical_threshold'])
+                      and float(current) < int(open_fd['critical_threshold'])
+                      and open_fd['critical_enabled']):
+                    alert = \
+                        OpenFileDescriptorsDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
                             meta_data['last_monitored'], 'CRITICAL',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
@@ -259,77 +290,22 @@ class SystemAlerter(Alerter):
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
 
-
-            if current > previous:
-                if (int(open_fd['warning_threshold']) < current <
-                        int(open_fd['critical_threshold']) and
-                        open_fd['warning_enabled']):
-                    alert = \
-                        OpenFileDescriptorsIncreasedAboveWarningThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'WARNING',
-                            meta_data['last_monitored'],
-                            meta_data['system_parent_id'],
-                            meta_data['system_id']
-                        )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
-                elif (int(open_fd['critical_threshold']) < current and
-                        open_fd['critical_enabled']):
-                    alert = \
-                      OpenFileDescriptorsIncreasedAboveCriticalThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'CRITICAL',
-                            meta_data['last_monitored'],
-                            meta_data['system_parent_id'],
-                            meta_data['system_id']
-                        )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
-                else:
-                    alert = \
-                      OpenFileDescriptorsIncreasedAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'INFO',
-                            meta_data['last_monitored'],
-                            meta_data['system_parent_id'],
-                            meta_data['system_id']
-                        )
-                    self._data_for_alerting = alert.alert_data
-                    self.logger.debug('Successfully classified alert {}'
-                                      ''.format(alert.alert_data))
-                    self._place_latest_data_on_queue()
-            elif current < previous:
-                alert = OpenFileDescriptorsDecreasedAlert(
-                    self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['last_monitored'],
-                    meta_data['system_parent_id'], meta_data['system_id']
-                )
-                self._data_for_alerting = alert.alert_data
-                self.logger.debug('Successfully classified alert {}'
-                                  ''.format(alert.alert_data))
-                self._place_latest_data_on_queue()
-
         if storage['enabled']:
-            current = int(metrics['system_storage_usage']['current'] or 0)
-            previous = int(metrics['system_storage_usage']['previous'] or 0)
-            if current > previous:
-                if (int(storage['warning_threshold']) < current <
-                        int(storage['critical_threshold']) and
-                        storage['warning_enabled']):
+            current = metrics['system_storage_usage']['current']
+            previous = metrics['system_storage_usage']['previous']
+            if current not in [previous, None]:
+                if (int(storage['warning_threshold']) <= float(current) <
+                    int(storage['critical_threshold']) and
+                    storage['warning_enabled'] and not
+                    int(storage['warning_threshold']) <= floaty(previous) <
+                    int(storage['critical_threshold']) and not
+                    floaty(previous) >=
+                        int(storage['critical_threshold'])):
                     alert = \
-                        SystemStorageUsageIncreasedAboveWarningThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'WARNING',
-                            meta_data['last_monitored'],
+                        SystemStorageUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'WARNING',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -337,14 +313,14 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                elif (int(storage['critical_threshold']) < current and
-                        storage['critical_enabled']):
+                elif (float(current) >= int(storage['critical_threshold']) and
+                      storage['critical_enabled'] and
+                      storage['limiter'].can_do_task()):
                     alert = \
-                      SystemStorageUsageIncreasedAboveCriticalThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'CRITICAL',
-                            meta_data['last_monitored'],
+                        SystemStorageUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'CRITICAL',
+                            meta_data['last_monitored'], 'CRITICAL',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -352,13 +328,16 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                else:
+                    storage['limiter'].did_task()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(storage['warning_threshold']) and
+                      float(current) < int(storage['warning_threshold']) and
+                      storage['warning_enabled']):
                     alert = \
-                      SystemStorageUsageIncreasedAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'INFO',
-                            meta_data['last_monitored'],
+                        SystemStorageUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -366,30 +345,39 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-            elif current < previous:
-                alert = SystemStorageUsageDecreasedAlert(
-                    self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['last_monitored'],
-                    meta_data['system_parent_id'], meta_data['system_id']
-                )
-                self._data_for_alerting = alert.alert_data
-                self.logger.debug('Successfully classified alert {}'
-                                  ''.format(alert.alert_data))
-                self._place_latest_data_on_queue()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(storage['critical_threshold'])
+                      and float(current) < int(storage['critical_threshold'])
+                      and storage['critical_enabled']):
+                    alert = \
+                        SystemStorageUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'CRITICAL',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
 
         if cpu_use['enabled']:
-            current = int(metrics['system_cpu_usage']['current'] or 0)
-            previous = int(metrics['system_cpu_usage']['previous'] or 0)
-            if current > previous:
-                if (int(cpu_use['warning_threshold']) < current <
-                        int(cpu_use['critical_threshold']) and
-                        cpu_use['warning_enabled']):
+            current = metrics['system_cpu_usage']['current']
+            previous = metrics['system_cpu_usage']['previous']
+            if current not in [previous, None]:
+                if (int(cpu_use['warning_threshold']) <= float(current) <
+                    int(cpu_use['critical_threshold']) and
+                    cpu_use['warning_enabled'] and not
+                    int(cpu_use['warning_threshold']) <= floaty(previous) <
+                    int(cpu_use['critical_threshold']) and not
+                    floaty(previous) >=
+                        int(cpu_use['critical_threshold'])):
                     alert = \
-                        SystemCPUUsageIncreasedAboveWarningThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'WARNING',
-                            meta_data['last_monitored'],
+                        SystemCPUUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'WARNING',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -397,14 +385,14 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                elif (int(cpu_use['critical_threshold']) < current and
-                        cpu_use['critical_enabled']):
+                elif (float(current) >= int(cpu_use['critical_threshold']) and
+                      cpu_use['critical_enabled'] and
+                      cpu_use['limiter'].can_do_task()):
                     alert = \
-                      SystemCPUUsageIncreasedAboveCriticalThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'CRITICAL',
-                            meta_data['last_monitored'],
+                        SystemCPUUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'CRITICAL',
+                            meta_data['last_monitored'], 'CRITICAL',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -412,13 +400,16 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                else:
+                    cpu_use['limiter'].did_task()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(cpu_use['warning_threshold']) and
+                      float(current) < int(cpu_use['warning_threshold']) and
+                      cpu_use['warning_enabled']):
                     alert = \
-                      SystemCPUUsageIncreasedAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'INFO',
-                            meta_data['last_monitored'],
+                        SystemCPUUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -426,30 +417,39 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-            elif current < previous:
-                alert = SystemCPUUsageDecreasedAlert(
-                    self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['last_monitored'],
-                    meta_data['system_parent_id'], meta_data['system_id']
-                )
-                self._data_for_alerting = alert.alert_data
-                self.logger.debug('Successfully classified alert {}'
-                                  ''.format(alert.alert_data))
-                self._place_latest_data_on_queue()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(cpu_use['critical_threshold'])
+                      and float(current) < int(cpu_use['critical_threshold'])
+                      and cpu_use['critical_enabled']):
+                    alert = \
+                        SystemCPUUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'CRITICAL',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
 
         if ram_use['enabled']:
-            current = int(metrics['system_cpu_usage']['current'] or 0)
-            previous = int(metrics['system_cpu_usage']['previous'] or 0)
-            if current > previous:
-                if (int(ram_use['warning_threshold']) < current <
-                        int(ram_use['critical_threshold']) and
-                        ram_use['warning_enabled']):
+            current = metrics['system_ram_usage']['current']
+            previous = metrics['system_ram_usage']['previous']
+            if current not in [previous, None]:
+                if (int(ram_use['warning_threshold']) <= float(current) <
+                    int(ram_use['critical_threshold']) and
+                    ram_use['warning_enabled'] and not
+                    int(ram_use['warning_threshold']) <= floaty(previous) <
+                    int(ram_use['critical_threshold']) and not
+                    floaty(previous) >=
+                        int(ram_use['critical_threshold'])):
                     alert = \
-                        SystemRAMUsageIncreasedAboveWarningThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'WARNING',
-                            meta_data['last_monitored'],
+                        SystemRAMUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'WARNING',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -457,14 +457,14 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                elif (int(ram_use['critical_threshold']) < current and
-                        ram_use['critical_enabled']):
+                elif (float(current) >= int(ram_use['critical_threshold']) and
+                      ram_use['critical_enabled'] and
+                      ram_use['limiter'].can_do_task()):
                     alert = \
-                      SystemRAMUsageIncreasedAboveCriticalThresholdAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'CRITICAL',
-                            meta_data['last_monitored'],
+                        SystemRAMUsageIncreasedAboveThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'CRITICAL',
+                            meta_data['last_monitored'], 'CRITICAL',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -472,13 +472,16 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-                else:
+                    ram_use['limiter'].did_task()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(ram_use['warning_threshold']) and
+                      float(current) < int(ram_use['warning_threshold']) and
+                      ram_use['warning_enabled']):
                     alert = \
-                      SystemRAMUsageIncreasedAlert(
-                            self.alerts_configs.parent,
-                            meta_data['system_name'],
-                            previous, current, 'INFO',
-                            meta_data['last_monitored'],
+                        SystemRAMUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'WARNING',
                             meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -486,16 +489,22 @@ class SystemAlerter(Alerter):
                     self.logger.debug('Successfully classified alert {}'
                                       ''.format(alert.alert_data))
                     self._place_latest_data_on_queue()
-            elif current < previous:
-                alert = SystemRAMUsageDecreasedAlert(
-                    self.alerts_configs.parent, meta_data['system_name'],
-                    previous, current, 'INFO', meta_data['last_monitored'],
-                    meta_data['system_parent_id'], meta_data['system_id']
-                )
-                self._data_for_alerting = alert.alert_data
-                self.logger.debug('Successfully classified alert {}'
-                                  ''.format(alert.alert_data))
-                self._place_latest_data_on_queue()
+                elif (float(current) < floaty(previous) and
+                      floaty(previous) >= int(ram_use['critical_threshold'])
+                      and float(current) < int(ram_use['critical_threshold'])
+                      and ram_use['critical_enabled']):
+                    alert = \
+                        SystemRAMUsageDecreasedBelowThresholdAlert(
+                            meta_data['system_name'], floaty(previous),
+                            float(current), 'INFO',
+                            meta_data['last_monitored'], 'CRITICAL',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    self._data_for_alerting = alert.alert_data
+                    self.logger.debug('Successfully classified alert {}'
+                                      ''.format(alert.alert_data))
+                    self._place_latest_data_on_queue()
 
     def _place_latest_data_on_queue(self) -> None:
         self.logger.debug("Adding alert data to the publishing queue ...")

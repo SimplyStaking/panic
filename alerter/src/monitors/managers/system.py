@@ -55,7 +55,8 @@ class SystemMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-        del sent_configs['DEFAULT']
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
 
         self.logger.info('Received configs {}'.format(sent_configs))
         if method.routing_key == 'general.systems_config':

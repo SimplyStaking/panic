@@ -35,7 +35,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
 def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
                                -> SystemAlerter:
     # Alerter name based on system
-    alerter_name = 'System alerter ({})'.format(system_alerts_config.parent)
+    alerter_name = 'System alerter ({})'.format(system_alerts_config.parent_id)
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 

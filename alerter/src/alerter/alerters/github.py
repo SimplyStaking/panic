@@ -75,8 +75,8 @@ class GithubAlerter(Alerter):
                     for i in range(0, current-previous):
                         alert = NewGitHubReleaseAlert(
                           meta['repo_name'],
-                          data['releases'][i]['release_name'],
-                          data['releases'][i]['tag_name'], 'INFO',
+                          data['releases'][str(i)]['release_name'],
+                          data['releases'][str(i)]['tag_name'], 'INFO',
                           meta['last_monitored'], meta['repo_parent_id'],
                           meta['repo_id']
                         )

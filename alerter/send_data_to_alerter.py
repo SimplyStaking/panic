@@ -28,7 +28,7 @@ if __name__ == '__main__':
     rabbitAPI = RabbitMQApi(DUMMY_LOGGER, rabbit_host)
     rabbitAPI.connect()
     rabbitAPI.confirm_delivery()
-    rabbitAPI.exchange_declare(exchange='alerter', exchange_type='direct',
+    rabbitAPI.exchange_declare(exchange='alert', exchange_type='topic',
                                passive=False, durable=True, auto_delete=False,
                                internal=False)
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
               "data": {
                 "no_of_releases": {
                   "current": 30,
-                  "previous": None
+                  "previous": 27
                 },
                 "releases": {
                   "0": {
@@ -203,27 +203,27 @@ if __name__ == '__main__':
                   'monitor_name': 'monitor_name_1',
                   'system_name': 'system_config_1',
                   'system_id': '1231-2321-120312031-3213213',
-                  'system_parent_id': 'parent_id_12',
-                  'timestamp': str(datetime.now().timestamp())
+                  'system_parent_id': 'aspdmasdpiomasdo',
+                  'last_monitored': str(datetime.now().timestamp())
               },
               'data': {
                   'process_cpu_seconds_total':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'process_memory_usage':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'virtual_memory_usage':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'open_file_descriptors':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'system_cpu_usage':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'system_ram_usage':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'system_storage_usage':
-                      {'current': 60, 'previous': None},
+                      {'current': 89, 'previous': 87},
                   'went_down_at':
-                      {'current': 1604783539.751823,
-                       'previous': 1604783539.751823},
+                      {'current': None,
+                          'previous': None},
               }
             }
         }
@@ -232,20 +232,20 @@ if __name__ == '__main__':
             "meta_data": {
               "system_name": "system_main_2",
               "system_id": "system_73a16131-a974-4283-9d64-93af38328e53",
-              "system_parent_id": "GLOBAL",
-              "time": 1604783549.751823
+              "system_parent_id": "aspdmasdpiomasdo",
+              "time": str(datetime.now().timestamp())
             },
             'went_down_at':
-                {'current': 1604783539.751823, 'previous': 1604783239.751823},
+                {'current':  1605645946.754372, 'previous': None},
             "message": "System is down.",
             "code": 5004
           }
         }
 
         rabbitAPI.basic_publish_confirm(
-            exchange='alerter',
-            routing_key='alerter.system.general',
-            body=transformer_data_decrease,
+            exchange='alert',
+            routing_key='alerter.system.aspdmasdpiomasdo',
+            body=system_data_error,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True

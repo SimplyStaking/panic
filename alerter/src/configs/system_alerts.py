@@ -1,4 +1,7 @@
+from datetime import timedelta
 from typing import Dict
+
+from src.utils.timing import TimedTaskLimiter
 
 
 class SystemAlertsConfig:
@@ -14,6 +17,42 @@ class SystemAlertsConfig:
         self._system_storage_usage = system_storage_usage
         self._system_ram_usage = system_ram_usage
         self._system_is_down = system_is_down
+
+        self._open_file_descriptors['limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._open_file_descriptors['critical_repeat']
+            ))
+        )
+
+        self._system_cpu_usage['limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._system_cpu_usage['critical_repeat']
+            ))
+        )
+
+        self._system_storage_usage['limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._system_storage_usage['critical_repeat']
+            ))
+        )
+
+        self._system_ram_usage['limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._system_ram_usage['critical_repeat']
+            ))
+        )
+
+        self._system_is_down['critical_limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._system_is_down['critical_repeat']
+            ))
+        )
+
+        self._system_is_down['warning_limiter'] = TimedTaskLimiter(
+            timedelta(seconds=int(
+                self._system_is_down['warning_repeat']
+            ))
+        )
 
     @property
     def parent_id(self) -> str:

@@ -1,12 +1,12 @@
 from enum import Enum
 
 from src.alerter.alerts.alert import Alert
-from src.utils.alert import SeverityCode, next_id
+from src.utils.alert import SeverityCode
 
 
-class AlertCode(Enum):
-    NewGitHubReleaseAlert = next_id(),
-    CannotAccessGitHubPageAlert = next_id(),
+class AlertCode(str, Enum):
+    NewGitHubReleaseAlert = 'github_alert_1',
+    CannotAccessGitHubPageAlert = 'github_alert_2',
 
 
 class NewGitHubReleaseAlert(Alert):

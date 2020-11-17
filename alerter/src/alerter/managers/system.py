@@ -56,14 +56,16 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-        del sent_configs['DEFAULT']
+
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
 
         self.logger.info('Received configs {}'.format(sent_configs))
 
         try:
             # Check if all the parent_ids in the received configuration
             # are the same
-            parent_id = sent_configs[0]['parent_id']
+            parent_id = sent_configs['1']['parent_id']
             for i in sent_configs:
                 if parent_id != sent_configs[i]['parent_id']:
                     raise ParentIdsMissMatchInAlertsConfiguration
