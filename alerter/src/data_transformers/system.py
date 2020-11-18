@@ -30,17 +30,17 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info("Creating \'{}\' exchange".format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue \'system_data_transformer_raw_data_queue\'")
+            "Creating queue 'system_data_transformer_raw_data_queue'")
         self.rabbitmq.queue_declare(
             'system_data_transformer_raw_data_queue', False, True, False,
             False)
         self.logger.info(
-            "Binding queue \'system_data_transformer_raw_data_queue\' to "
-            "exchange \'{}\' with routing key \'system\'".format(
+            "Binding queue 'system_data_transformer_raw_data_queue' to "
+            "exchange '{}' with routing key 'system'".format(
                 RAW_DATA_EXCHANGE))
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
                                  RAW_DATA_EXCHANGE, 'system')
@@ -55,10 +55,10 @@ class SystemDataTransformer(DataTransformer):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating \'{}\' exchange".format(STORE_EXCHANGE))
+        self.logger.info("Creating '{}' exchange".format(STORE_EXCHANGE))
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info("Creating \'{}\' exchange".format(ALERT_EXCHANGE))
+        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
 
@@ -540,7 +540,7 @@ class SystemDataTransformer(DataTransformer):
                 body=data['data'], is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=mandatory)
-            self.logger.debug("Sent {} to \'{}\' exchange"
+            self.logger.debug("Sent {} to '{}' exchange"
                               .format(data['data'], data['exchange']))
             self.publishing_queue.get()
             self.publishing_queue.task_done()

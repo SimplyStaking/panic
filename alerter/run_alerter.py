@@ -234,7 +234,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     # TODO: Need to add configs manager here when Mark finishes the
     #     : modifications
 
-    log_and_print("The alerter is stopping.", dummy_logger)
+    log_and_print("The alerting and monitoring process has ended.",
+                  dummy_logger)
     sys.exit()
 
 
@@ -280,7 +281,7 @@ if __name__ == '__main__':
     config_stop_queue.put('STOP')
     config_manager_runner_process.join()
 
-    print("The alerter is stopping.")
+    print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the

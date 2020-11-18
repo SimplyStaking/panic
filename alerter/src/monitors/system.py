@@ -285,7 +285,7 @@ class SystemMonitor(Monitor):
             exchange=RAW_DATA_EXCHANGE, routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug("Sent data to \'{}\' exchange".format(
+        self.logger.debug("Sent data to '{}' exchange".format(
             RAW_DATA_EXCHANGE))
 
     def _monitor(self) -> None:

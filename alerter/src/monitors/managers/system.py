@@ -29,23 +29,23 @@ class SystemMonitorsManager(MonitorsManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue \'system_monitors_manager_configs_queue\'")
+            "Creating queue 'system_monitors_manager_configs_queue'")
         self.rabbitmq.queue_declare(
             'system_monitors_manager_configs_queue', False, True, False, False)
         self.logger.info(
-            "Binding queue \'system_monitors_manager_configs_queue\' to "
-            "exchange \'{}\' with routing key "
-            "\'chains.*.*.systems_config\'".format(CONFIG_EXCHANGE))
+            "Binding queue 'system_monitors_manager_configs_queue' to "
+            "exchange '{}' with routing key "
+            "'chains.*.*.systems_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.systems_config')
         self.logger.info(
-            "Binding queue \'system_monitors_manager_configs_queue\' to "
-            "exchange \'{}\' with routing key "
-            "\'general.systems_config\'".format(CONFIG_EXCHANGE))
+            "Binding queue 'system_monitors_manager_configs_queue' to "
+            "exchange '{}' with routing key "
+            "'general.systems_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.systems_config')
         self.logger.info("Declaring consuming intentions")
