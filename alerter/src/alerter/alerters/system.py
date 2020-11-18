@@ -269,61 +269,63 @@ class SystemAlerter(Alerter):
         critical_threshold = float(config['critical_threshold'])
         warning_enabled = config['warning_enabled']
         critical_enabled = config['critical_enabled']
-        if (warning_threshold <= current < critical_threshold and
-            warning_enabled and not warning_threshold <= previous <
-                critical_threshold and not previous >= critical_threshold):
-            alert = \
-                IncreasedAboveThresholdAlert(
-                    meta_data['system_name'], previous, current, 'WARNING',
-                    meta_data['last_monitored'], 'WARNING',
-                    meta_data['system_parent_id'],
-                    meta_data['system_id']
-                )
-            self._data_for_alerting = alert.alert_data
-            self.logger.debug("Successfully classified alert {}"
-                              "".format(alert.alert_data))
-            self._place_latest_data_on_queue()
-        elif (current >= critical_threshold and critical_enabled and not
-              previous >= critical_threshold and
-              config['limiter'].can_do_task()):
-            alert = \
-                IncreasedAboveThresholdAlert(
-                    meta_data['system_name'], previous, current, 'CRITICAL',
-                    meta_data['last_monitored'], 'CRITICAL',
-                    meta_data['system_parent_id'],
-                    meta_data['system_id']
-                )
-            self._data_for_alerting = alert.alert_data
-            self.logger.debug("Successfully classified alert {}"
-                              "".format(alert.alert_data))
-            self._place_latest_data_on_queue()
-            config['limiter'].did_task()
-        elif (current < previous and previous >= warning_threshold and
-              current < warning_threshold and warning_enabled):
-            alert = \
-                DecreasedBelowThresholdAlert(
-                    meta_data['system_name'], previous, current, 'INFO',
-                    meta_data['last_monitored'], 'WARNING',
-                    meta_data['system_parent_id'],
-                    meta_data['system_id']
-                )
-            self._data_for_alerting = alert.alert_data
-            self.logger.debug("Successfully classified alert {}"
-                              "".format(alert.alert_data))
-            self._place_latest_data_on_queue()
-        elif (current < previous and previous >= critical_threshold
-              and current < critical_threshold and critical_enabled):
-            alert = \
-                DecreasedBelowThresholdAlert(
-                    meta_data['system_name'], previous, current, 'INFO',
-                    meta_data['last_monitored'], 'CRITICAL',
-                    meta_data['system_parent_id'],
-                    meta_data['system_id']
-                )
-            self._data_for_alerting = alert.alert_data
-            self.logger.debug("Successfully classified alert {}"
-                              "".format(alert.alert_data))
-            self._place_latest_data_on_queue()
+        if (warning_enabled):
+            if (warning_threshold <= current < critical_threshold and not
+                warning_threshold <= previous < critical_threshold and not
+                    previous >= critical_threshold):
+                alert = \
+                    IncreasedAboveThresholdAlert(
+                        meta_data['system_name'], previous, current, 'WARNING',
+                        meta_data['last_monitored'], 'WARNING',
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                self._data_for_alerting = alert.alert_data
+                self.logger.debug("Successfully classified alert {}"
+                                  "".format(alert.alert_data))
+                self._place_latest_data_on_queue()
+            elif (current < previous and previous >= warning_threshold and
+                  current < warning_threshold):
+                alert = \
+                    DecreasedBelowThresholdAlert(
+                        meta_data['system_name'], previous, current, 'INFO',
+                        meta_data['last_monitored'], 'WARNING',
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                self._data_for_alerting = alert.alert_data
+                self.logger.debug("Successfully classified alert {}"
+                                  "".format(alert.alert_data))
+                self._place_latest_data_on_queue()
+        elif (critical_enabled):
+            if(current >= critical_threshold and not
+                previous >= critical_threshold and
+                    config['limiter'].can_do_task()):
+                alert = \
+                    IncreasedAboveThresholdAlert(
+                        meta_data['system_name'], previous, current,
+                        'CRITICAL', meta_data['last_monitored'], 'CRITICAL',
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                self._data_for_alerting = alert.alert_data
+                self.logger.debug("Successfully classified alert {}"
+                                  "".format(alert.alert_data))
+                self._place_latest_data_on_queue()
+                config['limiter'].did_task()
+            elif (current < previous and previous >= critical_threshold
+                    and current < critical_threshold):
+                alert = \
+                    DecreasedBelowThresholdAlert(
+                        meta_data['system_name'], previous, current,
+                        'INFO', meta_data['last_monitored'], 'CRITICAL',
+                        meta_data['system_parent_id'],
+                        meta_data['system_id']
+                    )
+                self._data_for_alerting = alert.alert_data
+                self.logger.debug("Successfully classified alert {}"
+                                  "".format(alert.alert_data))
+                self._place_latest_data_on_queue()
 
     def _place_latest_data_on_queue(self) -> None:
         self.logger.debug("Adding alert data to the publishing queue ...")
