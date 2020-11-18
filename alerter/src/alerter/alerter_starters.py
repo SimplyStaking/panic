@@ -39,7 +39,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 
-    # Try initializing a alerter until successful
+    # Try initializing an alerter until successful
     while True:
         try:
             system_alerter = SystemAlerter(alerter_name, system_alerts_config,
@@ -62,7 +62,7 @@ def _initialize_github_alerter() -> GithubAlerter:
 
     github_alerter_logger = _initialize_alerter_logger(alerter_name)
 
-    # Try initializing a alerter until successful
+    # Try initializing an alerter until successful
     while True:
         try:
             github_alerter = GithubAlerter(alerter_name, github_alerter_logger)

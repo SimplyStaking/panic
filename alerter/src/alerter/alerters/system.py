@@ -40,41 +40,41 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _initialize_alerter(self) -> None:
-        self.rabbitmq.connect_till_successful()
+        self._rabbitmq.connect_till_successful()
         self.logger.info('Creating \'alert\' exchange')
-        self.rabbitmq.exchange_declare(exchange='alert',
-                                       exchange_type='topic', passive=False,
-                                       durable=True, auto_delete=False,
-                                       internal=False)
+        self._rabbitmq.exchange_declare(exchange='alert',
+                                        exchange_type='topic', passive=False,
+                                        durable=True, auto_delete=False,
+                                        internal=False)
         self._queue_used = 'system_alerter_queue_' + \
                            self.alerts_configs.parent_id
         self.logger.info('Creating queue \'{}\''.format(self._queue_used))
-        self.rabbitmq.queue_declare(self._queue_used, passive=False,
-                                    durable=True, exclusive=False,
-                                    auto_delete=False)
+        self._rabbitmq.queue_declare(self._queue_used, passive=False,
+                                     durable=True, exclusive=False,
+                                     auto_delete=False)
         routing_key = 'alerter.system.' + self.alerts_configs.parent_id
         self.logger.info('Binding queue \'{}\' to exchange '
                          '\'alert\' with routing key \'{}\''
                          ''.format(self._queue_used, routing_key))
-        self.rabbitmq.queue_bind(queue=self._queue_used,
-                                 exchange='alert',
-                                 routing_key=routing_key)
+        self._rabbitmq.queue_bind(queue=self._queue_used,
+                                  exchange='alert',
+                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
-        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info('Declaring consuming intentions')
 
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
-        self.rabbitmq.confirm_delivery()
+        self._rabbitmq.confirm_delivery()
         # TODO remove queue_purge for production
-        self.rabbitmq.queue_purge(self._queue_used)
-        self.rabbitmq.basic_consume(queue=self._queue_used,
-                                    on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False,
-                                    consumer_tag=None)
+        self._rabbitmq.queue_purge(self._queue_used)
+        self._rabbitmq.basic_consume(queue=self._queue_used,
+                                     on_message_callback=self._process_data,
+                                     auto_ack=False,
+                                     exclusive=False,
+                                     consumer_tag=None)
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -101,7 +101,7 @@ class SystemAlerter(Alerter):
             processing_error = True
 
         # If the data is processed, it can be acknowledged.
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Place the data on the publishing queue if there were no processing
         # errors. This is done after acknowledging the data, so that if
@@ -537,7 +537,7 @@ class SystemAlerter(Alerter):
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
-                self.rabbitmq.start_consuming()
+                self._rabbitmq.start_consuming()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
                 # there is a channel error, the RabbitMQ interface creates a
@@ -557,7 +557,7 @@ class SystemAlerter(Alerter):
                       'closed, and afterwards the process will exit.'
                       .format(self), self.logger)
 
-        self.rabbitmq.queue_delete(self._queue_used)
-        self.rabbitmq.disconnect_till_successful()
+        self._rabbitmq.queue_delete(self._queue_used)
+        self._rabbitmq.disconnect_till_successful()
         log_and_print('{} terminated.'.format(self), self.logger)
         sys.exit()

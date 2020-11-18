@@ -22,39 +22,39 @@ class GithubAlerter(Alerter):
         super().__init__(alerter_name, logger)
 
     def _initialize_alerter(self) -> None:
-        self.rabbitmq.connect_till_successful()
+        self._rabbitmq.connect_till_successful()
         self.logger.info('Creating \'alert\' exchange')
-        self.rabbitmq.exchange_declare(exchange='alert',
-                                       exchange_type='topic', passive=False,
-                                       durable=True, auto_delete=False,
-                                       internal=False)
+        self._rabbitmq.exchange_declare(exchange='alert',
+                                        exchange_type='topic', passive=False,
+                                        durable=True, auto_delete=False,
+                                        internal=False)
         self.logger.info('Creating queue \'github_alerter_queue\'')
-        self.rabbitmq.queue_declare('github_alerter_queue', passive=False,
-                                    durable=True, exclusive=False,
-                                    auto_delete=False)
+        self._rabbitmq.queue_declare('github_alerter_queue', passive=False,
+                                     durable=True, exclusive=False,
+                                     auto_delete=False)
 
         self.logger.info('Binding queue \'github_alerter_queue\' to exchange '
                          '\'alerter\' with routing key \'alerter.github\'')
         routing_key = 'alerter.github'
-        self.rabbitmq.queue_bind(queue='github_alerter_queue',
-                                 exchange='alert',
-                                 routing_key=routing_key)
+        self._rabbitmq.queue_bind(queue='github_alerter_queue',
+                                  exchange='alert',
+                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
-        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
 
         # Set producing configuration
         self.logger.info('Setting delivery confirmation on RabbitMQ channel')
-        self.rabbitmq.confirm_delivery()
+        self._rabbitmq.confirm_delivery()
         # TODO remove for production
-        self.rabbitmq.queue_purge('github_alerter_queue')
+        self._rabbitmq.queue_purge('github_alerter_queue')
         self.logger.info('Declaring consuming intentions')
-        self.rabbitmq.basic_consume(queue='github_alerter_queue',
-                                    on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False,
-                                    consumer_tag=None)
+        self._rabbitmq.basic_consume(queue='github_alerter_queue',
+                                     on_message_callback=self._process_data,
+                                     auto_ack=False,
+                                     exclusive=False,
+                                     consumer_tag=None)
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -103,7 +103,7 @@ class GithubAlerter(Alerter):
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)
 
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -139,7 +139,7 @@ class GithubAlerter(Alerter):
         log_and_print('{} started.'.format(self), self.logger)
         while True:
             try:
-                self.rabbitmq.start_consuming()
+                self._rabbitmq.start_consuming()
             except pika.exceptions.AMQPChannelError:
                 # Error would have already been logged by RabbitMQ logger. If
                 # there is a channel error, the RabbitMQ interface creates a
@@ -164,6 +164,6 @@ class GithubAlerter(Alerter):
                       'closed, and afterwards the process will exit.'
                       .format(self), self.logger)
 
-        self.rabbitmq.disconnect_till_successful()
+        self._rabbitmq.disconnect_till_successful()
         log_and_print('{} terminated.'.format(self), self.logger)
         sys.exit()

@@ -52,10 +52,6 @@ class Alerter(ABC):
         return self._alerter_name
 
     @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @property
     def data_for_alerting(self) -> Dict:
         return self._data_for_alerting
 
@@ -91,7 +87,7 @@ class Alerter(ABC):
         # that if an exception is raised, that message is not popped
         while not self.publishing_queue.empty():
             data = self.publishing_queue.queue[0]
-            self.rabbitmq.basic_publish_confirm(
+            self._rabbitmq.basic_publish_confirm(
                 exchange=data['exchange'], routing_key=data['routing_key'],
                 body=data['data'], is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
