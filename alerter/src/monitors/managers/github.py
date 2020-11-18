@@ -7,7 +7,6 @@ from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
-
 from src.configs.repo import RepoConfig
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
@@ -57,6 +56,8 @@ class GitHubMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
 
         self.logger.info("Received configs {}".format(sent_configs))
 
@@ -82,7 +83,8 @@ class GitHubMonitorsManager(MonitorsManager):
         # case an error occurs.
         correct_repos_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(sent_configs,
+                                                  current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 repo_id = config['id']
@@ -133,8 +135,8 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
 
-                # If we should not monitor the system, delete the previous process
-                # from the system and move to the next config
+                # If we should not monitor the system, delete the previous
+                # process from the system and move to the next config
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
                     del correct_repos_configs[config_id]
@@ -153,7 +155,8 @@ class GitHubMonitorsManager(MonitorsManager):
                 self._config_process_dict[config_id] = process
                 correct_repos_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(sent_configs,
+                                                  current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 repo_name = config['repo_name']
