@@ -27,9 +27,9 @@ class Alerter(ABC):
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
-                                 "ALERTER_PUBLISHING_QUEUE_SIZE"])
+                                 'ALERTER_PUBLISHING_QUEUE_SIZE'])
         self._publishing_queue = Queue(max_queue_size)
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -59,6 +59,10 @@ class Alerter(ABC):
     def publishing_queue(self) -> Queue:
         return self._publishing_queue
 
+    @property
+    def rabbitmq(self) -> RabbitMQApi:
+        return self._rabbitmq
+
     @abstractmethod
     def _place_latest_data_on_queue(self) -> None:
         pass
@@ -79,27 +83,31 @@ class Alerter(ABC):
         empty = True
         if not self.publishing_queue.empty():
             empty = False
-            self.logger.info('Attempting to send all data waiting in the '
-                             'publishing queue ...')
+            self.logger.info("Attempting to send all data waiting in the "
+                             "publishing queue ...")
 
         # Try sending the data in the publishing queue one by one. Important,
         # remove an item from the queue only if the sending was successful, so
         # that if an exception is raised, that message is not popped
         while not self.publishing_queue.empty():
             data = self.publishing_queue.queue[0]
-            self._rabbitmq.basic_publish_confirm(
-                exchange=data['exchange'], routing_key=data['routing_key'],
-                body=data['data'], is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.logger.debug('Sent {} to \'{}\' exchange'
-                              .format(data['data'], data['exchange']))
+            try:
+                self.rabbitmq.basic_publish_confirm(
+                    exchange=data['exchange'], routing_key=data['routing_key'],
+                    body=data['data'], is_body_dict=True,
+                    properties=pika.BasicProperties(delivery_mode=2),
+                    mandatory=True)
+                self.logger.debug("Sent {} to \'{}\' exchange"
+                                  .format(data['data'], data['exchange']))
+            except KeyError as e:
+                self.logger.exception(e)
+                raise e
             self.publishing_queue.get()
             self.publishing_queue.task_done()
 
         if not empty:
-            self.logger.info('Successfully sent all data from the publishing '
-                             'queue')
+            self.logger.info("Successfully sent all data from the publishing "
+                             "queue")
 
     def start_alert_classification(self) -> None:
         self._initialize_alerter()

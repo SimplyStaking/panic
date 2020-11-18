@@ -46,8 +46,6 @@ class SystemMonitorsManager(MonitorsManager):
             '\'general.systems_config\'')
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  'config', 'general.systems_config')
-        # TODO remove purge for production, keep right now for testing
-        self.rabbitmq.queue_purge('system_monitors_manager_configs_queue')
         self.logger.info('Declaring consuming intentions')
         self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)

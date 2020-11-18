@@ -49,18 +49,18 @@ class GithubAlerterManager:
         self._process_holder['github'] = process
         process.join()
         del self._process_holder['github']
-        log_and_print('{} stopped.'.format(self), self.logger)
+        log_and_print("{} stopped.".format(self), self.logger)
 
     # If termination signals are received, terminate all child process and exit
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print('{} is terminating. The github alerter will be '
-                      'stopped gracefully and then the {} process will '
-                      'exit.'.format(self, self), self.logger)
+        log_and_print("{} is terminating. The github alerter will be "
+                      "stopped gracefully and then the {} process will "
+                      "exit.".format(self, self), self.logger)
         process = self._process_holder['github']
-        log_and_print('Terminating the process of {}'.format(process),
+        log_and_print("Terminating the process of {}".format(process),
                       self.logger)
         process.terminate()
         process.join()
         del self._process_holder['github']
-        log_and_print('{} terminated.'.format(self), self.logger)
+        log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

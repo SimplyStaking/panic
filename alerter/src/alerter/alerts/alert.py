@@ -22,7 +22,10 @@ class Alert():
     @property
     def alert_data(self) -> Dict:
         return {
-            'alert': self._alert_code.name,
+            'alert_code': {
+                'name': self._alert_code.name,
+                'code': self._alert_code.value
+            },
             'message': self._message,
             'severity': self._severity,
             'parent_id': self._parent_id,

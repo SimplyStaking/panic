@@ -203,24 +203,24 @@ if __name__ == '__main__':
                   'monitor_name': 'monitor_name_1',
                   'system_name': 'system_config_1',
                   'system_id': '1231-2321-120312031-3213213',
-                  'system_parent_id': 'aspdmasdpiomasdo',
+                  'system_parent_id': 'GLOBAL',
                   'last_monitored': str(datetime.now().timestamp())
               },
               'data': {
                   'process_cpu_seconds_total':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'process_memory_usage':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'virtual_memory_usage':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'open_file_descriptors':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'system_cpu_usage':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'system_ram_usage':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'system_storage_usage':
-                      {'current': 89, 'previous': 87},
+                      {'current': 97, 'previous': 87},
                   'went_down_at':
                       {'current': None,
                           'previous': None},
@@ -235,8 +235,10 @@ if __name__ == '__main__':
               "system_parent_id": "aspdmasdpiomasdo",
               "time": str(datetime.now().timestamp())
             },
-            'went_down_at':
-                {'current':  1605645946.754372, 'previous': None},
+            "data": {
+              'went_down_at':
+                {'current':  1605645946.754372, 'previous': None}
+              },
             "message": "System is down.",
             "code": 5004
           }
@@ -244,8 +246,8 @@ if __name__ == '__main__':
 
         rabbitAPI.basic_publish_confirm(
             exchange='alert',
-            routing_key='alerter.system.aspdmasdpiomasdo',
-            body=system_data_error,
+            routing_key='alerter.system.GLOBAL',
+            body=transformer_data_decrease,
             is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True

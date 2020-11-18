@@ -26,29 +26,27 @@ class SystemAlertersManager(AlertersManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Creating exchange \'config\'')
+        self.logger.info("Creating exchange \'config\'")
         self.rabbitmq.exchange_declare('config', 'topic', False, True,
                                        False, False)
         self.logger.info(
-            'Creating queue \'system_alerters_manager_configs_queue\'')
+            "Creating queue \'system_alerters_manager_configs_queue\'")
         self.rabbitmq.queue_declare(
-            'system_alerters_manager_configs_queue', False, True, False, False)
+            "system_alerters_manager_configs_queue", False, True, False, False)
         self.logger.info(
-            'Binding queue \'system_alerters_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
-            '\'chains.*.*.alerts_config\'')
+            "Binding queue \'system_alerters_manager_configs_queue\' to "
+            "exchange \'config\' with routing key "
+            "\'chains.*.*.alerts_config\'")
         self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
                                  'config',
                                  'chains.*.*.alerts_config')
         self.logger.info(
-            'Binding queue \'system_alerters_manager_configs_queue\' to '
-            'exchange \'config\' with routing key '
-            '\'general.alerts_config\'')
+            "Binding queue \'system_alerters_manager_configs_queue\' to "
+            "exchange \'config\' with routing key "
+            "\'general.alerts_config\'")
         self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
                                  'config', 'general.alerts_config')
-        # TODO remove for production
-        self.rabbitmq.queue_purge('system_alerters_manager_configs_queue')
-        self.logger.info('Declaring consuming intentions')
+        self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume('system_alerters_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -60,7 +58,7 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        self.logger.info('Received configs {}'.format(sent_configs))
+        self.logger.info("Received configs {}".format(sent_configs))
 
         try:
             # Check if all the parent_ids in the received configuration
@@ -69,7 +67,7 @@ class SystemAlertersManager(AlertersManager):
             for i in sent_configs:
                 if parent_id != sent_configs[i]['parent_id']:
                     raise ParentIdsMissMatchInAlertsConfiguration(
-                          '{}: _process_data'.format(self))
+                          "{}: _process_data".format(self))
 
             filtered = {}
             for i in sent_configs:
@@ -89,14 +87,14 @@ class SystemAlertersManager(AlertersManager):
                 previous_process.terminate()
                 previous_process.join()
 
-                log_and_print('Restarting the system alerter of {} with latest'
-                              ' configuration'.format(parent_id), self.logger)
+                log_and_print("Restarting the system alerter of {} with latest"
+                              " configuration".format(parent_id), self.logger)
 
                 process = multiprocessing.Process(target=start_system_alerter,
                                                   args=(system_alerts_config,))
                 process.daemon = True
-                log_and_print('Creating a new process for the system alerter '
-                              'of {}'.format(system_alerts_config.parent_id),
+                log_and_print("Creating a new process for the system alerter "
+                              "of {}".format(system_alerts_config.parent_id),
                               self.logger)
                 process.start()
                 self._config_process_dict[parent_id] = process
@@ -104,8 +102,8 @@ class SystemAlertersManager(AlertersManager):
                 process = multiprocessing.Process(target=start_system_alerter,
                                                   args=(system_alerts_config,))
                 process.daemon = True
-                log_and_print('Creating a new process for the system alerter '
-                              'of {}'.format(system_alerts_config.parent_id),
+                log_and_print("Creating a new process for the system alerter "
+                              "of {}".format(system_alerts_config.parent_id),
                               self.logger)
                 process.start()
                 self._config_process_dict[parent_id] = process

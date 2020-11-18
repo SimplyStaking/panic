@@ -18,11 +18,11 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     while True:
         try:
             alerter_logger = create_logger(
-                os.environ["ALERTERS_LOG_FILE_TEMPLATE"].format(alerter_name),
-                alerter_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                os.environ['ALERTERS_LOG_FILE_TEMPLATE'].format(alerter_name),
+                alerter_name, os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 alerter_name, e)
             # Use a dummy logger in this case because we cannot create the
             # alerter's logger.
@@ -35,7 +35,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
 def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
                                -> SystemAlerter:
     # Alerter name based on system
-    alerter_name = 'System alerter ({})'.format(system_alerts_config.parent_id)
+    alerter_name = "System alerter ({})".format(system_alerts_config.parent_id)
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 
@@ -48,7 +48,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
                           system_alerter_logger)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 alerter_name, e)
             log_and_print(msg, system_alerter_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -58,7 +58,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
 
 def _initialize_github_alerter() -> GithubAlerter:
 
-    alerter_name = 'Github alerter'
+    alerter_name = "Github alerter"
 
     github_alerter_logger = _initialize_alerter_logger(alerter_name)
 
@@ -70,7 +70,7 @@ def _initialize_github_alerter() -> GithubAlerter:
                           github_alerter_logger)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!'.format(
+            msg = "!!! Error when initialising {}: {} !!!".format(
                 alerter_name, e)
             log_and_print(msg, github_alerter_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -91,14 +91,14 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig) -> None:
 def start_alerter(alerter: Alerter) -> None:
     while True:
         try:
-            log_and_print('{} started.'.format(alerter), alerter.logger)
+            log_and_print("{} started.".format(alerter), alerter.logger)
             alerter.start_alert_classification()
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(alerter), alerter.logger)
+            log_and_print("{} stopped.".format(alerter), alerter.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             alerter.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(alerter), alerter.logger)
+            log_and_print("{} stopped.".format(alerter), alerter.logger)

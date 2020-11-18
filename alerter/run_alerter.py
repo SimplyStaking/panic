@@ -310,30 +310,34 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 def on_terminate(signum: int, stack: FrameType) -> None:
     dummy_logger = logging.getLogger('Dummy')
 
-    log_and_print('PANIC is terminating. All components will be stopped '
-                  'gracefully.', dummy_logger)
+    log_and_print("PANIC is terminating. All components will be stopped "
+                  "gracefully.", dummy_logger)
 
-    log_and_print('Terminating the System Monitors Manager', dummy_logger)
+    log_and_print("Terminating the System Monitors Manager", dummy_logger)
     system_monitors_manager_process.terminate()
     system_monitors_manager_process.join()
 
-    log_and_print('Terminating the GitHub Monitors Manager', dummy_logger)
+    log_and_print("Terminating the GitHub Monitors Manager", dummy_logger)
     github_monitors_manager_process.terminate()
     github_monitors_manager_process.join()
 
-    log_and_print('Terminating the System Alerters Manager', dummy_logger)
+    log_and_print("Terminating the Data Transformers Manager", dummy_logger)
+    data_transformers_manager_process.terminate()
+    data_transformers_manager_process.join()
+
+    log_and_print("Terminating the System Alerters Manager", dummy_logger)
     system_alerters_manager_process.terminate()
     system_alerters_manager_process.join()
 
-    log_and_print('Terminating the Github Alerter Manager', dummy_logger)
+    log_and_print("Terminating the Github Alerter Manager", dummy_logger)
     github_alerter_manager_process.terminate()
     github_alerter_manager_process.join()
 
-    log_and_print('Terminating the Data Store Process', dummy_logger)
+    log_and_print("Terminating the Data Store Process", dummy_logger)
     data_store_process.terminate()
     data_store_process.join()
 
-    log_and_print('PANIC process terminated.', dummy_logger)
+    log_and_print("PANIC process terminated.", dummy_logger)
     sys.exit()
 
 
@@ -355,6 +359,7 @@ if __name__ == '__main__':
     github_alerter_manager_process = multiprocessing.Process(
         target=run_github_alerters_manager, args=())
     github_alerter_manager_process.start()
+
     data_transformers_manager_process = multiprocessing.Process(
         target=run_data_transformers_manager, args=())
     data_transformers_manager_process.start()
