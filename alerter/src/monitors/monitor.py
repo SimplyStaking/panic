@@ -1,13 +1,17 @@
 import logging
 import os
-import time
+import signal
+import sys
 from abc import ABC, abstractmethod
+from types import FrameType
 from typing import Dict
 
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 
 class Monitor(ABC):
@@ -20,9 +24,14 @@ class Monitor(ABC):
         self._logger = logger
         self._monitor_period = monitor_period
         self._data = {}
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         self._data_retrieval_failed = False
+
+        # Handle termination signals by stopping the monitor gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.monitor_name
@@ -60,11 +69,11 @@ class Monitor(ABC):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info('Setting delivery confirmation on RabbitMQ channel')
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info('Creating \'raw_data\' exchange')
-        self.rabbitmq.exchange_declare('raw_data', 'direct', False, True, False,
-                                       False)
+        self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+                                       False, False)
 
     @abstractmethod
     def _get_data(self) -> None:
@@ -97,27 +106,33 @@ class Monitor(ABC):
         while True:
             try:
                 self._monitor()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore perform another monitoring round without
-                # sleeping
-                continue
             except MessageWasNotDeliveredException as e:
                 # Log the fact that the message could not be sent. Sleep just
                 # because there is no use in consuming a lot of resources until
                 # the problem is fixed.
                 self.logger.exception(e)
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)
                 raise e
 
-            self.logger.debug('Sleeping for %s seconds.', self.monitor_period)
-            time.sleep(self.monitor_period)
+            self.logger.debug("Sleeping for %s seconds.", self.monitor_period)
+
+            # Use the BlockingConnection sleep to avoid dropped connections
+            self.rabbitmq.connection.sleep(self.monitor_period)
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()
 
 # TODO: There are some monitors which may require redis. Therefore consider
 #     : adding redis here in the future.

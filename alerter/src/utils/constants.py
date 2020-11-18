@@ -1,0 +1,4 @@
+CONFIG_EXCHANGE = 'config'
+RAW_DATA_EXCHANGE = 'raw_data'
+STORE_EXCHANGE = 'store'
+ALERT_EXCHANGE = 'alert'
