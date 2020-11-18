@@ -21,7 +21,8 @@ from src.alerter.alerts.system_alerts import (
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.alert import floaty
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  ConnectionNotInitializedException)
 from src.utils.logging import log_and_print
 from src.utils.timing import TimedTaskLimiter
 from src.alerter.alerts.alert import Alert
@@ -367,7 +368,38 @@ class SystemAlerter(Alerter):
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
 
-        self.rabbitmq.queue_delete(self._queue_used)
+        # Try to delete the queue before exiting to avoid cases when the data
+        # transformer is still sending data to this queue. This is done until
+        # successful
+        while True:
+            try:
+                self.rabbitmq.perform_operation_till_successful(
+                    self.rabbitmq.queue_delete, [self._queue_used,
+                                                 False, False], -1)
+                break
+            except ConnectionNotInitializedException:
+                self.logger.info(
+                    "Connection was not yet initialized, therefore no need to "
+                    "delete '{}'".format(self._queue_used))
+                break
+            except pika.exceptions.AMQPChannelError as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Will re-try deleting '{}'".format(self._queue_used))
+            except pika.exceptions.AMQPConnectionError as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Will re-connect again and re-try deleting "
+                    "'{}'".format(self._queue_used))
+                self.rabbitmq.connect_till_successful()
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Unexpected exception while trying to delete "
+                    "'{}'. Will not continue re-trying deleting the "
+                    "queue.".format(self._queue_used))
+                break
+
         self.rabbitmq.disconnect_till_successful()
-        log_and_print('{} terminated.'.format(self), self.logger)
+        log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
