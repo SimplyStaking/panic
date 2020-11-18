@@ -11,13 +11,14 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
-from .config_update_event_handler import ConfigFileEventHandler
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.constants import CONFIG_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException, \
     ConnectionNotInitializedException
 from src.utils.routing_key import get_routing_key
+from .config_update_event_handler import ConfigFileEventHandler
 
-_FIRST_RUN_EVENT = "first run"
+_FIRST_RUN_EVENT = 'first run'
 
 
 class ConfigManager:
@@ -27,8 +28,7 @@ class ConfigManager:
     """
 
     def __init__(self, logger: logging.Logger, config_directory: str,
-                 rabbit_ip: str, output_rabbit_channel: str,
-                 file_patterns: Optional[List[str]] = None,
+                 rabbit_ip: str, file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True, case_sensitive: bool = False):
         """
@@ -45,16 +45,15 @@ class ConfigManager:
             `ignore_file_patterns` are case sensitive. Defaults to False
         """
         if not file_patterns:
-            file_patterns = ["*.ini"]
+            file_patterns = ['*.ini']
 
         self._logger = logger
         self._config_directory = config_directory
         self._file_patterns = file_patterns
         self._watching = False
         self._connected_to_rabbit = False
-        self._output_rabbit_channel = output_rabbit_channel
 
-        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
+        self._rabbit = RabbitMQApi(logger.getChild('rabbitmq'), host=rabbit_ip)
 
         self._event_handler = ConfigFileEventHandler(
             self._logger.getChild(ConfigFileEventHandler.__name__),
@@ -68,15 +67,21 @@ class ConfigManager:
         self._observer.schedule(self._event_handler, config_directory,
                                 recursive=True)
 
-        # Looping due to some errors requiring a retry
+        self._initialize_rabbitmq()
+
+    def _initialize_rabbitmq(self) -> None:
         while True:
             try:
                 self._connect_to_rabbit()
                 self._logger.debug("Connected to Rabbit")
+                self._rabbit.confirm_delivery()
+                self._logger.debug("Just set delivery confirmation on RabbitMQ "
+                                   "channel")
                 self._rabbit.exchange_declare(
-                    output_rabbit_channel, "topic", False, True, False, False
+                    CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
-                self._logger.debug("Declared exchange in Rabbit")
+                self._logger.debug("Declared {} exchange in Rabbit".format(
+                    CONFIG_EXCHANGE))
                 break
             except (ConnectionNotInitializedException,
                     AMQPConnectionError) as connection_error:
@@ -126,8 +131,8 @@ class ConfigManager:
                 )
                 # We need to definitely send this
                 self._rabbit.basic_publish_confirm(
-                    self._output_rabbit_channel, routing_key, config,
-                    mandatory=True, is_body_dict=True,
+                    CONFIG_EXCHANGE, routing_key, config, mandatory=True,
+                    is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
                 )
                 self._logger.info("Configuration update sent")
@@ -135,7 +140,7 @@ class ConfigManager:
             except MessageWasNotDeliveredException as mwnde:
                 self._logger.error("Config was not successfully sent")
                 self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the log again")
+                self._logger.info("Will attempt sending the config again")
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
@@ -153,14 +158,14 @@ class ConfigManager:
                 self._logger.info("Connection restored, will attempt again")
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
-                continue
+                # logger and handled by RabbitMQ. Since a new channel is created
+                # we need to re-initialize RabbitMQ
+                self._initialize_rabbitmq()
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
         When an event is thrown, it reads the config and sends it as a dict via
-        rabbitmq to the topic exchange given in the constructor
+        rabbitmq to the config exchange of type topic
         with the routing key determined by the relative file path.
         :param event: The event passed by watchdog
         :return None

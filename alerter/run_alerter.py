@@ -1,26 +1,24 @@
 import logging
 import multiprocessing
 import os
-import time
+import signal
 import sys
+import time
+
+from typing import Tuple, Any
+from types import FrameType
 
 import pika.exceptions
-from typing import Tuple, Any
 
 from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
+from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
-from src.data_store.stores.manager import StoreManager
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
-
-# Internal Communication Names (Exchanges)
-CONFIG_EXCHANGE = "config"
-ALERTER_OUTPUT_EXCHANGE = "alerter"
-ALERT_ROUTER_OUTPUT_EXCHANGE = "channel_input"
 
 REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
 
@@ -44,9 +42,9 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                os.environ["DATA_STORE_LOG_FILE_TEMPLATE"].format(
+                os.environ['DATA_STORE_LOG_FILE_TEMPLATE'].format(
                     data_store_name), data_store_name,
-                os.environ["LOGGING_LEVEL"], rotating=True)
+                os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
@@ -68,8 +66,8 @@ def _initialize_manager_logger(manager_name: str) -> logging.Logger:
     while True:
         try:
             manager_logger = create_logger(
-                os.environ["MANAGERS_LOG_FILE_TEMPLATE"].format(manager_name),
-                manager_name, os.environ["LOGGING_LEVEL"], rotating=True)
+                os.environ['MANAGERS_LOG_FILE_TEMPLATE'].format(manager_name),
+                manager_name, os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
@@ -85,7 +83,7 @@ def _initialize_manager_logger(manager_name: str) -> logging.Logger:
 
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
-    manager_name = "System Monitors Manager"
+    manager_name = 'System Monitors Manager'
 
     system_monitors_manager_logger = _initialize_manager_logger(manager_name)
 
@@ -106,7 +104,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 
 
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
-    manager_name = "GitHub Monitors Manager"
+    manager_name = 'GitHub Monitors Manager'
 
     github_monitors_manager_logger = _initialize_manager_logger(manager_name)
 
@@ -127,7 +125,7 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
 
 
 def _initialize_data_transformers_manager() -> DataTransformersManager:
-    manager_name = "Data Transformers Manager"
+    manager_name = 'Data Transformers Manager'
 
     data_transformers_manager_logger = _initialize_manager_logger(manager_name)
 
@@ -173,15 +171,14 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
 def _initialize_config_manager() -> ConfigManager:
     config_manager_logger = create_logger(
-        os.environ["CONFIG_MANAGER_LOG_FILE"], ConfigManager.__name__,
-        os.environ["LOGGING_LEVEL"], rotating=True
+        os.environ['CONFIG_MANAGER_LOG_FILE'], ConfigManager.__name__,
+        os.environ['LOGGING_LEVEL'], rotating=True
     )
 
-    rabbit_ip = os.environ["RABBIT_IP"]
+    rabbit_ip = os.environ['RABBIT_IP']
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, "../config", rabbit_ip,
-                               CONFIG_EXCHANGE)
+            cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
             return cm
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
@@ -213,9 +210,10 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
     while True:
         try:
             manager.manage()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
+            # Since we have to re-initialize just break the loop.
             log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
@@ -256,6 +254,35 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
     config_manager.stop_watching_config_files()
 
 
+# If termination signals are received, terminate all child process and exit
+def on_terminate(signum: int, stack: FrameType) -> None:
+    dummy_logger = logging.getLogger('Dummy')
+
+    log_and_print("The alerter is terminating. All components will be stopped "
+                  "gracefully.", dummy_logger)
+
+    log_and_print("Terminating the System Monitors Manager", dummy_logger)
+    system_monitors_manager_process.terminate()
+    system_monitors_manager_process.join()
+
+    log_and_print("Terminating the GitHub Monitors Manager", dummy_logger)
+    github_monitors_manager_process.terminate()
+    github_monitors_manager_process.join()
+
+    log_and_print("Terminating the Data Transformers Manager", dummy_logger)
+    data_transformers_manager_process.terminate()
+    data_transformers_manager_process.join()
+
+    # TODO: Add data store here
+
+    # TODO: Need to add configs manager here when Mark finishes the
+    #     : modifications
+
+    log_and_print("The alerting and monitoring process has ended.",
+                  dummy_logger)
+    sys.exit()
+
+
 if __name__ == '__main__':
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
@@ -288,18 +315,23 @@ if __name__ == '__main__':
     )
     config_manager_runner_process.start()
 
+    signal.signal(signal.SIGTERM, on_terminate)
+    signal.signal(signal.SIGINT, on_terminate)
+    signal.signal(signal.SIGHUP, on_terminate)
+
     # If we don't wait for the processes to terminate the root process will exit
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
+    data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
-    config_stop_queue.put("STOP")
+    config_stop_queue.put('STOP')
     config_manager_runner_process.join()
 
-    print('The alerter is stopping.')
+    print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the
@@ -309,7 +341,3 @@ if __name__ == '__main__':
 #     : to right according to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
-
-# TODO: We may need graceful termination in managers of both transformer and
-#     : and monitor. And we may need to restart without waiting for all
-#     : processes to finish (Example see data transformer manager)

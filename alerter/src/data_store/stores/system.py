@@ -8,6 +8,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.utils.constants import STORE_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException
 
@@ -21,21 +22,22 @@ class SystemStore(Store):
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates an exchange named `store` of type `direct`
-        Declares a queue named `system_store_queue` and binds it to exchange
-        `store` with a routing key `transformer.system.*` meaning anything
+        Creates a store exchange of type `direct`
+        Declares a queue named `system_store_queue` and binds it to the store
+        exchange with a routing key `transformer.system.*` meaning anything
         coming from the transformer with regards to a system will be received
         here.
         """
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store', exchange_type='direct',
+        self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
+                                       exchange_type='direct',
                                        passive=False, durable=True,
                                        auto_delete=False, internal=False)
         self.rabbitmq.queue_declare('system_store_queue', passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='system_store_queue', exchange='store',
-                                 routing_key='system')
+        self.rabbitmq.queue_bind(queue='system_store_queue',
+                                 exchange=STORE_EXCHANGE, routing_key='system')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
@@ -60,7 +62,7 @@ class SystemStore(Store):
             self._process_redis_store(system_data)
             self._process_mongo_store(system_data)
         except KeyError as e:
-            self.logger.error('Error when parsing {}.'.format(system_data))
+            self.logger.error("Error when parsing {}.".format(system_data))
             self.logger.exception(e)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing {}".format(system_data))
@@ -81,7 +83,7 @@ class SystemStore(Store):
             self._process_redis_error_store(data['error'])
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_redis_store'.format(self))
+                "{}: _process_redis_store".format(self))
 
     def _process_redis_result_store(self, data: Dict) -> None:
         meta_data = data['meta_data']
@@ -91,17 +93,17 @@ class SystemStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            'Saving %s state: _process_cpu_seconds_total=%s, '
-            '_process_memory_usage=%s, _virtual_memory_usage=%s, '
-            '_open_file_descriptors=%s, _system_cpu_usage=%s, '
-            '_system_ram_usage=%s, _system_storage_usage=%s, '
-            '_network_transmit_bytes_per_second=%s, '
-            '_network_receive_bytes_per_second=%s, '
-            '_network_receive_bytes_total=%s, '
-            '_network_transmit_bytes_total=%s, '
-            '_disk_io_time_seconds_total=%s, '
-            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ',
-            '_last_monitored=%s', system_name,
+            "Saving %s state: _process_cpu_seconds_total=%s, "
+            "_process_memory_usage=%s, _virtual_memory_usage=%s, "
+            "_open_file_descriptors=%s, _system_cpu_usage=%s, "
+            "_system_ram_usage=%s, _system_storage_usage=%s, "
+            "_network_transmit_bytes_per_second=%s, "
+            "_network_receive_bytes_per_second=%s, "
+            "_network_receive_bytes_total=%s, "
+            "_network_transmit_bytes_total=%s, "
+            "_disk_io_time_seconds_total=%s, "
+            "_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ",
+            "_last_monitored=%s", system_name,
             metrics['process_cpu_seconds_total'],
             metrics['process_memory_usage'], metrics['virtual_memory_usage'],
             metrics['open_file_descriptors'], metrics['system_cpu_usage'],
@@ -160,7 +162,7 @@ class SystemStore(Store):
             metrics = data['data']
 
             self.logger.debug(
-                'Saving %s state: _went_down_at=%s', system_name,
+                "Saving %s state: _went_down_at=%s", system_name,
                 metrics['went_down_at']
             )
 
@@ -177,7 +179,7 @@ class SystemStore(Store):
             self._process_mongo_error_store(data['error'])
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_mongo_store'.format(self))
+                "{}: _process_mongo_store".format(self))
 
     def _process_mongo_result_store(self, data: Dict) -> None:
         """

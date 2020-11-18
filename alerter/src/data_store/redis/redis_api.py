@@ -30,7 +30,7 @@ class RedisApi:
         self._is_live = True  # This is necessary to initialise the variable
         self._set_as_live()
 
-        self._logger.info('Redis initialised.')
+        self._logger.info("Redis initialised.")
 
     @property
     def is_live(self) -> bool:
@@ -50,7 +50,7 @@ class RedisApi:
 
     def _set_as_live(self) -> None:
         if not self._is_live:
-            self._logger.info('Redis is now accessible again.')
+            self._logger.info("Redis is now accessible again.")
         self._is_live = True
 
     def _set_as_down(self) -> None:
@@ -59,8 +59,8 @@ class RedisApi:
         # so that usage of Redis is skipped for as long as the time interval
         if self._is_live or self._live_check_limiter.can_do_task():
             self._live_check_limiter.did_task()
-            self._logger.warning('Redis is unusable for some reason. Stopping '
-                                 'usage temporarily to improve performance.')
+            self._logger.warning("Redis is unusable for some reason. Stopping "
+                                 "usage temporarily to improve performance.")
         self._is_live = False
 
     def _do_not_use_if_recently_went_down(self) -> bool:
@@ -78,7 +78,7 @@ class RedisApi:
             self._set_as_live()
             return ret
         except Exception as e:
-            self._logger.error('Redis error in %s: %s', function.__name__, e)
+            self._logger.error("Redis error in %s: %s", function.__name__, e)
             self._set_as_down()
             return default_return
 
@@ -174,8 +174,8 @@ class RedisApi:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
             self._logger.error(
-                'Could not convert value %s of key %s to an integer. '
-                'Defaulting to value %s.', get_ret, key, default)
+                "Could not convert value %s of key %s to an integer. "
+                "Defaulting to value %s.", get_ret, key, default)
             return default
 
     def hget_int_unsafe(self, name: str, key: str,
@@ -187,8 +187,8 @@ class RedisApi:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
             self._logger.error(
-                'Could not convert value %s of key %s to an integer. '
-                'Defaulting to value %s.', get_ret, key, default)
+                "Could not convert value %s of key %s to an integer. "
+                "Defaulting to value %s.", get_ret, key, default)
             return default
 
     def get_bool_unsafe(self, key: str, default: Optional[bool] = None) \

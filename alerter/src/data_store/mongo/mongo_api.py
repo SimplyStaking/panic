@@ -33,7 +33,7 @@ class MongoApi:
         self._is_live = True  # This is necessary to initialise the variable
         self._set_as_live()
 
-        self._logger.info('Mongo initialised.')
+        self._logger.info("Mongo initialised.")
 
     @property
     def _db(self):
@@ -45,7 +45,7 @@ class MongoApi:
 
     def _set_as_live(self) -> None:
         if not self._is_live:
-            self._logger.info('Mongo is now accessible again.')
+            self._logger.info("Mongo is now accessible again.")
         self._is_live = True
 
     def _set_as_down(self) -> None:
@@ -54,8 +54,8 @@ class MongoApi:
         # so that usage of Mongo is skipped for as long as the time interval
         if self._is_live or self._live_check_limiter.can_do_task():
             self._live_check_limiter.did_task()
-            self._logger.warning('Mongo is unusable for some reason. Stopping '
-                                 'usage temporarily to improve performance.')
+            self._logger.warning("Mongo is unusable for some reason. Stopping "
+                                 "usage temporarily to improve performance.")
         self._is_live = False
 
     def _do_not_use_if_recently_went_down(self) -> bool:
@@ -73,7 +73,7 @@ class MongoApi:
             self._set_as_live()
             return ret
         except Exception as e:
-            self._logger.error('Mongo error in %s: %s', function.__name__, e)
+            self._logger.error("Mongo error in %s: %s", function.__name__, e)
             self._set_as_down()
             return default_return
 
@@ -114,4 +114,4 @@ class MongoApi:
         return self._db.command('ping')
 
     def ping_auth(self, username: str, password: str):
-        return self._db.authenticate(username, password, "admin")
+        return self._db.authenticate(username, password, 'admin')
