@@ -71,7 +71,7 @@ class Monitor(ABC):
         self.rabbitmq.connect_till_successful()
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating \'{}\' exchange".format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
 

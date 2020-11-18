@@ -30,23 +30,23 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue \'github_monitors_manager_configs_queue\'")
+            "Creating queue 'github_monitors_manager_configs_queue'")
         self.rabbitmq.queue_declare('github_monitors_manager_configs_queue',
                                     False, True, False, False)
         self.logger.info(
-            "Binding queue \'github_monitors_manager_configs_queue\' to "
-            "exchange \'{}\' with routing key "
-            "\'chains.*.*.repos_config\'".format(CONFIG_EXCHANGE))
+            "Binding queue 'github_monitors_manager_configs_queue' to "
+            "exchange '{}' with routing key "
+            "'chains.*.*.repos_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'chains.*.*.repos_config')
         self.logger.info(
-            "Binding queue \'github_monitors_manager_configs_queue\' to "
-            "exchange \'{}\' with routing key "
-            "\'general.repos_config\'".format(CONFIG_EXCHANGE))
+            "Binding queue 'github_monitors_manager_configs_queue' to "
+            "exchange '{}' with routing key "
+            "'general.repos_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.repos_config')
         self.logger.info("Declaring consuming intentions")
