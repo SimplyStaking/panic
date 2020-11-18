@@ -1,5 +1,6 @@
 import json
 import logging
+from enum import Enum
 from typing import Dict
 
 import requests
@@ -7,6 +8,11 @@ from prometheus_client.parser import text_string_to_metric_families
 
 from src.utils.exceptions import NoMetricsGivenException, \
     MetricNotFoundException
+
+
+class RequestStatus(Enum):
+    SUCCESS = True
+    FAILED = False
 
 
 def get_json(endpoint: str, logger: logging.Logger, params=None):

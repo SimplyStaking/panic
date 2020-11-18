@@ -10,12 +10,6 @@ import logging
 from abc import ABC, abstractmethod
 
 from src.alerter.alerts.alert import Alert
-from enum import Enum
-
-
-class RequestStatus(Enum):
-    SUCCESS = True
-    FAILED = False
 
 
 class Channel(ABC):
