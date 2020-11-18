@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from typing import Dict
 
 import pika
@@ -8,6 +7,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.utils.constants import STORE_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException
 
 
@@ -20,22 +20,22 @@ class GithubStore(Store):
         Initialize the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates an exchange named `store` of type `direct`
-        Declares a queue named `github_store_queue` and binds it to exchange
-        `store` with a routing key `github` meaning anything
+        Creates a store exchange of type `direct`
+        Declares a queue named `github_store_queue` and binds it to the store
+        exchange with a routing key `github` meaning anything
         coming from the transformer with regards to github updates will be
         received here.
         """
         self.rabbitmq.connect_till_successful()
-        self.rabbitmq.exchange_declare(exchange='store',
-                                       exchange_type='direct',
-                                       passive=False, durable=True,
-                                       auto_delete=False, internal=False)
+        self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
+                                       exchange_type='direct', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.rabbitmq.queue_declare('github_store_queue', passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='github_store_queue', exchange='store',
-                                 routing_key='github')
+        self.rabbitmq.queue_bind(queue='github_store_queue',
+                                 exchange=STORE_EXCHANGE, routing_key='github')
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
@@ -59,7 +59,7 @@ class GithubStore(Store):
         try:
             self._process_redis_store(github_data)
         except KeyError as e:
-            self.logger.error('Error when parsing {}.'.format(github_data))
+            self.logger.error("Error when parsing {}.".format(github_data))
             self.logger.exception(e)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing {}".format(github_data))
@@ -81,7 +81,7 @@ class GithubStore(Store):
             return
         else:
             raise ReceivedUnexpectedDataException(
-                '{}: _process_redis_store'.format(self))
+                "{}: _process_redis_store".format(self))
 
     def _process_redis_result_store(self, data: Dict) -> None:
         meta_data = data['meta_data']
@@ -91,7 +91,7 @@ class GithubStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            'Saving %s state: _no_of_releases=%s, _last_monitored=%s',
+            "Saving %s state: _no_of_releases=%s, _last_monitored=%s",
             repo_name, metrics['no_of_releases'], meta_data['last_monitored']
         )
 

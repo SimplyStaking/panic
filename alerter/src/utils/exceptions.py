@@ -81,7 +81,7 @@ class ReceivedUnexpectedDataException(PANICException):
 class InvalidUrlException(PANICException):
 
     def __init__(self, url) -> None:
-        message = "Invalid URL \'{}\'".format(url)
+        message = "Invalid URL '{}'".format(url)
         code = 5009
         super().__init__(message, code)
 

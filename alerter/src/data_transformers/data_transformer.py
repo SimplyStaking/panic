@@ -1,7 +1,10 @@
 import logging
 import os
+import signal
+import sys
 from abc import ABC, abstractmethod
 from queue import Queue
+from types import FrameType
 from typing import Dict, Union
 
 import pika.exceptions
@@ -12,6 +15,7 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 
 class DataTransformer(ABC):
@@ -28,11 +32,16 @@ class DataTransformer(ABC):
         # Set a max queue size so that if the data transformer is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
-                                 "DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE"])
+                                 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE'])
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+        # Handle termination signals by stopping the monitor gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.transformer_name
@@ -129,15 +138,20 @@ class DataTransformer(ABC):
                     self.logger.exception(e)
 
                 self._listen_for_data()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a new
-                # channel, therefore we can safely continue
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()

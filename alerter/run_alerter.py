@@ -33,13 +33,13 @@ def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
             )
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
+            msg = '!!! Error when initializing {}: {} !!!' \
                 .format(log_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(msg, dummy_logger)
-            log_and_print('Re-attempting initialization procedure of {}'
+            log_and_print("Re-attempting initialization procedure of {}"
                           .format(log_name), dummy_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -61,10 +61,10 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
                 system_alerters_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
+            msg = "!!! Error when initializing {}: {} !!!" \
                 .format(manager_name, e)
             log_and_print(msg, system_alerters_manager_logger)
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print("Re-attempting the initialization procedure",
                           system_alerters_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -97,7 +97,7 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
 
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
-    manager_name = "System Monitors Manager"
+    manager_name = 'System Monitors Manager'
 
     system_monitors_manager_logger = _initialize_logger(
         manager_name,
@@ -111,10 +111,10 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
                 system_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
+            msg = "!!! Error when initialising {}: {} !!!" \
                 .format(manager_name, e)
             log_and_print(msg, system_monitors_manager_logger)
-            log_and_print('Re-attempting initialization procedure of {}'
+            log_and_print("Re-attempting initialization procedure of {}"
                           .format(manager_name),
                           system_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -123,7 +123,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 
 
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
-    manager_name = "GitHub Monitors Manager"
+    manager_name = 'GitHub Monitors Manager'
 
     github_monitors_manager_logger = _initialize_logger(
         manager_name,
@@ -137,10 +137,10 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
                 github_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
+            msg = "!!! Error when initialising {}: {} !!!" \
                 .format(manager_name, e)
             log_and_print(msg, github_monitors_manager_logger)
-            log_and_print('Re-attempting initialization procedure of {}'
+            log_and_print("Re-attempting initialization procedure of {}"
                           .format(manager_name),
                           github_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -149,7 +149,7 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
 
 
 def _initialize_data_transformers_manager() -> DataTransformersManager:
-    manager_name = "Data Transformers Manager"
+    manager_name = 'Data Transformers Manager'
 
     data_transformers_manager_logger = _initialize_logger(
         manager_name,
@@ -163,10 +163,10 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
                 data_transformers_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
+            msg = "!!! Error when initialising {}: {} !!!" \
                 .format(manager_name, e)
             log_and_print(msg, data_transformers_manager_logger)
-            log_and_print('Re-attempting initialization procedure of {}'
+            log_and_print("Re-attempting initialization procedure of {}"
                           .format(manager_name),
                           data_transformers_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
@@ -180,10 +180,10 @@ def _initialize_config_manager() -> ConfigManager:
         "CONFIG_MANAGER_LOG_FILE"
     )
 
-    rabbit_ip = os.environ["RABBIT_IP"]
+    rabbit_ip = os.environ['RABBIT_IP']
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, "../config", rabbit_ip)
+            cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
             return cm
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
@@ -259,15 +259,16 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
     while True:
         try:
             manager.manage()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            # Since we have to re-initialize just break the loop.
+            log_and_print("{} stopped.".format(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print("{} stopped.".format(manager), manager.logger)
 
 
 def run_alerters_manager(manager: AlertersManager) -> None:
@@ -293,7 +294,7 @@ def run_data_transformers_manager() -> None:
             data_transformers_manager.manage()
         except Exception as e:
             data_transformers_manager.logger.exception(e)
-            log_and_print('{} stopped.'.format(data_transformers_manager),
+            log_and_print("{} stopped.".format(data_transformers_manager),
                           data_transformers_manager.logger)
 
 
@@ -310,7 +311,7 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 def on_terminate(signum: int, stack: FrameType) -> None:
     dummy_logger = logging.getLogger('Dummy')
 
-    log_and_print("PANIC is terminating. All components will be stopped "
+    log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
     log_and_print("Terminating the System Monitors Manager", dummy_logger)
@@ -338,6 +339,12 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     data_store_process.join()
 
     log_and_print("PANIC process terminated.", dummy_logger)
+
+    # TODO: Need to add configs manager here when Mark finishes the
+    #     : modifications
+
+    log_and_print("The alerting and monitoring process has ended.",
+                  dummy_logger)
     sys.exit()
 
 
@@ -388,14 +395,15 @@ if __name__ == '__main__':
     system_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
+    data_transformers_manager_process.join()
     data_store_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
-    config_stop_queue.put("STOP")
+    config_stop_queue.put('STOP')
     config_manager_runner_process.join()
 
-    print('The alerter is stopping.')
+    print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
 # TODO: Make sure that all queues and configs are declared before hand in the
@@ -405,7 +413,3 @@ if __name__ == '__main__':
 #     : to right according to the design (to avoid message not delivered
 #     : exceptions). Also, to fully solve these problems, we should perform
 #     : checks in the run alerter to see if a queue/exchange has been created
-
-# TODO: We may need graceful termination in managers of both transformer and
-#     : and monitor. And we may need to restart without waiting for all
-#     : processes to finish (Example see data transformer manager)
