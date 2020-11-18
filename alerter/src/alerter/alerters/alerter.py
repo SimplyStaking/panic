@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from queue import Queue
 from types import FrameType
-from typing import Dict
+from typing import Dict, Union
 
 import pika.exceptions
 from src.configs.system_alerts import SystemAlertsConfig
@@ -44,7 +44,7 @@ class Alerter(ABC):
         return self._logger
 
     @property
-    def alerts_configs(self) -> SystemAlertsConfig:
+    def alerts_configs(self) -> Union[SystemAlertsConfig]:
         pass
 
     @property
