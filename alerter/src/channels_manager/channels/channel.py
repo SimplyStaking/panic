@@ -10,11 +10,14 @@ import logging
 from abc import ABC, abstractmethod
 
 from src.alerter.alerts.alert import Alert
+from src.utils.data import RequestStatus
 
 
 class Channel(ABC):
-    def __init__(self, channel_name: str, logger: logging.Logger) -> None:
+    def __init__(self, channel_name: str, channel_id: str,
+                 logger: logging.Logger) -> None:
         self._channel_name = channel_name
+        self._channel_id = channel_id
         self._logger = logger
 
     def __str__(self) -> str:
@@ -25,9 +28,15 @@ class Channel(ABC):
         return self._channel_name
 
     @property
+    def channel_id(self) -> str:
+        return self._channel_id
+
+    @property
     def logger(self) -> logging.Logger:
         return self._logger
 
     @abstractmethod
     def alert(self, alert: Alert) -> RequestStatus:
         pass
+
+# TODO: May do a child name ChannelAlertsHandler to group common code

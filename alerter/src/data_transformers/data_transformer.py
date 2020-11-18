@@ -38,7 +38,7 @@ class DataTransformer(ABC):
         rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
-        # Handle termination signals by stopping the monitor gracefully
+        # Handle termination signals by stopping the transformer gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
         signal.signal(signal.SIGHUP, self.on_terminate)

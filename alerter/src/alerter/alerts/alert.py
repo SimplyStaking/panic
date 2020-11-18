@@ -1,5 +1,6 @@
-from typing import Dict
 from enum import Enum
+from typing import Dict
+
 
 # TODO: This needs to be updated as updated by Vitaly in the alerters. Must
 #     : also keep the getters.
@@ -8,7 +9,7 @@ from enum import Enum
 class Alert:
 
     def __init__(self, alert_code: Enum, message: str, severity: str,
-                 timestamp: str, parent_id: str, origin_id: str) -> None:
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
@@ -40,7 +41,7 @@ class Alert:
         return self._origin_id
 
     @property
-    def timestamp(self) -> str:
+    def timestamp(self) -> float:
         return self._timestamp
 
     @property

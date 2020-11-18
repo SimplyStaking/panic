@@ -1,0 +1,258 @@
+import json
+import logging
+import os
+import signal
+import sys
+from datetime import datetime
+from enum import Enum
+from queue import Queue
+from types import FrameType
+
+import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
+
+from src.alerter.alerts.alert import Alert
+from src.channels_manager.channels.telegram import TelegramChannel
+from src.channels_manager.handlers.handler import ChannelHandler
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import ALERT_EXCHANGE
+from src.utils.data import RequestStatus
+from src.utils.exceptions import ConnectionNotInitializedException
+from src.utils.logging import log_and_print
+
+
+class TelegramAlertsHandler(ChannelHandler):
+    def __init__(self, handler_name: str, logger: logging.Logger,
+                 telegram_channel: TelegramChannel) -> None:
+        super().__init__(handler_name, logger)
+        self._telegram_channel = telegram_channel
+
+        # Set a max queue size so that if the Telegram Alerts Handler is not
+        # able to send alerts for a long time, old alerts can be pruned without
+        # exhausting memory resources
+        max_queue_size = int(os.environ[
+                                 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
+        self._alerts_queue = Queue(max_queue_size)
+
+        rabbit_ip = os.environ['RABBIT_IP']
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+        # Handle termination signals by stopping the handler gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
+
+    @property
+    def telegram_channel(self) -> TelegramChannel:
+        return self._telegram_channel
+
+    @property
+    def alerts_queue(self) -> Queue:
+        return self._alerts_queue
+
+    @property
+    def rabbitmq(self) -> RabbitMQApi:
+        return self._rabbitmq
+
+    def _initialize_rabbitmq(self) -> None:
+        self.rabbitmq.connect_till_successful()
+
+        # Set consuming configuration
+        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+                                       False, False)
+        self.logger.info(
+            "Creating queue 'telegram_{}_alerts_handler_queue'".format(
+                self.telegram_channel.channel_id))
+        self.rabbitmq.queue_declare('telegram_{}_alerts_handler_queue'.format(
+            self.telegram_channel.channel_id), False, True, False, False)
+        self.logger.info(
+            "Binding queue 'telegram_{}_alerts_handler_queue' to "
+            "exchange '{}' with routing key 'channel.{}'".format(
+                self.telegram_channel.channel_id, ALERT_EXCHANGE,
+                self.telegram_channel.channel_id))
+        self.rabbitmq.queue_bind('telegram_{}_alerts_handler_queue'.format(
+            self.telegram_channel.channel_id), ALERT_EXCHANGE,
+            'channel.{}'.format(self.telegram_channel.channel_id))
+
+        # Pre-fetch count is 5 times less the maximum queue size
+        prefetch_count = round(self.alerts_queue.maxsize / 5)
+        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self.logger.info("Declaring consuming intentions")
+        self.rabbitmq.basic_consume('telegram_{}_alerts_handler_queue'.format(
+            self.telegram_channel.channel_id), self._process_alerts, False,
+            False, None)
+
+    def _process_alerts(self, ch: BlockingChannel,
+                        method: pika.spec.Basic.Deliver,
+                        properties: pika.spec.BasicProperties, body: bytes) \
+            -> None:
+        alert_json = json.loads(body)
+        self.logger.info("Received {} from monitors. Now processing this alert."
+                         .format(alert_json))
+
+        processing_error = False
+        alert = None
+        try:
+            alert_code = alert_json['alert_code']
+            message = alert_json['message']
+            severity = alert_json['severity']
+            parent_id = alert_json['parent_id']
+            origin_id = alert_json['origin_id']
+            timestamp = alert_json['timestamp']
+            alert_code_enum = Enum('AlertCode',
+                                   {alert_code['name']: alert_code['code']})
+            alert = Alert(alert_code_enum, message, severity, timestamp,
+                          parent_id, origin_id)
+
+            self.logger.info("Successfully processed {}".format(alert_json))
+        except Exception as e:
+            self.logger.error("Error when processing {}".format(alert_json))
+            self.logger.exception(e)
+            processing_error = True
+
+        # If the data is processed, it can be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Place the data on the alerts queue if there were no processing errors.
+        # This is done after acknowledging the data, so that if acknowledgement
+        # fails, the data is processed again and we do not have duplication of
+        # data in the queue
+        if not processing_error:
+            self._place_data_on_queue(alert)
+
+        # Send any data waiting in the queue, if any
+        try:
+            self._send_data()
+        except Exception as e:
+            raise e
+
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.start_consuming()
+
+    def _place_data_on_queue(self, alert: Alert) -> None:
+        self.logger.debug("Adding {} to the alerts queue ...".format(
+            alert.alert_code.name))
+
+        # Place the alert on the alerts queue. If the queue is full, remove old
+        # data first.
+        if self.alerts_queue.full():
+            self.alerts_queue.get()
+        self.alerts_queue.put(alert)
+
+        self.logger.debug("{} added to the alerts queue".format(
+            alert.alert_code.name))
+
+    def _send_data(self) -> None:
+        empty = True
+        if not self.alerts_queue.empty():
+            empty = False
+            self.logger.info("Attempting to send all alerts waiting in the "
+                             "alerts queue ...")
+
+        # Try sending the alerts in the alerts queue one by one. If sending
+        # fails, try re-sending three times in a space of 1 minute. If this
+        # still fails, stop sending alerts until the next alert is received. If
+        # 10 minutes pass since the alert was first raised, the alert is
+        # discarded. Important, remove an item from the queue only if the
+        # sending was successful, so that if an exception is raised, that
+        # message is not popped
+        max_attempts = 6
+        alert_validity_threshold = 600
+        while not self.alerts_queue.empty():
+            alert = self.alerts_queue.queue[0]
+
+            # Discard alert if 10 minutes passed since it was last raised
+            if (datetime.now().timestamp() - alert.timestamp) \
+                    > alert_validity_threshold:
+                self.alerts_queue.get()
+                self.alerts_queue.task_done()
+                continue
+
+            attempts = 0
+            ret = self.telegram_channel.alert(alert)
+            while ret != RequestStatus.SUCCESS and attempts <= max_attempts:
+                self.logger.info(
+                    "Will re-trying sending in 10 seconds. "
+                    "Attempts left: {}".format(max_attempts - attempts))
+                self.rabbitmq.connection.sleep(10)
+                ret = self.telegram_channel.alert(alert)
+                attempts += 1
+
+            if ret == RequestStatus.SUCCESS:
+                self.alerts_queue.get()
+                self.alerts_queue.task_done()
+            else:
+                self.logger.info("Stopped sending alerts.")
+                return
+
+        if not empty:
+            self.logger.info("Successfully sent all data from the publishing "
+                             "queue")
+
+    def start(self) -> None:
+        self._initialize_rabbitmq()
+        while True:
+            try:
+                # Before listening for new alerts, send the data waiting to be
+                # sent in the alerts queue.
+                self._send_data()
+                self._listen_for_data()
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and the 'telegram_{}_alerts_handler_queue' "
+                      "will be deleted. Afterwards, the process will exit."
+                      .format(self, self.telegram_channel.channel_id),
+                      self.logger)
+
+        # Try to delete the queue before exiting to avoid cases when the alert
+        # router is still sending data to this queue. This is done until
+        # successful
+        while True:
+            try:
+                self.rabbitmq.perform_operation_till_successful(
+                    self.rabbitmq.queue_delete,
+                    ['telegram_{}_alerts_handler_queue'.format(
+                        self.telegram_channel.channel_id), False, False], -1)
+                break
+            except ConnectionNotInitializedException:
+                self.logger.info(
+                    "Connection was not yet initialized, therefore no need to "
+                    "delete the 'telegram_{}_alerts_handler_queue'".format(
+                        self.telegram_channel.channel_id))
+                break
+            except pika.exceptions.AMQPChannelError as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Will re-try deleting the "
+                    "'telegram_{}_alerts_handler_queue'".format(
+                        self.telegram_channel.channel_id))
+            except pika.exceptions.AMQPConnectionError as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Will re-connect again and re-try deleting the "
+                    "'telegram_{}_alerts_handler_queue'".format(
+                        self.telegram_channel.channel_id))
+                self.rabbitmq.connect_till_successful()
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info(
+                    "Unexpected exception while trying to delete the "
+                    "'telegram_{}_alerts_handler_queue'. Will not continue "
+                    "re-trying deleting the queue".format(
+                        self.telegram_channel.channel_id))
+                break
+
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()

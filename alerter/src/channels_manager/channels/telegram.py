@@ -8,9 +8,9 @@ from src.utils.data import RequestStatus
 
 class TelegramChannel(Channel):
 
-    def __init__(self, channel_name: str, logger: logging.Logger,
-                 telegram_bot: TelegramBotApi) -> None:
-        super().__init__(channel_name, logger)
+    def __init__(self, channel_name: str, channel_id: str,
+                 logger: logging.Logger, telegram_bot: TelegramBotApi) -> None:
+        super().__init__(channel_name, channel_id, logger)
 
         self._telegram_bot = telegram_bot
 
