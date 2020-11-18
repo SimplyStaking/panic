@@ -113,11 +113,6 @@ class SystemAlerter(Alerter):
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
-        except (pika.exceptions.AMQPChannelError,
-                pika.exceptions.AMQPConnectionError) as e:
-            # No need to acknowledge in this case as channel is closed. Logging
-            # would have also been done by RabbitMQ.
-            raise e
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise the exception so that the
             # message can be acknowledged and removed from the rabbit queue.

@@ -64,6 +64,8 @@ class GithubAlerter(Alerter):
         self.logger.info("Processing {} received from transformers".format(
             data_received))
         parsed_routing_key = method.routing_key.split('.')
+
+        processing_error = False
         try:
             if 'result' in data_received:
                 meta = data_received['result']['meta_data']
@@ -101,17 +103,24 @@ class GithubAlerter(Alerter):
         except Exception as e:
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)
+            processing_error = True
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue
+        if not processing_error:
+            self._place_latest_data_on_queue()
 
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
-        except (pika.exceptions.AMQPChannelError,
-                pika.exceptions.AMQPConnectionError) as e:
-            # No need to acknowledge in this case as channel is closed. Logging
-            # would have also been done by RabbitMQ.
-            raise e
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as message is residing in the
+            # publisher queue.
+            self.logger.exception(e)
         except Exception as e:
             # For any other exception acknowledge and raise it, so the
             # message is removed from the rabbit queue as this message will now
