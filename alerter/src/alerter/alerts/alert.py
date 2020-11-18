@@ -5,7 +5,7 @@ from enum import Enum
 class Alert():
 
     def __init__(self, alert_code: Enum, message: str, severity: str,
-                 timestamp: str, parent_id: str, origin_id: str) -> None:
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
