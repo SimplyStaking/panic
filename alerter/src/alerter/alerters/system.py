@@ -25,6 +25,7 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
 from src.utils.logging import log_and_print
 from src.utils.timing import TimedTaskLimiter
 from src.alerter.alerts.alert import Alert
+from src.utils.constants import ALERT_EXCHANGE
 
 
 class SystemAlerter(Alerter):
@@ -43,7 +44,7 @@ class SystemAlerter(Alerter):
     def _initialize_alerter(self) -> None:
         self.rabbitmq.connect_till_successful()
         self.logger.info("Creating \'alert\' exchange")
-        self.rabbitmq.exchange_declare(exchange='alert',
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
@@ -58,7 +59,7 @@ class SystemAlerter(Alerter):
                          "\'alert\' with routing key \'{}\'"
                          "".format(self._queue_used, routing_key))
         self.rabbitmq.queue_bind(queue=self._queue_used,
-                                 exchange='alert',
+                                 exchange=ALERT_EXCHANGE,
                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
@@ -337,7 +338,7 @@ class SystemAlerter(Alerter):
         if self.publishing_queue.full():
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'alert',
+            'exchange': ALERT_EXCHANGE,
             'routing_key': 'alert_router.system',
             'data': copy.deepcopy(self.data_for_alerting)})
 

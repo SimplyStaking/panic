@@ -15,6 +15,7 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.logging import log_and_print
+from src.utils.constants import ALERT_EXCHANGE
 
 
 class GithubAlerter(Alerter):
@@ -24,7 +25,7 @@ class GithubAlerter(Alerter):
     def _initialize_alerter(self) -> None:
         self.rabbitmq.connect_till_successful()
         self.logger.info("Creating \'alert\' exchange")
-        self.rabbitmq.exchange_declare(exchange='alert',
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
@@ -37,7 +38,7 @@ class GithubAlerter(Alerter):
                          "\'alerter\' with routing key \'alerter.github\'")
         routing_key = 'alerter.github'
         self.rabbitmq.queue_bind(queue='github_alerter_queue',
-                                 exchange='alert',
+                                 exchange=ALERT_EXCHANGE,
                                  routing_key=routing_key)
 
         # Pre-fetch count is 10 times less the maximum queue size
@@ -125,7 +126,7 @@ class GithubAlerter(Alerter):
         if self.publishing_queue.full():
             self.publishing_queue.get()
         self.publishing_queue.put({
-            'exchange': 'alert',
+            'exchange': ALERT_EXCHANGE,
             'routing_key': 'alert_router.github',
             'data': copy.deepcopy(self.data_for_alerting)})
 
