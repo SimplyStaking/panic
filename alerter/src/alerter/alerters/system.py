@@ -345,7 +345,6 @@ class SystemAlerter(Alerter):
 
     def _alert_classifier_process(self) -> None:
         self._initialize_alerter()
-        log_and_print("{} started.".format(self), self.logger)
         while True:
             try:
                 self.rabbitmq.start_consuming()
@@ -373,9 +372,7 @@ class SystemAlerter(Alerter):
         # successful
         while True:
             try:
-                self.rabbitmq.perform_operation_till_successful(
-                    self.rabbitmq.queue_delete, [self._queue_used,
-                                                 False, False], -1)
+                self.rabbitmq.queue_delete(self._queue_used)
                 break
             except ConnectionNotInitializedException:
                 self.logger.info(

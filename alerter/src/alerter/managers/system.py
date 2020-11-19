@@ -55,8 +55,6 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-        self.logger.debug(sent_configs)
-        log_and_print(sent_configs, self.logger)
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
@@ -84,7 +82,6 @@ class SystemAlertersManager(AlertersManager):
                 system_is_down=filtered['system_is_down'],
             )
 
-            log_and_print(parent_id, self.logger)
             if parent_id in self.systems_configs:
                 log_and_print("PARENT_INT", self.logger)
                 previous_process = self.config_process_dict[parent_id]
