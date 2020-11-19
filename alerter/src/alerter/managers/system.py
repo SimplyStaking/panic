@@ -12,6 +12,7 @@ from src.utils.configs import (get_modified_configs, get_newly_added_configs,
                                get_removed_configs)
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 from src.utils.logging import log_and_print
+from src.utils.constants import CONFIG_EXCHANGE
 
 
 class SystemAlertersManager(AlertersManager):
@@ -26,8 +27,8 @@ class SystemAlertersManager(AlertersManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info("Creating exchange \'config\'")
-        self.rabbitmq.exchange_declare('config', 'topic', False, True,
+        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
             "Creating queue \'system_alerters_manager_configs_queue\'")
@@ -35,17 +36,17 @@ class SystemAlertersManager(AlertersManager):
             "system_alerters_manager_configs_queue", False, True, False, False)
         self.logger.info(
             "Binding queue \'system_alerters_manager_configs_queue\' to "
-            "exchange \'config\' with routing key "
-            "\'chains.*.*.alerts_config\'")
+            "exchange \'{}\' with routing key "
+            "\'chains.*.*.alerts_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
-                                 'config',
+                                 CONFIG_EXCHANGE,
                                  'chains.*.*.alerts_config')
         self.logger.info(
             "Binding queue \'system_alerters_manager_configs_queue\' to "
-            "exchange \'config\' with routing key "
-            "\'general.alerts_config\'")
+            "exchange \'{}\' with routing key "
+            "\'general.alerts_config\'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
-                                 'config', 'general.alerts_config')
+                                 CONFIG_EXCHANGE, 'general.alerts_config')
         self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume('system_alerters_manager_configs_queue',
                                     self._process_configs, False, False, None)
