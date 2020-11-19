@@ -3,8 +3,9 @@ import logging
 from typing import Dict
 
 import pika.exceptions
-
 from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.redis_api import RedisApi
+from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE
 
@@ -66,11 +67,11 @@ class AlertStore(Store):
 
     def _process_mongo_store(self, alert: Dict) -> None:
         """
-        Updating mongo with alerts using a size-based document with 1000 entries
-        Collection is the name of the chain, with document type alert as only
-        alerts will be stored. Mongo will keep adding new alerts to a document
-        until it's reached 1000 entries at which point mongo will create a new
-        document and repeat the process.
+        Updating mongo with alerts using a size-based document with 1000
+        entries. Collection is the name of the chain, with document type alert
+        as only alerts will be stored. Mongo will keep adding new alerts to a
+        document until it's reached 1000 entries at which point mongo will
+        create a new document and repeat the process.
 
         Origin is the object the alert is associated with e.g cosmos_node_2.
         Alert name is the configured alerts e.g Validator Missing Blocks

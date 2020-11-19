@@ -2,10 +2,6 @@ from enum import Enum
 from typing import Dict
 
 
-# TODO: This needs to be updated as updated by Vitaly in the alerters. Must
-#     : also keep the getters.
-
-
 class Alert:
 
     def __init__(self, alert_code: Enum, message: str, severity: str,
@@ -47,10 +43,13 @@ class Alert:
     @property
     def alert_data(self) -> Dict:
         return {
-            'alert': self.alert_code.name,
-            'message': self.message,
-            'severity': self.severity,
-            'parent_id': self.parent_id,
-            'origin_id': self.origin_id,
-            'timestamp': self.timestamp
+            'alert_code': {
+                'name': self._alert_code.name,
+                'code': self._alert_code.value
+            },
+            'message': self._message,
+            'severity': self._severity,
+            'parent_id': self._parent_id,
+            'origin_id': self._origin_id,
+            'timestamp': self._timestamp
         }
