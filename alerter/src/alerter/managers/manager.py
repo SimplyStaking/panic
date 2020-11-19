@@ -18,8 +18,9 @@ class AlertersManager(ABC):
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ["RABBIT_IP"]
+        rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -63,15 +64,11 @@ class AlertersManager(ABC):
         while True:
             try:
                 self._listen_for_configs()
-            except pika.exceptions.AMQPChannelError:
-                # Error would have already been logged by RabbitMQ logger. If
-                # there is a channel error, the RabbitMQ interface creates a
-                # new channel, therefore perform another managing round without
-                # sleeping
-                continue
-            except pika.exceptions.AMQPConnectionError as e:
-                # Error would have already been logged by RabbitMQ logger.
-                # Since we have to re-connect just break the loop.
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
                 raise e
             except Exception as e:
                 self.logger.exception(e)

@@ -27,7 +27,7 @@ class SystemAlertersManager(AlertersManager):
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
-        self.logger.info("Creating exchange \'{}\'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
@@ -55,7 +55,6 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
-
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
@@ -84,6 +83,7 @@ class SystemAlertersManager(AlertersManager):
             )
 
             if parent_id in self.systems_configs:
+                log_and_print("PARENT_INT", self.logger)
                 previous_process = self.config_process_dict[parent_id]
                 previous_process.terminate()
                 previous_process.join()
