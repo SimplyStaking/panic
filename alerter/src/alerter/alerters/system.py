@@ -3,14 +3,15 @@ import json
 import logging
 import sys
 from types import FrameType
-from typing import Dict
+from typing import Dict, Type
 
 import pika
 import pika.exceptions
+
 from src.alerter.alerters.alerter import Alerter
+from src.alerter.alerts.alert import Alert
 from src.alerter.alerts.system_alerts import (
-    InvalidUrlAlert, OpenFileDescriptorsDecreasedBelowThresholdAlert,
-    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    InvalidUrlAlert, OpenFileDescriptorsIncreasedAboveThresholdAlert,
     ReceivedUnexpectedDataAlert, SystemBackUpAgainAlert,
     SystemCPUUsageDecreasedBelowThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -20,13 +21,11 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert)
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.alert import floaty
+from src.utils.constants import ALERT_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException,
                                   ConnectionNotInitializedException)
 from src.utils.logging import log_and_print
-from src.utils.timing import TimedTaskLimiter
-from src.alerter.alerts.alert import Alert
-from src.utils.constants import ALERT_EXCHANGE
 
 
 class SystemAlerter(Alerter):
@@ -88,7 +87,6 @@ class SystemAlerter(Alerter):
         try:
             if self.alerts_configs.parent_id in parsed_routing_key:
                 if 'result' in data_received:
-                    metrics = data_received['result']['data']
                     self._process_results(data_received['result']['data'],
                                           data_received['result']['meta_data'])
                 elif 'error' in data_received:
@@ -176,8 +174,8 @@ class SystemAlerter(Alerter):
                         self._place_latest_data_on_queue()
                 else:
                     if (int(is_down['critical_repeat']) > difference >=
-                        int(is_down['warning_repeat']) and
-                        is_down['warning_enabled'] and
+                            int(is_down['warning_repeat']) and
+                            is_down['warning_enabled'] and
                             is_down['warning_limiter'].can_do_task()):
                         alert = SystemStillDownAlert(
                             meta_data['system_name'], difference, 'WARNING',
@@ -204,7 +202,7 @@ class SystemAlerter(Alerter):
                         is_down['critical_limiter'].did_task()
         else:
             raise ReceivedUnexpectedDataException(
-                        '{}: _process_errors'.format(self))
+                '{}: _process_errors'.format(self))
 
     def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
         open_fd = self.alerts_configs.open_file_descriptors
@@ -235,6 +233,7 @@ class SystemAlerter(Alerter):
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert
                 )
+                # TODO: Continue from this tomorrow
         if storage['enabled']:
             current = metrics['system_storage_usage']['current']
             previous = metrics['system_storage_usage']['previous']
@@ -264,7 +263,7 @@ class SystemAlerter(Alerter):
                 )
 
     def _classify_alert(self, current: float, previous: float, config: Dict,
-                        meta_data: Dict, IncreasedAboveThresholdAlert: Alert,
+                        meta_data: Dict, IncreasedAboveThresholdAlert: Type[Alert],
                         DecreasedBelowThresholdAlert: Alert):
         warning_threshold = float(config['warning_threshold'])
         critical_threshold = float(config['critical_threshold'])
@@ -272,8 +271,8 @@ class SystemAlerter(Alerter):
         critical_enabled = config['critical_enabled']
         if (warning_enabled):
             if (warning_threshold <= current < critical_threshold and not
-                warning_threshold <= previous < critical_threshold and not
-                    previous >= critical_threshold):
+            warning_threshold <= previous < critical_threshold and not
+            previous >= critical_threshold):
                 alert = \
                     IncreasedAboveThresholdAlert(
                         meta_data['system_name'], previous, current, 'WARNING',
@@ -299,8 +298,8 @@ class SystemAlerter(Alerter):
                                   "".format(alert.alert_data))
                 self._place_latest_data_on_queue()
         elif (critical_enabled):
-            if(current >= critical_threshold and not
-                previous >= critical_threshold and
+            if (current >= critical_threshold and not
+            previous >= critical_threshold and
                     config['limiter'].can_do_task()):
                 alert = \
                     IncreasedAboveThresholdAlert(
@@ -315,7 +314,7 @@ class SystemAlerter(Alerter):
                 self._place_latest_data_on_queue()
                 config['limiter'].did_task()
             elif (current < previous and previous >= critical_threshold
-                    and current < critical_threshold):
+                  and current < critical_threshold):
                 alert = \
                     DecreasedBelowThresholdAlert(
                         meta_data['system_name'], previous, current,

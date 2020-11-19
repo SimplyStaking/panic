@@ -15,7 +15,7 @@ class GithubAlerterManager:
     def __init__(self, logger: logging.Logger, name: str):
         self._name = name
         self._logger = logger
-        self._github_alerter = GithubAlerter(logger, 'Github Alerter')
+        self._github_alerter = GithubAlerter('Github Alerter', logger)
         self._process_holder = {}
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)

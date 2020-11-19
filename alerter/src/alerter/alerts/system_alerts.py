@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import Enum
 
 from src.alerter.alerts.alert import Alert
-from src.utils.alert import SeverityCode
 
 
 class SystemAlertCode(Enum):
@@ -22,7 +21,7 @@ class SystemAlertCode(Enum):
 
 
 class ReceivedUnexpectedDataAlert(Alert):
-    def __init__(self, message: str, severity: str, timestamp: str,
+    def __init__(self, message: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.ReceivedUnexpectedDataAlert,
@@ -30,37 +29,37 @@ class ReceivedUnexpectedDataAlert(Alert):
 
 
 class SystemWentDownAtAlert(Alert):
-    def __init__(self, origin_name: str, severity: str, timestamp: str,
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemWentDownAtAlert,
             "{} System is down, last time checked: {}.".format(
-                origin_name, datetime.fromtimestamp(int(float(timestamp)))),
+                origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id)
 
 
 class SystemBackUpAgainAlert(Alert):
-    def __init__(self, origin_name: str, severity: str, timestamp: str,
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemBackUpAgainAlert,
             "{} System is back up, last successful monitor at: {}.".format(
-                origin_name, datetime.fromtimestamp(int(float(timestamp)))),
+                origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id)
 
 
 class SystemStillDownAlert(Alert):
-    def __init__(self, origin_name: str, difference: str, severity: str,
-                 timestamp: str, parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, difference: float, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemStillDownAlert,
             "{} System is still down, it has been down for {}s.".format(
-                origin_name, int(float(difference))),
+                origin_name, difference),
             severity, timestamp, parent_id, origin_id)
 
 
 class InvalidUrlAlert(Alert):
-    def __init__(self, message: str, severity: str, timestamp: str,
+    def __init__(self, message: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.InvalidUrlAlert, message, severity,
@@ -69,7 +68,7 @@ class InvalidUrlAlert(Alert):
 
 class OpenFileDescriptorsIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -80,7 +79,7 @@ class OpenFileDescriptorsIncreasedAboveThresholdAlert(Alert):
 
 class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.OpenFileDescriptorsDecreasedBelowThresholdAlert,
@@ -91,7 +90,7 @@ class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
 
 class SystemCPUUsageIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -102,7 +101,7 @@ class SystemCPUUsageIncreasedAboveThresholdAlert(Alert):
 
 class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemCPUUsageDecreasedBelowThresholdAlert,
@@ -113,7 +112,7 @@ class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
 
 class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
@@ -124,7 +123,7 @@ class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
 
 class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageDecreasedBelowThresholdAlert,
@@ -135,7 +134,7 @@ class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
 
 class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
@@ -146,7 +145,7 @@ class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
 
 class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
     def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: str, threshold: str,
+                 severity: str, timestamp: float, threshold: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemStorageUsageDecreasedBelowThresholdAlert,

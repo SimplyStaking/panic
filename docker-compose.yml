@@ -78,10 +78,12 @@ services:
       - 'TRANSFORMERS_LOG_FILE_TEMPLATE=${TRANSFORMERS_LOG_FILE_TEMPLATE}'
       - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
       - 'CONFIG_MANAGER_LOG_FILE=${CONFIG_MANAGER_LOG_FILE}'
+      - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
+      - 'ALERTERS_LOG_FILE_TEMPLATE=${ALERTERS_LOG_FILE_TEMPLATE}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
-      dockerfile: './alerter/Dockerfile'
+      dockerfile: './alerter/Alerter_Dockerfile'
     image: 'simplyvc/panic_alerter:1.0.0'
     volumes:
       - './config:/opt/panic/config'
@@ -93,6 +95,24 @@ services:
     depends_on:
       - mongo
       - redis
+      - rabbitmq
+
+  health-checker:
+    environment:
+      - 'RABBIT_IP=${RABBIT_IP}'
+      - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
+    build:
+      context: './'
+      dockerfile: './alerter/Health_Checker_Dockerfile'
+    image: 'simplyvc/alerter_health_checker:1.0.0'
+    volumes:
+      - './alerter/logs:/opt/panic/logs'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${HEALTH_CHECKER_IP}'
+    depends_on:
+      - alerter
       - rabbitmq
 
 networks:

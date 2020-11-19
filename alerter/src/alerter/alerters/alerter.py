@@ -1,19 +1,15 @@
 import logging
 import os
 import signal
-import sys
-import time
 from abc import ABC, abstractmethod
 from queue import Queue
 from types import FrameType
-from typing import Dict, Union
+from typing import Dict
 
 import pika.exceptions
-from src.configs.system_alerts import SystemAlertsConfig
+
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  PANICException)
-from src.utils.logging import log_and_print
+from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
 class Alerter(ABC):
@@ -42,10 +38,6 @@ class Alerter(ABC):
     @property
     def logger(self) -> logging.Logger:
         return self._logger
-
-    @property
-    def alerts_configs(self) -> Union[SystemAlertsConfig]:
-        pass
 
     @property
     def alerter_name(self) -> str:

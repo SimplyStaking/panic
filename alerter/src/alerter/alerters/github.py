@@ -1,21 +1,19 @@
 import copy
 import json
 import logging
-import os
 import sys
 from types import FrameType
-from typing import Dict
 
 import pika
 import pika.exceptions
+
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert)
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import ALERT_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.logging import log_and_print
-from src.utils.constants import ALERT_EXCHANGE
 
 
 class GithubAlerter(Alerter):
@@ -63,7 +61,6 @@ class GithubAlerter(Alerter):
         data_received = json.loads(body.decode())
         self.logger.info("Processing {} received from transformers".format(
             data_received))
-        parsed_routing_key = method.routing_key.split('.')
 
         processing_error = False
         try:
@@ -72,14 +69,14 @@ class GithubAlerter(Alerter):
                 data = data_received['result']['data']
                 current = data['no_of_releases']['current']
                 previous = int(data['no_of_releases']['previous'] or 0)
-                if (current > previous):
-                    for i in range(0, current-previous):
+                if current > previous:
+                    for i in range(0, current - previous):
                         alert = NewGitHubReleaseAlert(
-                          meta['repo_name'],
-                          data['releases'][str(i)]['release_name'],
-                          data['releases'][str(i)]['tag_name'], 'INFO',
-                          meta['last_monitored'], meta['repo_parent_id'],
-                          meta['repo_id']
+                            meta['repo_name'],
+                            data['releases'][str(i)]['release_name'],
+                            data['releases'][str(i)]['tag_name'], 'INFO',
+                            meta['last_monitored'], meta['repo_parent_id'],
+                            meta['repo_id']
                         )
                         self._data_for_alerting = alert.alert_data
                         self.logger.debug("Successfully classified alert {}"
@@ -88,10 +85,10 @@ class GithubAlerter(Alerter):
             elif 'error' in data_received:
                 meta_data = data_received['error']['meta_data']
                 alert = CannotAccessGitHubPageAlert(
-                            meta_data['repo_name'], 'ERROR',
-                            meta_data['time'],
-                            meta_data['repo_parent_id'], meta_data['repo_id']
-                        )
+                    meta_data['repo_name'], 'ERROR',
+                    meta_data['time'],
+                    meta_data['repo_parent_id'], meta_data['repo_id']
+                )
                 self._data_for_alerting = alert.alert_data
                 self.logger.debug("Successfully classified alert {}".format(
                     alert.alert_data)
