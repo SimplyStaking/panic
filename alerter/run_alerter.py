@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 import signal
 import sys
 import time
@@ -17,6 +16,7 @@ from src.data_transformers.manager import DataTransformersManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
+from src.utils import env
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
@@ -42,9 +42,8 @@ def _initialize_data_store_logger(data_store_name: str) -> logging.Logger:
     while True:
         try:
             data_store_logger = create_logger(
-                os.environ['DATA_STORE_LOG_FILE_TEMPLATE'].format(
-                    data_store_name), data_store_name,
-                os.environ['LOGGING_LEVEL'], rotating=True)
+                env.DATA_STORE_LOG_FILE_TEMPLATE.format(data_store_name),
+                data_store_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
@@ -66,8 +65,8 @@ def _initialize_manager_logger(manager_name: str) -> logging.Logger:
     while True:
         try:
             manager_logger = create_logger(
-                os.environ['MANAGERS_LOG_FILE_TEMPLATE'].format(manager_name),
-                manager_name, os.environ['LOGGING_LEVEL'], rotating=True)
+                env.MANAGERS_LOG_FILE_TEMPLATE.format(manager_name),
+                manager_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
@@ -147,18 +146,15 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
 
 def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     alert_router_logger = create_logger(
-        os.environ["ALERT_ROUTER_LOG_FILE"], AlertRouter.__name__,
-        os.environ["LOGGING_LEVEL"], rotating=True
+        env.ALERT_ROUTER_LOG_FILE, AlertRouter.__name__, env.LOGGING_LEVEL,
+        rotating=True
     )
 
-    rabbit_ip = os.environ["RABBIT_IP"]
+    rabbit_ip = env.RABBIT_IP
 
     while True:
         try:
-            alert_router = AlertRouter(alert_router_logger, rabbit_ip,
-                                       ALERTER_OUTPUT_EXCHANGE,
-                                       ALERT_ROUTER_OUTPUT_EXCHANGE,
-                                       CONFIG_EXCHANGE)
+            alert_router = AlertRouter(alert_router_logger, rabbit_ip)
             return alert_router, alert_router_logger
         except (ConnectionNotInitializedException,
                 pika.exceptions.AMQPConnectionError):
@@ -171,11 +167,11 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
 def _initialize_config_manager() -> ConfigManager:
     config_manager_logger = create_logger(
-        os.environ['CONFIG_MANAGER_LOG_FILE'], ConfigManager.__name__,
-        os.environ['LOGGING_LEVEL'], rotating=True
+        env.CONFIG_MANAGER_LOG_FILE, ConfigManager.__name__, env.LOGGING_LEVEL,
+        rotating=True
     )
 
-    rabbit_ip = os.environ['RABBIT_IP']
+    rabbit_ip = env.RABBIT_IP
     while True:
         try:
             cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
@@ -239,7 +235,7 @@ def run_alert_router() -> None:
 
     while True:
         try:
-            alert_router.start_listening()
+            alert_router.start()
         except Exception:
             log_and_print(_get_stopped_message(alert_router),
                           alert_router_logger)
@@ -272,6 +268,10 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("Terminating the Data Transformers Manager", dummy_logger)
     data_transformers_manager_process.terminate()
     data_transformers_manager_process.join()
+
+    log_and_print("Terminating the Alert Router", dummy_logger)
+    alert_router_process.terminate()
+    alert_router_process.join()
 
     # TODO: Add data store here
 

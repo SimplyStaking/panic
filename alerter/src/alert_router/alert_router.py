@@ -1,26 +1,34 @@
 import json
+import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError, \
     ParsingError
 from logging import Logger
 from threading import RLock
+from types import FrameType
 from typing import Dict
 
 import pika
-from pika import BasicProperties
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
+from src.abstract.component import Component
+from src.message_broker.publisher import QueuingPublisher
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
+from src.utils.constants import CONFIG_EXCHANGE, ALERTER_EXCHANGE, \
+    CHANNEL_EXCHANGE, STORE_EXCHANGE
 from src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
+from src.utils.logging import log_and_print
 
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = "alert_router_configs_queue"
 ALERT_ROUTER_INPUT_QUEUE_NAME = "alert_router_input_queue"
 
 
-class AlertRouter:
-    def __init__(self, logger: Logger, rabbit_ip: str, alert_input_channel: str,
-                 alert_output_channel: str, config_input_channel: str):
+class AlertRouter(Component, QueuingPublisher):
+    def __init__(self, logger: Logger, rabbit_ip: str):
+        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
+        self._enable_console_output = env.ENABLE_CONSOLE_OUTPUT
 
         # We need to ensure that the config is not read when it is written to.
         # The GIL helps that, but making it explicit is also nice
@@ -28,16 +36,9 @@ class AlertRouter:
         self._config = {}
 
         self._logger = logger
-        self._alert_input_channel = alert_input_channel
-        self._alert_output_channel = alert_output_channel
-        self._config_input_channel = config_input_channel
-        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
-        self._initialise_rabbit()
-
-    def __del__(self):
-        self._logger.info("Disconnecting from RabbitMQ")
-        self._rabbit.disconnect_till_successful()
-        self._logger.info("Disconnected from RabbitMQ")
+        super(Component, self).__init__()
+        super(QueuingPublisher, self).__init__(
+            logger.getChild(QueuingPublisher.__name__), self._rabbit)
 
     def _initialise_rabbit(self) -> None:
         """
@@ -52,7 +53,7 @@ class AlertRouter:
                 self._rabbit.confirm_delivery()
 
                 self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_CONFIGS_QUEUE_NAME, self._config_input_channel,
+                    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
                     "channels.*"
                 )
                 self._rabbit.basic_consume(
@@ -61,8 +62,7 @@ class AlertRouter:
                     exclusive=False, consumer_tag=None)
 
                 self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_INPUT_QUEUE_NAME, self._alert_input_channel,
-                    "#"
+                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERTER_EXCHANGE, "#"
                 )
                 self._rabbit.basic_consume(
                     queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
@@ -71,12 +71,13 @@ class AlertRouter:
                 )
 
                 # Declare output exchange
-                self._logger.info("Creating %s exchange",
-                                  self._alert_output_channel)
+                self._logger.info("Creating %s exchange", CHANNEL_EXCHANGE)
                 self._rabbit.exchange_declare(
-                    self._alert_output_channel, "topic", False, True, False,
+                    CHANNEL_EXCHANGE, "topic", False, True, False,
                     False
                 )
+
+                self._rabbit.confirm_delivery()
                 break
             except (ConnectionNotInitializedException,
                     AMQPConnectionError) as connection_error:
@@ -88,9 +89,7 @@ class AlertRouter:
                 self._logger.error(connection_error.message)
                 raise connection_error
             except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
+                # We need to re-initialize the connection
                 continue
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
@@ -164,24 +163,7 @@ class AlertRouter:
             self._logger.debug(self._config)
         self._logger.debug("Removed the lock from the config dict")
 
-        while True:
-            try:
-                self._rabbit.basic_ack(method.delivery_tag, False)
-                break
-            except (ConnectionNotInitializedException,
-                    AMQPConnectionError) as connection_error:
-                # Should be impossible, but since exchange_declare can throw
-                # it we shall ensure to log that the error passed through here
-                # too.
-                self._logger.error("Something went wrong when trying to send "
-                                   "an acknowledgement")
-                self._logger.error(connection_error.message)
-                raise connection_error
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
-                continue
+        self._rabbit.basic_ack(method.delivery_tag, False)
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
@@ -205,80 +187,64 @@ class AlertRouter:
         self._logger.debug("Removed the lock from the config dict")
         self._logger.debug("send_to_ids = %s", send_to_ids)
 
+        for channel_id in send_to_ids:
+            send_alert: Dict = {**recv_alert,
+                                'destination_id': channel_id}
+
+            self._logger.debug("Queuing %s to be sent to %s",
+                               send_alert, channel_id)
+
+            self._push_to_queue(send_alert, CHANNEL_EXCHANGE,
+                                f"channel.{channel_id}")
+            self._logger.info("Routed Alert queued")
+
+        # Enqueue once to the console
+        if self._enable_console_output:
+            self._push_to_queue(
+                {**recv_alert, 'destination_id': "console"},
+                CHANNEL_EXCHANGE, "channel.console")
+
+        # Enqueue once to the data store
+        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
+
+        self._rabbit.basic_ack(method.delivery_tag, False)
+
+        # Send any data waiting in the publisher queue, if any
+        try:
+            self._send_data()
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as message is residing in the
+            # publisher queue.
+            self._logger.exception(e)
+
+    def start(self) -> None:
+        self._initialise_rabbit()
         while True:
             try:
-                print(len(send_to_ids))
-                for channel_id in send_to_ids:
-                    print(channel_id)
-                    send_alert: Dict = {**recv_alert,
-                                        'destination_id': channel_id}
+                # Before listening for new data send the data waiting to be sent
+                # in the publishing queue. If the message is not routed, start
+                # consuming and perform sending later.
+                try:
+                    self._send_data()
+                except MessageWasNotDeliveredException as e:
+                    self._logger.exception(e)
 
-                    self._logger.debug("Sending %s to %s", send_alert,
-                                       channel_id)
-                    self._rabbit.basic_publish_confirm(
-                        self._alert_output_channel, f"channel.{channel_id}",
-                        send_alert,
-                        mandatory=True, is_body_dict=True,
-                        properties=BasicProperties(delivery_mode=2)
-                    )
-                    self._logger.info("Routed Alert sent")
-                break
-            except MessageWasNotDeliveredException as mwnde:
-                self._logger.error("Alert was not successfully sent")
-                self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the alert again")
-            except (
-                    ConnectionNotInitializedException, AMQPConnectionError
-            ) as connection_error:
-                # If the connection is not initalized or there is a connection
-                # error, we need to restart the connection and try it again
-                self._logger.error("There has been a connection error")
-                self._logger.exception(connection_error)
-                self._logger.info("Restarting the connection")
-                self._rabbit.connect_till_successful()
-
-                self._logger.info("Connection restored, will attempt again")
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
-                continue
-
-        while True:
-            try:
-                self._rabbit.basic_ack(method.delivery_tag, False)
-                break
-            except (ConnectionNotInitializedException,
-                    AMQPConnectionError) as connection_error:
-                # Should be impossible, but since exchange_declare can throw
-                # it we shall ensure to log that the error passed through here
-                # too.
-                self._logger.error("Something went wrong when trying to send "
-                                   "an acknowledgement")
-                self._logger.error(connection_error.message)
-                raise connection_error
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
-                continue
-
-    def start_listening(self) -> None:
-        self._logger.info("Starting the alert router listeners")
-        while True:
-            try:
+                self._logger.info("Starting the alert router listeners")
                 self._rabbit.start_consuming()
-            except (ConnectionNotInitializedException,
-                    AMQPConnectionError) as connection_error:
-                # Should be impossible, but since exchange_declare can throw
-                # it we shall ensure to log that the error passed through here
-                # too.
-                self._logger.error(
-                    "Something went wrong that meant a connection was not made")
-                self._logger.exception(connection_error)
-                raise connection_error
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. As a result we don't need to
-                # anything here, just re-try.
-                continue
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialize the
+                # connection or channel settings
+                raise e
+            except Exception as e:
+                self._logger.exception(e)
+                raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self._logger)
+        self._rabbit.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self._logger)
+        sys.exit()
