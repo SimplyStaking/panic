@@ -2,8 +2,8 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
+import pika
 import pika.exceptions
-
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi

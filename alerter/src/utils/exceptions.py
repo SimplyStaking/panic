@@ -84,3 +84,10 @@ class InvalidUrlException(PANICException):
         message = "Invalid URL '{}'".format(url)
         code = 5009
         super().__init__(message, code)
+
+
+class ParentIdsMissMatchInAlertsConfiguration(PANICException):
+    def __init__(self, err) -> None:
+        message = "{} Error alerts do not have the same parent_ids".format(err)
+        code = 5010
+        super().__init__(message, code)

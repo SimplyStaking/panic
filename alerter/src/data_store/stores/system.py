@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Dict
 
 import pika.exceptions
-
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
@@ -93,17 +92,17 @@ class SystemStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            "Saving %s state: _process_cpu_seconds_total=%s, "
-            "_process_memory_usage=%s, _virtual_memory_usage=%s, "
-            "_open_file_descriptors=%s, _system_cpu_usage=%s, "
-            "_system_ram_usage=%s, _system_storage_usage=%s, "
-            "_network_transmit_bytes_per_second=%s, "
-            "_network_receive_bytes_per_second=%s, "
-            "_network_receive_bytes_total=%s, "
-            "_network_transmit_bytes_total=%s, "
-            "_disk_io_time_seconds_total=%s, "
-            "_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, ",
-            "_last_monitored=%s", system_name,
+            'Saving %s state: _process_cpu_seconds_total=%s, '
+            '_process_memory_usage=%s, _virtual_memory_usage=%s, '
+            '_open_file_descriptors=%s, _system_cpu_usage=%s, '
+            '_system_ram_usage=%s, _system_storage_usage=%s, '
+            '_network_transmit_bytes_per_second=%s, '
+            '_network_receive_bytes_per_second=%s, '
+            '_network_receive_bytes_total=%s, '
+            '_network_transmit_bytes_total=%s, '
+            '_disk_io_time_seconds_total=%s, '
+            '_disk_io_time_seconds_in_interval=%s, _went_down_at=%s, '
+            '_last_monitored=%s', system_name,
             metrics['process_cpu_seconds_total'],
             metrics['process_memory_usage'], metrics['virtual_memory_usage'],
             metrics['open_file_descriptors'], metrics['system_cpu_usage'],
