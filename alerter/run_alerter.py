@@ -244,14 +244,7 @@ def run_github_alerters_manager() -> None:
     while True:
         try:
             manager.start_github_alerter_manager()
-        except pika.exceptions.AMQPConnectionError:
-            # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
         except Exception:
-            # Close the connection with RabbitMQ if we have an unexpected
-            # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 
