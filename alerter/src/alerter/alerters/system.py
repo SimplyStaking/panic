@@ -9,7 +9,6 @@ import pika
 import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.alerts.alert import Alert
 from src.alerter.alerts.system_alerts import (
     InvalidUrlAlert, OpenFileDescriptorsIncreasedAboveThresholdAlert,
     ReceivedUnexpectedDataAlert, SystemBackUpAgainAlert,
@@ -18,7 +17,8 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemRAMUsageIncreasedAboveThresholdAlert, SystemStillDownAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert,
-    SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert)
+    SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
+    OpenFileDescriptorsDecreasedBelowThresholdAlert)
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.alert import floaty
 from src.utils.constants import ALERT_EXCHANGE
@@ -26,6 +26,8 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException,
                                   ConnectionNotInitializedException)
 from src.utils.logging import log_and_print
+from src.utils.types import IncreasedAboveThresholdSystemAlert, \
+    DecreasedBelowThresholdSystemAlert
 
 
 class SystemAlerter(Alerter):
@@ -231,7 +233,7 @@ class SystemAlerter(Alerter):
                 self._classify_alert(
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
-                    OpenFileDescriptorsIncreasedAboveThresholdAlert
+                    OpenFileDescriptorsDecreasedBelowThresholdAlert
                 )
         if storage['enabled']:
             current = metrics['system_storage_usage']['current']
@@ -263,8 +265,10 @@ class SystemAlerter(Alerter):
 
     def _classify_alert(
             self, current: float, previous: float, config: Dict,
-            meta_data: Dict, increased_above_threshold_alert: Type[Alert],
-            decreased_below_threshold_alert: Type[Alert]):
+            meta_data: Dict, increased_above_threshold_alert:
+            Type[IncreasedAboveThresholdSystemAlert],
+            decreased_below_threshold_alert:
+            Type[DecreasedBelowThresholdSystemAlert]):
         warning_threshold = float(config['warning_threshold'])
         critical_threshold = float(config['critical_threshold'])
         warning_enabled = config['warning_enabled']
