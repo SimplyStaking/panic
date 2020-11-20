@@ -251,7 +251,7 @@ def run_github_alerters_manager() -> None:
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
+            manager.github_alerter.rabbitmq.disconnect_till_successful()
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 

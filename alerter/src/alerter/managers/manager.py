@@ -8,6 +8,7 @@ from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
+
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.logging import log_and_print
 

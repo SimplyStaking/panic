@@ -5,7 +5,6 @@ from multiprocessing import Process
 from types import FrameType
 from typing import Dict
 
-import pika.exceptions
 from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.utils.logging import log_and_print

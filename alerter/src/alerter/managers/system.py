@@ -5,11 +5,10 @@ from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
+
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.configs import (get_modified_configs, get_newly_added_configs,
-                               get_removed_configs)
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 from src.utils.logging import log_and_print
 
@@ -67,7 +66,7 @@ class SystemAlertersManager(AlertersManager):
             for i in sent_configs:
                 if parent_id != sent_configs[i]['parent_id']:
                     raise ParentIdsMissMatchInAlertsConfiguration(
-                          "{}: _process_data".format(self))
+                        "{}: _process_data".format(self))
 
             filtered = {}
             for i in sent_configs:
@@ -110,7 +109,7 @@ class SystemAlertersManager(AlertersManager):
 
             # To avoid non-moniterable systems
             self._systems_configs[parent_id] = {
-                parent_id:  sent_configs
+                parent_id: sent_configs
             }
         except Exception as e:
             self.logger.exception(e)

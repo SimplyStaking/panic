@@ -3,10 +3,10 @@ import os
 import time
 
 import pika.exceptions
+
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerters.github import GithubAlerter
-from src.configs.repo import RepoConfig
+from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import create_logger, log_and_print
 
@@ -33,7 +33,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
 
 
 def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
-                               -> SystemAlerter:
+        -> SystemAlerter:
     # Alerter name based on system
     alerter_name = "System alerter ({})".format(system_alerts_config.parent_id)
 
@@ -57,7 +57,6 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
 
 
 def _initialize_github_alerter() -> GithubAlerter:
-
     alerter_name = "Github alerter"
 
     github_alerter_logger = _initialize_alerter_logger(alerter_name)

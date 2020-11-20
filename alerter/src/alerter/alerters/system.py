@@ -233,7 +233,6 @@ class SystemAlerter(Alerter):
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert
                 )
-                # TODO: Continue from this tomorrow
         if storage['enabled']:
             current = metrics['system_storage_usage']['current']
             previous = metrics['system_storage_usage']['previous']
@@ -262,19 +261,19 @@ class SystemAlerter(Alerter):
                     SystemRAMUsageDecreasedBelowThresholdAlert
                 )
 
-    def _classify_alert(self, current: float, previous: float, config: Dict,
-                        meta_data: Dict, IncreasedAboveThresholdAlert: Type[Alert],
-                        DecreasedBelowThresholdAlert: Alert):
+    def _classify_alert(
+            self, current: float, previous: float, config: Dict,
+            meta_data: Dict, increased_above_threshold_alert: Type[Alert],
+            decreased_below_threshold_alert: Type[Alert]):
         warning_threshold = float(config['warning_threshold'])
         critical_threshold = float(config['critical_threshold'])
         warning_enabled = config['warning_enabled']
         critical_enabled = config['critical_enabled']
-        if (warning_enabled):
-            if (warning_threshold <= current < critical_threshold and not
-            warning_threshold <= previous < critical_threshold and not
-            previous >= critical_threshold):
+        if warning_enabled:
+            if (warning_threshold <= current < critical_threshold) and not \
+                    (warning_threshold <= previous):
                 alert = \
-                    IncreasedAboveThresholdAlert(
+                    increased_above_threshold_alert(
                         meta_data['system_name'], previous, current, 'WARNING',
                         meta_data['last_monitored'], 'WARNING',
                         meta_data['system_parent_id'],
@@ -284,10 +283,9 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
                 self._place_latest_data_on_queue()
-            elif (current < previous and previous >= warning_threshold and
-                  current < warning_threshold):
+            elif current < warning_threshold <= previous:
                 alert = \
-                    DecreasedBelowThresholdAlert(
+                    decreased_below_threshold_alert(
                         meta_data['system_name'], previous, current, 'INFO',
                         meta_data['last_monitored'], 'WARNING',
                         meta_data['system_parent_id'],
@@ -297,12 +295,12 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
                 self._place_latest_data_on_queue()
-        elif (critical_enabled):
-            if (current >= critical_threshold and not
-            previous >= critical_threshold and
-                    config['limiter'].can_do_task()):
+
+        if critical_enabled:
+            if current >= critical_threshold and \
+                    config['limiter'].can_do_task():
                 alert = \
-                    IncreasedAboveThresholdAlert(
+                    increased_above_threshold_alert(
                         meta_data['system_name'], previous, current,
                         'CRITICAL', meta_data['last_monitored'], 'CRITICAL',
                         meta_data['system_parent_id'],
@@ -313,10 +311,9 @@ class SystemAlerter(Alerter):
                                   "".format(alert.alert_data))
                 self._place_latest_data_on_queue()
                 config['limiter'].did_task()
-            elif (current < previous and previous >= critical_threshold
-                  and current < critical_threshold):
+            elif warning_threshold < current < critical_threshold <= previous:
                 alert = \
-                    DecreasedBelowThresholdAlert(
+                    decreased_below_threshold_alert(
                         meta_data['system_name'], previous, current,
                         'INFO', meta_data['last_monitored'], 'CRITICAL',
                         meta_data['system_parent_id'],
