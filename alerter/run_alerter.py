@@ -249,9 +249,7 @@ def run_github_alerters_manager() -> None:
             # Since we have to re-connect just break the loop.
             log_and_print('{} stopped.'.format(manager), manager.logger)
         except Exception:
-            # Close the connection with RabbitMQ if we have an unexpected
-            # exception, and start again
-            manager.github_alerter.rabbitmq.disconnect_till_successful()
+            # Start again on unexpected exception
             log_and_print('{} stopped.'.format(manager), manager.logger)
 
 
