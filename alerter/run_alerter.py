@@ -342,38 +342,34 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 
 # If termination signals are received, terminate all child process and exit
 def on_terminate(signum: int, stack: FrameType) -> None:
+    def terminate_and_join_process(process: multiprocessing.Process, name: str):
+        log_and_print(f"Terminating the {name}", dummy_logger)
+        process.terminate()
+        process.join()
+
     dummy_logger = logging.getLogger('Dummy')
 
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
-    log_and_print("Terminating the System Monitors Manager", dummy_logger)
-    system_monitors_manager_process.terminate()
-    system_monitors_manager_process.join()
+    terminate_and_join_process(system_monitors_manager_process,
+                               "System Monitors Manager")
 
-    log_and_print("Terminating the GitHub Monitors Manager", dummy_logger)
-    github_monitors_manager_process.terminate()
-    github_monitors_manager_process.join()
+    terminate_and_join_process(github_monitors_manager_process,
+                               "GitHub Monitors Manager")
 
-    log_and_print("Terminating the Data Transformers Manager", dummy_logger)
-    data_transformers_manager_process.terminate()
-    data_transformers_manager_process.join()
+    terminate_and_join_process(data_transformers_manager_process,
+                               "Data Transformers Manager")
 
-    log_and_print("Terminating the System Alerters Manager", dummy_logger)
-    system_alerters_manager_process.terminate()
-    system_alerters_manager_process.join()
+    terminate_and_join_process(system_alerters_manager_process,
+                               "System Alerters Manager")
 
-    log_and_print("Terminating the Github Alerter Manager", dummy_logger)
-    github_alerter_manager_process.terminate()
-    github_alerter_manager_process.join()
+    terminate_and_join_process(github_alerter_manager_process,
+                               "Github Alerter Manager")
 
-    log_and_print("Terminating the Data Store Process", dummy_logger)
-    data_store_process.terminate()
-    data_store_process.join()
+    terminate_and_join_process(data_store_process, "Data Store Process")
 
-    log_and_print("Terminating the Alert Router", dummy_logger)
-    alert_router_process.terminate()
-    alert_router_process.join()
+    terminate_and_join_process(alert_router_process, "Alert Router")
 
     log_and_print("PANIC process terminated.", dummy_logger)
 
@@ -449,10 +445,10 @@ if __name__ == '__main__':
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
-# TODO: Make sure that all queues and configs are declared before hand in the
-#     : run alerter before start sending configs, as otherwise configs manager
-#     : would not be able to send configs on start-up. Therefore start the
-#     : config manager last. Similarly, components must be started from left
-#     : to right according to the design (to avoid message not delivered
-#     : exceptions). Also, to fully solve these problems, we should perform
-#     : checks in the run alerter to see if a queue/exchange has been created
+    # TODO: Make sure that all queues and configs are declared before hand in the
+    #     : run alerter before start sending configs, as otherwise configs manager
+    #     : would not be able to send configs on start-up. Therefore start the
+    #     : config manager last. Similarly, components must be started from left
+    #     : to right according to the design (to avoid message not delivered
+    #     : exceptions). Also, to fully solve these problems, we should perform
+    #     : checks in the run alerter to see if a queue/exchange has been created
