@@ -11,12 +11,12 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
+from src.abstract import QueuingPublisherComponent
 from src.abstract.component import Component
-from src.message_broker.publisher import QueuingPublisher
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import CONFIG_EXCHANGE, ALERTER_EXCHANGE, \
-    CHANNEL_EXCHANGE, STORE_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, CHANNEL_EXCHANGE, \
+    STORE_EXCHANGE, ALERT_EXCHANGE
 from src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -25,10 +25,11 @@ ALERT_ROUTER_CONFIGS_QUEUE_NAME = "alert_router_configs_queue"
 ALERT_ROUTER_INPUT_QUEUE_NAME = "alert_router_input_queue"
 
 
-class AlertRouter(Component, QueuingPublisher):
-    def __init__(self, logger: Logger, rabbit_ip: str):
+class AlertRouter(QueuingPublisherComponent):
+    def __init__(self, logger: Logger, rabbit_ip: str,
+                 enable_console_alerts: bool):
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
-        self._enable_console_output = env.ENABLE_CONSOLE_OUTPUT
+        self._enable_console_alerts = enable_console_alerts
 
         # We need to ensure that the config is not read when it is written to.
         # The GIL helps that, but making it explicit is also nice
@@ -37,8 +38,8 @@ class AlertRouter(Component, QueuingPublisher):
 
         self._logger = logger
         super(Component, self).__init__()
-        super(QueuingPublisher, self).__init__(
-            logger.getChild(QueuingPublisher.__name__), self._rabbit)
+        super().__init__(
+            logger.getChild(QueuingPublisherComponent.__name__), self._rabbit)
 
     def _initialise_rabbit(self) -> None:
         """
@@ -62,7 +63,7 @@ class AlertRouter(Component, QueuingPublisher):
                     exclusive=False, consumer_tag=None)
 
                 self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERTER_EXCHANGE, "#"
+                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "alerter.*"
                 )
                 self._rabbit.basic_consume(
                     queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
@@ -152,11 +153,10 @@ class AlertRouter(Component, QueuingPublisher):
                     self._logger.warning(
                         "The previous configuration will be used instead")
                     self._config[config_filename] = previous_config
-                except (ParsingError, ValueError) as parsing_error:
-                    self._logger.error(
-                        "The configuration file %s has an incorrect entry",
-                        config_filename)
-                    self._logger.error(parsing_error.message)
+                except Exception as e:
+                    self._logger.error("Encountered an error when reading the "
+                                       "configuration files")
+                    self._logger.exception(e)
                     self._logger.warning(
                         "The previous configuration will be used instead")
                     self._config[config_filename] = previous_config
@@ -199,15 +199,15 @@ class AlertRouter(Component, QueuingPublisher):
             self._logger.info("Routed Alert queued")
 
         # Enqueue once to the console
-        if self._enable_console_output:
+        if self._enable_console_alerts:
             self._push_to_queue(
                 {**recv_alert, 'destination_id': "console"},
                 CHANNEL_EXCHANGE, "channel.console")
 
+        self._rabbit.basic_ack(method.delivery_tag, False)
+
         # Enqueue once to the data store
         self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
-
-        self._rabbit.basic_ack(method.delivery_tag, False)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -241,10 +241,17 @@ class AlertRouter(Component, QueuingPublisher):
                 self._logger.exception(e)
                 raise e
 
+    def disconnect(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self._rabbit.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
-        self._rabbit.disconnect_till_successful()
+        self.disconnect()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()

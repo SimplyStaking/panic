@@ -185,17 +185,9 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
     rabbit_ip = env.RABBIT_IP
 
-    while True:
-        try:
-            alert_router = AlertRouter(alert_router_logger, rabbit_ip)
-            return alert_router, alert_router_logger
-        except (ConnectionNotInitializedException,
-                pika.exceptions.AMQPConnectionError):
-            # This is already logged, we need to try again. This exception
-            # should not happen, but if it does the program can't fully start
-            # up
-            alert_router_logger.info("Trying to set up the alert router again")
-            continue
+    alert_router = AlertRouter(alert_router_logger, rabbit_ip,
+                               env.ENABLE_CONSOLE_ALERTS)
+    return alert_router, alert_router_logger
 
 
 def _initialize_config_manager() -> ConfigManager:
@@ -270,12 +262,12 @@ def run_github_alerters_manager() -> None:
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
@@ -327,7 +319,14 @@ def run_alert_router() -> None:
     while True:
         try:
             alert_router.start()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(alert_router),
+                          alert_router_logger)
         except Exception:
+            alert_router.disconnect()
             log_and_print(_get_stopped_message(alert_router),
                           alert_router_logger)
 

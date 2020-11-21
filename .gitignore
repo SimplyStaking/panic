@@ -27,7 +27,7 @@ yarn-error.log*
 
 # configs
 config/**
-!config/.gitkeep
+!./config/.gitkeep
 
 # dependencies
 node_modules/

@@ -11,16 +11,6 @@ This also ensures all mandatory values are present before running by
 initializing the class 
 """
 
-# Installer Configuration
-INSTALLER_IP = os.environ['INSTALLER_IP']
-INSTALLER_PORT = int(os.environ['INSTALLER_PORT'])
-INSTALLER_USERNAME = os.environ['INSTALLER_USERNAME']
-INSTALLER_PASSWORD = os.environ['INSTALLER_PASSWORD']
-ACCESS_TOKEN_SECRET = os.environ['ACCESS_TOKEN_SECRET']
-ACCESS_TOKEN_LIFE = int(os.environ['ACCESS_TOKEN_LIFE'])
-REFRESH_TOKEN_SECRET = os.environ['REFRESH_TOKEN_SECRET']
-REFRESH_TOKEN_LIFE = int(os.environ['REFRESH_TOKEN_LIFE'])
-
 # Mongo configuration
 DB_NAME = os.environ['DB_NAME']
 DB_IP = os.environ['DB_IP']
@@ -48,7 +38,7 @@ MONITORS_LOG_FILE_TEMPLATE = os.environ['MONITORS_LOG_FILE_TEMPLATE']
 TRANSFORMERS_LOG_FILE_TEMPLATE = os.environ['TRANSFORMERS_LOG_FILE_TEMPLATE']
 MANAGERS_LOG_FILE_TEMPLATE = os.environ['MANAGERS_LOG_FILE_TEMPLATE']
 ALERTERS_LOG_FILE_TEMPLATE = os.environ['ALERTERS_LOG_FILE_TEMPLATE']
-ALERT_ROUTER_LOG_FILE = os.environ['MANAGERS_LOG_FILE_TEMPLATE']
+ALERT_ROUTER_LOG_FILE = os.environ['ALERT_ROUTER_LOG_FILE']
 CONFIG_MANAGER_LOG_FILE = os.environ['CONFIG_MANAGER_LOG_FILE']
 
 # GitHub monitoring configuration
@@ -65,6 +55,6 @@ DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE = int(
 ALERTER_PUBLISHING_QUEUE_SIZE = int(os.environ['ALERTER_PUBLISHING_QUEUE_SIZE'])
 
 # Console Output
-ENABLE_CONSOLE_OUTPUT: bool = \
+ENABLE_CONSOLE_ALERTS: bool = \
     os.getenv('ENABLE_CONSOLE_ALERTS', False).lower() in (
         True, "true", "yes", "y")

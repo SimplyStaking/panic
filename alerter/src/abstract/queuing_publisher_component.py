@@ -20,7 +20,7 @@ class QueuingPublisherComponent(Component, ABC):
                  max_queue_size: int = 0):
         """
         Initializes the queue needed for publishing. It also sets the prefetch
-        count of the rabbit mq passed through.
+        count of the rabbitmq channel passed through.
         :param logger: The logger object to log with
         :param rabbitmq: The rabbit MQ connection to use
         :param max_queue_size: The max queue size, defaults to 0 for infinite
@@ -69,16 +69,21 @@ class QueuingPublisherComponent(Component, ABC):
         # that if an exception is raised, that message is not popped
         while not self._publishing_queue.empty():
             data = self._publishing_queue.queue[0]
-            self._rabbitmq.basic_publish_confirm(
-                exchange=data['exchange'], routing_key=data['routing_key'],
-                body=data['data'], is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self._logger.debug(
-                f"Sent {data['data']} to '{data['exchange']}' exchange"
-            )
-            self._publishing_queue.get()
-            self._publishing_queue.task_done()
+            try:
+                self._rabbitmq.basic_publish_confirm(
+                    exchange=data['exchange'], routing_key=data['routing_key'],
+                    body=data['data'], is_body_dict=True,
+                    properties=pika.BasicProperties(delivery_mode=2),
+                    mandatory=True)
+                self._logger.debug(
+                    f"Sent {data['data']} to '{data['exchange']}' exchange"
+                )
+                self._publishing_queue.get()
+                self._publishing_queue.task_done()
+            except KeyError as ke:
+                self._logger.error("Enqueued datum %s was incomplete", data)
+                self._logger.exception(ke)
+                self._logger.warn("Discarding this datum")
 
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
