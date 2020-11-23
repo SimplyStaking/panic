@@ -12,8 +12,7 @@ from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, CHANNEL_EXCHANGE, \
-    STORE_EXCHANGE, ALERT_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE
 from src.utils.exceptions import ConnectionNotInitializedException, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -64,13 +63,6 @@ class AlertRouter(QueuingPublisherComponent):
                     queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
                     on_message_callback=self._process_alert, auto_ack=False,
                     exclusive=False, consumer_tag=None
-                )
-
-                # Declare output exchanges
-                self._logger.info("Creating %s exchange", CHANNEL_EXCHANGE)
-                self._rabbit.exchange_declare(
-                    CHANNEL_EXCHANGE, "topic", False, True, False,
-                    False
                 )
 
                 # Declare store exchange just in case it hasn't been declared

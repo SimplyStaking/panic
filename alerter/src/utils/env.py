@@ -11,13 +11,6 @@ This also ensures all mandatory values are present before running by
 initializing the class 
 """
 
-# Mongo configuration
-DB_NAME = os.environ['DB_NAME']
-DB_IP = os.environ['DB_IP']
-DB_PORT = int(os.environ['DB_PORT'])
-INSTALLER_AUTH_COLLECTION = os.environ['INSTALLER_AUTH_COLLECTION']
-ACCOUNTS_COLLECTION = os.environ['ACCOUNTS_COLLECTION']
-
 # Alerter configuration
 ALERTER_IP = os.environ['ALERTER_IP']
 UNIQUE_ALERTER_IDENTIFIER = os.environ['UNIQUE_ALERTER_IDENTIFIER']
