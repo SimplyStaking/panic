@@ -190,15 +190,16 @@ class AlertRouter(QueuingPublisherComponent):
             self._logger.debug("Queuing %s to be sent to %s",
                                send_alert, channel_id)
 
-            self._push_to_queue(send_alert, CHANNEL_EXCHANGE,
-                                "channel.{}".format(channel_id))
+            self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                "channel.{}".format(channel_id),
+                                mandatory=False)
             self._logger.info("Routed Alert queued")
 
         # Enqueue once to the console
         if self._enable_console_alerts:
             self._push_to_queue(
                 {**recv_alert, 'destination_id': "console"},
-                CHANNEL_EXCHANGE, "channel.console")
+                ALERT_EXCHANGE, "channel.console", mandatory=False)
 
         self._rabbit.basic_ack(method.delivery_tag, False)
 

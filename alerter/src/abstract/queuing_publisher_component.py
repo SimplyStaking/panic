@@ -4,8 +4,7 @@ from abc import ABC
 from queue import Queue
 from typing import Dict
 
-import pika
-
+from pika import BasicProperties
 from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
 
@@ -34,14 +33,19 @@ class QueuingPublisherComponent(Component, ABC):
 
         super().__init__()
 
-    def _push_to_queue(self, data: Dict, exchange: str,
-                       routing_key: str) -> None:
+    def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
+                       properties: BasicProperties = BasicProperties(
+                           delivery_mode=2), mandatory: bool = True) -> None:
         """
         Method that takes the data to save and puts the data in their respective
         queues
         :param data: The data to queue to be sent.
         :param exchange: The exchange to send the data to
         :param routing_key: The routing key to use
+        :param properties: Any pika properties to use
+        (defaults to delivery_mode = 2)
+        :param mandatory: Whether the message must be delivered or not
+        (defaults to True)
         """
         self._logger.debug("Adding data to the publishing queue ...")
 
@@ -51,7 +55,8 @@ class QueuingPublisherComponent(Component, ABC):
             self._logger.debug("The queue is full, clearing the first item.")
             self._publishing_queue.get()
         data_dict = {'exchange': exchange, 'routing_key': routing_key,
-                     'data': copy.deepcopy(data)}
+                     'data': copy.deepcopy(data), 'properties': properties,
+                     'mandatory': mandatory}
         self._logger.debug("Adding %s to the queue", data_dict)
         self._publishing_queue.put(data_dict)
 
@@ -73,8 +78,7 @@ class QueuingPublisherComponent(Component, ABC):
                 self._rabbitmq.basic_publish_confirm(
                     exchange=data['exchange'], routing_key=data['routing_key'],
                     body=data['data'], is_body_dict=True,
-                    properties=pika.BasicProperties(delivery_mode=2),
-                    mandatory=True)
+                    properties=data['properties'], mandatory=data['mandatory'])
                 self._logger.debug(
                     "Sent %s to '%s' exchange", data['data'], data['exchange']
                 )
