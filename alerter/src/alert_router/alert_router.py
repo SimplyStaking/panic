@@ -1,7 +1,6 @@
 import json
 import sys
-from configparser import ConfigParser, NoOptionError, NoSectionError, \
-    ParsingError
+from configparser import ConfigParser, NoOptionError, NoSectionError
 from logging import Logger
 from threading import RLock
 from types import FrameType
@@ -12,9 +11,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.abstract import QueuingPublisherComponent
-from src.abstract.component import Component
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import env
 from src.utils.constants import CONFIG_EXCHANGE, CHANNEL_EXCHANGE, \
     STORE_EXCHANGE, ALERT_EXCHANGE
 from src.utils.exceptions import ConnectionNotInitializedException, \
@@ -37,7 +34,6 @@ class AlertRouter(QueuingPublisherComponent):
         self._config = {}
 
         self._logger = logger
-        super(Component, self).__init__()
         super().__init__(
             logger.getChild(QueuingPublisherComponent.__name__), self._rabbit)
 
@@ -54,29 +50,36 @@ class AlertRouter(QueuingPublisherComponent):
                 self._rabbit.confirm_delivery()
 
                 self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
-                    "channels.*"
-                )
+                    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
+                    "channels.*")
                 self._rabbit.basic_consume(
                     queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                     on_message_callback=self._process_configs, auto_ack=False,
                     exclusive=False, consumer_tag=None)
 
                 self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "alerter.*"
-                )
+                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
+                    "alerter.*")
                 self._rabbit.basic_consume(
                     queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
                     on_message_callback=self._process_alert, auto_ack=False,
                     exclusive=False, consumer_tag=None
                 )
 
-                # Declare output exchange
+                # Declare output exchanges
                 self._logger.info("Creating %s exchange", CHANNEL_EXCHANGE)
                 self._rabbit.exchange_declare(
                     CHANNEL_EXCHANGE, "topic", False, True, False,
                     False
                 )
+
+                # Declare store exchange just in case it hasn't been declared
+                # yet
+                self._rabbit.exchange_declare(exchange=STORE_EXCHANGE,
+                                              exchange_type='direct',
+                                              passive=False,
+                                              durable=True, auto_delete=False,
+                                              internal=False)
 
                 self._rabbit.confirm_delivery()
                 break
@@ -94,18 +97,19 @@ class AlertRouter(QueuingPublisherComponent):
                 continue
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
-                                         exchange_name: str,
+                                         exchange_name: str, exchange_type: str,
                                          routing_key: str) -> None:
         """
         Declare the specified exchange and queue and binds that queue to the
         exchange
+        :param exchange_type:
         :param queue_name: The queue to declare and bind to the exchange
         :param exchange_name: The exchange to declare and bind the queue to
         :return: None
         """
         self._logger.info("Creating %s exchange", exchange_name)
         self._rabbit.exchange_declare(
-            exchange_name, "topic", False, True, False, False
+            exchange_name, exchange_type, False, True, False, False
         )
         self._logger.info("Creating and binding queue for %s exchange",
                           exchange_name)
