@@ -3,9 +3,6 @@
 # vs code
 .vscode
 
-# Gitkeep
-!**/.gitkeep
-
 # project builds
 /builds
 /cache
@@ -46,3 +43,5 @@ build
 .env.test.local
 .env.production.local
 
+# Gitkeep
+!/**/.gitkeep
