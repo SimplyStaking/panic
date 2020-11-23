@@ -3,6 +3,9 @@
 # vs code
 .vscode
 
+# Gitkeep
+!**/.gitkeep
+
 # project builds
 /builds
 /cache
@@ -18,16 +21,12 @@ __pycache__/
 # logs
 **/*.log
 **/*.log*
-!alerter/logs/managers/.gitkeep
-!alerter/logs/monitors/.gitkeep
-!alerter/logs/.gitkeep
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # configs
 config/**
-!./config/.gitkeep
 
 # dependencies
 node_modules/
