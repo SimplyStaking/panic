@@ -1,15 +1,8 @@
 import { container } from "assets/jss/material-kit-react.js";
-import { title } from "assets/jss/material-kit-react.js";
+
+import image from "assets/img/sign.jpg";
 
 const loginStyle = {
-  title: {
-    ...title,
-    marginBottom: "50px",
-    marginTop: "30px",
-    minHeight: "32px",
-    textDecoration: "none",
-    textAlign: "center"
-  },
   section: {
     minHeight: "110vh",
     maxHeight: "1600px",
@@ -21,32 +14,21 @@ const loginStyle = {
     border: "0",
     display: "flex",
     alignItems: "center",
+    backgroundImage: "url(" + image + ")"
   },
   container,
   form: {
     margin: "0"
   },
-  cardHeader_1: {
+  cardHeader: {
+    background: "#151965",
     width: "auto",
     textAlign: "center",
     marginLeft: "20px",
     marginRight: "20px",
     marginTop: "-40px",
     padding: "20px 0",
-    marginBottom: "15px",
-    borderRadius: "25px",
-    background: "linear-gradient(94.18deg, #0B867E 0%, #2706AA 100%)",
-  },
-  cardHeader_2: {
-    width: "auto",
-    textAlign: "center",
-    marginLeft: "20px",
-    marginRight: "20px",
-    marginTop: "-40px",
-    padding: "20px 0",
-    marginBottom: "15px",
-    borderRadius: "25px",
-    background: "linear-gradient(94.18deg, #C0251B 0%, #EC9C00 100%)",
+    marginBottom: "15px"
   },
   socialIcons: {
     maxWidth: "24px",

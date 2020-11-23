@@ -1,17 +1,10 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import {
   ToastsContainer, ToastsContainerPosition, ToastsStore,
 } from 'react-toasts';
 import PageManger from './containers/global/pageManager';
 
 import './App.css';
-
-const useStyles = makeStyles(() => ({
-  root: {
-    display: 'flex',
-  },
-}));
 
 /*
 * Main application, which loads the PageManager and the ToastsContainer
@@ -20,10 +13,8 @@ const useStyles = makeStyles(() => ({
 * with the backend.
 */
 function App() {
-  const classes = useStyles();
-
   return (
-    <div className={classes.root}>
+    <div>
       <PageManger />
       <ToastsContainer
         store={ToastsStore}

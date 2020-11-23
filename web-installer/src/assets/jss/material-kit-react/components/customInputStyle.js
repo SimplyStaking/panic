@@ -6,6 +6,11 @@ import {
 } from "assets/jss/material-kit-react.js";
 
 const customInputStyle = {
+  helperText: {
+    "&.MuiFormHelperText-root.Mui-error": {
+      color: "#990F0F !important"
+    }
+  },
   disabled: {
     "&:before": {
       borderColor: "transparent !important"

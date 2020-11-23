@@ -1,5 +1,6 @@
 import React from 'react';
 import { Grid, Box } from '@material-ui/core';
+import { makeStyles } from "@material-ui/core/styles";
 import Title from '../global/title';
 import MainText from '../global/mainText';
 import FormAccordion from '../global/formAccordion';
@@ -25,70 +26,89 @@ import {
   PAGERDUTY, OPSGENIE,
 } from '../../constants/constants';
 import Data from '../../data/channels';
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
+import Card from "components/material_ui/Card/Card.js";
+import CardHeader from "components/material_ui/Card/CardHeader.js";
+import CardBody from "components/material_ui/Card/CardBody.js";
+import CardFooter from "components/material_ui/Card/CardFooter.js";
+import styles from "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
+import Parallax from "components/material_ui/Parallax/Parallax.js";
+import DescriptionSection from "components/channels/descriptionSection.js";
+
+const useStyles = makeStyles(styles);
 
 function ChannelsPage() {
+  const classes = useStyles();
 
   return (
     <div>
-      <Title
-        text={Data.channels.title}
-      />
-      <MainText
-        text={Data.channels.description}
-      />
-      <Box p={2} className="flex_root">
-        <Box
-          p={3}
-          border={1}
-          borderRadius="borderRadius"
-          borderColor="grey.300"
-        >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <div>
-                <FormAccordion
-                  icon={TelegramIcon}
-                  name={TELEGRAM}
-                  form={(<TelegramFormContainer />)}
-                  table={(<TelegramTableContainer />)}
-                />
-                <FormAccordion
-                  icon={TwilioIcon}
-                  name={TWILIO}
-                  form={(<TwilioFormContainer />)}
-                  table={(<TwilioTableContainer />)}
-                />
-                <FormAccordion
-                  icon={EmailIcon}
-                  name={EMAIL}
-                  form={<EmailFormContainer />}
-                  table={(<EmailTableContainer />)}
-                />
-                <FormAccordion
-                  icon={PagerDuty}
-                  name={PAGERDUTY}
-                  form={<PagerDutyFormContainer />}
-                  table={<PagerDutyTableContainer />}
-                />
-                <FormAccordion
-                  icon={OpsGenie}
-                  name={OPSGENIE}
-                  form={<OpsGenieFormContainer />}
-                  table={<OpsGenieTableContainer />}
-                />
+      <Parallax image={require("assets/img/backgrounds/5.png")}>
+        <div className={classes.container}>
+          <GridContainer>
+            <GridItem>
+              <div className={classes.brand}>
+                <h1 className={classes.title}>
+                  {Data.channels.title}
+                </h1>
               </div>
+            </GridItem>
+          </GridContainer>
+        </div>
+      </Parallax>
+      <div className={classes.mainRaised}>
+      <Card>
+        <CardBody>
+        <div className={classes.container}>
+          <DescriptionSection />
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <div>
+                  <FormAccordion
+                    icon={TelegramIcon}
+                    name={TELEGRAM}
+                    form={(<TelegramFormContainer />)}
+                    table={(<TelegramTableContainer />)}
+                  />
+                  <FormAccordion
+                    icon={TwilioIcon}
+                    name={TWILIO}
+                    form={(<TwilioFormContainer />)}
+                    table={(<TwilioTableContainer />)}
+                  />
+                  <FormAccordion
+                    icon={EmailIcon}
+                    name={EMAIL}
+                    form={<EmailFormContainer />}
+                    table={(<EmailTableContainer />)}
+                  />
+                  <FormAccordion
+                    icon={PagerDuty}
+                    name={PAGERDUTY}
+                    form={<PagerDutyFormContainer />}
+                    table={<PagerDutyTableContainer />}
+                  />
+                  <FormAccordion
+                    icon={OpsGenie}
+                    name={OPSGENIE}
+                    form={<OpsGenieFormContainer />}
+                    table={<OpsGenieTableContainer />}
+                  />
+                </div>
+              </Grid>
             </Grid>
-          </Grid>
-        </Box>
-      </Box>
-      <NavigationButtonContainer
-        text={NEXT}
-        navigation={CHAINS_PAGE}
-      />
-      <NavigationButtonContainer
-        text={BACK}
-        navigation={WELCOME_PAGE}
-      />
+          <NavigationButtonContainer
+            text={NEXT}
+            navigation={CHAINS_PAGE}
+          />
+          <NavigationButtonContainer
+            text={BACK}
+            navigation={WELCOME_PAGE}
+          />
+            </div>
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { Button, Box } from '@material-ui/core';
+import { Box } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import CancelIcon from '@material-ui/icons/Cancel';
 import { ToastsStore } from 'react-toasts';
 import {
@@ -440,10 +441,8 @@ function LoginButton({
     }
   };
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Login
-      </Box>
+    <Button simple color="primary" size="lg" disabled={disabled} onClick={onClick}>
+      Get started
     </Button>
   );
 }

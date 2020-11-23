@@ -1,26 +1,28 @@
 import { container } from "assets/jss/material-kit-react.js";
+import Background from "assets/img/backgrounds/5.png"
 
 const componentsStyle = {
   container,
+  backgroundImage:{
+    backgroundImage: `url(${Background})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+  },
   brand: {
     color: "#FFFFFF",
-    textAlign: "left"
+    textAlign: "center"
   },
   title: {
     fontSize: "4.2rem",
     fontWeight: "600",
-    display: "inline-block",
-    position: "relative"
+    // display: "inline-block",
+    position: "relative",
+    color: "#FFFFFF"
   },
   subtitle: {
     fontSize: "1.313rem",
     maxWidth: "500px",
     margin: "10px 0 0"
-  },
-  main: {
-    background: "#FFFFFF",
-    position: "relative",
-    zIndex: "3"
   },
   mainRaised: {
     margin: "-60px 30px 0px",

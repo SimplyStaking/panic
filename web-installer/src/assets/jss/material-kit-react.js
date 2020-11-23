@@ -1,11 +1,11 @@
 /*!
 
  =========================================================
- * Material Kit React - v1.8.0 based on Material Kit - v2.0.2
+ * Material Kit React - v1.9.0 based on Material Kit - v2.0.2
  =========================================================
 
  * Product Page: https://www.creative-tim.com/product/material-kit-react
- * Copyright 2019 Creative Tim (https://www.creative-tim.com)
+ * Copyright 2020 Creative Tim (https://www.creative-tim.com)
  * Licensed under MIT (https://github.com/creativetimofficial/material-kit-react/blob/master/LICENSE.md)
 
  =========================================================
@@ -24,7 +24,7 @@ const transition = {
   transition: "all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
 };
 
-const conatinerFluid = {
+const containerFluid = {
   paddingRight: "15px",
   paddingLeft: "15px",
   marginRight: "auto",
@@ -32,7 +32,7 @@ const conatinerFluid = {
   width: "100%"
 };
 const container = {
-  ...conatinerFluid,
+  ...containerFluid,
   "@media (min-width: 576px)": {
     maxWidth: "540px"
   },
@@ -69,7 +69,7 @@ const defaultFont = {
   lineHeight: "1.5em"
 };
 
-const primaryColor = "#9c27b0";
+const primaryColor = "#151965";
 const warningColor = "#ff9800";
 const dangerColor = "#f44336";
 const successColor = "#4caf50";
@@ -156,7 +156,7 @@ const defaultBoxShadow = {
 };
 
 const title = {
-  color: "#ffffff",
+  color: "#3C4858",
   margin: "1.75rem 0 0.875rem",
   textDecoration: "none",
   fontWeight: "700",
@@ -184,7 +184,7 @@ export {
   drawerWidth,
   transition,
   container,
-  conatinerFluid,
+  containerFluid,
   boxShadow,
   card,
   defaultFont,
