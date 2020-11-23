@@ -76,7 +76,7 @@ class QueuingPublisherComponent(Component, ABC):
                     properties=pika.BasicProperties(delivery_mode=2),
                     mandatory=True)
                 self._logger.debug(
-                    f"Sent {data['data']} to '{data['exchange']}' exchange"
+                    "Sent %s to '%s' exchange", data['data'], data['exchange']
                 )
                 self._publishing_queue.get()
                 self._publishing_queue.task_done()

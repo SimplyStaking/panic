@@ -199,7 +199,7 @@ class AlertRouter(QueuingPublisherComponent):
                                send_alert, channel_id)
 
             self._push_to_queue(send_alert, CHANNEL_EXCHANGE,
-                                f"channel.{channel_id}")
+                                "channel.{}".format(channel_id))
             self._logger.info("Routed Alert queued")
 
         # Enqueue once to the console

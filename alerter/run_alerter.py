@@ -27,15 +27,16 @@ REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
 
 
 def _get_initialisation_error_message(name: str, exception: Exception) -> str:
-    return f"'!!! Error when initialising {name}: {exception} !!!"
+    return "'!!! Error when initialising {}: {} !!!".format(name, exception)
 
 
 def _get_reattempting_message(reattempting_what: str) -> str:
-    return f"Re-attempting initialization procedure of {reattempting_what}"
+    return "Re-attempting initialization procedure of {}".format(
+        reattempting_what)
 
 
 def _get_stopped_message(what_stopped: Any) -> str:
-    return f"{what_stopped} stopped."
+    return "{} stopped.".format(what_stopped)
 
 
 def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
@@ -343,7 +344,7 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 # If termination signals are received, terminate all child process and exit
 def on_terminate(signum: int, stack: FrameType) -> None:
     def terminate_and_join_process(process: multiprocessing.Process, name: str):
-        log_and_print(f"Terminating the {name}", dummy_logger)
+        log_and_print("Terminating the {}".format(name), dummy_logger)
         process.terminate()
         process.join()
 
