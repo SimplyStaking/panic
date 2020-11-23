@@ -28,6 +28,11 @@ _key_system_went_down_at = 's15'
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'
 
+# cX_<component_name>
+_key_component_heartbeat_timestamp = 'c1'
+
+# TODO: Have key _key_component_processes_status
+
 
 class Keys:
 
@@ -114,3 +119,8 @@ class Keys:
     @staticmethod
     def get_github_last_monitored(repo_id: str) -> str:
         return Keys._as_prefix(_key_github_last_monitored) + repo_id
+
+    @staticmethod
+    def get_component_heartbeat_timestamp(component_name: str) -> str:
+        return Keys._as_prefix(_key_component_heartbeat_timestamp) \
+               + component_name

@@ -8,12 +8,12 @@ import pika
 import pika.exceptions
 
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import HEARTBEAT_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class HeartbeatPublisher:
+class PingPublisher:
     def __init__(self, interval: int, logger: logging.Logger):
         self._interval = interval
         self._logger = logger
@@ -42,26 +42,26 @@ class HeartbeatPublisher:
         self.rabbitmq.connect_till_successful()
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEARTBEAT_EXCHANGE))
-        self.rabbitmq.exchange_declare(HEARTBEAT_EXCHANGE, 'direct', False,
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _send_heartbeat(self) -> None:
+    def ping(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEARTBEAT_EXCHANGE, routing_key='heartbeat', body='ping',
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='ping', body='ping',
             is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug("Sent data to '{}' exchange".format(
-            HEARTBEAT_EXCHANGE))
+            HEALTH_CHECK_EXCHANGE))
 
     def start(self) -> None:
         self._initialize_rabbitmq()
         while True:
             try:
-                self._send_heartbeat()
+                self.ping()
             except MessageWasNotDeliveredException as e:
-                # Log the fact that the heartbeat could not be sent and sleep
+                # Log the fact that we could not ping the alerter and sleep
                 # until the next round of publishing.
                 self.logger.exception(e)
             except (pika.exceptions.AMQPConnectionError,
