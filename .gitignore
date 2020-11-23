@@ -24,6 +24,8 @@ yarn-error.log*
 
 # configs
 config/**
+!config/**/
+
 
 # dependencies
 node_modules/
@@ -44,4 +46,4 @@ build
 .env.production.local
 
 # Gitkeep
-!/**/.gitkeep
+!**/.gitkeep
