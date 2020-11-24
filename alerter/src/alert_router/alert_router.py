@@ -152,9 +152,9 @@ class AlertRouter(QueuingPublisherComponent):
                        body: bytes) -> None:
         recv_alert: Dict = json.loads(body)
 
-        # Adding this as we are getting a few empty dicts on first run
-        # We can't process empty dicts
-        if not recv_alert:
+        # If the alert is empty, just acknowledge and return
+        if recv_alert:
+            self._rabbit.basic_ack(method.delivery_tag, False)
             return
 
         self._logger.debug("recv_alert = %s", recv_alert)
