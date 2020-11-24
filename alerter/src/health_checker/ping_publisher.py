@@ -1,12 +1,15 @@
+import json
 import logging
 import os
 import signal
 import sys
 from types import FrameType
+from datetime import datetime
 
 import pika
 import pika.exceptions
 
+from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -14,9 +17,12 @@ from src.utils.logging import log_and_print
 
 
 class PingPublisher:
-    def __init__(self, interval: int, logger: logging.Logger):
+    def __init__(self, interval: int, logger: logging.Logger, redis: RedisApi) \
+            -> None:
+        self._name = 'Ping Publisher'
         self._interval = interval
         self._logger = logger
+        self._redis = redis
 
         rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
@@ -25,6 +31,17 @@ class PingPublisher:
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
         signal.signal(signal.SIGHUP, self.on_terminate)
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def redis(self) -> RedisApi:
+        return self._redis
 
     @property
     def interval(self) -> int:
@@ -74,6 +91,13 @@ class PingPublisher:
                 self.logger.exception(e)
                 raise e
 
+            self.logger.debug('Saving {} heartbeat to Redis'.format(self))
+            key_heartbeat = Keys.get_component_heartbeat(self.name)
+            ping_pub_heartbeat = {'component_name': self.name,
+                                  'timestamp': datetime.now().timestamp()}
+            transformed_ping_pub_heartbeat = json.dumps(ping_pub_heartbeat)
+            self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
+
             self.logger.debug("Sleeping for %s seconds.", self.interval)
 
             # Use the BlockingConnection sleep to avoid dropped connections
@@ -86,5 +110,3 @@ class PingPublisher:
         self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
-
-# TODO: Add heartbeat timestamp of handler process here

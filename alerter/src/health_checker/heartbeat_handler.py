@@ -149,6 +149,7 @@ class HeartbeatHandler:
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
+        self.logger.debug('Saving {} heartbeat to Redis'.format(self))
         key_heartbeat = Keys.get_component_heartbeat(self.name)
         handler_heartbeat = {'component_name': self.name,
                              'timestamp': datetime.now().timestamp()}
