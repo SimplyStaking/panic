@@ -96,7 +96,7 @@ class ConfigManager:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. As a result we don't need to
                 # anything here, just re-try.
-                continue
+                time.sleep(10)
 
     def __del__(self):
         self.stop_watching_config_files()

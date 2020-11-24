@@ -12,8 +12,12 @@ initializing the class
 """
 
 # Alerter configuration
-ALERTER_IP = os.environ['ALERTER_IP']
 UNIQUE_ALERTER_IDENTIFIER = os.environ['UNIQUE_ALERTER_IDENTIFIER']
+
+# Mongo configuration
+DB_NAME = os.environ['DB_NAME']
+DB_IP = os.environ['DB_IP']
+DB_PORT = int(os.environ['DB_PORT'])
 
 # Redis configuration
 REDIS_IP = os.environ['REDIS_IP']

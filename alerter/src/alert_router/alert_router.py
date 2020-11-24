@@ -41,52 +41,37 @@ class AlertRouter(QueuingPublisherComponent):
         Initialises the rabbit connection and the exchanges needed
         :return: None
         """
-        while True:
-            try:
-                self._rabbit.connect_till_successful()
-                self._logger.info(
-                    "Setting delivery confirmation on RabbitMQ channel")
-                self._rabbit.confirm_delivery()
+        self._rabbit.connect_till_successful()
+        self._logger.info(
+            "Setting delivery confirmation on RabbitMQ channel")
+        self._rabbit.confirm_delivery()
 
-                self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
-                    "channels.*")
-                self._rabbit.basic_consume(
-                    queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                    on_message_callback=self._process_configs, auto_ack=False,
-                    exclusive=False, consumer_tag=None)
+        self._declare_exchange_and_bind_queue(
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
+            "channels.*")
+        self._rabbit.basic_consume(
+            queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+            on_message_callback=self._process_configs, auto_ack=False,
+            exclusive=False, consumer_tag=None)
 
-                self._declare_exchange_and_bind_queue(
-                    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
-                    "alerter.*")
-                self._rabbit.basic_consume(
-                    queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
-                    on_message_callback=self._process_alert, auto_ack=False,
-                    exclusive=False, consumer_tag=None
-                )
+        self._declare_exchange_and_bind_queue(
+            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
+            "alert_router.*")
+        self._rabbit.basic_consume(
+            queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
+            on_message_callback=self._process_alert, auto_ack=False,
+            exclusive=False, consumer_tag=None
+        )
 
-                # Declare store exchange just in case it hasn't been declared
-                # yet
-                self._rabbit.exchange_declare(exchange=STORE_EXCHANGE,
-                                              exchange_type='direct',
-                                              passive=False,
-                                              durable=True, auto_delete=False,
-                                              internal=False)
+        # Declare store exchange just in case it hasn't been declared
+        # yet
+        self._rabbit.exchange_declare(exchange=STORE_EXCHANGE,
+                                      exchange_type='direct',
+                                      passive=False,
+                                      durable=True, auto_delete=False,
+                                      internal=False)
 
-                self._rabbit.confirm_delivery()
-                break
-            except (ConnectionNotInitializedException,
-                    AMQPConnectionError) as connection_error:
-                # Should be impossible, but since exchange_declare can throw
-                # it we shall ensure to log that the error passed through here
-                # too.
-                self._logger.error(
-                    "Something went wrong that meant a connection was not made")
-                self._logger.error(connection_error.message)
-                raise connection_error
-            except AMQPChannelError:
-                # We need to re-initialize the connection
-                continue
+        self._rabbit.confirm_delivery()
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
                                          exchange_name: str, exchange_type: str,
@@ -166,6 +151,12 @@ class AlertRouter(QueuingPublisherComponent):
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
         recv_alert: Dict = json.loads(body)
+
+        # Adding this as we are getting a few empty dicts on first run
+        # We can't process empty dicts
+        if not recv_alert:
+            return
+
         self._logger.debug("recv_alert = %s", recv_alert)
 
         # Where to route this alert to

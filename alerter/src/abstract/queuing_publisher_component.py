@@ -1,5 +1,6 @@
 import copy
 import logging
+import time
 from abc import ABC
 from queue import Queue
 from typing import Dict
@@ -7,6 +8,7 @@ from typing import Dict
 from pika import BasicProperties
 from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.exceptions import ConnectionNotInitializedException
 
 
 class QueuingPublisherComponent(Component, ABC):
@@ -29,8 +31,14 @@ class QueuingPublisherComponent(Component, ABC):
         self._rabbitmq = rabbitmq
 
         prefetch_count = round(self._publishing_queue.maxsize / 5)
-        self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
-
+        self._rabbitmq.connect_till_successful()
+        try:
+            self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        except ConnectionNotInitializedException as cnie:
+            self._logger.error("A connection was not initialised. Retrying in "
+                               "10 seconds")
+            self._logger.exception(cnie)
+            time.sleep(10)
         super().__init__()
 
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
