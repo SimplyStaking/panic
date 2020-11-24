@@ -17,9 +17,9 @@ from src.utils.logging import log_and_print
 
 
 class PingPublisher:
-    def __init__(self, interval: int, logger: logging.Logger, redis: RedisApi) \
-            -> None:
-        self._name = 'Ping Publisher'
+    def __init__(self, interval: int, logger: logging.Logger, redis: RedisApi,
+                 name: str) -> None:
+        self._name = name
         self._interval = interval
         self._logger = logger
         self._redis = redis

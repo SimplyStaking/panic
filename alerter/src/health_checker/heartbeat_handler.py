@@ -19,8 +19,9 @@ from src.utils.types import RedisType
 
 
 class HeartbeatHandler:
-    def __init__(self, logger: logging.Logger, redis: RedisApi) -> None:
-        self._name = 'Heartbeat Handler'
+    def __init__(self, logger: logging.Logger, redis: RedisApi, name: str) \
+            -> None:
+        self._name = name
         self._logger = logger
         self._redis = redis
 

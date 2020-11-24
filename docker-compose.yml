@@ -100,6 +100,11 @@ services:
   health-checker:
     environment:
       - 'RABBIT_IP=${RABBIT_IP}'
+      - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_IP=${REDIS_IP}'
+      - 'REDIS_PORT=${REDIS_PORT}'
+      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
       - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
