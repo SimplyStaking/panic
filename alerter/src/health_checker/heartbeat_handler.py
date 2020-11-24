@@ -1,17 +1,9 @@
-# TODO: This component will receive two types of messages. One is a response
-#     : from the managers that all/some of the processes are working as
-#     : expected (we need to store this is redis as json). The other response
-#     : is a latest update of the monitors when it performed a good monitoring
-#     : round last. Whenever either one of these operations is done, the health
-#     : checker must save it's last update time to redis, so that the user
-#     : can detect if there is a problem with the health checker.
-
-import copy
 import json
-import os
 import logging
+import os
 import signal
-from typing import Dict, Union
+import sys
+from datetime import datetime
 from types import FrameType
 
 import pika.exceptions
@@ -19,19 +11,16 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
-from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
-from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
-    RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException, MessageWasNotDeliveredException
-from src.utils.types import convert_to_float_if_not_none, RedisType
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.exceptions import ReceivedUnexpectedDataException
+from src.utils.logging import log_and_print
+from src.utils.types import RedisType
 
 
 class HeartbeatHandler:
     def __init__(self, logger: logging.Logger, redis: RedisApi) -> None:
+        self._name = 'Heartbeat Handler'
         self._logger = logger
         self._redis = redis
 
@@ -47,6 +36,13 @@ class HeartbeatHandler:
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
         signal.signal(signal.SIGHUP, self.on_terminate)
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def logger(self) -> logging.Logger:
@@ -82,7 +78,11 @@ class HeartbeatHandler:
         self.rabbitmq.basic_consume('heartbeat_handler_queue',
                                     self._process_heartbeat, False, False, None)
 
-    def _save_to_redis(self, key: str, value: RedisType) -> None:
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.start_consuming()
+
+    def _save_to_redis_and_add_to_state_if_fail(
+            self, key: str, value: RedisType) -> None:
         self.logger.debug('Saving %s=%s to Redis', key, value)
         ret = self.redis.set(key, value)
 
@@ -128,20 +128,18 @@ class HeartbeatHandler:
             heartbeat))
 
         try:
-            if method.routing_key == 'heartbeat.worker':
+            if method.routing_key == 'heartbeat.worker' or \
+                    method.routing_key == 'heartbeat.manager':
                 component_name = heartbeat['component_name']
-                timestamp = heartbeat['timestamp']
 
-                key_heartbeat_timestamp = \
-                    Keys.get_component_heartbeat_timestamp(component_name)
-                self._save_to_redis(key_heartbeat_timestamp, timestamp)
+                key_heartbeat = Keys.get_component_heartbeat(component_name)
+                transformed_heartbeat = json.dumps(heartbeat)
+                self._save_to_redis_and_add_to_state_if_fail(
+                    key_heartbeat, transformed_heartbeat)
 
                 self._dump_unsavable_redis_data()
 
                 self.logger.info("Successfully processed {}".format(heartbeat))
-            elif method.routing_key == 'heartbeat.manager':
-                self.logger.info("Successfully processed {}".format(heartbeat))
-                # TODO: Manager heartbeat handler
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_heartbeat".format(self))
@@ -151,20 +149,16 @@ class HeartbeatHandler:
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        # TODO: Health checker heartbeat (May not even need it)
+        key_heartbeat = Keys.get_component_heartbeat(self.name)
+        handler_heartbeat = {'component_name': self.name,
+                             'timestamp': datetime.now().timestamp()}
+        transformed_handler_heartbeat = json.dumps(handler_heartbeat)
+        self.redis.set(key_heartbeat, transformed_handler_heartbeat)
 
     def start(self) -> None:
         self._initialize_rabbitmq()
         while True:
             try:
-                # Before listening for new data send the data waiting to be sent
-                # in the publishing queue. If the message is not routed, start
-                # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
-
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
@@ -183,7 +177,3 @@ class HeartbeatHandler:
         self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
-
-# TODO: Perform the functionality for receiving heartbeat.manager
-# TODO: Need to store health checker heartbeat at everything we do, to confirm
-#     : that the health checker is working

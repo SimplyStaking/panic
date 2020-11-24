@@ -86,3 +86,5 @@ class PingPublisher:
         self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+# TODO: Add heartbeat timestamp of handler process here
