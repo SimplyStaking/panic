@@ -111,7 +111,7 @@ class GithubAlerter(Alerter):
         # errors. This is done after acknowledging the data, so that if
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
-        if not processing_error:
+        if not processing_error and bool(self._data_for_alerting):
             self._place_latest_data_on_queue()
 
         # Send any data waiting in the publisher queue, if any
