@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import copy
 import signal
 import sys
 from datetime import datetime
@@ -108,7 +109,9 @@ class HeartbeatHandler:
 
         self.logger.debug('Attempting to save data that was not able to be '
                           'saved to redis.')
-        for key, value in self._unsavable_redis_data.items():
+
+        unsavable_redis_data_copy = copy.deepcopy(self._unsavable_redis_data)
+        for key, value in unsavable_redis_data_copy.items():
             ret = self.redis.set(key, value)
             if ret is not None:
                 self.logger.debug('Removing %s=%s from state', key, value)

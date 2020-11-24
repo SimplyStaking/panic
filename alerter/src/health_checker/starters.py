@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from typing import Union
 
 import pika.exceptions
 
@@ -8,7 +9,8 @@ from src.data_store.redis import RedisApi
 from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils.logging import create_logger, log_and_print
-from src.utils.types import HealthCheckerComponentType
+
+HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
 
 def _initialize_health_checker_logger(component_name: str) -> logging.Logger:

@@ -58,24 +58,24 @@ class HealthCheckerManager:
                 self.component_process_dict['Heartbeat Handler'] = \
                     heartbeat_handler_process
 
-                # Start the ping publisher in a separate process if it is not
-                # yet started or it is not alive.
-                if 'Ping Publisher' not in self.component_process_dict or \
-                        not self.component_process_dict[
-                            'Ping Publisher'].is_alive():
+            # Start the ping publisher in a separate process if it is not
+            # yet started or it is not alive.
+            if 'Ping Publisher' not in self.component_process_dict or \
+                    not self.component_process_dict[
+                        'Ping Publisher'].is_alive():
 
-                    # To avoid having unreleased resources
-                    if 'Ping Publisher' in self.component_process_dict:
-                        self.component_process_dict['Ping Publisher'].join()
+                # To avoid having unreleased resources
+                if 'Ping Publisher' in self.component_process_dict:
+                    self.component_process_dict['Ping Publisher'].join()
 
-                    log_and_print("Attempting to start the Ping Publisher.",
-                                  self.logger)
-                    ping_publisher_process = multiprocessing.Process(
-                        target=start_ping_publisher, args=())
-                    ping_publisher_process.daemon = True
-                    ping_publisher_process.start()
-                    self.component_process_dict['Ping Publisher'] = \
-                        ping_publisher_process
+                log_and_print("Attempting to start the Ping Publisher.",
+                              self.logger)
+                ping_publisher_process = multiprocessing.Process(
+                    target=start_ping_publisher, args=())
+                ping_publisher_process.daemon = True
+                ping_publisher_process.start()
+                self.component_process_dict['Ping Publisher'] = \
+                    ping_publisher_process
 
             self.logger.debug("Sleeping for %s seconds.", 10)
             time.sleep(10)

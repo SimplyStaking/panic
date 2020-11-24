@@ -69,7 +69,7 @@ class PingPublisher:
             is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug("Sent data to '{}' exchange".format(
+        self.logger.info("Sent data to '{}' exchange".format(
             HEALTH_CHECK_EXCHANGE))
 
     def start(self) -> None:
@@ -91,7 +91,7 @@ class PingPublisher:
                 self.logger.exception(e)
                 raise e
 
-            self.logger.debug('Saving {} heartbeat to Redis'.format(self))
+            self.logger.info('Saving {} heartbeat to Redis'.format(self))
             key_heartbeat = Keys.get_component_heartbeat(self.name)
             ping_pub_heartbeat = {'component_name': self.name,
                                   'timestamp': datetime.now().timestamp()}

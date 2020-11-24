@@ -9,8 +9,6 @@ from src.alerter.alerts.system_alerts import \
     SystemCPUUsageDecreasedBelowThresholdAlert, \
     SystemRAMUsageDecreasedBelowThresholdAlert, \
     SystemStorageUsageDecreasedBelowThresholdAlert
-from src.health_checker.heartbeat_handler import HeartbeatHandler
-from src.health_checker.ping_publisher import PingPublisher
 
 RedisType = Union[bytes, str, int, float]
 IncreasedAboveThresholdSystemAlert = Union[
@@ -25,7 +23,6 @@ DecreasedBelowThresholdSystemAlert = Union[
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 ]
-HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
 
 def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],

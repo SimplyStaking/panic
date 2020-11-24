@@ -65,6 +65,8 @@ def run_health_checker_manager() -> None:
 
     while True:
         try:
+            log_and_print("{} started.".format(health_checker_manager),
+                          health_checker_manager.logger)
             health_checker_manager.manage()
         except Exception as e:
             health_checker_manager.logger.exception(e)
