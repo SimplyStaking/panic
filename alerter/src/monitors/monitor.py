@@ -9,7 +9,7 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import RAW_DATA_EXCHANGE
+from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -74,6 +74,9 @@ class Monitor(ABC):
         self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     @abstractmethod
     def _get_data(self) -> None:
@@ -100,6 +103,14 @@ class Monitor(ABC):
     @abstractmethod
     def _monitor(self) -> None:
         pass
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
 
     def start(self) -> None:
         self._initialize_rabbitmq()

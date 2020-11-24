@@ -7,6 +7,7 @@ from typing import Dict
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
+
 from src.configs.repo import RepoConfig
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
@@ -28,7 +29,7 @@ class GitHubMonitorsManager(MonitorsManager):
         return self._repos_configs
 
     def _initialize_rabbitmq(self) -> None:
-        self.rabbitmq.connect_till_successful()
+        super()._initialize_rabbitmq()
         self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
@@ -48,7 +49,8 @@ class GitHubMonitorsManager(MonitorsManager):
             "'general.repos_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.repos_config')
-        self.logger.info("Declaring consuming intentions")
+        self.logger.info("Declaring consuming intentions on "
+                         "'github_monitors_manager_configs_queue'")
         self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -111,7 +113,11 @@ class GitHubMonitorsManager(MonitorsManager):
                 log_and_print("Creating a new process for the monitor of {}"
                               .format(repo_config.repo_name), self.logger)
                 process.start()
-                self._config_process_dict[config_id] = process
+                self._config_process_dict[config_id] = {}
+                self._config_process_dict[config_id]['component_name'] = \
+                    'GitHub monitor ({})'.format(
+                        repo_name.replace('/', ' ')[:-1])
+                self._config_process_dict[config_id]['process'] = process
                 correct_repos_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -131,7 +137,8 @@ class GitHubMonitorsManager(MonitorsManager):
                     .format(repo_name)
                 repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                          monitor_repo, releases_page)
-                previous_process = self.config_process_dict[config_id]
+                previous_process = self.config_process_dict[config_id][
+                    'process']
                 previous_process.terminate()
                 previous_process.join()
 
@@ -152,7 +159,11 @@ class GitHubMonitorsManager(MonitorsManager):
                 # Kill children if parent is killed
                 process.daemon = True
                 process.start()
-                self._config_process_dict[config_id] = process
+                self._config_process_dict[config_id] = {}
+                self._config_process_dict[config_id]['component_name'] = \
+                    'GitHub monitor ({})'.format(
+                        repo_name.replace('/', ' ')[:-1])
+                self._config_process_dict[config_id]['process'] = process
                 correct_repos_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs,
@@ -160,7 +171,8 @@ class GitHubMonitorsManager(MonitorsManager):
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 repo_name = config['repo_name']
-                previous_process = self.config_process_dict[config_id]
+                previous_process = self.config_process_dict[config_id][
+                    'process']
                 previous_process.terminate()
                 previous_process.join()
                 del self.config_process_dict[config_id]

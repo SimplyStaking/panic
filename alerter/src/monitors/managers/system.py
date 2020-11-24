@@ -28,7 +28,7 @@ class SystemMonitorsManager(MonitorsManager):
         return self._systems_configs
 
     def _initialize_rabbitmq(self) -> None:
-        self.rabbitmq.connect_till_successful()
+        super()._initialize_rabbitmq()
         self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
@@ -48,7 +48,8 @@ class SystemMonitorsManager(MonitorsManager):
             "'general.systems_config'".format(CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_configs_queue',
                                  CONFIG_EXCHANGE, 'general.systems_config')
-        self.logger.info("Declaring consuming intentions")
+        self.logger.info("Declaring consuming intentions on "
+                         "system_monitors_manager_configs_queue")
         self.rabbitmq.basic_consume('system_monitors_manager_configs_queue',
                                     self._process_configs, False, False, None)
 
@@ -106,7 +107,10 @@ class SystemMonitorsManager(MonitorsManager):
                 log_and_print("Creating a new process for the monitor of {}"
                               .format(system_config.system_name), self.logger)
                 process.start()
-                self._config_process_dict[config_id] = process
+                self._config_process_dict[config_id] = {}
+                self._config_process_dict[config_id]['component_name'] = \
+                    'System monitor ({})'.format(system_name)
+                self._config_process_dict[config_id]['process'] = process
                 correct_systems_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -121,7 +125,8 @@ class SystemMonitorsManager(MonitorsManager):
                 monitor_system = str_to_bool(config['monitor_system'])
                 system_config = SystemConfig(system_id, parent_id, system_name,
                                              monitor_system, node_exporter_url)
-                previous_process = self.config_process_dict[config_id]
+                previous_process = self.config_process_dict[config_id][
+                    'process']
                 previous_process.terminate()
                 previous_process.join()
 
@@ -142,14 +147,18 @@ class SystemMonitorsManager(MonitorsManager):
                 # Kill children if parent is killed
                 process.daemon = True
                 process.start()
-                self._config_process_dict[config_id] = process
+                self._config_process_dict[config_id] = {}
+                self._config_process_dict[config_id]['component_name'] = \
+                    'System monitor ({})'.format(system_name)
+                self._config_process_dict[config_id]['process'] = process
                 correct_systems_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 system_name = config['name']
-                previous_process = self.config_process_dict[config_id]
+                previous_process = self.config_process_dict[config_id][
+                    'process']
                 previous_process.terminate()
                 previous_process.join()
                 del self.config_process_dict[config_id]

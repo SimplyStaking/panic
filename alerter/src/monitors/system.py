@@ -332,6 +332,13 @@ class SystemMonitor(Monitor):
 
         self._send_data()
 
-        # Only output the gathered data if there was no error
         if not self.data_retrieval_failed:
+            # Only output the gathered data if there was no error
             self.logger.info(self.status())
+
+            # Send a heartbeat only if the entire round was successful
+            heartbeat = {
+                'component_name': self.monitor_name,
+                'timestamp': datetime.now().timestamp()
+            }
+            self._send_heartbeat(heartbeat)
