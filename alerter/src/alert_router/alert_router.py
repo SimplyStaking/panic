@@ -2,19 +2,17 @@ import json
 import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from logging import Logger
-from threading import RLock
 from types import FrameType
 from typing import Dict
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import AMQPConnectionError, AMQPChannelError
+from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE
-from src.utils.exceptions import ConnectionNotInitializedException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = "alert_router_configs_queue"
@@ -27,9 +25,6 @@ class AlertRouter(QueuingPublisherComponent):
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
         self._enable_console_alerts = enable_console_alerts
 
-        # We need to ensure that the config is not read when it is written to.
-        # The GIL helps that, but making it explicit is also nice
-        self._config_lock = RLock()
         self._config = {}
 
         self._logger = logger
@@ -109,38 +104,37 @@ class AlertRouter(QueuingPublisherComponent):
                           config_filename)
         self._logger.debug("recv_config = %s", recv_config)
 
-        with self._config_lock:
-            self._logger.debug("Got a lock on the config")
-            previous_config = self._config.get(config_filename, None)
-            self._config[config_filename] = {}
+        self._logger.debug("Got a lock on the config")
+        previous_config = self._config.get(config_filename, None)
+        self._config[config_filename] = {}
 
-            # Only take from the config if it is not empty
-            if recv_config:
-                # Taking what we need, and checking types
-                try:
-                    for key in recv_config.sections():
-                        self._config[config_filename][key] = {
-                            'id': recv_config.get(key, 'id'),
-                            'info': recv_config.getboolean(key, 'info'),
-                            'warning': recv_config.getboolean(key, 'warning'),
-                            'critical': recv_config.getboolean(key, 'critical'),
-                            'error': recv_config.getboolean(key, 'error')
-                        }
-                except (NoOptionError, NoSectionError) as missing_error:
-                    self._logger.error(
-                        "The configuration file %s is missing some configs",
-                        config_filename)
-                    self._logger.error(missing_error.message)
-                    self._logger.warning(
-                        "The previous configuration will be used instead")
-                    self._config[config_filename] = previous_config
-                except Exception as e:
-                    self._logger.error("Encountered an error when reading the "
-                                       "configuration files")
-                    self._logger.exception(e)
-                    self._logger.warning(
-                        "The previous configuration will be used instead")
-                    self._config[config_filename] = previous_config
+        # Only take from the config if it is not empty
+        if recv_config:
+            # Taking what we need, and checking types
+            try:
+                for key in recv_config.sections():
+                    self._config[config_filename][key] = {
+                        'id': recv_config.get(key, 'id'),
+                        'info': recv_config.getboolean(key, 'info'),
+                        'warning': recv_config.getboolean(key, 'warning'),
+                        'critical': recv_config.getboolean(key, 'critical'),
+                        'error': recv_config.getboolean(key, 'error')
+                    }
+            except (NoOptionError, NoSectionError) as missing_error:
+                self._logger.error(
+                    "The configuration file %s is missing some configs",
+                    config_filename)
+                self._logger.error(missing_error.message)
+                self._logger.warning(
+                    "The previous configuration will be used instead")
+                self._config[config_filename] = previous_config
+            except Exception as e:
+                self._logger.error("Encountered an error when reading the "
+                                   "configuration files")
+                self._logger.exception(e)
+                self._logger.warning(
+                    "The previous configuration will be used instead")
+                self._config[config_filename] = previous_config
             self._logger.debug(self._config)
         self._logger.debug("Removed the lock from the config dict")
 
@@ -158,19 +152,18 @@ class AlertRouter(QueuingPublisherComponent):
             return
 
         self._logger.debug("recv_alert = %s", recv_alert)
-
         # Where to route this alert to
-        with self._config_lock:
-            self._logger.debug("Got a lock on the config")
-            self._logger.debug("Obtaining list of channels to alert")
-            self._logger.debug(
-                [channel.get('id') for channel_type in self._config.values()
-                 for channel in channel_type.values()])
-            send_to_ids = [
-                channel.get('id') for channel_type in self._config.values()
-                for channel in channel_type.values()
-                if channel.get(recv_alert.get('severity').lower())
-            ]
+        self._logger.debug("Got a lock on the config")
+        self._logger.debug("Obtaining list of channels to alert")
+        self._logger.debug(
+            [channel.get('id') for channel_type in self._config.values()
+             for channel in channel_type.values()])
+        send_to_ids = [
+            channel.get('id') for channel_type in self._config.values()
+            for channel in channel_type.values()
+            if channel.get(recv_alert.get('severity').lower())
+        ]
+
         self._logger.debug("Removed the lock from the config dict")
         self._logger.debug("send_to_ids = %s", send_to_ids)
 
