@@ -1,9 +1,12 @@
 import logging
 from abc import ABC
 
+from src.abstract import Component
 
-class ChannelHandler(ABC):
+
+class ChannelHandler(Component, ABC):
     def __init__(self, handler_name: str, logger: logging.Logger) -> None:
+        super().__init__()
         self._handler_name = handler_name
         self._logger = logger
 

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import signal
 import sys
 from datetime import datetime
 from enum import Enum
@@ -13,7 +12,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
-from src.channels_manager.handlers.handler import ChannelHandler
+from src.channels_manager.handlers import ChannelHandler
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE
 from src.utils.data import RequestStatus
@@ -37,11 +36,6 @@ class TelegramAlertsHandler(ChannelHandler):
         rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
-        # Handle termination signals by stopping the handler gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
-
     @property
     def telegram_channel(self) -> TelegramChannel:
         return self._telegram_channel
@@ -54,7 +48,7 @@ class TelegramAlertsHandler(ChannelHandler):
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -191,7 +185,7 @@ class TelegramAlertsHandler(ChannelHandler):
                              "queue")
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new alerts, send the data waiting to be
