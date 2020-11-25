@@ -1,8 +1,7 @@
 import logging
 import os
-import signal
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from queue import Queue
 from types import FrameType
 from typing import Dict, Union
@@ -10,6 +9,7 @@ from typing import Dict, Union
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.component import Component
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
@@ -18,7 +18,7 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class DataTransformer(ABC):
+class DataTransformer(Component):
     def __init__(self, transformer_name: str, logger: logging.Logger,
                  redis: RedisApi) -> None:
         self._transformer_name = transformer_name
@@ -37,11 +37,7 @@ class DataTransformer(ABC):
 
         rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
-
-        # Handle termination signals by stopping the transformer gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        super().__init__()
 
     def __str__(self) -> str:
         return self.transformer_name
