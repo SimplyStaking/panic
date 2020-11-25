@@ -189,10 +189,8 @@ function SendTestAlertButton({ disabled, botChatID, botToken }) {
     }
   };
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Test
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -441,7 +439,7 @@ function LoginButton({
     }
   };
   return (
-    <Button simple color="primary" size="lg" disabled={disabled} onClick={onClick}>
+    <Button color="primary" size="lg" disabled={disabled} onClick={onClick}>
       Get started
     </Button>
   );

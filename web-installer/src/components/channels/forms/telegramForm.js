@@ -2,9 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Checkbox, FormControlLabel, Typography,
+  TextField, Box, Checkbox, FormControlLabel, Typography,
   Switch, Grid, Tooltip,
 } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
@@ -18,7 +19,10 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <form onSubmit={handleSubmit} className="root">
-          <Typography variant="subtitle1" gutterBottom className="greyBackground">
+          <Typography
+            variant="subtitle1"
+            gutterBottom
+            className="greyBackground">
             <Box m={2} p={3}>
               <p>{Data.telegram.description}</p>
             </Box>
@@ -27,7 +31,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Bot Name: </Typography>
+                <Typography> Bot Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -51,7 +55,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Bot Token: </Typography>
+                <Typography> Bot Token </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -75,7 +79,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Chat ID: </Typography>
+                <Typography> Chat ID </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -99,7 +103,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Severities: </Typography>
+                <Typography> Severities </Typography>
               </Grid>
               <Grid item xs={9}>
                 <FormControlLabel
@@ -161,7 +165,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Telegram Commands: </Typography>
+                <Typography> Telegram Commands </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -187,7 +191,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 />
               </Grid>
               <Grid item xs={2}>
-                <Typography> Telegram Alerts: </Typography>
+                <Typography> Telegram Alerts </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -213,7 +217,11 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 />
               </Grid>
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center">
                   <Box px={2}>
                     <SendTestAlertButton
                       disabled={(Object.keys(errors).length !== 0)}
@@ -221,14 +229,12 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       botToken={values.botToken}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>

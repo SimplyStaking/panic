@@ -23,7 +23,7 @@ export default function DescriptionSection() {
       <GridContainer justify="center">
         <GridItem xs={12} sm={12} md={8}>
           <h1 className={classes.title}>
-              Everything you need to know about Channels.
+              {Data.channels.subtitle_1}
           </h1>
         </GridItem>
       </GridContainer>
@@ -32,7 +32,15 @@ export default function DescriptionSection() {
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
               title={Data.channels.what_title}
-              description={Data.channels.what}
+              description={
+                <div>
+                  <ul>
+                    <li>{Data.channels.what_1}</li>
+                    <li>{Data.channels.what_2}</li>
+                    <li>{Data.channels.what_3}</li>
+                  </ul>
+                </div>
+              }
               icon={HelpIcon}
               iconColor="#00000"
               vertical
@@ -40,8 +48,18 @@ export default function DescriptionSection() {
           </GridItem>
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
-              title={Data.channels.why_title}
-              description={Data.channels.why}
+              title={Data.channels.supported_title}
+              description={
+                <div>
+                  <ul>
+                    <li>{Data.channels.channel_1}</li>
+                    <li>{Data.channels.channel_2}</li>
+                    <li>{Data.channels.channel_3}</li>
+                    <li>{Data.channels.channel_4}</li>
+                    <li>{Data.channels.channel_5}</li>
+                  </ul>
+                </div>
+              }
               icon={AddIcCallIcon}
               iconColor="#00000"
               vertical
@@ -50,7 +68,16 @@ export default function DescriptionSection() {
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
               title={Data.channels.how_title}
-              description={Data.channels.how}
+              description={
+                <div>
+                  <ul>
+                    <li>{Data.channels.how_1}</li>
+                    <li>{Data.channels.how_2}</li>
+                    <li>{Data.channels.how_3}</li>
+                    <li>{Data.channels.how_4}</li>
+                  </ul>
+                </div>
+              }
               icon={SettingsIcon}
               iconColor="#00000"
               vertical
@@ -60,12 +87,19 @@ export default function DescriptionSection() {
         <GridContainer>
           <GridItem xs={12} sm={12} md={12}>
             <h1 className={classes.title}>
-              Types of Alerts
+              {Data.alerts.title}
             </h1>
             <br></br>
           </GridItem>
         </GridContainer>
         <AlertSection />
+        <GridContainer>
+          <GridItem xs={12} sm={12} md={12}>
+            <h1 className={classes.title}>
+              {Data.channels.subtitle_2}
+            </h1>
+          </GridItem>
+        </GridContainer>
       </div>
     </div>
   );

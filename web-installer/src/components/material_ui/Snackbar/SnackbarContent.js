@@ -15,44 +15,27 @@ import styles from "assets/jss/material-kit-react/components/snackbarContentStyl
 const useStyles = makeStyles(styles);
 
 export default function SnackbarContent(props) {
-  const { message, color, close, icon } = props;
+  const { message, color, close, icon, icon_color } = props;
   const classes = useStyles();
-  var action = [];
-  const closeAlert = () => {
-    setAlert(null);
-  };
-  if (close !== undefined) {
-    action = [
-      <IconButton
-        className={classes.iconButton}
-        key="close"
-        aria-label="Close"
-        color="inherit"
-        onClick={closeAlert}
-      >
-        <Close className={classes.close} />
-      </IconButton>
-    ];
-  }
   let snackIcon = null;
   switch (typeof icon) {
     case "object":
-      snackIcon = <props.icon className={classes.icon} />;
+      snackIcon = <props.icon
+                    className={classes.icon} style={{color: icon_color}}/>;
       break;
     case "string":
-      snackIcon = <Icon className={classes.icon}>{props.icon}</Icon>;
+      snackIcon = <Icon className={classes.icon} style={{color: icon_color}} >{props.icon}</Icon>;
       break;
     default:
       snackIcon = null;
       break;
   }
-  const [alert, setAlert] = React.useState(
+  return (
     <Snack
       message={
         <div>
           {snackIcon}
           {message}
-          {close !== undefined ? action : null}
         </div>
       }
       classes={{
@@ -61,12 +44,12 @@ export default function SnackbarContent(props) {
       }}
     />
   );
-  return alert;
 }
 
 SnackbarContent.propTypes = {
   message: PropTypes.node.isRequired,
   color: PropTypes.oneOf(["default","info", "success", "warning", "danger", "primary"]),
   close: PropTypes.bool,
-  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
+  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
+  icon_color: PropTypes.string
 };

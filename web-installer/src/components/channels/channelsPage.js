@@ -61,42 +61,42 @@ function ChannelsPage() {
         <CardBody>
         <div className={classes.container}>
           <DescriptionSection />
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <div>
-                  <FormAccordion
-                    icon={TelegramIcon}
-                    name={TELEGRAM}
-                    form={(<TelegramFormContainer />)}
-                    table={(<TelegramTableContainer />)}
-                  />
-                  <FormAccordion
-                    icon={TwilioIcon}
-                    name={TWILIO}
-                    form={(<TwilioFormContainer />)}
-                    table={(<TwilioTableContainer />)}
-                  />
-                  <FormAccordion
-                    icon={EmailIcon}
-                    name={EMAIL}
-                    form={<EmailFormContainer />}
-                    table={(<EmailTableContainer />)}
-                  />
-                  <FormAccordion
-                    icon={PagerDuty}
-                    name={PAGERDUTY}
-                    form={<PagerDutyFormContainer />}
-                    table={<PagerDutyTableContainer />}
-                  />
-                  <FormAccordion
-                    icon={OpsGenie}
-                    name={OPSGENIE}
-                    form={<OpsGenieFormContainer />}
-                    table={<OpsGenieTableContainer />}
-                  />
-                </div>
-              </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <div>
+                <FormAccordion
+                  icon={TelegramIcon}
+                  name={TELEGRAM}
+                  form={(<TelegramFormContainer />)}
+                  table={(<TelegramTableContainer />)}
+                />
+                <FormAccordion
+                  icon={TwilioIcon}
+                  name={TWILIO}
+                  form={(<TwilioFormContainer />)}
+                  table={(<TwilioTableContainer />)}
+                />
+                <FormAccordion
+                  icon={EmailIcon}
+                  name={EMAIL}
+                  form={<EmailFormContainer />}
+                  table={(<EmailTableContainer />)}
+                />
+                <FormAccordion
+                  icon={PagerDuty}
+                  name={PAGERDUTY}
+                  form={<PagerDutyFormContainer />}
+                  table={<PagerDutyTableContainer />}
+                />
+                <FormAccordion
+                  icon={OpsGenie}
+                  name={OPSGENIE}
+                  form={<OpsGenieFormContainer />}
+                  table={<OpsGenieTableContainer />}
+                />
+              </div>
             </Grid>
+          </Grid>
           <NavigationButtonContainer
             text={NEXT}
             navigation={CHAINS_PAGE}

@@ -10,6 +10,8 @@ import Clearfix from "components/material_ui/Clearfix/Clearfix.js";
 import NewReleasesIcon from '@material-ui/icons/NewReleases';
 import styles from "assets/jss/material-kit-react/views/componentsSections/notificationsStyles.js";
 import ErrorIcon from '@material-ui/icons/Error';
+import Data from 'data/channels';
+
 const useStyles = makeStyles(styles);
 
 export default function AlertsSection() {
@@ -19,38 +21,42 @@ export default function AlertsSection() {
       <SnackbarContent
         message={
           <span>
-            <b>INFO ALERT: little to zero severity but consists of information which is still important to acknowledge. Info alerts also include positive events.</b>
+            <b>{Data.alerts.info}</b>
           </span>
         }
         color="default"
         icon="info_outline"
+        icon_color="#339900"
       />
       <SnackbarContent
         message={
           <span>
-            <b>WARNING ALERT: a less severe alert but which still requires attention as it may be a warning of an incoming critical alert.  </b>
+            <b>{Data.alerts.warning}</b>
           </span>
         }
         color="default"
         icon={Warning}
+        icon_color="#EED202"
       />
       <SnackbarContent
         message={
           <span>
-            <b>CRITICAL ALERT: the most severe alert and the type of alert that uses should use Twilio/PagerDuty/OpsGenie phone calling.</b> 
+            <b>{Data.alerts.critical}</b>
           </span>
         }
         color="default"
         icon={NewReleasesIcon}
+        icon_color="#cc3300"
       />
       <SnackbarContent
         message={
           <span>
-            <b>ERROR ALERT: This is a severe alert which indicates that something is wrong with PANIC.</b> 
+            <b>{Data.alerts.error}</b>
           </span>
         }
         color="default"
         icon={ErrorIcon}
+        icon_color="#000000"
       />
       <Clearfix />
     </div>

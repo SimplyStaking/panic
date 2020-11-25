@@ -6,9 +6,6 @@ import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { LoginButton } from '../../utils/buttons';
 import { CHANNELS_PAGE } from '../../constants/constants';
-import Icon from "@material-ui/core/Icon";
-// @material-ui/icons
-import People from "@material-ui/icons/People";
 // core components
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
@@ -18,6 +15,11 @@ import CardBody from "components/material_ui/Card/CardBody.js";
 import CardFooter from "components/material_ui/Card/CardFooter.js";
 import CustomInput from "components/material_ui/CustomInput/CustomInput.js";
 import styles from "assets/jss/material-kit-react/views/componentsSections/loginStyle.js";
+import { MuiThemeProvider } from '@material-ui/core/styles';
+import { Tooltip } from '@material-ui/core';
+import { defaultTheme, theme } from 'components/theme/default';
+import InfoIcon from '@material-ui/icons/Info';
+import Data from 'data/welcome';
 
 const useStyles = makeStyles(styles);
 
@@ -54,14 +56,18 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                     name="username"
                     placeHolder="Username"
                     id="username"
-                    type= "username"
+                    type="text"
                     formControlProps={{
                       fullWidth: true
                     }}
                     inputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <People className={classes.inputIconsColor} />
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={Data.username} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
                         </InputAdornment>
                       )
                     }}
@@ -74,16 +80,20 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                     name="password"
                     placeHolder="Password"
                     id="password"
-                    type= "password"
+                    type="password"
                     formControlProps={{
                       fullWidth: true
                     }}
                     inputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <Icon className={classes.inputIconsColor}>
-                            lock_outline
-                          </Icon>
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip
+                              title={Data.password}
+                              placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
                         </InputAdornment>
                       ),
                       autoComplete: "off"

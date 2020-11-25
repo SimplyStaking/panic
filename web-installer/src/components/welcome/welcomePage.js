@@ -10,7 +10,7 @@ import LoginContainer from '../../containers/welcome/loginContainer';
 import NavigationButtonContainer from
   '../../containers/global/navigationButtonContainer';
 import { CHANNELS_PAGE, START } from '../../constants/constants';
-import Data from '../../data/welcome';
+import Data from 'data/welcome';
 import styles from "assets/jss/material-kit-react/views/components.js";
 import Footer from 'components/material_ui/Footer/Footer.js';
 
@@ -20,26 +20,29 @@ function WelcomePage() {
   const classes = useStyles();
   return (
       <div className={classes.backgroundImage}>
-      <div className={classes.container}>
-        <GridContainer>
-          <GridItem>
-            <div className={classes.brand}>
-              <h1 className={classes.title}>
-                PANIC Monitoring and Alerting for Blockchains
-              </h1>
-            </div>
-          </GridItem>
-        </GridContainer>
-      </div>
-      <br></br>
-      <br></br>
-      <div>
-        <LoginContainer />        
-      </div>
-      <NavigationButtonContainer
-        text={START}
-        navigation={CHANNELS_PAGE}
-      />
+        <div className={classes.container}>
+          <div className={classes.brand}>
+            <GridContainer>
+              <GridItem>
+                  <h1 className={classes.title}>
+                    {Data.title}
+                  </h1>
+                  <h2 className={classes.subtitle}>
+                    {Data.description}
+                  </h2>
+              </GridItem>
+            </GridContainer>
+          </div>
+        </div>
+        <br></br>
+        <br></br>
+        <div>
+          <LoginContainer />        
+        </div>
+        <NavigationButtonContainer
+          text={START}
+          navigation={CHANNELS_PAGE}
+        />
     </div>
   );
 }
