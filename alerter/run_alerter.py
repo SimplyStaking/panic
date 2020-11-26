@@ -265,9 +265,6 @@ def run_github_alerters_manager() -> None:
             # Since we have to re-connect just break the loop.
             log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
-            # Close the connection with RabbitMQ if we have an unexpected
-            # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(manager), manager.logger)
 
 
@@ -308,8 +305,16 @@ def run_data_transformers_manager() -> None:
     while True:
         try:
             data_transformers_manager.manage()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(data_transformers_manager),
+                          data_transformers_manager.logger)
         except Exception as e:
-            data_transformers_manager.logger.exception(e)
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            data_transformers_manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
 
