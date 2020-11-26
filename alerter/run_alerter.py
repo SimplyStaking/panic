@@ -1,9 +1,10 @@
 import logging
 import multiprocessing
-import os
 import signal
 import sys
 import time
+
+from typing import Tuple, Any
 from types import FrameType
 
 import pika.exceptions
@@ -11,36 +12,51 @@ import pika.exceptions
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
+from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
+from src.utils import env
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
+REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
 
-def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
+
+def _get_initialisation_error_message(name: str, exception: Exception) -> str:
+    return "'!!! Error when initialising {}: {} !!!".format(name, exception)
+
+
+def _get_reattempting_message(reattempting_what: str) -> str:
+    return "Re-attempting initialization procedure of {}".format(
+        reattempting_what)
+
+
+def _get_stopped_message(what_stopped: Any) -> str:
+    return "{} stopped.".format(what_stopped)
+
+
+def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             new_logger = create_logger(
-                os.environ[os_env_name].format(log_name), log_name,
-                os.environ["LOGGING_LEVEL"], rotating=True
-            )
+                log_file_template.format(log_name), log_name, env.LOGGING_LEVEL,
+                rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initializing {}: {} !!!' \
-                .format(log_name, e)
             # Use a dummy logger in this case because we cannot create the
             # managers's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
-            log_and_print(msg, dummy_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
-                          .format(log_name), dummy_logger)
+            log_and_print(_get_initialisation_error_message(log_name, e),
+                          dummy_logger)
+            log_and_print(_get_reattempting_message(log_name),
+                          dummy_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return new_logger
@@ -61,13 +77,11 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
                 system_alerters_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = "!!! Error when initializing {}: {} !!!" \
-                .format(manager_name, e)
-            log_and_print(msg, system_alerters_manager_logger)
-            log_and_print("Re-attempting the initialization procedure",
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          system_alerters_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           system_alerters_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
-
     return system_alerters_manager
 
 
@@ -86,10 +100,9 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
                 github_alerter_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
-            log_and_print(msg, github_alerter_manager_logger)
-            log_and_print('Re-attempting the initialization procedure',
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          github_alerter_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           github_alerter_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -100,8 +113,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     manager_name = 'System Monitors Manager'
 
     system_monitors_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system monitors manager
@@ -111,11 +123,9 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
                 system_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_name, e)
-            log_and_print(msg, system_monitors_manager_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
-                          .format(manager_name),
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          system_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           system_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -126,8 +136,7 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
     manager_name = 'GitHub Monitors Manager'
 
     github_monitors_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the github monitors manager
@@ -137,11 +146,9 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
                 github_monitors_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_name, e)
-            log_and_print(msg, github_monitors_manager_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
-                          .format(manager_name),
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          github_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           github_monitors_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -152,8 +159,7 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
     manager_name = 'Data Transformers Manager'
 
     data_transformers_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data transformers manager
@@ -163,24 +169,34 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
                 data_transformers_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_name, e)
-            log_and_print(msg, data_transformers_manager_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
-                          .format(manager_name),
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          data_transformers_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
                           data_transformers_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return data_transformers_manager
 
 
-def _initialize_config_manager() -> ConfigManager:
-    config_manager_logger = _initialize_logger(
-        ConfigManager.__name__,
-        "CONFIG_MANAGER_LOG_FILE"
+def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
+    alert_router_logger = create_logger(
+        env.ALERT_ROUTER_LOG_FILE, AlertRouter.__name__, env.LOGGING_LEVEL,
+        rotating=True
     )
 
-    rabbit_ip = os.environ['RABBIT_IP']
+    rabbit_ip = env.RABBIT_IP
+
+    alert_router = AlertRouter(alert_router_logger, rabbit_ip,
+                               env.ENABLE_CONSOLE_ALERTS)
+    return alert_router, alert_router_logger
+
+
+def _initialize_config_manager() -> ConfigManager:
+    config_manager_logger = _initialize_logger(
+        ConfigManager.__name__, env.CONFIG_MANAGER_LOG_FILE
+    )
+
+    rabbit_ip = env.RABBIT_IP
     while True:
         try:
             cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
@@ -247,10 +263,12 @@ def run_github_alerters_manager() -> None:
         except pika.exceptions.AMQPConnectionError:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
-            # Start again on unexpected exception
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            manager.rabbitmq.disconnect_till_successful()
+            log_and_print(_get_stopped_message(manager), manager.logger)
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
@@ -261,12 +279,12 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print("{} stopped.".format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
-            log_and_print("{} stopped.".format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
 
 
 def run_alerters_manager(manager: AlertersManager) -> None:
@@ -292,8 +310,26 @@ def run_data_transformers_manager() -> None:
             data_transformers_manager.manage()
         except Exception as e:
             data_transformers_manager.logger.exception(e)
-            log_and_print("{} stopped.".format(data_transformers_manager),
+            log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
+
+
+def run_alert_router() -> None:
+    alert_router, alert_router_logger = _initialize_alert_router()
+
+    while True:
+        try:
+            alert_router.start()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(alert_router),
+                          alert_router_logger)
+        except Exception:
+            alert_router.disconnect()
+            log_and_print(_get_stopped_message(alert_router),
+                          alert_router_logger)
 
 
 def run_config_manager(command_queue: multiprocessing.Queue) -> None:
@@ -307,34 +343,34 @@ def run_config_manager(command_queue: multiprocessing.Queue) -> None:
 
 # If termination signals are received, terminate all child process and exit
 def on_terminate(signum: int, stack: FrameType) -> None:
+    def terminate_and_join_process(process: multiprocessing.Process, name: str):
+        log_and_print("Terminating the {}".format(name), dummy_logger)
+        process.terminate()
+        process.join()
+
     dummy_logger = logging.getLogger('Dummy')
 
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
-    log_and_print("Terminating the System Monitors Manager", dummy_logger)
-    system_monitors_manager_process.terminate()
-    system_monitors_manager_process.join()
+    terminate_and_join_process(system_monitors_manager_process,
+                               "System Monitors Manager")
 
-    log_and_print("Terminating the GitHub Monitors Manager", dummy_logger)
-    github_monitors_manager_process.terminate()
-    github_monitors_manager_process.join()
+    terminate_and_join_process(github_monitors_manager_process,
+                               "GitHub Monitors Manager")
 
-    log_and_print("Terminating the Data Transformers Manager", dummy_logger)
-    data_transformers_manager_process.terminate()
-    data_transformers_manager_process.join()
+    terminate_and_join_process(data_transformers_manager_process,
+                               "Data Transformers Manager")
 
-    log_and_print("Terminating the System Alerters Manager", dummy_logger)
-    system_alerters_manager_process.terminate()
-    system_alerters_manager_process.join()
+    terminate_and_join_process(system_alerters_manager_process,
+                               "System Alerters Manager")
 
-    log_and_print("Terminating the Github Alerter Manager", dummy_logger)
-    github_alerter_manager_process.terminate()
-    github_alerter_manager_process.join()
+    terminate_and_join_process(github_alerter_manager_process,
+                               "Github Alerter Manager")
 
-    log_and_print("Terminating the Data Store Process", dummy_logger)
-    data_store_process.terminate()
-    data_store_process.join()
+    terminate_and_join_process(data_store_process, "Data Store Process")
+
+    terminate_and_join_process(alert_router_process, "Alert Router")
 
     log_and_print("PANIC process terminated.", dummy_logger)
 
@@ -374,6 +410,11 @@ if __name__ == '__main__':
                                                  args=())
     data_store_process.start()
 
+    # Start the alert router in a separate process
+    alert_router_process = multiprocessing.Process(target=run_alert_router,
+                                                   args=())
+    alert_router_process.start()
+
     # Config manager must be the last to start since it immediately begins by
     # sending the configs. That being said, all previous processes need to wait
     # for the config manager too.
@@ -395,6 +436,7 @@ if __name__ == '__main__':
     github_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()
+    alert_router_process.join()
 
     # To stop the config watcher, we send something in the stop queue, this way
     # We can ensure the watchers and connections are stopped properly
@@ -404,10 +446,11 @@ if __name__ == '__main__':
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
-# TODO: Make sure that all queues and configs are declared before hand in the
-#     : run alerter before start sending configs, as otherwise configs manager
-#     : would not be able to send configs on start-up. Therefore start the
-#     : config manager last. Similarly, components must be started from left
-#     : to right according to the design (to avoid message not delivered
-#     : exceptions). Also, to fully solve these problems, we should perform
-#     : checks in the run alerter to see if a queue/exchange has been created
+    # TODO: Make sure that all queues and configs are declared before hand in
+    #     : the run alerter before start sending configs, as otherwise configs
+    #     : manager would not be able to send configs on start-up. Therefore
+    #     : start the config manager last. Similarly, components must be started
+    #     : from left to right according to the design (to avoid message not
+    #     : delivered exceptions). Also, to fully solve these problems, we
+    #     : should perform checks in the run alerter to see if a queue/exchange
+    #     : has been created
