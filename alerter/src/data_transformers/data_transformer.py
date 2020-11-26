@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from abc import abstractmethod
+from datetime import datetime
 from queue import Queue
 from types import FrameType
 from typing import Dict, Union
@@ -14,6 +15,7 @@ from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -120,6 +122,14 @@ class DataTransformer(Component):
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         pass
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
 
     def start(self) -> None:
         self._initialize_rabbitmq()

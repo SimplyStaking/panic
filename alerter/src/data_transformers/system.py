@@ -12,10 +12,11 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
-    RAW_DATA_EXCHANGE
+    RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException, MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none
+from datetime import datetime
 
 
 class SystemDataTransformer(DataTransformer):
@@ -61,6 +62,9 @@ class SystemDataTransformer(DataTransformer):
         self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def load_state(self, system: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
@@ -599,8 +603,18 @@ class SystemDataTransformer(DataTransformer):
             self._send_data()
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as message is residing in the
-            # publisher queue.
+            # publisher queue. We must return in this case so that no heartbeat
+            # is sent
             self.logger.exception(e)
+            return
         except Exception as e:
             # For any other exception raise it.
             raise e
+
+        # Send heartbeat if the entire round was successful
+        if not processing_error:
+            heartbeat = {
+                'component_name': self.transformer_name,
+                'timestamp': datetime.now().timestamp()
+            }
+            self._send_heartbeat(heartbeat)
