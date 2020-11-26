@@ -156,5 +156,3 @@ class GitHubMonitor(Monitor):
                 'timestamp': datetime.now().timestamp()
             }
             self._send_heartbeat(heartbeat)
-
-# TODO: Tomorrow start by testing heartbeat in monitors
