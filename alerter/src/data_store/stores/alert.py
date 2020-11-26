@@ -134,3 +134,8 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
+
+# TODO: Tomorrow start by 1. Testing that heartbeat of the store works
+#     :                   2. Testing that the Alert store works now (see logs)
+#     :                   3. Test that termination from run alerter works fully
+#     :                   4. Continue with alerter
