@@ -97,6 +97,10 @@ class PingPublisher:
                                   'timestamp': datetime.now().timestamp()}
             transformed_ping_pub_heartbeat = json.dumps(ping_pub_heartbeat)
             self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
+            ret = self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
+            if ret is None:
+                self.logger.error('Could not save %s=%s to Redis.',
+                                  key_heartbeat, transformed_ping_pub_heartbeat)
 
             self.logger.debug("Sleeping for %s seconds.", self.interval)
 

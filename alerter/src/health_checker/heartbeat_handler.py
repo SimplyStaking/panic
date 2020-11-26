@@ -114,7 +114,8 @@ class HeartbeatHandler:
         for key, value in unsavable_redis_data_copy.items():
             ret = self.redis.set(key, value)
             if ret is not None:
-                self.logger.debug('Removing %s=%s from state', key, value)
+                self.logger.debug('Successfully saved %s=%s. Removing from '
+                                  'state.', key, value)
                 del self._unsavable_redis_data[key]
 
         if len(self._unsavable_redis_data) == 0:
@@ -158,7 +159,10 @@ class HeartbeatHandler:
         handler_heartbeat = {'component_name': self.name,
                              'timestamp': datetime.now().timestamp()}
         transformed_handler_heartbeat = json.dumps(handler_heartbeat)
-        self.redis.set(key_heartbeat, transformed_handler_heartbeat)
+        ret = self.redis.set(key_heartbeat, transformed_handler_heartbeat)
+        if ret is None:
+            self.logger.error('Could not save %s=%s to Redis.', key_heartbeat,
+                              transformed_handler_heartbeat)
 
     def start(self) -> None:
         self._initialize_rabbitmq()
