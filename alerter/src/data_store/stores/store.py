@@ -11,6 +11,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
 
@@ -94,6 +95,14 @@ class Store(ABC):
     @abstractmethod
     def _start_listening(self):
         pass
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
 
     def begin_store(self) -> None:
         self._initialize_store()

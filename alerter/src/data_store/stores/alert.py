@@ -3,11 +3,13 @@ import logging
 from typing import Dict
 
 import pika.exceptions
+
 from src.data_store.mongo.mongo_api import MongoApi
-from src.data_store.redis.redis_api import RedisApi
-from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.constants import STORE_EXCHANGE
+from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.exceptions import ReceivedUnexpectedDataException, \
+    MessageWasNotDeliveredException
+from datetime import datetime
 
 
 class AlertStore(Store):
@@ -28,16 +30,23 @@ class AlertStore(Store):
                                        exchange_type='direct', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare('alerts_store_queue', passive=False,
+        self.rabbitmq.queue_declare('alert_store_queue', passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='alerts_store_queue',
+        self.rabbitmq.queue_bind(queue='alert_store_queue',
                                  exchange=STORE_EXCHANGE, routing_key='alert')
+
+        # Set producing configuration for heartbeat
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
                                host=self.mongo_ip, port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue='alerts_store_queue',
+        self.rabbitmq.basic_consume(queue='alert_store_queue',
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False, consumer_tag=None)
@@ -52,18 +61,40 @@ class AlertStore(Store):
         Processes the data being received, from the queue. There is only one
         type of data that is going to be received which is an alert. All
         alerts will be stored in mongo, there isn't a need to store them in
-        redis.
+        redis. If successful, a heartbeat will be sent.
         """
         alert_data = json.loads(body.decode())
+        processing_error = False
         try:
-            self._process_mongo_store(alert_data['result']['data'])
+            self._process_mongo_store(alert_data)
         except KeyError as e:
-            self.logger.error("Error when reading alert data, in data store.")
+            self.logger.error("Error when parsing {}.".format(alert_data))
             self.logger.exception(e)
+            processing_error = True
+        except ReceivedUnexpectedDataException as e:
+            self.logger.error("Error when processing {}".format(alert_data))
+            self.logger.exception(e)
+            processing_error = True
         except Exception as e:
             self.logger.exception(e)
-            raise e
+            processing_error = True
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Send a heartbeat only if there were no errors
+        if not processing_error:
+            try:
+                if not processing_error:
+                    heartbeat = {
+                        'component_name': self.store_name,
+                        'timestamp': datetime.now().timestamp()
+                    }
+                    self._send_heartbeat(heartbeat)
+            except MessageWasNotDeliveredException as e:
+                self.logger.exception(e)
+            except Exception as e:
+                # For any other exception raise it.
+                raise e
 
     def _process_mongo_store(self, alert: Dict) -> None:
         """
@@ -103,6 +134,3 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
-
-# TODO: Need to update like system and github store. This must be done during
-#     : the alert routing phase.

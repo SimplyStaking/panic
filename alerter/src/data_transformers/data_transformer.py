@@ -138,10 +138,18 @@ class DataTransformer(Component):
                 # Before listening for new data send the data waiting to be sent
                 # in the publishing queue. If the message is not routed, start
                 # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+
+                        # Send heartbeat if sending was successful
+                        heartbeat = {
+                            'component_name': self.transformer_name,
+                            'timestamp': datetime.now().timestamp()
+                        }
+                        self._send_heartbeat(heartbeat)
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
 
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
