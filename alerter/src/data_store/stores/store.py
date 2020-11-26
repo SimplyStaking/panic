@@ -1,12 +1,17 @@
 import logging
 import os
+import signal
+import sys
 from abc import ABC, abstractmethod
+from types import FrameType
 
 import pika
 import pika.exceptions
+
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.logging import log_and_print
 
 
 class Store(ABC):
@@ -27,6 +32,11 @@ class Store(ABC):
         self._redis = RedisApi(logger=self._logger, db=redis_db,
                                host=redis_ip, port=redis_port,
                                namespace=unique_alerter_identifier)
+
+        # Handle termination signals by stopping the manager gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.store_name
@@ -99,3 +109,11 @@ class Store(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()

@@ -3,16 +3,15 @@ import multiprocessing
 import signal
 import sys
 import time
-
-from typing import Tuple, Any
 from types import FrameType
+from typing import Tuple, Any
 
 import pika.exceptions
 
+from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
-from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
@@ -214,8 +213,7 @@ def _initialize_data_store_manager() -> StoreManager:
     manager_name = "Data Store Manager"
 
     data_store_manager_logger = _initialize_logger(
-        manager_name,
-        "DATA_STORE_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data store manager
@@ -235,9 +233,24 @@ def _initialize_data_store_manager() -> StoreManager:
     return data_store_manager
 
 
-def run_data_store() -> None:
-    store_manager = _initialize_data_store_manager()
-    store_manager.start_store_manager()
+def run_data_stores_manager() -> None:
+    stores_manager = _initialize_data_store_manager()
+
+    while True:
+        try:
+            stores_manager.manage()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(stores_manager),
+                          stores_manager.logger)
+        except Exception as e:
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            stores_manager.rabbitmq.disconnect_till_successful()
+            log_and_print(_get_stopped_message(stores_manager),
+                          stores_manager.logger)
 
 
 def run_system_monitors_manager() -> None:
@@ -411,7 +424,7 @@ if __name__ == '__main__':
     data_transformers_manager_process.start()
 
     # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_store,
+    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
                                                  args=())
     data_store_process.start()
 

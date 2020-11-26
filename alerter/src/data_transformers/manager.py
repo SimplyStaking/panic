@@ -179,7 +179,7 @@ class DataTransformersManager:
     # If termination signals are received, terminate all child process and exit
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and any running the data transformers will be "
+                      "closed, and any running data transformers will be "
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
         self.rabbitmq.disconnect_till_successful()

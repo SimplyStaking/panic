@@ -99,9 +99,10 @@ class MonitorsManager(ABC):
                       .format(self, self), self.logger)
         self.rabbitmq.disconnect_till_successful()
 
-        for config_id, process in self.config_process_dict.items():
+        for config_id, process_details in self.config_process_dict.items():
             log_and_print("Terminating the process of {}".format(config_id),
                           self.logger)
+            process = process_details['process']
             process.terminate()
             process.join()
 

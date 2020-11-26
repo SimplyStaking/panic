@@ -601,20 +601,17 @@ class SystemDataTransformer(DataTransformer):
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
+
+            if not processing_error:
+                heartbeat = {
+                    'component_name': self.transformer_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as message is residing in the
-            # publisher queue. We must return in this case so that no heartbeat
-            # is sent
+            # publisher queue.
             self.logger.exception(e)
-            return
         except Exception as e:
             # For any other exception raise it.
             raise e
-
-        # Send heartbeat if the entire round was successful
-        if not processing_error:
-            heartbeat = {
-                'component_name': self.transformer_name,
-                'timestamp': datetime.now().timestamp()
-            }
-            self._send_heartbeat(heartbeat)

@@ -338,18 +338,17 @@ class GitHubDataTransformer(DataTransformer):
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
+
+            if not processing_error:
+                heartbeat = {
+                    'component_name': self.transformer_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as message is residing in the
             # publisher queue.
             self.logger.exception(e)
-            return
         except Exception as e:
             # For any other exception raise it.
             raise e
-
-        if not processing_error:
-            heartbeat = {
-                'component_name': self.transformer_name,
-                'timestamp': datetime.now().timestamp()
-            }
-            self._send_heartbeat(heartbeat)
