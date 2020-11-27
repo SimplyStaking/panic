@@ -64,6 +64,9 @@ class AlertStore(Store):
         redis. If successful, a heartbeat will be sent.
         """
         alert_data = json.loads(body.decode())
+        self.logger.info("Received {}. Now processing this data.".format(
+            alert_data))
+
         processing_error = False
         try:
             self._process_mongo_store(alert_data)
@@ -122,8 +125,8 @@ class AlertStore(Store):
             }, {
                 '$push': {
                     'alerts': {
-                        'origin': alert['origin'],
-                        'alert_name': alert['alert_name'],
+                        'origin': alert['origin_id'],
+                        'alert_name': alert['alert_code']['name'],
                         'severity': alert['severity'],
                         'message': alert['message'],
                         'timestamp': alert['timestamp'],
@@ -134,8 +137,3 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
-
-# TODO: Tomorrow start by 1. Testing that heartbeat of the store works
-#     :                   2. Testing that the Alert store works now (see logs)
-#     :                   3. Test that termination from run alerter works fully
-#     :                   4. Continue with alerter

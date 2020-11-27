@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 from types import FrameType
+from typing import List
 
 import pika
 import pika.exceptions
@@ -63,13 +64,14 @@ class GithubAlerter(Alerter):
             data_received))
 
         processing_error = False
+        data_for_alerting = []
         try:
             if 'result' in data_received:
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
                 current = data['no_of_releases']['current']
-                previous = int(data['no_of_releases']['previous'] or 0)
-                if current > previous:
+                previous = data['no_of_releases']['previous']
+                if previous is not None and int(current) > int(previous):
                     for i in range(0, current - previous):
                         alert = NewGitHubReleaseAlert(
                             meta['repo_name'],
@@ -78,10 +80,9 @@ class GithubAlerter(Alerter):
                             meta['last_monitored'], meta['repo_parent_id'],
                             meta['repo_id']
                         )
-                        self._data_for_alerting = alert.alert_data
+                        data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        self._place_latest_data_on_queue()
             elif 'error' in data_received:
                 meta_data = data_received['error']['meta_data']
                 alert = CannotAccessGitHubPageAlert(
@@ -89,11 +90,10 @@ class GithubAlerter(Alerter):
                     meta_data['time'],
                     meta_data['repo_parent_id'], meta_data['repo_id']
                 )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}".format(
                     alert.alert_data)
                 )
-                self._place_latest_data_on_queue()
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))
@@ -109,7 +109,7 @@ class GithubAlerter(Alerter):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue()
+            self._place_latest_data_on_queue(data_for_alerting)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -124,20 +124,20 @@ class GithubAlerter(Alerter):
             # reside in the publisher queue
             raise e
 
-    def _place_latest_data_on_queue(self) -> None:
-        self.logger.debug("Adding alert data to the publishing queue ...")
-
+    def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
         # queue is full, remove old data.
-        if self.publishing_queue.full():
-            self.publishing_queue.get()
-        self.publishing_queue.put({
-            'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alert_router.github',
-            'data': copy.deepcopy(self.data_for_alerting)})
-
-        self.logger.debug("Alert data added to the publishing queue "
-                          "successfully.")
+        for alert in data_list:
+            self.logger.debug("Adding {} to the publishing queue.".format(
+                alert))
+            if self.publishing_queue.full():
+                self.publishing_queue.get()
+            self.publishing_queue.put({
+                'exchange': ALERT_EXCHANGE,
+                'routing_key': 'alert_router.github',
+                'data': copy.deepcopy(alert)})
+            self.logger.debug("{} added to the publishing queue "
+                              "successfully.".format(alert))
 
     def _alert_classifier_process(self) -> None:
         self._initialize_alerter()

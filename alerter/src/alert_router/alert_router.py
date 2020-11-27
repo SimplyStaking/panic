@@ -147,7 +147,7 @@ class AlertRouter(QueuingPublisherComponent):
         recv_alert: Dict = json.loads(body)
 
         # If the alert is empty, just acknowledge and return
-        if recv_alert:
+        if not recv_alert:
             self._rabbit.basic_ack(method.delivery_tag, False)
             return
 

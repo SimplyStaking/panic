@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 from types import FrameType
-from typing import Dict, Type
+from typing import Dict, Type, List
 
 import pika
 import pika.exceptions
@@ -86,13 +86,16 @@ class SystemAlerter(Alerter):
         data_received = json.loads(body.decode())
         parsed_routing_key = method.routing_key.split('.')
         processing_error = False
+        data_for_alerting = []
         try:
             if self.alerts_configs.parent_id in parsed_routing_key:
                 if 'result' in data_received:
                     self._process_results(data_received['result']['data'],
-                                          data_received['result']['meta_data'])
+                                          data_received['result']['meta_data'],
+                                          data_for_alerting)
                 elif 'error' in data_received:
-                    self._process_errors(data_received['error'])
+                    self._process_errors(data_received['error'],
+                                         data_for_alerting)
                 else:
                     raise ReceivedUnexpectedDataException(
                         "{}: _process_data".format(self))
@@ -109,7 +112,7 @@ class SystemAlerter(Alerter):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue.
         if not processing_error:
-            self._place_latest_data_on_queue()
+            self._place_latest_data_on_queue(data_for_alerting)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -125,7 +128,8 @@ class SystemAlerter(Alerter):
             # reside in the publisher queue
             raise e
 
-    def _process_errors(self, error_data: Dict) -> None:
+    def _process_errors(self, error_data: Dict,
+                        data_for_alerting: List) -> None:
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
         data = error_data['data']
@@ -134,19 +138,17 @@ class SystemAlerter(Alerter):
                 error_data['message'], 'ERROR', meta_data['time'],
                 meta_data['system_parent_id'], meta_data['system_id']
             )
-            self._data_for_alerting = alert.alert_data
+            data_for_alerting.append(alert.alert_data)
             self.logger.debug('Successfully classified alert {}'
                               ''.format(alert.alert_data))
-            self._place_latest_data_on_queue()
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 error_data['message'], 'ERROR', meta_data['time'],
                 meta_data['system_parent_id'], meta_data['system_id']
             )
-            self._data_for_alerting = alert.alert_data
+            data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert {}"
                               "".format(alert.alert_data))
-            self._place_latest_data_on_queue()
         elif int(error_data['code']) == 5004:
             if is_down['enabled']:
                 current = float(data['went_down_at']['current'])
@@ -160,20 +162,18 @@ class SystemAlerter(Alerter):
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                        self._data_for_alerting = alert.alert_data
+                        data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        self._place_latest_data_on_queue()
                     else:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'WARNING',
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                        self._data_for_alerting = alert.alert_data
+                        data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        self._place_latest_data_on_queue()
                 else:
                     if (int(is_down['critical_repeat']) > difference >=
                             int(is_down['warning_repeat']) and
@@ -184,10 +184,9 @@ class SystemAlerter(Alerter):
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                        self._data_for_alerting = alert.alert_data
+                        data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        self._place_latest_data_on_queue()
                         is_down['warning_limiter'].did_task()
                     elif (int(is_down['critical_repeat']) <= difference and
                           is_down['critical_enabled'] and
@@ -197,16 +196,16 @@ class SystemAlerter(Alerter):
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
-                        self._data_for_alerting = alert.alert_data
+                        data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        self._place_latest_data_on_queue()
                         is_down['critical_limiter'].did_task()
         else:
             raise ReceivedUnexpectedDataException(
                 '{}: _process_errors'.format(self))
 
-    def _process_results(self, metrics: Dict, meta_data: Dict) -> None:
+    def _process_results(self, metrics: Dict, meta_data: Dict,
+                         data_for_alerting: List) -> None:
         open_fd = self.alerts_configs.open_file_descriptors
         cpu_use = self.alerts_configs.system_cpu_usage
         storage = self.alerts_configs.system_storage_usage
@@ -221,10 +220,9 @@ class SystemAlerter(Alerter):
                     meta_data['last_monitored'], meta_data['system_parent_id'],
                     meta_data['system_id']
                 )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._place_latest_data_on_queue()
 
         if open_fd['enabled']:
             current = metrics['open_file_descriptors']['current']
@@ -233,7 +231,8 @@ class SystemAlerter(Alerter):
                 self._classify_alert(
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
-                    OpenFileDescriptorsDecreasedBelowThresholdAlert
+                    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+                    data_for_alerting
                 )
         if storage['enabled']:
             current = metrics['system_storage_usage']['current']
@@ -242,7 +241,8 @@ class SystemAlerter(Alerter):
                 self._classify_alert(
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
-                    SystemStorageUsageDecreasedBelowThresholdAlert
+                    SystemStorageUsageDecreasedBelowThresholdAlert,
+                    data_for_alerting
                 )
         if cpu_use['enabled']:
             current = metrics['system_cpu_usage']['current']
@@ -251,7 +251,8 @@ class SystemAlerter(Alerter):
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
-                    SystemCPUUsageDecreasedBelowThresholdAlert
+                    SystemCPUUsageDecreasedBelowThresholdAlert,
+                    data_for_alerting
                 )
         if ram_use['enabled']:
             current = metrics['system_ram_usage']['current']
@@ -260,7 +261,8 @@ class SystemAlerter(Alerter):
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
-                    SystemRAMUsageDecreasedBelowThresholdAlert
+                    SystemRAMUsageDecreasedBelowThresholdAlert,
+                    data_for_alerting
                 )
 
     def _classify_alert(
@@ -268,7 +270,7 @@ class SystemAlerter(Alerter):
             meta_data: Dict, increased_above_threshold_alert:
             Type[IncreasedAboveThresholdSystemAlert],
             decreased_below_threshold_alert:
-            Type[DecreasedBelowThresholdSystemAlert]):
+            Type[DecreasedBelowThresholdSystemAlert], data_for_alerting: List):
         warning_threshold = float(config['warning_threshold'])
         critical_threshold = float(config['critical_threshold'])
         warning_enabled = config['warning_enabled']
@@ -283,10 +285,9 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._place_latest_data_on_queue()
             elif current < warning_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
@@ -295,10 +296,9 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._place_latest_data_on_queue()
 
         if critical_enabled:
             if current >= critical_threshold and \
@@ -310,10 +310,9 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._place_latest_data_on_queue()
                 config['limiter'].did_task()
             elif warning_threshold < current < critical_threshold <= previous:
                 alert = \
@@ -323,25 +322,24 @@ class SystemAlerter(Alerter):
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
-                self._data_for_alerting = alert.alert_data
+                data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._place_latest_data_on_queue()
 
-    def _place_latest_data_on_queue(self) -> None:
-        self.logger.debug("Adding alert data to the publishing queue ...")
-
+    def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
         # queue is full, remove old data.
-        if self.publishing_queue.full():
-            self.publishing_queue.get()
-        self.publishing_queue.put({
-            'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alert_router.system',
-            'data': copy.deepcopy(self.data_for_alerting)})
-
-        self.logger.debug("Alert data added to the publishing queue "
-                          "successfully.")
+        for alert in data_list:
+            self.logger.debug("Adding {} to the publishing queue.".format(
+                alert))
+            if self.publishing_queue.full():
+                self.publishing_queue.get()
+            self.publishing_queue.put({
+                'exchange': ALERT_EXCHANGE,
+                'routing_key': 'alert_router.system',
+                'data': copy.deepcopy(alert)})
+            self.logger.debug("{} added to the publishing queue "
+                              "successfully.".format(alert))
 
     def _alert_classifier_process(self) -> None:
         self._initialize_alerter()

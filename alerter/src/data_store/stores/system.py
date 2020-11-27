@@ -68,6 +68,9 @@ class SystemStore(Store):
         sent.
         """
         system_data = json.loads(body.decode())
+        self.logger.info("Received {}. Now processing this data.".format(
+            system_data))
+
         processing_error = False
         try:
             self._process_redis_store(system_data)
