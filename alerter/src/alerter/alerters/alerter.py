@@ -2,6 +2,7 @@ import logging
 import os
 import signal
 from abc import ABC, abstractmethod
+from datetime import datetime
 from queue import Queue
 from types import FrameType
 from typing import Dict
@@ -9,6 +10,7 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
@@ -19,13 +21,16 @@ class Alerter(ABC):
 
         self._alerter_name = alerter_name
         self._logger = logger
+
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
         max_queue_size = int(os.environ[
                                  'ALERTER_PUBLISHING_QUEUE_SIZE'])
         self._publishing_queue = Queue(max_queue_size)
+
         rabbit_ip = os.environ['RABBIT_IP']
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -66,6 +71,14 @@ class Alerter(ABC):
     def _alert_classifier_process(self) -> None:
         pass
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
+
     def _send_data(self) -> None:
         empty = True
         if not self.publishing_queue.empty():
@@ -78,17 +91,13 @@ class Alerter(ABC):
         # that if an exception is raised, that message is not popped
         while not self.publishing_queue.empty():
             data = self.publishing_queue.queue[0]
-            try:
-                self.rabbitmq.basic_publish_confirm(
-                    exchange=data['exchange'], routing_key=data['routing_key'],
-                    body=data['data'], is_body_dict=True,
-                    properties=pika.BasicProperties(delivery_mode=2),
-                    mandatory=True)
-                self.logger.debug("Sent {} to \'{}\' exchange"
-                                  .format(data['data'], data['exchange']))
-            except KeyError as e:
-                self.logger.exception(e)
-                raise e
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug("Sent {} to '{}' exchange".format(
+                data['data'], data['exchange']))
             self.publishing_queue.get()
             self.publishing_queue.task_done()
 
@@ -100,13 +109,21 @@ class Alerter(ABC):
         self._initialize_alerter()
         while True:
             try:
-                # Before listening for new data send the data waiting to be
+                # Before listening for new data send the data waiting to be sent
                 # in the publishing queue. If the message is not routed, start
                 # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+
+                        # Send heartbeat if sending was successful
+                        heartbeat = {
+                            'component_name': self.alerter_name,
+                            'timestamp': datetime.now().timestamp()
+                        }
+                        self._send_heartbeat(heartbeat)
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
 
                 self._alert_classifier_process()
             except (pika.exceptions.AMQPConnectionError,
@@ -122,3 +139,7 @@ class Alerter(ABC):
     @abstractmethod
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         pass
+
+# TODO: Monday start from the beginning from here and compare with data
+#     : transformer. Go through the implementation bit by bit to make sure that
+#     : you break nothing.
