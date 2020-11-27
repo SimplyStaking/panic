@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import Dict
 
 import pika.exceptions
@@ -9,7 +10,6 @@ from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     MessageWasNotDeliveredException
-from datetime import datetime
 
 
 class AlertStore(Store):
