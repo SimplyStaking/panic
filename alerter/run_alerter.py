@@ -65,8 +65,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
     manager_name = "System Alerters Manager"
 
     system_alerters_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager
@@ -85,11 +84,10 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
 
 
 def _initialize_github_alerter_manager() -> GithubAlerterManager:
-    manager_name = "Github Alerter Manager"
+    manager_name = "GitHub Alerter Manager"
 
     github_alerter_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager

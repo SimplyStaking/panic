@@ -16,6 +16,7 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+import copy
 
 
 class SystemAlertersManager(AlertersManager):
@@ -124,7 +125,8 @@ class SystemAlertersManager(AlertersManager):
 
             filtered = {}
             for i in sent_configs:
-                filtered[sent_configs[i]['name']] = sent_configs[i]
+                filtered[sent_configs[i]['name']] = copy.deepcopy(
+                    sent_configs[i])
 
             system_alerts_config = SystemAlertsConfig(
                 parent_id=parent_id,
@@ -136,7 +138,8 @@ class SystemAlertersManager(AlertersManager):
             )
 
             if parent_id in self.systems_alerts_configs:
-                previous_process = self.parent_id_process_dict[parent_id]
+                previous_process = \
+                    self.parent_id_process_dict[parent_id]['process']
                 previous_process.terminate()
                 previous_process.join()
 

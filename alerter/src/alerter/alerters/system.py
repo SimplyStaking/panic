@@ -84,6 +84,9 @@ class SystemAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
+        self.logger.info("Processing {} received from transformers".format(
+            data_received))
+
         parsed_routing_key = method.routing_key.split('.')
         processing_error = False
         data_for_alerting = []
