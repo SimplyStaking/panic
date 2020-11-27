@@ -32,10 +32,10 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     return alerter_logger
 
 
-def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
-        -> SystemAlerter:
+def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
+                               chain: str) -> SystemAlerter:
     # Alerter name based on system
-    alerter_name = "System alerter ({})".format(system_alerts_config.parent_id)
+    alerter_name = "System alerter ({})".format(chain)
 
     system_alerter_logger = _initialize_alerter_logger(alerter_name)
 
@@ -57,7 +57,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig) \
 
 
 def _initialize_github_alerter() -> GithubAlerter:
-    alerter_name = "Github alerter"
+    alerter_name = "GitHub Alerter"
 
     github_alerter_logger = _initialize_alerter_logger(alerter_name)
 
@@ -82,8 +82,9 @@ def start_github_alerter() -> None:
     start_alerter(github_alerter)
 
 
-def start_system_alerter(system_alerts_config: SystemAlertsConfig) -> None:
-    system_alerter = _initialize_system_alerter(system_alerts_config)
+def start_system_alerter(system_alerts_config: SystemAlertsConfig,
+                         chain: str) -> None:
+    system_alerter = _initialize_system_alerter(system_alerts_config, chain)
     start_alerter(system_alerter)
 
 
