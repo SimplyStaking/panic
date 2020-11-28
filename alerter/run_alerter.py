@@ -191,7 +191,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     return alert_router, alert_router_logger
 
 
-def _initialize_config_manager() -> ConfigManager:
+def _initialize_config_manager() -> Tuple[ConfigManager, logging.Logger]:
     config_manager_logger = _initialize_logger(
         ConfigManager.__name__, env.CONFIG_MANAGER_LOG_FILE
     )
@@ -199,8 +199,9 @@ def _initialize_config_manager() -> ConfigManager:
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
-            return cm
+            config_manager = ConfigManager(config_manager_logger, '../config',
+                                           rabbit_ip)
+            return config_manager, config_manager_logger
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
@@ -332,13 +333,22 @@ def run_alert_router() -> None:
                           alert_router_logger)
 
 
-def run_config_manager(command_queue: multiprocessing.Queue) -> None:
-    config_manager = _initialize_config_manager()
-    config_manager.start_watching_config_files()
+def run_config_manager() -> None:
+    config_manager, config_manager_logger = _initialize_config_manager()
 
-    # We wait until something is sent to this queue
-    command_queue.get()
-    config_manager.stop_watching_config_files()
+    while True:
+        try:
+            config_manager.start()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(config_manager),
+                          config_manager_logger)
+        except Exception:
+            config_manager.disconnect()
+            log_and_print(_get_stopped_message(config_manager),
+                          config_manager_logger)
 
 
 # If termination signals are received, terminate all child process and exit
@@ -418,10 +428,8 @@ if __name__ == '__main__':
     # Config manager must be the last to start since it immediately begins by
     # sending the configs. That being said, all previous processes need to wait
     # for the config manager too.
-    config_stop_queue = multiprocessing.Queue()
     config_manager_runner_process = multiprocessing.Process(
-        target=run_config_manager, args=(config_stop_queue,)
-    )
+        target=run_config_manager, args=())
     config_manager_runner_process.start()
 
     signal.signal(signal.SIGTERM, on_terminate)
@@ -437,19 +445,16 @@ if __name__ == '__main__':
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
-
-    # To stop the config watcher, we send something in the stop queue, this way
-    # We can ensure the watchers and connections are stopped properly
-    config_stop_queue.put('STOP')
     config_manager_runner_process.join()
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
-    # TODO: Make sure that all queues and configs are declared before hand in the
-    #     : run alerter before start sending configs, as otherwise configs manager
-    #     : would not be able to send configs on start-up. Therefore start the
-    #     : config manager last. Similarly, components must be started from left
-    #     : to right according to the design (to avoid message not delivered
-    #     : exceptions). Also, to fully solve these problems, we should perform
-    #     : checks in the run alerter to see if a queue/exchange has been created
+    # TODO: Make sure that all queues and configs are declared before hand in
+    #     : the run alerter before start sending configs, as otherwise configs
+    #     : manager would not be able to send configs on start-up. Therefore
+    #     : start the config manager last. Similarly, components must be started
+    #     : from left to right according to the design (to avoid message not
+    #     : delivered exceptions). Also, to fully solve these problems, we
+    #     : should perform checks in the run alerter to see if a queue/exchange
+    #     : has been created
