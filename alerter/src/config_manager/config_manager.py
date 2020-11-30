@@ -98,9 +98,12 @@ class ConfigManager(Component):
                                   HEALTH_CHECK_EXCHANGE)
 
                 self._logger.info(
-                    "Binding queue '%s' to exchange '%s' with "
+                    "Creating and binding queue '%s' to exchange '%s' with "
                     "routing key '%s", queue_name, HEALTH_CHECK_EXCHANGE,
                     _ROUTING_KEY)
+
+                self._rabbit.queue_declare(queue_name, False, True, False,
+                                           False)
 
                 self._rabbit.queue_bind(queue_name, HEALTH_CHECK_EXCHANGE,
                                         _ROUTING_KEY)

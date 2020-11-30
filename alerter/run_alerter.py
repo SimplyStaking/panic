@@ -363,6 +363,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
+    terminate_and_join_process(config_manager_runner_process, "Configs Manager")
+
     terminate_and_join_process(system_monitors_manager_process,
                                "System Monitors Manager")
 
@@ -383,9 +385,6 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(alert_router_process, "Alert Router")
 
     log_and_print("PANIC process terminated.", dummy_logger)
-
-    # TODO: Need to add configs manager here when Mark finishes the
-    #     : modifications
 
     log_and_print("The alerting and monitoring process has ended.",
                   dummy_logger)
@@ -438,6 +437,7 @@ if __name__ == '__main__':
 
     # If we don't wait for the processes to terminate the root process will
     # exit
+    config_manager_runner_process.join()
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
     system_alerters_manager_process.join()
@@ -445,7 +445,6 @@ if __name__ == '__main__':
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
-    config_manager_runner_process.join()
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
