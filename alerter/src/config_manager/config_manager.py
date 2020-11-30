@@ -26,7 +26,7 @@ from ..abstract import Component
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
-_ROUTING_KEY = 'heartbeat.config_manager'
+_HEARTBEAT_ROUTING_KEY = 'heartbeat.config_manager'
 
 
 class ConfigManager(Component):
@@ -100,13 +100,13 @@ class ConfigManager(Component):
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
                     "routing key '%s", queue_name, HEALTH_CHECK_EXCHANGE,
-                    _ROUTING_KEY)
+                    _HEARTBEAT_ROUTING_KEY)
 
                 self._rabbit.queue_declare(queue_name, False, True, False,
                                            False)
 
                 self._rabbit.queue_bind(queue_name, HEALTH_CHECK_EXCHANGE,
-                                        _ROUTING_KEY)
+                                        _HEARTBEAT_ROUTING_KEY)
 
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
@@ -162,7 +162,7 @@ class ConfigManager(Component):
         }
 
         self._rabbit.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key=_ROUTING_KEY,
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key=_HEARTBEAT_ROUTING_KEY,
             body=heartbeat, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self._logger.info("Sent heartbeat to %s exchange",
