@@ -19,7 +19,6 @@ from src.utils.logging import log_and_print
 
 _ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
-_HEARTBEAT_ROUTING_KEY = 'heartbeat.alert_router'
 _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 
@@ -75,7 +74,7 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._declare_exchange_and_bind_queue(
             _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic",
-            _HEARTBEAT_ROUTING_KEY
+            'ping'
         )
 
         self._logger.info("Declaring consuming intentions")
@@ -225,9 +224,10 @@ class AlertRouter(QueuingPublisherComponent):
         }
 
         self._rabbit.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key=_HEARTBEAT_ROUTING_KEY,
-            body=heartbeat, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.alert_router', body=heartbeat,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self._logger.info("Sent heartbeat to %s exchange",
                           HEALTH_CHECK_EXCHANGE)
 

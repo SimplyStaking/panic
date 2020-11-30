@@ -106,7 +106,7 @@ class ConfigManager(Component):
                                            False)
 
                 self._rabbit.queue_bind(queue_name, HEALTH_CHECK_EXCHANGE,
-                                        _HEARTBEAT_ROUTING_KEY)
+                                        'ping')
 
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
