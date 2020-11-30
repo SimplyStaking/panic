@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 from src.alerter.alerts.alert import Alert
+from src.utils.datetime import strfdelta
 
 
 class SystemAlertCode(Enum):
@@ -18,6 +19,7 @@ class SystemAlertCode(Enum):
     SystemWentDownAtAlert = 'system_alert_11',
     SystemBackUpAgainAlert = 'system_alert_12',
     SystemStillDownAlert = 'system_alert_13',
+    MetricNotFoundErrorAlert = 'system_alert_14'
 
 
 class ReceivedUnexpectedDataAlert(Alert):
@@ -53,8 +55,9 @@ class SystemStillDownAlert(Alert):
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemStillDownAlert,
-            "{} System is still down, it has been down for {}s.".format(
-                origin_name, difference),
+            "{} System is still down, it has been down for {}.".format(
+                origin_name, strfdelta(timedelta(seconds=difference),
+                                       "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id)
 
 
@@ -152,3 +155,11 @@ class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
             "{} system storage usage DECREASED below {} Threshold from {}% to"
             " {}%.".format(origin_name, threshold, old_value, new_value),
             severity, timestamp, parent_id, origin_id)
+
+
+class MetricNotFoundErrorAlert(Alert):
+    def __init__(self, message: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            SystemAlertCode.MetricNotFoundErrorAlert, message, severity,
+            timestamp, parent_id, origin_id)

@@ -2,7 +2,6 @@ import logging
 import os
 import signal
 from abc import ABC, abstractmethod
-from datetime import datetime
 from queue import Queue
 from types import FrameType
 from typing import Dict
@@ -55,20 +54,19 @@ class Alerter(ABC):
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.start_consuming()
+
     @abstractmethod
     def _place_latest_data_on_queue(self, data_list: Dict) -> None:
         pass
 
     @abstractmethod
-    def _initialize_alerter(self) -> None:
+    def _initialize_rabbitmq(self) -> None:
         pass
 
     @abstractmethod
     def _process_data(self, *args) -> None:
-        pass
-
-    @abstractmethod
-    def _alert_classifier_process(self) -> None:
         pass
 
     def _send_heartbeat(self, data_to_send: dict) -> None:
@@ -103,10 +101,10 @@ class Alerter(ABC):
 
         if not empty:
             self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
+                             "queue.")
 
-    def start_alert_classification(self) -> None:
-        self._initialize_alerter()
+    def start(self) -> None:
+        self._initialize_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -115,17 +113,10 @@ class Alerter(ABC):
                 if not self.publishing_queue.empty():
                     try:
                         self._send_data()
-
-                        # Send heartbeat if sending was successful
-                        heartbeat = {
-                            'component_name': self.alerter_name,
-                            'timestamp': datetime.now().timestamp()
-                        }
-                        self._send_heartbeat(heartbeat)
                     except MessageWasNotDeliveredException as e:
                         self.logger.exception(e)
 
-                self._alert_classifier_process()
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -139,7 +130,3 @@ class Alerter(ABC):
     @abstractmethod
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         pass
-
-# TODO: Monday start from the beginning from here and compare with data
-#     : transformer. Go through the implementation bit by bit to make sure that
-#     : you break nothing.

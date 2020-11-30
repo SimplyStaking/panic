@@ -141,13 +141,6 @@ class DataTransformer(Component):
                 if not self.publishing_queue.empty():
                     try:
                         self._send_data()
-
-                        # Send heartbeat if sending was successful
-                        heartbeat = {
-                            'component_name': self.transformer_name,
-                            'timestamp': datetime.now().timestamp()
-                        }
-                        self._send_heartbeat(heartbeat)
                     except MessageWasNotDeliveredException as e:
                         self.logger.exception(e)
 

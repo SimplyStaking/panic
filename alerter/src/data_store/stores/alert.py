@@ -87,12 +87,11 @@ class AlertStore(Store):
         # Send a heartbeat only if there were no errors
         if not processing_error:
             try:
-                if not processing_error:
-                    heartbeat = {
-                        'component_name': self.store_name,
-                        'timestamp': datetime.now().timestamp()
-                    }
-                    self._send_heartbeat(heartbeat)
+                heartbeat = {
+                    'component_name': self.store_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
             except MessageWasNotDeliveredException as e:
                 self.logger.exception(e)
             except Exception as e:

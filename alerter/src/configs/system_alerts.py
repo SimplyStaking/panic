@@ -48,12 +48,6 @@ class SystemAlertsConfig:
             ))
         )
 
-        self._system_is_down['warning_limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_is_down['warning_repeat']
-            ))
-        )
-
     @property
     def parent_id(self) -> str:
         return self._parent_id
@@ -77,21 +71,3 @@ class SystemAlertsConfig:
     @property
     def system_is_down(self) -> Dict:
         return self._system_is_down
-
-    def set_parent_id(self, parent_id: str) -> None:
-        self._parent_id = parent_id
-
-    def set_open_file_descriptors(self, open_file_descriptors:
-                                  Dict) -> None:
-        self._open_file_descriptors = open_file_descriptors
-
-    def set_system_cpu_usage(self, system_cpu_usage:
-                             Dict) -> None:
-        self._system_cpu_usage = system_cpu_usage
-
-    def set_system_storage_usage(self, system_storage_usage:
-                                 Dict) -> None:
-        self._system_storage_usage = system_storage_usage
-
-    def set_system_is_down(self, system_is_down: Dict) -> None:
-        self._system_is_down = system_is_down

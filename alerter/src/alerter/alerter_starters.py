@@ -92,8 +92,9 @@ def start_alerter(alerter: Alerter) -> None:
     while True:
         try:
             log_and_print("{} started.".format(alerter), alerter.logger)
-            alerter.start_alert_classification()
-        except pika.exceptions.AMQPConnectionError:
+            alerter.start()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
             log_and_print("{} stopped.".format(alerter), alerter.logger)

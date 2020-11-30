@@ -46,7 +46,7 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.queue_bind('system_data_transformer_raw_data_queue',
                                  RAW_DATA_EXCHANGE, 'system')
 
-        # Pre-fetch count is 10 times less the maximum queue size
+        # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
