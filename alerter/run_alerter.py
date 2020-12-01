@@ -3,16 +3,15 @@ import multiprocessing
 import signal
 import sys
 import time
-
-from typing import Tuple, Any
 from types import FrameType
+from typing import Tuple, Any
 
 import pika.exceptions
 
+from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
-from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
@@ -66,8 +65,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
     manager_name = "System Alerters Manager"
 
     system_alerters_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager
@@ -86,11 +84,10 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
 
 
 def _initialize_github_alerter_manager() -> GithubAlerterManager:
-    manager_name = "Github Alerter Manager"
+    manager_name = "GitHub Alerter Manager"
 
     github_alerter_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager
@@ -214,8 +211,7 @@ def _initialize_data_store_manager() -> StoreManager:
     manager_name = "Data Store Manager"
 
     data_store_manager_logger = _initialize_logger(
-        manager_name,
-        "DATA_STORE_LOG_FILE_TEMPLATE"
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data store manager
@@ -235,9 +231,24 @@ def _initialize_data_store_manager() -> StoreManager:
     return data_store_manager
 
 
-def run_data_store() -> None:
-    store_manager = _initialize_data_store_manager()
-    store_manager.start_store_manager()
+def run_data_stores_manager() -> None:
+    stores_manager = _initialize_data_store_manager()
+
+    while True:
+        try:
+            stores_manager.manage()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(stores_manager),
+                          stores_manager.logger)
+        except Exception as e:
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            stores_manager.rabbitmq.disconnect_till_successful()
+            log_and_print(_get_stopped_message(stores_manager),
+                          stores_manager.logger)
 
 
 def run_system_monitors_manager() -> None:
@@ -256,19 +267,8 @@ def run_system_alerters_manager() -> None:
 
 
 def run_github_alerters_manager() -> None:
-    manager = _initialize_github_alerter_manager()
-    while True:
-        try:
-            manager.start_github_alerter_manager()
-        except pika.exceptions.AMQPConnectionError:
-            # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
-            log_and_print(_get_stopped_message(manager), manager.logger)
-        except Exception:
-            # Close the connection with RabbitMQ if we have an unexpected
-            # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(manager), manager.logger)
+    github_alerter_manager = _initialize_github_alerter_manager()
+    run_alerters_manager(github_alerter_manager)
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
@@ -291,15 +291,16 @@ def run_alerters_manager(manager: AlertersManager) -> None:
     while True:
         try:
             manager.manage()
-        except pika.exceptions.AMQPConnectionError:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-connect just break the loop.
-            log_and_print('{} stopped.'.format(manager), manager.logger)
-        except Exception:
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(manager), manager.logger)
+        except Exception as e:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
-            log_and_print('{} stopped.'.format(manager), manager.logger)
+            log_and_print(_get_stopped_message(manager), manager.logger)
 
 
 def run_data_transformers_manager() -> None:
@@ -308,8 +309,16 @@ def run_data_transformers_manager() -> None:
     while True:
         try:
             data_transformers_manager.manage()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(data_transformers_manager),
+                          data_transformers_manager.logger)
         except Exception as e:
-            data_transformers_manager.logger.exception(e)
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            data_transformers_manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
 
@@ -406,7 +415,7 @@ if __name__ == '__main__':
     data_transformers_manager_process.start()
 
     # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_store,
+    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
                                                  args=())
     data_store_process.start()
 
@@ -446,10 +455,11 @@ if __name__ == '__main__':
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
 
-    # TODO: Make sure that all queues and configs are declared before hand in the
-    #     : run alerter before start sending configs, as otherwise configs manager
-    #     : would not be able to send configs on start-up. Therefore start the
-    #     : config manager last. Similarly, components must be started from left
-    #     : to right according to the design (to avoid message not delivered
-    #     : exceptions). Also, to fully solve these problems, we should perform
-    #     : checks in the run alerter to see if a queue/exchange has been created
+    # TODO: Make sure that all queues and configs are declared before hand in
+    #     : the run alerter before start sending configs, as otherwise configs
+    #     : manager would not be able to send configs on start-up. Therefore
+    #     : start the config manager last. Similarly, components must be started
+    #     : from left to right according to the design (to avoid message not
+    #     : delivered exceptions). Also, to fully solve these problems, we
+    #     : should perform checks in the run alerter to see if a queue/exchange
+    #     : has been created

@@ -1,7 +1,29 @@
 from typing import Union, Any
 from enum import Enum
 
+from src.alerter.alerts.system_alerts import \
+    OpenFileDescriptorsIncreasedAboveThresholdAlert, \
+    SystemCPUUsageIncreasedAboveThresholdAlert, \
+    SystemRAMUsageIncreasedAboveThresholdAlert, \
+    SystemStorageUsageIncreasedAboveThresholdAlert, \
+    OpenFileDescriptorsDecreasedBelowThresholdAlert, \
+    SystemCPUUsageDecreasedBelowThresholdAlert, \
+    SystemRAMUsageDecreasedBelowThresholdAlert, \
+    SystemStorageUsageDecreasedBelowThresholdAlert
+
 RedisType = Union[bytes, str, int, float]
+IncreasedAboveThresholdSystemAlert = Union[
+    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemStorageUsageIncreasedAboveThresholdAlert
+]
+DecreasedBelowThresholdSystemAlert = Union[
+    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+    SystemCPUUsageDecreasedBelowThresholdAlert,
+    SystemRAMUsageDecreasedBelowThresholdAlert,
+    SystemStorageUsageDecreasedBelowThresholdAlert
+]
 
 
 class OpsgenieSeverities(Enum):

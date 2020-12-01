@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+from datetime import datetime
 from typing import Dict, Union
 
 import pika.exceptions
@@ -12,7 +13,7 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants import RAW_DATA_EXCHANGE, STORE_EXCHANGE, \
-    ALERT_EXCHANGE
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     MessageWasNotDeliveredException
 from src.utils.types import convert_to_float_if_not_none, \
@@ -62,6 +63,9 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def load_state(self, repo: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
@@ -261,32 +265,6 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.debug("Transformed data added to the publishing queue "
                           "successfully.")
 
-    def _send_data(self) -> None:
-        empty = True
-        if not self.publishing_queue.empty():
-            empty = False
-            self.logger.info("Attempting to send all data waiting in the "
-                             "publishing queue ...")
-
-        # Try sending the data in the publishing queue one by one. Important,
-        # remove an item from the queue only if the sending was successful, so
-        # that if an exception is raised, that message is not popped
-        while not self.publishing_queue.empty():
-            data = self.publishing_queue.queue[0]
-            self.rabbitmq.basic_publish_confirm(
-                exchange=data['exchange'], routing_key=data['routing_key'],
-                body=data['data'], is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.logger.debug("Sent {} to '{}' exchange"
-                              .format(data['data'], data['exchange']))
-            self.publishing_queue.get()
-            self.publishing_queue.task_done()
-
-        if not empty:
-            self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
-
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
                           properties: pika.spec.BasicProperties, body: bytes) \
@@ -334,6 +312,13 @@ class GitHubDataTransformer(DataTransformer):
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
+
+            if not processing_error:
+                heartbeat = {
+                    'component_name': self.transformer_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as message is residing in the
             # publisher queue.

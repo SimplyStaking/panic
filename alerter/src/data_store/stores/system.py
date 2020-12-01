@@ -7,9 +7,9 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.constants import STORE_EXCHANGE
+from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException
+    SystemIsDownException, MessageWasNotDeliveredException
 
 
 class SystemStore(Store):
@@ -26,6 +26,9 @@ class SystemStore(Store):
         exchange with a routing key `transformer.system.*` meaning anything
         coming from the transformer with regards to a system will be received
         here.
+
+        The HEALTH_CHECK_EXCHANGE is also declared so that whenever a successful
+        store round occurs, a heartbeat is sent
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
@@ -37,6 +40,13 @@ class SystemStore(Store):
                                     auto_delete=False)
         self.rabbitmq.queue_bind(queue='system_store_queue',
                                  exchange=STORE_EXCHANGE, routing_key='system')
+
+        # Set producing configuration for heartbeat
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
@@ -54,26 +64,44 @@ class SystemStore(Store):
                       body: bytes) -> None:
         """ 
         Processes the data being received, from the queue. This data will be
-        saved in Mongo and Redis as required.
+        saved in Mongo and Redis as required. If successful, a heartbeat will be
+        sent.
         """
         system_data = json.loads(body.decode())
+        self.logger.info("Received {}. Now processing this data.".format(
+            system_data))
+
+        processing_error = False
         try:
             self._process_redis_store(system_data)
             self._process_mongo_store(system_data)
         except KeyError as e:
             self.logger.error("Error when parsing {}.".format(system_data))
             self.logger.exception(e)
+            processing_error = True
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing {}".format(system_data))
             self.logger.exception(e)
+            processing_error = True
         except Exception as e:
             self.logger.exception(e)
-            # When an exception is raised we must acknowledge the message so
-            # that it is removed from the queue, since it won't be re-delivered
-            self.rabbitmq.basic_ack(method.delivery_tag, False)
-            raise e
+            processing_error = True
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Send a heartbeat only if there were no errors
+        if not processing_error:
+            try:
+                heartbeat = {
+                    'component_name': self.store_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
+            except MessageWasNotDeliveredException as e:
+                self.logger.exception(e)
+            except Exception as e:
+                # For any other exception raise it.
+                raise e
 
     def _process_redis_store(self, data: Dict) -> None:
         if 'result' in data:
