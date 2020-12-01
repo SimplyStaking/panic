@@ -62,7 +62,13 @@ class ConfigManager(Component):
         self._watching = False
         self._connected_to_rabbit = False
 
-        self._rabbit = RabbitMQApi(logger.getChild('rabbitmq'), host=rabbit_ip)
+        self._config_rabbit = RabbitMQApi(
+            logger.getChild("config_{}".format(RabbitMQApi.__name__)),
+            host=rabbit_ip)
+
+        self._heartbeat_rabbit = RabbitMQApi(
+            logger.getChild("heartbeat_{}".format(RabbitMQApi.__name__)),
+            host=rabbit_ip)
 
         self._event_handler = ConfigFileEventHandler(
             self._logger.getChild(ConfigFileEventHandler.__name__),
@@ -77,43 +83,47 @@ class ConfigManager(Component):
                                 recursive=True)
 
     def _initialize_rabbitmq(self) -> None:
-        queue_name = "config_ping_queue"
+        config_ping_queue = "config_ping_queue"
 
         while True:
             try:
                 self._connect_to_rabbit()
                 self._logger.info("Connected to Rabbit")
-                self._rabbit.confirm_delivery()
+                self._config_rabbit.confirm_delivery()
                 self._logger.info("Enabled delivery confirmation on RabbitMQ "
                                   "channel")
-                self._rabbit.exchange_declare(
+                self._config_rabbit.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
 
-                self._rabbit.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic',
-                                              False, True, False, False)
+                self._config_rabbit.exchange_declare(HEALTH_CHECK_EXCHANGE,
+                                                     'topic',
+                                                     False, True, False, False)
                 self._logger.info("Declared %s exchange in Rabbit",
                                   HEALTH_CHECK_EXCHANGE)
 
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
-                    "routing key '%s", queue_name, HEALTH_CHECK_EXCHANGE,
+                    "routing key '%s", config_ping_queue, HEALTH_CHECK_EXCHANGE,
                     _HEARTBEAT_ROUTING_KEY)
 
-                self._rabbit.queue_declare(queue_name, False, True, False,
-                                           False)
+                self._heartbeat_rabbit.queue_declare(config_ping_queue, False,
+                                                     True, False, False)
 
-                self._rabbit.queue_bind(queue_name, HEALTH_CHECK_EXCHANGE,
-                                        'ping')
+                self._heartbeat_rabbit.queue_bind(config_ping_queue,
+                                                  HEALTH_CHECK_EXCHANGE,
+                                                  'ping')
 
+                self._heartbeat_rabbit.confirm_delivery()
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
-                self._rabbit.basic_qos(prefetch_count=prefetch_count)
+                self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
                 self._logger.info("Declaring consuming intentions")
-                self._rabbit.basic_consume(queue_name, self._process_ping,
-                                           True, False, None)
+                self._heartbeat_rabbit.basic_consume(config_ping_queue,
+                                                     self._process_ping,
+                                                     True, False, None)
                 break
             except (ConnectionNotInitializedException,
                     AMQPConnectionError) as connection_error:
@@ -133,7 +143,8 @@ class ConfigManager(Component):
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
             self._logger.info("Connecting to RabbitMQ")
-            self._rabbit.connect_till_successful()
+            self._config_rabbit.connect_till_successful()
+            self._heartbeat_rabbit.connect_till_successful()
             self._connected_to_rabbit = True
             self._logger.info("Connected to RabbitMQ")
         else:
@@ -143,7 +154,8 @@ class ConfigManager(Component):
     def disconnect(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from RabbitMQ")
-            self._rabbit.disconnect_till_successful()
+            self._config_rabbit.disconnect_till_successful()
+            self._heartbeat_rabbit.disconnect_till_successful()
             self._connected_to_rabbit = False
             self._logger.info("Disconnected from RabbitMQ")
         else:
@@ -161,7 +173,7 @@ class ConfigManager(Component):
             'timestamp': datetime.now().timestamp(),
         }
 
-        self._rabbit.basic_publish_confirm(
+        self._heartbeat_rabbit.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE, routing_key=_HEARTBEAT_ROUTING_KEY,
             body=heartbeat, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
@@ -178,7 +190,7 @@ class ConfigManager(Component):
                     "Attempting to send config to routing key %s", routing_key
                 )
                 # We need to definitely send this
-                self._rabbit.basic_publish_confirm(
+                self._config_rabbit.basic_publish_confirm(
                     CONFIG_EXCHANGE, routing_key, config, mandatory=True,
                     is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
