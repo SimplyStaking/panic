@@ -50,7 +50,8 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._declare_exchange_and_bind_queue(
             _ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
-            "channels.*")
+            "channels.*"
+        )
         self._rabbit.basic_consume(
             queue=_ALERT_ROUTER_CONFIGS_QUEUE_NAME,
             on_message_callback=self._process_configs, auto_ack=False,
@@ -58,7 +59,8 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._declare_exchange_and_bind_queue(
             _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
-            "alert_router.*")
+            "alert_router.*"
+        )
         self._rabbit.basic_consume(
             queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
             on_message_callback=self._process_alert, auto_ack=False,
@@ -73,8 +75,7 @@ class AlertRouter(QueuingPublisherComponent):
                                       internal=False)
 
         self._declare_exchange_and_bind_queue(
-            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic",
-            'ping'
+            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic", "ping"
         )
 
         self._logger.info("Declaring consuming intentions")
