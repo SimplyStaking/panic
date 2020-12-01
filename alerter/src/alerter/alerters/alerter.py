@@ -1,6 +1,7 @@
 import logging
 import os
 import signal
+import sys
 from abc import ABC, abstractmethod
 from queue import Queue
 from types import FrameType
@@ -11,6 +12,7 @@ import pika.exceptions
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException)
+from src.utils.logging import log_and_print
 
 
 class Alerter(ABC):
@@ -127,6 +129,10 @@ class Alerter(ABC):
                 self.logger.exception(e)
                 raise e
 
-    @abstractmethod
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        pass
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()

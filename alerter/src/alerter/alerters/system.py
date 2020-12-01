@@ -1,12 +1,9 @@
 import copy
 import json
 import logging
-import sys
 from datetime import datetime, timedelta
-from types import FrameType
 from typing import Dict, Type, List
 
-import pika
 import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
@@ -24,9 +21,7 @@ from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.alert import floaty
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException,
-                                  ConnectionNotInitializedException)
-from src.utils.logging import log_and_print
+                                  ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
 from src.utils.types import IncreasedAboveThresholdSystemAlert, \
     DecreasedBelowThresholdSystemAlert, str_to_bool
@@ -46,14 +41,19 @@ class SystemAlerter(Alerter):
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
-        self._initial_downtime_alert_sent = False
+        self._system_initial_downtime_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
     @property
     def alerts_configs(self) -> SystemAlertsConfig:
         return self._system_alerts_config
 
-    def _create_timed_task_limiters_for_system(self, system_id: str) -> None:
+    def _create_state_for_system(self, system_id: str) -> None:
+        # Initialize initial downtime alert sent
+        if system_id not in self._system_initial_downtime_alert_sent:
+            self._system_initial_downtime_alert_sent[system_id] = False
+
+        # Initialize timed task limiters
         if system_id not in self._system_critical_timed_task_limiters:
             open_fd = self.alerts_configs.open_file_descriptors
             cpu_use = self.alerts_configs.system_cpu_usage
@@ -144,13 +144,13 @@ class SystemAlerter(Alerter):
                     data = data_received['result']['data']
                     meta_data = data_received['result']['meta_data']
                     system_id = meta_data['system_id']
-                    self._create_timed_task_limiters_for_system(system_id)
+                    self._create_state_for_system(system_id)
 
                     self._process_results(data, meta_data, data_for_alerting)
                 elif 'error' in data_received:
                     meta_data = data_received['error']['meta_data']
                     system_id = meta_data['system_id']
-                    self._create_timed_task_limiters_for_system(system_id)
+                    self._create_state_for_system(system_id)
 
                     self._process_errors(data_received['error'],
                                          data_for_alerting)
@@ -222,23 +222,23 @@ class SystemAlerter(Alerter):
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
                 current = float(data['went_down_at']['current'])
-                monitoring_time = float(meta_data['time'])
+                monitoring_timestamp = float(meta_data['time'])
+                monitoring_datetime = datetime.fromtimestamp(
+                    monitoring_timestamp)
                 critical_limiters = self._system_critical_timed_task_limiters[
                     meta_data['system_id']]
                 is_down_critical_limiter = critical_limiters[
                     IS_DOWN_LIMITER_NAME]
-                time_elapsed_since_critical_alert = \
-                    monitoring_time - \
-                    is_down_critical_limiter.last_time_that_did_task
-                time_difference = monitoring_time - current
+                downtime = monitoring_timestamp - current
+
                 critical_threshold = int(is_down['critical_threshold'])
                 critical_enabled = str_to_bool(is_down['critical_enabled'])
                 warning_threshold = int(is_down['warning_threshold'])
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
-                critical_repeat = int(is_down['critical_repeat'])
 
-                if not self._initial_downtime_alert_sent:
-                    if (critical_threshold <= time_difference and
+                if not self._system_initial_downtime_alert_sent[
+                    meta_data['system_id']]:
+                    if (critical_threshold <= downtime and
                             critical_enabled):
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',
@@ -248,10 +248,11 @@ class SystemAlerter(Alerter):
                         data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        is_down_critical_limiter.did_task()
-                        self._initial_downtime_alert_sent = True
-                    elif warning_threshold <= time_difference and \
-                            warning_enabled:
+                        is_down_critical_limiter.set_last_time_that_did_task(
+                            monitoring_datetime)
+                        self._system_initial_downtime_alert_sent[
+                            meta_data['system_id']] = True
+                    elif warning_threshold <= downtime and warning_enabled:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'WARNING',
                             meta_data['time'], meta_data['system_parent_id'],
@@ -260,21 +261,24 @@ class SystemAlerter(Alerter):
                         data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        is_down_critical_limiter.did_task()
-                        self._initial_downtime_alert_sent = True
+                        is_down_critical_limiter.set_last_time_that_did_task(
+                            monitoring_datetime)
+                        self._system_initial_downtime_alert_sent[
+                            meta_data['system_id']] = True
                 else:
-                    if (critical_enabled and time_elapsed_since_critical_alert
-                            >= critical_repeat):
+                    if critical_enabled and \
+                            is_down_critical_limiter.can_do_task(
+                                monitoring_datetime):
                         alert = SystemStillDownAlert(
-                            meta_data['system_name'], time_difference,
-                            'CRITICAL', meta_data['time'],
-                            meta_data['system_parent_id'],
+                            meta_data['system_name'], downtime, 'CRITICAL',
+                            meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
                         data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert {}"
                                           "".format(alert.alert_data))
-                        is_down_critical_limiter.did_task()
+                        is_down_critical_limiter.set_last_time_that_did_task(
+                            monitoring_datetime)
 
     def _process_results(self, metrics: Dict, meta_data: Dict,
                          data_for_alerting: List) -> None:
@@ -299,7 +303,8 @@ class SystemAlerter(Alerter):
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                self._initial_downtime_alert_sent = False
+                self._system_initial_downtime_alert_sent[
+                    meta_data['system_id']] = False
                 is_down_critical_limiter.reset()
 
         if str_to_bool(open_fd['enabled']):
@@ -353,7 +358,6 @@ class SystemAlerter(Alerter):
     ) -> None:
         warning_threshold = float(config['warning_threshold'])
         critical_threshold = float(config['critical_threshold'])
-        critical_repeat = float(config['critical_repeat'])
         warning_enabled = str_to_bool(config['warning_enabled'])
         critical_enabled = str_to_bool(config['critical_enabled'])
         critical_limiters = self._system_critical_timed_task_limiters[
@@ -365,7 +369,7 @@ class SystemAlerter(Alerter):
                     (warning_threshold <= previous):
                 alert = \
                     increased_above_threshold_alert(
-                        meta_data['system_name'], previous, current, 'WARNING',
+                        meta_data['system_name'], current, 'WARNING',
                         meta_data['last_monitored'], 'WARNING',
                         meta_data['system_parent_id'],
                         meta_data['system_id']
@@ -376,7 +380,7 @@ class SystemAlerter(Alerter):
             elif current < warning_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
-                        meta_data['system_name'], previous, current, 'INFO',
+                        meta_data['system_name'], current, 'INFO',
                         meta_data['last_monitored'], 'WARNING',
                         meta_data['system_parent_id'],
                         meta_data['system_id']
@@ -386,27 +390,27 @@ class SystemAlerter(Alerter):
                                   "".format(alert.alert_data))
 
         if critical_enabled:
-            monitoring_time = float(meta_data['last_monitored'])
-            time_elapsed_since_alert = \
-                monitoring_time - critical_limiter.last_time_that_did_task
+            monitoring_datetime = datetime.fromtimestamp(
+                float(meta_data['last_monitored']))
             if current >= critical_threshold and \
-                    time_elapsed_since_alert >= critical_repeat:
+                    critical_limiter.can_do_task(monitoring_datetime):
                 alert = \
                     increased_above_threshold_alert(
-                        meta_data['system_name'], previous, current,
-                        'CRITICAL', meta_data['last_monitored'], 'CRITICAL',
+                        meta_data['system_name'], current, 'CRITICAL',
+                        meta_data['last_monitored'], 'CRITICAL',
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert {}"
                                   "".format(alert.alert_data))
-                critical_limiter.did_task()
+                critical_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
             elif warning_threshold < current < critical_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
-                        meta_data['system_name'], previous, current,
-                        'INFO', meta_data['last_monitored'], 'CRITICAL',
+                        meta_data['system_name'], current, 'INFO',
+                        meta_data['last_monitored'], 'CRITICAL',
                         meta_data['system_parent_id'],
                         meta_data['system_id']
                     )
@@ -429,45 +433,3 @@ class SystemAlerter(Alerter):
                 'data': copy.deepcopy(alert)})
             self.logger.debug("{} added to the publishing queue "
                               "successfully.".format(alert))
-
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and the {} queue will be deleted. Afterwards "
-                      "the process will exit.".format(self, self._queue_used),
-                      self.logger)
-
-        # Try to delete the queue before exiting to avoid cases when the data
-        # transformer is still sending data to this queue. This is done until
-        # successful
-        while True:
-            try:
-                self.rabbitmq.perform_operation_till_successful(
-                    self.rabbitmq.queue_delete, [self._queue_used,
-                                                 False, False], -1)
-                break
-            except ConnectionNotInitializedException:
-                self.logger.info(
-                    "Connection was not yet initialized, therefore no need to "
-                    "delete '{}'".format(self._queue_used))
-                break
-            except pika.exceptions.AMQPChannelError as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Will re-try deleting '{}'".format(self._queue_used))
-            except pika.exceptions.AMQPConnectionError as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Will re-connect again and re-try deleting "
-                    "'{}'".format(self._queue_used))
-                self.rabbitmq.connect_till_successful()
-            except Exception as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Unexpected exception while trying to delete "
-                    "'{}'. Will not continue re-trying deleting the "
-                    "queue.".format(self._queue_used))
-                break
-
-        self.rabbitmq.disconnect_till_successful()
-        log_and_print("{} terminated.".format(self), self.logger)
-        sys.exit()

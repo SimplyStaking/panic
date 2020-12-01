@@ -1,9 +1,7 @@
 import copy
 import json
 import logging
-import sys
 from datetime import datetime
-from types import FrameType
 from typing import List
 
 import pika.exceptions
@@ -14,7 +12,6 @@ from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
-from src.utils.logging import log_and_print
 
 
 class GithubAlerter(Alerter):
@@ -151,11 +148,3 @@ class GithubAlerter(Alerter):
                 'data': copy.deepcopy(alert)})
             self.logger.debug("{} added to the publishing queue "
                               "successfully.".format(alert))
-
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
-        log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and afterwards the process will exit."
-                      .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
-        log_and_print("{} terminated.".format(self), self.logger)
-        sys.exit()

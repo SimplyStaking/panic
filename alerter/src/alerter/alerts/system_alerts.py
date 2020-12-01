@@ -70,91 +70,91 @@ class InvalidUrlAlert(Alert):
 
 
 class OpenFileDescriptorsIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.OpenFileDescriptorsIncreasedAboveThresholdAlert,
-            "{} open file descriptors INCREASED above {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
+            "{} open file descriptors INCREASED above {} Threshold. Current "
+            "value {}%.".format(origin_name, threshold, new_value),
             severity, timestamp, parent_id, origin_id)
 
 
 class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.OpenFileDescriptorsDecreasedBelowThresholdAlert,
-            "{} open file descriptors DECREASED below {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} open file descriptors DECREASED below {} Threshold. Current "
+            "value {}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemCPUUsageIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemCPUUsageIncreasedAboveThresholdAlert,
-            "{} system CPU usage INCREASED above {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system CPU usage INCREASED above {} Threshold. Current value: "
+            "{}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemCPUUsageDecreasedBelowThresholdAlert,
-            "{} system CPU usage DECREASED below {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system CPU usage DECREASED below {} Threshold. Current value: "
+            "{}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
-            "{} system RAM usage INCREASED above {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system RAM usage INCREASED above {} Threshold. Current value:"
+            "{}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageDecreasedBelowThresholdAlert,
-            "{} system RAM usage DECREASED below {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system RAM usage DECREASED below {} Threshold. Current value: "
+            "{}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
-            "{} system RAM usage INCREASED above {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system RAM usage INCREASED above {} Threshold. Current value: "
+            "{}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, old_value: float, new_value: float,
-                 severity: str, timestamp: float, threshold: str,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, new_value: float, severity: str,
+                 timestamp: float, threshold: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemStorageUsageDecreasedBelowThresholdAlert,
-            "{} system storage usage DECREASED below {} Threshold from {}% to"
-            " {}%.".format(origin_name, threshold, old_value, new_value),
-            severity, timestamp, parent_id, origin_id)
+            "{} system storage usage DECREASED below {} Threshold. Current "
+            "value: {}%.".format(origin_name, threshold, new_value), severity,
+            timestamp, parent_id, origin_id)
 
 
 class MetricNotFoundErrorAlert(Alert):
