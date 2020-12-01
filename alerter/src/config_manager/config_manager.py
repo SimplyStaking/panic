@@ -3,8 +3,7 @@ import logging
 import os
 import time
 from configparser import ConfigParser, DuplicateSectionError, \
-    DuplicateOptionError, InterpolationError, ParsingError, \
-    MissingSectionHeaderError
+    DuplicateOptionError, InterpolationError, ParsingError
 from typing import Any, Dict, List, Optional, Callable
 
 from pika import BasicProperties
@@ -71,24 +70,33 @@ class ConfigManager:
         self._initialize_rabbitmq()
 
     def _initialize_rabbitmq(self) -> None:
-        try:
-            self._connect_to_rabbit()
-            self._logger.debug("Connected to Rabbit")
-            self._rabbit.confirm_delivery()
-            self._logger.debug("Just set delivery confirmation on RabbitMQ "
-                               "channel")
-            self._rabbit.exchange_declare(
-                CONFIG_EXCHANGE, 'topic', False, True, False, False
-            )
-            self._logger.debug("Declared {} exchange in Rabbit".format(
-                CONFIG_EXCHANGE))
-        except ConnectionNotInitializedException as cnie:
-            # Should be impossible, but since exchange_declare can throw it we
-            # shall ensure to log that the error passed through here too.
-            self._logger.error(
-                "Something went wrong that meant a connection was not made")
-            self._logger.error(cnie.message)
-            raise cnie
+        while True:
+            try:
+                self._connect_to_rabbit()
+                self._logger.debug("Connected to Rabbit")
+                self._rabbit.confirm_delivery()
+                self._logger.debug("Just set delivery confirmation on RabbitMQ "
+                                   "channel")
+                self._rabbit.exchange_declare(
+                    CONFIG_EXCHANGE, 'topic', False, True, False, False
+                )
+                self._logger.debug("Declared {} exchange in Rabbit".format(
+                    CONFIG_EXCHANGE))
+                break
+            except (ConnectionNotInitializedException,
+                    AMQPConnectionError) as connection_error:
+                # Should be impossible, but since exchange_declare can throw
+                # it we shall ensure to log that the error passed through here
+                # too.
+                self._logger.error(
+                    "Something went wrong that meant a connection was not made")
+                self._logger.error(connection_error.message)
+                raise connection_error
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. As a result we don't need to
+                # anything here, just re-try.
+                time.sleep(10)
 
     def __del__(self):
         self.stop_watching_config_files()
@@ -106,7 +114,7 @@ class ConfigManager:
     def _disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from RabbitMQ")
-            self._rabbit.disconnect()
+            self._rabbit.disconnect_till_successful()
             self._connected_to_rabbit = False
             self._logger.info("Disconnected from RabbitMQ")
         else:
@@ -175,7 +183,7 @@ class ConfigManager:
             # TODO (Mark) PANIC-278 - Implement schema check
         except (
                 DuplicateSectionError, DuplicateOptionError, InterpolationError,
-                MissingSectionHeaderError, ParsingError
+                ParsingError
         ) as e:
             self._logger.error(e.message)
             # When the config is invalid, we do nothing and discard this event.
