@@ -15,9 +15,9 @@ from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE
+from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
-from src.utils.exceptions import ConnectionNotInitializedException
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
@@ -83,6 +83,21 @@ class TelegramAlertsHandler(ChannelHandler):
             self.telegram_channel.channel_id), self._process_alerts, False,
             False, None)
 
+        # Set producing configuration for heartbeat publishing
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
+
     def _process_alerts(self, ch: BlockingChannel,
                         method: pika.spec.Basic.Deliver,
                         properties: pika.spec.BasicProperties, body: bytes) \
@@ -119,7 +134,7 @@ class TelegramAlertsHandler(ChannelHandler):
         # fails, the data is processed again and we do not have duplication of
         # data in the queue
         if not processing_error:
-            self._place_data_on_queue(alert)
+            self._place_alert_on_queue(alert)
 
         # Send any data waiting in the queue, if any
         try:
@@ -127,10 +142,24 @@ class TelegramAlertsHandler(ChannelHandler):
         except Exception as e:
             raise e
 
+        if self.alerts_queue.empty() and not processing_error:
+            try:
+                heartbeat = {
+                    'component_name': self.handler_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
+            except MessageWasNotDeliveredException as e:
+                # Log the message and do not raise it as message is residing in
+                # the alerts queue.
+                self.logger.exception(e)
+            except Exception as e:
+                raise e
+
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 
-    def _place_data_on_queue(self, alert: Alert) -> None:
+    def _place_alert_on_queue(self, alert: Alert) -> None:
         self.logger.debug("Adding {} to the alerts queue ...".format(
             alert.alert_code.name))
 
@@ -183,7 +212,12 @@ class TelegramAlertsHandler(ChannelHandler):
                 self.alerts_queue.get()
                 self.alerts_queue.task_done()
             else:
-                self.logger.info("Stopped sending alerts.")
+                self.logger.info("Not all alerts could be sent in a timely "
+                                 "manner. The alerts which could not be sent "
+                                 "will be saved in the alerts queue, and if "
+                                 "not a lot of time passes since these alerts "
+                                 "were raised, these alert would still be "
+                                 "sent.")
                 return
 
         if not empty:
@@ -210,49 +244,8 @@ class TelegramAlertsHandler(ChannelHandler):
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and the 'telegram_{}_alerts_handler_queue' "
-                      "will be deleted. Afterwards, the process will exit."
-                      .format(self, self.telegram_channel.channel_id),
-                      self.logger)
-
-        # Try to delete the queue before exiting to avoid cases when the alert
-        # router is still sending data to this queue. This is done until
-        # successful
-        while True:
-            try:
-                self.rabbitmq.perform_operation_till_successful(
-                    self.rabbitmq.queue_delete,
-                    ['telegram_{}_alerts_handler_queue'.format(
-                        self.telegram_channel.channel_id), False, False], -1)
-                break
-            except ConnectionNotInitializedException:
-                self.logger.info(
-                    "Connection was not yet initialized, therefore no need to "
-                    "delete the 'telegram_{}_alerts_handler_queue'".format(
-                        self.telegram_channel.channel_id))
-                break
-            except pika.exceptions.AMQPChannelError as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Will re-try deleting the "
-                    "'telegram_{}_alerts_handler_queue'".format(
-                        self.telegram_channel.channel_id))
-            except pika.exceptions.AMQPConnectionError as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Will re-connect again and re-try deleting the "
-                    "'telegram_{}_alerts_handler_queue'".format(
-                        self.telegram_channel.channel_id))
-                self.rabbitmq.connect_till_successful()
-            except Exception as e:
-                self.logger.exception(e)
-                self.logger.info(
-                    "Unexpected exception while trying to delete the "
-                    "'telegram_{}_alerts_handler_queue'. Will not continue "
-                    "re-trying deleting the queue".format(
-                        self.telegram_channel.channel_id))
-                break
-
+                      "closed, and afterwards the process will "
+                      "exit.".format(self), self.logger)
         self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
