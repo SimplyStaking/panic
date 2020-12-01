@@ -229,7 +229,7 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.disconnect_till_successful()
 
         for _, process_details in self.parent_id_process_dict.items():
-            log_and_print("Terminating the process of {}".format(
+            log_and_print("Terminating the alerter process of {}".format(
                 process_details['chain']), self.logger)
             process = process_details['process']
             process.terminate()
