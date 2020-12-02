@@ -13,7 +13,7 @@ import {
 import StepButtonContainer from
   '../../../../containers/chains/common/stepButtonContainer';
 import NavigationButton from '../../../global/navigationButton';
-import { PingNodeExpoter } from '../../../../utils/buttons';
+import { PingNodeExporter } from '../../../../utils/buttons';
 import { defaultTheme, theme } from '../../../theme/default';
 import Data from '../../../../data/chains';
 
@@ -131,7 +131,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   alignItems="center"
                 >
                   <Box px={2}>
-                    <PingNodeExpoter
+                    <PingNodeExporter
                       disabled={(Object.keys(errors).length !== 0)}
                       exporterUrl={values.exporterUrl}
                     />

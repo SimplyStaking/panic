@@ -2,14 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
+  TextField, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
 } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { SendTestOpsGenieButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { SendTestOpsGenieButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
 const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
   return (
@@ -25,7 +26,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Configuration Name: </Typography>
+                <Typography> Configuration Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -49,7 +50,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> API Token: </Typography>
+                <Typography> API Token </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -73,7 +74,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> EU: </Typography>
+                <Typography> EU </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
@@ -98,7 +99,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Severities: </Typography>
+                <Typography> Severities </Typography>
               </Grid>
               <Grid item xs={9}>
                 <FormControlLabel
@@ -169,14 +170,12 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                       eu={values.eu}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>

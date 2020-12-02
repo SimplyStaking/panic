@@ -2,20 +2,19 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
-import WelcomePage from '../../components/welcome/welcomePage';
-import ChannelsPage from '../../components/channels/channelsPage';
-import ChainsPage from '../../components/chains/chainsPage';
-import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
-import SubstrateSetupPage from
-  '../../components/chains/substrate/substrateSetupPage';
-import GeneralSetupPage from '../../components/general/generalSetupPage';
-import GeneralPage from '../../components/general/generalPage';
-import UsersPage from '../../components/users/usersPage';
+import WelcomePage from 'components/welcome/welcomePage';
+import ChannelsPage from 'components/channels/channelsPage';
+import ChainsPage from 'components/chains/chainsPage';
+import CosmosSetupPage from 'components/chains/cosmos/cosmosSetupPage';
+import SubstrateSetupPage from 'components/chains/substrate/substrateSetupPage';
+import OtherSetupPage from 'components/chains/other/otherSetupPage';
+import GeneralPage from 'components/general/generalPage';
+import UsersPage from 'components/users/usersPage';
 import {
   WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
-  SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, USERS_PAGE, GENERAL_SETUP_PAGE,
-} from '../../constants/constants';
-import { refreshAccessToken } from '../../utils/data';
+  SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, USERS_PAGE, OTHER_SETUP_PAGE,
+} from 'constants/constants';
+import { refreshAccessToken } from 'utils/data';
 
 const mapStateToProps = (state) => ({
   page: state.ChangePageReducer.page,
@@ -26,7 +25,7 @@ const mapStateToProps = (state) => ({
 function getPage(pageName) {
   switch (pageName) {
     case WELCOME_PAGE:
-      return <ChannelsPage />;
+      return <WelcomePage />;
     case CHANNELS_PAGE:
       return <ChannelsPage />;
     case CHAINS_PAGE:
@@ -35,8 +34,8 @@ function getPage(pageName) {
       return <CosmosSetupPage />;
     case SUBSTRATE_SETUP_PAGE:
       return <SubstrateSetupPage />;
-    case GENERAL_SETUP_PAGE:
-      return <GeneralSetupPage />;
+    case OTHER_SETUP_PAGE:
+      return <OtherSetupPage />;
     case USERS_PAGE:
       return <UsersPage />;
     case GENERAL_PAGE:

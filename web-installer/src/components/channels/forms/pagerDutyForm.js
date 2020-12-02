@@ -2,8 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
+  TextField, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
 } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -25,7 +26,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Configuration Name: </Typography>
+                <Typography> Configuration Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -49,7 +50,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> API Token: </Typography>
+                <Typography> API Token </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -73,7 +74,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Integration Key: </Typography>
+                <Typography> Integration Key </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -97,7 +98,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Severities: </Typography>
+                <Typography> Severities </Typography>
               </Grid>
               <Grid item xs={9}>
                 <FormControlLabel
@@ -168,14 +169,12 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                       integrationKey={values.integrationKey}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>

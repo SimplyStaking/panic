@@ -16,13 +16,14 @@ const cosmosRepeatAlerts = {
   byId: {
     1: {
       name: 'Cannot access validator',
+      identifier: 'cannot_access_validator',
+      description: 'If a validator is in-accessible you will be alerted.',
+      adornment: 'Seconds',
       warning: {
-        delay: 60,
-        repeat: 0,
+        repeat: 60,
         enabled: true,
       },
       critical: {
-        delay: 60,
         repeat: 300,
         enabled: true,
       },
@@ -30,13 +31,14 @@ const cosmosRepeatAlerts = {
     },
     2: {
       name: 'Cannot access node',
+      identifier: 'cannot_access_node',
+      description: 'If a node is in-accessible you will be alerted.',
+      adornment: 'Seconds',
       warning: {
-        delay: 60,
         repeat: 300,
         enabled: true,
       },
       critical: {
-        delay: 120,
         repeat: 300,
         enabled: false,
       },
@@ -44,230 +46,317 @@ const cosmosRepeatAlerts = {
     },
     3: {
       name: 'Lost connection with specific peer',
+      identifier: 'lost_connection_with_peer',
+      description: 'If a node loses connection with a specific peer after some '
+                 + 'time you will receive an alert.',
+      adornment: 'Seconds',
       warning: {
-        delay: 60,
-        repeat: 0,
+        repeat: 300,
         enabled: true,
       },
       critical: {
-        delay: 120,
-        repeat: 0,
+        repeat: 500,
         enabled: false,
       },
       enabled: true,
     },
-  },
-  allIds: ['1', '2', '3'],
-};
-
-const cosmosTimeWindowAlerts = {
-  byId: {
-    1: {
-      name: 'Missed Blocks',
+    4: {
+      name: 'System Is Down',
+      identifier: 'system_is_down',
+      description: 'The Node Exporter URL is un-reachable therefore the '
+                 + 'system is taken to be down.',
+      adornment: 'Seconds',
       warning: {
-        threshold: 20,
-        timewindow: 360,
+        repeat: 0,
         enabled: true,
       },
       critical: {
-        threshold: 100,
-        timewindow: 3600,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
   },
-  allIds: ['1'],
+  allIds: ['1', '2', '3', '4'],
 };
 
 const cosmosThresholdAlerts = {
   byId: {
-    1: {
-      name: 'Open File Descriptors increased',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    2: {
-      name: 'Peer count decreased',
+    5: {
+      name: 'Peer count decreased below threshold',
+      identifier: 'peer_count_decreased',
+      description: 'Number of peers connected to your node has decreased.',
+      adornment: 'Peers',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 3,
         enabled: true,
       },
       critical: {
         threshold: 2,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
-    3: {
+    6: {
       name: 'No change in block height',
+      identifier: 'no_change_in_block_height',
+      description: 'No change in block height has been detected after some '
+                 + 'time.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 180,
         enabled: true,
       },
       critical: {
         threshold: 300,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
-    4: {
-      name: 'Time of last pre-commit/pre-vote activity is above threshold',
+    7: {
+      name: 'Time of last activity is above threshold',
+      identifier: 'time_of_last_activity',
+      description: 'Alerts will be sent based on how much time has passed '
+                 + 'since last pre-commit/pre-vote activity.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 60,
         enabled: true,
       },
       critical: {
         threshold: 180,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    5: {
-      name: 'Mempool Size',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    6: {
-      name: 'System CPU usage increased',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    7: {
-      name: 'System storage usage increased',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     8: {
-      name: 'System RAM usage increased',
+      name: 'Mempool Size',
+      identifier: 'mempool_size',
+      description: 'Alerts will be sent based on how many transactions are in '
+                 + 'the mempool.',
+      adornment: 'Megabytes',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     9: {
-      name: 'System network usage increased',
+      name: 'Open File Descriptors Increased',
+      identifier: 'open_file_descriptors',
+      description: 'Open File Descriptors alerted on based on percentage usage'
+                 + '.',
+      adornment: '%',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    10: {
+      name: 'System CPU Usage Increased',
+      identifier: 'system_cpu_usage',
+      description: 'System CPU alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    11: {
+      name: 'System storage usage increased',
+      identifier: 'system_storage_usage',
+      description: 'System Storage alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    12: {
+      name: 'System RAM usage increased',
+      identifier: 'system_ram_usage',
+      description: 'System RAM alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      warning: {
+        threshold: 85,
+        enabled: true,
+      },
+      critical: {
+        threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  allIds: ['5', '6', '7', '8', '9', '10', '11', '12'],
+};
+
+const cosmosTimeWindowAlerts = {
+  byId: {
+    13: {
+      name: 'Missed Blocks',
+      identifier: 'missed_blocks',
+      description: 'After a number of consecutive missed blocks you will '
+                 + 'receive an alert.', 
+      adornment_threshold: 'Blocks',
+      adornment_time: 'Seconds',
+      warning: {
+        threshold: 20,
+        time_window: 360,
+        enabled: true,
+      },
+      critical: {
+        threshold: 100,
+        time_window: 3600,
+        enabled: true,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['13'],
 };
 
 const cosmosSeverityAlerts = {
   byId: {
-    1: {
-      name: 'Validator inaccessible on startup',
-      severity: CRITICAL,
-      enabled: true,
-    },
-    2: {
-      name: 'Node inaccessible on startup',
-      severity: WARNING,
-      enabled: true,
-    },
-    3: {
-      name: 'Slashed',
-      severity: CRITICAL,
-      enabled: true,
-    },
-    4: {
-      name: 'Node is syncing',
-      severity: WARNING,
-      enabled: true,
-    },
-    5: {
-      name: 'Validator is not active in this session',
-      severity: WARNING,
-      enabled: true,
-    },
-    6: {
-      name: 'Validator set size increased',
-      severity: INFO,
-      enabled: true,
-    },
-    7: {
-      name: 'Validator set size decreased',
-      severity: INFO,
-      enabled: true,
-    },
-    8: {
-      name: 'Validator is jailed',
-      severity: CRITICAL,
-      enabled: true,
-    },
-    9: {
-      name: 'Voting power increased',
-      severity: INFO,
-      enabled: false,
-    },
-    10: {
-      name: 'Validator power decreased',
-      severity: INFO,
-      enabled: false,
-    },
-    11: {
-      name: 'New proposal submitted',
-      severity: INFO,
-      enabled: false,
-    },
-    12: {
-      name: 'Proposal conducted',
-      severity: INFO,
-      enabled: false,
-    },
-    13: {
-      name: 'Delegated balance increase',
-      severity: INFO,
-      enabled: false,
-    },
     14: {
+      name: 'Validator inaccessible on startup',
+      identifier: 'validator_inaccessible_on_startup',
+      description: 'Validator was not accessible on startup.', 
+      severity: CRITICAL,
+      enabled: true,
+    },
+    15: {
+      name: 'Node inaccessible on startup',
+      identifier: 'node_inaccessible_on_startup',
+      description: 'Node was not accessible on startup.', 
+      severity: WARNING,
+      enabled: true,
+    },
+    16: {
+      name: 'Slashed',
+      identifier: 'slashed',
+      description: 'Occurs when your validator has been slashed.', 
+      severity: CRITICAL,
+      enabled: true,
+    },
+    17: {
+      name: 'Node is syncing',
+      identifier: 'node_is_syncing',
+      description: 'Occurs when your node is still catching up to the rest of '
+                 + 'the blockchain network in terms of block height.', 
+      severity: INFO,
+      enabled: true,
+    },
+    18: {
+      name: 'Validator is not active in this session',
+      identifier: 'validator_not_active_in_session',
+      description: 'Occurs when your validator is not participating in the '
+                 + 'current consensus round.',
+      severity: WARNING,
+      enabled: true,
+    },
+    19: {
+      name: 'Validator set size increased',
+      identifier: 'validator_set_size_increased',
+      description: 'The number of validators in the set have increased.',
+      severity: INFO,
+      enabled: true,
+    },
+    20: {
+      name: 'Validator set size decreased',
+      identifier: 'validator_set_size_decreased',
+      description: 'The number of validators in the set have decreased.',
+      severity: INFO,
+      enabled: true,
+    },
+    21: {
+      name: 'Validator Is Jailed',
+      identifier: 'validator_is_jailed',
+      description: 'The number of validators in the set have decreased.',
+      severity: CRITICAL,
+      enabled: true,
+    },
+    22: {
+      name: 'Voting power increased',
+      identifier: 'voting_power_increased',
+      description: 'Voting power of a validator has increased.',
+      severity: INFO,
+      enabled: false,
+    },
+    23: {
+      name: 'Validator power decreased',
+      identifier: 'voting_power_decreased',
+      description: 'Voting power of a validator has decreased.',
+      severity: INFO,
+      enabled: false,
+    },
+    24: {
+      name: 'New proposal submitted',
+      identifier: 'new_proposal',
+      description: 'A new proposal has been submitted.',
+      severity: INFO,
+      enabled: false,
+    },
+    25: {
+      name: 'Proposal conducted',
+      identifier: 'proposal_conducted',
+      description: 'A proposal has been conducted.',
+      severity: INFO,
+      enabled: false,
+    },
+    26: {
+      name: 'Delegated balance increase',
+      identifier: 'delegated_balance_increase',
+      description: 'The amount of tokens delegated to your validator has '
+                 + 'increased.',
+      severity: INFO,
+      enabled: false,
+    },
+    27: {
       name: 'Delegated balance decrease',
+      identifier: 'delegated_balance_decrease',
+      description: 'The amount of tokens delegated to your validator has '
+                 + 'decreased.',
       severity: INFO,
       enabled: false,
     },
   },
-  allIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  allIds: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
 };
 
 // Reducers to add and remove cosmos node configurations from global state

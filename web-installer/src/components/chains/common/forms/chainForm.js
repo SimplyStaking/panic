@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
+import { makeStyles } from "@material-ui/core/styles";
 import {
   TextField, Typography, Box, Grid, Tooltip,
 } from '@material-ui/core';
@@ -10,6 +11,11 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
 import NavigationButton from '../../../global/navigationButton';
 import { defaultTheme, theme } from '../../../theme/default';
+import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
+
+const useStyles = makeStyles(styles);
 
 /*
  * This form allows for the input of a chain name.
@@ -17,7 +23,8 @@ import { defaultTheme, theme } from '../../../theme/default';
 const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
   saveChainDetails, currentChain, updateChainDetails, pageChanger,
   clearChainId}) => {
-
+  
+  const classes = useStyles();
   // NextStep function will save the chain name, step changer
   function nextStep(step) {
     // If there is a current chain assigned already, overwrite the value
@@ -48,7 +55,16 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
-      <div>
+      <div> 
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>
+                  {data.chainForm.title}
+              </h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography
           variant="subtitle1"
           gutterBottom
@@ -66,7 +82,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
           >
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Chain Name: </Typography>
+                <Typography> Chain Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -77,6 +93,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                   placeholder={data.chainForm.placeholder}
                   helperText={errors.chainName ? errors.chainName : ''}
                   onChange={handleChange}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -103,7 +120,10 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
               <Grid item xs={2}>
                 <Box px={2}>
                   <NavigationButton
-                    disabled={(Object.keys(errors).length !== 0)}
+                    disabled={
+                      (Object.keys(errors).length !== 0) &&
+                      (values.chainName.length === 0)
+                    }
                     nextPage={nextStep}
                     buttonText={NEXT}
                     navigation={data.chainForm.nextStep}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeStyles } from "@material-ui/core/styles";
-import StepManager from 'containers/chains/substrate/stepManager';
-import Data from 'data/substrate';
+import StepManager from 'containers/chains/other/stepManager';
+import Data from 'data/general';
 import Parallax from "components/material_ui/Parallax/Parallax.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
@@ -11,7 +11,14 @@ import CardBody from "components/material_ui/Card/CardBody.js";
 
 const useStyles = makeStyles(styles);
 
-function SubstrateSetupPage() {
+/*
+ * Main general setup page, this will be constant through out the general
+ * setup process. What will change is whatever the StepManager returns. This
+ * depends on what is currently set in the state through redux. E.g if the step
+ * is set as the REPOS_STEP in redux then the repositories form and table will
+ * be rendered.
+*/
+function OtherSetupPage() {
   const classes = useStyles();
 
   return (
@@ -22,7 +29,7 @@ function SubstrateSetupPage() {
             <GridItem>
               <div className={classes.brand}>
                 <h1 className={classes.title}>
-                  {Data.substrate.title}
+                  {Data.general.title}
                 </h1>
               </div>
             </GridItem>
@@ -42,4 +49,4 @@ function SubstrateSetupPage() {
   );
 }
 
-export default SubstrateSetupPage;
+export default OtherSetupPage;

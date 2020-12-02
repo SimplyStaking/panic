@@ -6,7 +6,7 @@ export const COSMOS_SETUP_PAGE = 'COSMOS_SETUP_PAGE';
 export const SUBSTRATE_SETUP_PAGE = 'SUBSTRATE_SETUP_PAGE';
 export const USERS_PAGE = 'USERS_PAGE';
 export const GENERAL_PAGE = 'GENERAL_PAGE';
-export const GENERAL_SETUP_PAGE = 'GENERAL_SETUP_PAGE';
+export const OTHER_SETUP_PAGE = 'OTHER_SETUP_PAGE';
 
 // Used for button names
 export const START = 'Start';
@@ -15,6 +15,7 @@ export const BACK = 'Back';
 export const DONE = 'Done';
 export const NEW = 'New';
 export const GENERAL = 'GENERAL';
+export const OTHER = 'Other';
 export const CONFIGURE = 'CONFIGURE';
 
 // Used for General Reducer Parent

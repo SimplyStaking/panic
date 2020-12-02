@@ -2,21 +2,39 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
+import { NEXT, BACK } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import { defaultTheme, theme } from '../../../theme/default';
+import Button from "components/material_ui/CustomButtons/Button.js";
+import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import { makeStyles } from "@material-ui/core/styles";
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
+
+const useStyles = makeStyles(styles);
 
 const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   data}) => {
+
+  const classes = useStyles();
+
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>
+                  {data.nodeForm.title}
+              </h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.nodeForm.description}</p>
@@ -27,7 +45,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Node Name: </Typography>
+                <Typography> Node Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -52,7 +70,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node WS URL: </Typography>
+                <Typography> Node WS URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -77,7 +95,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Telemetry URL: </Typography>
+                <Typography> Telemetry URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -102,14 +120,14 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Prometheus Endpoint URL: </Typography>
+                <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
                   value={values.prometheusUrl}
                   type="text"
                   name="prometheusUrl"
-                  placeholder={data.nodeForm.prometheusHodler}
+                  placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -127,7 +145,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
+                <Typography> Node Exporter URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -152,7 +170,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Stash Address: </Typography>
+                <Typography> Stash Address </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -177,7 +195,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node is Validator: </Typography>
+                <Typography> Node is Validator </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -236,7 +254,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={4} />
               <Grid item xs={2}>
-                <Typography> Monitor Node: </Typography>
+                <Typography> Monitor Node </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -265,7 +283,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 />
               </Grid>
               <Grid item xs={2}>
-                <Typography> Use as Data Source: </Typography>
+                <Typography> Use as Data Source </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -303,27 +321,14 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   justify="flex-end"
                   alignItems="center"
                 >
-                  <Box px={2}>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
-                    >
-                      <Box px={2}>
-                        Test Node
-                      </Box>
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
-                      type="submit"
-                    >
-                      <Box px={2}>
-                        Add Node
-                      </Box>
-                    </Button>
-                  </Box>
+                  <Button
+                    color="primary"
+                    size="md"
+                    disabled={(Object.keys(errors).length !== 0)}
+                    type="submit"
+                  >
+                      Add Node
+                  </Button>
                 </Grid>
               </Grid>
               <Grid item xs={2}>
@@ -381,7 +386,7 @@ NodesForm.propTypes = forbidExtraProps({
       websocketTip: PropTypes.string.isRequired,
       telemetryHolder: PropTypes.string.isRequired,
       telemetryTip: PropTypes.string.isRequired,
-      prometheusHodler: PropTypes.string.isRequired,
+      prometheusHolder: PropTypes.string.isRequired,
       prometheusTip: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       exporterUrlTip: PropTypes.string.isRequired,

@@ -2,26 +2,43 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import { PingNodeExpoter } from '../../../../utils/buttons';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import { PingNodeExporter } from '../../../../utils/buttons';
 import { defaultTheme, theme } from '../../../theme/default';
+import Button from "components/material_ui/CustomButtons/Button.js";
+import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import { makeStyles } from "@material-ui/core/styles";
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
 
 /*
  * Contains the details to setup a KMS configuration to be monitored, this also
  * has the functionality to test the Node Exporter IP address that will be given.
  */
+const useStyles = makeStyles(styles);
+
 const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   data}) => {
+  const classes = useStyles();
+
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>
+                  {data.kmsForm.title}
+              </h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.kmsForm.description}</p>
@@ -32,7 +49,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> KMS Name: </Typography>
+                <Typography> KMS Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -56,7 +73,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
+                <Typography> Node Exporter URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -83,7 +100,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Monitor KMS: </Typography>
+                <Typography> Monitor KMS </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
@@ -121,19 +138,17 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   alignItems="center"
                 >
                   <Box px={2}>
-                    <PingNodeExpoter
+                    <PingNodeExporter
                       disabled={(Object.keys(errors).length !== 0)}
                       exporterUrl={values.exporterUrl}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
                         Add KMS
-                      </Box>
                     </Button>
                   </Box>
                 </Grid>

@@ -389,7 +389,6 @@ class SaveConfig extends Component {
     return (
       <SaveConfigButton
         onClick={this.saveConfigs}
-        text="Finish"
       />
     );
   }

@@ -1,9 +1,15 @@
 import React from 'react';
-import { Grid, Box } from '@material-ui/core';
-import Title from '../../global/title';
-import MainText from '../../global/mainText';
+import { makeStyles } from "@material-ui/core/styles";
 import StepManager from '../../../containers/chains/cosmos/stepManager';
-import Data from '../../../data/cosmos';
+import Data from 'data/cosmos';
+import Parallax from "components/material_ui/Parallax/Parallax.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import styles from "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
+import Card from "components/material_ui/Card/Card.js";
+import CardBody from "components/material_ui/Card/CardBody.js";
+
+const useStyles = makeStyles(styles);
 
 /*
  * Main cosmos setup page, this will be constant through out the cosmos chain
@@ -13,28 +19,32 @@ import Data from '../../../data/cosmos';
  * rendered.
 */
 function CosmosSetupPage() {
+  const classes = useStyles();
+
   return (
     <div>
-      <Title
-        text={Data.cosmos.title}
-      />
-      <MainText
-        text={Data.cosmos.description}
-      />
-      <Box p={2} className="flex_root">
-        <Box
-          p={3}
-          border={1}
-          borderRadius="borderRadius"
-          borderColor="grey.300"
-        >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+      <Parallax image={require("assets/img/backgrounds/5.png")}>
+        <div className={classes.container}>
+          <GridContainer>
+            <GridItem>
+              <div className={classes.brand}>
+                <h1 className={classes.title}>
+                  {Data.cosmos.title}
+                </h1>
+              </div>
+            </GridItem>
+          </GridContainer>
+        </div>
+      </Parallax>
+      <div className={classes.mainRaised}>
+        <Card>
+          <CardBody>
+            <div className={classes.container}>
               <StepManager />
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { changeStep } from '../../../redux/actions/pageActions';
-import NavigationButton from '../../../components/global/navigationButton';
+import { changeStep } from 'redux/actions/pageActions';
+import NavigationButton from 'components/global/navigationButton';
 
 class StepButtonContainer extends Component {
   constructor(props) {

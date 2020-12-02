@@ -2,15 +2,16 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
+  TextField, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
 } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { SendTestEmailButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { SendTestEmailButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
 const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
@@ -32,7 +33,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Configuration Name: </Typography>
+                <Typography> Configuration Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -56,7 +57,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> SMTP: </Typography>
+                <Typography> SMTP </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -80,7 +81,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Email From: </Typography>
+                <Typography> Email From </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -104,7 +105,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Emails To: </Typography>
+                <Typography> Emails To </Typography>
               </Grid>
               <Grid item xs={9}>
                 <Autocomplete
@@ -138,7 +139,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Username: </Typography>
+                <Typography> Username </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -160,7 +161,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Password: </Typography>
+                <Typography> Password </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -182,7 +183,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Severities: </Typography>
+                <Typography> Severities </Typography>
               </Grid>
               <Grid item xs={9}>
                 <FormControlLabel
@@ -256,14 +257,12 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       pass={values.password}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>

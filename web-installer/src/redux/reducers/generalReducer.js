@@ -6,75 +6,106 @@ import {
   REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
   ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  UPDATE_THRESHOLD_ALERT,
+  UPDATE_THRESHOLD_ALERT, UPDATE_REPEAT_ALERT,
 } from '../actions/types';
 import { GLOBAL } from '../../constants/constants';
 
 const generalThresholdAlerts = {
   byId: {
     1: {
-      name: 'Open File Descriptors increased',
+      name: 'Open File Descriptors Increased',
+      identifier: 'open_file_descriptors',
+      description: 'Open File Descriptors alerted on based on percentage usage'
+                 + '.',
+      adornment: '%',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     2: {
-      name: 'System CPU usage increased',
+      name: 'System CPU Usage Increased',
+      identifier: 'system_cpu_usage',
+      description: 'System CPU alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     3: {
       name: 'System storage usage increased',
+      identifier: 'system_storage_usage',
+      description: 'System Storage alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     4: {
       name: 'System RAM usage increased',
+      identifier: 'system_ram_usage',
+      description: 'System RAM alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    5: {
-      name: 'System network usage increased',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
   },
-  allIds: ['1', '2', '3', '4', '5'],
+  allIds: ['1', '2', '3', '4'],
 };
+
+const generalRepeatAlerts = {
+  byId: {
+    5: {
+      name: 'System Is Down',
+      identifier: 'system_is_down',
+      description: 'The Node Exporter URL is un-reachable therefore the '
+                 + 'system is taken to be down.',
+      adornment: 'Seconds',
+      warning: {
+        repeat: 0,
+        enabled: true,
+      },
+      critical: {
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+  },
+  allIds: ['5'],
+}
 
 // Initial periodic state
 const periodicState = {
@@ -97,6 +128,7 @@ const generalState = {
       pagerduties: [],
       opsgenies: [],
       thresholdAlerts: generalThresholdAlerts,
+      repeatAlerts: generalRepeatAlerts,
     },
   },
   allIds: [GLOBAL],
@@ -349,6 +381,28 @@ function GeneralReducer(state = generalState, action) {
             opsgenies: state.byId[GLOBAL].opsgenies.filter(
               (config) => config !== action.payload.id,
             ),
+          },
+        },
+      };
+    case UPDATE_REPEAT_ALERT:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parentId !== GLOBAL) {
+        return state;
+      }
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            repeatAlerts: {
+              ...state.byId[GLOBAL].repeatAlerts,
+              byId: {
+                ...state.byId[GLOBAL].repeatAlerts.byId,
+                [action.payload.id]: action.payload.alert,
+              },
+            },
           },
         },
       };

@@ -2,8 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Typography, Grid, Tooltip,
+  TextField, Box, Typography, Grid, Tooltip,
 } from '@material-ui/core';
+import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -32,7 +33,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Configuration Name: </Typography>
+                <Typography> Configuration Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -56,7 +57,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Account Sid: </Typography>
+                <Typography> Account Sid </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -80,7 +81,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Authentication Token: </Typography>
+                <Typography> Authentication Token </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -104,7 +105,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Twilio Phone Number: </Typography>
+                <Typography> Twilio Phone Number </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -128,7 +129,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Phone numbers to dial: </Typography>
+                <Typography> Phone numbers to dial </Typography>
               </Grid>
               <Grid item xs={9}>
                 <Autocomplete
@@ -176,14 +177,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       twilioPhoneNo={values.twilioPhoneNo}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>

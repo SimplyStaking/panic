@@ -39,10 +39,8 @@ function SendTestEmailButton({
     });
   };
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Send test e-mail
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -75,10 +73,8 @@ function TestCallButton({
     });
   };
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Test call
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -107,15 +103,8 @@ function SendTestOpsGenieButton({ disabled, apiKey, eu }) {
     }
   };
   return (
-    <Button
-      variant="outlined"
-      size="large"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <Box px={2}>
-        Test
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -144,15 +133,8 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
     }
   };
   return (
-    <Button
-      variant="outlined"
-      size="large"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <Box px={2}>
-        Test
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -219,10 +201,8 @@ function PingRepoButton({ disabled, repo }) {
     }
   };
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Test Repository
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test Repo
     </Button>
   );
 }
@@ -282,16 +262,8 @@ function AddAccount({ username, password, disabled }) {
     }
   };
   return (
-    <Button
-      type="submit"
-      variant="outlined"
-      size="large"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <Box px={2}>
-        Add Account
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Add
     </Button>
   );
 }
@@ -365,24 +337,20 @@ function PingCosmosButton({
   };
 
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Test Node
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test Node
     </Button>
   );
 }
 
-function SaveConfigButton({ onClick, text }) {
+function SaveConfigButton({ onClick }) {
   return (
-    <Button variant="outlined" size="large" onClick={onClick}>
-      <Box px={2}>
-        {text}
-      </Box>
+    <Button onClick={onClick} size="lg" color="primary">
+      Finish
     </Button>
   );
 }
-function PingNodeExpoter({ disabled, exporterUrl }) {
+function PingNodeExporter({ disabled, exporterUrl }) {
   const onClick = async () => {
     // Check if the node exporter url given works properly
     if (exporterUrl) {
@@ -407,10 +375,8 @@ function PingNodeExpoter({ disabled, exporterUrl }) {
   };
 
   return (
-    <Button variant="outlined" size="large" disabled={disabled} onClick={onClick}>
-      <Box px={2}>
-        Test Node
-      </Box>
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
     </Button>
   );
 }
@@ -484,7 +450,6 @@ SendTestAlertButton.propTypes = forbidExtraProps({
 
 SaveConfigButton.propTypes = forbidExtraProps({
   onClick: PropTypes.func.isRequired,
-  text: PropTypes.string.isRequired,
 });
 
 LoginButton.propTypes = forbidExtraProps({
@@ -506,7 +471,7 @@ PingCosmosButton.propTypes = forbidExtraProps({
   exporterUrl: PropTypes.string.isRequired,
 });
 
-PingNodeExpoter.propTypes = forbidExtraProps({
+PingNodeExporter.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   exporterUrl: PropTypes.string.isRequired,
 });
@@ -525,6 +490,6 @@ DeleteAccount.propTypes = forbidExtraProps({
 export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
-  PingRepoButton, PingCosmosButton, PingNodeExpoter, SaveConfigButton,
+  PingRepoButton, PingCosmosButton, PingNodeExporter, SaveConfigButton,
   AddAccount, DeleteAccount,
 };

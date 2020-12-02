@@ -2,19 +2,16 @@ import { connect } from 'react-redux';
 import {
   updateRepeatAlert, updateTimeWindowAlert, updateThresholdAlert,
   updateSeverityAlert,
-} from '../../../redux/actions/alertActions';
-import { resetCurrentChainIdCosmos } from
-  '../../../redux/actions/cosmosActions';
-import { resetCurrentChainIdSubstrate } from
-  '../../../redux/actions/substrateActions';
-import { changePage, changeStep } from '../../../redux/actions/pageActions';
-import AlertsTable from '../../../components/chains/common/tables/alertsTable';
-import GeneralAlertsTable from
-  '../../../components/chains/common/tables/generalAlertsTable';
-import { GLOBAL } from '../../../constants/constants';
-import CosmosData from '../../../data/cosmos';
-import SubstrateData from '../../../data/substrate';
-import GeneralData from '../../../data/general';
+} from 'redux/actions/alertActions';
+import { resetCurrentChainIdCosmos } from 'redux/actions/cosmosActions';
+import { resetCurrentChainIdSubstrate } from 'redux/actions/substrateActions';
+import { changePage, changeStep } from 'redux/actions/pageActions';
+import AlertsTable from 'components/chains/common/tables/alertsTable';
+import GeneralAlertsTable from 'components/chains/common/tables/generalAlertsTable';
+import { GLOBAL } from 'constants/constants';
+import CosmosData from 'data/cosmos';
+import SubstrateData from 'data/substrate';
+import GeneralData from 'data/general';
 
 // ------------------------- Cosmos Based Chain Data --------------------
 
@@ -99,6 +96,8 @@ function mapGeneralDispatchToProps(dispatch) {
     clearChainId: () => dispatch(resetCurrentChainIdSubstrate()),
     updateThresholdAlertDetails:
       (details) => dispatch(updateThresholdAlert(details)),
+    updateRepeatAlertDetails:
+      (details) => dispatch(updateRepeatAlert(details)),
   };
 }
 

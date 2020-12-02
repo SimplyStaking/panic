@@ -27,7 +27,7 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
           <TableRow>
             <TableCell align="center">Name</TableCell>
             <TableCell align="center">Tendermint</TableCell>
-            <TableCell align="center">Cosmos SDK</TableCell>
+            <TableCell align="center">Cosmos Rest Server</TableCell>
             <TableCell align="center">Prometheus</TableCell>
             <TableCell align="center">Node Exporter</TableCell>
             <TableCell align="center">Validator</TableCell>

@@ -18,16 +18,16 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <Typography
+          variant="subtitle1"
+          gutterBottom
+          className="greyBackground">
+          <Box m={2} p={3}>
+            <p>{Data.telegram.description}</p>
+          </Box>
+        </Typography>
+        <Divider />
         <form onSubmit={handleSubmit} className="root">
-          <Typography
-            variant="subtitle1"
-            gutterBottom
-            className="greyBackground">
-            <Box m={2} p={3}>
-              <p>{Data.telegram.description}</p>
-            </Box>
-          </Typography>
-          <Divider />
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>

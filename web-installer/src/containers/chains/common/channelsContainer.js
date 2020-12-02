@@ -1,16 +1,15 @@
 import { connect } from 'react-redux';
-import ChannelsTable from
-  '../../../components/chains/common/tables/channelsTable';
-import { GLOBAL } from '../../../constants/constants';
+import ChannelsTable from 'components/chains/common/tables/channelsTable';
+import { GLOBAL } from 'constants/constants';
 import {
   addTelegramChannel, removeTelegramChannel, addTwilioChannel,
   removeTwilioChannel, addEmailChannel, removeEmailChannel,
   addPagerDutyChannel, removePagerDutyChannel, addOpsGenieChannel,
   removeOpsGenieChannel,
-} from '../../../redux/actions/generalActions';
-import CosmosData from '../../../data/cosmos';
-import SubstrateData from '../../../data/substrate';
-import GeneralData from '../../../data/general';
+} from 'redux/actions/generalActions';
+import CosmosData from 'data/cosmos';
+import SubstrateData from 'data/substrate';
+import GeneralData from 'data/general';
 
 // ------------------------- Common Actions -----------------------------
 

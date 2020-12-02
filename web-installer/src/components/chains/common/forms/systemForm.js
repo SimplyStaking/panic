@@ -2,30 +2,37 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
-} from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import NavigationButton from '../../../global/navigationButton';
-import { PingNodeExpoter } from '../../../../utils/buttons';
-import { defaultTheme, theme } from '../../../theme/default';
-import Data from '../../../../data/chains';
+import { NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import NavigationButton from 'components/global/navigationButton';
+import { PingNodeExporter } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/system';
+import Button from "components/material_ui/CustomButtons/Button.js";
+import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import { makeStyles } from "@material-ui/core/styles";
+import GridContainer from "components/material_ui/Grid/GridContainer.js";
+import GridItem from "components/material_ui/Grid/GridItem.js";
 
 /*
  * Systems form contains all the information and structure needed to setup
  * a system configuration. Contains functionality to test if the provided system
  * is correct.
  */
+
+const useStyles = makeStyles(styles);
+
 const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   pageChanger}) => {
 
-  // Next page is infact returning back to the Chains Setings Page
+  const classes = useStyles();
+
+  // Next page is in fact returning back to the Chains Settings Page
   // but keeping the name the same for consistency
   function nextPage(page) {
     // Clear the current chain, id we are working on.
@@ -35,9 +42,18 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>
+                  {Data.title}
+              </h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{Data.chainName.description}</p>
+            <p>{Data.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -45,7 +61,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> System Name: </Typography>
+                <Typography> System Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -53,7 +69,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   value={values.name}
                   type="text"
                   name="name"
-                  placeholder="System_1"
+                  placeholder={Data.name_holder}
                   helperText={errors.name ? errors.name : ''}
                   onChange={handleChange}
                   fullWidth
@@ -62,14 +78,14 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.systems.name} placement="left">
+                    <Tooltip title={Data.name} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
+                <Typography> Node Exporter URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -77,7 +93,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   value={values.exporterUrl}
                   type="text"
                   name="exporterUrl"
-                  placeholder="http://176.67.65.56:9000"
+                  placeholder={Data.exporter_url_holder}
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
                   fullWidth
@@ -86,14 +102,14 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.systems.exporterUrl} placement="left">
+                    <Tooltip title={Data.exporterUrl} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Monitor System: </Typography>
+                <Typography> Monitor System </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
@@ -112,10 +128,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={Data.systems.monitorSystem}
-                      placement="left"
-                    >
+                    <Tooltip title={Data.monitorSystem} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -131,19 +144,17 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   alignItems="center"
                 >
                   <Box px={2}>
-                    <PingNodeExpoter
+                    <PingNodeExporter
                       disabled={(Object.keys(errors).length !== 0)}
                       exporterUrl={values.exporterUrl}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
+                      color="primary"
+                      size="md"
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                      <Box px={2}>
                         Add System
-                      </Box>
                     </Button>
                   </Box>
                 </Grid>

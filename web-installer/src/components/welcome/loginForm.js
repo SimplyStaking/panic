@@ -17,7 +17,7 @@ import CustomInput from "components/material_ui/CustomInput/CustomInput.js";
 import styles from "assets/jss/material-kit-react/views/componentsSections/loginStyle.js";
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Tooltip } from '@material-ui/core';
-import { defaultTheme, theme } from 'components/theme/default';
+import { theme } from 'components/theme/default';
 import InfoIcon from '@material-ui/icons/Info';
 import Data from 'data/welcome';
 
