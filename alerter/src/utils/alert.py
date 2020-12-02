@@ -13,3 +13,10 @@ class SeverityCode(Enum):
     WARNING = 2
     CRITICAL = 3
     ERROR = 4
+
+
+class Severity(Enum):
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    CRITICAL = 'CRITICAL'
+    ERROR = 'ERROR'

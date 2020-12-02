@@ -20,37 +20,37 @@ class CommandHandler(ABC):
         return self._logger
 
     @abstractmethod
-    def start_callback(self) -> None:
+    def start_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def help_callback(self) -> None:
+    def help_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def mute_callback(self) -> None:
+    def mute_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def unmute_callback(self) -> None:
+    def mute_all_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def snooze_callback(self) -> None:
+    def unmute_all_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def unsnooze_callback(self) -> None:
+    def unmute_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def health_callback(self) -> None:
+    def status_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def ping_callback(self) -> None:
+    def ping_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def unknown_callback(self) -> None:
+    def unknown_callback(self, *args) -> None:
         pass

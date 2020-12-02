@@ -7,6 +7,9 @@
 # Hashes
 _hash_parent = 'hash_p1'
 
+# Unique keys
+_key_alerter_mute = "a1"
+
 # sX_<system_id>
 _key_system_process_cpu_seconds_total = 's1'
 _key_system_process_memory_usage = 's2'
@@ -31,6 +34,9 @@ _key_github_last_monitored = 'gh2'
 # cX_<component_name>
 _key_component_heartbeat = 'c1'
 
+# chX_<parent_id>
+_key_chain_mute_alerts = 'ch1'
+
 
 class Keys:
 
@@ -41,6 +47,10 @@ class Keys:
     @staticmethod
     def get_hash_parent(parent_id: str) -> str:
         return Keys._as_prefix(_hash_parent) + parent_id
+
+    @staticmethod
+    def get_alerter_mute() -> str:
+        return _key_alerter_mute
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
@@ -121,3 +131,7 @@ class Keys:
     @staticmethod
     def get_component_heartbeat(component_name: str) -> str:
         return Keys._as_prefix(_key_component_heartbeat) + component_name
+
+    @staticmethod
+    def get_chain_mute_alerts() -> str:
+        return _key_chain_mute_alerts
