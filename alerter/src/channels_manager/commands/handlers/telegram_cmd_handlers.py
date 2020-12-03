@@ -57,6 +57,7 @@ class TelegramCommandHandlers(CmdHandler):
             pass
         except Exception as e:
             self.logger.error('Unrecognized error when accessing Redis: %s', e)
+            raise e
         return False
 
     def mongo_running(self) -> bool:
@@ -67,6 +68,7 @@ class TelegramCommandHandlers(CmdHandler):
             pass
         except Exception as e:
             self.logger.error('Unrecognized error when accessing Mongo: %s', e)
+            raise e
         return False
 
     def rabbit_running(self) -> bool:
@@ -82,6 +84,7 @@ class TelegramCommandHandlers(CmdHandler):
         except Exception as e:
             self.logger.error('Unrecognized error when accessing RabbitMQ: %s',
                               e)
+            raise e
         return False
 
     @staticmethod
@@ -105,12 +108,185 @@ class TelegramCommandHandlers(CmdHandler):
         if self.telegram_commands_handler.authorise(update, context):
             update.message.reply_text('PONG!')
 
-    def status_callback(self) -> None:
+    @staticmethod
+    def _get_running_icon(running: bool) -> str:
+        if running:
+            return '\xE2\x9C\x85'
+        else:
+            return '\xE2\x9D\x97'
+
+    def _get_mongo_based_status(self) -> str:
+        status = ""
+        try:
+            if self.mongo_running():
+                status += '- *Mongo*: {} \n'.format(self._get_running_icon(
+                    True))
+            else:
+                status += '- *Mongo*: {} \n'.format(self._get_running_icon(
+                    False))
+        except Exception:
+            status += '- Could not get Mongo status due to an unrecognized ' \
+                      'error. Check the logs to debug the issue.'
+
+        return status
+
+    def _get_rabbit_based_status(self) -> str:
+        status = ""
+        try:
+            if self.rabbit_running():
+                status += '- *RabbitMQ*: {} \n'.format(
+                    self._get_running_icon(True))
+            else:
+                status += '- *RabbitMQ*: {} \n'.format(self._get_running_icon(
+                    False))
+        except Exception:
+            status += '- Could not get RabbitMQ status due to an ' \
+                      'unrecognized error. Check the logs to debug the issue.'
+
+        return status
+
+    def _get_muted_status(self) -> str:
+        # TODO: Use unsafe only to trigger exceptions. Do not catch exceptions.
+        #     : as this is solved in the calling function
+        status = ''
+
+        mute_alerter_key = Keys.get_alerter_mute()
+        all_chains_muted_severities = []
+        if self.redis.exists_unsafe(mute_alerter_key):
+            muted_severities = json.loads(self.redis.get_unsafe(
+                mute_alerter_key).decode())
+            for severity, severity_muted in muted_severities.items():
+                if severity_muted:
+                    all_chains_muted_severities.append(severity)
+            status += '- All chains have {} alerts ' \
+                      'muted.\n '.format(','.join(all_chains_muted_severities))
+
+        associated_chains = self.telegram_commands_handler.associated_chains
+        chain_names = \
+            [chain_name for _, chain_name in associated_chains.items()]
+
+        # TODO: write a line for each chain .. do union of all_chain_muted_severities
+
+        # TODO: Say no muted alert severities for associated chains if nothing
+        #     : muted for associated chains. And say nothing on the other one
+        return status
+
+    def _get_panic_components_status(self) -> str:
+        # TODO: Use unsafe only to trigger exceptions. Do not catch exceptions.
         pass
 
-    def unmute_callback(self) -> None:
-        # TODO: Both unmute all and unmute can take severities (or not)
-        pass
+    def _get_redis_based_status(self) -> str:
+        associated_chains = self.telegram_commands_handler.associated_chains
+        chain_names = \
+            [chain_name for _, chain_name in associated_chains.items()]
+
+        redis_accessible_status = ""
+        redis_error_status = \
+            "- *Redis*: {} \n".format(self._get_running_icon(False)) + \
+            "- No {} alert is consider muted as Redis is inaccessible.".format(
+                ', '.join(chain_names)) + \
+            "- Cannot get PANIC components' status as Redis is inaccessible."
+        unrecognized_error_status = \
+            "- Could not get Redis status due to an unrecognized error. " \
+            "Check the logs to debug the issue." + \
+            "- Cannot get PANIC components' status due to an unrecognized " \
+            "error. "
+        try:
+            redis_accessible_status += '- *Redis*: {} \n'.format(
+                self._get_running_icon(True))
+            redis_accessible_status += self._get_muted_status()
+            redis_accessible_status += self._get_panic_components_status()
+        except (RedisError, ConnectionResetError) as e:
+            self.logger.exception(e)
+            self.logger.error('Error in redis when getting redis based '
+                              'status: ', e)
+            return redis_error_status
+        except Exception as e:
+            self.logger.exception(e)
+            self.logger.error('Could not get redis based status: ', e)
+            return unrecognized_error_status
+
+        return redis_accessible_status
+
+    def status_callback(self, update: Update, context: CallbackContext) -> None:
+        self._logger.info('/status: update=%s, context=%s', update, context)
+
+        # Check that authorised
+        if not self.telegram_commands_handler.authorise(update, context):
+            return
+
+        # Start forming the status message
+        update.message.reply_text('Generating status...')
+
+        mongo_based_status = self._get_mongo_based_status()
+        rabbit_based_status = self._get_rabbit_based_status()
+        redis_based_status = self._get_redis_based_status()
+
+        status = mongo_based_status + rabbit_based_status + redis_based_status
+
+        # TODO: If overflow message split in two messages. See if you can.
+        # Send status
+        self.formatted_reply(
+            update, status[:-1] if status.endswith('\n') else status)
+
+    def unmute_callback(self, update: Update, context: CallbackContext) -> None:
+        self.logger.info('/unmute: update=%s, context=%s', update, context)
+
+        # Check that authorised
+        if not self.telegram_commands_handler.authorise(update, context):
+            return
+
+        update.message.reply_text('Performing unmute...')
+
+        associated_chains = self.telegram_commands_handler.associated_chains
+
+        redis_error_chains = []
+        unrecognized_error_chains = []
+        successfully_unmuted_chains = []
+        already_unmuted_chains = []
+        for chain_id, chain_name in associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+            try:
+                if self.redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                    self.redis.hremove_unsafe(chain_hash, mute_alerts_key)
+                    self.logger.info("%s alerts have been unmuted.",
+                                     chain_name)
+                    successfully_unmuted_chains.append(chain_name)
+                else:
+                    already_unmuted_chains.append(chain_name)
+                    self.logger.info("%s has no muted severities.", chain_name)
+            except (RedisError, ConnectionResetError) as e:
+                self.logger.exception(e)
+                self.logger.error('Could not unmute %s alerts due to a'
+                                  'redis error: %s', chain_name, e)
+                redis_error_chains.append(chain_name)
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.error('Could not unmute %s alerts due to an '
+                                  'unrecognized error: %s', chain_name, e)
+                unrecognized_error_chains.append(chain_name)
+
+        res = "Unmute result:\n\n"
+        if len(successfully_unmuted_chains) != 0:
+            res += "- Successfully unmuted all {} alerts.\n".format(', '.join(
+                successfully_unmuted_chains))
+
+        if len(redis_error_chains) != 0:
+            res += "- Could not unmute {} alerts due to a redis error. Check " \
+                   "/status or the logs to see if Redis is online and/or " \
+                   "re-try again \n".format(', '.join(redis_error_chains))
+
+        if len(unrecognized_error_chains) != 0:
+            res += "- Could not unmute {} alerts due to an unrecognized " \
+                   "error. Check the logs to debug the issue. " \
+                   "\n".format(', '.join(unrecognized_error_chains))
+
+        if len(already_unmuted_chains) != 0:
+            res += "- No {} alert severity was muted.\n".format(
+                ', '.join(already_unmuted_chains))
+
+        update.message.reply_text(res)
 
     def mute_callback(self, update: Update, context: CallbackContext) -> None:
         self._logger.info('/mute: update=%s, context=%s', update, context)
@@ -156,6 +332,7 @@ class TelegramCommandHandlers(CmdHandler):
 
         redis_error_chains = []
         muted_chains = []
+        unrecognized_error_chains = []
         for chain_id, chain_name in associated_chains.items():
             chain_hash = Keys.get_hash_parent(chain_id)
             mute_alerts_key = Keys.get_chain_mute_alerts()
@@ -164,54 +341,43 @@ class TelegramCommandHandlers(CmdHandler):
             for severity in panic_severities:
                 severities_muted[severity] = severity in recognized_severities
 
-            set_ret = self.redis.hset(chain_hash, mute_alerts_key, json.dumps(
-                severities_muted))
-            if set_ret is None:
-                redis_error_chains.append(chain_name)
-            else:
+            try:
+                self.redis.hset_unsafe(chain_hash, mute_alerts_key,
+                                       json.dumps(severities_muted))
                 muted_chains.append(chain_name)
+            except (RedisError, ConnectionResetError) as e:
+                self.logger.exception(e)
+                self.logger.error('Could not unmute %s alerts due to a'
+                                  'redis error: %s', chain_name, e)
+                redis_error_chains.append(chain_name)
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.error('Could not unmute %s alerts due to an '
+                                  'unrecognized error: %s', chain_name, e)
+                unrecognized_error_chains.append(chain_name)
 
-        if len(redis_error_chains) == 0:
-            self.logger.info('Successfully muted all alerts with '
-                             'severity/severities {} for chain(s) '
-                             '{}.'.format(', '.join(recognized_severities),
-                                          ', '.join(muted_chains)))
-            update.message.reply_text(
-                'Successfully muted all alerts with severity/severities {} for '
-                'chain(s) {}. Give a few seconds until the alerter picks '
-                'this up.'.format(', '.join(recognized_severities),
-                                  ', '.join(muted_chains)))
-        else:
-            if len(muted_chains) == 0:
-                self.logger.error(
-                    'I could not mute {} alerts for {} due to a Redis error.'
-                    ''.format(', '.join(recognized_severities),
-                              ', '.join(redis_error_chains)))
-                update.message.reply_text(
-                    'I could not mute {} alerts for {} due to a Redis error. '
-                    'Please check /status or the logs to see if Redis is '
-                    'online and/or re-try again.'.format(
-                        ', '.join(recognized_severities),
-                        ', '.join(redis_error_chains)))
-            else:
-                self.logger.error(
-                    'Successfully muted all alerts with severity/severities '
-                    '{} for chain(s) {}. However, I could not mute {} alerts '
-                    'for {} due to a Redis error.'.format(
-                        ', '.join(recognized_severities),
-                        ', '.join(muted_chains),
-                        ', '.join(recognized_severities),
-                        ', '.join(redis_error_chains)))
-                update.message.reply_text(
-                    'Successfully muted all alerts with severity/severities '
-                    '{} for chain(s) {}. Give a few seconds until the alerter '
-                    'picks this up. However, I could not mute {} alerts for {} '
-                    'due to a Redis error. Please check /status to see if '
-                    'Redis is online and/or re-try again.'.format(
-                        ', '.join(recognized_severities),
-                        ', '.join(muted_chains),
-                        ', '.join(recognized_severities),
-                        ', '.join(redis_error_chains)))
+        res = "Mute result:\n\n"
+        if len(muted_chains) != 0:
+            res += "- Successfully muted all {} alerts for chain(s). Give a " \
+                   "few seconds until the alerter picks this up. " \
+                   "\n".format(', '.join(recognized_severities),
+                               ', '.join(muted_chains))
+
+        if len(redis_error_chains) != 0:
+            res += "- Could not mute {} alerts for chain(s) {} due to a " \
+                   "redis error. Check /status or the logs to see if Redis " \
+                   "is online and/or re-try again " \
+                   "\n".format(', '.join(recognized_severities),
+                               ', '.join(redis_error_chains))
+
+        if len(unrecognized_error_chains) != 0:
+            res += "- Could not mute {} alerts for chain(s) {} due to an " \
+                   "unrecognized error. Check /status or the logs to see if " \
+                   "Redis is online and/or re-try again " \
+                   "\n".format(', '.join(recognized_severities),
+                               ', '.join(unrecognized_error_chains))
+
+        update.message.reply_text(res)
 
     def mute_all_callback(self, update: Update, context: CallbackContext) \
             -> None:
@@ -257,8 +423,17 @@ class TelegramCommandHandlers(CmdHandler):
         for severity in panic_severities:
             severities_muted[severity] = severity in recognized_severities
 
-        set_ret = self.redis.set(mute_alerter_key, json.dumps(severities_muted))
-        if set_ret is None:
+        try:
+            self.redis.set_unsafe(mute_alerter_key,
+                                  json.dumps(severities_muted))
+            self.logger.info('Successfully muted all {} alerts for every '
+                             'chain.'.format(', '.join(recognized_severities)))
+            update.message.reply_text(
+                'Successfully muted all {} alerts for every chain. Give a few '
+                'seconds until the alerter picks this up.'.format(
+                    ', '.join(recognized_severities)))
+        except (RedisError, ConnectionResetError) as e:
+            self.logger.exception(e)
             self.logger.error(
                 'I could not mute all {} alerts due to a Redis error.'
                 ''.format(', '.join(recognized_severities)))
@@ -266,18 +441,112 @@ class TelegramCommandHandlers(CmdHandler):
                 'I could not mute all {} alerts due to a Redis error. Please '
                 'check /status or the logs to see if Redis is online and/or '
                 're-try again.'.format(', '.join(recognized_severities)))
-        else:
-            self.logger.info('Successfully muted all {} alerts for every '
-                             'chain.'.format(', '.join(recognized_severities)))
+        except Exception as e:
+            self.logger.exception(e)
+            self.logger.error(
+                'I could not mute all {} alerts due to an unrecognized error.'
+                ''.format(', '.join(recognized_severities)))
             update.message.reply_text(
-                'Successfully muted all {} alerts for every chain. Give a few '
-                'seconds until the alerter picks this up.'.format(
-                    ', '.join(recognized_severities)))
+                'I could not mute all {} alerts due to an unrecognized error. '
+                'Please check /status or the logs to see if Redis is online '
+                'and/or re-try again.'.format(', '.join(recognized_severities)))
 
-    def unmute_all_callback(self) -> None:
-        # TODO: Must check for pattern an unmute for every chain, apart from
-        #     : unsetting the mute all variable in redis
-        pass
+    def unmute_all_callback(self, update: Update, context: CallbackContext) \
+            -> None:
+        self.logger.info('/unmute_all: update=%s, context=%s', update, context)
+
+        # Check that authorised
+        if not self.telegram_commands_handler.authorise(update, context):
+            return
+
+        update.message.reply_text('Performing unmute_all ...')
+
+        mute_alerter_key = Keys.get_alerter_mute()
+        at_least_one_chain_was_muted = False
+
+        try:
+            if self.redis.exists_unsafe(mute_alerter_key):
+                self.redis.remove_unsafe(mute_alerter_key)
+                self.logger.info("Successfully deleted %s from redis",
+                                 mute_alerter_key)
+                at_least_one_chain_was_muted = True
+        except (RedisError, ConnectionResetError) as e:
+            self.logger.exception(e)
+            self.logger.error('Unmuting unsuccessful due to an issue with '
+                              'redis %s', e)
+            update.message.reply_text(
+                'Unmuting unsuccessful due to an issue with Redis. Check '
+                '/status or the logs to see if Redis is online and/or re-try '
+                'again.')
+            return
+        except Exception as e:
+            self.logger.exception(e)
+            self.logger.error('Unmuting unsuccessful due to an unrecognized '
+                              'issue: %s', e)
+            update.message.reply_text(
+                'Unmuting unsuccessful due to an unrecognized issue. Check '
+                'the logs to debug the issue and/or re-try again.')
+            return
+
+        try:
+            parent_hash = Keys.get_hash_parent_raw()
+            chain_hashes_list = self.redis.get_keys_unsafe(
+                '*' + parent_hash + '*')
+        except (RedisError, ConnectionResetError) as e:
+            self.logger.exception(e)
+            self.logger.error("It may be that not all chains were unmuted "
+                              "due to an issue with redis: %s", e)
+            update.message.reply_text(
+                'It may be that not all chains were unmuted due to a Redis '
+                'error. Check /status or the logs to see if redis is online '
+                'and/or re-try again.')
+            return
+        except Exception as e:
+            self.logger.exception(e)
+            self.logger.error("It may be that not all chains were unmuted "
+                              "due to an unrecognized issue: %s", e)
+            update.message.reply_text(
+                'It may be that not all chains were unmuted due to an '
+                'unrecognized error. Check /status or the logs to see if '
+                'redis is online and/or re-try again.')
+            return
+
+        for chain_hash in chain_hashes_list:
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+            try:
+                if self.redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                    self.redis.hremove_unsafe(chain_hash, mute_alerts_key)
+                    self.logger.info("All alert severities have been unmuted "
+                                     "for chain with hash %s.", chain_hash)
+                    at_least_one_chain_was_muted = True
+            except (RedisError, ConnectionResetError) as e:
+                self.logger.exception(e)
+                self.logger.error('Could not unmute all alerts of chain with '
+                                  'hash %s due to a redis error: %s.',
+                                  chain_hash, e)
+                update.message.reply_text(
+                    'Not all chains were unmuted due to an issue with Redis. '
+                    'Check /status or the logs to see if redis is online '
+                    'and/or re-try again.')
+                return
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.error(
+                    'Unmuting unsuccessful due to an unrecognized issue: '
+                    '%s', e)
+                update.message.reply_text(
+                    'Not all chains were unmuted due to an unrecognized issue. '
+                    'Check the logs to debug the issue and/or re-try again.')
+                return
+
+        if at_least_one_chain_was_muted:
+            update.message.reply_text(
+                'Successfully unmuted all alert severities of all chains '
+                'being monitored in panic (including general repositories and '
+                'general systems as they belong to the chain GENERAL).')
+        else:
+            update.message.reply_text(
+                'No alert severity was muted for any chain.')
 
     def help_callback(self) -> None:
         pass
