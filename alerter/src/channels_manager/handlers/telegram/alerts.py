@@ -3,13 +3,13 @@ import logging
 import os
 import sys
 from datetime import datetime
-from enum import Enum
 from queue import Queue
 from types import FrameType
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers import ChannelHandler
@@ -94,8 +94,7 @@ class TelegramAlertsHandler(ChannelHandler):
             parent_id = alert_json['parent_id']
             origin_id = alert_json['origin_id']
             timestamp = alert_json['timestamp']
-            alert_code_enum = Enum('AlertCode',
-                                   {alert_code['name']: alert_code['code']})
+            alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
             alert = Alert(alert_code_enum, message, severity, timestamp,
                           parent_id, origin_id)
 

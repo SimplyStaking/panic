@@ -1,10 +1,14 @@
+import json
 import logging
+from enum import Enum
 from queue import Queue
 from types import FrameType
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alert_code import AlertCode
+from src.alerter.alerts.alert import Alert
 from src.channels_manager.handlers import ChannelHandler
 from src.configs.email_channel import EmailChannelConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -25,7 +29,23 @@ class EmailAlertsHandler(ChannelHandler):
                        method: pika.spec.Basic.Deliver,
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
-        pass
+        alert_json = json.loads(body)
+        self.logger.info("Received and processing alert: %s", alert_json)
+        processing_error = False
+        try:
+            # We check that everything is in the alert dict
+            alert_code = alert_json['alert_code']
+            alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
+            alert = Alert(alert_code_enum, alert_json['message'],
+                          alert_json['severity'], alert_json['timestamp'],
+                          alert_json['parent_id'], alert_json['origin_id'])
+            self.logger.info("Successfully processed {}".format(alert_json))
+        except Exception as e:
+            self.logger.error("Error when processing {}".format(alert_json))
+            self.logger.exception(e)
+            processing_error = True
+
+
 
     def _initialise_rabbitmq(self) -> None:
         email_channel_queue_name = "email_{}_alerts_handler_queue".format(

@@ -144,7 +144,7 @@ class ConfigManager:
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
-                # If the connection is not initalized or there is a connection
+                # If the connection is not initialised or there is a connection
                 # error, we need to restart the connection and try it again
                 self._logger.error("There has been a connection error")
                 self._logger.exception(connection_error)
