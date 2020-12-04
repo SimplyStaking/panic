@@ -9,16 +9,16 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     config_name: '',
     account_sid: '',
-    authToken: '',
-    twilioPhoneNum: '',
-    twilioPhoneNumbersToDial: '',
+    auth_token: '',
+    twilio_phone_num: '',
+    twilio_phone_numbers_to_dial: '',
   }),
   mapPropsToValues: () => ({
     config_name: '',
     account_sid: '',
-    authToken: '',
-    twilioPhoneNum: '',
-    twilioPhoneNumbersToDial: [],
+    auth_token: '',
+    twilio_phone_num: '',
+    twilio_phone_numbers_to_dial: [],
   }),
   validationSchema: (props) => TwilioSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
@@ -26,9 +26,9 @@ const Form = withFormik({
     const payload = {
       config_name: values.config_name,
       account_sid: values.account_sid,
-      authToken: values.authToken,
-      twilioPhoneNum: values.twilioPhoneNum,
-      twilioPhoneNumbersToDial: values.twilioPhoneNumbersToDial,
+      auth_token: values.auth_token,
+      twilio_phone_num: values.twilio_phone_num,
+      twilio_phone_numbers_to_dial: values.twilio_phone_numbers_to_dial,
     };
     saveTwilioDetails(payload);
     resetForm();

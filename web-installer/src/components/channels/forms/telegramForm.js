@@ -41,7 +41,6 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.bot_namePlaceholder}
                   helperText={errors.bot_name ? errors.bot_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -67,7 +66,6 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.botTokenPlaceholder}
                   helperText={errors.bot_token ? errors.bot_token : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -93,7 +91,6 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.chatIdPlaceholder}
                   helperText={errors.chat_id ? errors.chat_id : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />

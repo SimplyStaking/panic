@@ -10,22 +10,22 @@ import CosmosData from 'data/cosmos';
 // setup, and if the exporter_url is provided
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    kmsName: '',
+    kms_name: '',
     exporter_url: '',
   }),
   mapPropsToValues: () => ({
-    kmsName: '',
+    kms_name: '',
     exporter_url: '',
-    monitorKms: true,
+    monitor_kms: true,
   }),
   validationSchema: (props) => KmsSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveKmsDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
-      kmsName: values.kmsName,
+      kms_name: values.kms_name,
       exporter_url: values.exporter_url,
-      monitorKms: values.monitorKms,
+      monitor_kms: values.monitor_kms,
     };
     saveKmsDetails(payload);
     resetForm();

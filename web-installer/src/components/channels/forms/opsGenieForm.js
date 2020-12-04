@@ -37,7 +37,6 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="ops-genie-1"
                   helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -63,7 +62,6 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="0a9sjd09j1md00d10md19mda2a"
                   helperText={errors.api_token ? errors.api_token : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />

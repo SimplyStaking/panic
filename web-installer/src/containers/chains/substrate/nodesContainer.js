@@ -10,35 +10,35 @@ import SubstrateData from 'data/substrate';
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    substrateNodeName: '',
+    substrate_node_name: '',
   }),
   mapPropsToValues: () => ({
-    substrateNodeName: '',
-    nodeWsUrl: '',
-    telemetryUrl: '',
-    prometheusUrl: '',
+    substrate_node_name: '',
+    node_ws_url: '',
+    telemetry_url: '',
+    prometheus_url: '',
     exporter_url: '',
-    stashAddress: '',
-    isValidator: false,
-    monitorNode: true,
-    isArchiveNode: true,
-    useAsDataSource: true,
+    stash_address: '',
+    is_validator: false,
+    monitor_node: true,
+    is_archive_node: true,
+    use_as_data_source: true,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
-      substrateNodeName: values.substrateNodeName,
-      nodeWsUrl: values.nodeWsUrl,
-      telemetryUrl: values.telemetryUrl,
-      prometheusUrl: values.prometheusUrl,
+      substrate_node_name: values.substrate_node_name,
+      node_ws_url: values.node_ws_url,
+      telemetry_url: values.telemetry_url,
+      prometheus_url: values.prometheus_url,
       exporter_url: values.exporter_url,
-      stashAddress: values.stashAddress,
-      isValidator: values.isValidator,
-      monitorNode: values.monitorNode,
-      isArchiveNode: values.isArchiveNode,
-      useAsDataSource: values.useAsDataSource,
+      stash_address: values.stash_address,
+      is_validator: values.is_validator,
+      monitor_node: values.monitor_node,
+      is_archive_node: values.is_archive_node,
+      use_as_data_source: values.use_as_data_source,
     };
     saveNodeDetails(payload);
     resetForm();

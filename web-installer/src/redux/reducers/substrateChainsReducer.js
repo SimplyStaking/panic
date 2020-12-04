@@ -503,7 +503,7 @@ function substrateChainsById(state = {}, action) {
         ...state,
         [action.payload.id]: {
           id: action.payload.id,
-          chain_name: action.payload.chainName,
+          chain_name: action.payload.chain_name,
           nodes: [],
           repositories: [],
           alerts: [],
@@ -523,7 +523,7 @@ function substrateChainsById(state = {}, action) {
         ...state,
         [action.payload.id]: {
           ...state[action.payload.id],
-          chainName: action.payload.chainName,
+          chain_name: action.payload.chain_name,
         },
       };
     case REMOVE_CHAIN_SUBSTRATE:

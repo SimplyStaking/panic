@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const ChainNameSchema = (props) => Yup.object().shape({
-  chainName: Yup.string()
+  chain_name: Yup.string()
     .test(
       'unique-chain-name',
       'Chain name is not unique.',

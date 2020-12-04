@@ -89,7 +89,7 @@ class SaveConfig extends Component {
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig('chain', 'nodes_config.ini',
-          chainConfig.chainName, 'cosmos', nodesToSave);
+          chainConfig.chain_name, 'cosmos', nodesToSave);
       }
 
       // Repeat the above process for repositories
@@ -103,7 +103,7 @@ class SaveConfig extends Component {
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig('chain', 'repos_config.ini',
-          chainConfig.chainName, 'cosmos', reposToSave);
+          chainConfig.chain_name, 'cosmos', reposToSave);
       }
 
       // Repeat the above process for kms configs
@@ -117,7 +117,7 @@ class SaveConfig extends Component {
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig('chain', 'kms_config.ini',
-          chainConfig.chainName, 'cosmos', kmsToSave);
+          chainConfig.chain_name, 'cosmos', kmsToSave);
       }
 
       const channelConfigs = {};
@@ -129,7 +129,7 @@ class SaveConfig extends Component {
 
       // Save the channels
       await sendConfig('chain', 'channels_config.ini',
-        chainConfig.chainName, 'cosmos', channelConfigs);
+        chainConfig.chain_name, 'cosmos', channelConfigs);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -155,7 +155,7 @@ class SaveConfig extends Component {
       }
       // Save the repeatAlerts configs
       await sendConfig('chain', 'repeat_alerts_config.ini',
-        chainConfig.chainName, 'cosmos', repeatAlertsConfig);
+        chainConfig.chain_name, 'cosmos', repeatAlertsConfig);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -178,10 +178,10 @@ class SaveConfig extends Component {
       }
 
       await sendConfig('chain', 'threshold_alerts_config.ini',
-        chainConfig.chainName, 'cosmos', thresholdAlertsConfig);
+        chainConfig.chain_name, 'cosmos', thresholdAlertsConfig);
 
       await sendConfig('chain', 'severity_alerts_config.ini',
-        chainConfig.chainName, 'cosmos', chainConfig.severityAlerts.byId);
+        chainConfig.chain_name, 'cosmos', chainConfig.severityAlerts.byId);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -208,7 +208,7 @@ class SaveConfig extends Component {
       }
 
       await sendConfig('chain', 'timewindow_alerts_config.ini',
-        chainConfig.chainName, 'cosmos', timeWindowAlertsConfig);
+        chainConfig.chain_name, 'cosmos', timeWindowAlertsConfig);
     });
 
     ToastsStore.success('Saved Cosmos Configs!', 5000);
@@ -227,7 +227,7 @@ class SaveConfig extends Component {
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig('chain', 'nodes_config.ini',
-          chainConfig.chainName, 'substrate', nodesToSave);
+          chainConfig.chain_name, 'substrate', nodesToSave);
       }
 
       // Repeat the above process for repositories
@@ -241,7 +241,7 @@ class SaveConfig extends Component {
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig('chain', 'repos_config.ini',
-          chainConfig.chainName, 'substrate', reposToSave);
+          chainConfig.chain_name, 'substrate', reposToSave);
       }
 
       const channelConfigs = {};
@@ -253,7 +253,7 @@ class SaveConfig extends Component {
 
       // Save the channels
       await sendConfig('chain', 'channels_config.ini',
-        chainConfig.chainName, 'substrate', channelConfigs);
+        chainConfig.chain_name, 'substrate', channelConfigs);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -279,7 +279,7 @@ class SaveConfig extends Component {
       }
       // Save the repeatAlerts configs
       await sendConfig('chain', 'repeat_alerts_config.ini',
-        chainConfig.chainName, 'substrate', repeatAlertsConfig);
+        chainConfig.chain_name, 'substrate', repeatAlertsConfig);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -302,9 +302,9 @@ class SaveConfig extends Component {
       }
 
       await sendConfig('chain', 'threshold_alerts_config.ini',
-        chainConfig.chainName, 'substrate', thresholdAlertsConfig);
+        chainConfig.chain_name, 'substrate', thresholdAlertsConfig);
       await sendConfig('chain', 'severity_alerts_config.ini',
-        chainConfig.chainName, 'substrate', chainConfig.severityAlerts.byId);
+        chainConfig.chain_name, 'substrate', chainConfig.severityAlerts.byId);
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -331,7 +331,7 @@ class SaveConfig extends Component {
       }
 
       await sendConfig('chain', 'timewindow_alerts_config.ini',
-        chainConfig.chainName, 'substrate', timeWindowAlertsConfig);
+        chainConfig.chain_name, 'substrate', timeWindowAlertsConfig);
     });
 
     ToastsStore.success('Saved Substrate Configs!', 5000);
@@ -400,8 +400,8 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       config_name: PropTypes.string,
       smtp: PropTypes.string,
-      emailFrom: PropTypes.string,
-      emailsTo: PropTypes.arrayOf(PropTypes.string),
+      email_from: PropTypes.string,
+      emails_to: PropTypes.arrayOf(PropTypes.string),
       username: PropTypes.string,
       password: PropTypes.string,
       info: PropTypes.bool,
@@ -428,7 +428,7 @@ SaveConfig.propTypes = {
       id: PropTypes.string,
       config_name: PropTypes.string,
       api_token: PropTypes.string,
-      integrationKey: PropTypes.string,
+      integration_key: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,
@@ -456,9 +456,9 @@ SaveConfig.propTypes = {
       id: PropTypes.string,
       config_name: PropTypes.string,
       account_sid: PropTypes.string,
-      authToken: PropTypes.string,
-      twilioPhoneNum: PropTypes.string,
-      twilioPhoneNumbersToDial: PropTypes.arrayOf(
+      auth_token: PropTypes.string,
+      twilio_phone_num: PropTypes.string,
+      twilio_phone_numbers_to_dial: PropTypes.arrayOf(
         PropTypes.string,
       ),
     }).isRequired,
@@ -530,9 +530,9 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      kmsName: PropTypes.string,
+      kms_name: PropTypes.string,
       exporter_url: PropTypes.string,
-      monitorKms: PropTypes.bool,
+      monitor_kms: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
@@ -550,15 +550,15 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      cosmosNodeName: PropTypes.string,
-      tendermintRpcUrl: PropTypes.string,
-      cosmosRpcUrl: PropTypes.string,
-      prometheusUrl: PropTypes.string,
+      cosmos_node_name: PropTypes.string,
+      tendermint_rpc_url: PropTypes.string,
+      cosmos_rpc_url: PropTypes.string,
+      prometheus_url: PropTypes.string,
       exporter_url: PropTypes.string,
-      isValidator: PropTypes.bool,
-      monitorNode: PropTypes.bool,
-      isArchiveNode: PropTypes.bool,
-      useAsDataSource: PropTypes.bool,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
@@ -637,16 +637,16 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      substrateNodeName: PropTypes.string.isRequired,
-      nodeWsUrl: PropTypes.string,
-      telemetryUrl: PropTypes.string,
-      prometheusUrl: PropTypes.string,
+      substrate_node_name: PropTypes.string.isRequired,
+      node_ws_url: PropTypes.string,
+      telemetry_url: PropTypes.string,
+      prometheus_url: PropTypes.string,
       exporter_url: PropTypes.string,
-      stashAddress: PropTypes.string,
-      isValidator: PropTypes.bool,
-      monitorNode: PropTypes.bool,
-      isArchiveNode: PropTypes.bool,
-      useAsDataSource: PropTypes.bool,
+      stash_address: PropTypes.string,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

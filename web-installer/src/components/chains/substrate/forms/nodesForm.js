@@ -49,13 +49,13 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.substrateNodeName}
-                  value={values.substrateNodeName}
+                  error={errors.substrate_node_name}
+                  value={values.substrate_node_name}
                   type="text"
-                  name="substrateNodeName"
+                  name="substrate_node_name"
                   placeholder={data.nodeForm.nameHolder}
-                  helperText={errors.substrateNodeName
-                    ? errors.substrateNodeName : ''}
+                  helperText={errors.substrate_node_name
+                    ? errors.substrate_node_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -76,9 +76,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.nodeWsUrl}
+                  value={values.node_ws_url}
                   type="text"
-                  name="nodeWsUrl"
+                  name="node_ws_url"
                   placeholder={data.nodeForm.websocketHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -103,9 +103,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.telemetryUrl}
+                  value={values.telemetry_url}
                   type="text"
-                  name="telemetryUrl"
+                  name="telemetry_url"
                   placeholder={data.nodeForm.telemetryHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -130,9 +130,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.prometheusUrl}
+                  value={values.prometheus_url}
                   type="text"
-                  name="prometheusUrl"
+                  name="prometheus_url"
                   placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -184,9 +184,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.stashAddress}
+                  value={values.stash_address}
                   type="text"
-                  name="stashAddress"
+                  name="stash_address"
                   placeholder={data.nodeForm.stashAddressHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -225,11 +225,11 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.isValidator}
+                      checked={values.is_validator}
                       onClick={() => {
-                        setFieldValue('isValidator', !values.isValidator);
+                        setFieldValue('is_validator', !values.is_validator);
                       }}
-                      name="isValidator"
+                      name="is_validator"
                       color="primary"
                     />
                   )}
@@ -254,11 +254,11 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.isArchiveNode}
+                      checked={values.is_archive_node}
                       onClick={() => {
-                        setFieldValue('isArchiveNode', !values.isArchiveNode);
+                        setFieldValue('is_archive_node', !values.is_archive_node);
                       }}
-                      name="isArchiveNode"
+                      name="is_archive_node"
                       color="primary"
                     />
                   )}
@@ -284,11 +284,11 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorNode}
+                      checked={values.monitor_node}
                       onClick={() => {
-                        setFieldValue('monitorNode', !values.monitorNode);
+                        setFieldValue('monitor_node', !values.monitor_node);
                       }}
-                      name="monitorNode"
+                      name="monitor_node"
                       color="primary"
                     />
                   )}
@@ -313,12 +313,12 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.useAsDataSource}
+                      checked={values.use_as_data_source}
                       onClick={() => {
-                        setFieldValue('useAsDataSource',
-                          !values.useAsDataSource);
+                        setFieldValue('use_as_data_source',
+                          !values.use_as_data_source);
                       }}
-                      name="useAsDataSource"
+                      name="use_as_data_source"
                       color="primary"
                     />
                   )}
@@ -372,20 +372,20 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    substrateNodeName: PropTypes.string,
+    substrate_node_name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    substrateNodeName: PropTypes.string.isRequired,
-    nodeWsUrl: PropTypes.string,
-    telemetryUrl: PropTypes.string,
-    prometheusUrl: PropTypes.string,
+    substrate_node_name: PropTypes.string.isRequired,
+    node_ws_url: PropTypes.string,
+    telemetry_url: PropTypes.string,
+    prometheus_url: PropTypes.string,
     exporter_url: PropTypes.string,
-    stashAddress: PropTypes.string,
-    isValidator: PropTypes.bool.isRequired,
-    monitorNode: PropTypes.bool.isRequired,
-    isArchiveNode: PropTypes.bool.isRequired,
-    useAsDataSource: PropTypes.bool.isRequired,
+    stash_address: PropTypes.string,
+    is_validator: PropTypes.bool.isRequired,
+    monitor_node: PropTypes.bool.isRequired,
+    is_archive_node: PropTypes.bool.isRequired,
+    use_as_data_source: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,

@@ -37,7 +37,6 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="pager-duty-1"
                   helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -63,7 +62,6 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="_xaegfLaV3zAPx2A3hMPp"
                   helperText={errors.api_token ? errors.api_token : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -82,14 +80,13 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.integrationKey}
-                  value={values.integrationKey}
+                  error={errors.integration_key}
+                  value={values.integration_key}
                   type="text"
-                  name="integrationKey"
+                  name="integration_key"
                   placeholder="9ba187h1f52176l75131dl5hxr6fdb1c8"
-                  helperText={errors.integrationKey ? errors.integrationKey : ''}
+                  helperText={errors.integration_key ? errors.integration_key : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -98,7 +95,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
                     <Tooltip
-                      title={Data.pagerDuty.integrationKey}
+                      title={Data.pagerDuty.integration_key}
                       placement="left">
                       <InfoIcon />
                     </Tooltip>
@@ -182,7 +179,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                     <SendTestPagerDutyButton
                       disabled={(Object.keys(errors).length !== 0)}
                       api_token={values.api_token}
-                      integrationKey={values.integrationKey}
+                      integration_key={values.integration_key}
                     />
                     <Button
                       color="primary"
@@ -207,13 +204,13 @@ PagerDutyForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     config_name: PropTypes.string,
     api_token: PropTypes.string,
-    integrationKey: PropTypes.string,
+    integration_key: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     config_name: PropTypes.string.isRequired,
     api_token: PropTypes.string.isRequired,
-    integrationKey: PropTypes.string.isRequired,
+    integration_key: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

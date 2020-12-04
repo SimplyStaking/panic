@@ -16,13 +16,13 @@ import SubstrateData from 'data/substrate';
 // has a chain configured under the same name.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    chainName: '',
+    chain_name: '',
   }),
   // If the current chain is set then load the name of that chain otherwise
   // return the blank output for the chain name form.
   mapPropsToValues: (props) => ({
-    chainName: props.currentChain
-      ? props.config.byId[props.currentChain].chainName : props.currentChain,
+    chain_name: props.currentChain
+      ? props.config.byId[props.currentChain].chain_name : props.currentChain,
   }),
   validationSchema: (props) => ChainSchema(props),
 })(ChainForm);

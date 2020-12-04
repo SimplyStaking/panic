@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const KmsSchema = (props) => Yup.object().shape({
-  kmsName: Yup.string()
+  kms_name: Yup.string()
     .test(
       'unique-kms-name',
       'KMS name is not unique.',
@@ -14,7 +14,7 @@ const KmsSchema = (props) => Yup.object().shape({
         }
 
         for (let i = 0; i < kmsConfig.allIds.length; i += 1) {
-          if (kmsConfig.byId[kmsConfig.allIds[i]].kmsName === value) {
+          if (kmsConfig.byId[kmsConfig.allIds[i]].kms_name === value) {
             return false;
           }
         }

@@ -53,12 +53,12 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.kmsName}
-                  value={values.kmsName}
+                  error={errors.kms_name}
+                  value={values.kms_name}
                   type="text"
-                  name="kmsName"
+                  name="kms_name"
                   placeholder={data.kmsForm.nameHolder}
-                  helperText={errors.kmsName ? errors.kmsName : ''}
+                  helperText={errors.kms_name ? errors.kms_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -110,11 +110,11 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorKms}
+                      checked={values.monitor_kms}
                       onClick={() => {
-                        setFieldValue('monitorKms', !values.monitorKms);
+                        setFieldValue('monitor_kms', !values.monitor_kms);
                       }}
-                      name="monitorKms"
+                      name="monitor_kms"
                       color="primary"
                     />
                   )}
@@ -186,14 +186,14 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 
 KmsForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    kmsName: PropTypes.string,
+    kms_name: PropTypes.string,
     exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    kmsName: PropTypes.string.isRequired,
+    kms_name: PropTypes.string.isRequired,
     exporter_url: PropTypes.string.isRequired,
-    monitorKms: PropTypes.bool.isRequired,
+    monitor_kms: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,

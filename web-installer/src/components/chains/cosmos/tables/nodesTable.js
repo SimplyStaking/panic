@@ -41,34 +41,34 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].cosmosNodeName}
+                {nodesConfig.byId[id].cosmos_node_name}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].tendermintRpcUrl}
+                {nodesConfig.byId[id].tendermint_rpc_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].cosmosRpcUrl}
+                {nodesConfig.byId[id].cosmos_rpc_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].prometheusUrl}
+                {nodesConfig.byId[id].prometheus_url}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isValidator
+                {nodesConfig.byId[id].is_validator
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitorNode
+                {nodesConfig.byId[id].monitor_node
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isArchiveNode
+                {nodesConfig.byId[id].is_archive_node
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].useAsDataSource
+                {nodesConfig.byId[id].use_as_data_source
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
@@ -98,15 +98,15 @@ NodesTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      cosmosNodeName: PropTypes.string,
-      tendermintRpcUrl: PropTypes.string,
-      cosmosRpcUrl: PropTypes.string,
-      prometheusUrl: PropTypes.string,
+      cosmos_node_name: PropTypes.string,
+      tendermint_rpc_url: PropTypes.string,
+      cosmos_rpc_url: PropTypes.string,
+      prometheus_url: PropTypes.string,
       exporter_url: PropTypes.string,
-      isValidator: PropTypes.bool,
-      monitorNode: PropTypes.bool,
-      isArchiveNode: PropTypes.bool,
-      useAsDataSource: PropTypes.bool,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

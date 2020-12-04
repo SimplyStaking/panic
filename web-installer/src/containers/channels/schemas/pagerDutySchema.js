@@ -21,7 +21,7 @@ const PagerDutySchema = (props) => Yup.object().shape({
     .required('Config name is required.'),
   api_token: Yup.string()
     .required('API token is required.'),
-  integrationKey: Yup.string()
+  integration_key: Yup.string()
     .required('Integration key is required.'),
 });
 

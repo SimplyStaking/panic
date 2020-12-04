@@ -9,12 +9,12 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     config_name: '',
     api_token: '',
-    integrationKey: '',
+    integration_key: '',
   }),
   mapPropsToValues: () => ({
     config_name: '',
     api_token: '',
-    integrationKey: '',
+    integration_key: '',
     info: false,
     warning: false,
     critical: false,
@@ -26,7 +26,7 @@ const Form = withFormik({
     const payload = {
       config_name: values.config_name,
       api_token: values.api_token,
-      integrationKey: values.integrationKey,
+      integration_key: values.integration_key,
       info: values.info,
       warning: values.warning,
       critical: values.critical,

@@ -10,33 +10,33 @@ import CosmosData from 'data/cosmos';
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    cosmosNodeName: '',
+    cosmos_node_name: '',
   }),
   mapPropsToValues: () => ({
-    cosmosNodeName: '',
-    tendermintRpcUrl: '',
-    cosmosRpcUrl: '',
-    prometheusUrl: '',
+    cosmos_node_name: '',
+    tendermint_rpc_url: '',
+    cosmos_rpc_url: '',
+    prometheus_url: '',
     exporter_url: '',
-    isValidator: false,
-    monitorNode: true,
-    isArchiveNode: true,
-    useAsDataSource: true,
+    is_validator: false,
+    monitor_node: true,
+    is_archive_node: true,
+    use_as_data_source: true,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
-      cosmosNodeName: values.cosmosNodeName,
-      tendermintRpcUrl: values.tendermintRpcUrl,
-      cosmosRpcUrl: values.cosmosRpcUrl,
-      prometheusUrl: values.prometheusUrl,
+      cosmos_node_name: values.cosmos_node_name,
+      tendermint_rpc_url: values.tendermint_rpc_url,
+      cosmos_rpc_url: values.cosmos_rpc_url,
+      prometheus_url: values.prometheus_url,
       exporter_url: values.exporter_url,
-      isValidator: values.isValidator,
-      monitorNode: values.monitorNode,
-      isArchiveNode: values.isArchiveNode,
-      useAsDataSource: values.useAsDataSource,
+      is_validator: values.is_validator,
+      monitor_node: values.monitor_node,
+      is_archive_node: values.is_archive_node,
+      use_as_data_source: values.use_as_data_source,
     };
     saveNodeDetails(payload);
     resetForm();

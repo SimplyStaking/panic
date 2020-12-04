@@ -24,7 +24,7 @@ export default {
          + 'the chain, the channels you want alerts for that chain to go to '
          + 'and finally the specific alerts configured for that chain.',
   },
-  chainName: {
+  chain_name: {
     description: 'We will now go through the setup of cosmos based chains.',
     name: 'This will be used to identify the current chain that you are setting up.',
   },
@@ -32,7 +32,7 @@ export default {
     description: '',
     name: 'This will be used to identify the curren KMS configuration.',
     exporter_url: '',
-    monitorKms: '',
+    monitor_kms: '',
   },
   systems: {
     description: '',
@@ -45,12 +45,12 @@ export default {
     name: '',
     tendermintRPC: '',
     cosmosSDKRPC: '',
-    prometheusUrl: '',
+    prometheus_url: '',
     nodeExporterURL: '',
-    isValidator: '',
+    is_validator: '',
     isArchive: '',
-    monitorNode: '',
-    useAsDataSource: '',
+    monitor_node: '',
+    use_as_data_source: '',
   },
   repositoryDetails: {
     description: '',

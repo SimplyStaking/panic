@@ -16,8 +16,8 @@ import Data from 'data/channels';
 const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
 
-  const updateToEmails = (event, emailsTo) => {
-    setFieldValue('emailsTo', emailsTo);
+  const updateToEmails = (event, emails_to) => {
+    setFieldValue('emails_to', emails_to);
   };
 
   return (
@@ -44,7 +44,6 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="main_email_channel"
                   helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -70,7 +69,6 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="my.smtp.com"
                   helperText={errors.smtp ? errors.smtp : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -89,14 +87,13 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.emailFrom}
-                  value={values.emailFrom}
+                  error={errors.email_from}
+                  value={values.email_from}
                   type="text"
-                  name="emailFrom"
+                  name="email_from"
                   placeholder="alerter@email.com"
-                  helperText={errors.emailFrom ? errors.emailFrom : ''}
+                  helperText={errors.email_from ? errors.email_from : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -119,17 +116,17 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   freeSolo
                   options={[]}
                   onChange={updateToEmails}
-                  value={values.emailsTo}
+                  value={values.emails_to}
                   renderInput={(params) => (
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={errors.emailsTo}
+                      error={errors.emails_to}
                       type="text"
-                      name="emailsTo"
+                      name="emails_to"
                       placeholder="Add a destination email [Press Enter after each Email]."
                       variant="standard"
-                      helperText={errors.emailsTo ? errors.emailsTo : ''}
+                      helperText={errors.emails_to ? errors.emails_to : ''}
                       autoComplete='off'
                       fullWidth
                     />
@@ -155,7 +152,6 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="username"
                   placeholder="my_username"
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -179,7 +175,6 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="password"
                   placeholder="*****************"
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />
@@ -261,8 +256,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   <Box px={2}>
                     <SendTestEmailButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      to={values.emailsTo}
-                      from={values.emailFrom}
+                      to={values.emails_to}
+                      from={values.email_from}
                       smtp={values.smtp}
                       user={values.username}
                       pass={values.password}
@@ -290,15 +285,15 @@ EmailForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     config_name: PropTypes.string,
     smtp: PropTypes.string,
-    emailFrom: PropTypes.string,
-    emailsTo: PropTypes.string,
+    email_from: PropTypes.string,
+    emails_to: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     config_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
-    emailFrom: PropTypes.string.isRequired,
-    emailsTo: PropTypes.arrayOf(
+    email_from: PropTypes.string.isRequired,
+    emails_to: PropTypes.arrayOf(
       PropTypes.string.isRequired,
     ).isRequired,
     username: PropTypes.string.isRequired,

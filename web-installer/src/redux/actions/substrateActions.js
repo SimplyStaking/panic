@@ -14,7 +14,7 @@ export function addChainSubstrate(payload) {
     type: ADD_CHAIN_SUBSTRATE,
     payload: {
       id: `chain_name_${uuidv4()}`,
-      chain_name: payload.chainName,
+      chain_name: payload.chain_name,
     },
   };
 }
@@ -54,16 +54,16 @@ export function addNodeSubstrate(payload) {
     payload: {
       id: `node_${uuidv4()}`,
       parent_id: payload.parent_id,
-      substrate_node_name: payload.substrateNodeName,
-      node_ws_url: payload.nodeWsUrl,
-      telemetry_url: payload.telemetryUrl,
-      prometheus_url: payload.prometheusUrl,
+      substrate_node_name: payload.substrate_node_name,
+      node_ws_url: payload.node_ws_url,
+      telemetry_url: payload.telemetry_url,
+      prometheus_url: payload.prometheus_url,
       exporter_url: payload.exporter_url,
-      stash_address: payload.stashAddress,
-      is_validator: payload.isValidator,
-      monitor_node: payload.monitorNode,
-      is_archive_node: payload.isArchiveNode,
-      use_as_data_source: payload.useAsDataSource,
+      stash_address: payload.stash_address,
+      is_validator: payload.is_validator,
+      monitor_node: payload.monitor_node,
+      is_archive_node: payload.is_archive_node,
+      use_as_data_source: payload.use_as_data_source,
     },
   };
 }

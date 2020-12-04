@@ -58,7 +58,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
           {config.allIds.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {config.byId[id].chainName}
+                {config.byId[id].chain_name}
               </TableCell>
               <TableCell align="center">
                 <Box px={2}>
@@ -87,7 +87,7 @@ SubstrateChainsTable.propTypes = forbidExtraProps({
   config: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      chainName: PropTypes.string,
+      chain_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,

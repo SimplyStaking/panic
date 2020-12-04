@@ -60,9 +60,9 @@ export function addKms(payload) {
     payload: {
       id: `kms_${uuidv4()}`,
       parent_id: payload.parent_id,
-      kms_name: payload.kmsName,
+      kms_name: payload.kms_name,
       exporter_url: payload.exporter_url,
-      monitor_kms: payload.monitorKms,
+      monitor_kms: payload.monitor_kms,
     },
   };
 }

@@ -9,14 +9,14 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     config_name: '',
     smtp: '',
-    emailFrom: '',
+    email_from: '',
     emailTo: '',
   }),
   mapPropsToValues: () => ({
     config_name: '',
     smtp: '',
-    emailFrom: '',
-    emailsTo: [],
+    email_from: '',
+    emails_to: [],
     username: '',
     password: '',
     info: false,
@@ -30,8 +30,8 @@ const Form = withFormik({
     const payload = {
       config_name: values.config_name,
       smtp: values.smtp,
-      emailFrom: values.emailFrom,
-      emailsTo: values.emailsTo,
+      email_from: values.email_from,
+      emails_to: values.emails_to,
       username: values.username,
       password: values.password,
       info: values.info,

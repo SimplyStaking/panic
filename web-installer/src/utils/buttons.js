@@ -45,15 +45,15 @@ function SendTestEmailButton({
   );
 }
 
-// Sends test calls to every phone number provided in the "twilioPhoneNum" array.
+// Sends test calls to every phone number provided in the "twilio_phone_num" array.
 function TestCallButton({
-  disabled, twilioPhoneNumbersToDial, account_sid, authToken, twilioPhoneNum,
+  disabled, twilio_phone_numbers_to_dial, account_sid, auth_token, twilio_phone_num,
 }) {
   const onClick = async () => {
-    twilioPhoneNumbersToDial.forEach(async (twilioNumber) => {
+    twilio_phone_numbers_to_dial.forEach(async (twilioNumber) => {
       try {
         ToastsStore.info(`Calling number ${twilioNumber}`, 5000);
-        await testCall(account_sid, authToken, twilioPhoneNum, twilioNumber);
+        await testCall(account_sid, auth_token, twilio_phone_num, twilioNumber);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
@@ -109,11 +109,11 @@ function SendTestOpsGenieButton({ disabled, apiKey, eu }) {
   );
 }
 
-function SendTestPagerDutyButton({ disabled, api_token, integrationKey }) {
+function SendTestPagerDutyButton({ disabled, api_token, integration_key }) {
   const onClick = async () => {
     try {
       ToastsStore.info('Sending test PagerDuty alert.', 5000);
-      await sendTestPagerDuty(api_token, integrationKey);
+      await sendTestPagerDuty(api_token, integration_key);
       ToastsStore.success('Successfully send alert!', 5000);
     } catch (e) {
       if (e.response) {
@@ -269,46 +269,46 @@ function AddAccount({ username, password, disabled }) {
 }
 
 function PingCosmosButton({
-  disabled, tendermintRpcUrl, prometheusUrl, exporter_url,
+  disabled, tendermint_rpc_url, prometheus_url, exporter_url,
 }) {
   const onClick = async () => {
     // Check if the tendermint RPC URL given works properly
-    if (tendermintRpcUrl) {
+    if (tendermint_rpc_url) {
       try {
-        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRpcUrl}`, 5000);
-        await pingTendermint(tendermintRpcUrl);
+        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermint_rpc_url}`, 5000);
+        await pingTendermint(tendermint_rpc_url);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${
+          ToastsStore.error(`Could not connect with Tendermint RPC Url ${tendermint_rpc_url}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.message}`, 5000,
+            `Could not connect with Tendermint RPC Url ${tendermint_rpc_url}. Error: ${e.message}`, 5000,
           );
         }
       }
     }
 
     // Check if the prometheus url given works properly
-    if (prometheusUrl) {
+    if (prometheus_url) {
       try {
-        ToastsStore.info(`Connecting with Prometheus Url ${prometheusUrl}`, 5000);
-        await pingCosmosPrometheus(prometheusUrl);
+        ToastsStore.info(`Connecting with Prometheus Url ${prometheus_url}`, 5000);
+        await pingCosmosPrometheus(prometheus_url);
         ToastsStore.success('Successfully connected', 5000);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          ToastsStore.error(`Could not connect with prometheus url ${prometheusUrl}. Error: ${
+          ToastsStore.error(`Could not connect with prometheus url ${prometheus_url}. Error: ${
             e.response.data.message}`, 5000);
         } else {
           // Something happened in setting up the request that triggered an Error
           ToastsStore.error(
-            `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.message}`, 5000,
+            `Could not connect with prometheus url ${prometheus_url}. Error: ${e.message}`, 5000,
           );
         }
       }
@@ -420,7 +420,7 @@ SendTestOpsGenieButton.propTypes = forbidExtraProps({
 SendTestPagerDutyButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   api_token: PropTypes.string.isRequired,
-  integrationKey: PropTypes.string.isRequired,
+  integration_key: PropTypes.string.isRequired,
 });
 
 SendTestEmailButton.propTypes = forbidExtraProps({
@@ -435,9 +435,9 @@ SendTestEmailButton.propTypes = forbidExtraProps({
 TestCallButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   account_sid: PropTypes.string.isRequired,
-  authToken: PropTypes.string.isRequired,
-  twilioPhoneNum: PropTypes.string.isRequired,
-  twilioPhoneNumbersToDial: PropTypes.arrayOf(
+  auth_token: PropTypes.string.isRequired,
+  twilio_phone_num: PropTypes.string.isRequired,
+  twilio_phone_numbers_to_dial: PropTypes.arrayOf(
     PropTypes.string.isRequired,
   ).isRequired,
 });
@@ -466,8 +466,8 @@ PingRepoButton.propTypes = forbidExtraProps({
 
 PingCosmosButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  tendermintRpcUrl: PropTypes.string.isRequired,
-  prometheusUrl: PropTypes.string.isRequired,
+  tendermint_rpc_url: PropTypes.string.isRequired,
+  prometheus_url: PropTypes.string.isRequired,
   exporter_url: PropTypes.string.isRequired,
 });
 

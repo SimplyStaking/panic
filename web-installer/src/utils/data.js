@@ -8,14 +8,14 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
-function pingTendermint(tendermintRpcUrl) {
+function pingTendermint(tendermint_rpc_url) {
   return sendData('/server/cosmos/tendermint', {},
-    { tendermintRpcUrl });
+    { tendermint_rpc_url });
 }
 
-function pingCosmosPrometheus(prometheusUrl) {
+function pingCosmosPrometheus(prometheus_url) {
   return sendData('/server/cosmos/prometheus', {},
-    { prometheusUrl });
+    { prometheus_url });
 }
 
 function pingNodeExporter(exporter_url) {
@@ -27,9 +27,9 @@ function pingRepo(url) {
   return fetchData(url);
 }
 
-function sendConfig(configType, fileName, chainName, baseChain, config) {
+function sendConfig(configType, fileName, chain_name, baseChain, config) {
   return sendData('/server/config', {
-    configType, fileName, chainName, baseChain,
+    configType, fileName, chain_name, baseChain,
   }, { config });
 }
 
@@ -47,9 +47,9 @@ function sendTestEmail(smtp, from, to, user, pass) {
   });
 }
 
-function sendTestPagerDuty(api_token, integrationKey) {
+function sendTestPagerDuty(api_token, integration_key) {
   return sendData('/server/pagerduty/test', {}, {
-    api_token, integrationKey,
+    api_token, integration_key,
   });
 }
 
@@ -59,10 +59,10 @@ function sendTestOpsGenie(apiKey, eu) {
   });
 }
 
-function testCall(account_sid, authToken, twilioPhoneNumber,
+function testCall(account_sid, auth_token, twilioPhoneNumber,
   phoneNumberToDial) {
   return sendData('/server/twilio/test', {}, {
-    account_sid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    account_sid, auth_token, twilioPhoneNumber, phoneNumberToDial,
   });
 }
 

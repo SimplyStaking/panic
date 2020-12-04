@@ -21,10 +21,10 @@ const EmailSchema = (props) => Yup.object().shape({
     .required('Config name is required.'),
   smtp: Yup.string()
     .required('SMTP is required.'),
-  emailFrom: Yup.string()
+  email_from: Yup.string()
     .email('Email is not valid.')
     .required('Email From is required.'),
-  emailsTo: Yup.array()
+  emails_to: Yup.array()
     .transform(function(value, originalValue) {
       if (this.isType(value) && value !== null) {
         return value;

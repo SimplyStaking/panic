@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const NodeSchema = (props) => Yup.object().shape({
-  substrateNodeName: Yup.string()
+  substrate_node_name: Yup.string()
     .test(
       'unique-node-name',
       'Node name is not unique.',
@@ -11,7 +11,7 @@ const NodeSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < nodesConfig.allIds.length; i += 1) {
-          if (nodesConfig.byId[nodesConfig.allIds[i]].substrateNodeName
+          if (nodesConfig.byId[nodesConfig.allIds[i]].substrate_node_name
               === value) {
             return false;
           }

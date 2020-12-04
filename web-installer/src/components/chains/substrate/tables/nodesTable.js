@@ -41,37 +41,37 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].substrateNodeName}
+                {nodesConfig.byId[id].substrate_node_name}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].nodeWsUrl}
+                {nodesConfig.byId[id].node_ws_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].telemetryUrl}
+                {nodesConfig.byId[id].telemetry_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].prometheusUrl}
+                {nodesConfig.byId[id].prometheus_url}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].stashAddress}
+                {nodesConfig.byId[id].stash_address}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isValidator
+                {nodesConfig.byId[id].is_validator
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitorNode
+                {nodesConfig.byId[id].monitor_node
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isArchiveNode
+                {nodesConfig.byId[id].is_archive_node
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].useAsDataSource
+                {nodesConfig.byId[id].use_as_data_source
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
@@ -101,16 +101,16 @@ NodesTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      substrateNodeName: PropTypes.string.isRequired,
-      nodeWsUrl: PropTypes.string,
-      telemetryUrl: PropTypes.string,
-      prometheusUrl: PropTypes.string,
+      substrate_node_name: PropTypes.string.isRequired,
+      node_ws_url: PropTypes.string,
+      telemetry_url: PropTypes.string,
+      prometheus_url: PropTypes.string,
       exporter_url: PropTypes.string,
-      stashAddress: PropTypes.string,
-      isValidator: PropTypes.bool,
-      monitorNode: PropTypes.bool,
-      isArchiveNode: PropTypes.bool,
-      useAsDataSource: PropTypes.bool,
+      stash_address: PropTypes.string,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

@@ -30,12 +30,12 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
     if (currentChain) {
       const payload = {
         id: currentChain,
-        chainName: values.chainName,
+        chain_name: values.chain_name,
       };
       updateChainDetails(payload);
     } else {
       const payload = {
-        chainName: values.chainName,
+        chain_name: values.chain_name,
       };
       saveChainDetails(payload);
     }
@@ -84,12 +84,12 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.chainName}
-                  value={values.chainName}
+                  error={errors.chain_name}
+                  value={values.chain_name}
                   type="text"
-                  name="chainName"
+                  name="chain_name"
                   placeholder={data.chainForm.placeholder}
-                  helperText={errors.chainName ? errors.chainName : ''}
+                  helperText={errors.chain_name ? errors.chain_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -121,7 +121,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                   <NavigationButton
                     disabled={
                       (Object.keys(errors).length !== 0) &&
-                      (values.chainName.length === 0)
+                      (values.chain_name.length === 0)
                     }
                     nextPage={nextStep}
                     buttonText={NEXT}
@@ -139,10 +139,10 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
 
 ChainNameForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    chainName: PropTypes.string,
+    chain_name: PropTypes.string,
   }).isRequired,
   values: PropTypes.shape({
-    chainName: PropTypes.string.isRequired,
+    chain_name: PropTypes.string.isRequired,
   }).isRequired,
   currentChain: PropTypes.string.isRequired,
   saveChainDetails: PropTypes.func.isRequired,
