@@ -1,11 +1,10 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import NodesForm from '../../../components/chains/cosmos/forms/nodesForm';
-import NodesTable from '../../../components/chains/cosmos/tables/nodesTable';
-import { addNodeCosmos, removeNodeCosmos } from
-  '../../../redux/actions/cosmosActions';
+import NodesForm from 'components/chains/cosmos/forms/nodesForm';
+import NodesTable from 'components/chains/cosmos/tables/nodesTable';
+import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
 import NodeSchema from './schemas/nodeSchema';
-import CosmosData from '../../../data/cosmos';
+import CosmosData from 'data/cosmos';
 
 // This performs cosmos node name validation, by checking if the node name
 // already exists under the same chain being configured.

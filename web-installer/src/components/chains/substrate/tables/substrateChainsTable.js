@@ -7,7 +7,7 @@ import {
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
-import { SUBSTRATE_SETUP_PAGE } from '../../../../constants/constants';
+import { SUBSTRATE_SETUP_PAGE } from 'constants/constants';
 
 const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
   removeChainDetails, removeNodeDetails, removeRepositoryDetails}) => {
@@ -66,7 +66,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
                     loadConfiguration(SUBSTRATE_SETUP_PAGE, id);
                   }}
                   >
-                    Load
+                    Load Chain
                   </Button>
                 </Box>
               </TableCell>

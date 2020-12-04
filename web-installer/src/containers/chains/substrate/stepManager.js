@@ -1,17 +1,20 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsSubstrateTableContainer } from '../common/alertsContainer';
-import { SubstrateChainFormContainer } from '../common/chainContainer';
-import { ChannelsSubstrateTableContainer } from '../common/channelsContainer';
+import { AlertsSubstrateTableContainer } from
+  'containers/chains/common/alertsContainer';
+import { SubstrateChainFormContainer } from
+  'containers/chains/common/chainContainer';
+import { ChannelsSubstrateTableContainer } from
+  'containers/chains/common/channelsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import {
   RepositoriesSubstrateFormContainer, RepositoriesSubstrateTableContainer,
-} from '../common/repositoriesContainer';
+} from 'containers/chains/common/repositoriesContainer';
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, NODES_STEP,
   REPOSITORIES_STEP,
-} from '../../../constants/constants';
+} from 'constants/constants';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,

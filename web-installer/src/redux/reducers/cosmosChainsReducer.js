@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { combineReducers } from 'redux';
-import { INFO, WARNING, CRITICAL } from '../../constants/constants';
+import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS,
   REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,

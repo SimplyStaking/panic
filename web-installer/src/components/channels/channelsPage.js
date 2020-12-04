@@ -1,7 +1,7 @@
 import React from 'react';
 import { Grid } from '@material-ui/core';
 import { makeStyles } from "@material-ui/core/styles";
-import FormAccordion from '../global/formAccordion';
+import FormAccordion from 'components/global/formAccordion';
 import TelegramIcon from 'assets/icons/telegram.svg';
 import TwilioIcon from 'assets/icons/twilio.svg';
 import EmailIcon from 'assets/icons/email.svg';

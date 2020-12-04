@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import { DeleteAccount } from '../../utils/buttons';
+import { DeleteAccount } from 'utils/buttons';
 
 const UsersTable = ({users, removeUserDetails}) => {
   // Do not show users table if there are no users

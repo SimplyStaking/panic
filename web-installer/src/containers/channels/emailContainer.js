@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import EmailForm from '../../components/channels/forms/emailForm';
-import EmailTable from '../../components/channels/tables/emailTable';
-import { addEmail, removeEmail } from '../../redux/actions/channelActions';
+import EmailForm from 'components/channels/forms/emailForm';
+import EmailTable from 'components/channels/tables/emailTable';
+import { addEmail, removeEmail } from 'redux/actions/channelActions';
 import EmailSchema from './schemas/emailSchema';
 
 const Form = withFormik({

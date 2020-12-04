@@ -1,5 +1,5 @@
 import { CHANGE_PAGE } from '../actions/types';
-import { WELCOME_PAGE } from '../../constants/constants';
+import { WELCOME_PAGE } from 'constants/constants';
 
 const initialstate = {
   page: WELCOME_PAGE,

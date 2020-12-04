@@ -9,7 +9,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import { defaultTheme, theme } from '../../../theme/default';
+import { defaultTheme, theme } from 'components/theme/default';
 import Button from "components/material_ui/CustomButtons/Button.js";
 import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";

@@ -1,10 +1,10 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import SystemForm from '../../../components/chains/common/forms/systemForm';
-import SystemTable from '../../../components/chains/common/tables/systemTable';
-import { addSystem, removeSystem } from '../../../redux/actions/generalActions';
-import { changeStep, changePage } from '../../../redux/actions/pageActions';
-import { GLOBAL } from '../../../constants/constants';
+import SystemForm from 'components/chains/common/forms/systemForm';
+import SystemTable from 'components/chains/common/tables/systemTable';
+import { addSystem, removeSystem } from 'redux/actions/generalActions';
+import { changeStep, changePage } from 'redux/actions/pageActions';
+import { GLOBAL } from 'constants/constants';
 import SystemSchema from './schemas/systemSchema';
 
 // Form validation, check if the system name is unique and if the exporter

@@ -1,16 +1,13 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import RepositoriesForm from
-  '../../../components/chains/common/forms/repositoriesForm';
-import RepositoriesTable from
-  '../../../components/chains/common/tables/repositoriesTable';
-import { addRepository, removeRepository } from
-  '../../../redux/actions/generalActions';
-import { GLOBAL } from '../../../constants/constants';
+import RepositoriesForm from 'components/chains/common/forms/repositoriesForm';
+import RepositoriesTable from 'components/chains/common/tables/repositoriesTable';
+import { addRepository, removeRepository } from 'redux/actions/generalActions';
+import { GLOBAL } from 'constants/constants';
 import RepositorySchema from './schemas/repositorySchema';
-import GeneralData from '../../../data/general';
-import CosmosData from '../../../data/cosmos';
-import SubstrateData from '../../../data/substrate';
+import GeneralData from 'data/general';
+import CosmosData from 'data/cosmos';
+import SubstrateData from 'data/substrate';
 
 // This performs repository validation, by checking if the repository is already
 // setup.

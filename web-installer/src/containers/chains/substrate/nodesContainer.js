@@ -1,11 +1,10 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import NodesForm from '../../../components/chains/substrate/forms/nodesForm';
-import NodesTable from '../../../components/chains/substrate/tables/nodesTable';
-import { addNodeSubstrate, removeNodeSubstrate } from
-  '../../../redux/actions/substrateActions';
+import NodesForm from 'components/chains/substrate/forms/nodesForm';
+import NodesTable from 'components/chains/substrate/tables/nodesTable';
+import { addNodeSubstrate, removeNodeSubstrate } from 'redux/actions/substrateActions';
 import NodeSchema from './schemas/nodeSchema';
-import SubstrateData from '../../../data/substrate';
+import SubstrateData from 'data/substrate';
 
 // This performs substrate node name validation, by checking if the node name
 // already exists under the same chain being configured.

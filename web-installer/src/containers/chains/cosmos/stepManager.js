@@ -1,19 +1,22 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsCosmosTableContainer } from '../common/alertsContainer';
-import { CosmosChainFormContainer } from '../common/chainContainer';
-import { ChannelsCosmosTableContainer } from '../common/channelsContainer';
+import { AlertsCosmosTableContainer } from
+  'containers/chains/common/alertsContainer';
+import { CosmosChainFormContainer } from
+  'containers/chains/common/chainContainer';
+import { ChannelsCosmosTableContainer } from
+  'containers/chains/common/channelsContainer';
 import { KmsCosmosFormContainer, KmsCosmosTableContainer } from
-  '../common/kmsContainer';
+  'containers/chains/common/kmsContainer';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import {
   RepositoriesCosmosFormContainer, RepositoriesCosmosTableContainer,
-} from '../common/repositoriesContainer';
+} from 'containers/chains/common/repositoriesContainer';
 import {
   ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, KMS_STEP, NODES_STEP,
   REPOSITORIES_STEP,
-} from '../../../constants/constants';
+} from 'constants/constants';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,

@@ -1,10 +1,10 @@
 import { connect } from 'react-redux';
 import SubstrateChainsTable from
-  '../../../components/chains/substrate/tables/substrateChainsTable';
+  'components/chains/substrate/tables/substrateChainsTable';
 import { removeChainSubstrate, loadConfigSubstrate, removeNodeSubstrate } from
-  '../../../redux/actions/substrateActions';
-import { removeRepository } from '../../../redux/actions/generalActions';
-import { changePage } from '../../../redux/actions/pageActions';
+  'redux/actions/substrateActions';
+import { removeRepository } from 'redux/actions/generalActions';
+import { changePage } from 'redux/actions/pageActions';
 
 // We will need the configured state of the substrate nodes
 const mapStateToProps = (state) => ({

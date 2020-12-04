@@ -9,7 +9,7 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
-import { GLOBAL } from '../../../../constants/constants';
+import { GLOBAL } from 'constants/constants';
 
 const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
   const currentConfig = config.byId[GLOBAL];

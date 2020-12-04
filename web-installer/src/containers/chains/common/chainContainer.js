@@ -1,16 +1,16 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import ChainForm from '../../../components/chains/common/forms/chainForm';
+import ChainForm from 'components/chains/common/forms/chainForm';
 import {
   addChainCosmos, updateChainCosmos, resetCurrentChainIdCosmos,
-} from '../../../redux/actions/cosmosActions';
+} from 'redux/actions/cosmosActions';
 import {
   addChainSubstrate, updateChainSubstrate, resetCurrentChainIdSubstrate,
-} from '../../../redux/actions/substrateActions';
-import { changeStep, changePage } from '../../../redux/actions/pageActions';
+} from 'redux/actions/substrateActions';
+import { changeStep, changePage } from 'redux/actions/pageActions';
 import ChainSchema from './schemas/chainSchema';
-import CosmosData from '../../../data/cosmos';
-import SubstrateData from '../../../data/substrate';
+import CosmosData from 'data/cosmos';
+import SubstrateData from 'data/substrate';
 
 // This performs chain name validation, by checking if the base chain already
 // has a chain configured under the same name.

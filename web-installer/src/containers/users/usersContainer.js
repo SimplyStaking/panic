@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import UsersForm from '../../components/users/usersForm';
-import UsersTable from '../../components/users/usersTable';
-import { addUser, removeUser } from '../../redux/actions/usersActions';
+import UsersForm from 'components/users/usersForm';
+import UsersTable from 'components/users/usersTable';
+import { addUser, removeUser } from 'redux/actions/usersActions';
 import UserSchema from './userSchema';
 
 const Form = withFormik({

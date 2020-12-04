@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TwilioForm from '../../components/channels/forms/twilioForm';
-import TwilioTable from '../../components/channels/tables/twilioTable';
-import { addTwilio, removeTwilio } from '../../redux/actions/channelActions';
+import TwilioForm from 'components/channels/forms/twilioForm';
+import TwilioTable from 'components/channels/tables/twilioTable';
+import { addTwilio, removeTwilio } from 'redux/actions/channelActions';
 import TwilioSchema from './schemas/twilioSchema';
 
 const Form = withFormik({

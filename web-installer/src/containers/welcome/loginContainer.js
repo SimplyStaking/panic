@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import LoginForm from '../../components/welcome/loginForm';
-import { login, setAuthenticated } from '../../redux/actions/loginActions';
-import { changePage } from '../../redux/actions/pageActions';
+import LoginForm from 'components/welcome/loginForm';
+import { login, setAuthenticated } from 'redux/actions/loginActions';
+import { changePage } from 'redux/actions/pageActions';
 import LoginSchema from './loginSchema';
 
 const Form = withFormik({

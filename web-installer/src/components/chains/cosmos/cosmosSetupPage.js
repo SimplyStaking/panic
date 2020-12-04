@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from "@material-ui/core/styles";
-import StepManager from '../../../containers/chains/cosmos/stepManager';
+import StepManager from 'containers/chains/cosmos/stepManager';
 import Data from 'data/cosmos';
 import Parallax from "components/material_ui/Parallax/Parallax.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";

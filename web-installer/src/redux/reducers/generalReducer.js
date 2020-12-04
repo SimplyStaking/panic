@@ -8,7 +8,7 @@ import {
   REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
   UPDATE_THRESHOLD_ALERT, UPDATE_REPEAT_ALERT,
 } from '../actions/types';
-import { GLOBAL } from '../../constants/constants';
+import { GLOBAL } from 'constants/constants';
 
 const generalThresholdAlerts = {
   byId: {

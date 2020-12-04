@@ -7,7 +7,7 @@ import {
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
-import { COSMOS_SETUP_PAGE } from '../../../../constants/constants';
+import { COSMOS_SETUP_PAGE } from 'constants/constants';
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
@@ -78,7 +78,7 @@ const CosmosChainsTable = ({config, loadConfigDetails, pageChanger,
                     loadConfiguration(COSMOS_SETUP_PAGE, id);
                   }}
                   >
-                    Load
+                    Load Chain
                   </Button>
                 </Box>
               </TableCell>

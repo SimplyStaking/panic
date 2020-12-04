@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
-import { SaveConfigButton } from '../../utils/buttons';
-import { sendConfig } from '../../utils/data';
-import { GLOBAL } from '../../constants/constants';
+import { SaveConfigButton } from 'utils/buttons';
+import { sendConfig } from 'utils/data';
+import { GLOBAL } from 'constants/constants';
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
