@@ -1,12 +1,10 @@
 import React from "react";
-// @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { LoginButton } from '../../utils/buttons';
-import { CHANNELS_PAGE } from '../../constants/constants';
-// core components
+import { LoginButton } from 'utils/buttons';
+import { CHANNELS_PAGE } from 'constants/constants';
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import Card from "components/material_ui/Card/Card.js";

@@ -2,16 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Box, Checkbox, FormControlLabel, Typography,
-  Switch, Grid, Tooltip,
+  TextField, Box, Checkbox, FormControlLabel, Typography, Switch, Grid, Tooltip,
 } from '@material-ui/core';
 import Button from "components/material_ui/CustomButtons/Button.js";
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
-import { SendTestAlertButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { SendTestAlertButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
 const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
@@ -42,6 +41,8 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.botNamePlaceholder}
                   helperText={errors.botName ? errors.botName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -66,6 +67,8 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.botTokenPlaceholder}
                   helperText={errors.botToken ? errors.botToken : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -90,6 +93,8 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder={Data.telegram.chatIdPlaceholder}
                   helperText={errors.chatID ? errors.chatID : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -158,7 +163,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.telegram.severties} placement="left">
+                    <Tooltip title={Data.telegram.severities} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>

@@ -44,6 +44,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="main_email_channel"
                   helperText={errors.configName ? errors.configName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -68,6 +70,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="my.smtp.com"
                   helperText={errors.smtp ? errors.smtp : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -92,6 +96,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="alerter@email.com"
                   helperText={errors.emailFrom ? errors.emailFrom : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -121,9 +127,11 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       error={errors.emailsTo}
                       type="text"
                       name="emailsTo"
-                      placeholder="Add a destination email."
+                      placeholder="Add a destination email [Press Enter after each Email]."
                       variant="standard"
                       helperText={errors.emailsTo ? errors.emailsTo : ''}
+                      inputProps={{min: 0, style: { textAlign: 'right' }}}
+                      autoComplete='off'
                       fullWidth
                     />
                   )}
@@ -148,6 +156,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="username"
                   placeholder="my_username"
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -170,6 +180,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="password"
                   placeholder="*****************"
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -238,7 +250,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.email.severties} placement="left">
+                    <Tooltip title={Data.email.severities} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>

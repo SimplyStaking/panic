@@ -7,15 +7,12 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
-} from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import NavigationButton from '../../../global/navigationButton';
-import { PingNodeExporter } from '../../../../utils/buttons';
-import { defaultTheme, theme } from '../../../theme/default';
-import Data from '../../../../data/chains';
+import { NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import NavigationButton from 'components/global/navigationButton';
+import { PingNodeExporter } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/chains';
 
 /*
  * Systems form contains all the information and structure needed to setup
@@ -56,6 +53,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder="System_1"
                   helperText={errors.name ? errors.name : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -80,6 +79,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder="http://176.67.65.56:9000"
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>

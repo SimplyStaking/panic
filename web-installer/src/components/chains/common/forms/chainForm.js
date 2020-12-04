@@ -2,15 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { makeStyles } from "@material-ui/core/styles";
-import {
-  TextField, Typography, Box, Grid, Tooltip,
-} from '@material-ui/core';
+import { TextField, Typography, Box, Grid, Tooltip } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
-import NavigationButton from '../../../global/navigationButton';
-import { defaultTheme, theme } from '../../../theme/default';
+import { NEXT, BACK } from 'constants/constants';
+import NavigationButton from 'components/global/navigationButton';
+import { defaultTheme, theme } from 'components/theme/default';
 import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
@@ -93,6 +91,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                   placeholder={data.chainForm.placeholder}
                   helperText={errors.chainName ? errors.chainName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
                   fullWidth
                 />

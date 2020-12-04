@@ -63,6 +63,8 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   placeholder={data.repoForm.nameHolder}
                   helperText={errors.repoName ? errors.repoName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>

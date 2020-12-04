@@ -8,9 +8,9 @@ import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { SendTestPagerDutyButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { SendTestPagerDutyButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
 const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
   return (
@@ -37,6 +37,8 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="pager-duty-1"
                   helperText={errors.configName ? errors.configName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -61,6 +63,8 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="_xaegfLaV3zAPx2A3hMPp"
                   helperText={errors.apiToken ? errors.apiToken : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -85,13 +89,17 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="9ba187h1f52176l75131dl5hxr6fdb1c8"
                   helperText={errors.integrationKey ? errors.integrationKey : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.pagerDuty.integrationKey} placement="left">
+                    <Tooltip
+                      title={Data.pagerDuty.integrationKey}
+                      placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -153,7 +161,10 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.pagerDuty.severties} placement="left">
+                    <Tooltip
+                      title={Data.pagerDuty.severities}
+                      placement="left"
+                    >
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -161,7 +172,12 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <SendTestPagerDutyButton
                       disabled={(Object.keys(errors).length !== 0)}

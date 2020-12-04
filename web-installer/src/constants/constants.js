@@ -41,7 +41,7 @@ export const NODES_STEP = 'NODES_STEP';
 export const REPOSITORIES_STEP = 'REPOSITORIES_STEP';
 export const SYSTEMS_STEP = 'SYSTEMS_STEP';
 
-// Severties constants
+// Severities constants
 export const INFO = 'INFO';
 export const WARNING = 'WARNING';
 export const CRITICAL = 'CRITICAL';

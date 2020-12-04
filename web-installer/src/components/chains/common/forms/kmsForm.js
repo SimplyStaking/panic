@@ -7,10 +7,10 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
+import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import { PingNodeExporter } from '../../../../utils/buttons';
-import { defaultTheme, theme } from '../../../theme/default';
+import { PingNodeExporter } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
 import Button from "components/material_ui/CustomButtons/Button.js";
 import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";
@@ -60,6 +60,8 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={data.kmsForm.nameHolder}
                   helperText={errors.kmsName ? errors.kmsName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -84,6 +86,8 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={data.kmsForm.exporterUrlHolder}
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>

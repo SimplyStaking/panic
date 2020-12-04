@@ -162,6 +162,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                     {RepeatAlerts.byId[id].adornment}
                                   </InputAdornment>,
                               }}
+                              autoComplete='off'
                               fullWidth
                             />
                           </Grid>
@@ -231,6 +232,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 });
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">
@@ -344,6 +346,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 );
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">
@@ -381,6 +384,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 });
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">
@@ -460,6 +464,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               );
                             }}
                             inputProps={{min: 0, style: { textAlign: 'right' }}}
+                            autoComplete='off'
                             InputProps={{
                               endAdornment:
                                 <InputAdornment position="end">
@@ -497,6 +502,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               });
                             }}
                             inputProps={{min: 0, style: { textAlign: 'right' }}}
+                            autoComplete='off'
                             InputProps={{
                               endAdornment:
                                 <InputAdornment position="end">
@@ -609,6 +615,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 );
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">
@@ -687,6 +694,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 );
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">
@@ -726,6 +734,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 );
                               }}
                               inputProps={{min: 0, style: { textAlign: 'right' }}}
+                              autoComplete='off'
                               InputProps={{
                                 endAdornment:
                                   <InputAdornment position="end">

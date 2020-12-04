@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { changePage } from '../../redux/actions/pageActions';
-import NavigationButton from '../../components/global/navigationButton';
+import { changePage } from 'redux/actions/pageActions';
+import NavigationButton from 'components/global/navigationButton';
 
 class NavigationButtonContainer extends Component {
   constructor(props) {

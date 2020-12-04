@@ -59,6 +59,8 @@ const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
                       Seconds
                     </InputAdornment>,
                 }}
+              inputProps={{min: 0, style: { textAlign: 'right' }}}
+              autoComplete='off'
               fullWidth
             />
           </Grid>

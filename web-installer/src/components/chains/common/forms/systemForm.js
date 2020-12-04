@@ -72,6 +72,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={Data.name_holder}
                   helperText={errors.name ? errors.name : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -96,6 +98,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={Data.exporter_url_holder}
                   helperText={errors.exporterUrl ? errors.exporterUrl : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>

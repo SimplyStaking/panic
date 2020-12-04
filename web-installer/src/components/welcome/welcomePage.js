@@ -4,10 +4,10 @@ import { makeStyles } from "@material-ui/core/styles";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import LoginContainer from 'containers/welcome/loginContainer';
-import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
-import { CHANNELS_PAGE, START } from '../../constants/constants';
-import Data from 'data/welcome';
 import styles from "assets/jss/material-kit-react/views/components.js";
+import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import { CHANNELS_PAGE, START } from 'constants/constants';
+import Data from 'data/welcome';
 
 const useStyles = makeStyles(styles);
 
@@ -31,7 +31,7 @@ function WelcomePage() {
         </div>
         <br></br>
         <br></br>
-        <div>
+        <div className={classes.topPadded}>
           <LoginContainer />        
         </div>
         <NavigationButtonContainer

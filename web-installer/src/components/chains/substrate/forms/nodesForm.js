@@ -57,6 +57,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   helperText={errors.substrateNodeName
                     ? errors.substrateNodeName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -79,6 +81,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="nodeWsUrl"
                   placeholder={data.nodeForm.websocketHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -104,6 +108,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="telemetryUrl"
                   placeholder={data.nodeForm.telemetryHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -129,6 +135,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="prometheusUrl"
                   placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -154,6 +162,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="exporterUrl"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -179,6 +189,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="stashAddress"
                   placeholder={data.nodeForm.stashAddressHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>

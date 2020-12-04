@@ -2,11 +2,11 @@ export default {
   chains: {
     title: 'Chain\'s Setup',
     subtitle_1: 'Everything you need to know about Chains.',
-    subtitle_2: 'Setup the chains now.',
+    subtitle_2: 'Setup the chains now!',
     what_title: 'What are Chains?',
     supported_title: 'Supported Chains',
     how_title: 'How are they setup?',
-    what_1: 'Chains are the type of blockchain nodes you have running that you'
+    what_1: 'Chains are the type of blockchain nodes you have running that you '
           + 'want to be monitored and alerted on.',
     what_2: 'The chains you will choose from are the underlying technology '
           + 'the blockchain is built with.',
@@ -21,7 +21,7 @@ export default {
     how_2: 'First you will choose the type of blockchain you will be setting up'
          + ' is it built using the Cosmos-SDK or Substrate?',
     how_3: 'From then on you will setup the chain name, the nodes belonging to '
-         + 'to the chain, the channels you want alerts for that chain to go to '
+         + 'the chain, the channels you want alerts for that chain to go to '
          + 'and finally the specific alerts configured for that chain.',
   },
   chainName: {

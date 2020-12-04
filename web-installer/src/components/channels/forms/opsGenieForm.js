@@ -37,6 +37,8 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="ops-genie-1"
                   helperText={errors.configName ? errors.configName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -61,6 +63,8 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                   placeholder="0a9sjd09j1md00d10md19mda2a"
                   helperText={errors.apiToken ? errors.apiToken : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -92,7 +96,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.opsGenie.token} placement="left">
+                    <Tooltip title={Data.opsGenie.eu} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -154,7 +158,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.opsGenie.severties} placement="left">
+                    <Tooltip title={Data.opsGenie.severities} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>

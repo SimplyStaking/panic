@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { TextField, Typography, Grid } from '@material-ui/core';
-import { AddAccount } from '../../utils/buttons';
+import { AddAccount } from 'utils/buttons';
 
 const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
   return (
@@ -10,7 +10,7 @@ const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
       <form onSubmit={handleSubmit} className="root">
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={2}>
-            <Typography> Username: </Typography>
+            <Typography> Username </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField
@@ -21,6 +21,8 @@ const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
               placeholder="panic_user_main"
               helperText={errors.username ? errors.username : ''}
               onChange={handleChange}
+              inputProps={{min: 0, style: { textAlign: 'right' }}}
+              autoComplete='off'
               fullWidth
             />
           </Grid>
@@ -36,6 +38,8 @@ const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
               placeholder="*****************"
               helperText={errors.password ? errors.password : ''}
               onChange={handleChange}
+              inputProps={{min: 0, style: { textAlign: 'right' }}}
+              autoComplete='off'
               fullWidth
             />
           </Grid>

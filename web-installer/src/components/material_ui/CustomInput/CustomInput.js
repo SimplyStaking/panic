@@ -69,6 +69,7 @@ export default function CustomInput(props) {
         placeholder={placeHolder}
         helperText={helperText}
         onChange={handleChange}
+        autoComplete='off'
         fullWidth
         InputProps={inputProps}
         FormHelperTextProps={{

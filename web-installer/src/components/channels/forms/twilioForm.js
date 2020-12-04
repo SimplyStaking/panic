@@ -1,17 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import {
-  TextField, Box, Typography, Grid, Tooltip,
-} from '@material-ui/core';
+import { TextField, Box, Typography, Grid, Tooltip } from '@material-ui/core';
 import Button from "components/material_ui/CustomButtons/Button.js";
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { TestCallButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { TestCallButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
 const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
@@ -44,6 +42,8 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="twilio_caller_main"
                   helperText={errors.configName ? errors.configName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -68,6 +68,8 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="abcd1234efgh5678ABCD1234EFGH567890"
                   helperText={errors.accountSid ? errors.accountSid : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -92,6 +94,8 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="1234abcd5678efgh1234abcd5678efgh"
                   helperText={errors.authToken ? errors.authToken : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -116,6 +120,8 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="+12025551234"
                   helperText={errors.twilioPhoneNo ? errors.twilioPhoneNo : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -145,9 +151,11 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       error={errors.twilioPhoneNumbersToDialValid}
                       type="text"
                       name="twilioPhoneNumbersToDialValid"
-                      placeholder="Add Phone Numbers"
+                      placeholder="Add Phone Numbers [Press Enter after each Number]"
                       variant="standard"
                       helperText={errors.twilioPhoneNumbersToDialValid ? errors.twilioPhoneNumbersToDialValid : ''}
+                      inputProps={{min: 0, style: { textAlign: 'right' }}}
+                      autoComplete='off'
                       fullWidth
                     />
                   )}

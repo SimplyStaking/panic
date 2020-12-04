@@ -58,6 +58,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   helperText={errors.cosmosNodeName
                     ? errors.cosmosNodeName : ''}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -80,6 +82,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="tendermintRpcUrl"
                   placeholder={data.nodeForm.tendermintHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -105,6 +109,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="cosmosRpcUrl"
                   placeholder={data.nodeForm.sdkHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -127,6 +133,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="prometheusUrl"
                   placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
@@ -152,6 +160,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="exporterUrl"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
+                  inputProps={{min: 0, style: { textAlign: 'right' }}}
+                  autoComplete='off'
                   fullWidth
                 />
               </Grid>
