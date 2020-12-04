@@ -155,9 +155,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.exporterUrl}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -308,7 +308,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                     disabled={false}
                     tendermintRpcUrl={values.tendermintRpcUrl}
                     prometheusUrl={values.prometheusUrl}
-                    exporterUrl={values.exporterUrl}
+                    exporter_url={values.exporter_url}
                   />
                   <Button
                     color="primary"
@@ -357,7 +357,7 @@ NodesForm.propTypes = forbidExtraProps({
     tendermintRpcUrl: PropTypes.string,
     cosmosRpcUrl: PropTypes.string,
     prometheusUrl: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    exporter_url: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,
     isArchiveNode: PropTypes.bool.isRequired,

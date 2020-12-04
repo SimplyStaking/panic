@@ -35,10 +35,10 @@ const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
                 {systemConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {systemConfig.byId[id].exporterUrl}
+                {systemConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {systemConfig.byId[id].monitorSystem
+                {systemConfig.byId[id].monitor_system
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
@@ -66,10 +66,10 @@ SystemTable.propTypes = forbidExtraProps({
   systemConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       name: PropTypes.string,
-      exporterUrl: PropTypes.string,
-      monitorSystem: PropTypes.bool,
+      exporter_url: PropTypes.string,
+      monitor_system: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

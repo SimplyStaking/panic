@@ -23,7 +23,7 @@ const KmsSchema = (props) => Yup.object().shape({
       },
     )
     .required('KMS name is required.'),
-  exporterUrl: Yup.string()
+  exporter_url: Yup.string()
     .required('Node Exporter Url is required.'),
 });
 

@@ -1,10 +1,10 @@
 import * as Yup from 'yup';
 
 const RepositorySchema = (props) => Yup.object().shape({
-  repoName: Yup.string()
+  repo_name: Yup.string()
     .test(
       'unique-repository-name',
-      'Repository arleady exists.',
+      'Repository already exists.',
       (value) => {
         const { reposConfig } = props;
 
@@ -14,7 +14,7 @@ const RepositorySchema = (props) => Yup.object().shape({
         }
 
         for (let i = 0; i < reposConfig.allIds.length; i += 1) {
-          if (reposConfig.byId[reposConfig.allIds[i]].repoName === value) {
+          if (reposConfig.byId[reposConfig.allIds[i]].repo_name === value) {
             return false;
           }
         }

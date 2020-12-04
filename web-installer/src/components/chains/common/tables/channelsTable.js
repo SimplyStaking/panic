@@ -84,7 +84,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                   onClick={() => {
                                     const payload = {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                     };
                                     if (currentConfig.telegrams.includes(id)) {
                                       removeTelegramDetails(payload);
@@ -96,7 +96,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                   color="primary"
                                 />
                               )}
-                              label={telegrams.byId[id].botName}
+                              label={telegrams.byId[id].bot_name}
                               labelPlacement="start"
                             />
                           </TableCell>
@@ -122,7 +122,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 onClick={() => {
                                   const payload = {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                   };
                                   if (currentConfig.telegrams.includes(id)) {
                                     removeTelegramDetails(payload);
@@ -134,7 +134,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={telegrams.byId[id].botName}
+                            label={telegrams.byId[id].bot_name}
                             labelPlacement="start"
                           />
                         </ListItem>
@@ -167,7 +167,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 onClick={() => {
                                   const payload = {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                   };
                                   if (currentConfig.twilios.includes(id)) {
                                     removeTwilioDetails(payload);
@@ -179,7 +179,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={twilios.byId[id].configName}
+                            label={twilios.byId[id].config_name}
                             labelPlacement="start"
                           />
                         </ListItem>
@@ -212,7 +212,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 onClick={() => {
                                   const payload = {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                   };
                                   if (currentConfig.emails.includes(id)) {
                                     removeEmailDetails(payload);
@@ -224,7 +224,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={emails.byId[id].configName}
+                            label={emails.byId[id].config_name}
                             labelPlacement="start"
                           />
                         </ListItem>
@@ -257,7 +257,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 onClick={() => {
                                   const payload = {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                   };
                                   if (currentConfig.pagerduties.includes(id)) {
                                     removePagerDutyDetails(payload);
@@ -269,7 +269,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={pagerduties.byId[id].configName}
+                            label={pagerduties.byId[id].config_name}
                             labelPlacement="start"
                           />
                         </ListItem>
@@ -302,7 +302,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 onClick={() => {
                                   const payload = {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                   };
                                   if (currentConfig.opsgenies.includes(id)) {
                                     removeOpsGenieDetails(payload);
@@ -314,7 +314,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={opsgenies.byId[id].configName}
+                            label={opsgenies.byId[id].config_name}
                             labelPlacement="start"
                           />
                         </ListItem>
@@ -355,35 +355,35 @@ ChannelsTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      botName: PropTypes.string,
+      bot_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   emails: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   pagerduties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   opsgenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

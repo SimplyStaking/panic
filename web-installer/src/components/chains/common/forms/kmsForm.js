@@ -79,12 +79,12 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.exporterUrl}
-                  value={values.exporterUrl}
+                  error={errors.exporter_url}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={data.kmsForm.exporterUrlHolder}
-                  helperText={errors.exporterUrl ? errors.exporterUrl : ''}
+                  helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -144,7 +144,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   <Box px={2}>
                     <PingNodeExporter
                       disabled={(Object.keys(errors).length !== 0)}
-                      exporterUrl={values.exporterUrl}
+                      exporter_url={values.exporter_url}
                     />
                     <Button
                       color="primary"
@@ -187,12 +187,12 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 KmsForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     kmsName: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     kmsName: PropTypes.string.isRequired,
-    exporterUrl: PropTypes.string.isRequired,
+    exporter_url: PropTypes.string.isRequired,
     monitorKms: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,

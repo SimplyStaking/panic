@@ -22,7 +22,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
   function clearAllChainDetails(chainID) {
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
-    const payload = { parentId: chainID, id: '' };
+    const payload = { parent_id: chainID, id: '' };
 
     // Clear all the configured nodes from state
     for (let i = 0; i < currentConfig.nodes.length; i += 1) {

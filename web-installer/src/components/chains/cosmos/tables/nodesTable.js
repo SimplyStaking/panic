@@ -53,7 +53,7 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
                 {nodesConfig.byId[id].prometheusUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].exporterUrl}
+                {nodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].isValidator
@@ -97,12 +97,12 @@ NodesTable.propTypes = forbidExtraProps({
   nodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       cosmosNodeName: PropTypes.string,
       tendermintRpcUrl: PropTypes.string,
       cosmosRpcUrl: PropTypes.string,
       prometheusUrl: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,
       isArchiveNode: PropTypes.bool,

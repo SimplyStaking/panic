@@ -17,7 +17,7 @@ const Form = withFormik({
     nodeWsUrl: '',
     telemetryUrl: '',
     prometheusUrl: '',
-    exporterUrl: '',
+    exporter_url: '',
     stashAddress: '',
     isValidator: false,
     monitorNode: true,
@@ -28,12 +28,12 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
+      parent_id: currentChain,
       substrateNodeName: values.substrateNodeName,
       nodeWsUrl: values.nodeWsUrl,
       telemetryUrl: values.telemetryUrl,
       prometheusUrl: values.prometheusUrl,
-      exporterUrl: values.exporterUrl,
+      exporter_url: values.exporter_url,
       stashAddress: values.stashAddress,
       isValidator: values.isValidator,
       monitorNode: values.monitorNode,

@@ -15,7 +15,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
   }) => {
 
   const updateTwilioNumbers = (events, phoneNums) => {
-    setFieldValue('twilioPhoneNumbersToDialValid', phoneNums);
+    setFieldValue('twilioPhoneNumbersToDial', phoneNums);
   };
 
   return (
@@ -35,12 +35,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.configName}
-                  value={values.configName}
+                  error={errors.config_name}
+                  value={values.config_name}
                   type="text"
-                  name="configName"
+                  name="config_name"
                   placeholder="twilio_caller_main"
-                  helperText={errors.configName ? errors.configName : ''}
+                  helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -61,12 +61,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.accountSid}
-                  value={values.accountSid}
+                  error={errors.account_sid}
+                  value={values.account_sid}
                   type="text"
-                  name="accountSid"
+                  name="account_sid"
                   placeholder="abcd1234efgh5678ABCD1234EFGH567890"
-                  helperText={errors.accountSid ? errors.accountSid : ''}
+                  helperText={errors.account_sid ? errors.account_sid : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -113,12 +113,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.twilioPhoneNo}
-                  value={values.twilioPhoneNo}
+                  error={errors.twilioPhoneNum}
+                  value={values.twilioPhoneNum}
                   type="text"
-                  name="twilioPhoneNo"
+                  name="twilioPhoneNum"
                   placeholder="+12025551234"
-                  helperText={errors.twilioPhoneNo ? errors.twilioPhoneNo : ''}
+                  helperText={errors.twilioPhoneNum ? errors.twilioPhoneNum : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -143,18 +143,17 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   freeSolo
                   options={[]}
                   onChange={updateTwilioNumbers}
-                  value={values.twilioPhoneNumbersToDialValid}
+                  value={values.twilioPhoneNumbersToDial}
                   renderInput={(params) => (
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={errors.twilioPhoneNumbersToDialValid}
+                      error={errors.twilioPhoneNumbersToDial}
                       type="text"
-                      name="twilioPhoneNumbersToDialValid"
+                      name="twilioPhoneNumbersToDial"
                       placeholder="Add Phone Numbers [Press Enter after each Number]"
                       variant="standard"
-                      helperText={errors.twilioPhoneNumbersToDialValid ? errors.twilioPhoneNumbersToDialValid : ''}
-                      inputProps={{min: 0, style: { textAlign: 'right' }}}
+                      helperText={errors.twilioPhoneNumbersToDial ? errors.twilioPhoneNumbersToDial : ''}
                       autoComplete='off'
                       fullWidth
                     />
@@ -176,13 +175,13 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   <Box px={2}>
                     <TestCallButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      twilioPhoneNumbersToDialValid={
-                        values.twilioPhoneNumbersToDialValid
-                          ? values.twilioPhoneNumbersToDialValid : []
+                      twilioPhoneNumbersToDial={
+                        values.twilioPhoneNumbersToDial
+                          ? values.twilioPhoneNumbersToDial : []
                       }
-                      accountSid={values.accountSid}
+                      account_sid={values.account_sid}
                       authToken={values.authToken}
-                      twilioPhoneNo={values.twilioPhoneNo}
+                      twilioPhoneNum={values.twilioPhoneNum}
                     />
                     <Button
                       color="primary"
@@ -205,19 +204,19 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 TwilioForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    configName: PropTypes.string,
-    accountSid: PropTypes.string,
+    config_name: PropTypes.string,
+    account_sid: PropTypes.string,
     authToken: PropTypes.string,
-    twilioPhoneNo: PropTypes.string,
-    twilioPhoneNumbersToDialValid: PropTypes.string,
+    twilioPhoneNum: PropTypes.string,
+    twilioPhoneNumbersToDial: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    accountSid: PropTypes.string.isRequired,
+    config_name: PropTypes.string.isRequired,
+    account_sid: PropTypes.string.isRequired,
     authToken: PropTypes.string.isRequired,
-    twilioPhoneNo: PropTypes.string.isRequired,
-    twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+    twilioPhoneNum: PropTypes.string.isRequired,
+    twilioPhoneNumbersToDial: PropTypes.arrayOf(
       PropTypes.string.isRequired,
     ).isRequired,
   }).isRequired,

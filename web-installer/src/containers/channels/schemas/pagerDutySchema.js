@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const PagerDutySchema = (props) => Yup.object().shape({
-  configName: Yup.string()
+  config_name: Yup.string()
     .test(
       'unique-config-name',
       'PagerDuty config name is not unique.',
@@ -11,7 +11,7 @@ const PagerDutySchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (pagerDuties.byId[pagerDuties.allIds[i]].configName === value) {
+          if (pagerDuties.byId[pagerDuties.allIds[i]].config_name === value) {
             return false;
           }
         }
@@ -19,7 +19,7 @@ const PagerDutySchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  apiToken: Yup.string()
+  api_token: Yup.string()
     .required('API token is required.'),
   integrationKey: Yup.string()
     .required('Integration key is required.'),

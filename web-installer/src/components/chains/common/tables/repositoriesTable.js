@@ -29,10 +29,10 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
           {config.byId[currentChain].repositories.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {reposConfig.byId[id].repoName}
+                {reposConfig.byId[id].repo_name}
               </TableCell>
               <TableCell align="center">
-                {reposConfig.byId[id].monitorRepo
+                {reposConfig.byId[id].monitor_repo
                   ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
@@ -60,9 +60,9 @@ RepositoriesTable.propTypes = forbidExtraProps({
   reposConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
-      repoName: PropTypes.string,
-      monitorRepo: PropTypes.bool,
+      parent_id: PropTypes.string,
+      repo_name: PropTypes.string,
+      monitor_repo: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

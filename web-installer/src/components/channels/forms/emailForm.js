@@ -37,12 +37,12 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.configName}
-                  value={values.configName}
+                  error={errors.config_name}
+                  value={values.config_name}
                   type="text"
-                  name="configName"
+                  name="config_name"
                   placeholder="main_email_channel"
-                  helperText={errors.configName ? errors.configName : ''}
+                  helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -130,7 +130,6 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       placeholder="Add a destination email [Press Enter after each Email]."
                       variant="standard"
                       helperText={errors.emailsTo ? errors.emailsTo : ''}
-                      inputProps={{min: 0, style: { textAlign: 'right' }}}
                       autoComplete='off'
                       fullWidth
                     />
@@ -289,14 +288,14 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 EmailForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    configName: PropTypes.string,
+    config_name: PropTypes.string,
     smtp: PropTypes.string,
     emailFrom: PropTypes.string,
     emailsTo: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    configName: PropTypes.string.isRequired,
+    config_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
     emailFrom: PropTypes.string.isRequired,
     emailsTo: PropTypes.arrayOf(

@@ -30,12 +30,12 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.configName}
-                  value={values.configName}
+                  error={errors.config_name}
+                  value={values.config_name}
                   type="text"
-                  name="configName"
+                  name="config_name"
                   placeholder="ops-genie-1"
-                  helperText={errors.configName ? errors.configName : ''}
+                  helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -56,12 +56,12 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.apiToken}
-                  value={values.apiToken}
+                  error={errors.api_token}
+                  value={values.api_token}
                   type="text"
-                  name="apiToken"
+                  name="api_token"
                   placeholder="0a9sjd09j1md00d10md19mda2a"
-                  helperText={errors.apiToken ? errors.apiToken : ''}
+                  helperText={errors.api_token ? errors.api_token : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -170,7 +170,7 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
                   <Box px={2}>
                     <SendTestOpsGenieButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      apiKey={values.apiToken}
+                      apiKey={values.api_token}
                       eu={values.eu}
                     />
                     <Button
@@ -194,13 +194,13 @@ const OpsGenieForm = ({errors, values, handleSubmit, handleChange}) => {
 
 OpsGenieForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    configName: PropTypes.string,
-    apiToken: PropTypes.string,
+    config_name: PropTypes.string,
+    api_token: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    apiToken: PropTypes.string.isRequired,
+    config_name: PropTypes.string.isRequired,
+    api_token: PropTypes.string.isRequired,
     eu: PropTypes.bool.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,

@@ -104,7 +104,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateRepeatAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: RepeatAlerts.byId[id].name,
                                         identifier: RepeatAlerts.byId[id].identifier,
@@ -139,7 +139,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               onChange={(event) => {
                                 updateRepeatAlertDetails({
                                   id,
-                                  parentId: currentChain,
+                                  parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
                                     identifier: RepeatAlerts.byId[id].identifier,
@@ -180,7 +180,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateRepeatAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: RepeatAlerts.byId[id].name,
                                         identifier: RepeatAlerts.byId[id].identifier,
@@ -215,7 +215,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               onChange={(event) => {
                                 updateRepeatAlertDetails({
                                   id,
-                                  parentId: currentChain,
+                                  parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
                                     identifier: RepeatAlerts.byId[id].identifier,
@@ -253,7 +253,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             onClick={() => {
                               updateRepeatAlertDetails({
                                 id,
-                                parentId: currentChain,
+                                parent_id: currentChain,
                                 alert: {
                                   name: RepeatAlerts.byId[id].name,
                                   identifier: RepeatAlerts.byId[id].identifier,
@@ -290,7 +290,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateTimeWindowAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: TimeWindowAlerts.byId[id].name,
                                         identifier: TimeWindowAlerts.byId[id].identifier,
@@ -327,7 +327,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 updateTimeWindowAlertDetails(
                                   {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                     alert: {
                                       name: TimeWindowAlerts.byId[id].name,
                                       identifier: TimeWindowAlerts.byId[id].identifier,
@@ -366,7 +366,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               onChange={(event) => {
                                 updateTimeWindowAlertDetails({
                                   id,
-                                  parentId: currentChain,
+                                  parent_id: currentChain,
                                   alert: {
                                     name: TimeWindowAlerts.byId[id].name,
                                     identifier: TimeWindowAlerts.byId[id].identifier,
@@ -408,7 +408,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateTimeWindowAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: TimeWindowAlerts.byId[id].name,
                                         identifier: TimeWindowAlerts.byId[id].identifier,
@@ -445,7 +445,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               updateTimeWindowAlertDetails(
                                 {
                                   id,
-                                  parentId: currentChain,
+                                  parent_id: currentChain,
                                   alert: {
                                     name: TimeWindowAlerts.byId[id].name,
                                     identifier: TimeWindowAlerts.byId[id].identifier,
@@ -484,7 +484,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             onChange={(event) => {
                               updateTimeWindowAlertDetails({
                                 id,
-                                parentId: currentChain,
+                                parent_id: currentChain,
                                 alert: {
                                   name: TimeWindowAlerts.byId[id].name,
                                   identifier: TimeWindowAlerts.byId[id].identifier,
@@ -523,7 +523,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             onClick={() => {
                               updateTimeWindowAlertDetails({
                                 id,
-                                parentId: currentChain,
+                                parent_id: currentChain,
                                 alert: {
                                   name: TimeWindowAlerts.byId[id].name,
                                   identifier: TimeWindowAlerts.byId[id].identifier,
@@ -561,7 +561,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateThresholdAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: ThresholdAlerts.byId[id].name,
                                         identifier: ThresholdAlerts.byId[id].identifier,
@@ -597,7 +597,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 updateThresholdAlertDetails(
                                   {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                     alert: {
                                       name: ThresholdAlerts.byId[id].name,
                                       identifier: ThresholdAlerts.byId[id].identifier,
@@ -639,7 +639,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   updateThresholdAlertDetails(
                                     {
                                       id,
-                                      parentId: currentChain,
+                                      parent_id: currentChain,
                                       alert: {
                                         name: ThresholdAlerts.byId[id].name,
                                         identifier: ThresholdAlerts.byId[id].identifier,
@@ -675,7 +675,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 updateThresholdAlertDetails(
                                   {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                     alert: {
                                       name: ThresholdAlerts.byId[id].name,
                                       identifier: ThresholdAlerts.byId[id].identifier,
@@ -715,7 +715,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 updateThresholdAlertDetails(
                                   {
                                     id,
-                                    parentId: currentChain,
+                                    parent_id: currentChain,
                                     alert: {
                                       name: ThresholdAlerts.byId[id].name,
                                       identifier: ThresholdAlerts.byId[id].identifier,
@@ -755,7 +755,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             onClick={() => {
                               updateThresholdAlertDetails({
                                 id,
-                                parentId: currentChain,
+                                parent_id: currentChain,
                                 alert: {
                                   name: ThresholdAlerts.byId[id].name,
                                   identifier: ThresholdAlerts.byId[id].identifier,
@@ -815,7 +815,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             updateSeverityAlertDetails(
                               {
                                 id,
-                                parentId: currentChain,
+                                parent_id: currentChain,
                                 alert: {
                                   name: SeverityAlerts.byId[id].name,
                                   identifier: ThresholdAlerts.byId[id].identifier,
@@ -842,7 +842,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               updateSeverityAlertDetails(
                                 {
                                   id,
-                                  parentId: currentChain,
+                                  parent_id: currentChain,
                                   alert: {
                                     name: SeverityAlerts.byId[id].name,
                                     identifier: ThresholdAlerts.byId[id].identifier,

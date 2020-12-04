@@ -7,13 +7,13 @@ import EmailSchema from './schemas/emailSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
+    config_name: '',
     smtp: '',
     emailFrom: '',
     emailTo: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
+    config_name: '',
     smtp: '',
     emailFrom: '',
     emailsTo: [],
@@ -28,7 +28,7 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveEmailDetails } = props;
     const payload = {
-      configName: values.configName,
+      config_name: values.config_name,
       smtp: values.smtp,
       emailFrom: values.emailFrom,
       emailsTo: values.emailsTo,

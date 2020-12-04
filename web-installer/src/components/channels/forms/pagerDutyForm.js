@@ -30,12 +30,12 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.configName}
-                  value={values.configName}
+                  error={errors.config_name}
+                  value={values.config_name}
                   type="text"
-                  name="configName"
+                  name="config_name"
                   placeholder="pager-duty-1"
-                  helperText={errors.configName ? errors.configName : ''}
+                  helperText={errors.config_name ? errors.config_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -56,12 +56,12 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.apiToken}
-                  value={values.apiToken}
+                  error={errors.api_token}
+                  value={values.api_token}
                   type="text"
-                  name="apiToken"
+                  name="api_token"
                   placeholder="_xaegfLaV3zAPx2A3hMPp"
-                  helperText={errors.apiToken ? errors.apiToken : ''}
+                  helperText={errors.api_token ? errors.api_token : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -181,7 +181,7 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   <Box px={2}>
                     <SendTestPagerDutyButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      apiToken={values.apiToken}
+                      api_token={values.api_token}
                       integrationKey={values.integrationKey}
                     />
                     <Button
@@ -205,14 +205,14 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
 
 PagerDutyForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    configName: PropTypes.string,
-    apiToken: PropTypes.string,
+    config_name: PropTypes.string,
+    api_token: PropTypes.string,
     integrationKey: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    configName: PropTypes.string.isRequired,
-    apiToken: PropTypes.string.isRequired,
+    config_name: PropTypes.string.isRequired,
+    api_token: PropTypes.string.isRequired,
     integrationKey: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,

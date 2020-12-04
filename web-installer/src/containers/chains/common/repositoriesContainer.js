@@ -13,19 +13,19 @@ import SubstrateData from 'data/substrate';
 // setup.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    repoName: '',
+    repo_name: '',
   }),
   mapPropsToValues: () => ({
-    repoName: '',
-    monitorRepo: true,
+    repo_name: '',
+    monitor_repo: true,
   }),
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveRepositoryDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
-      repoName: values.repoName,
-      monitorRepo: values.monitorRepo,
+      parent_id: currentChain,
+      repo_name: values.repo_name,
+      monitor_repo: values.monitor_repo,
     };
     saveRepositoryDetails(payload);
     resetForm();

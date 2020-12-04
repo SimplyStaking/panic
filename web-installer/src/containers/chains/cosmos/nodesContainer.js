@@ -17,7 +17,7 @@ const Form = withFormik({
     tendermintRpcUrl: '',
     cosmosRpcUrl: '',
     prometheusUrl: '',
-    exporterUrl: '',
+    exporter_url: '',
     isValidator: false,
     monitorNode: true,
     isArchiveNode: true,
@@ -27,12 +27,12 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
+      parent_id: currentChain,
       cosmosNodeName: values.cosmosNodeName,
       tendermintRpcUrl: values.tendermintRpcUrl,
       cosmosRpcUrl: values.cosmosRpcUrl,
       prometheusUrl: values.prometheusUrl,
-      exporterUrl: values.exporterUrl,
+      exporter_url: values.exporter_url,
       isValidator: values.isValidator,
       monitorNode: values.monitorNode,
       isArchiveNode: values.isArchiveNode,

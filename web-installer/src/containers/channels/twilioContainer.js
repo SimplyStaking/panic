@@ -7,28 +7,28 @@ import TwilioSchema from './schemas/twilioSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
-    accountSid: '',
+    config_name: '',
+    account_sid: '',
     authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: '',
+    twilioPhoneNum: '',
+    twilioPhoneNumbersToDial: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
-    accountSid: '',
+    config_name: '',
+    account_sid: '',
     authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: [],
+    twilioPhoneNum: '',
+    twilioPhoneNumbersToDial: [],
   }),
   validationSchema: (props) => TwilioSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTwilioDetails } = props;
     const payload = {
-      configName: values.configName,
-      accountSid: values.accountSid,
+      config_name: values.config_name,
+      account_sid: values.account_sid,
       authToken: values.authToken,
-      twilioPhoneNo: values.twilioPhoneNo,
-      twilioPhoneNumbersToDialValid: values.twilioPhoneNumbersToDialValid,
+      twilioPhoneNum: values.twilioPhoneNum,
+      twilioPhoneNumbersToDial: values.twilioPhoneNumbersToDial,
     };
     saveTwilioDetails(payload);
     resetForm();

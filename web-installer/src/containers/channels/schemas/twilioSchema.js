@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const TwilioSchema = (props) => Yup.object().shape({
-  configName: Yup.string()
+  config_name: Yup.string()
     .test(
       'unique-config-name',
       'Twilio config name is not unique.',
@@ -11,7 +11,7 @@ const TwilioSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < twilios.allIds.length; i += 1) {
-          if (twilios.byId[twilios.allIds[i]].configName === value) {
+          if (twilios.byId[twilios.allIds[i]].config_name === value) {
             return false;
           }
         }
@@ -19,13 +19,13 @@ const TwilioSchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  accountSid: Yup.string()
+  account_sid: Yup.string()
     .required('Account Sid is required.'),
   authToken: Yup.string()
     .required('Authentication token is required.'),
-  twilioPhoneNo: Yup.string()
+  twilioPhoneNum: Yup.string()
     .required('Twilio phone number is required.'),
-  twilioPhoneNumbersToDialValid: Yup.array()
+  twilioPhoneNumbersToDial: Yup.array()
     .required('Phone numbers to dial are required.'),
 });
 

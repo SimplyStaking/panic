@@ -34,12 +34,12 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.botName}
-                  value={values.botName}
+                  error={errors.bot_name}
+                  value={values.bot_name}
                   type="text"
-                  name="botName"
-                  placeholder={Data.telegram.botNamePlaceholder}
-                  helperText={errors.botName ? errors.botName : ''}
+                  name="bot_name"
+                  placeholder={Data.telegram.bot_namePlaceholder}
+                  helperText={errors.bot_name ? errors.bot_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -60,12 +60,12 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.botToken}
-                  value={values.botToken}
+                  error={errors.bot_token}
+                  value={values.bot_token}
                   type="text"
-                  name="botToken"
+                  name="bot_token"
                   placeholder={Data.telegram.botTokenPlaceholder}
-                  helperText={errors.botToken ? errors.botToken : ''}
+                  helperText={errors.bot_token ? errors.bot_token : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -86,12 +86,12 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.chatID}
-                  value={values.chatID}
+                  error={errors.chat_id}
+                  value={values.chat_id}
                   type="text"
-                  name="chatID"
+                  name="chat_id"
                   placeholder={Data.telegram.chatIdPlaceholder}
-                  helperText={errors.chatID ? errors.chatID : ''}
+                  helperText={errors.chat_id ? errors.chat_id : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -101,7 +101,7 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.telegram.chatID} placement="left">
+                    <Tooltip title={Data.telegram.chat_id} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -230,8 +230,8 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   <Box px={2}>
                     <SendTestAlertButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      botChatID={values.chatID}
-                      botToken={values.botToken}
+                      botChatID={values.chat_id}
+                      bot_token={values.bot_token}
                     />
                     <Button
                       color="primary"
@@ -254,15 +254,15 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 TelegramForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    botName: PropTypes.string,
-    botToken: PropTypes.string,
-    chatID: PropTypes.string,
+    bot_name: PropTypes.string,
+    bot_token: PropTypes.string,
+    chat_id: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    botName: PropTypes.string.isRequired,
-    botToken: PropTypes.string.isRequired,
-    chatID: PropTypes.string.isRequired,
+    bot_name: PropTypes.string.isRequired,
+    bot_token: PropTypes.string.isRequired,
+    chat_id: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

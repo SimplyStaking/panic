@@ -14,7 +14,7 @@ import * as Yup from 'yup';
   .typeError returns the specified error message if the input is not numeric.
 */
 const TelegramSchema = (props) => Yup.object().shape({
-  botName: Yup.string()
+  bot_name: Yup.string()
     .test(
       'unique-bot-name',
       'Bot Name is not unique.',
@@ -24,7 +24,7 @@ const TelegramSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < telegrams.allIds.length; i += 1) {
-          if (telegrams.byId[telegrams.allIds[i]].botName === value) {
+          if (telegrams.byId[telegrams.allIds[i]].bot_name === value) {
             return false;
           }
         }
@@ -32,9 +32,9 @@ const TelegramSchema = (props) => Yup.object().shape({
       },
     )
     .required('Bot name is required.'),
-  botToken: Yup.string()
+  bot_token: Yup.string()
     .required('Bot token is required.'),
-  chatID: Yup.number()
+  chat_id: Yup.number()
     .typeError('Chat ID must be numeric.')
     .required('Chat ID number is required.'),
 });

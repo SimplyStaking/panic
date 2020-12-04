@@ -31,14 +31,14 @@ export default {
   kms: {
     description: '',
     name: 'This will be used to identify the curren KMS configuration.',
-    exporterUrl: '',
+    exporter_url: '',
     monitorKms: '',
   },
   systems: {
     description: '',
     name: 'This will be used to identify the curren System configuration.',
-    exporterUrl: '',
-    monitorSystem: '',
+    exporter_url: '',
+    monitor_system: '',
   },
   nodeDetails: {
     description: '',
@@ -55,6 +55,6 @@ export default {
   repositoryDetails: {
     description: '',
     name: '',
-    monitorRepo: '',
+    monitor_repo: '',
   },
 };

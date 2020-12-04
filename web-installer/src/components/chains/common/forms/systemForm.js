@@ -91,12 +91,12 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.exporterUrl}
-                  value={values.exporterUrl}
+                  error={errors.exporter_url}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={Data.exporter_url_holder}
-                  helperText={errors.exporterUrl ? errors.exporterUrl : ''}
+                  helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -106,7 +106,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.exporterUrl} placement="left">
+                    <Tooltip title={Data.exporter_url} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -119,11 +119,11 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorSystem}
+                      checked={values.monitor_system}
                       onClick={() => {
-                        setFieldValue('monitorSystem', !values.monitorSystem);
+                        setFieldValue('monitor_system', !values.monitor_system);
                       }}
-                      name="monitorSystem"
+                      name="monitor_system"
                       color="primary"
                     />
                   )}
@@ -132,7 +132,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.monitorSystem} placement="left">
+                    <Tooltip title={Data.monitor_system} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -150,7 +150,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   <Box px={2}>
                     <PingNodeExporter
                       disabled={(Object.keys(errors).length !== 0)}
-                      exporterUrl={values.exporterUrl}
+                      exporter_url={values.exporter_url}
                     />
                     <Button
                       color="primary"
@@ -158,7 +158,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                       disabled={(Object.keys(errors).length !== 0)}
                       type="submit"
                     >
-                        Add System
+                        Add
                     </Button>
                   </Box>
                 </Grid>
@@ -194,13 +194,13 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 SystemForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     name: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    exporterUrl: PropTypes.string.isRequired,
-    monitorSystem: PropTypes.bool.isRequired,
+    exporter_url: PropTypes.string.isRequired,
+    monitor_system: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,

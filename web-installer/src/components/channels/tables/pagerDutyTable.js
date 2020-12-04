@@ -32,10 +32,14 @@ const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
           {Object.keys(pagerDuties.byId).map((pagerDuty) => (
             <TableRow key={pagerDuties.byId[pagerDuty].id}>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].configName}
+                {pagerDuties.byId[pagerDuty].config_name}
               </TableCell>
-              <TableCell align="center">{pagerDuties.byId[pagerDuty].apiToken}</TableCell>
-              <TableCell align="center">{pagerDuties.byId[pagerDuty].integrationKey}</TableCell>
+              <TableCell align="center">
+                {pagerDuties.byId[pagerDuty].api_token}
+              </TableCell>
+              <TableCell align="center">
+                {pagerDuties.byId[pagerDuty].integration_key
+              }</TableCell>
               <TableCell align="center">
                 {pagerDuties.byId[pagerDuty].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -65,9 +69,9 @@ PagerDutyTable.propTypes = forbidExtraProps({
   pagerDuties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      apiToken: PropTypes.string,
-      integrationKey: PropTypes.string,
+      config_name: PropTypes.string,
+      api_token: PropTypes.string,
+      integration_key: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

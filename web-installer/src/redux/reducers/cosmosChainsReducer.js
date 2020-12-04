@@ -398,7 +398,7 @@ function cosmosChainsById(state = {}, action) {
         ...state,
         [action.payload.id]: {
           id: action.payload.id,
-          chainName: action.payload.chainName,
+          chain_name: action.payload.chainName,
           nodes: [],
           kmses: [],
           repositories: [],
@@ -427,17 +427,17 @@ function cosmosChainsById(state = {}, action) {
     case ADD_NODE_COSMOS:
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          nodes: state[action.payload.parentId].nodes.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          nodes: state[action.payload.parent_id].nodes.concat(action.payload.id),
         },
       };
     case REMOVE_NODE_COSMOS:
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          nodes: state[action.payload.parentId].nodes.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          nodes: state[action.payload.parent_id].nodes.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -445,27 +445,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          repositories: state[action.payload.parentId].repositories.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
         },
       };
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          repositories: state[action.payload.parentId].repositories.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          repositories: state[action.payload.parent_id].repositories.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -473,27 +473,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_KMS:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          kmses: state[action.payload.parentId].kmses.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          kmses: state[action.payload.parent_id].kmses.concat(action.payload.id),
         },
       };
     case REMOVE_KMS:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          kmses: state[action.payload.parentId].kmses.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          kmses: state[action.payload.parent_id].kmses.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -501,27 +501,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          telegrams: state[action.payload.parentId].telegrams.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          telegrams: state[action.payload.parent_id].telegrams.concat(action.payload.id),
         },
       };
     case REMOVE_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          telegrams: state[action.payload.parentId].telegrams.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          telegrams: state[action.payload.parent_id].telegrams.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -529,27 +529,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          twilios: state[action.payload.parentId].twilios.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          twilios: state[action.payload.parent_id].twilios.concat(action.payload.id),
         },
       };
     case REMOVE_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          twilios: state[action.payload.parentId].twilios.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          twilios: state[action.payload.parent_id].twilios.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -557,27 +557,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          emails: state[action.payload.parentId].emails.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          emails: state[action.payload.parent_id].emails.concat(action.payload.id),
         },
       };
     case REMOVE_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          emails: state[action.payload.parentId].emails.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          emails: state[action.payload.parent_id].emails.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -585,27 +585,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          pagerduties: state[action.payload.parentId].pagerduties.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          pagerduties: state[action.payload.parent_id].pagerduties.concat(action.payload.id),
         },
       };
     case REMOVE_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          pagerduties: state[action.payload.parentId].pagerduties.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          pagerduties: state[action.payload.parent_id].pagerduties.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -613,27 +613,27 @@ function cosmosChainsById(state = {}, action) {
     case ADD_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          opsgenies: state[action.payload.parentId].opsgenies.concat(action.payload.id),
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          opsgenies: state[action.payload.parent_id].opsgenies.concat(action.payload.id),
         },
       };
     case REMOVE_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
-          opsgenies: state[action.payload.parentId].opsgenies.filter(
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          opsgenies: state[action.payload.parent_id].opsgenies.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -641,17 +641,17 @@ function cosmosChainsById(state = {}, action) {
     case UPDATE_REPEAT_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
           repeatAlerts: {
-            ...state[action.payload.parentId].repeatAlerts,
+            ...state[action.payload.parent_id].repeatAlerts,
             byId: {
-              ...state[action.payload.parentId].repeatAlerts.byId,
+              ...state[action.payload.parent_id].repeatAlerts.byId,
               [action.payload.id]: action.payload.alert,
             },
           },
@@ -660,17 +660,17 @@ function cosmosChainsById(state = {}, action) {
     case UPDATE_TIMEWINDOW_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
           timeWindowAlerts: {
-            ...state[action.payload.parentId].timeWindowAlerts,
+            ...state[action.payload.parent_id].timeWindowAlerts,
             byId: {
-              ...state[action.payload.parentId].timeWindowAlerts.byId,
+              ...state[action.payload.parent_id].timeWindowAlerts.byId,
               [action.payload.id]: action.payload.alert,
             },
           },
@@ -679,17 +679,17 @@ function cosmosChainsById(state = {}, action) {
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
           thresholdAlerts: {
-            ...state[action.payload.parentId].thresholdAlerts,
+            ...state[action.payload.parent_id].thresholdAlerts,
             byId: {
-              ...state[action.payload.parentId].thresholdAlerts.byId,
+              ...state[action.payload.parent_id].thresholdAlerts.byId,
               [action.payload.id]: action.payload.alert,
             },
           },
@@ -698,17 +698,17 @@ function cosmosChainsById(state = {}, action) {
     case UPDATE_SEVERITY_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parentId] === undefined) {
+      if (state[action.payload.parent_id] === undefined) {
         return state;
       }
       return {
         ...state,
-        [action.payload.parentId]: {
-          ...state[action.payload.parentId],
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
           severityAlerts: {
-            ...state[action.payload.parentId].severityAlerts,
+            ...state[action.payload.parent_id].severityAlerts,
             byId: {
-              ...state[action.payload.parentId].severityAlerts.byId,
+              ...state[action.payload.parent_id].severityAlerts.byId,
               [action.payload.id]: action.payload.alert,
             },
           },

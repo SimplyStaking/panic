@@ -7,12 +7,12 @@ import OpsGenieSchema from './schemas/opsGenieSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
-    apiToken: '',
+    config_name: '',
+    api_token: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
-    apiToken: '',
+    config_name: '',
+    api_token: '',
     eu: false,
     info: false,
     warning: false,
@@ -23,8 +23,8 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveOpsGenieDetails } = props;
     const payload = {
-      configName: values.configName,
-      apiToken: values.apiToken,
+      config_name: values.config_name,
+      api_token: values.api_token,
       eu: values.eu,
       info: values.info,
       warning: values.warning,

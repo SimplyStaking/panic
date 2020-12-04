@@ -18,9 +18,9 @@ function pingCosmosPrometheus(prometheusUrl) {
     { prometheusUrl });
 }
 
-function pingNodeExporter(exporterUrl) {
+function pingNodeExporter(exporter_url) {
   return sendData('/server/system/exporter', {},
-    { exporterUrl });
+    { exporter_url });
 }
 
 function pingRepo(url) {
@@ -47,9 +47,9 @@ function sendTestEmail(smtp, from, to, user, pass) {
   });
 }
 
-function sendTestPagerDuty(apiToken, integrationKey) {
+function sendTestPagerDuty(api_token, integrationKey) {
   return sendData('/server/pagerduty/test', {}, {
-    apiToken, integrationKey,
+    api_token, integrationKey,
   });
 }
 
@@ -59,10 +59,10 @@ function sendTestOpsGenie(apiKey, eu) {
   });
 }
 
-function testCall(accountSid, authToken, twilioPhoneNumber,
+function testCall(account_sid, authToken, twilioPhoneNumber,
   phoneNumberToDial) {
   return sendData('/server/twilio/test', {}, {
-    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    account_sid, authToken, twilioPhoneNumber, phoneNumberToDial,
   });
 }
 

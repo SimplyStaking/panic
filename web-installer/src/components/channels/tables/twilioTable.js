@@ -29,21 +29,21 @@ const TwilioTable = ({twilios, removeTwilioDetails}) => {
           {Object.keys(twilios.byId).map((twilio) => (
             <TableRow key={twilios.byId[twilio].id}>
               <TableCell align="center">
-                {twilios.byId[twilio].configName}
+                {twilios.byId[twilio].config_name}
               </TableCell>
               <TableCell align="center">
-                {twilios.byId[twilio].accountSid}
+                {twilios.byId[twilio].account_sid}
               </TableCell>
               <TableCell align="center">
-                {twilios.byId[twilio].authToken}
+                {twilios.byId[twilio].auth_token}
               </TableCell>
               <TableCell align="center">
-                {twilios.byId[twilio].twilioPhoneNo}
+                {twilios.byId[twilio].twilio_phone_num}
               </TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {twilios.byId[twilio].twilioPhoneNumbersToDialValid.map(
+                    {twilios.byId[twilio].twilio_phone_numbers_to_dial.map(
                       (number) => (
                         <ListItem key={number}>
                           { number }
@@ -72,11 +72,11 @@ TwilioTable.propTypes = forbidExtraProps({
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      accountSid: PropTypes.string,
-      authToken: PropTypes.string,
-      twilioPhoneNo: PropTypes.string,
-      twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+      config_name: PropTypes.string,
+      account_sid: PropTypes.string,
+      auth_token: PropTypes.string,
+      twilio_phone_num: PropTypes.string,
+      twilio_phone_numbers_to_dial: PropTypes.arrayOf(
         PropTypes.string,
       ),
     }).isRequired,

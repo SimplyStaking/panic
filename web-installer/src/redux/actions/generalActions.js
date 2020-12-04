@@ -20,9 +20,9 @@ export function addRepository(payload) {
     type: ADD_REPOSITORY,
     payload: {
       id: `repo_${uuidv4()}`,
-      parentId: payload.parentId,
-      repoName: payload.repoName,
-      monitorRepo: payload.monitorRepo,
+      parent_id: payload.parent_id,
+      repo_name: payload.repo_name,
+      monito_repo: payload.monitor_repo,
     },
   };
 }
@@ -39,10 +39,10 @@ export function addSystem(payload) {
     type: ADD_SYSTEM,
     payload: {
       id: `system_${uuidv4()}`,
-      parentId: payload.parentId,
+      parent_id: payload.parent_id,
       name: payload.name,
-      exporterUrl: payload.exporterUrl,
-      monitorSystem: payload.monitorSystem,
+      exporter_url: payload.exporter_url,
+      monitor_system: payload.monitor_system,
     },
   };
 }
@@ -59,10 +59,10 @@ export function addKms(payload) {
     type: ADD_KMS,
     payload: {
       id: `kms_${uuidv4()}`,
-      parentId: payload.parentId,
-      kmsName: payload.kmsName,
-      exporterUrl: payload.exporterUrl,
-      monitorKms: payload.monitorKms,
+      parent_id: payload.parent_id,
+      kms_name: payload.kmsName,
+      exporter_url: payload.exporter_url,
+      monitor_kms: payload.monitorKms,
     },
   };
 }

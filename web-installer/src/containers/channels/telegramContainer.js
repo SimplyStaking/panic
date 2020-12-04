@@ -7,14 +7,14 @@ import TelegramSchema from './schemas/telegramSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    botName: '',
-    botToken: '',
-    chatID: '',
+    bot_name: '',
+    bot_token: '',
+    chat_id: '',
   }),
   mapPropsToValues: () => ({
-    botName: '',
-    botToken: '',
-    chatID: '',
+    bot_name: '',
+    bot_token: '',
+    chat_id: '',
     info: false,
     warning: false,
     critical: false,
@@ -26,9 +26,9 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTelegramDetails } = props;
     const payload = {
-      botName: values.botName,
-      botToken: values.botToken,
-      chatID: values.chatID,
+      bot_name: values.bot_name,
+      bot_token: values.bot_token,
+      chat_id: values.chat_id,
       info: values.info,
       warning: values.warning,
       critical: values.critical,

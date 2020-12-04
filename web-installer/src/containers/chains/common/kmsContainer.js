@@ -7,24 +7,24 @@ import KmsSchema from './schemas/kmsSchema';
 import CosmosData from 'data/cosmos';
 
 // This performs kms name validation, by checking if the kms name is already
-// setup, and if the exporterUrl is provided
+// setup, and if the exporter_url is provided
 const Form = withFormik({
   mapPropsToErrors: () => ({
     kmsName: '',
-    exporterUrl: '',
+    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     kmsName: '',
-    exporterUrl: '',
+    exporter_url: '',
     monitorKms: true,
   }),
   validationSchema: (props) => KmsSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveKmsDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
+      parent_id: currentChain,
       kmsName: values.kmsName,
-      exporterUrl: values.exporterUrl,
+      exporter_url: values.exporter_url,
       monitorKms: values.monitorKms,
     };
     saveKmsDetails(payload);

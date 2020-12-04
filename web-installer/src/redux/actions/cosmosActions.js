@@ -14,7 +14,7 @@ export function addChainCosmos(payload) {
     type: ADD_CHAIN_COSMOS,
     payload: {
       id: `chain_name_${uuidv4()}`,
-      chainName: payload.chainName,
+      chain_name: payload.chainName,
     },
   };
 }
@@ -53,16 +53,16 @@ export function addNodeCosmos(payload) {
     type: ADD_NODE_COSMOS,
     payload: {
       id: `node_${uuidv4()}`,
-      parentId: payload.parentId,
-      cosmosNodeName: payload.cosmosNodeName,
-      tendermintRpcUrl: payload.tendermintRpcUrl,
-      cosmosRpcUrl: payload.cosmosRpcUrl,
-      prometheusUrl: payload.prometheusUrl,
-      exporterUrl: payload.exporterUrl,
-      isValidator: payload.isValidator,
-      monitorNode: payload.monitorNode,
-      isArchiveNode: payload.isArchiveNode,
-      useAsDataSource: payload.useAsDataSource,
+      parent_id: payload.parent_id,
+      cosmos_node_name: payload.cosmosNodeName,
+      tendermint_rpc_url: payload.tendermintRpcUrl,
+      cosmos_rpc_url: payload.cosmosRpcUrl,
+      prometheus_url: payload.prometheusUrl,
+      exporter_url: payload.exporter_url,
+      is_validator: payload.isValidator,
+      monitor_node: payload.monitorNode,
+      is_archive_node: payload.isArchiveNode,
+      use_as_data_source: payload.useAsDataSource,
     },
   };
 }

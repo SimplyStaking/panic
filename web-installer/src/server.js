@@ -568,13 +568,13 @@ app.post('/server/config', verify, async (req, res) => {
 app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    account_sid, authToken, twilioPhoneNumber, phoneNumberToDial,
   } = req.body;
 
-  // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
+  // Check if account_sid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
   const missingParamsList = utils.missingValues({
-    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    account_sid, authToken, twilioPhoneNumber, phoneNumberToDial,
   });
 
   // If some required parameters are missing inform the user.
@@ -587,7 +587,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
   // Create Twilio client
   let twilioClient;
   try {
-    twilioClient = twilio(accountSid, authToken);
+    twilioClient = twilio(account_sid, authToken);
   } catch (err) {
     console.error(err);
     const error = new errors.TwilioError(err.message);
@@ -677,10 +677,10 @@ app.post('/server/email/test', verify, async (req, res) => {
 // This endpoint triggers an test alert event to the PagerDuty space.
 app.post('/server/pagerduty/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { apiToken, integrationKey } = req.body;
+  const { api_token, integrationKey } = req.body;
 
-  // Check if apiToken and integrationKey are missing.
-  const missingParamsList = utils.missingValues({ apiToken, integrationKey });
+  // Check if api_token and integrationKey are missing.
+  const missingParamsList = utils.missingValues({ api_token, integrationKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -690,7 +690,7 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
   }
 
   // Create PagerDuty client and test alert message
-  const pdClient = new PdClient(apiToken);
+  const pdClient = new PdClient(api_token);
   const testAlert = new msgs.TestAlert();
 
   // Send test alert event
@@ -841,10 +841,10 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 
 app.post('/server/system/exporter', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { exporterUrl } = req.body;
+  const { exporter_url } = req.body;
 
-  // Check if exporterUrl is missing.
-  const missingParamsList = utils.missingValues({ exporterUrl });
+  // Check if exporter_url is missing.
+  const missingParamsList = utils.missingValues({ exporter_url });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -853,7 +853,7 @@ app.post('/server/system/exporter', async (req, res) => {
     return;
   }
 
-  const url = `${exporterUrl}/metrics`;
+  const url = `${exporter_url}/metrics`;
 
   axios.get(url, { params: {} })
     .then((_) => {

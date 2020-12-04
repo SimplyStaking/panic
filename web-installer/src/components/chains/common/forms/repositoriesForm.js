@@ -56,12 +56,12 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.repoName}
-                  value={values.repoName}
+                  error={errors.repo_name}
+                  value={values.repo_name}
                   type="text"
-                  name="repoName"
+                  name="repo_name"
                   placeholder={data.repoForm.nameHolder}
-                  helperText={errors.repoName ? errors.repoName : ''}
+                  helperText={errors.repo_name ? errors.repo_name : ''}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
                   autoComplete='off'
@@ -84,11 +84,11 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorRepo}
+                      checked={values.monitor_repo}
                       onClick={() => {
-                        setFieldValue('monitorRepo', !values.monitorRepo);
+                        setFieldValue('monitor_repo', !values.monitor_repo);
                       }}
-                      name="monitorRepo"
+                      name="monitor_repo"
                       color="primary"
                     />
                   )}
@@ -115,7 +115,7 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   <Box px={2}>
                     <PingRepoButton
                       disabled={(Object.keys(errors).length !== 0)}
-                      repo={values.repoName}
+                      repo={values.repo_name}
                     />
                     <Button
                       color="primary"
@@ -157,12 +157,12 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
 
 RepositoriesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    repoName: PropTypes.string,
+    repo_name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    repoName: PropTypes.string.isRequired,
-    monitorRepo: PropTypes.bool.isRequired,
+    repo_name: PropTypes.string.isRequired,
+    monitor_repo: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,

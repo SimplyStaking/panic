@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const OpsGenieSchema = (props) => Yup.object().shape({
-  configName: Yup.string()
+  config_name: Yup.string()
     .test(
       'unique-config-name',
       'OpsGenie config name is not unique.',
@@ -11,7 +11,7 @@ const OpsGenieSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < opsGenies.allIds.length; i += 1) {
-          if (opsGenies.byId[opsGenies.allIds[i]].configName === value) {
+          if (opsGenies.byId[opsGenies.allIds[i]].config_name === value) {
             return false;
           }
         }
@@ -19,7 +19,7 @@ const OpsGenieSchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  apiToken: Yup.string()
+  api_token: Yup.string()
     .required('API token is required.'),
 });
 

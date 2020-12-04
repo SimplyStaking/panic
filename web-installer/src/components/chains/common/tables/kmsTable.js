@@ -32,7 +32,7 @@ const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
                 {kmsConfig.byId[id].kmsName}
               </TableCell>
               <TableCell align="center">
-                {kmsConfig.byId[id].exporterUrl}
+                {kmsConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
                 {kmsConfig.byId[id].monitorKms ? <CheckIcon /> : <ClearIcon />}
@@ -63,9 +63,9 @@ KmsTable.propTypes = forbidExtraProps({
   kmsConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       kmsName: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       monitorKms: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,

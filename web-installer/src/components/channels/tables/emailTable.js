@@ -36,14 +36,14 @@ const EmailTable = ({emails, removeEmailDetails}) => {
           {Object.keys(emails.byId).map((email) => (
             <TableRow key={emails.byId[email].id}>
               <TableCell align="center">
-                {emails.byId[email].configName}
+                {emails.byId[email].config_name}
               </TableCell>
               <TableCell align="center">{emails.byId[email].smtp}</TableCell>
-              <TableCell align="center">{emails.byId[email].emailFrom}</TableCell>
+              <TableCell align="center">{emails.byId[email].email_from}</TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {emails.byId[email].emailsTo.map((to) => (
+                    {emails.byId[email].emails_to.map((to) => (
                       <ListItem key={to}>
                         { to }
                       </ListItem>
@@ -81,10 +81,10 @@ const EmailTable = ({emails, removeEmailDetails}) => {
 EmailTable.propTypes = forbidExtraProps({
   emails: PropTypes.shape({
     byId: PropTypes.shape({
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
       smtp: PropTypes.string,
-      emailFrom: PropTypes.string,
-      emailsTo: PropTypes.arrayOf(PropTypes.string),
+      email_from: PropTypes.string,
+      emails_to: PropTypes.arrayOf(PropTypes.string),
       username: PropTypes.string,
       password: PropTypes.string,
       info: PropTypes.bool,

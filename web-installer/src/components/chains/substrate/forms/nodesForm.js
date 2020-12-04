@@ -157,9 +157,9 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  value={values.exporterUrl}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
                   inputProps={{min: 0, style: { textAlign: 'right' }}}
@@ -380,7 +380,7 @@ NodesForm.propTypes = forbidExtraProps({
     nodeWsUrl: PropTypes.string,
     telemetryUrl: PropTypes.string,
     prometheusUrl: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    exporter_url: PropTypes.string,
     stashAddress: PropTypes.string,
     isValidator: PropTypes.bool.isRequired,
     monitorNode: PropTypes.bool.isRequired,

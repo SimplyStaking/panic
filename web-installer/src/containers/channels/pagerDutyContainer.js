@@ -7,13 +7,13 @@ import PagerDutySchema from './schemas/pagerDutySchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
-    apiToken: '',
+    config_name: '',
+    api_token: '',
     integrationKey: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
-    apiToken: '',
+    config_name: '',
+    api_token: '',
     integrationKey: '',
     info: false,
     warning: false,
@@ -24,8 +24,8 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { savePagerDutyDetails } = props;
     const payload = {
-      configName: values.configName,
-      apiToken: values.apiToken,
+      config_name: values.config_name,
+      api_token: values.api_token,
       integrationKey: values.integrationKey,
       info: values.info,
       warning: values.warning,

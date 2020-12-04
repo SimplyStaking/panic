@@ -30,6 +30,7 @@ const mapStateToProps = (state) => ({
   periodic: state.PeriodicReducer,
 });
 
+// holy fuck let's do this
 class SaveConfig extends Component {
   constructor(props) {
     super(props);
@@ -397,7 +398,7 @@ class SaveConfig extends Component {
 SaveConfig.propTypes = {
   emails: PropTypes.shape({
     byId: PropTypes.shape({
-      configName: PropTypes.string,
+      config_name: PropTypes.string,
       smtp: PropTypes.string,
       emailFrom: PropTypes.string,
       emailsTo: PropTypes.arrayOf(PropTypes.string),
@@ -413,8 +414,8 @@ SaveConfig.propTypes = {
   opsgenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      apiToken: PropTypes.string,
+      config_name: PropTypes.string,
+      api_token: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,
@@ -425,8 +426,8 @@ SaveConfig.propTypes = {
   pagerduties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      apiToken: PropTypes.string,
+      config_name: PropTypes.string,
+      api_token: PropTypes.string,
       integrationKey: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
@@ -438,9 +439,9 @@ SaveConfig.propTypes = {
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      botName: PropTypes.string,
-      botToken: PropTypes.string,
-      chatID: PropTypes.string,
+      bot_name: PropTypes.string,
+      bot_token: PropTypes.string,
+      chat_id: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,
@@ -453,11 +454,11 @@ SaveConfig.propTypes = {
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      accountSid: PropTypes.string,
+      config_name: PropTypes.string,
+      account_sid: PropTypes.string,
       authToken: PropTypes.string,
-      twilioPhoneNo: PropTypes.string,
-      twilioPhoneNumbersToDialValid: PropTypes.arrayOf(
+      twilioPhoneNum: PropTypes.string,
+      twilioPhoneNumbersToDial: PropTypes.arrayOf(
         PropTypes.string,
       ),
     }).isRequired,
@@ -528,9 +529,9 @@ SaveConfig.propTypes = {
   kmses: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       kmsName: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       monitorKms: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -538,22 +539,22 @@ SaveConfig.propTypes = {
   systems: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       name: PropTypes.string,
-      exporterUrl: PropTypes.string,
-      monitorSystem: PropTypes.bool,
+      exporter_url: PropTypes.string,
+      monitor_system: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   cosmosNodes: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       cosmosNodeName: PropTypes.string,
       tendermintRpcUrl: PropTypes.string,
       cosmosRpcUrl: PropTypes.string,
       prometheusUrl: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,
       isArchiveNode: PropTypes.bool,
@@ -564,9 +565,9 @@ SaveConfig.propTypes = {
   repositories: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
-      repoName: PropTypes.string,
-      monitorRepo: PropTypes.bool,
+      parent_id: PropTypes.string,
+      repo_name: PropTypes.string,
+      monitor_repo: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
@@ -635,12 +636,12 @@ SaveConfig.propTypes = {
   substrateNodes: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       substrateNodeName: PropTypes.string.isRequired,
       nodeWsUrl: PropTypes.string,
       telemetryUrl: PropTypes.string,
       prometheusUrl: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       stashAddress: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,

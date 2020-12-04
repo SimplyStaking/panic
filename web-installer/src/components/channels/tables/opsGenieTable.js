@@ -31,9 +31,9 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
           {Object.keys(opsGenies.byId).map((opsgenie) => (
             <TableRow key={opsGenies.byId[opsgenie].id}>
               <TableCell align="center">
-                {opsGenies.byId[opsgenie].configName}
+                {opsGenies.byId[opsgenie].config_name}
               </TableCell>
-              <TableCell align="center">{opsGenies.byId[opsgenie].apiToken}</TableCell>
+              <TableCell align="center">{opsGenies.byId[opsgenie].api_token}</TableCell>
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -63,8 +63,8 @@ OpsGenieTable.propTypes = forbidExtraProps({
   opsGenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      apiToken: PropTypes.string,
+      config_name: PropTypes.string,
+      api_token: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

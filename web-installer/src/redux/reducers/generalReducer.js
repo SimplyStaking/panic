@@ -146,7 +146,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
 
@@ -163,7 +163,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
 
@@ -182,7 +182,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -198,7 +198,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
 
@@ -217,7 +217,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -233,7 +233,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_TELEGRAM_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -251,7 +251,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -267,7 +267,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_TWILIO_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -285,7 +285,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -301,7 +301,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_EMAIL_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -319,7 +319,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -335,7 +335,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_PAGERDUTY_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -353,7 +353,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -369,7 +369,7 @@ function GeneralReducer(state = generalState, action) {
     case REMOVE_OPSGENIE_CHANNEL:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -387,7 +387,7 @@ function GeneralReducer(state = generalState, action) {
     case UPDATE_REPEAT_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -409,7 +409,7 @@ function GeneralReducer(state = generalState, action) {
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {

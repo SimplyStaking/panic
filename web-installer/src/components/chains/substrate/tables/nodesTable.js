@@ -53,7 +53,7 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
                 {nodesConfig.byId[id].prometheusUrl}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].exporterUrl}
+                {nodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].stashAddress}
@@ -100,12 +100,12 @@ NodesTable.propTypes = forbidExtraProps({
   nodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
+      parent_id: PropTypes.string,
       substrateNodeName: PropTypes.string.isRequired,
       nodeWsUrl: PropTypes.string,
       telemetryUrl: PropTypes.string,
       prometheusUrl: PropTypes.string,
-      exporterUrl: PropTypes.string,
+      exporter_url: PropTypes.string,
       stashAddress: PropTypes.string,
       isValidator: PropTypes.bool,
       monitorNode: PropTypes.bool,
