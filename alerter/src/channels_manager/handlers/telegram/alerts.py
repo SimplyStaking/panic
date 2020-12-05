@@ -14,6 +14,7 @@ from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers import ChannelHandler
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import ALERT_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import ConnectionNotInitializedException
@@ -29,8 +30,7 @@ class TelegramAlertsHandler(ChannelHandler):
         # Set a max queue size so that if the Telegram Alerts Handler is not
         # able to send alerts for a long time, old alerts can be pruned without
         # exhausting memory resources
-        max_queue_size = int(os.environ[
-                                 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE
         self._alerts_queue = Queue(max_queue_size)
 
         rabbit_ip = os.environ['RABBIT_IP']
