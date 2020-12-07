@@ -10,9 +10,17 @@ class TelegramBotApi:
 
         self._base_url = 'https://api.telegram.org/bot' + bot_token
 
+    @property
+    def bot_token(self) -> str:
+        return self._bot_token
+
+    @property
+    def bot_chat_id(self) -> Optional[str]:
+        return self._bot_chat_id
+
     def send_message(self, message: str) -> Dict:
         data = {
-            'chat_id': self._bot_chat_id,
+            'chat_id': self.bot_chat_id,
             'text': message,
             'parse_mode': 'MarkdownV2'
         }

@@ -14,6 +14,10 @@ class TelegramChannel(Channel):
 
         self._telegram_bot = telegram_bot
 
+    @property
+    def telegram_bot(self) -> TelegramBotApi:
+        return self._telegram_bot
+
     def alert(self, alert: Alert) -> RequestStatus:
         subject = 'PANIC {}'.format(alert.severity.upper())
         try:
