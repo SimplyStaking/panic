@@ -19,6 +19,8 @@ export function addTelegram(payload) {
       error: payload.error,
       alerts: payload.alerts,
       commands: payload.commands,
+      parent_ids: [],
+      parent_names: [],
     },
   };
 }
@@ -40,6 +42,8 @@ export function addTwilio(payload) {
       auth_token: payload.auth_token,
       twilio_phone_num: payload.twilio_phone_num,
       twilio_phone_numbers_to_dial: payload.twilio_phone_numbers_to_dial,
+      parent_ids: [],
+      parent_names: [],
     },
   };
 }
@@ -66,6 +70,8 @@ export function addEmail(payload) {
       warning: payload.warning,
       critical: payload.critical,
       error: payload.error,
+      parent_ids: [],
+      parent_names: [],
     },
   };
 }
@@ -89,6 +95,8 @@ export function addPagerDuty(payload) {
       warning: payload.warning,
       critical: payload.critical,
       error: payload.error,
+      parent_ids: [],
+      parent_names: [],
     },
   };
 }
@@ -112,6 +120,8 @@ export function addOpsGenie(payload) {
       warning: payload.warning,
       critical: payload.critical,
       error: payload.error,
+      parent_ids: [],
+      parent_names: [],
     },
   };
 }

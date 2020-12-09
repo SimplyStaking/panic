@@ -18,7 +18,14 @@ const productStyle = {
   },
   description: {
     color: "#999"
-  }
+  },
+  root: {
+    flexGrow: 1,
+  },
+  paper: {
+    width: '100%',
+    textAlign: 'center',
+  },
 };
 
 export default productStyle;

@@ -9,7 +9,7 @@ import './App.css';
 /*
 * Main application, which loads the PageManager and the ToastsContainer
 * PageManager changes which page/form is being viewed through redux
-* Toasts Container controls the overlayed notifications when interacting
+* Toasts Container controls the overlay notifications when interacting
 * with the backend.
 */
 function App() {

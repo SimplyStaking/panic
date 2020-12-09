@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Grid, FormControlLabel, Checkbox, List, ListItem, Typography, Box,
+  Grid, FormControlLabel, Checkbox, Typography, Box,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -20,10 +20,10 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
   emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
   addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
   addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
-  removeOpsGenieDetails}) => {
+  removeOpsGenieDetails, createPayloadTelegram, createPayloadTwilio,
+  createPayloadEmail, createPayloadPagerDuty, createPayloadOpsGenie}) => {
 
   const currentConfig = config.byId[currentChain];
-
   const classes = useStyles();
 
   return (
@@ -59,76 +59,32 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
           )
         }
       </div>
-      <Grid container className="root" spacing={0}>
+      <Grid container spacing={3} className={classes.root}>
         {telegrams.allIds.length !== 0 && (
           <Grid item xs={4}>
-            <Grid container justify="center" spacing={3}>
-              <Grid item>
-                <TableContainer component={Paper}>
-                  <Table className="table" aria-label="simple table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align="center">
-                          Telegram
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {telegrams.allIds.map((id) => (
-                        <TableRow key={id}>
-                          <TableCell key={id} align="center">
-                            <FormControlLabel
-                              control={(
-                                <Checkbox
-                                  checked={currentConfig.telegrams.includes(id)}
-                                  onClick={() => {
-                                    const payload = {
-                                      id,
-                                      parent_id: currentChain,
-                                    };
-                                    if (currentConfig.telegrams.includes(id)) {
-                                      removeTelegramDetails(payload);
-                                    } else {
-                                      addTelegramDetails(payload);
-                                    }
-                                  }}
-                                  name="telegrams"
-                                  color="primary"
-                                />
-                              )}
-                              label={telegrams.byId[id].bot_name}
-                              labelPlacement="start"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Paper className="paper">
-                  <Typography>
-                    Telegram
-                  </Typography>
-                  <div
-                    className="tableColumn"
-                  >
-                    <List>
-                      {telegrams.allIds.map((id) => (
-                        <ListItem key={id}>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className="table" aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">
+                        Telegram
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {telegrams.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
                           <FormControlLabel
                             control={(
                               <Checkbox
                                 checked={currentConfig.telegrams.includes(id)}
                                 onClick={() => {
-                                  const payload = {
-                                    id,
-                                    parent_id: currentChain,
-                                  };
-                                  if (currentConfig.telegrams.includes(id)) {
-                                    removeTelegramDetails(payload);
-                                  } else {
-                                    addTelegramDetails(payload);
-                                  }
+                                  createPayloadTelegram(
+                                    telegrams.byId[id], currentConfig,
+                                    addTelegramDetails, removeTelegramDetails
+                                  );
                                 }}
                                 name="telegrams"
                                 color="primary"
@@ -137,43 +93,40 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             label={telegrams.byId[id].bot_name}
                             labelPlacement="start"
                           />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
         )}
         {twilios.allIds.length !== 0 && (
           <Grid item xs={4}>
-            <Grid container justify="center" spacing={3}>
-              <Grid item>
-                <Paper className="paper">
-                  <Typography>
-                    Twilio
-                  </Typography>
-                  <div
-                    style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
-                  >
-                    <List>
-                      {twilios.allIds.map((id) => (
-                        <ListItem key={id}>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className="table" aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">
+                        Twilio
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {twilios.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
                           <FormControlLabel
                             control={(
                               <Checkbox
                                 checked={currentConfig.twilios.includes(id)}
                                 onClick={() => {
-                                  const payload = {
-                                    id,
-                                    parent_id: currentChain,
-                                  };
-                                  if (currentConfig.twilios.includes(id)) {
-                                    removeTwilioDetails(payload);
-                                  } else {
-                                    addTwilioDetails(payload);
-                                  }
+                                  createPayloadTwilio(
+                                    twilios.byId[id], currentConfig,
+                                    addTwilioDetails, removeTwilioDetails
+                                  );
                                 }}
                                 name="twilios"
                                 color="primary"
@@ -182,43 +135,40 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             label={twilios.byId[id].config_name}
                             labelPlacement="start"
                           />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
         )}
         {emails.allIds.length !== 0 && (
           <Grid item xs={4}>
-            <Grid container justify="center" spacing={3}>
-              <Grid item>
-                <Paper className="paper">
-                  <Typography>
-                    Email
-                  </Typography>
-                  <div
-                    style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
-                  >
-                    <List>
-                      {emails.allIds.map((id) => (
-                        <ListItem key={id}>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className="table" aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">
+                        Email
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {emails.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
                           <FormControlLabel
                             control={(
                               <Checkbox
                                 checked={currentConfig.emails.includes(id)}
                                 onClick={() => {
-                                  const payload = {
-                                    id,
-                                    parent_id: currentChain,
-                                  };
-                                  if (currentConfig.emails.includes(id)) {
-                                    removeEmailDetails(payload);
-                                  } else {
-                                    addEmailDetails(payload);
-                                  }
+                                  createPayloadEmail(
+                                    emails.byId[id], currentConfig,
+                                    addEmailDetails, removeEmailDetails
+                                  );
                                 }}
                                 name="emails"
                                 color="primary"
@@ -227,88 +177,83 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             label={emails.byId[id].config_name}
                             labelPlacement="start"
                           />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
         )}
         {pagerduties.allIds.length !== 0 && (
           <Grid item xs={4}>
-            <Grid container justify="center" spacing={3}>
-              <Grid item>
-                <Paper className="paper">
-                  <Typography>
-                    PagerDuty
-                  </Typography>
-                  <div
-                    style={{ maxHeight: 300, minHeight: 300, overflow: 'auto' }}
-                  >
-                    <List>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className="table" aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">
+                        PagerDuty
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                       {pagerduties.allIds.map((id) => (
-                        <ListItem key={id}>
-                          <FormControlLabel
-                            control={(
-                              <Checkbox
-                                checked={currentConfig.pagerduties.includes(id)}
-                                onClick={() => {
-                                  const payload = {
-                                    id,
-                                    parent_id: currentChain,
-                                  };
-                                  if (currentConfig.pagerduties.includes(id)) {
-                                    removePagerDutyDetails(payload);
-                                  } else {
-                                    addPagerDutyDetails(payload);
-                                  }
-                                }}
-                                name="pagerduties"
-                                color="primary"
-                              />
-                            )}
-                            label={pagerduties.byId[id].config_name}
-                            labelPlacement="start"
-                          />
-                        </ListItem>
+                        <TableRow key={id}>
+                          <TableCell key={id} align="center">
+                            <FormControlLabel
+                              control={(
+                                <Checkbox
+                                  checked={currentConfig.pagerduties.includes(id)}
+                                  onClick={() => {
+                                    createPayloadPagerDuty(
+                                      pagerduties.byId[id], currentConfig,
+                                      addPagerDutyDetails, removePagerDutyDetails
+                                    );
+                                  }}
+                                  name="pagerduties"
+                                  color="primary"
+                                />
+                              )}
+                              label={pagerduties.byId[id].config_name}
+                              labelPlacement="start"
+                            />
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </List>
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
         )}
         {opsgenies.allIds.length !== 0 && (
           <Grid item xs={4}>
-            <Grid container justify="center" spacing={3}>
-              <Grid item>
-                <Paper className="paper">
-                  <Typography>
-                    OpsGenie
-                  </Typography>
-                  <div
-                    className="tableColumn"
-                  >
-                    <List>
-                      {opsgenies.allIds.map((id) => (
-                        <ListItem key={id}>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className={classes.paper} aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">
+                        OpsGenie
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {opsgenies.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
                           <FormControlLabel
                             control={(
                               <Checkbox
                                 checked={currentConfig.opsgenies.includes(id)}
                                 onClick={() => {
-                                  const payload = {
-                                    id,
-                                    parent_id: currentChain,
-                                  };
-                                  if (currentConfig.opsgenies.includes(id)) {
-                                    removeOpsGenieDetails(payload);
-                                  } else {
-                                    addOpsGenieDetails(payload);
-                                  }
+                                  createPayloadOpsGenie(
+                                    opsgenies.byId[id], currentConfig,
+                                    addOpsGenieDetails,
+                                    removeOpsGenieDetails
+                                  );
                                 }}
                                 name="opsgenies"
                                 color="primary"
@@ -317,16 +262,21 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             label={opsgenies.byId[id].config_name}
                             labelPlacement="start"
                           />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
         )}
         <Grid item xs={12} />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
         <Grid item xs={2}>
           <Box px={2}>
             <StepButtonContainer
@@ -406,6 +356,11 @@ ChannelsTable.propTypes = forbidExtraProps({
   removePagerDutyDetails: PropTypes.func.isRequired,
   addOpsGenieDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
+  createPayloadTelegram: PropTypes.func.isRequired,
+  createPayloadTwilio: PropTypes.func.isRequired,
+  createPayloadEmail: PropTypes.func.isRequired,
+  createPayloadPagerDuty: PropTypes.func.isRequired,
+  createPayloadOpsGenie: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
   data: PropTypes.shape({
     channelsTable: PropTypes.shape({

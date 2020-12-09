@@ -20,16 +20,6 @@ const UsersSchema = (props) => Yup.object().shape({
     )
     .required('Username  is required.'),
   password: Yup.string()
-    .test(
-      'password-length',
-      'Password too short, please provide at least 8 characters',
-      (value) => {
-        if (value.length < 8) {
-          return false;
-        }
-        return true;
-      },
-    )
     .required('Password  is required.'),
 });
 

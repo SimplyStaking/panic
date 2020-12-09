@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 import {
   ADD_TELEGRAM, REMOVE_TELEGRAM, ADD_TWILIO, REMOVE_TWILIO, ADD_EMAIL,
   REMOVE_EMAIL, ADD_PAGERDUTY, REMOVE_PAGERDUTY, ADD_OPSGENIE, REMOVE_OPSGENIE,
-} from '../actions/types';
+} from 'redux/actions/types';
 
 // Reducers to add and remove telegram configurations from global state
 function telegramsById(state = {}, action) {
