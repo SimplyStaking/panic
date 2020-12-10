@@ -3,7 +3,7 @@ import logging
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.channels.channel import Channel
-from src.configs.email_channel import EmailChannelConfig
+from src.configs.channel.email import EmailChannelConfig
 from src.utils.data import RequestStatus
 
 _EMAIL_HTML_TEMPLATE = """<style type="text/css">

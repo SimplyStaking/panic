@@ -13,7 +13,7 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.handlers import ChannelHandler
-from src.configs.email_channel import EmailChannelConfig
+from src.configs.channel.email import EmailChannelConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE
 from src.utils.data import RequestStatus
