@@ -7,7 +7,7 @@ class TwilioApi:
         self._client = Client(account_sid, auth_token)
 
     def dial_number(self, call_from: str, call_to: str,
-                    twiml: str, twiml_is_url: bool):
+                    twiml: str, twiml_is_url: bool) -> None:
         if twiml_is_url:
             self._client.calls.create(
                 to=call_to, from_=call_from, url=twiml, method="GET")

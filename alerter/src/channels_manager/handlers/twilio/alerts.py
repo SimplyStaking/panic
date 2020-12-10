@@ -1,18 +1,17 @@
 import json
 import logging
-import os
 import signal
 import sys
 from datetime import datetime
 from enum import Enum
-from queue import Queue
 from types import FrameType
+from typing import List
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerts.alert import Alert
-from src.channels_manager.channels.telegram import TelegramChannel
+from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils import env
@@ -22,18 +21,16 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class TelegramAlertsHandler(ChannelHandler):
+class TwilioAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 telegram_channel: TelegramChannel) -> None:
+                 twilio_channel: TwilioChannel, call_from: str,
+                 call_to: List[str], twiml: str, twiml_is_url: bool) -> None:
         super().__init__(handler_name, logger)
-        self._telegram_channel = telegram_channel
-
-        # Set a max queue size so that if the Telegram Alerts Handler is not
-        # able to send alerts for a long time, old alerts can be pruned without
-        # exhausting memory resources
-        max_queue_size = int(os.environ[
-                                 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
-        self._alerts_queue = Queue(max_queue_size)
+        self._twilio_channel = twilio_channel
+        self._call_from = call_from
+        self._call_to = call_to
+        self._twiml = twiml
+        self._twiml_is_url = twiml_is_url
 
         rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
@@ -44,12 +41,8 @@ class TelegramAlertsHandler(ChannelHandler):
         signal.signal(signal.SIGHUP, self.on_terminate)
 
     @property
-    def telegram_channel(self) -> TelegramChannel:
-        return self._telegram_channel
-
-    @property
-    def alerts_queue(self) -> Queue:
-        return self._alerts_queue
+    def twilio_channel(self) -> TwilioChannel:
+        return self._twilio_channel
 
     @property
     def rabbitmq(self) -> RabbitMQApi:
@@ -63,26 +56,25 @@ class TelegramAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue 'telegram_{}_alerts_handler_queue'".format(
-                self.telegram_channel.channel_id))
-        self.rabbitmq.queue_declare('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), False, True, False, False)
+            "Creating queue 'twilio_{}_alerts_handler_queue'".format(
+                self.twilio_channel.channel_id))
+        self.rabbitmq.queue_declare('twilio_{}_alerts_handler_queue'.format(
+            self.twilio_channel.channel_id), False, True, False, False)
         self.logger.info(
-            "Binding queue 'telegram_{}_alerts_handler_queue' to "
+            "Binding queue 'twilio_{}_alerts_handler_queue' to "
             "exchange '{}' with routing key 'channel.{}'".format(
-                self.telegram_channel.channel_id, ALERT_EXCHANGE,
-                self.telegram_channel.channel_id))
-        self.rabbitmq.queue_bind('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), ALERT_EXCHANGE,
-            'channel.{}'.format(self.telegram_channel.channel_id))
+                self.twilio_channel.channel_id, ALERT_EXCHANGE,
+                self.twilio_channel.channel_id))
+        self.rabbitmq.queue_bind('twilio_{}_alerts_handler_queue'.format(
+            self.twilio_channel.channel_id), ALERT_EXCHANGE,
+            'channel.{}'.format(self.twilio_channel.channel_id))
 
-        # Pre-fetch count is 5 times less the maximum queue size
-        prefetch_count = round(self.alerts_queue.maxsize / 5)
+        prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
-        self.rabbitmq.basic_consume('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), self._process_alerts, False,
-            False, None)
+        self.rabbitmq.basic_consume('twilio_{}_alerts_handler_queue'.format(
+            self.twilio_channel.channel_id), self._process_alerts, False, False,
+            None)
 
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -130,20 +122,15 @@ class TelegramAlertsHandler(ChannelHandler):
         # If the data is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        # Place the data on the alerts queue if there were no processing errors.
-        # This is done after acknowledging the data, so that if acknowledgement
-        # fails, the data is processed again and we do not have duplication of
-        # data in the queue
-        if not processing_error:
-            self._place_alert_on_queue(alert)
-
-        # Send any data waiting in the queue, if any
+        calling_successful = RequestStatus.FAILED
         try:
-            self._send_data()
+            # Initiate the calling procedure if the data sent was a valid alert
+            if not processing_error:
+                calling_successful = self._call_using_twilio(alert)
         except Exception as e:
             raise e
 
-        if self.alerts_queue.empty() and not processing_error:
+        if calling_successful == RequestStatus.SUCCESS and not processing_error:
             try:
                 heartbeat = {
                     'component_name': self.handler_name,
@@ -160,78 +147,52 @@ class TelegramAlertsHandler(ChannelHandler):
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 
-    def _place_alert_on_queue(self, alert: Alert) -> None:
-        self.logger.debug("Adding {} to the alerts queue ...".format(
-            alert.alert_code.name))
+    def _call_using_twilio(self, alert: Alert) -> RequestStatus:
+        # Do not call if 5 minutes passed since the alert was last raised, as
+        # alert is considered to be old
+        alert_validity_threshold = 300
+        if (datetime.now().timestamp() - alert.timestamp) \
+                > alert_validity_threshold:
+            self.logger.error('Did not call as alert was raised a while '
+                              'ago')
+            return RequestStatus.FAILED
 
-        # Place the alert on the alerts queue. If the queue is full, remove old
-        # data first.
-        if self.alerts_queue.full():
-            self.alerts_queue.get()
-        self.alerts_queue.put(alert)
-
-        self.logger.debug("{} added to the alerts queue".format(
-            alert.alert_code.name))
-
-    def _send_data(self) -> None:
-        empty = True
-        if not self.alerts_queue.empty():
-            empty = False
-            self.logger.info("Attempting to send all alerts waiting in the "
-                             "alerts queue ...")
-
-        # Try sending the alerts in the alerts queue one by one. If sending
-        # fails, try re-sending six times in a space of 1 minute. If this
-        # still fails, stop sending alerts until the next alert is received. If
-        # 10 minutes pass since the alert was first raised, the alert is
-        # discarded. Important, remove an item from the queue only if the
-        # sending was successful, so that if an exception is raised, that
-        # message is not popped
-        max_attempts = 6
-        alert_validity_threshold = 600
-        while not self.alerts_queue.empty():
-            alert = self.alerts_queue.queue[0]
-
-            # Discard alert if 10 minutes passed since it was last raised
-            if (datetime.now().timestamp() - alert.timestamp) \
-                    > alert_validity_threshold:
-                self.alerts_queue.get()
-                self.alerts_queue.task_done()
-                continue
-
+        # For each number try calling 3 times in a space of 15 seconds until the
+        # call is successful. If this threshold is reached, we move to the next
+        # number.
+        max_attempts = 3
+        calling_status = RequestStatus.SUCCESS
+        for number in self._call_to:
             attempts = 0
-            ret = self.telegram_channel.alert(alert)
+            ret = self.twilio_channel.alert(call_from=self._call_from,
+                                            call_to=number, twiml=self._twiml,
+                                            twiml_is_url=self._twiml_is_url)
             while ret != RequestStatus.SUCCESS and attempts <= max_attempts:
                 self.logger.info(
-                    "Will re-trying sending in 10 seconds. "
+                    "Will re-trying calling in 5 seconds. "
                     "Attempts left: {}".format(max_attempts - attempts))
-                self.rabbitmq.connection.sleep(10)
-                ret = self.telegram_channel.alert(alert)
+                self.rabbitmq.connection.sleep(5)
+                ret = self.twilio_channel.alert(call_from=self._call_from,
+                                                call_to=number,
+                                                twiml=self._twiml,
+                                                twiml_is_url=self._twiml_is_url)
                 attempts += 1
 
-            if ret == RequestStatus.SUCCESS:
-                self.alerts_queue.get()
-                self.alerts_queue.task_done()
-            else:
-                self.logger.info("Not all alerts could be sent in a timely "
-                                 "manner. The alerts which could not be sent "
-                                 "will be saved in the alerts queue, and if "
-                                 "not a lot of time passes since these alerts "
-                                 "were raised, these alert would still be "
-                                 "sent.")
-                return
+            if ret == RequestStatus.FAILED:
+                calling_status = RequestStatus.FAILED
 
-        if not empty:
-            self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
+        if calling_status == RequestStatus.SUCCESS:
+            self.logger.info('Successfully sent all calling requests to Twilio')
+        else:
+            self.logger.error('Could not succesfully send all calling '
+                              'requests to Twilio')
+
+        return calling_status
 
     def start(self) -> None:
         self._initialize_rabbitmq()
         while True:
             try:
-                # Before listening for new alerts, send the data waiting to be
-                # sent in the alerts queue.
-                self._send_data()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:

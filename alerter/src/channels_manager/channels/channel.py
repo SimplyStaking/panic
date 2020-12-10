@@ -36,7 +36,5 @@ class Channel(ABC):
         return self._logger
 
     @abstractmethod
-    def alert(self, alert: Alert) -> RequestStatus:
+    def alert(self, *args) -> RequestStatus:
         pass
-
-# TODO: May do a child name ChannelAlertsHandler to group common code
