@@ -46,6 +46,8 @@ services:
     networks:
       panic_net:
         ipv4_address: '${REDIS_IP}'
+    ports:
+      - "6379:6379"
     restart: always
     container_name: 'redis'
 

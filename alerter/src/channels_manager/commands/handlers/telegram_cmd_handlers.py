@@ -40,7 +40,7 @@ class TelegramCommandHandlers(CmdHandler):
         redis_ip = 'localhost'
         redis_db = 10
         redis_port = 6379
-        unique_alerter_identifier = 'test_name_space'
+        unique_alerter_identifier = 'panic_alerter'
         self._redis = RedisApi(logger=self.logger.getChild('redis'),
                                host=redis_ip, db=redis_db, port=redis_port,
                                namespace=unique_alerter_identifier)
@@ -187,20 +187,31 @@ class TelegramCommandHandlers(CmdHandler):
                 if severity_muted:
                     all_chains_muted_severities.append(severity)
             status += '- All chains have {} alerts ' \
-                      'muted.\n '.format(','.join(all_chains_muted_severities))
+                      'muted.\n'.format(', '.join(all_chains_muted_severities))
+        else:
+            status += '- There is no severity which was muted using ' \
+                      'mute\\_all \n'
 
         associated_chains = self.associated_chains
 
         for chain_id, chain_name in associated_chains.items():
+            chain_name = chain_name.replace("_", "\\_").replace("*", "\\*")\
+                .replace("[", "\\[").replace("`", "\\`")
             chain_hash = Keys.get_hash_parent(chain_id)
             mute_alerts_key = Keys.get_chain_mute_alerts()
             if self.redis.hexists_unsafe(chain_hash, mute_alerts_key):
-                chain_muted_severities = json.loads(self.redis.hget_unsafe(
-                    chain_hash, mute_alerter_key).decode())
-                muted_severities = list(set().union(
+                muted_severities = json.loads(self.redis.hget_unsafe(
+                    chain_hash, mute_alerts_key).decode())
+                chain_muted_severities = []
+                for severity, severity_muted in muted_severities.items():
+                    if severity_muted:
+                        chain_muted_severities.append(severity)
+                chain_muted_severities = list(set().union(
                     chain_muted_severities, all_chains_muted_severities))
-                status += '- {} has {} alerts muted.\n '.format(
-                    chain_name, ','.join(muted_severities))
+                status += '- {} has {} alerts muted.\n'.format(
+                    chain_name, ', '.join(chain_muted_severities))
+            elif not all_chains_muted_severities:
+                status += '- {} has no alerts muted.\n'.format(chain_name)
 
         return status
 
@@ -221,16 +232,17 @@ class TelegramCommandHandlers(CmdHandler):
         hb_cut_off_time = hb_interval + hb_grace_buffer
 
         if time_elapsed_since_hb > hb_cut_off_time:
-            missed_hbs = (current_timestamp - hb_timestamp) // hb_interval
+            missed_hbs = int((current_timestamp - hb_timestamp) // hb_interval)
             status = '- *{}*: {} - Missed {} heartbeats, either the ' \
-                     'health-checker or the {} are running into problems. ' \
-                     'Cannot check latest status of ' \
-                     'sub-processes.\n'.format(component,
-                                               self._get_running_icon(False),
-                                               missed_hbs, component)
+                     'health-checker found problems when saving the ' \
+                     'heartbeat or the {} is running into problems. ' \
+                     'Please check the ' \
+                     'logs.\n'.format(component, self._get_running_icon(False),
+                                      missed_hbs, component)
         else:
             if len(dead_processes) != 0:
                 for sub_process in dead_processes:
+                    # To avoid special character errors in telegram
                     status += '- *{}*: {} - Not running. \n'.format(
                         sub_process, self._get_running_icon(False))
 
@@ -253,12 +265,13 @@ class TelegramCommandHandlers(CmdHandler):
         hb_cut_off_time = hb_interval + hb_grace_buffer
 
         if time_elapsed_since_hb > hb_cut_off_time:
-            missed_hbs = (current_timestamp - hb_timestamp) // hb_interval
-            status += '- *{}*: {} - Missed {} heartbeats, either the ' \
-                      'health-checker or the {} are running ' \
-                      'into problems.\n'.format(component,
-                                                self._get_running_icon(False),
-                                                missed_hbs, component)
+            missed_hbs = int((current_timestamp - hb_timestamp) // hb_interval)
+            status = '- *{}*: {} - Missed {} heartbeats, either the ' \
+                     'health-checker found problems when saving the ' \
+                     'heartbeat or the {} is running into problems. ' \
+                     'Please check the ' \
+                     'logs.\n'.format(component, self._get_running_icon(False),
+                                      missed_hbs, component)
         else:
             if not alive:
                 status += '- *{}*: {} - Not running. \n'.format(
@@ -266,8 +279,9 @@ class TelegramCommandHandlers(CmdHandler):
 
         return status
 
-    def _get_panic_components_status(self, health_checker_ok: bool) -> str:
-        if not health_checker_ok:
+    def _get_panic_components_status(self, problems_in_health_checker: bool) \
+            -> str:
+        if problems_in_health_checker:
             return '- *PANIC Components*: {} - Cannot get live status as ' \
                    'there seems to be an issue with the Health ' \
                    'Checker.\n'.format(self._get_running_icon(False))
@@ -407,7 +421,8 @@ class TelegramCommandHandlers(CmdHandler):
             hb_cut_off_time = hb_interval + hb_grace_buffer
 
             if time_elapsed_since_hb > hb_cut_off_time:
-                missed_hbs = (current_timestamp - hb_timestamp) // hb_interval
+                missed_hbs = \
+                    int((current_timestamp - hb_timestamp) // hb_interval)
                 status += '- *Health Checker (Heartbeat Handler)*: {} - ' \
                           'Missed {} heartbeats.\n' \
                     .format(self._get_running_icon(False), missed_hbs)
@@ -430,7 +445,8 @@ class TelegramCommandHandlers(CmdHandler):
             hb_cut_off_time = hb_interval + hb_grace_buffer
 
             if time_elapsed_since_hb > hb_cut_off_time:
-                missed_hbs = (current_timestamp - hb_timestamp) // hb_interval
+                missed_hbs = \
+                    int((current_timestamp - hb_timestamp) // hb_interval)
                 status += '- *Health Checker (Ping Publisher)*: {} - Missed ' \
                           '{} heartbeats.\n' \
                     .format(self._get_running_icon(False), missed_hbs)
@@ -450,30 +466,37 @@ class TelegramCommandHandlers(CmdHandler):
 
     def _get_redis_based_status(self) -> str:
         associated_chains = self.associated_chains
+
+        # Avoid errors in Telegram by escaping them.
         chain_names = \
-            [chain_name for _, chain_name in associated_chains.items()]
+            [chain_name.replace("_", "\\_").replace("*", "\\*").replace(
+                "[", "\\[").replace("`", "\\`")
+             for _, chain_name in associated_chains.items()]
 
         redis_accessible_status = ""
         redis_error_status = \
             "- *Redis*: {} \n".format(self._get_running_icon(False)) + \
             "- No {} alert is consider muted as Redis is " \
             "inaccessible.\n".format(', '.join(chain_names)) + \
+            "- Cannot get Health Checker status as Redis is inaccessible.\n" + \
             "- Cannot get PANIC components' status as Redis is inaccessible.\n"
         unrecognized_error_status = \
             "- Could not get Redis status due to an unrecognized error. " \
             "Check the logs to debug the issue.\n" + \
             "- Cannot get mute status due to an unrecognized error.\n" + \
+            "- Cannot get Health Checker status due to an unrecognized " \
+            "error.\n" + \
             "- Cannot get PANIC components' status due to an unrecognized " \
             "error. \n"
         try:
-            # TODO: Tomorrow continue testing the code bit by bit from here. The
-            #     : exception cases were tested. Start testing from muting
-            #     : status bit by bit.
             redis_accessible_status += '- *Redis*: {} \n'.format(
                 self._get_running_icon(True))
             redis_accessible_status += self._get_muted_status()
-            health_checker_status, is_ok = self._get_health_checker_status()
-            redis_accessible_status += self._get_panic_components_status(is_ok)
+            health_checker_status, problems_in_health_checker = \
+                self._get_health_checker_status()
+            redis_accessible_status += health_checker_status
+            redis_accessible_status += \
+                self._get_panic_components_status(problems_in_health_checker)
         except (RedisError, ConnectionResetError) as e:
             self.logger.exception(e)
             self.logger.error('Error in redis when getting redis based '
@@ -520,6 +543,7 @@ class TelegramCommandHandlers(CmdHandler):
         successfully_unmuted_chains = []
         already_unmuted_chains = []
         for chain_id, chain_name in associated_chains.items():
+            # To avoid special character errors in telegram
             chain_hash = Keys.get_hash_parent(chain_id)
             mute_alerts_key = Keys.get_chain_mute_alerts()
             try:
@@ -527,9 +551,13 @@ class TelegramCommandHandlers(CmdHandler):
                     self.redis.hremove_unsafe(chain_hash, mute_alerts_key)
                     self.logger.info("%s alerts have been unmuted.",
                                      chain_name)
-                    successfully_unmuted_chains.append(chain_name)
+                    successfully_unmuted_chains.append(
+                        chain_name.replace("_", "\\_").replace(
+                            "*", "\\*").replace("[", "\\[").replace("`", "\\`"))
                 else:
-                    already_unmuted_chains.append(chain_name)
+                    already_unmuted_chains.append(
+                        chain_name.replace("_", "\\_").replace(
+                            "*", "\\*").replace("[", "\\[").replace("`", "\\`"))
                     self.logger.info("%s has no muted severities.", chain_name)
             except (RedisError, ConnectionResetError) as e:
                 self.logger.exception(e)
