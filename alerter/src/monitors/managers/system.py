@@ -217,8 +217,6 @@ class SystemMonitorsManager(MonitorsManager):
             heartbeat['dead_processes'] = []
             for config_id, process_details in self.config_process_dict.items():
                 process = process_details['process']
-                process.terminate()
-                process.join()
                 component_name = process_details['component_name']
                 if process.is_alive():
                     heartbeat['running_processes'].append(component_name)

@@ -17,7 +17,7 @@ from src.channels_manager.commands.handlers.handler import CommandHandler \
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
-# from src.utils import env
+from src.utils import env
 from src.utils.alert import Severity
 
 
@@ -28,29 +28,21 @@ class TelegramCommandHandlers(CmdHandler):
             -> None:
         super().__init__(handler_name, logger.getChild(handler_name))
 
-        # rabbit_ip = env.RABBIT_IP
-        rabbit_ip = 'localhost'
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
                                      host=rabbit_ip)
 
-        # redis_ip = env.REDIS_IP
-        # redis_db = env.REDIS_DB
-        # redis_port = env.REDIS_PORT
-        # unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
-        redis_ip = 'localhost'
-        redis_db = 10
-        redis_port = 6379
-        unique_alerter_identifier = 'panic_alerter'
+        redis_ip = env.REDIS_IP
+        redis_db = env.REDIS_DB
+        redis_port = env.REDIS_PORT
+        unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
         self._redis = RedisApi(logger=self.logger.getChild('redis'),
                                host=redis_ip, db=redis_db, port=redis_port,
                                namespace=unique_alerter_identifier)
 
-        # mongo_ip = env.DB_IP
-        # mongo_db = env.DB_NAME
-        # mongo_port = env.DB_PORT
-        mongo_ip = 'localhost'
-        mongo_db = 'panicdb'
-        mongo_port = 27017
+        mongo_ip = env.DB_IP
+        mongo_db = env.DB_NAME
+        mongo_port = env.DB_PORT
         self._mongo = MongoApi(logger=self.logger.getChild('mongo'),
                                host=mongo_ip, db_name=mongo_db, port=mongo_port)
 
@@ -195,7 +187,7 @@ class TelegramCommandHandlers(CmdHandler):
         associated_chains = self.associated_chains
 
         for chain_id, chain_name in associated_chains.items():
-            chain_name = chain_name.replace("_", "\\_").replace("*", "\\*")\
+            chain_name = chain_name.replace("_", "\\_").replace("*", "\\*") \
                 .replace("[", "\\[").replace("`", "\\`")
             chain_hash = Keys.get_hash_parent(chain_id)
             mute_alerts_key = Keys.get_chain_mute_alerts()
