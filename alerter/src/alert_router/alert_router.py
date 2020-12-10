@@ -226,7 +226,7 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._rabbit.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.alert_router', body=heartbeat,
+            routing_key='heartbeat.worker', body=heartbeat,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self._logger.info("Sent heartbeat to %s exchange",

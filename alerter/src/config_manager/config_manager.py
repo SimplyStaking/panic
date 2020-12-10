@@ -26,7 +26,7 @@ from ..abstract import Component
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
-_HEARTBEAT_ROUTING_KEY = 'heartbeat.config_manager'
+_HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 
 
 class ConfigManager(Component):
@@ -98,9 +98,9 @@ class ConfigManager(Component):
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
 
-                self._config_rabbit.exchange_declare(HEALTH_CHECK_EXCHANGE,
-                                                     'topic',
-                                                     False, True, False, False)
+                self._heartbeat_rabbit.exchange_declare(
+                    HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False
+                )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   HEALTH_CHECK_EXCHANGE)
 
