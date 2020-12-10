@@ -302,6 +302,7 @@ class ConfigManager(Component):
 
         self._logger.debug("Config file observer started")
         self._connect_to_rabbit()
+        self._heartbeat_rabbit.start_consuming()
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         """
