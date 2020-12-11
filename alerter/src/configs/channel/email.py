@@ -7,7 +7,7 @@ class EmailChannelConfig:
         self._id_ = id_
         self._config_name = config_name
         self._smtp = smtp
-        self._email_from = email_from
+        self._email_from = "PANIC <{}>".format(email_from)
         self._emails_to = frozenset(emails_to)
         self._username = username
         self._password = password
