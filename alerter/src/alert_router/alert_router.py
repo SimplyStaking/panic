@@ -219,7 +219,7 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._logger.debug("Received %s. Let's pong", body)
         heartbeat = {
-            'component_name': "ConfigManager",
+            'component_name': "AlertRouter",
             'is_alive': True,
             'timestamp': datetime.now().timestamp(),
         }

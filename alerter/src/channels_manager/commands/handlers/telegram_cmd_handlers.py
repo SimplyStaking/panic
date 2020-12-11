@@ -911,4 +911,5 @@ class TelegramCommandHandlers(CmdHandler):
             return False
 
 # TODO: Need to update alerter router to cater for these commands. First check
-#     : if alert all variable is set, then check for the specific parent id
+#     : if alert all variable is set, then check for the specific parent id. We
+#     : need to do union if both exist.
