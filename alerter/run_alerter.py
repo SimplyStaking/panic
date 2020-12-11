@@ -187,7 +187,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     rabbit_ip = env.RABBIT_IP
 
     alert_router = AlertRouter(alert_router_logger, rabbit_ip,
-                               env.ENABLE_CONSOLE_ALERTS)
+                               env.ENABLE_CONSOLE_ALERTS, env.ENABLE_LOG_ALERTS)
     return alert_router, alert_router_logger
 
 

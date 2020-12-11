@@ -12,8 +12,8 @@ from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, \
-    HEALTH_CHECK_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -24,9 +24,10 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 class AlertRouter(QueuingPublisherComponent):
     def __init__(self, logger: Logger, rabbit_ip: str,
-                 enable_console_alerts: bool):
+                 enable_console_alerts: bool, enable_log_alerts: bool):
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
         self._enable_console_alerts = enable_console_alerts
+        self._enable_log_alerts = enable_log_alerts
 
         self._config = {}
 
@@ -199,6 +200,12 @@ class AlertRouter(QueuingPublisherComponent):
                 {**recv_alert, 'destination_id': "console"},
                 ALERT_EXCHANGE, "channel.console", mandatory=False)
 
+        if self._enable_log_alerts:
+            self._push_to_queue(
+                {**recv_alert, 'destination_id': "console"},
+                ALERT_EXCHANGE, "channel.log", mandatory=False)
+
+
         self._rabbit.basic_ack(method.delivery_tag, False)
 
         # Enqueue once to the data store
@@ -219,7 +226,7 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._logger.debug("Received %s. Let's pong", body)
         heartbeat = {
-            'component_name': "ConfigManager",
+            'component_name': "AlertRouter",
             'is_alive': True,
             'timestamp': datetime.now().timestamp(),
         }
