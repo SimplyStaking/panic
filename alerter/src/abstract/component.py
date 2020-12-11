@@ -7,6 +7,7 @@ class Component(ABC):
     """
     We define all the methods a component of this system must have.
     """
+
     def __init__(self):
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)

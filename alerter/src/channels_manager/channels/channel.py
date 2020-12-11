@@ -9,7 +9,6 @@
 import logging
 from abc import ABC, abstractmethod
 
-from src.alerter.alerts.alert import Alert
 from src.utils.data import RequestStatus
 
 

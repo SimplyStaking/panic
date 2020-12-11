@@ -1,8 +1,5 @@
 import logging
-from typing import List
 
-from src.alerter.alerts.alert import Alert
-from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
 from src.channels_manager.channels.channel import Channel
 from src.utils.data import RequestStatus

@@ -1,5 +1,5 @@
-from typing import Union, Any
 from enum import Enum
+from typing import Union, Any
 
 from src.alerter.alerts.system_alerts import \
     OpenFileDescriptorsIncreasedAboveThresholdAlert, \

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Dict
 
 import pika.exceptions
+
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store

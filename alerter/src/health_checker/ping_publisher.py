@@ -3,8 +3,8 @@ import logging
 import os
 import signal
 import sys
-from types import FrameType
 from datetime import datetime
+from types import FrameType
 
 import pika
 import pika.exceptions

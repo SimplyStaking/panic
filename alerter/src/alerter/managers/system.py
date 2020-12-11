@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import multiprocessing
@@ -16,7 +17,6 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-import copy
 
 
 class SystemAlertersManager(AlertersManager):
