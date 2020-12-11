@@ -14,8 +14,6 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -35,9 +33,6 @@ class TelegramAlertsHandler(ChannelHandler):
                                  'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
         self._alerts_queue = Queue(max_queue_size)
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
-
         # Handle termination signals by stopping the handler gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -50,10 +45,6 @@ class TelegramAlertsHandler(ChannelHandler):
     @property
     def alerts_queue(self) -> Queue:
         return self._alerts_queue
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()

@@ -13,8 +13,6 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -32,9 +30,6 @@ class TwilioAlertsHandler(ChannelHandler):
         self._twiml = twiml
         self._twiml_is_url = twiml_is_url
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
-
         # Handle termination signals by stopping the handler gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -43,10 +38,6 @@ class TwilioAlertsHandler(ChannelHandler):
     @property
     def twilio_channel(self) -> TwilioChannel:
         return self._twilio_channel
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
 
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()

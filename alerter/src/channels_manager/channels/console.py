@@ -10,20 +10,18 @@ class ConsoleChannel(Channel):
 
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger) -> None:
-        super().__init__(channel_name, channel_id, logger)
+        super().__init__(channel_name, channel_id,
+                         logger.getChild(channel_name))
 
     def alert(self, alert: Alert) -> RequestStatus:
-        msg = "{} {} - {}".format(self.channel_name, alert.severity.upper(),
-                                  alert.message)
+        msg = "PANIC {} - {}".format(alert.severity.upper(), alert.message)
         try:
             print(msg)
             sys.stdout.flush()
-            self.logger.info("Sent %s to console channel %s.",
-                             alert.alert_code.name, self.__str__())
+            self.logger.info("Sent %s to console.", alert.alert_code.name)
             return RequestStatus.SUCCESS
         except Exception as e:
-            self.logger.error(
-                "Error when sending %s to console channel %s.",
-                alert.alert_code.name, self.__str__())
+            self.logger.error("Error when sending %s to console.",
+                              alert.alert_code.name, self.__str__())
             self.logger.exception(e)
             return RequestStatus.FAILED
