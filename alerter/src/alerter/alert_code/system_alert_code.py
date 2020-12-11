@@ -15,4 +15,3 @@ class SystemAlertCode(AlertCode):
     SystemWentDownAtAlert = 'system_alert_11'
     SystemBackUpAgainAlert = 'system_alert_12'
     SystemStillDownAlert = 'system_alert_13'
-    TEST = 'github_alert_2'
