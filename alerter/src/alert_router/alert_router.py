@@ -199,6 +199,10 @@ class AlertRouter(QueuingPublisherComponent):
                 {**recv_alert, 'destination_id': "console"},
                 ALERT_EXCHANGE, "channel.console", mandatory=True)
 
+        self._push_to_queue(
+            {**recv_alert, 'destination_id': "log"},
+            ALERT_EXCHANGE, "channel.log", mandatory=True)
+
         self._rabbit.basic_ack(method.delivery_tag, False)
 
         # Enqueue once to the data store

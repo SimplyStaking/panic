@@ -25,17 +25,16 @@ class TelegramChannel(Channel):
                 subject, alert.message))
             self.logger.debug("alert: telegram_ret: %s", ret)
             if ret['ok']:
-                self.logger.info("Sent {} to Telegram channel {}.".format(
-                    alert.alert_code.name, self))
+                self.logger.info("Sent %s to Telegram channel %s.",
+                                 alert.alert_code.name, self.__str__())
                 return RequestStatus.SUCCESS
             else:
                 self.logger.error(
-                    "Error when sending {} to Telegram channel {}: {}.".format(
-                        alert.alert_code.name, self, ret['description']))
+                    "Error when sending %s to Telegram channel %s: %s.",
+                    alert.alert_code.name, self.__str__(), ret['description'])
                 return RequestStatus.FAILED
         except Exception as e:
-            self.logger.error(
-                "Error when sending {} to Telegram channel {}.".format(
-                    alert.alert_code.name, self))
+            self.logger.error("Error when sending %s to Telegram channel %s.",
+                              alert.alert_code.name, self.__str__())
             self.logger.exception(e)
             return RequestStatus.FAILED
