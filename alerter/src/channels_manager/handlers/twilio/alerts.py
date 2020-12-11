@@ -151,8 +151,9 @@ class TwilioAlertsHandler(ChannelHandler):
         # Do not call if 5 minutes passed since the alert was last raised, as
         # alert is considered to be old
         alert_validity_threshold = 300
-        if (datetime.now().timestamp() - alert.timestamp) \
-                > alert_validity_threshold:
+        time_elapsed_since_alert_was_raised = \
+            datetime.now().timestamp() - alert.timestamp
+        if time_elapsed_since_alert_was_raised > alert_validity_threshold:
             self.logger.error('Did not call as alert was raised a while '
                               'ago')
             return RequestStatus.FAILED
@@ -167,7 +168,7 @@ class TwilioAlertsHandler(ChannelHandler):
             ret = self.twilio_channel.alert(call_from=self._call_from,
                                             call_to=number, twiml=self._twiml,
                                             twiml_is_url=self._twiml_is_url)
-            while ret != RequestStatus.SUCCESS and attempts <= max_attempts:
+            while ret != RequestStatus.SUCCESS and attempts < max_attempts:
                 self.logger.info(
                     "Will re-trying calling in 5 seconds. "
                     "Attempts left: {}".format(max_attempts - attempts))

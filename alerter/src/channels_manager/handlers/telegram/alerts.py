@@ -201,7 +201,7 @@ class TelegramAlertsHandler(ChannelHandler):
 
             attempts = 0
             ret = self.telegram_channel.alert(alert)
-            while ret != RequestStatus.SUCCESS and attempts <= max_attempts:
+            while ret != RequestStatus.SUCCESS and attempts < max_attempts:
                 self.logger.info(
                     "Will re-trying sending in 10 seconds. "
                     "Attempts left: {}".format(max_attempts - attempts))
