@@ -77,8 +77,8 @@ class EmailAlertsHandler(ChannelHandler):
         self._send_data()
 
     def _place_data_on_queue(self, alert: Alert) -> None:
-        self.logger.debug("Adding {} to the alerts queue ...".format(
-            alert.alert_code.name))
+        self.logger.debug("Adding %s to the alerts queue ...",
+                          alert.alert_code.name)
 
         # Place the alert on the alerts queue. If the queue is full, remove old
         # data first.
@@ -86,8 +86,8 @@ class EmailAlertsHandler(ChannelHandler):
             self._alerts_queue.get()
         self._alerts_queue.put(alert)
 
-        self.logger.debug("{} added to the alerts queue".format(
-            alert.alert_code.name))
+        self.logger.debug("%s added to the alerts queue",
+                          alert.alert_code.name)
 
     def _send_data(self) -> None:
         empty = True
