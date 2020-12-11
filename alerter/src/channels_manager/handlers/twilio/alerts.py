@@ -3,13 +3,13 @@ import logging
 import signal
 import sys
 from datetime import datetime
-from enum import Enum
 from types import FrameType
 from typing import List
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.handlers.handler import ChannelHandler
@@ -103,15 +103,10 @@ class TwilioAlertsHandler(ChannelHandler):
         alert = None
         try:
             alert_code = alert_json['alert_code']
-            message = alert_json['message']
-            severity = alert_json['severity']
-            parent_id = alert_json['parent_id']
-            origin_id = alert_json['origin_id']
-            timestamp = alert_json['timestamp']
-            alert_code_enum = Enum('AlertCode',
-                                   {alert_code['name']: alert_code['code']})
-            alert = Alert(alert_code_enum, message, severity, timestamp,
-                          parent_id, origin_id)
+            alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
+            alert = Alert(alert_code_enum, alert_json['message'],
+                          alert_json['severity'], alert_json['timestamp'],
+                          alert_json['parent_id'], alert_json['origin_id'])
 
             self.logger.info("Successfully processed {}".format(alert_json))
         except Exception as e:
