@@ -40,6 +40,16 @@ class PagerDutySeverities(Enum):
     INFO = 'info'
 
 
+class ChannelTypes(Enum):
+    TELEGRAM = 'telegram'
+    TWILIO = 'twilio'
+    EMAIL = 'email'
+    OPSGENIE = 'opsgenie'
+    PAGERDUTY = 'pagerduty'
+    CONSOLE = 'console'
+    LOG = 'log'
+
+
 def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
                                  default_return: Any) -> Any:
     # This function converts a value to float if it is not None, otherwise it
