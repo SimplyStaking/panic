@@ -36,7 +36,7 @@ const TelegramTable = ({telegrams, removeTelegramDetails}) => {
             {Object.keys(telegrams.byId).map((telegram) => (
               <TableRow key={telegrams.byId[telegram].id}>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].bot_name}
+                  {telegrams.byId[telegram].channel_name}
                 </TableCell>
                 <TableCell align="center">
                   {telegrams.byId[telegram].bot_token}
@@ -89,7 +89,7 @@ TelegramTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      bot_name: PropTypes.string,
+      channel_name: PropTypes.string,
       bot_token: PropTypes.string,
       chat_id: PropTypes.string,
       info: PropTypes.bool,

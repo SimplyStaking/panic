@@ -34,12 +34,12 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.bot_name}
-                  value={values.bot_name}
+                  error={errors.channel_name}
+                  value={values.channel_name}
                   type="text"
-                  name="bot_name"
-                  placeholder={Data.telegram.bot_namePlaceholder}
-                  helperText={errors.bot_name ? errors.bot_name : ''}
+                  name="channel_name"
+                  placeholder={Data.telegram.channel_namePlaceholder}
+                  helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth
@@ -251,13 +251,13 @@ const TelegramForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 TelegramForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    bot_name: PropTypes.string,
+    channel_name: PropTypes.string,
     bot_token: PropTypes.string,
     chat_id: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    bot_name: PropTypes.string.isRequired,
+    channel_name: PropTypes.string.isRequired,
     bot_token: PropTypes.string.isRequired,
     chat_id: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,

@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const OpsGenieSchema = (props) => Yup.object().shape({
-  config_name: Yup.string()
+  channel_name: Yup.string()
     .test(
       'unique-config-name',
       'OpsGenie config name is not unique.',
@@ -11,7 +11,7 @@ const OpsGenieSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < opsGenies.allIds.length; i += 1) {
-          if (opsGenies.byId[opsGenies.allIds[i]].config_name === value) {
+          if (opsGenies.byId[opsGenies.allIds[i]].channel_name === value) {
             return false;
           }
         }

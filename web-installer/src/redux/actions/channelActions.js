@@ -11,7 +11,7 @@ export function addTelegram(payload) {
     type: ADD_TELEGRAM,
     payload: {
       id: `telegram_${uuidv4()}`,
-      bot_name: payload.bot_name,
+      channel_name: payload.channel_name,
       bot_token: payload.bot_token,
       chat_id: payload.chat_id,
       info: payload.info,
@@ -45,7 +45,7 @@ export function addTwilio(payload) {
     type: ADD_TWILIO,
     payload: {
       id: `twilio_${uuidv4()}`,
-      config_name: payload.config_name,
+      channel_name: payload.channel_name,
       account_sid: payload.account_sid,
       auth_token: payload.auth_token,
       twilio_phone_num: payload.twilio_phone_num,
@@ -75,7 +75,7 @@ export function addEmail(payload) {
     type: ADD_EMAIL,
     payload: {
       id: `email_${uuidv4()}`,
-      config_name: payload.config_name,
+      channel_name: payload.channel_name,
       smtp: payload.smtp,
       email_from: payload.email_from,
       emails_to: payload.emails_to,
@@ -110,7 +110,7 @@ export function addPagerDuty(payload) {
     type: ADD_PAGERDUTY,
     payload: {
       id: `pagerduty_${uuidv4()}`,
-      config_name: payload.config_name,
+      channel_name: payload.channel_name,
       api_token: payload.api_token,
       integration_key: payload.integration_key,
       info: payload.info,
@@ -142,7 +142,7 @@ export function addOpsGenie(payload) {
     type: ADD_OPSGENIE,
     payload: {
       id: `opsgenie_${uuidv4()}`,
-      config_name: payload.config_name,
+      channel_name: payload.channel_name,
       api_token: payload.api_token,
       eu: payload.eu,
       info: payload.info,

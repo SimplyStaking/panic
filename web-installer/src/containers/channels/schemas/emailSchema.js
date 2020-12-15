@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const EmailSchema = (props) => Yup.object().shape({
-  config_name: Yup.string()
+  channel_name: Yup.string()
     .test(
       'unique-config-name',
       'Email config name is not unique.',
@@ -11,7 +11,7 @@ const EmailSchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < emails.allIds.length; i += 1) {
-          if (emails.byId[emails.allIds[i]].config_name === value) {
+          if (emails.byId[emails.allIds[i]].channel_name === value) {
             return false;
           }
         }

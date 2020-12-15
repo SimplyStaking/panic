@@ -35,12 +35,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.config_name}
-                  value={values.config_name}
+                  error={errors.channel_name}
+                  value={values.channel_name}
                   type="text"
-                  name="config_name"
+                  name="channel_name"
                   placeholder="twilio_caller_main"
-                  helperText={errors.config_name ? errors.config_name : ''}
+                  helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth
@@ -200,7 +200,7 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 TwilioForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    config_name: PropTypes.string,
+    channel_name: PropTypes.string,
     account_sid: PropTypes.string,
     auth_token: PropTypes.string,
     twilio_phone_num: PropTypes.string,
@@ -208,7 +208,7 @@ TwilioForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    config_name: PropTypes.string.isRequired,
+    channel_name: PropTypes.string.isRequired,
     account_sid: PropTypes.string.isRequired,
     auth_token: PropTypes.string.isRequired,
     twilio_phone_num: PropTypes.string.isRequired,

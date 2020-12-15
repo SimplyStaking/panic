@@ -36,7 +36,7 @@ const EmailTable = ({emails, removeEmailDetails}) => {
           {Object.keys(emails.byId).map((email) => (
             <TableRow key={emails.byId[email].id}>
               <TableCell align="center">
-                {emails.byId[email].config_name}
+                {emails.byId[email].channel_name}
               </TableCell>
               <TableCell align="center">{emails.byId[email].smtp}</TableCell>
               <TableCell align="center">{emails.byId[email].email_from}</TableCell>
@@ -81,7 +81,7 @@ const EmailTable = ({emails, removeEmailDetails}) => {
 EmailTable.propTypes = forbidExtraProps({
   emails: PropTypes.shape({
     byId: PropTypes.shape({
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       smtp: PropTypes.string,
       email_from: PropTypes.string,
       emails_to: PropTypes.arrayOf(PropTypes.string),

@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const PagerDutySchema = (props) => Yup.object().shape({
-  config_name: Yup.string()
+  channel_name: Yup.string()
     .test(
       'unique-config-name',
       'PagerDuty config name is not unique.',
@@ -11,7 +11,7 @@ const PagerDutySchema = (props) => Yup.object().shape({
           return true;
         }
         for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (pagerDuties.byId[pagerDuties.allIds[i]].config_name === value) {
+          if (pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value) {
             return false;
           }
         }

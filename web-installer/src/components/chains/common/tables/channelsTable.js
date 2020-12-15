@@ -91,7 +91,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={telegrams.byId[id].bot_name}
+                            label={telegrams.byId[id].channel_name}
                             labelPlacement="start"
                           />
                         </TableCell>
@@ -136,7 +136,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={twilios.byId[id].config_name}
+                            label={twilios.byId[id].channel_name}
                             labelPlacement="start"
                           />
                         </TableCell>
@@ -181,7 +181,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={emails.byId[id].config_name}
+                            label={emails.byId[id].channel_name}
                             labelPlacement="start"
                           />
                         </TableCell>
@@ -226,7 +226,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                   color="primary"
                                 />
                               )}
-                              label={pagerduties.byId[id].config_name}
+                              label={pagerduties.byId[id].channel_name}
                               labelPlacement="start"
                             />
                           </TableCell>
@@ -272,7 +272,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                 color="primary"
                               />
                             )}
-                            label={opsgenies.byId[id].config_name}
+                            label={opsgenies.byId[id].channel_name}
                             labelPlacement="start"
                           />
                         </TableCell>
@@ -318,35 +318,35 @@ ChannelsTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      bot_name: PropTypes.string,
+      channel_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   emails: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   pagerduties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   opsgenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

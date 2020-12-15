@@ -417,7 +417,7 @@ class SaveConfig extends Component {
 SaveConfig.propTypes = {
   emails: PropTypes.shape({
     byId: PropTypes.shape({
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       smtp: PropTypes.string,
       email_from: PropTypes.string,
       emails_to: PropTypes.arrayOf(PropTypes.string),
@@ -433,7 +433,7 @@ SaveConfig.propTypes = {
   opsgenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       api_token: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
@@ -445,7 +445,7 @@ SaveConfig.propTypes = {
   pagerduties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       api_token: PropTypes.string,
       integration_key: PropTypes.string,
       info: PropTypes.bool,
@@ -458,7 +458,7 @@ SaveConfig.propTypes = {
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      bot_name: PropTypes.string,
+      channel_name: PropTypes.string,
       bot_token: PropTypes.string,
       chat_id: PropTypes.string,
       info: PropTypes.bool,
@@ -473,7 +473,7 @@ SaveConfig.propTypes = {
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       account_sid: PropTypes.string,
       auth_token: PropTypes.string,
       twilio_phone_num: PropTypes.string,

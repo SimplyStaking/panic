@@ -30,12 +30,12 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.config_name}
-                  value={values.config_name}
+                  error={errors.channel_name}
+                  value={values.channel_name}
                   type="text"
-                  name="config_name"
+                  name="channel_name"
                   placeholder="pager-duty-1"
-                  helperText={errors.config_name ? errors.config_name : ''}
+                  helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth
@@ -202,13 +202,13 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
 
 PagerDutyForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    config_name: PropTypes.string,
+    channel_name: PropTypes.string,
     api_token: PropTypes.string,
     integration_key: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    config_name: PropTypes.string.isRequired,
+    channel_name: PropTypes.string.isRequired,
     api_token: PropTypes.string.isRequired,
     integration_key: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,

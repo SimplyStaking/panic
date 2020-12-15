@@ -37,12 +37,12 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.config_name}
-                  value={values.config_name}
+                  error={errors.channel_name}
+                  value={values.channel_name}
                   type="text"
-                  name="config_name"
+                  name="channel_name"
                   placeholder="main_email_channel"
-                  helperText={errors.config_name ? errors.config_name : ''}
+                  helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth
@@ -283,14 +283,14 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 EmailForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    config_name: PropTypes.string,
+    channel_name: PropTypes.string,
     smtp: PropTypes.string,
     email_from: PropTypes.string,
     emails_to: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    config_name: PropTypes.string.isRequired,
+    channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
     email_from: PropTypes.string.isRequired,
     emails_to: PropTypes.arrayOf(

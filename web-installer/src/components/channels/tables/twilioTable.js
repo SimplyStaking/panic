@@ -29,7 +29,7 @@ const TwilioTable = ({twilios, removeTwilioDetails}) => {
           {Object.keys(twilios.byId).map((twilio) => (
             <TableRow key={twilios.byId[twilio].id}>
               <TableCell align="center">
-                {twilios.byId[twilio].config_name}
+                {twilios.byId[twilio].channel_name}
               </TableCell>
               <TableCell align="center">
                 {twilios.byId[twilio].account_sid}
@@ -72,7 +72,7 @@ TwilioTable.propTypes = forbidExtraProps({
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       account_sid: PropTypes.string,
       auth_token: PropTypes.string,
       twilio_phone_num: PropTypes.string,

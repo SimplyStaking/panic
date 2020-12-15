@@ -32,7 +32,7 @@ const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
           {Object.keys(pagerDuties.byId).map((pagerDuty) => (
             <TableRow key={pagerDuties.byId[pagerDuty].id}>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].config_name}
+                {pagerDuties.byId[pagerDuty].channel_name}
               </TableCell>
               <TableCell align="center">
                 {pagerDuties.byId[pagerDuty].api_token}
@@ -69,7 +69,7 @@ PagerDutyTable.propTypes = forbidExtraProps({
   pagerDuties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      config_name: PropTypes.string,
+      channel_name: PropTypes.string,
       api_token: PropTypes.string,
       integration_key: PropTypes.string,
       info: PropTypes.bool,

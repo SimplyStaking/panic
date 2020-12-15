@@ -7,14 +7,14 @@ import TwilioSchema from './schemas/twilioSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    config_name: '',
+    channel_name: '',
     account_sid: '',
     auth_token: '',
     twilio_phone_num: '',
     twilio_phone_numbers_to_dial: '',
   }),
   mapPropsToValues: () => ({
-    config_name: '',
+    channel_name: '',
     account_sid: '',
     auth_token: '',
     twilio_phone_num: '',
@@ -24,7 +24,7 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTwilioDetails } = props;
     const payload = {
-      config_name: values.config_name,
+      channel_name: values.channel_name,
       account_sid: values.account_sid,
       auth_token: values.auth_token,
       twilio_phone_num: values.twilio_phone_num,
