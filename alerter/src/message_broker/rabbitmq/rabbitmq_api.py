@@ -218,6 +218,10 @@ class RabbitMQApi:
                 # stop the loop
                 self.perform_operation_till_successful(self.disconnect, [], -1)
                 break
+            except ConnectionNotInitializedException:
+                self._logger.info("No need to disconnect as no connection was "
+                                  "initialize with Rabbit.")
+                break
             except Exception as e:
                 self._logger.exception(e)
                 self._logger.info(

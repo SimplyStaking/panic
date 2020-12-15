@@ -506,7 +506,6 @@ if __name__ == '__main__':
     data_store_process.join()
     alert_router_process.join()
     channels_manager_process.join()
-    config_manager_runner_process.join()
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()

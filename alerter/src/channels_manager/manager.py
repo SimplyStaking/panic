@@ -71,7 +71,7 @@ class ChannelsManager:
         self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'system_alerters_manager_ping_queue'")
+        self.logger.info("Creating queue 'channels_manager_ping_queue'")
         self.rabbitmq.queue_declare('channels_manager_ping_queue', False, True,
                                     False, False)
         self.logger.info("Binding queue 'channels_manager_ping_queue' to "
@@ -250,15 +250,18 @@ class ChannelsManager:
         # Start the console channel in a separate process if it is not yet
         # started or it is not alive. This must be done in case of a restart of
         # the manager.
+        alerts_handler_type = ChannelHandlerTypes.ALERTS.value
         if 'CONSOLE' not in self._channel_process_dict or \
-                not self.channel_process_dict['CONSOLE'].is_alive():
+                not self.channel_process_dict['CONSOLE'][alerts_handler_type][
+                    'process'].is_alive():
             self._create_and_start_console_alerts_handler('CONSOLE', 'CONSOLE')
 
         # Start the LOG channel in a separate process if it is not yet started
         # or it is not alive. This must be done in case of a restart of the
         # manager.
         if 'LOG' not in self._channel_process_dict or \
-                not self.channel_process_dict['LOG'].is_alive():
+                not self.channel_process_dict['LOG'][alerts_handler_type][
+                    'process'].is_alive():
             self._create_and_start_log_alerts_handler('LOG', 'LOG')
 
     def _process_telegram_configs(self, sent_configs: Dict) -> Dict:
@@ -334,6 +337,13 @@ class ChannelsManager:
                             "configuration".format(channel_name), self.logger)
                         self._create_and_start_telegram_alerts_handler(
                             bot_token, chat_id, channel_id, channel_name)
+                else:
+                    if alerts:
+                        log_and_print(
+                            "Starting a new alerts handler for {}.".format(
+                                channel_name), self.logger)
+                        self._create_and_start_telegram_alerts_handler(
+                            bot_token, chat_id, channel_id, channel_name)
 
                 commands_handler_type = ChannelHandlerTypes.COMMANDS.value
                 if commands_handler_type in \
@@ -352,6 +362,14 @@ class ChannelsManager:
                         log_and_print(
                             "Restarting the commands handler of {} with latest "
                             "configuration".format(channel_name), self.logger)
+                        self._create_and_start_telegram_cmds_handler(
+                            bot_token, chat_id, channel_id, channel_name,
+                            associated_chains)
+                else:
+                    if commands:
+                        log_and_print(
+                            "Starting a new commands handler for {}.".format(
+                                channel_name), self.logger)
                         self._create_and_start_telegram_cmds_handler(
                             bot_token, chat_id, channel_id, channel_name,
                             associated_chains)
@@ -522,7 +540,7 @@ class ChannelsManager:
             heartbeat['running_processes'] = []
             heartbeat['dead_processes'] = []
             for channel_id, handlers in self.channel_process_dict.items():
-                for handler, process_details in handlers:
+                for handler, process_details in handlers.items():
                     process = process_details['process']
                     component_name = process_details['component_name']
                     if process.is_alive():
@@ -537,13 +555,13 @@ class ChannelsManager:
                             if handler == ChannelHandlerTypes.ALERTS.value:
                                 self._create_and_start_telegram_alerts_handler(
                                     process_details['bot_token'],
-                                    process_details['bot_chain_id'],
+                                    process_details['bot_chat_id'],
                                     process_details['channel_id'],
                                     process_details['channel_name'])
                             elif handler == ChannelHandlerTypes.COMMANDS.value:
                                 self._create_and_start_telegram_cmds_handler(
                                     process_details['bot_token'],
-                                    process_details['bot_chain_id'],
+                                    process_details['bot_chat_id'],
                                     process_details['channel_id'],
                                     process_details['channel_name'],
                                     process_details['associated_chains'])
@@ -614,7 +632,7 @@ class ChannelsManager:
         self.rabbitmq.disconnect_till_successful()
 
         for _, handlers in self.channel_process_dict.items():
-            for handler, process_details in handlers:
+            for handler, process_details in handlers.items():
                 log_and_print("Terminating {}".format(
                     process_details['component_name']), self.logger)
                 process = process_details['process']
