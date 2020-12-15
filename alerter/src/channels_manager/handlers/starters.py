@@ -1,18 +1,23 @@
 import logging
 import time
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import pika.exceptions
 
 from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
+from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.channels.console import ConsoleChannel
+from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.twilio import TwilioChannel
+from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.channels_manager.handlers.log.alerts import LogAlertsHandler
+from src.channels_manager.handlers.pager_duty.alerts import \
+    PagerDutyAlertsHandler
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
 from src.channels_manager.handlers.telegram.commands import \
     TelegramCommandsHandler
@@ -77,8 +82,11 @@ def _initialize_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
             telegram_channel = TelegramChannel(channel_name, channel_id,
                                                handler_logger, telegram_bot)
 
+            rabbit_ip = env.RABBIT_IP
+            queue_size = env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE
             telegram_alerts_handler = TelegramAlertsHandler(
-                handler_name, handler_logger, telegram_channel)
+                handler_name, handler_logger, rabbit_ip, queue_size,
+                telegram_channel)
             log_and_print("Successfully initialized {}".format(handler_name),
                           handler_logger)
             break
@@ -114,7 +122,9 @@ def _initialize_telegram_commands_handler(
                                                handler_logger, telegram_bot)
 
             telegram_commands_handler = TelegramCommandsHandler(
-                handler_name, handler_logger, associated_chains,
+                handler_name, handler_logger, env.RABBIT_IP, env.REDIS_IP,
+                env.REDIS_DB, env.REDIS_PORT, env.UNIQUE_ALERTER_IDENTIFIER,
+                env.DB_IP, env.DB_NAME, env.DB_PORT, associated_chains,
                 telegram_channel)
             log_and_print("Successfully initialized {}".format(handler_name),
                           handler_logger)
@@ -153,8 +163,8 @@ def _initialize_twilio_alerts_handler(
                                            handler_logger, twilio_api)
 
             twilio_alerts_handler = TwilioAlertsHandler(
-                handler_name, handler_logger, twilio_channel, call_from,
-                call_to, twiml, twiml_is_url)
+                handler_name, handler_logger, env.RABBIT_IP, twilio_channel,
+                call_from, call_to, twiml, twiml_is_url)
             log_and_print("Successfully initialized {}".format(handler_name),
                           handler_logger)
             break
@@ -177,6 +187,81 @@ def start_twilio_alerts_handler(
     start_handler(twilio_alerts_handler)
 
 
+def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
+                                         channel_name: str) \
+        -> PagerDutyAlertsHandler:
+    # Handler name based on channel name
+    handler_name = "PagerDuty Alerts Handler ({})".format(channel_name)
+    handler_logger = _initialize_channel_handler_logger(handler_name)
+
+    # Try initializing handler until successful
+    while True:
+        try:
+            pagerduty_channel = PagerDutyChannel(
+                channel_name, channel_id, handler_logger, integration_key)
+
+            pagerduty_alerts_handler = PagerDutyAlertsHandler(
+                handler_name, handler_logger, env.RABBIT_IP,
+                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, pagerduty_channel)
+            log_and_print("Successfully initialized {}".format(handler_name),
+                          handler_logger)
+            break
+        except Exception as e:
+            msg = "!!! Error when initialising {}: {} !!!".format(
+                handler_name, e)
+            log_and_print(msg, handler_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return pagerduty_alerts_handler
+
+
+def start_pagerduty_alerts_handler(integration_key: str, channel_id: str,
+                                   channel_name: str) -> None:
+    pagerduty_alerts_handler = _initialize_pagerduty_alerts_handler(
+        integration_key, channel_id, channel_name)
+    start_handler(pagerduty_alerts_handler)
+
+
+def _initialize_email_alerts_handler(
+        smtp: str, email_from: str, emails_to: List[str],
+        channel_id: str, channel_name: str, username: Optional[str],
+        password: Optional[str]) -> EmailAlertsHandler:
+    # Handler name based on channel name
+    handler_name = "Email Alerts Handler ({})".format(channel_name)
+    handler_logger = _initialize_channel_handler_logger(handler_name)
+
+    # Try initializing handler until successful
+    while True:
+        try:
+            email_channel = EmailChannel(
+                channel_name, channel_id, handler_logger, smtp, email_from,
+                emails_to, username, password)
+
+            email_alerts_handler = EmailAlertsHandler(
+                handler_name, handler_logger, env.RABBIT_IP,
+                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, email_channel)
+            log_and_print("Successfully initialized {}".format(handler_name),
+                          handler_logger)
+            break
+        except Exception as e:
+            msg = "!!! Error when initialising {}: {} !!!".format(
+                handler_name, e)
+            log_and_print(msg, handler_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return email_alerts_handler
+
+
+def start_email_alerts_handler(
+        smtp: str, email_from: str, emails_to: List[str], channel_id: str,
+        channel_name: str, username: Optional[str],
+        password: Optional[str]) -> None:
+    email_alerts_handler = _initialize_email_alerts_handler(
+        smtp, email_from, emails_to, channel_id, channel_name, username,
+        password)
+    start_handler(email_alerts_handler)
+
+
 def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
         -> ConsoleAlertsHandler:
     # Handler name based on channel name
@@ -190,7 +275,7 @@ def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
                                              handler_logger)
 
             console_alerts_handler = ConsoleAlertsHandler(
-                handler_name, handler_logger, console_channel)
+                handler_name, handler_logger, env.RABBIT_IP, console_channel)
             log_and_print("Successfully initialized {}".format(handler_name),
                           handler_logger)
             break
@@ -223,7 +308,7 @@ def _initialize_log_alerts_handler(channel_id: str, channel_name: str) \
                                      alerts_logger)
 
             log_alerts_handler = LogAlertsHandler(handler_name, handler_logger,
-                                                  log_channel)
+                                                  env.RABBIT_IP, log_channel)
             log_and_print("Successfully initialized {}".format(handler_name),
                           handler_logger)
             break

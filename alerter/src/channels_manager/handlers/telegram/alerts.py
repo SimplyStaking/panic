@@ -1,6 +1,5 @@
 import json
 import logging
-import signal
 import sys
 from datetime import datetime
 from queue import Queue
@@ -14,7 +13,6 @@ from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils import env
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -22,20 +20,18 @@ from src.utils.logging import log_and_print
 
 class TelegramAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 telegram_channel: TelegramChannel) -> None:
-        super().__init__(handler_name, logger)
+                 rabbit_ip: str, queue_size: int,
+                 telegram_channel: TelegramChannel, max_attempts: int = 6,
+                 alert_validity_threshold: int = 600) -> None:
+        super().__init__(handler_name, logger, rabbit_ip)
+
         self._telegram_channel = telegram_channel
-
-        # Set a max queue size so that if the Telegram Alerts Handler is not
-        # able to send alerts for a long time, old alerts can be pruned without
-        # exhausting memory resources
-        max_queue_size = env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE
-        self._alerts_queue = Queue(max_queue_size)
-
-        # Handle termination signals by stopping the handler gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        self._alerts_queue = Queue(queue_size)
+        self._max_attempts = max_attempts
+        self._alert_validity_threshold = alert_validity_threshold
+        self._telegram_alerts_handler_queue = \
+            'telegram_{}_alerts_handler_queue'.format(
+                self.telegram_channel.channel_id)
 
     @property
     def telegram_channel(self) -> TelegramChannel:
@@ -53,26 +49,25 @@ class TelegramAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue 'telegram_{}_alerts_handler_queue'".format(
-                self.telegram_channel.channel_id))
-        self.rabbitmq.queue_declare('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), False, True, False, False)
+            "Creating queue '{}'".format(self._telegram_alerts_handler_queue))
+        self.rabbitmq.queue_declare(self._telegram_alerts_handler_queue, False,
+                                    True, False, False)
         self.logger.info(
-            "Binding queue 'telegram_{}_alerts_handler_queue' to "
-            "exchange '{}' with routing key 'channel.{}'".format(
-                self.telegram_channel.channel_id, ALERT_EXCHANGE,
-                self.telegram_channel.channel_id))
-        self.rabbitmq.queue_bind('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), ALERT_EXCHANGE,
-            'channel.{}'.format(self.telegram_channel.channel_id))
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'channel.{}'".format(self._telegram_alerts_handler_queue,
+                                  ALERT_EXCHANGE,
+                                  self.telegram_channel.channel_id))
+        self.rabbitmq.queue_bind(self._telegram_alerts_handler_queue,
+                                 ALERT_EXCHANGE,
+                                 'channel.{}'.format(
+                                     self.telegram_channel.channel_id))
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.alerts_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
-        self.rabbitmq.basic_consume('telegram_{}_alerts_handler_queue'.format(
-            self.telegram_channel.channel_id), self._process_alerts, False,
-            False, None)
+        self.rabbitmq.basic_consume(self._telegram_alerts_handler_queue,
+                                    self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -89,9 +84,9 @@ class TelegramAlertsHandler(ChannelHandler):
         self.logger.info("Sent heartbeat to '{}' exchange".format(
             HEALTH_CHECK_EXCHANGE))
 
-    def _process_alerts(self, ch: BlockingChannel,
-                        method: pika.spec.Basic.Deliver,
-                        properties: pika.spec.BasicProperties, body: bytes) \
+    def _process_alert(self, ch: BlockingChannel,
+                       method: pika.spec.Basic.Deliver,
+                       properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
         self.logger.info("Received {}. Now processing this alert.".format(
@@ -166,30 +161,29 @@ class TelegramAlertsHandler(ChannelHandler):
                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
-        # fails, try re-sending six times in a space of 1 minute. If this
-        # still fails, stop sending alerts until the next alert is received. If
-        # 10 minutes pass since the alert was first raised, the alert is
-        # discarded. Important, remove an item from the queue only if the
-        # sending was successful, so that if an exception is raised, that
-        # message is not popped
-        max_attempts = 6
-        alert_validity_threshold = 600
+        # fails, try re-sending max_attempts times in a space of 1 minute. If
+        # this still fails, stop sending alerts until the next alert is
+        # received. If alert_validity_threshold seconds pass since the alert was
+        # first raised, the alert is discarded. Important, remove an item from
+        # the queue only if the sending was successful, so that if an exception
+        # is raised, that message is not popped
         while not self.alerts_queue.empty():
             alert = self.alerts_queue.queue[0]
 
             # Discard alert if 10 minutes passed since it was last raised
             if (datetime.now().timestamp() - alert.timestamp) \
-                    > alert_validity_threshold:
+                    > self._alert_validity_threshold:
                 self.alerts_queue.get()
                 self.alerts_queue.task_done()
                 continue
 
             attempts = 0
             ret = self.telegram_channel.alert(alert)
-            while ret != RequestStatus.SUCCESS and attempts < max_attempts:
+            while ret != RequestStatus.SUCCESS and \
+                    attempts < self._max_attempts:
                 self.logger.info(
                     "Will re-trying sending in 10 seconds. "
-                    "Attempts left: {}".format(max_attempts - attempts))
+                    "Attempts left: {}".format(self._max_attempts - attempts))
                 self.rabbitmq.connection.sleep(10)
                 ret = self.telegram_channel.alert(alert)
                 attempts += 1

@@ -1,6 +1,5 @@
 import json
 import logging
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -20,20 +19,18 @@ from src.utils.logging import log_and_print
 
 class LogAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 log_channel: LogChannel) -> None:
-        super().__init__(handler_name, logger)
-        self._log_channel = log_channel
+                 rabbit_ip: str, log_channel: LogChannel) -> None:
+        super().__init__(handler_name, logger, rabbit_ip)
 
-        # Handle termination signals by stopping the handler gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        self._log_channel = log_channel
+        self._log_alerts_handler_queue = \
+            'log_{}_alerts_handler_queue'.format(self.log_channel.channel_id)
 
     @property
     def log_channel(self) -> LogChannel:
         return self._log_channel
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -41,23 +38,21 @@ class LogAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue 'log_{}_alerts_handler_queue'".format(
-                self.log_channel.channel_id))
-        self.rabbitmq.queue_declare('log_{}_alerts_handler_queue'.format(
-            self.log_channel.channel_id), False, True, False, False)
+            "Creating queue '{}'".format(self._log_alerts_handler_queue))
+        self.rabbitmq.queue_declare(self._log_alerts_handler_queue, False, True,
+                                    False, False)
         self.logger.info(
-            "Binding queue 'log_{}_alerts_handler_queue' to "
-            "exchange '{}' with routing key 'channel.log'".format(
-                self.log_channel.channel_id, ALERT_EXCHANGE))
-        self.rabbitmq.queue_bind('log_{}_alerts_handler_queue'.format(
-            self.log_channel.channel_id), ALERT_EXCHANGE, 'channel.log')
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'channel.log'".format(self._log_alerts_handler_queue,
+                                   ALERT_EXCHANGE))
+        self.rabbitmq.queue_bind(self._log_alerts_handler_queue, ALERT_EXCHANGE,
+                                 'channel.log')
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
-        self.rabbitmq.basic_consume('log_{}_alerts_handler_queue'.format(
-            self.log_channel.channel_id), self._process_alerts, False,
-            False, None)
+        self.rabbitmq.basic_consume(self._log_alerts_handler_queue,
+                                    self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -74,9 +69,9 @@ class LogAlertsHandler(ChannelHandler):
         self.logger.info("Sent heartbeat to '{}' exchange".format(
             HEALTH_CHECK_EXCHANGE))
 
-    def _process_alerts(self, ch: BlockingChannel,
-                        method: pika.spec.Basic.Deliver,
-                        properties: pika.spec.BasicProperties, body: bytes) \
+    def _process_alert(self, ch: BlockingChannel,
+                       method: pika.spec.Basic.Deliver,
+                       properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
         self.logger.info("Received {}. Now processing this alert.".format(
@@ -125,7 +120,7 @@ class LogAlertsHandler(ChannelHandler):
         self.rabbitmq.start_consuming()
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._listen_for_data()

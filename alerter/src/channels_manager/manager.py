@@ -6,7 +6,7 @@ import signal
 import sys
 from datetime import datetime
 from types import FrameType
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -14,7 +14,8 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.channels_manager.handlers.starters import \
     start_telegram_alerts_handler, start_telegram_commands_handler, \
     start_twilio_alerts_handler, start_console_alerts_handler, \
-    start_log_alerts_handler
+    start_log_alerts_handler, start_email_alerts_handler, \
+    start_pagerduty_alerts_handler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
@@ -64,7 +65,7 @@ class ChannelsManager:
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
@@ -201,6 +202,68 @@ class ChannelsManager:
         process_details['twiml'] = twiml
         process_details['twiml_is_url'] = twiml_is_url
         process_details['channel_type'] = ChannelTypes.TWILIO.value
+
+    def _create_and_start_email_alerts_handler(
+            self, smtp: str, email_from: str, emails_to: List[str],
+            channel_id: str, channel_name: str, username: Optional[str],
+            password: Optional[str]) -> None:
+        process = multiprocessing.Process(
+            target=start_email_alerts_handler,
+            args=(smtp, email_from, emails_to, channel_id, channel_name,
+                  username, password))
+        process.daemon = True
+        log_and_print("Creating a new process for the alerts handler of "
+                      "e-mail channel {}".format(channel_name), self.logger)
+        process.start()
+
+        if channel_id not in self._channel_process_dict:
+            self._channel_process_dict[channel_id] = {}
+
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
+        process_details['component_name'] = \
+            "Email Alerts Handler ({})".format(channel_name)
+        process_details['process'] = process
+        process_details['smtp'] = smtp
+        process_details['email_from'] = email_from
+        process_details['emails_to'] = emails_to
+        process_details['channel_id'] = channel_id
+        process_details['channel_name'] = channel_name
+        process_details['username'] = username
+        process_details['password'] = password
+        process_details['channel_type'] = ChannelTypes.EMAIL.value
+
+    def _create_and_start_pagerduty_alerts_handler(
+            self, integration_key: str, channel_id: str, channel_name: str) \
+            -> None:
+        process = multiprocessing.Process(
+            target=start_pagerduty_alerts_handler,
+            args=(integration_key, channel_id, channel_name))
+        process.daemon = True
+        log_and_print("Creating a new process for the alerts handler of "
+                      "pager duty channel {}".format(channel_name), self.logger)
+        process.start()
+
+        if channel_id not in self._channel_process_dict:
+            self._channel_process_dict[channel_id] = {}
+
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
+        process_details['component_name'] = \
+            "PagerDuty Alerts Handler ({})".format(channel_name)
+        process_details['process'] = process
+        process_details['integration_key'] = integration_key
+        process_details['channel_id'] = channel_id
+        process_details['channel_name'] = channel_name
+        process_details['channel_type'] = ChannelTypes.PAGERDUTY.value
+
+    # TODO: Continue from below here both e-mail and pagerduty integration
+    #     : Then tomorrow we must start the opsgenie one and compare the code
+    #     : of the alerts handler with Email. There is some issue with the
+    #     : code such as, remove the configs, arrange channels, do heartbeat
+    #     : add exception around send, < alert_threshold_validity etc.
 
     def _create_and_start_console_alerts_handler(
             self, channel_id: str, channel_name: str) -> None:
@@ -606,7 +669,7 @@ class ChannelsManager:
 
     def manage(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._start_persistent_channels()

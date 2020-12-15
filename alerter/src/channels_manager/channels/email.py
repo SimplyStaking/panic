@@ -1,9 +1,9 @@
 import logging
+from typing import List, Optional
 
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.channels.channel import Channel
-from src.configs.channel.email import EmailChannelConfig
 from src.utils.data import RequestStatus
 
 _EMAIL_HTML_TEMPLATE = """<style type="text/css">
@@ -61,11 +61,14 @@ Origin ID: {origin_id}
 
 class EmailChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
-                 logger: logging.Logger, email_config: EmailChannelConfig):
-        super().__init__(channel_name, channel_id, logger)
-        self._config = email_config
-        self._email_api = EmailApi(self._config.smtp, self._config.email_from,
-                                   self._config.username, self._config.password)
+                 logger: logging.Logger, smtp: str, email_from: str,
+                 emails_to: List[str], username: Optional[str],
+                 password: Optional[str]):
+        super().__init__(channel_name, channel_id,
+                         logger.getChild(channel_name))
+
+        self._emails_to = emails_to
+        self._email_api = EmailApi(smtp, email_from, username, password)
 
     def alert(self, alert: Alert) -> RequestStatus:
         subject = "PANIC {}".format(alert.severity)
@@ -82,9 +85,9 @@ class EmailChannel(Channel):
         self._logger.debug("Formatted email template")
         self._logger.info("Sending alert to the channel's destination emails")
         self._logger.debug("Destination Emails: %s",
-                           self._config.emails_to)
+                           self._emails_to)
         try:
-            for to_address in self._config.emails_to:
+            for to_address in self._emails_to:
                 self._logger.debug("Sending alert to %s", to_address)
                 self._email_api.send_email_with_html(
                     subject, html_email_message, plain_email_message,
@@ -94,6 +97,6 @@ class EmailChannel(Channel):
             return RequestStatus.SUCCESS
         except Exception as e:
             self._logger.error("Error when sending %s to Email channel %s",
-                               alert.alert_code.name, self)
+                               alert.alert_code.name, self.__str__())
             self._logger.exception(e)
             return RequestStatus.FAILED

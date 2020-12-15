@@ -1,6 +1,5 @@
 import json
 import logging
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -21,25 +20,28 @@ from src.utils.logging import log_and_print
 
 class TwilioAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 twilio_channel: TwilioChannel, call_from: str,
-                 call_to: List[str], twiml: str, twiml_is_url: bool) -> None:
-        super().__init__(handler_name, logger)
+                 rabbit_ip: str, twilio_channel: TwilioChannel, call_from: str,
+                 call_to: List[str], twiml: str, twiml_is_url: bool,
+                 max_attempts: int = 3, alert_validity_threshold: int = 300) \
+            -> None:
+        super().__init__(handler_name, logger, rabbit_ip)
+
         self._twilio_channel = twilio_channel
         self._call_from = call_from
         self._call_to = call_to
         self._twiml = twiml
         self._twiml_is_url = twiml_is_url
-
-        # Handle termination signals by stopping the handler gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        self._max_attempts = max_attempts
+        self._alert_validity_threshold = alert_validity_threshold
+        self._twilio_alerts_handler_queue = \
+            'twilio_{}_alerts_handler_queue'.format(
+                self.twilio_channel.channel_id)
 
     @property
     def twilio_channel(self) -> TwilioChannel:
         return self._twilio_channel
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -47,25 +49,24 @@ class TwilioAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info(
-            "Creating queue 'twilio_{}_alerts_handler_queue'".format(
-                self.twilio_channel.channel_id))
-        self.rabbitmq.queue_declare('twilio_{}_alerts_handler_queue'.format(
-            self.twilio_channel.channel_id), False, True, False, False)
+            "Creating queue '{}'".format(self._twilio_alerts_handler_queue))
+        self.rabbitmq.queue_declare(self._twilio_alerts_handler_queue, False,
+                                    True, False, False)
         self.logger.info(
-            "Binding queue 'twilio_{}_alerts_handler_queue' to "
-            "exchange '{}' with routing key 'channel.{}'".format(
-                self.twilio_channel.channel_id, ALERT_EXCHANGE,
-                self.twilio_channel.channel_id))
-        self.rabbitmq.queue_bind('twilio_{}_alerts_handler_queue'.format(
-            self.twilio_channel.channel_id), ALERT_EXCHANGE,
-            'channel.{}'.format(self.twilio_channel.channel_id))
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'channel.{}'".format(self._twilio_alerts_handler_queue,
+                                  ALERT_EXCHANGE,
+                                  self.twilio_channel.channel_id))
+        self.rabbitmq.queue_bind(self._twilio_alerts_handler_queue,
+                                 ALERT_EXCHANGE,
+                                 'channel.{}'.format(
+                                     self.twilio_channel.channel_id))
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
-        self.rabbitmq.basic_consume('twilio_{}_alerts_handler_queue'.format(
-            self.twilio_channel.channel_id), self._process_alerts, False, False,
-            None)
+        self.rabbitmq.basic_consume(self._twilio_alerts_handler_queue,
+                                    self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -82,9 +83,9 @@ class TwilioAlertsHandler(ChannelHandler):
         self.logger.info("Sent heartbeat to '{}' exchange".format(
             HEALTH_CHECK_EXCHANGE))
 
-    def _process_alerts(self, ch: BlockingChannel,
-                        method: pika.spec.Basic.Deliver,
-                        properties: pika.spec.BasicProperties, body: bytes) \
+    def _process_alert(self, ch: BlockingChannel,
+                       method: pika.spec.Basic.Deliver,
+                       properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
         self.logger.info("Received {}. Now processing this alert.".format(
@@ -134,30 +135,29 @@ class TwilioAlertsHandler(ChannelHandler):
         self.rabbitmq.start_consuming()
 
     def _call_using_twilio(self, alert: Alert) -> RequestStatus:
-        # Do not call if 5 minutes passed since the alert was last raised, as
-        # alert is considered to be old
-        alert_validity_threshold = 300
+        # Do not call if alert_validity_treshold seconds passed since the alert
+        # was last raised, as alert is considered to be old
         time_elapsed_since_alert_was_raised = \
             datetime.now().timestamp() - alert.timestamp
-        if time_elapsed_since_alert_was_raised > alert_validity_threshold:
+        if time_elapsed_since_alert_was_raised > self._alert_validity_threshold:
             self.logger.error('Did not call as alert was raised a while '
                               'ago')
             return RequestStatus.FAILED
 
-        # For each number try calling 3 times in a space of 15 seconds until the
-        # call is successful. If this threshold is reached, we move to the next
-        # number.
-        max_attempts = 3
+        # For each number try calling max_attempts times in a space of 15
+        # seconds until the call is successful. If this threshold is reached,
+        # we move to the next number.
         calling_status = RequestStatus.SUCCESS
         for number in self._call_to:
             attempts = 0
             ret = self.twilio_channel.alert(call_from=self._call_from,
                                             call_to=number, twiml=self._twiml,
                                             twiml_is_url=self._twiml_is_url)
-            while ret != RequestStatus.SUCCESS and attempts < max_attempts:
+            while ret != RequestStatus.SUCCESS and \
+                    attempts < self._max_attempts:
                 self.logger.info(
                     "Will re-trying calling in 5 seconds. "
-                    "Attempts left: {}".format(max_attempts - attempts))
+                    "Attempts left: {}".format(self._max_attempts - attempts))
                 self.rabbitmq.connection.sleep(5)
                 ret = self.twilio_channel.alert(call_from=self._call_from,
                                                 call_to=number,
@@ -177,7 +177,7 @@ class TwilioAlertsHandler(ChannelHandler):
         return calling_status
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._listen_for_data()

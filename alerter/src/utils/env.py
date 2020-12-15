@@ -22,7 +22,7 @@ DB_PORT = int(os.environ['DB_PORT'])
 # Redis configuration
 REDIS_IP = os.environ['REDIS_IP']
 REDIS_PORT = int(os.environ['REDIS_PORT'])
-REDIS_DB = os.environ['REDIS_DB']
+REDIS_DB = int(os.environ['REDIS_DB'])
 
 # RabbitMQ configuration
 RABBIT_IP = os.environ['RABBIT_IP']
