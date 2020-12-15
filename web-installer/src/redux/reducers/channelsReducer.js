@@ -28,14 +28,12 @@ function telegramsById(state = {}, action) {
       return _.omit(state, action.payload.id);
     case ADD_TELEGRAM_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
       };
     case REMOVE_TELEGRAM_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
@@ -82,14 +80,12 @@ function twiliosById(state = {}, action) {
       return _.omit(state, action.payload.id);
     case ADD_TWILIO_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
       };
     case REMOVE_TWILIO_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
@@ -136,14 +132,12 @@ function emailsById(state = {}, action) {
       return _.omit(state, action.payload.id);
     case ADD_EMAIL_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
       };
     case REMOVE_EMAIL_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
@@ -190,14 +184,12 @@ function pagerdutyById(state = {}, action) {
       return _.omit(state, action.payload.id);
     case ADD_PAGERDUTY_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
       };
     case REMOVE_PAGERDUTY_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
@@ -244,14 +236,12 @@ function opsgenieById(state = {}, action) {
       return _.omit(state, action.payload.id);
     case ADD_OPSGENIE_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
       };
     case REMOVE_OPSGENIE_CHANNEL:
       parsed = JSON.parse(JSON.stringify(action.payload));
-      delete parsed["parent_id"];
       return {
         ...state,
         [action.payload.id]: parsed,
