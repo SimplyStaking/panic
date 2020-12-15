@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import signal
 import sys
 from datetime import datetime
@@ -15,6 +14,7 @@ from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils import env
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -29,8 +29,7 @@ class TelegramAlertsHandler(ChannelHandler):
         # Set a max queue size so that if the Telegram Alerts Handler is not
         # able to send alerts for a long time, old alerts can be pruned without
         # exhausting memory resources
-        max_queue_size = int(os.environ[
-                                 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE
         self._alerts_queue = Queue(max_queue_size)
 
         # Handle termination signals by stopping the handler gracefully
@@ -46,7 +45,7 @@ class TelegramAlertsHandler(ChannelHandler):
     def alerts_queue(self) -> Queue:
         return self._alerts_queue
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -212,7 +211,7 @@ class TelegramAlertsHandler(ChannelHandler):
                              "queue")
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new alerts, send the data waiting to be

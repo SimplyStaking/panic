@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from datetime import timedelta
-from typing import List, Optional, Union, Dict, Callable, Any
+from typing import List, Optional, Union, Dict, Callable, Any, Sequence
 
 import pika
 import pika.exceptions
@@ -361,7 +361,7 @@ class RabbitMQApi:
     # This function only works if no exceptions are raised, i.e. till RabbitMQ
     # becomes usable again
     @staticmethod
-    def perform_operation_till_successful(function, args: List[Any],
+    def perform_operation_till_successful(function, args: Sequence,
                                           default_return: Any) -> None:
         while function(*args) == default_return:
             time.sleep(10)
