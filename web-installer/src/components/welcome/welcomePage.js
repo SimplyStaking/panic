@@ -6,6 +6,7 @@ import GridItem from "components/material_ui/Grid/GridItem.js";
 import LoginContainer from 'containers/welcome/loginContainer';
 import styles from "assets/jss/material-kit-react/views/components.js";
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import LoadConfig from 'containers/global/loadConfig';
 import { CHANNELS_PAGE, START } from 'constants/constants';
 import Data from 'data/welcome';
 
@@ -38,6 +39,7 @@ function WelcomePage() {
           text={START}
           navigation={CHANNELS_PAGE}
         />
+        <LoadConfig /> 
     </div>
   );
 }

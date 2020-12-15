@@ -4,12 +4,9 @@ import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS,
   REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
-  REMOVE_REPOSITORY, ADD_KMS, REMOVE_KMS, ADD_TELEGRAM_CHANNEL,
-  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
-  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT,
-  UPDATE_SEVERITY_ALERT, LOAD_CONFIG_COSMOS,
+  REMOVE_REPOSITORY, ADD_KMS, REMOVE_KMS, UPDATE_REPEAT_ALERT,
+  UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
+  LOAD_CONFIG_COSMOS, LOAD_CHAIN_COSMOS,
 } from '../actions/types';
 
 const cosmosRepeatAlerts = {
@@ -19,6 +16,8 @@ const cosmosRepeatAlerts = {
       identifier: 'cannot_access_validator',
       description: 'If a validator is in-accessible you will be alerted.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 60,
         enabled: true,
@@ -34,6 +33,8 @@ const cosmosRepeatAlerts = {
       identifier: 'cannot_access_node',
       description: 'If a node is in-accessible you will be alerted.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 300,
         enabled: true,
@@ -50,6 +51,8 @@ const cosmosRepeatAlerts = {
       description: 'If a node loses connection with a specific peer after some '
                  + 'time you will receive an alert.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 300,
         enabled: true,
@@ -66,6 +69,8 @@ const cosmosRepeatAlerts = {
       description: 'The Node Exporter URL is un-reachable therefore the '
                  + 'system is taken to be down.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 0,
         enabled: true,
@@ -88,6 +93,8 @@ const cosmosThresholdAlerts = {
       description: 'Number of peers connected to your node has decreased.',
       adornment: 'Peers',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 3,
         enabled: true,
@@ -106,6 +113,8 @@ const cosmosThresholdAlerts = {
                  + 'time.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 180,
         enabled: true,
@@ -124,6 +133,8 @@ const cosmosThresholdAlerts = {
                  + 'since last pre-commit/pre-vote activity.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 60,
         enabled: true,
@@ -142,6 +153,8 @@ const cosmosThresholdAlerts = {
                  + 'the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -160,6 +173,8 @@ const cosmosThresholdAlerts = {
                  + '.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -177,6 +192,8 @@ const cosmosThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -194,6 +211,8 @@ const cosmosThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -211,6 +230,8 @@ const cosmosThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -235,6 +256,8 @@ const cosmosTimeWindowAlerts = {
                  + 'receive an alert.', 
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
+      type: 'time_window',
+      parent_id: '',
       warning: {
         threshold: 20,
         time_window: 360,
@@ -258,6 +281,8 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_inaccessible_on_startup',
       description: 'Validator was not accessible on startup.', 
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     15: {
@@ -265,6 +290,8 @@ const cosmosSeverityAlerts = {
       identifier: 'node_inaccessible_on_startup',
       description: 'Node was not accessible on startup.', 
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     16: {
@@ -272,6 +299,8 @@ const cosmosSeverityAlerts = {
       identifier: 'slashed',
       description: 'Occurs when your validator has been slashed.', 
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     17: {
@@ -280,6 +309,8 @@ const cosmosSeverityAlerts = {
       description: 'Occurs when your node is still catching up to the rest of '
                  + 'the blockchain network in terms of block height.', 
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     18: {
@@ -288,6 +319,8 @@ const cosmosSeverityAlerts = {
       description: 'Occurs when your validator is not participating in the '
                  + 'current consensus round.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     19: {
@@ -295,6 +328,8 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_set_size_increased',
       description: 'The number of validators in the set have increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     20: {
@@ -302,6 +337,8 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_set_size_decreased',
       description: 'The number of validators in the set have decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     21: {
@@ -309,6 +346,8 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_is_jailed',
       description: 'The number of validators in the set have decreased.',
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     22: {
@@ -316,6 +355,8 @@ const cosmosSeverityAlerts = {
       identifier: 'voting_power_increased',
       description: 'Voting power of a validator has increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     23: {
@@ -323,6 +364,8 @@ const cosmosSeverityAlerts = {
       identifier: 'voting_power_decreased',
       description: 'Voting power of a validator has decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     24: {
@@ -330,6 +373,8 @@ const cosmosSeverityAlerts = {
       identifier: 'new_proposal',
       description: 'A new proposal has been submitted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     25: {
@@ -337,6 +382,8 @@ const cosmosSeverityAlerts = {
       identifier: 'proposal_conducted',
       description: 'A proposal has been conducted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     26: {
@@ -345,6 +392,8 @@ const cosmosSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     27: {
@@ -353,6 +402,8 @@ const cosmosSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
   },
@@ -402,12 +453,6 @@ function cosmosChainsById(state = {}, action) {
           nodes: [],
           kmses: [],
           repositories: [],
-          alerts: [],
-          telegrams: [],
-          twilios: [],
-          emails: [],
-          pagerduties: [],
-          opsgenies: [],
           repeatAlerts: cosmosRepeatAlerts,
           timeWindowAlerts: cosmosTimeWindowAlerts,
           thresholdAlerts: cosmosThresholdAlerts,
@@ -424,6 +469,21 @@ function cosmosChainsById(state = {}, action) {
       };
     case REMOVE_CHAIN_COSMOS:
       return _.omit(state, action.payload.id);
+    case LOAD_CHAIN_COSMOS:
+      return {
+        ...state,
+        [action.payload.id]: {
+          id: action.payload.id,
+          chain_name: action.payload.chain_name,
+          nodes: [],
+          kmses: [],
+          repositories: [],
+          repeatAlerts: cosmosRepeatAlerts,
+          timeWindowAlerts: cosmosTimeWindowAlerts,
+          thresholdAlerts: cosmosThresholdAlerts,
+          severityAlerts: cosmosSeverityAlerts,
+        },
+      };
     case ADD_NODE_COSMOS:
       return {
         ...state,
@@ -494,146 +554,6 @@ function cosmosChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           kmses: state[action.payload.parent_id].kmses.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          telegrams: state[action.payload.parent_id].telegrams.concat(action.payload.id),
-        },
-      };
-    case REMOVE_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          telegrams: state[action.payload.parent_id].telegrams.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          twilios: state[action.payload.parent_id].twilios.concat(action.payload.id),
-        },
-      };
-    case REMOVE_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          twilios: state[action.payload.parent_id].twilios.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          emails: state[action.payload.parent_id].emails.concat(action.payload.id),
-        },
-      };
-    case REMOVE_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          emails: state[action.payload.parent_id].emails.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          pagerduties: state[action.payload.parent_id].pagerduties.concat(action.payload.id),
-        },
-      };
-    case REMOVE_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          pagerduties: state[action.payload.parent_id].pagerduties.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          opsgenies: state[action.payload.parent_id].opsgenies.concat(action.payload.id),
-        },
-      };
-    case REMOVE_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          opsgenies: state[action.payload.parent_id].opsgenies.filter(
             (config) => config !== action.payload.id,
           ),
         },

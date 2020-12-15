@@ -4,12 +4,8 @@ import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
   ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE,
   REMOVE_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME, RESET_CHAIN_SUBSTRATE, ADD_REPOSITORY,
-  REMOVE_REPOSITORY, ADD_TELEGRAM_CHANNEL,
-  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
-  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT,
-  UPDATE_SEVERITY_ALERT, LOAD_CONFIG_SUBSTRATE,
+  REMOVE_REPOSITORY, UPDATE_REPEAT_ALERT, UPDATE_TIMEWINDOW_ALERT,
+  UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT, LOAD_CONFIG_SUBSTRATE,
 } from '../actions/types';
 
 const substrateRepeatAlerts = {
@@ -19,6 +15,8 @@ const substrateRepeatAlerts = {
       identifier: 'cannot_access_validator',
       description: 'If a validator is in-accessible you will be alerted.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 60,
         enabled: true,
@@ -34,6 +32,8 @@ const substrateRepeatAlerts = {
       identifier: 'cannot_access_node',
       description: 'If a node is in-accessible you will be alerted.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 300,
         enabled: true,
@@ -50,6 +50,8 @@ const substrateRepeatAlerts = {
       description: 'If a node loses connection with a specific peer after some '
                  + 'time you will receive an alert.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 300,
         enabled: true,
@@ -66,6 +68,8 @@ const substrateRepeatAlerts = {
       description: 'The Node Exporter URL is un-reachable therefore the '
                  + 'system is taken to be down.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: '',
       warning: {
         repeat: 0,
         enabled: true,
@@ -89,6 +93,8 @@ const substrateTimeWindowAlerts = {
                  + 'time.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
+      type: 'time_window',
+      parent_id: '',
       warning: {
         threshold: 30,
         time_window: 360,
@@ -108,6 +114,8 @@ const substrateTimeWindowAlerts = {
                  + ' some time.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
+      type: 'time_window',
+      parent_id: '',
       warning: {
         threshold: 30,
         time_window: 360,
@@ -133,6 +141,8 @@ const substrateThresholdAlerts = {
                  + 'since last pre-commit/pre-vote activity.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 60,
         enabled: true,
@@ -151,6 +161,8 @@ const substrateThresholdAlerts = {
                  + 'the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -168,6 +180,8 @@ const substrateThresholdAlerts = {
       description: 'Open File Descriptors alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -185,6 +199,8 @@ const substrateThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -202,6 +218,8 @@ const substrateThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -219,6 +237,8 @@ const substrateThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: '',
       warning: {
         threshold: 85,
         enabled: true,
@@ -241,6 +261,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_inaccessible_on_startup',
       description: 'Validator was not accessible on startup.', 
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     14: {
@@ -248,6 +270,8 @@ const substrateSeverityAlerts = {
       identifier: 'node_inaccessible_on_startup',
       description: 'Node was not accessible on startup.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     15: {
@@ -255,6 +279,8 @@ const substrateSeverityAlerts = {
       identifier: 'slashed',
       description: 'Occurs when your validator has been slashed.', 
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     16: {
@@ -263,6 +289,8 @@ const substrateSeverityAlerts = {
       description: 'Occurs when your node is still catching up to the rest of '
                  + 'the blockchain network in terms of block height.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     17: {
@@ -271,6 +299,8 @@ const substrateSeverityAlerts = {
       description: 'Occurs when your validator is not participating in the '
                  + 'current consensus round.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     18: {
@@ -278,6 +308,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_set_size_increased',
       description: 'The number of validators in the set have increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     19: {
@@ -285,6 +317,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_set_size_decreased',
       description: 'The number of validators in the set have decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     20: {
@@ -292,6 +326,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_declared_offline',
       description: 'The validator has been declared offline by the blockchain.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     21: {
@@ -300,6 +336,8 @@ const substrateSeverityAlerts = {
       description: 'The Validator did not author a block and sent no heartbeats'
                  + ' in the previous session',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     22: {
@@ -307,6 +345,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_payout_pending',
       description: 'A new pending payout has been detected',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     23: {
@@ -314,6 +354,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_proposal',
       description: 'A new proposal has been submitted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     24: {
@@ -321,6 +363,8 @@ const substrateSeverityAlerts = {
       identifier: 'proposal_conducted',
       description: 'A proposal has been conducted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     25: {
@@ -329,6 +373,8 @@ const substrateSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     26: {
@@ -337,6 +383,8 @@ const substrateSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     27: {
@@ -344,6 +392,8 @@ const substrateSeverityAlerts = {
       identifier: 'bonded_balance_increased',
       description: 'Bonded balance of your validator has increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     28: {
@@ -351,6 +401,8 @@ const substrateSeverityAlerts = {
       identifier: 'bonded_balance_decreased',
       description: 'Bonded balance of your validator has decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     29: {
@@ -358,6 +410,8 @@ const substrateSeverityAlerts = {
       identifier: 'free_balance_increased',
       description: 'Free balance of your validator has increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     30: {
@@ -365,6 +419,8 @@ const substrateSeverityAlerts = {
       identifier: 'free_balance_decreased',
       description: 'Free balance of your validator has decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     31: {
@@ -372,6 +428,8 @@ const substrateSeverityAlerts = {
       identifier: 'reserve_balance_increased',
       description: 'Reserve balance of your validator has increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     32: {
@@ -379,6 +437,8 @@ const substrateSeverityAlerts = {
       identifier: 'reserve_balance_decreased',
       description: 'Reserve balance of your validator has decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     33: {
@@ -386,6 +446,8 @@ const substrateSeverityAlerts = {
       identifier: 'nominated_balance_increased',
       description: 'Nominated balance of your validator has increased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     34: {
@@ -393,6 +455,8 @@ const substrateSeverityAlerts = {
       identifier: 'nominated_balance_decreased',
       description: 'Nominated balance of your validator has decreased.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: false,
     },
     35: {
@@ -400,6 +464,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_not_elected',
       description: 'The Validator has not been elected for the next session.',
       severity: WARNING,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     36: {
@@ -407,6 +473,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_is_disabled',
       description: 'The Validator has not been elected for the next session.',
       severity: CRITICAL,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     37: {
@@ -414,6 +482,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_council_proposal',
       description: 'A new council proposal has been detected.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     38: {
@@ -421,6 +491,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_in_council',
       description: 'The Validator is now part of the council.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     39: {
@@ -428,6 +500,8 @@ const substrateSeverityAlerts = {
       identifier: 'validator_not_in_council',
       description: 'The Validator is no longer part of the council.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     40: {
@@ -435,6 +509,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_treasury_proposal',
       description: 'A new treasury proposal has been submitted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     41: {
@@ -442,6 +518,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_tip_proposal',
       description: 'A new tip proposal has been submitted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     42: {
@@ -449,6 +527,8 @@ const substrateSeverityAlerts = {
       identifier: 'new_referendum',
       description: 'A new referendum has been submitted.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
     43: {
@@ -456,6 +536,8 @@ const substrateSeverityAlerts = {
       identifier: 'referendum_completed',
       description: 'A new referendum has been completed.',
       severity: INFO,
+      type: 'severity',
+      parent_id: '',
       enabled: true,
     },
   },
@@ -506,12 +588,6 @@ function substrateChainsById(state = {}, action) {
           chain_name: action.payload.chain_name,
           nodes: [],
           repositories: [],
-          alerts: [],
-          telegrams: [],
-          twilios: [],
-          emails: [],
-          pagerduties: [],
-          opsgenies: [],
           repeatAlerts: substrateRepeatAlerts,
           timeWindowAlerts: substrateTimeWindowAlerts,
           thresholdAlerts: substrateThresholdAlerts,
@@ -570,146 +646,6 @@ function substrateChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           repositories: state[action.payload.parent_id].repositories.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          telegrams: state[action.payload.parent_id].telegrams.concat(action.payload.id),
-        },
-      };
-    case REMOVE_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          telegrams: state[action.payload.parent_id].telegrams.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          twilios: state[action.payload.parent_id].twilios.concat(action.payload.id),
-        },
-      };
-    case REMOVE_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          twilios: state[action.payload.parent_id].twilios.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          emails: state[action.payload.parent_id].emails.concat(action.payload.id),
-        },
-      };
-    case REMOVE_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          emails: state[action.payload.parent_id].emails.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          pagerduties: state[action.payload.parent_id].pagerduties.concat(action.payload.id),
-        },
-      };
-    case REMOVE_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          pagerduties: state[action.payload.parent_id].pagerduties.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          opsgenies: state[action.payload.parent_id].opsgenies.concat(action.payload.id),
-        },
-      };
-    case REMOVE_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          opsgenies: state[action.payload.parent_id].opsgenies.filter(
             (config) => config !== action.payload.id,
           ),
         },

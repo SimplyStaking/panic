@@ -37,6 +37,7 @@
     "react-scripts": "3.4.3",
     "react-slick": "^0.27.13",
     "react-toasts": "^3.0.6",
+    "read-ini-file": "^3.0.0",
     "redux": "^4.0.5",
     "twilio": "^3.49.1",
     "uuid": "^8.3.0",

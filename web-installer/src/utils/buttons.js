@@ -350,6 +350,15 @@ function SaveConfigButton({ onClick }) {
     </Button>
   );
 }
+
+function LoadConfigButton({ onClick }) {
+  return (
+    <Button onClick={onClick} size="lg" color="primary">
+      Load Config
+    </Button>
+  );
+}
+
 function PingNodeExporter({ disabled, exporter_url }) {
   const onClick = async () => {
     // Check if the node exporter url given works properly
@@ -452,6 +461,10 @@ SaveConfigButton.propTypes = forbidExtraProps({
   onClick: PropTypes.func.isRequired,
 });
 
+LoadConfigButton.propTypes = forbidExtraProps({
+  onClick: PropTypes.func.isRequired,
+});
+
 LoginButton.propTypes = forbidExtraProps({
   username: PropTypes.string.isRequired,
   password: PropTypes.string.isRequired,
@@ -491,5 +504,5 @@ export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
   PingRepoButton, PingCosmosButton, PingNodeExporter, SaveConfigButton,
-  AddAccount, DeleteAccount,
+  LoadConfigButton, AddAccount, DeleteAccount,
 };

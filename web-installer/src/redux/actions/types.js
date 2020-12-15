@@ -1,13 +1,18 @@
 // Channel related actions
 export const ADD_TELEGRAM = 'ADD_TELEGRAM';
+export const LOAD_TELEGRAM = 'LOAD_TELEGRAM';
 export const REMOVE_TELEGRAM = 'REMOVE_TELEGRAM';
 export const ADD_TWILIO = 'ADD_TWILIO';
+export const LOAD_TWILIO = 'LOAD_TWILIO';
 export const REMOVE_TWILIO = 'REMOVE_TWILIO';
 export const ADD_EMAIL = 'ADD_EMAIL';
+export const LOAD_EMAIL = 'LOAD_EMAIL';
 export const REMOVE_EMAIL = 'REMOVE_EMAIL';
 export const ADD_PAGERDUTY = 'ADD_PAGERDUTY';
+export const LOAD_PAGERDUTY = 'LOAD_PAGERDUTY';
 export const REMOVE_PAGERDUTY = 'REMOVE_PAGERDUTY';
 export const ADD_OPSGENIE = 'ADD_OPSGENIE';
+export const LOAD_OPSGENIE = 'LOAD_OPSGENIE';
 export const REMOVE_OPSGENIE = 'REMOVE_OPSGENIE';
 
 // Page related actions
@@ -17,6 +22,7 @@ export const CHANGE_STEP = 'CHANGE_STEP';
 // Cosmos chains related actions
 export const ADD_CHAIN_COSMOS = 'ADD_CHAIN_COSMOS';
 export const REMOVE_CHAIN_COSMOS = 'REMOVE_CHAIN_COSMOS';
+export const LOAD_CHAIN_COSMOS = 'LOAD_CHAIN_COSMOS';
 export const ADD_NODE_COSMOS = 'ADD_NODE_COSMOS';
 export const REMOVE_NODE_COSMOS = 'REMOVE_NODE_COSMOS';
 export const RESET_CHAIN_COSMOS = 'RESET_CHAIN_COSMOS';

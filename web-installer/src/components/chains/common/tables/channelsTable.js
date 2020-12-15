@@ -20,8 +20,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
   emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
   addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
   addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
-  removeOpsGenieDetails, createPayloadTelegram, createPayloadTwilio,
-  createPayloadEmail, createPayloadPagerDuty, createPayloadOpsGenie}) => {
+  removeOpsGenieDetails, createPayload }) => {
 
   const currentConfig = config.byId[currentChain];
   const classes = useStyles();
@@ -79,11 +78,13 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={currentConfig.telegrams.includes(id)}
+                                checked={
+                                  telegrams.byId[id].parent_ids.includes(currentChain)
+                                }
                                 onClick={() => {
-                                  createPayloadTelegram(
+                                  createPayload(
                                     telegrams.byId[id], currentConfig,
-                                    addTelegramDetails, removeTelegramDetails
+                                    addTelegramDetails, removeTelegramDetails,
                                   );
                                 }}
                                 name="telegrams"
@@ -121,11 +122,14 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={currentConfig.twilios.includes(id)}
+                                checked={
+                                  twilios.byId[id].parent_ids.includes(
+                                    currentChain)
+                                }
                                 onClick={() => {
-                                  createPayloadTwilio(
+                                  createPayload(
                                     twilios.byId[id], currentConfig,
-                                    addTwilioDetails, removeTwilioDetails
+                                    addTwilioDetails, removeTwilioDetails,
                                   );
                                 }}
                                 name="twilios"
@@ -163,11 +167,14 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={currentConfig.emails.includes(id)}
+                                checked={
+                                  emails.byId[id].parent_ids.includes(
+                                    currentChain)
+                                }
                                 onClick={() => {
-                                  createPayloadEmail(
+                                  createPayload(
                                     emails.byId[id], currentConfig,
-                                    addEmailDetails, removeEmailDetails
+                                    addEmailDetails, removeEmailDetails,
                                   );
                                 }}
                                 name="emails"
@@ -205,11 +212,14 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             <FormControlLabel
                               control={(
                                 <Checkbox
-                                  checked={currentConfig.pagerduties.includes(id)}
+                                  checked={
+                                    pagerduties.byId[id].parent_ids.includes(
+                                      currentChain)
+                                  }
                                   onClick={() => {
-                                    createPayloadPagerDuty(
+                                    createPayload(
                                       pagerduties.byId[id], currentConfig,
-                                      addPagerDutyDetails, removePagerDutyDetails
+                                      addPagerDutyDetails, removePagerDutyDetails,
                                     );
                                   }}
                                   name="pagerduties"
@@ -247,9 +257,12 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={currentConfig.opsgenies.includes(id)}
+                                checked={
+                                  opsgenies.byId[id].parent_ids.includes(
+                                    currentChain)
+                                }
                                 onClick={() => {
-                                  createPayloadOpsGenie(
+                                  createPayload(
                                     opsgenies.byId[id], currentConfig,
                                     addOpsGenieDetails,
                                     removeOpsGenieDetails
@@ -356,11 +369,7 @@ ChannelsTable.propTypes = forbidExtraProps({
   removePagerDutyDetails: PropTypes.func.isRequired,
   addOpsGenieDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
-  createPayloadTelegram: PropTypes.func.isRequired,
-  createPayloadTwilio: PropTypes.func.isRequired,
-  createPayloadEmail: PropTypes.func.isRequired,
-  createPayloadPagerDuty: PropTypes.func.isRequired,
-  createPayloadOpsGenie: PropTypes.func.isRequired,
+  createPayload: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
   data: PropTypes.shape({
     channelsTable: PropTypes.shape({

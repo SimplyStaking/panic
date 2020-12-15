@@ -115,17 +115,6 @@ class SaveConfig extends Component {
           chainConfig.chain_name, 'cosmos', kmsToSave);
       }
 
-      const channelConfigs = {};
-      channelConfigs.telegram = chainConfig.telegrams;
-      channelConfigs.email = chainConfig.emails;
-      channelConfigs.twilio = chainConfig.twilios;
-      channelConfigs.opsgenie = chainConfig.opsgenies;
-      channelConfigs.pagerduty = chainConfig.pagerduties;
-
-      // Save the channels
-      await sendConfig('chain', 'channels_config.ini',
-        chainConfig.chain_name, 'cosmos', channelConfigs);
-
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
       const repeatAlertsConfig = {};
@@ -134,7 +123,7 @@ class SaveConfig extends Component {
         repeatAlertsConfig[id] = {};
         repeatAlertsConfig[id].name = chainConfig.repeatAlerts.byId[id]
           .identifier;
-        repeatAlertsConfig[id].type = 'repeat';
+        repeatAlertsConfig[id].parent_id = currentChainId;
         repeatAlertsConfig[id].enabled = chainConfig.repeatAlerts
           .byId[id].enabled;
         repeatAlertsConfig[id].critical_enabled = chainConfig.repeatAlerts
@@ -155,7 +144,7 @@ class SaveConfig extends Component {
         thresholdAlertsConfig[id] = {};
         thresholdAlertsConfig[id].name = chainConfig.thresholdAlerts.byId[id]
           .identifier;
-        thresholdAlertsConfig[id].type = 'threshold';
+        thresholdAlertsConfig[id].parent_id = currentChainId;
         thresholdAlertsConfig[id].enabled = chainConfig.thresholdAlerts.byId[id]
           .enabled;
         thresholdAlertsConfig[id].warning_threshold = chainConfig
@@ -178,7 +167,7 @@ class SaveConfig extends Component {
         timeWindowAlertsConfig[id] = {};
         timeWindowAlertsConfig[id].name = chainConfig.timeWindowAlerts
           .byId[id].identifier;
-        timeWindowAlertsConfig[id].type = 'time_window';
+        timeWindowAlertsConfig[id].parent_id = currentChainId;
         timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts
           .byId[id].enabled;
         timeWindowAlertsConfig[id].warning_threshold = chainConfig
@@ -203,7 +192,7 @@ class SaveConfig extends Component {
         severityAlertsConfig[id] = {};
         severityAlertsConfig[id].name = chainConfig.severityAlerts.byId[id]
           .identifier;
-        severityAlertsConfig[id].type = 'severity';
+        severityAlertsConfig[id].parent_id = currentChainId;
         severityAlertsConfig[id].enabled = chainConfig.severityAlerts
           .byId[id].enabled;
         severityAlertsConfig[id].severity = chainConfig.severityAlerts
@@ -252,17 +241,6 @@ class SaveConfig extends Component {
           chainConfig.chain_name, 'substrate', reposToSave);
       }
 
-      const channelConfigs = {};
-      channelConfigs.telegram = chainConfig.telegrams;
-      channelConfigs.email = chainConfig.emails;
-      channelConfigs.twilio = chainConfig.twilios;
-      channelConfigs.opsgenie = chainConfig.opsgenies;
-      channelConfigs.pagerduty = chainConfig.pagerduties;
-
-      // Save the channels
-      await sendConfig('chain', 'channels_config.ini',
-        chainConfig.chain_name, 'substrate', channelConfigs);
-
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
       const repeatAlertsConfig = {};
@@ -272,6 +250,7 @@ class SaveConfig extends Component {
         repeatAlertsConfig[id].name = chainConfig.repeatAlerts.byId[id].name;
         repeatAlertsConfig[id].enabled = chainConfig.repeatAlerts.byId[id]
           .enabled;
+        repeatAlertsConfig[id].parent_id = currentChainId;
         repeatAlertsConfig[id].critical_delayed = chainConfig.repeatAlerts
           .byId[id].critical.delayed;
         repeatAlertsConfig[id].critical_enabled = chainConfig.repeatAlerts
@@ -286,10 +265,6 @@ class SaveConfig extends Component {
           .byId[id].warning.repeat;
       }
 
-      // Save the repeatAlerts configs
-      await sendConfig('chain', 'repeat_alerts_config.ini',
-        chainConfig.chain_name, 'substrate', repeatAlertsConfig);
-
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
       const thresholdAlertsConfig = {};
@@ -298,6 +273,7 @@ class SaveConfig extends Component {
         thresholdAlertsConfig[id] = {};
         thresholdAlertsConfig[id].name = chainConfig.thresholdAlerts.byId[id]
           .name;
+        thresholdAlertsConfig[id].parent_id = currentChainId;
         thresholdAlertsConfig[id].enabled = chainConfig.thresholdAlerts
           .byId[id].enabled;
         thresholdAlertsConfig[id].critical_threshold = chainConfig
@@ -310,12 +286,6 @@ class SaveConfig extends Component {
           .thresholdAlerts.byId[id].warning.enabled;
       }
 
-      await sendConfig('chain', 'threshold_alerts_config.ini',
-        chainConfig.chain_name, 'substrate', thresholdAlertsConfig);
-
-      await sendConfig('chain', 'severity_alerts_config.ini',
-        chainConfig.chain_name, 'substrate', chainConfig.severityAlerts.byId);
-
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
       const timeWindowAlertsConfig = {};
@@ -324,6 +294,7 @@ class SaveConfig extends Component {
         timeWindowAlertsConfig[id] = {};
         timeWindowAlertsConfig[id].name = chainConfig.timeWindowAlerts
           .byId[id].name;
+        timeWindowAlertsConfig[id].parent_id = currentChainId;
         timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts
           .byId[id].enabled;
         timeWindowAlertsConfig[id].critical_threshold = chainConfig
@@ -340,22 +311,31 @@ class SaveConfig extends Component {
           .timeWindowAlerts.byId[id].warning.enabled;
       }
 
-      await sendConfig('chain', 'timewindow_alerts_config.ini',
-        chainConfig.chain_name, 'substrate', timeWindowAlertsConfig);
+      // Redo the structure of these alerts to be able to save them in the .ini
+      // file
+      const severityAlertsConfig = {};
+      for (let i = 0; i < chainConfig.severityAlerts.allIds.length; i += 1) {
+        const id = chainConfig.severityAlerts.allIds[i];
+        severityAlertsConfig[id] = {};
+        severityAlertsConfig[id].name = chainConfig.severityAlerts.byId[id]
+          .identifier;
+        severityAlertsConfig[id].parent_id = currentChainId;
+        severityAlertsConfig[id].enabled = chainConfig.severityAlerts
+          .byId[id].enabled;
+        severityAlertsConfig[id].severity = chainConfig.severityAlerts
+          .byId[id].severity;
+      }
+
+      const allAlertsConfig = {
+        ...repeatAlertsConfig, ...thresholdAlertsConfig,
+        ...timeWindowAlertsConfig, ...severityAlertsConfig,
+      }
+
+      await sendConfig('chain', 'alerts_config.ini',
+        chainConfig.chain_name, 'cosmos', allAlertsConfig);
     });
 
     ToastsStore.success('Saved Substrate Configs!', 5000);
-
-    // Save the general configurations
-    const channelConfigs = {};
-    channelConfigs.telegram = general.telegrams;
-    channelConfigs.email = general.emails;
-    channelConfigs.twilio = general.twilios;
-    channelConfigs.opsgenie = general.opsgenies;
-    channelConfigs.pagerduty = general.pagerduties;
-
-    // Save the channels
-    await sendConfig('general', 'channels_config.ini', '', '', channelConfigs);
 
     const generalSystems = {};
     for (let k = 0; k < general.systems.length; k += 1) {
@@ -373,24 +353,52 @@ class SaveConfig extends Component {
 
     // Redo the structure of these alerts to be able to save them in the .ini
     // file
-    const generalThreshold = {};
+    const thresholdAlertsConfig = {};
     for (let i = 0; i < general.thresholdAlerts.allIds.length; i += 1) {
       const id = general.thresholdAlerts.allIds[i];
-      generalThreshold[id] = {};
-      generalThreshold[id].name = general.thresholdAlerts.byId[id].name;
-      generalThreshold[id].enabled = general.thresholdAlerts.byId[id].enabled;
-      generalThreshold[id].critical_threshold = general.thresholdAlerts
+      thresholdAlertsConfig[id] = {};
+      thresholdAlertsConfig[id].name = general.thresholdAlerts.byId[id].name;
+      thresholdAlertsConfig[id].enabled = general.thresholdAlerts.byId[id].enabled;
+      thresholdAlertsConfig[id].parent_id = 'GLOBAL';
+      thresholdAlertsConfig[id].critical_threshold = general.thresholdAlerts
         .byId[id].critical.threshold;
-      generalThreshold[id].critical_enabled = general
+      thresholdAlertsConfig[id].critical_enabled = general
         .thresholdAlerts.byId[id].critical.enabled;
-      generalThreshold[id].warning_threshold = general
+      thresholdAlertsConfig[id].warning_threshold = general
         .thresholdAlerts.byId[id].warning.threshold;
-      generalThreshold[id].warning_enabled = general
+      thresholdAlertsConfig[id].warning_enabled = general
         .thresholdAlerts.byId[id].warning.enabled;
     }
 
-    await sendConfig('general', 'threshold_alerts_config.ini', '', '',
-      generalThreshold);
+    // Redo the structure of these alerts to be able to save them in the .ini
+    // file
+    const repeatAlertsConfig = {};
+    for (let i = 0; i < general.repeatAlerts.allIds.length; i += 1) {
+      const id = general.repeatAlerts.allIds[i];
+      repeatAlertsConfig[id] = {};
+      repeatAlertsConfig[id].name = general.repeatAlerts.byId[id].name;
+      repeatAlertsConfig[id].enabled = general.repeatAlerts.byId[id]
+        .enabled;
+      repeatAlertsConfig[id].parent_id = 'GLOBAL';
+      repeatAlertsConfig[id].critical_delayed = general.repeatAlerts
+        .byId[id].critical.delayed;
+      repeatAlertsConfig[id].critical_enabled = general.repeatAlerts
+        .byId[id].critical.enabled;
+      repeatAlertsConfig[id].critical_repeat = general.repeatAlerts
+        .byId[id].critical.repeat;
+      repeatAlertsConfig[id].warning_delayed = general.repeatAlerts
+        .byId[id].warning.delayed;
+      repeatAlertsConfig[id].warning_enabled = general.repeatAlerts
+        .byId[id].warning.enabled;
+      repeatAlertsConfig[id].warning_repeat = general.repeatAlerts
+        .byId[id].warning.repeat;
+    }
+
+    const allAlertsConfig = {
+      ...repeatAlertsConfig, ...thresholdAlertsConfig,
+    }
+
+    await sendConfig('general', 'alerts_config.ini', '', '', allAlertsConfig);
 
     await sendConfig('general', 'periodic_config.ini', '', '', { periodic });
 

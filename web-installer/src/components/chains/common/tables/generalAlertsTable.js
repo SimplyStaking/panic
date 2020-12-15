@@ -499,6 +499,9 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
             </Table>
           </TableContainer>
         </Box>
+        <Grid item xs={12} />
+        <br/>
+        <br/>
         <Grid container spacing={2}>
           <Grid item xs={2}>
             <Box px={2}>

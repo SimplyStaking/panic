@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const { resolve } = require('path');
+const { readdir } = require('fs').promises;
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
@@ -463,6 +465,40 @@ app.post('/server/database/drop', verify, async (req, res) => {
 });
 
 // ---------------------------------------- Configs
+
+// Function to get all the files in a directory
+async function getFiles(dir) {
+  const dirents = await readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(dirents.map((dirent) => {
+    const res = resolve(dir, dirent.name);
+    return dirent.isDirectory() ? getFiles(res) : res;
+  }));
+  return Array.prototype.concat(...files);
+}
+
+// This endpoint is used to return a list of paths inside the configuration
+// folder
+app.get('/server/paths', verify, async(req, res) => {
+  console.log('Received GET request for %s', req.url);
+  const configPath = path.join(__dirname, '../../', 'config');
+  try{
+    const files = getFiles(configPath)
+      .then(function(files) {
+          var processedPaths = []
+          for (var i = 0; i < files.length; i++) {
+            var newPath = files[i].replace(configPath, '');
+            processedPaths.push(newPath);
+          }
+          return processedPaths;
+        }
+      )
+      .catch(e => console.error(e));
+    return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(await files));
+  } catch (err) {
+    // Inform the user about the error.
+    return res.status(err.code).send(utils.errorJson(err.message));
+  }
+})
 
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.

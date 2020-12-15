@@ -2,11 +2,8 @@ import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
   UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
-  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, ADD_TELEGRAM_CHANNEL,
-  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
-  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
-  UPDATE_THRESHOLD_ALERT, UPDATE_REPEAT_ALERT,
+  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, UPDATE_THRESHOLD_ALERT,
+  UPDATE_REPEAT_ALERT,
 } from '../actions/types';
 import { GLOBAL } from 'constants/constants';
 
@@ -19,6 +16,8 @@ const generalThresholdAlerts = {
                  + '.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
@@ -36,6 +35,8 @@ const generalThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
@@ -53,6 +54,8 @@ const generalThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
@@ -70,6 +73,8 @@ const generalThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
+      type: 'threshold',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
@@ -93,6 +98,8 @@ const generalRepeatAlerts = {
       description: 'The Node Exporter URL is un-reachable therefore the '
                  + 'system is taken to be down.',
       adornment: 'Seconds',
+      type: 'repeat',
+      parent_id: 'GLOBAL',
       warning: {
         repeat: 0,
         enabled: true,
@@ -122,11 +129,6 @@ const generalState = {
       repositories: [],
       systems: [],
       periodic: periodicState,
-      telegrams: [],
-      twilios: [],
-      emails: [],
-      pagerduties: [],
-      opsgenies: [],
       thresholdAlerts: generalThresholdAlerts,
       repeatAlerts: generalRepeatAlerts,
     },
@@ -209,176 +211,6 @@ function GeneralReducer(state = generalState, action) {
           GLOBAL: {
             ...state.byId[GLOBAL],
             systems: state.byId[GLOBAL].systems.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            telegrams: state.byId[GLOBAL].telegrams.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            telegrams: state.byId[GLOBAL].telegrams.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            twilios: state.byId[GLOBAL].twilios.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            twilios: state.byId[GLOBAL].twilios.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            emails: state.byId[GLOBAL].emails.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            emails: state.byId[GLOBAL].emails.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            pagerduties: state.byId[GLOBAL].pagerduties.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            pagerduties: state.byId[GLOBAL].pagerduties.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            opsgenies: state.byId[GLOBAL].opsgenies.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            opsgenies: state.byId[GLOBAL].opsgenies.filter(
               (config) => config !== action.payload.id,
             ),
           },

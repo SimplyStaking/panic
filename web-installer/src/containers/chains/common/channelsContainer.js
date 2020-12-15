@@ -13,118 +13,24 @@ import GeneralData from 'data/general';
 
 // ------------------------- Common Functions ---------------------------
 
-function createPayloadTelegram(channelData, currentConfig, addTelegramDetails,
-  removeTelegramDetails){
+function createPayload(channelData, currentConfig, addDetails, removeDetails){
 
-  const payload = channelData;
+  let payload = JSON.parse(JSON.stringify(channelData));
   payload.parent_id = currentConfig.id;
-
-  if (currentConfig.telegrams.includes(channelData.id)) {
-    var index =  payload.parent_ids.indexOf(currentConfig.id);
+  if (channelData.parent_ids.includes(currentConfig.id)) {
+    var index = payload.parent_ids.indexOf(currentConfig.id);
     if (index > -1) {
       payload.parent_ids.splice(index, 1);
     }
-    index =  payload.parent_names.indexOf(currentConfig.id);
+    index =  payload.parent_names.indexOf(currentConfig.chain_name);
     if (index > -1) {
-      payload.parent_ids.splice(index, 1);
+      payload.parent_names.splice(index, 1);
     }
-    removeTelegramDetails(payload);
+    removeDetails(payload);
   } else {
     payload.parent_ids.push(currentConfig.id);
     payload.parent_names.push(currentConfig.chain_name);
-    addTelegramDetails(payload);
-  }
-}
-
-function createPayloadTwilio(channelData, currentConfig, addTwilioDetails,
-  removeTwilioDetails){
-
-  const payload = channelData;
-  payload.parent_id = currentConfig.id;
-
-  if (currentConfig.twilios.includes(channelData.id)) {
-    var index =  payload.parent_ids.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    index =  payload.parent_names.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    removeTwilioDetails(payload);
-  } else {
-    payload.parent_ids.push(currentConfig.id);
-    payload.parent_names.push(currentConfig.chain_name);
-    addTwilioDetails(payload);
-  }
-}
-
-function createPayloadEmail(channelData, currentConfig, addEmailDetails,
-  removeEmailDetails){
-
-  const payload = channelData;
-  payload.parent_id = currentConfig.id;
-
-  if (currentConfig.emails.includes(channelData.id)) {
-    var index =  payload.parent_ids.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    index =  payload.parent_names.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    removeEmailDetails(payload);
-  } else {
-    payload.parent_ids.push(currentConfig.id);
-    payload.parent_names.push(currentConfig.chain_name);
-    addEmailDetails(payload);
-  }
-}
-
-function createPayloadPagerDuty(channelData, currentConfig, addPagerDutyDetails,
-  removePagerDutyDetails){
-
-  const payload = channelData;
-  payload.parent_id = currentConfig.id;
-
-  if (currentConfig.pagerduties.includes(channelData.id)) {
-    var index =  payload.parent_ids.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    index =  payload.parent_names.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    removePagerDutyDetails(payload);
-  } else {
-    payload.parent_ids.push(currentConfig.id);
-    payload.parent_names.push(currentConfig.chain_name);
-    addPagerDutyDetails(payload);
-  }
-}
-
-function createPayloadOpsGenie(channelData, currentConfig, addOpsGenieDetails,
-  removeOpsGenieDetails){
-
-  const payload = channelData;
-  payload.parent_id = currentConfig.id;
-
-  if (currentConfig.opsgenies.includes(channelData.id)) {
-    var index =  payload.parent_ids.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    index =  payload.parent_names.indexOf(currentConfig.id);
-    if (index > -1) {
-      payload.parent_ids.splice(index, 1);
-    }
-    removeOpsGenieDetails(payload);
-  } else {
-    payload.parent_ids.push(currentConfig.id);
-    payload.parent_names.push(currentConfig.chain_name);
-    addOpsGenieDetails(payload);
+    addDetails(payload);
   }
 }
 
@@ -154,11 +60,7 @@ function mapDispatchToProps(dispatch) {
       (details) => dispatch(addOpsGenieChannel(details)),
     removeOpsGenieDetails:
       (details) => dispatch(removeOpsGenieChannel(details)),
-    createPayloadTelegram: createPayloadTelegram,
-    createPayloadTwilio: createPayloadTwilio,
-    createPayloadEmail: createPayloadEmail,
-    createPayloadPagerDuty: createPayloadPagerDuty,
-    createPayloadOpsGenie: createPayloadOpsGenie,
+    createPayload: createPayload,
   };
 }
 

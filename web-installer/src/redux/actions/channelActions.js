@@ -1,6 +1,7 @@
 import {
   ADD_TELEGRAM, REMOVE_TELEGRAM, ADD_TWILIO, REMOVE_TWILIO, ADD_EMAIL,
   REMOVE_EMAIL, ADD_PAGERDUTY, REMOVE_PAGERDUTY, ADD_OPSGENIE, REMOVE_OPSGENIE,
+  LOAD_TELEGRAM, LOAD_TWILIO, LOAD_EMAIL, LOAD_PAGERDUTY, LOAD_OPSGENIE
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -25,6 +26,13 @@ export function addTelegram(payload) {
   };
 }
 
+export function loadTelegram(payload) {
+  return {
+    type: LOAD_TELEGRAM,
+    payload,
+  };
+}
+
 export function removeTelegram(payload) {
   return {
     type: REMOVE_TELEGRAM,
@@ -45,6 +53,13 @@ export function addTwilio(payload) {
       parent_ids: [],
       parent_names: [],
     },
+  };
+}
+
+export function loadTwilio(payload) {
+  return {
+    type: LOAD_TWILIO,
+    payload,
   };
 }
 
@@ -76,6 +91,13 @@ export function addEmail(payload) {
   };
 }
 
+export function loadEmail(payload) {
+  return {
+    type: LOAD_EMAIL,
+    payload,
+  };
+}
+
 export function removeEmail(payload) {
   return {
     type: REMOVE_EMAIL,
@@ -101,6 +123,13 @@ export function addPagerDuty(payload) {
   };
 }
 
+export function loadPagerduty(payload) {
+  return {
+    type: LOAD_PAGERDUTY,
+    payload,
+  };
+}
+
 export function removePagerDuty(payload) {
   return {
     type: REMOVE_PAGERDUTY,
@@ -123,6 +152,13 @@ export function addOpsGenie(payload) {
       parent_ids: [],
       parent_names: [],
     },
+  };
+}
+
+export function loadOpsgenie(payload) {
+  return {
+    type: LOAD_OPSGENIE,
+    payload,
   };
 }
 

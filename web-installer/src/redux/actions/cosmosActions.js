@@ -1,13 +1,13 @@
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS, LOAD_CONFIG_COSMOS,
-  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS,
+  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS, LOAD_CHAIN_COSMOS,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
 // a new identifer, from then on you re-used the old one.
-// When creating a new chain, we must add empty lists as we need to intialize
+// When creating a new chain, we must add empty lists as we need to initialize
 // the key/value pairs beforehand.
 export function addChainCosmos(payload) {
   return {
@@ -16,6 +16,13 @@ export function addChainCosmos(payload) {
       id: `chain_name_${uuidv4()}`,
       chain_name: payload.chain_name,
     },
+  };
+}
+
+export function loadChainCosmos(payload) {
+  return {
+    type: LOAD_CHAIN_COSMOS,
+    payload,
   };
 }
 
