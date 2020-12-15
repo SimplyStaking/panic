@@ -12,6 +12,7 @@ from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
+from src.channels_manager.manager import ChannelsManager
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
@@ -173,6 +174,29 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
             time.sleep(10)  # sleep 10 seconds before trying again
 
     return data_transformers_manager
+
+
+def _initialize_channels_manager() -> ChannelsManager:
+    manager_name = 'Channels Manager'
+
+    channels_manager_logger = _initialize_logger(
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialize the data transformers manager
+    while True:
+        try:
+            channels_manager = ChannelsManager(channels_manager_logger,
+                                               manager_name)
+            break
+        except Exception as e:
+            log_and_print(_get_initialisation_error_message(manager_name, e),
+                          channels_manager_logger)
+            log_and_print(_get_reattempting_message(manager_name),
+                          channels_manager_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return channels_manager
 
 
 def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
@@ -360,6 +384,26 @@ def run_config_manager() -> None:
                           config_manager_logger)
 
 
+def run_channels_manager() -> None:
+    channels_manager = _initialize_channels_manager()
+
+    while True:
+        try:
+            channels_manager.manage()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(_get_stopped_message(channels_manager),
+                          channels_manager.logger)
+        except Exception as e:
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            channels_manager.rabbitmq.disconnect_till_successful()
+            log_and_print(_get_stopped_message(channels_manager),
+                          channels_manager.logger)
+
+
 # If termination signals are received, terminate all child process and exit
 def on_terminate(signum: int, stack: FrameType) -> None:
     def terminate_and_join_process(process: multiprocessing.Process, name: str):
@@ -392,6 +436,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(data_store_process, "Data Store Process")
 
     terminate_and_join_process(alert_router_process, "Alert Router")
+
+    terminate_and_join_process(channels_manager_process, 'Channels Manager')
 
     log_and_print("PANIC process terminated.", dummy_logger)
 
@@ -433,6 +479,11 @@ if __name__ == '__main__':
                                                    args=())
     alert_router_process.start()
 
+    # Start the channels manager in a separate process
+    channels_manager_process = multiprocessing.Process(
+        target=run_channels_manager, args=())
+    channels_manager_process.start()
+
     # Config manager must be the last to start since it immediately begins by
     # sending the configs. That being said, all previous processes need to wait
     # for the config manager too.
@@ -454,6 +505,8 @@ if __name__ == '__main__':
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
+    channels_manager_process.join()
+    config_manager_runner_process.join()
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()

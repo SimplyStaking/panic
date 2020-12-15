@@ -11,22 +11,18 @@ from typing import Dict, List
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.alerter.alerter_starters import start_system_alerter
-from src.alerter.managers.manager import AlertersManager
 from src.channels_manager.handlers.starters import \
     start_telegram_alerts_handler, start_telegram_commands_handler, \
     start_twilio_alerts_handler, start_console_alerts_handler, \
     start_log_alerts_handler
-from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
-from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import str_to_bool, ChannelTypes
+from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
 
 
 class ChannelsManager:
@@ -119,7 +115,7 @@ class ChannelsManager:
         self.logger.info("Sent heartbeat to '{}' exchange".format(
             HEALTH_CHECK_EXCHANGE))
 
-    def _create_and_start_telegram_alerts_handler_process(
+    def _create_and_start_telegram_alerts_handler(
             self, bot_token: str, bot_chat_id: str, channel_id: str,
             channel_name: str) -> None:
         process = multiprocessing.Process(target=start_telegram_alerts_handler,
@@ -133,8 +129,9 @@ class ChannelsManager:
         if channel_id not in self._channel_process_dict:
             self._channel_process_dict[channel_id] = {}
 
-        self._channel_process_dict[channel_id]['alerts'] = {}
-        process_details = self._channel_process_dict[channel_id]['alerts']
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
             "Telegram Alerts Handler ({})".format(channel_name)
         process_details['process'] = process
@@ -144,7 +141,7 @@ class ChannelsManager:
         process_details['channel_name'] = channel_name
         process_details['channel_type'] = ChannelTypes.TELEGRAM.value
 
-    def _create_and_start_telegram_cmds_handler_process(
+    def _create_and_start_telegram_cmds_handler(
             self, bot_token: str, bot_chat_id: str, channel_id: str,
             channel_name: str, associated_chains: Dict) -> None:
         process = multiprocessing.Process(
@@ -159,8 +156,10 @@ class ChannelsManager:
         if channel_id not in self._channel_process_dict:
             self._channel_process_dict[channel_id] = {}
 
-        self._channel_process_dict[channel_id]['commands'] = {}
-        process_details = self._channel_process_dict[channel_id]['commands']
+        commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+        self._channel_process_dict[channel_id][commands_handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][
+            commands_handler_type]
         process_details['component_name'] = \
             "Telegram Commands Handler ({})".format(channel_name)
         process_details['process'] = process
@@ -171,7 +170,7 @@ class ChannelsManager:
         process_details['associated_chains'] = associated_chains
         process_details['channel_type'] = ChannelTypes.TELEGRAM.value
 
-    def _create_and_start_twilio_alerts_handler_process(
+    def _create_and_start_twilio_alerts_handler(
             self, account_sid: str, auth_token: str, channel_id: str,
             channel_name: str, call_from: str, call_to: List[str], twiml: str,
             twiml_is_url: bool) -> None:
@@ -187,8 +186,9 @@ class ChannelsManager:
         if channel_id not in self._channel_process_dict:
             self._channel_process_dict[channel_id] = {}
 
-        self._channel_process_dict[channel_id]['alerts'] = {}
-        process_details = self._channel_process_dict[channel_id]['alerts']
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
             "Twilio Alerts Handler ({})".format(channel_name)
         process_details['process'] = process
@@ -202,7 +202,7 @@ class ChannelsManager:
         process_details['twiml_is_url'] = twiml_is_url
         process_details['channel_type'] = ChannelTypes.TWILIO.value
 
-    def _create_and_start_console_alerts_handler_process(
+    def _create_and_start_console_alerts_handler(
             self, channel_id: str, channel_name: str) -> None:
         process = multiprocessing.Process(target=start_console_alerts_handler,
                                           args=(channel_id, channel_name))
@@ -214,8 +214,9 @@ class ChannelsManager:
         if channel_id not in self._channel_process_dict:
             self._channel_process_dict[channel_id] = {}
 
-        self._channel_process_dict[channel_id]['alerts'] = {}
-        process_details = self._channel_process_dict[channel_id]['alerts']
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
             "Console Alerts Handler ({})".format(channel_name)
         process_details['process'] = process
@@ -223,8 +224,8 @@ class ChannelsManager:
         process_details['channel_name'] = channel_name
         process_details['channel_type'] = ChannelTypes.CONSOLE.value
 
-    def _create_and_start_log_alerts_handler_process(self, channel_id: str,
-                                                     channel_name: str) -> None:
+    def _create_and_start_log_alerts_handler(self, channel_id: str,
+                                             channel_name: str) -> None:
         process = multiprocessing.Process(target=start_log_alerts_handler,
                                           args=(channel_id, channel_name))
         process.daemon = True
@@ -235,14 +236,30 @@ class ChannelsManager:
         if channel_id not in self._channel_process_dict:
             self._channel_process_dict[channel_id] = {}
 
-        self._channel_process_dict[channel_id]['alerts'] = {}
-        process_details = self._channel_process_dict[channel_id]['alerts']
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
             "Log Alerts Handler ({})".format(channel_name)
         process_details['process'] = process
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
         process_details['channel_type'] = ChannelTypes.LOG.value
+
+    def _start_persistent_channels(self) -> None:
+        # Start the console channel in a separate process if it is not yet
+        # started or it is not alive. This must be done in case of a restart of
+        # the manager.
+        if 'CONSOLE' not in self._channel_process_dict or \
+                not self.channel_process_dict['CONSOLE'].is_alive():
+            self._create_and_start_console_alerts_handler('CONSOLE', 'CONSOLE')
+
+        # Start the LOG channel in a separate process if it is not yet started
+        # or it is not alive. This must be done in case of a restart of the
+        # manager.
+        if 'LOG' not in self._channel_process_dict or \
+                not self.channel_process_dict['LOG'].is_alive():
+            self._create_and_start_log_alerts_handler('LOG', 'LOG')
 
     def _process_telegram_configs(self, sent_configs: Dict) -> Dict:
         if ChannelTypes.TELEGRAM.value in self.channel_configs:
@@ -272,14 +289,14 @@ class ChannelsManager:
                 # If Telegram Alerts are enabled on this channel, start an
                 # alerts handler for this channel
                 if alerts:
-                    self._create_and_start_telegram_alerts_handler_process(
+                    self._create_and_start_telegram_alerts_handler(
                         bot_token, chat_id, channel_id, channel_name)
                     correct_configs[config_id] = config
 
                 # If Telegram Commands are enabled on this channel, start a
                 # commands handler for this channel
                 if commands:
-                    self._create_and_start_telegram_cmds_handler_process(
+                    self._create_and_start_telegram_cmds_handler(
                         bot_token, chat_id, channel_id, channel_name,
                         associated_chains)
                     correct_configs[config_id] = config
@@ -299,38 +316,43 @@ class ChannelsManager:
                 chain_names = config['chain_names'].split(',')
                 associated_chains = dict(zip(parent_ids, chain_names))
 
-                if 'alerts' in self.channel_process_dict[channel_id]:
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
                     previous_alerts_process = self.channel_process_dict[
-                        channel_id]['alerts']['process']
+                        channel_id][alerts_handler_type]['process']
                     previous_alerts_process.terminate()
                     previous_alerts_process.join()
 
                     if not alerts:
-                        del self.channel_process_dict[channel_id]['alerts']
+                        del self.channel_process_dict[channel_id][
+                            alerts_handler_type]
                         log_and_print("Killed the alerts handler of {} "
                                       .format(channel_name), self.logger)
                     else:
                         log_and_print(
                             "Restarting the alerts handler of {} with latest "
                             "configuration".format(channel_name), self.logger)
-                        self._create_and_start_telegram_alerts_handler_process(
+                        self._create_and_start_telegram_alerts_handler(
                             bot_token, chat_id, channel_id, channel_name)
 
-                if 'commands' in self.channel_process_dict[channel_id]:
+                commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                if commands_handler_type in \
+                        self.channel_process_dict[channel_id]:
                     previous_commands_process = self.channel_process_dict[
-                        channel_id]['commands']['process']
+                        channel_id][commands_handler_type]['process']
                     previous_commands_process.terminate()
                     previous_commands_process.join()
 
                     if not commands:
-                        del self.channel_process_dict[channel_id]['commands']
+                        del self.channel_process_dict[channel_id][
+                            commands_handler_type]
                         log_and_print("Killed the commands handler of {} "
                                       .format(channel_name), self.logger)
                     else:
                         log_and_print(
                             "Restarting the commands handler of {} with latest "
                             "configuration".format(channel_name), self.logger)
-                        self._create_and_start_telegram_cmds_handler_process(
+                        self._create_and_start_telegram_cmds_handler(
                             bot_token, chat_id, channel_id, channel_name,
                             associated_chains)
 
@@ -349,17 +371,20 @@ class ChannelsManager:
                 channel_id = config['id']
                 channel_name = config['channel_name']
 
-                if 'alerts' in self.channel_process_dict[channel_id]:
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
                     previous_alerts_process = self.channel_process_dict[
-                        channel_id]['alerts']['process']
+                        channel_id][alerts_handler_type]['process']
                     previous_alerts_process.terminate()
                     previous_alerts_process.join()
                     log_and_print("Killed the alerts handler of {} ".format(
                         channel_name), self.logger)
 
-                if 'commands' in self.channel_process_dict[channel_id]:
+                commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                if commands_handler_type in \
+                        self.channel_process_dict[channel_id]:
                     previous_commands_process = self.channel_process_dict[
-                        channel_id]['commands']['process']
+                        channel_id][commands_handler_type]['process']
                     previous_commands_process.terminate()
                     previous_commands_process.join()
                     log_and_print("Killed the commands handler of {} ".format(
@@ -396,12 +421,12 @@ class ChannelsManager:
                 account_sid = config['account_sid']
                 auth_token = config['auth_token']
                 twilio_phone_number = config['twilio_phone_no']
-                numbers_to_dial = config['twilio_phone_numbers_to_dial_valid']\
+                numbers_to_dial = config['twilio_phone_numbers_to_dial_valid'] \
                     .split(',')
                 twiml = env.TWIML
                 twiml_is_url = env.TWIML_IS_URL
 
-                self._create_and_start_twilio_alerts_handler_process(
+                self._create_and_start_twilio_alerts_handler(
                     account_sid, auth_token, channel_id, channel_name,
                     twilio_phone_number, numbers_to_dial, twiml, twiml_is_url)
                 correct_configs[config_id] = config
@@ -421,16 +446,17 @@ class ChannelsManager:
                 twiml = env.TWIML
                 twiml_is_url = env.TWIML_IS_URL
 
-                if 'alerts' in self.channel_process_dict[channel_id]:
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
                     previous_alerts_process = self.channel_process_dict[
-                        channel_id]['alerts']['process']
+                        channel_id][alerts_handler_type]['process']
                     previous_alerts_process.terminate()
                     previous_alerts_process.join()
 
                 log_and_print("Restarting the alerts handler of {} with "
                               "latest configuration".format(channel_name),
                               self.logger)
-                self._create_and_start_twilio_alerts_handler_process(
+                self._create_and_start_twilio_alerts_handler(
                     account_sid, auth_token, channel_id, channel_name,
                     twilio_phone_number, numbers_to_dial, twiml,
                     twiml_is_url)
@@ -442,9 +468,10 @@ class ChannelsManager:
                 channel_id = config['id']
                 channel_name = config['channel_name']
 
-                if 'alerts' in self.channel_process_dict[channel_id]:
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
                     previous_alerts_process = self.channel_process_dict[
-                        channel_id]['alerts']['process']
+                        channel_id][alerts_handler_type]['process']
                     previous_alerts_process.terminate()
                     previous_alerts_process.join()
                     log_and_print("Killed the alerts handler of {} ".format(
@@ -507,16 +534,37 @@ class ChannelsManager:
                         # Restart dead process
                         channel_type = process_details['channel_type']
                         if channel_type == ChannelTypes.TELEGRAM.value:
-                            # TODO: Tomorrow continue from these. Start by
-                            #     : doing if handler == commands, or handler=alerts.
-                            #     : maybe do handler type enum
-                            pass
+                            if handler == ChannelHandlerTypes.ALERTS.value:
+                                self._create_and_start_telegram_alerts_handler(
+                                    process_details['bot_token'],
+                                    process_details['bot_chain_id'],
+                                    process_details['channel_id'],
+                                    process_details['channel_name'])
+                            elif handler == ChannelHandlerTypes.COMMANDS.value:
+                                self._create_and_start_telegram_cmds_handler(
+                                    process_details['bot_token'],
+                                    process_details['bot_chain_id'],
+                                    process_details['channel_id'],
+                                    process_details['channel_name'],
+                                    process_details['associated_chains'])
                         elif channel_type == ChannelTypes.TWILIO.value:
-                            pass
+                            self._create_and_start_twilio_alerts_handler(
+                                process_details['account_sid'],
+                                process_details['auth_token'],
+                                process_details['channel_id'],
+                                process_details['channel_name'],
+                                process_details['call_from'],
+                                process_details['call_to'],
+                                process_details['twiml'],
+                                process_details['twiml_is_url'])
                         elif channel_type == ChannelTypes.CONSOLE.value:
-                            pass
+                            self._create_and_start_console_alerts_handler(
+                                process_details['channel_id'],
+                                process_details['channel_name'])
                         elif channel_type == ChannelTypes.LOG.value:
-                            pass
+                            self._create_and_start_log_alerts_handler(
+                                process_details['channel_id'],
+                                process_details['channel_name'])
 
                         # TODO: Must add e-mail, pager and opsgenie here.
             heartbeat['timestamp'] = datetime.now().timestamp()
@@ -543,8 +591,7 @@ class ChannelsManager:
         self._initialize_rabbitmq()
         while True:
             try:
-                # TODO: Must start console and logs before listening for data,
-                #     : and this must happen if they are not alive etc.
+                self._start_persistent_channels()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
@@ -561,17 +608,18 @@ class ChannelsManager:
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
-            "any running system alerters will be stopped gracefully. "
+            "any running channel handlers will be stopped gracefully. "
             "Afterwards the {} process will exit.".format(self, self),
             self.logger)
         self.rabbitmq.disconnect_till_successful()
 
-        for _, process_details in self.parent_id_process_dict.items():
-            log_and_print("Terminating the alerter process of {}".format(
-                process_details['chain']), self.logger)
-            process = process_details['process']
-            process.terminate()
-            process.join()
+        for _, handlers in self.channel_process_dict.items():
+            for handler, process_details in handlers:
+                log_and_print("Terminating {}".format(
+                    process_details['component_name']), self.logger)
+                process = process_details['process']
+                process.terminate()
+                process.join()
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

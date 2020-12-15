@@ -50,6 +50,11 @@ class ChannelTypes(Enum):
     LOG = 'log'
 
 
+class ChannelHandlerTypes(Enum):
+    ALERTS = 'alerts'
+    COMMANDS = 'commands'
+
+
 def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
                                  default_return: Any) -> Any:
     # This function converts a value to float if it is not None, otherwise it
