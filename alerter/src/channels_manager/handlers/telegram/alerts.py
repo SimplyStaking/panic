@@ -170,7 +170,8 @@ class TelegramAlertsHandler(ChannelHandler):
         while not self.alerts_queue.empty():
             alert = self.alerts_queue.queue[0]
 
-            # Discard alert if 10 minutes passed since it was last raised
+            # Discard alert if alert_validity_threshold seconds passed since it
+            # was last raised
             if (datetime.now().timestamp() - alert.timestamp) \
                     > self._alert_validity_threshold:
                 self.alerts_queue.get()

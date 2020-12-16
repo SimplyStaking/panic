@@ -121,16 +121,17 @@ class EmailAlertsHandler(ChannelHandler):
                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
-        # fails, try re-sending three times in a space of 1 minute. If this
-        # still fails, stop sending alerts until the next alert is received. If
-        # 10 minutes pass since the alert was first raised, the alert is
-        # discarded. Important, remove an item from the queue only if the
-        # sending was successful, so that if an exception is raised, that
-        # message is not popped
+        # fails, try re-sending max_attempts times in a space of 1 minute. If
+        # this still fails, stop sending alerts until the next alert is
+        # received. If alert_validity_threshold seconds pass since the alert was
+        # first raised, the alert is discarded. Important, remove an item from
+        # the queue only if the sending was successful, so that if an exception
+        # is raised, that message is not popped
         while not self.alerts_queue.empty():
             alert = self.alerts_queue.queue[0]
 
-            # Discard alert if 10 minutes passed since it was last raised
+            # Discard alert if alert_validity_threshold seconds passed since it
+            # was last raised
             if (datetime.now().timestamp() - alert.timestamp) \
                     > self._alert_validity_threshold:
                 self.alerts_queue.get()
@@ -188,6 +189,13 @@ class EmailAlertsHandler(ChannelHandler):
         self.logger.info("Declaring consuming intentions")
         self.rabbitmq.basic_consume(self._email_alerts_handler_queue,
                                     self._process_alert, False, False, None)
+
+        # Set producing configuration for heartbeat publishing
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()

@@ -67,8 +67,5 @@ class OpsgenieApi:
         return self._alert_api.get_request_status(request_id=request_id)
 
 # TODO: Request might not have been processed immediately, therefore get status
-#     : may fail. Hence appropriate error handling must be doen around
-#     : get_status
-
-# TODO: Must catch the initialziations exceptions of all the APIs, and the
-#     : sending of alerts, dial numbers etc
+#     : may fail. Hence appropriate error handling must be done around
+#     : get_request_status

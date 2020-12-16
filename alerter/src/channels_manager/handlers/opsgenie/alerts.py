@@ -13,29 +13,42 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.handlers import ChannelHandler
-from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE
+from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
-from src.utils.exceptions import ConnectionNotInitializedException
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class OpsgenieAlertHandler(ChannelHandler):
+class OpsgenieAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
                  rabbit_ip: str, queue_size: int,
                  opsgenie_channel: OpsgenieChannel, max_attempts: int = 6,
                  alert_validity_threshold: int = 600):
-        self._alerts_queue = Queue(queue_size)
-        self._rabbit = RabbitMQApi(logger=logger.getChild(RabbitMQApi.__name__),
-                                   host=rabbit_ip)
+        super().__init__(handler_name, logger, rabbit_ip)
+
         self._opsgenie_channel = opsgenie_channel
+        self._alerts_queue = Queue(queue_size)
         self._max_attempts = max_attempts
         self._alert_validity_threshold = alert_validity_threshold
-        self._opsgenie_channel_queue_name = \
+        self._opsgenie_alerts_handler_queue = \
             "opsgenie_{}_alerts_handler_queue".format(
                 self._opsgenie_channel.channel_id)
 
-        super().__init__(handler_name, logger)
+    @property
+    def opsgenie_channel(self) -> OpsgenieChannel:
+        return self._opsgenie_channel
+
+    @property
+    def alerts_queue(self) -> Queue:
+        return self._alerts_queue
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '{}' exchange".format(
+            HEALTH_CHECK_EXCHANGE))
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
@@ -43,7 +56,9 @@ class OpsgenieAlertHandler(ChannelHandler):
                        body: bytes) -> None:
         alert_json = json.loads(body)
         self.logger.info("Received and processing alert: %s", alert_json)
+
         processing_error = False
+        alert = None
         try:
             # We check that everything is in the alert dict
             alert_code = alert_json['alert_code']
@@ -58,19 +73,36 @@ class OpsgenieAlertHandler(ChannelHandler):
             processing_error = True
 
         # If the data is processed, it can be acknowledged.
-        self._rabbit.basic_ack(method.delivery_tag, False)
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Place the data on the alerts queue if there were no processing errors.
         # This is done after acknowledging the data, so that if acknowledgement
         # fails, the data is processed again and we do not have duplication of
         # data in the queue
         if not processing_error:
-            self._place_data_on_queue(alert)
+            self._place_alert_on_queue(alert)
 
         # Send any data waiting in the queue, if any
-        self._send_data()
+        try:
+            self._send_data()
+        except Exception as e:
+            raise e
 
-    def _place_data_on_queue(self, alert: Alert) -> None:
+        if self.alerts_queue.empty() and not processing_error:
+            try:
+                heartbeat = {
+                    'component_name': self.handler_name,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
+            except MessageWasNotDeliveredException as e:
+                # Log the message and do not raise it as heartbeats must be
+                # real-time.
+                self.logger.exception(e)
+            except Exception as e:
+                raise e
+
+    def _place_alert_on_queue(self, alert: Alert) -> None:
         self.logger.debug("Adding %s to the alerts queue ...",
                           alert.alert_code.name)
 
@@ -91,16 +123,17 @@ class OpsgenieAlertHandler(ChannelHandler):
                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
-        # fails, try re-sending three times in a space of 1 minute. If this
-        # still fails, stop sending alerts until the next alert is received. If
-        # 10 minutes pass since the alert was first raised, the alert is
-        # discarded. Important, remove an item from the queue only if the
-        # sending was successful, so that if an exception is raised, that
-        # message is not popped
+        # fails, try re-sending max_attempts times in a space of 1 minute. If
+        # this still fails, stop sending alerts until the next alert is
+        # received. If alert_validity_threshold seconds pass since the alert was
+        # first raised, the alert is discarded. Important, remove an item from
+        # the queue only if the sending was successful, so that if an exception
+        # is raised, that message is not popped
         while not self._alerts_queue.empty():
             alert = self._alerts_queue.queue[0]
 
-            # Discard alert if 10 minutes passed since it was last raised
+            # Discard alert if alert_validity_threshold seconds passed since it
+            # was last raised
             if (datetime.now().timestamp() - alert.timestamp) \
                     > self._alert_validity_threshold:
                 self._alerts_queue.get()
@@ -110,11 +143,11 @@ class OpsgenieAlertHandler(ChannelHandler):
             attempts = 0
             status = self._opsgenie_channel.alert(alert)
             while status != RequestStatus.SUCCESS \
-                    and attempts <= self._max_attempts:
+                    and attempts < self._max_attempts:
                 self.logger.info(
                     "Will re-trying sending in 10 seconds. "
                     "Attempts left: %s", self._max_attempts - attempts)
-                self._rabbit.connection.sleep(10)
+                self.rabbitmq.connection.sleep(10)
                 status = self._opsgenie_channel.alert(alert)
                 attempts += 1
 
@@ -133,37 +166,41 @@ class OpsgenieAlertHandler(ChannelHandler):
         opsgenie_routing_key = "channel.{}".format(
             self._opsgenie_channel.channel_id)
 
-        self._rabbit.connect_till_successful()
+        self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
         self.logger.info("Creating %s exchange", ALERT_EXCHANGE)
-        self._rabbit.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
-                                      False, False)
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+                                       False, False)
         self.logger.info(
-            "Creating queue '%s'", self._opsgenie_channel_queue_name)
-        self._rabbit.queue_declare(self._opsgenie_channel_queue_name, False,
-                                   True, False, False)
+            "Creating queue '%s'", self._opsgenie_alerts_handler_queue)
+        self.rabbitmq.queue_declare(self._opsgenie_alerts_handler_queue, False,
+                                    True, False, False)
 
         self.logger.info(
             "Binding queue '%s' to exchange '%s' with routing key 'channel.%s'",
-            self._opsgenie_channel_queue_name, ALERT_EXCHANGE,
+            self._opsgenie_alerts_handler_queue, ALERT_EXCHANGE,
             opsgenie_routing_key
         )
-        self._rabbit.queue_bind(self._opsgenie_channel_queue_name,
-                                ALERT_EXCHANGE, opsgenie_routing_key)
+        self.rabbitmq.queue_bind(self._opsgenie_alerts_handler_queue,
+                                 ALERT_EXCHANGE, opsgenie_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
-        self._rabbit.basic_qos(prefetch_count=prefetch_count)
+        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info("Declaring consuming intentions")
-        self._rabbit.basic_consume(self._opsgenie_channel_queue_name,
-                                   self._process_alert, False, False, None)
+        self.rabbitmq.basic_consume(self._opsgenie_alerts_handler_queue,
+                                    self._process_alert, False, False, None)
+
+        # Set producing configuration for heartbeat publishing
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
+        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     def _listen_for_data(self) -> None:
-        self._rabbit.start_consuming()
-
-    def disconnect(self):
-        self._rabbit.disconnect_till_successful()
+        self.rabbitmq.start_consuming()
 
     def start(self) -> None:
         self._initialise_rabbitmq()
@@ -184,44 +221,8 @@ class OpsgenieAlertHandler(ChannelHandler):
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and the '{}' queue will be deleted. Afterwards, "
-                      "the process will exit."
-                      .format(self, self._opsgenie_channel_queue_name),
-                      self.logger)
-
-        # Try to delete the queue before exiting to avoid cases when the alert
-        # router is still sending data to this queue. This is done until
-        # successful
-        while True:
-            try:
-                self._rabbit.perform_operation_till_successful(
-                    self._rabbit.queue_delete,
-                    [self._opsgenie_channel_queue_name, False, False], -1)
-                break
-            except ConnectionNotInitializedException:
-                self._logger.info(
-                    "Connection was not yet initialized, therefore no need to "
-                    "delete the '%s' queue.",
-                    self._opsgenie_channel_queue_name)
-                break
-            except pika.exceptions.AMQPChannelError as e:
-                self._logger.exception(e)
-                self._logger.info("Will re-try deleting the '%s' queue.",
-                                  self._opsgenie_channel_queue_name)
-            except pika.exceptions.AMQPConnectionError as e:
-                self._logger.exception(e)
-                self._logger.info(
-                    "Will re-connect again and re-try deleting the '%s' queue.",
-                    self._opsgenie_channel_queue_name)
-                self._rabbit.connect_till_successful()
-            except Exception as e:
-                self._logger.exception(e)
-                self._logger.info(
-                    "Unexpected exception while trying to delete the '%s' "
-                    "queue. Will not continue re-trying deleting the queue.",
-                    self._opsgenie_channel_queue_name)
-                break
-
-        self._rabbit.disconnect_till_successful()
+                      "closed, and afterwards the process will "
+                      "exit.".format(self), self.logger)
+        self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

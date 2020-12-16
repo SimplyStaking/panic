@@ -135,7 +135,7 @@ class TwilioAlertsHandler(ChannelHandler):
         self.rabbitmq.start_consuming()
 
     def _call_using_twilio(self, alert: Alert) -> RequestStatus:
-        # Do not call if alert_validity_treshold seconds passed since the alert
+        # Do not call if alert_validity_threshold seconds passed since the alert
         # was last raised, as alert is considered to be old
         time_elapsed_since_alert_was_raised = \
             datetime.now().timestamp() - alert.timestamp

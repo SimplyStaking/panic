@@ -29,10 +29,10 @@ class OpsgenieChannel(Channel):
                 alias=alert.alert_code.value
             )
             self.logger.info("Sent %s to OpsGenie channel %s",
-                             alert.alert_code.name, self)
+                             alert.alert_code.name, self.__str__())
             return RequestStatus.SUCCESS
         except Exception as e:
             self.logger.error("Error when sending %s to OpsGenie channel %s",
-                              alert.alert_code.name, self)
+                              alert.alert_code.name, self.__str__())
             self.logger.exception(e)
             return RequestStatus.FAILED

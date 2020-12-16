@@ -4,18 +4,21 @@ from typing import List, Dict, Optional
 
 import pika.exceptions
 
+from src.channels_manager.apis.opsgenie_api import OpsgenieApi
 from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
 from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.channels.log import LogChannel
+from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.channels_manager.handlers.log.alerts import LogAlertsHandler
+from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
 from src.channels_manager.handlers.pager_duty.alerts import \
     PagerDutyAlertsHandler
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
@@ -260,6 +263,43 @@ def start_email_alerts_handler(
         smtp, email_from, emails_to, channel_id, channel_name, username,
         password)
     start_handler(email_alerts_handler)
+
+
+def _initialize_opsgenie_alerts_handler(api_key: str, eu_host: bool,
+                                        channel_id: str, channel_name: str) \
+        -> OpsgenieAlertsHandler:
+    # Handler name based on channel name
+    handler_name = "Opsgenie Alerts Handler ({})".format(channel_name)
+    handler_logger = _initialize_channel_handler_logger(handler_name)
+
+    # Try initializing handler until successful
+    while True:
+        try:
+            opsgenie_api = OpsgenieApi(api_key, eu_host)
+
+            opsgenie_channel = OpsgenieChannel(channel_name, channel_id,
+                                               handler_logger, opsgenie_api)
+
+            opsgenie_alerts_handler = OpsgenieAlertsHandler(
+                handler_name, handler_logger, env.RABBIT_IP,
+                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, opsgenie_channel)
+            log_and_print("Successfully initialized {}".format(handler_name),
+                          handler_logger)
+            break
+        except Exception as e:
+            msg = "!!! Error when initialising {}: {} !!!".format(
+                handler_name, e)
+            log_and_print(msg, handler_logger)
+            time.sleep(10)  # sleep 10 seconds before trying again
+
+    return opsgenie_alerts_handler
+
+
+def start_opsgenie_alerts_handler(api_key: str, eu_host: bool, channel_id: str,
+                                  channel_name: str) -> None:
+    opsgenie_alerts_handler = _initialize_opsgenie_alerts_handler(
+        api_key, eu_host, channel_id, channel_name)
+    start_handler(opsgenie_alerts_handler)
 
 
 def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \

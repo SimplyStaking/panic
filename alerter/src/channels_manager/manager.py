@@ -15,7 +15,7 @@ from src.channels_manager.handlers.starters import \
     start_telegram_alerts_handler, start_telegram_commands_handler, \
     start_twilio_alerts_handler, start_console_alerts_handler, \
     start_log_alerts_handler, start_email_alerts_handler, \
-    start_pagerduty_alerts_handler
+    start_pagerduty_alerts_handler, start_opsgenie_alerts_handler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
@@ -124,7 +124,7 @@ class ChannelsManager:
                                                 channel_id, channel_name))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
-                      "telegram channel {}".format(channel_name), self.logger)
+                      "Telegram channel {}".format(channel_name), self.logger)
         process.start()
 
         if channel_id not in self._channel_process_dict:
@@ -151,7 +151,7 @@ class ChannelsManager:
                   associated_chains))
         process.daemon = True
         log_and_print("Creating a new process for the commands handler of "
-                      "telegram channel {}".format(channel_name), self.logger)
+                      "Telegram channel {}".format(channel_name), self.logger)
         process.start()
 
         if channel_id not in self._channel_process_dict:
@@ -181,7 +181,7 @@ class ChannelsManager:
                   call_to, twiml, twiml_is_url))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
-                      "twilio channel {}".format(channel_name), self.logger)
+                      "Twilio channel {}".format(channel_name), self.logger)
         process.start()
 
         if channel_id not in self._channel_process_dict:
@@ -242,7 +242,7 @@ class ChannelsManager:
             args=(integration_key, channel_id, channel_name))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
-                      "pager duty channel {}".format(channel_name), self.logger)
+                      "PagerDuty channel {}".format(channel_name), self.logger)
         process.start()
 
         if channel_id not in self._channel_process_dict:
@@ -259,11 +259,31 @@ class ChannelsManager:
         process_details['channel_name'] = channel_name
         process_details['channel_type'] = ChannelTypes.PAGERDUTY.value
 
-    # TODO: Continue from below here both e-mail and pagerduty integration
-    #     : Then tomorrow we must start the opsgenie one and compare the code
-    #     : of the alerts handler with Email. There is some issue with the
-    #     : code such as, remove the configs, arrange channels, do heartbeat
-    #     : add exception around send, < alert_threshold_validity etc.
+    def _create_and_start_opsgenie_alerts_handler(
+            self, api_key: str, eu_host: bool, channel_id: str,
+            channel_name: str) -> None:
+        process = multiprocessing.Process(
+            target=start_opsgenie_alerts_handler,
+            args=(api_key, eu_host, channel_id, channel_name))
+        process.daemon = True
+        log_and_print("Creating a new process for the alerts handler of "
+                      "Opsgenie channel {}".format(channel_name), self.logger)
+        process.start()
+
+        if channel_id not in self._channel_process_dict:
+            self._channel_process_dict[channel_id] = {}
+
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
+        process_details['component_name'] = \
+            "Opsgenie Alerts Handler ({})".format(channel_name)
+        process_details['process'] = process
+        process_details['api_key'] = api_key
+        process_details['channel_id'] = channel_id
+        process_details['channel_name'] = channel_name
+        process_details['eu_host'] = eu_host
+        process_details['channel_type'] = ChannelTypes.OPSGENIE.value
 
     def _create_and_start_console_alerts_handler(
             self, channel_id: str, channel_name: str) -> None:
@@ -723,6 +743,80 @@ class ChannelsManager:
 
         return correct_configs
 
+    def _process_opsgenie_configs(self, sent_configs: Dict) -> Dict:
+        if ChannelTypes.OPSGENIE.value in self.channel_configs:
+            current_configs = self.channel_configs[ChannelTypes.OPSGENIE.value]
+        else:
+            current_configs = {}
+
+        # This contains all the correct latest channel configs. All current
+        # configs are correct configs, therefore start from the current and
+        # modify as we go along according to the updates. This is done just in
+        # case an error occurs.
+        correct_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                api_key = config['api_token']
+                eu_host = str_to_bool(config['eu'])
+
+                self._create_and_start_opsgenie_alerts_handler(
+                    api_key, eu_host, channel_id, channel_name)
+                correct_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                api_key = config['api_token']
+                eu_host = str_to_bool(config['eu'])
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+
+                log_and_print("Restarting the alerts handler of {} with "
+                              "latest configuration".format(channel_name),
+                              self.logger)
+                self._create_and_start_opsgenie_alerts_handler(
+                    api_key, eu_host, channel_id, channel_name)
+                correct_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+                    log_and_print("Killed the alerts handler of {} ".format(
+                        channel_name), self.logger)
+
+                del self.channel_process_dict[channel_id]
+                del correct_configs[config_id]
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.exception(e)
+
+        return correct_configs
+
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -748,9 +842,9 @@ class ChannelsManager:
             self._channel_configs[ChannelTypes.PAGERDUTY.value] = \
                 updated_configs
         elif method.routing_key == 'channels.opsgenie_config':
-            pass
-
-        # TODO: Must do for opsgenie
+            updated_configs = self._process_opsgenie_configs(sent_configs)
+            self._channel_configs[ChannelTypes.OPSGENIE.value] = \
+                updated_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
@@ -818,7 +912,12 @@ class ChannelsManager:
                                 process_details['channel_name'],
                             )
                         elif channel_type == ChannelTypes.OPSGENIE.value:
-                            pass
+                            self._create_and_start_opsgenie_alerts_handler(
+                                process_details['api_key'],
+                                process_details['eu_host'],
+                                process_details['channel_id'],
+                                process_details['channel_name'],
+                            )
                         elif channel_type == ChannelTypes.CONSOLE.value:
                             self._create_and_start_console_alerts_handler(
                                 process_details['channel_id'],
@@ -827,8 +926,6 @@ class ChannelsManager:
                             self._create_and_start_log_alerts_handler(
                                 process_details['channel_id'],
                                 process_details['channel_name'])
-
-                        # TODO: Must add opsgenie here.
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and
