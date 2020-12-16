@@ -20,7 +20,7 @@ class OpsgenieChannel(Channel):
             "error": OpsgenieSeverities.ERROR,
             "warning": OpsgenieSeverities.WARNING,
             "info": OpsgenieSeverities.INFO,
-        }.get(alert.severity.lower(), default=OpsgenieSeverities.INFO)
+        }.get(alert.severity.lower(), OpsgenieSeverities.INFO)
 
         try:
             self._opsgenie_api.create_alert(
