@@ -1,3 +1,3 @@
-from .email.alerts import EmailAlertsHandler
 from .handler import ChannelHandler
+from .email.alerts import EmailAlertsHandler
 from .telegram.alerts import TelegramAlertsHandler
