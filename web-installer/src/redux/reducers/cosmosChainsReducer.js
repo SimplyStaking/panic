@@ -6,8 +6,11 @@ import {
   REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
   REMOVE_REPOSITORY, ADD_KMS, REMOVE_KMS, UPDATE_REPEAT_ALERT,
   UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
-  LOAD_CONFIG_COSMOS, LOAD_CHAIN_COSMOS,
-} from '../actions/types';
+  LOAD_CONFIG_COSMOS, LOAD_NODE_COSMOS, LOAD_REPOSITORY_COSMOS,
+  LOAD_KMS_COSMOS, LOAD_REPEAT_ALERTS_COSMOS, LOAD_TIMEWINDOW_ALERTS_COSMOS,
+  LOAD_THRESHOLD_ALERTS_COSMOS, LOAD_SEVERITY_ALERTS_COSMOS
+} from 'redux/actions/types';
+
 
 const cosmosRepeatAlerts = {
   byId: {
@@ -16,7 +19,6 @@ const cosmosRepeatAlerts = {
       identifier: 'cannot_access_validator',
       description: 'If a validator is in-accessible you will be alerted.',
       adornment: 'Seconds',
-      type: 'repeat',
       parent_id: '',
       warning: {
         repeat: 60,
@@ -33,7 +35,6 @@ const cosmosRepeatAlerts = {
       identifier: 'cannot_access_node',
       description: 'If a node is in-accessible you will be alerted.',
       adornment: 'Seconds',
-      type: 'repeat',
       parent_id: '',
       warning: {
         repeat: 300,
@@ -51,7 +52,6 @@ const cosmosRepeatAlerts = {
       description: 'If a node loses connection with a specific peer after some '
                  + 'time you will receive an alert.',
       adornment: 'Seconds',
-      type: 'repeat',
       parent_id: '',
       warning: {
         repeat: 300,
@@ -69,7 +69,6 @@ const cosmosRepeatAlerts = {
       description: 'The Node Exporter URL is un-reachable therefore the '
                  + 'system is taken to be down.',
       adornment: 'Seconds',
-      type: 'repeat',
       parent_id: '',
       warning: {
         repeat: 0,
@@ -93,7 +92,6 @@ const cosmosThresholdAlerts = {
       description: 'Number of peers connected to your node has decreased.',
       adornment: 'Peers',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 3,
@@ -113,7 +111,6 @@ const cosmosThresholdAlerts = {
                  + 'time.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 180,
@@ -133,7 +130,6 @@ const cosmosThresholdAlerts = {
                  + 'since last pre-commit/pre-vote activity.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 60,
@@ -153,7 +149,6 @@ const cosmosThresholdAlerts = {
                  + 'the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 85,
@@ -173,7 +168,6 @@ const cosmosThresholdAlerts = {
                  + '.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 85,
@@ -192,7 +186,6 @@ const cosmosThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 85,
@@ -211,7 +204,6 @@ const cosmosThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 85,
@@ -230,7 +222,6 @@ const cosmosThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: '',
       warning: {
         threshold: 85,
@@ -256,7 +247,6 @@ const cosmosTimeWindowAlerts = {
                  + 'receive an alert.', 
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
-      type: 'time_window',
       parent_id: '',
       warning: {
         threshold: 20,
@@ -281,7 +271,6 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_inaccessible_on_startup',
       description: 'Validator was not accessible on startup.', 
       severity: CRITICAL,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -290,7 +279,6 @@ const cosmosSeverityAlerts = {
       identifier: 'node_inaccessible_on_startup',
       description: 'Node was not accessible on startup.', 
       severity: WARNING,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -299,7 +287,6 @@ const cosmosSeverityAlerts = {
       identifier: 'slashed',
       description: 'Occurs when your validator has been slashed.', 
       severity: CRITICAL,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -309,7 +296,6 @@ const cosmosSeverityAlerts = {
       description: 'Occurs when your node is still catching up to the rest of '
                  + 'the blockchain network in terms of block height.', 
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -319,7 +305,6 @@ const cosmosSeverityAlerts = {
       description: 'Occurs when your validator is not participating in the '
                  + 'current consensus round.',
       severity: WARNING,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -328,7 +313,6 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_set_size_increased',
       description: 'The number of validators in the set have increased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -337,7 +321,6 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_set_size_decreased',
       description: 'The number of validators in the set have decreased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -346,7 +329,6 @@ const cosmosSeverityAlerts = {
       identifier: 'validator_is_jailed',
       description: 'The number of validators in the set have decreased.',
       severity: CRITICAL,
-      type: 'severity',
       parent_id: '',
       enabled: true,
     },
@@ -355,7 +337,6 @@ const cosmosSeverityAlerts = {
       identifier: 'voting_power_increased',
       description: 'Voting power of a validator has increased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
@@ -364,7 +345,6 @@ const cosmosSeverityAlerts = {
       identifier: 'voting_power_decreased',
       description: 'Voting power of a validator has decreased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
@@ -373,7 +353,6 @@ const cosmosSeverityAlerts = {
       identifier: 'new_proposal',
       description: 'A new proposal has been submitted.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
@@ -382,7 +361,6 @@ const cosmosSeverityAlerts = {
       identifier: 'proposal_conducted',
       description: 'A proposal has been conducted.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
@@ -392,7 +370,6 @@ const cosmosSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'increased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
@@ -402,18 +379,23 @@ const cosmosSeverityAlerts = {
       description: 'The amount of tokens delegated to your validator has '
                  + 'decreased.',
       severity: INFO,
-      type: 'severity',
       parent_id: '',
       enabled: false,
     },
   },
-  allIds: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
+  allIds: ['14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24',
+            '25', '26', '27'],
 };
 
 // Reducers to add and remove cosmos node configurations from global state
 function nodesById(state = {}, action) {
   switch (action.type) {
     case ADD_NODE_COSMOS:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
+    case LOAD_NODE_COSMOS:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -430,6 +412,12 @@ function allNodes(state = [], action) {
   switch (action.type) {
     case ADD_NODE_COSMOS:
       return state.concat(action.payload.id);
+    case LOAD_NODE_COSMOS:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_NODE_COSMOS:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -469,21 +457,6 @@ function cosmosChainsById(state = {}, action) {
       };
     case REMOVE_CHAIN_COSMOS:
       return _.omit(state, action.payload.id);
-    case LOAD_CHAIN_COSMOS:
-      return {
-        ...state,
-        [action.payload.id]: {
-          id: action.payload.id,
-          chain_name: action.payload.chain_name,
-          nodes: [],
-          kmses: [],
-          repositories: [],
-          repeatAlerts: cosmosRepeatAlerts,
-          timeWindowAlerts: cosmosTimeWindowAlerts,
-          thresholdAlerts: cosmosThresholdAlerts,
-          severityAlerts: cosmosSeverityAlerts,
-        },
-      };
     case ADD_NODE_COSMOS:
       return {
         ...state,
@@ -491,6 +464,27 @@ function cosmosChainsById(state = {}, action) {
           ...state[action.payload.parent_id],
           nodes: state[action.payload.parent_id].nodes.concat(action.payload.id),
         },
+      };
+    case LOAD_NODE_COSMOS:
+      if (!(state.hasOwnProperty(action.node.parent_id))){
+        state[action.payload.node.parent_id] = {};
+      }
+      if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
+        state[action.payload.node.parent_id].nodes = [];
+        state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
+      }
+      if (!(state[action.payload.node.parent_id].nodes.includes(
+          action.payload.node.id))){
+        return {
+          ...state,
+          [action.payload.node.parent_id]: {
+            ...state[action.payload.node.parent_id],
+            nodes: state[action.payload.node.parent_id].nodes.concat(
+              action.payload.node.id),
+          },
+        };
+      }else{
+        return state;
       };
     case REMOVE_NODE_COSMOS:
       return {
@@ -512,8 +506,30 @@ function cosmosChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
+          repositories: state[action.payload.parent_id].repositories.concat(
+            action.payload.id),
         },
+      };
+    case LOAD_REPOSITORY_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.repo.parent_id))){
+        state[action.payload.repo.parent_id] = {};
+      }
+      if (!(state[action.payload.repo.parent_id].hasOwnProperty("repositories"))){
+        state[action.payload.repo.parent_id].repositories = [];
+        state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
+      }
+      if (!(state[action.payload.repo.parent_id].repositories.includes(
+          action.repo.payload.id))){
+        return {
+          ...state,
+          [action.payload.repo.parent_id]: {
+            ...state[action.payload.repo.parent_id],
+            repositories: state[action.payload.repo.parent_id].repositories.
+              concat(action.payload.repo.id),
+          },
+        }
+      }else{
+        return state;
       };
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
@@ -542,6 +558,27 @@ function cosmosChainsById(state = {}, action) {
           ...state[action.payload.parent_id],
           kmses: state[action.payload.parent_id].kmses.concat(action.payload.id),
         },
+      };
+    case LOAD_KMS_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.kms.parent_id))){
+        state[action.payload.kms.parent_id] = {};
+      }
+      if (!(state[action.payload.kms.parent_id].hasOwnProperty("kmses"))){
+        state[action.payload.kms.parent_id].kmses = [];
+        state[action.payload.kms.parent_id].chain_name = action.payload.chain_name;
+      }
+      if (!(state[action.payload.kms.parent_id].kmses.
+          includes(action.payload.kms.id))){
+        return {
+          ...state,
+          [action.payload.kms.parent_id]: {
+            ...state[action.payload.kms.parent_id],
+            kmses: state[action.payload.kms.parent_id].kmses.concat(
+              action.payload.kms.id),
+          },
+        }
+      }else{
+        return state;
       };
     case REMOVE_KMS:
       // Since this is common for multiple chains and general settings
@@ -577,6 +614,21 @@ function cosmosChainsById(state = {}, action) {
           },
         },
       };
+    case LOAD_REPEAT_ALERTS_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = {};
+        state[action.payload.parent_id].chain_name = action.payload.chain_name;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          repeatAlerts: action.payload.alerts,
+        },
+      };
     case UPDATE_TIMEWINDOW_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -594,6 +646,21 @@ function cosmosChainsById(state = {}, action) {
               [action.payload.id]: action.payload.alert,
             },
           },
+        },
+      };
+    case LOAD_TIMEWINDOW_ALERTS_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = {};
+        state[action.payload.parent_id].chain_name = action.payload.chain_name;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          timeWindowAlerts: action.payload.alerts,
         },
       };
     case UPDATE_THRESHOLD_ALERT:
@@ -615,6 +682,21 @@ function cosmosChainsById(state = {}, action) {
           },
         },
       };
+    case LOAD_THRESHOLD_ALERTS_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts = {};
+        state[action.payload.parent_id].chain_name = action.payload.chain_name;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          thresholdAlerts: action.payload.alerts,
+        },
+      };
     case UPDATE_SEVERITY_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -634,6 +716,21 @@ function cosmosChainsById(state = {}, action) {
           },
         },
       };
+    case LOAD_SEVERITY_ALERTS_COSMOS:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts = {};
+        state[action.payload.parent_id].chain_name = action.payload.chain_name;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          severityAlerts: action.payload.alerts,
+        },
+      };
     default:
       return state;
   }
@@ -643,6 +740,48 @@ function allCosmosChains(state = [], action) {
   switch (action.type) {
     case ADD_CHAIN_COSMOS:
       return state.concat(action.payload.id);
+    case LOAD_NODE_COSMOS:
+      if (!(state.includes(action.payload.node.parent_id))){
+        return state.concat(action.payload.node.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_REPOSITORY_COSMOS:
+      if (!(state.includes(action.payload.repo.parent_id))){
+        return state.concat(action.payload.repo.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_KMS_COSMOS:
+      if (!(state.includes(action.payload.kms.parent_id))){
+        return state.concat(action.payload.kms.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_REPEAT_ALERTS_COSMOS:
+      if (!(state.includes(action.payload.parent_id))){
+        return state.concat(action.payload.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_TIMEWINDOW_ALERTS_COSMOS:
+      if (!(state.includes(action.payload.parent_id))){
+        return state.concat(action.payload.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_THRESHOLD_ALERTS_COSMOS:
+      if (!(state.includes(action.payload.parent_id))){
+        return state.concat(action.payload.parent_id);
+      }else{
+        return state;
+      }
+    case LOAD_SEVERITY_ALERTS_COSMOS:
+      if (!(state.includes(action.payload.parent_id))){
+        return state.concat(action.payload.parent_id);
+      }else{
+        return state;
+      }
     case REMOVE_CHAIN_COSMOS:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -670,4 +809,6 @@ function CurrentCosmosChain(state = '', action) {
 
 export {
   CosmosNodesReducer, CosmosChainsReducer, CurrentCosmosChain,
-};
+  cosmosRepeatAlerts, cosmosThresholdAlerts, cosmosTimeWindowAlerts,
+  cosmosSeverityAlerts,
+}; 

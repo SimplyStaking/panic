@@ -49,7 +49,11 @@ function allTelegrams(state = [], action) {
     case ADD_TELEGRAM:
       return state.concat(action.payload.id);
     case LOAD_TELEGRAM:
-      return state.concat(action.payload.id);
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_TELEGRAM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -101,7 +105,11 @@ function allTwilios(state = [], action) {
     case ADD_TWILIO:
       return state.concat(action.payload.id);
     case LOAD_TWILIO:
-      return state.concat(action.payload.id);
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_TWILIO:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -153,8 +161,11 @@ function allEmails(state = [], action) {
     case ADD_EMAIL:
       return state.concat(action.payload.id);
     case LOAD_EMAIL:
-      return state.concat(action.payload.id);
-    case REMOVE_EMAIL:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }    case REMOVE_EMAIL:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;
@@ -205,8 +216,11 @@ function allPagerDuties(state = [], action) {
     case ADD_PAGERDUTY:
       return state.concat(action.payload.id);
     case LOAD_PAGERDUTY:
-      return state.concat(action.payload.id);
-    case REMOVE_PAGERDUTY:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }    case REMOVE_PAGERDUTY:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;
@@ -257,8 +271,11 @@ function allOpsGenies(state = [], action) {
     case ADD_OPSGENIE:
       return state.concat(action.payload.id);
     case LOAD_OPSGENIE:
-      return state.concat(action.payload.id);
-    case REMOVE_OPSGENIE:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }    case REMOVE_OPSGENIE:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;

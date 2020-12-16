@@ -1,6 +1,9 @@
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS, LOAD_CONFIG_COSMOS,
   RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS, LOAD_CHAIN_COSMOS,
+  LOAD_NODE_COSMOS, LOAD_REPOSITORY_COSMOS, LOAD_KMS_COSMOS, LOAD_REPEAT_ALERTS_COSMOS,
+  LOAD_TIMEWINDOW_ALERTS_COSMOS, LOAD_THRESHOLD_ALERTS_COSMOS,
+  LOAD_SEVERITY_ALERTS_COSMOS
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -16,13 +19,6 @@ export function addChainCosmos(payload) {
       id: `chain_name_${uuidv4()}`,
       chain_name: payload.chain_name,
     },
-  };
-}
-
-export function loadChainCosmos(payload) {
-  return {
-    type: LOAD_CHAIN_COSMOS,
-    payload,
   };
 }
 
@@ -74,6 +70,13 @@ export function addNodeCosmos(payload) {
   };
 }
 
+export function loadNodeCosmos(payload) {
+  return {
+    type: LOAD_NODE_COSMOS,
+    payload,
+  };
+}
+
 // Action to remove a cosmos node from the current configuration
 export function removeNodeCosmos(payload) {
   return {
@@ -85,6 +88,48 @@ export function removeNodeCosmos(payload) {
 export function loadConfigCosmos(payload) {
   return {
     type: LOAD_CONFIG_COSMOS,
+    payload,
+  };
+}
+
+export function loadReposCosmos(payload) {
+  return {
+    type: LOAD_REPOSITORY_COSMOS,
+    payload,
+  };
+}
+
+export function loadKMSCosmos(payload) {
+  return {
+    type: LOAD_KMS_COSMOS,
+    payload,
+  };
+}
+
+export function loadRepeatAlertsCosmos(payload) {
+  return {
+    type: LOAD_REPEAT_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadTimeWindowAlertsCosmos(payload) {
+  return {
+    type: LOAD_TIMEWINDOW_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsCosmos(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadSeverityAlertsCosmos(payload) {
+  return {
+    type: LOAD_SEVERITY_ALERTS_COSMOS,
     payload,
   };
 }

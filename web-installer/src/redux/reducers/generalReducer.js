@@ -3,8 +3,10 @@ import { combineReducers } from 'redux';
 import {
   UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
   REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, UPDATE_THRESHOLD_ALERT,
-  UPDATE_REPEAT_ALERT,
-} from '../actions/types';
+  UPDATE_REPEAT_ALERT, LOAD_REPOSITORY, LOAD_SYSTEM, LOAD_KMS,
+  LOAD_REPOSITORY_GENERAL, LOAD_SYSTEM_GENERAL, LOAD_REPEAT_ALERTS_GENERAL,
+  LOAD_THRESHOLD_ALERTS_GENERAL,
+} from 'redux/actions/types';
 import { GLOBAL } from 'constants/constants';
 
 const generalThresholdAlerts = {
@@ -16,7 +18,6 @@ const generalThresholdAlerts = {
                  + '.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
@@ -35,7 +36,6 @@ const generalThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
@@ -54,7 +54,6 @@ const generalThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
@@ -73,7 +72,6 @@ const generalThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      type: 'threshold',
       parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
@@ -98,7 +96,6 @@ const generalRepeatAlerts = {
       description: 'The Node Exporter URL is un-reachable therefore the '
                  + 'system is taken to be down.',
       adornment: 'Seconds',
-      type: 'repeat',
       parent_id: 'GLOBAL',
       warning: {
         repeat: 0,
@@ -140,11 +137,6 @@ const generalState = {
 // systems
 function GeneralReducer(state = generalState, action) {
   switch (action.type) {
-    // case UPDATE_PERIODIC:
-    //   return {
-    //     ...state,
-    //     periodic: action.payload,
-    //   };
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -161,6 +153,26 @@ function GeneralReducer(state = generalState, action) {
             repositories: state.byId[GLOBAL].repositories.concat(action.payload.id),
           },
         },
+      };
+    case LOAD_REPOSITORY_GENERAL:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
+        state[action.payload.parent_id].repositories = [];
+      }
+      if (!(state[action.payload.parent_id].repositories.includes(
+          action.payload.id))){
+        return {
+          ...state,
+          [action.payload.parent_id]: {
+            ...state[action.payload.parent_id],
+            repositories: state[action.payload.parent_id].repositories.concat(
+              action.payload.id),
+          },
+        }
+      }else{
+        return state;
       };
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
@@ -196,6 +208,25 @@ function GeneralReducer(state = generalState, action) {
             systems: state.byId[GLOBAL].systems.concat(action.payload.id),
           },
         },
+      };
+    case LOAD_SYSTEM_GENERAL:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("systems"))){
+        state[action.payload.parent_id].systems = [];
+      }
+      if (!(state[action.payload.parent_id].systems.includes(action.payload.id))){
+        return {
+          ...state,
+          [action.payload.parent_id]: {
+            ...state[action.payload.parent_id],
+            systems: state[action.payload.parent_id].systems.concat(
+              action.payload.id),
+          },
+        };
+      }else{
+        return state;
       };
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
@@ -238,6 +269,20 @@ function GeneralReducer(state = generalState, action) {
           },
         },
       };
+    case LOAD_REPEAT_ALERTS_GENERAL:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = {};
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          repeatAlerts: action.payload.alerts,
+        },
+      };
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -258,6 +303,20 @@ function GeneralReducer(state = generalState, action) {
               },
             },
           },
+        },
+      };
+    case LOAD_THRESHOLD_ALERTS_GENERAL:
+      if (!(state.hasOwnProperty(action.payload.parent_id))){
+        state[action.payload.parent_id] = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts = {};
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          thresholdAlerts: action.payload.alerts,
         },
       };
     default:
@@ -283,6 +342,11 @@ function repositoriesById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_REPOSITORY:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_REPOSITORY:
       return _.omit(state, action.payload.id);
     default:
@@ -295,6 +359,12 @@ function allRepositories(state = [], action) {
   switch (action.type) {
     case ADD_REPOSITORY:
       return state.concat(action.payload.id);
+    case LOAD_REPOSITORY:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_REPOSITORY:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -315,6 +385,11 @@ function systemsById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_SYSTEM:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_SYSTEM:
       return _.omit(state, action.payload.id);
     default:
@@ -327,6 +402,12 @@ function allSystems(state = [], action) {
   switch (action.type) {
     case ADD_SYSTEM:
       return state.concat(action.payload.id);
+    case LOAD_SYSTEM:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_SYSTEM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -347,6 +428,11 @@ function kmsesById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_KMS:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_KMS:
       return _.omit(state, action.payload.id);
     default:
@@ -359,6 +445,12 @@ function allKmses(state = [], action) {
   switch (action.type) {
     case ADD_KMS:
       return state.concat(action.payload.id);
+    case LOAD_KMS:
+      if (!(state.includes(action.payload.id))){
+        return state.concat(action.payload.id);
+      }else{
+        return state;
+      }
     case REMOVE_KMS:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -373,5 +465,5 @@ const KmsReducer = combineReducers({
 
 export {
   RepositoryReducer, SystemsReducer, KmsReducer, PeriodicReducer,
-  GeneralReducer,
+  GeneralReducer, generalThresholdAlerts, generalRepeatAlerts,
 };

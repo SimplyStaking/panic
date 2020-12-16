@@ -1,6 +1,9 @@
 import {
-  ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE, LOAD_CONFIG_SUBSTRATE,
-  RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME, REMOVE_CHAIN_SUBSTRATE,
+  ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE,
+  LOAD_CONFIG_SUBSTRATE, RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME,
+  REMOVE_CHAIN_SUBSTRATE, LOAD_NODE_SUBSTRATE, LOAD_REPOSITORY_SUBSTRATE,
+  LOAD_REPEAT_ALERTS_SUBSTRATE, LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+  LOAD_THRESHOLD_ALERTS_SUBSTRATE, LOAD_SEVERITY_ALERTS_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -68,6 +71,13 @@ export function addNodeSubstrate(payload) {
   };
 }
 
+export function loadNodeSubstrate(payload) {
+  return {
+    type: LOAD_NODE_SUBSTRATE,
+    payload,
+  };
+}
+
 // Action to remove a substrate node from the current configuration
 export function removeNodeSubstrate(payload) {
   return {
@@ -79,6 +89,41 @@ export function removeNodeSubstrate(payload) {
 export function loadConfigSubstrate(payload) {
   return {
     type: LOAD_CONFIG_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadReposSubstrate(payload) {
+  return {
+    type: LOAD_REPOSITORY_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadRepeatAlertsSubstrate(payload) {
+  return {
+    type: LOAD_REPEAT_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadTimeWindowAlertsSubstrate(payload) {
+  return {
+    type: LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsSubstrate(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadSeverityAlertsSubstrate(payload) {
+  return {
+    type: LOAD_SEVERITY_ALERTS_SUBSTRATE,
     payload,
   };
 }

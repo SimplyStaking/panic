@@ -4,6 +4,9 @@ import {
   REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
   ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL,
   REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL,
+  LOAD_REPOSITORY, LOAD_REPOSITORY_GENERAL, LOAD_KMS,
+  LOAD_THRESHOLD_ALERTS_GENERAL, LOAD_REPEAT_ALERTS_GENERAL,
+  LOAD_SYSTEM_GENERAL
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -27,6 +30,13 @@ export function addRepository(payload) {
   };
 }
 
+export function loadRepository(payload) {
+  return {
+    type: LOAD_REPOSITORY,
+    payload,
+  };
+}
+
 export function removeRepository(payload) {
   return {
     type: REMOVE_REPOSITORY,
@@ -44,6 +54,13 @@ export function addSystem(payload) {
       exporter_url: payload.exporter_url,
       monitor_system: payload.monitor_system,
     },
+  };
+}
+
+export function loadSystemGeneral(payload) {
+  return {
+    type: LOAD_SYSTEM_GENERAL,
+    payload,
   };
 }
 
@@ -147,6 +164,34 @@ export function addOpsGenieChannel(payload) {
 export function removeOpsGenieChannel(payload) {
   return {
     type: REMOVE_OPSGENIE_CHANNEL,
+    payload,
+  };
+}
+
+export function loadReposGeneral(payload) {
+  return {
+    type: LOAD_REPOSITORY_GENERAL,
+    payload,
+  };
+}
+
+export function loadKMS(payload) {
+  return {
+    type: LOAD_KMS,
+    payload,
+  };
+}
+
+export function loadRepeatAlertsGeneral(payload) {
+  return {
+    type: LOAD_REPEAT_ALERTS_GENERAL,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsGeneral(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_GENERAL,
     payload,
   };
 }
