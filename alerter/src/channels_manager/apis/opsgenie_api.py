@@ -65,7 +65,3 @@ class OpsgenieApi:
     # successful or not
     def get_request_status(self, request_id: str):
         return self._alert_api.get_request_status(request_id=request_id)
-
-# TODO: Request might not have been processed immediately, therefore get status
-#     : may fail. Hence appropriate error handling must be done around
-#     : get_request_status

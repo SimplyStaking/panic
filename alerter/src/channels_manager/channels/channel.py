@@ -1,11 +1,3 @@
-# TODO: Handle sending exceptions in individual handlers and log errors. Also
-#     : no backup channels, and add the alert to the sending queue in the
-#     : handler
-
-# TODO: We should infer the severity from the alert, and we must provide
-#     : error handling of whether the alert was sent etc in the respective
-#     : channels (also log there).
-
 import logging
 from abc import ABC, abstractmethod
 

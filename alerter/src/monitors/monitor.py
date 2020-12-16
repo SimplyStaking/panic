@@ -144,6 +144,3 @@ class Monitor(ABC):
         self.rabbitmq.disconnect_till_successful()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
-
-# TODO: There are some monitors which may require redis. Therefore consider
-#     : adding redis here in the future.

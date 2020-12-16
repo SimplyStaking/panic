@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pdpyras import EventsAPISession
 
-# TODO: Must handle exceptions in the caller just in case request fails.
 from src.utils.types import PagerDutySeverities
 
 
