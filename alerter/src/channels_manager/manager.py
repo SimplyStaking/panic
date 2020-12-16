@@ -569,6 +569,160 @@ class ChannelsManager:
 
         return correct_configs
 
+    def _process_email_configs(self, sent_configs: Dict) -> Dict:
+        if ChannelTypes.EMAIL.value in self.channel_configs:
+            current_configs = self.channel_configs[ChannelTypes.EMAIL.value]
+        else:
+            current_configs = {}
+
+        # This contains all the correct latest channel configs. All current
+        # configs are correct configs, therefore start from the current and
+        # modify as we go along according to the updates. This is done just in
+        # case an error occurs.
+        correct_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                smtp = config['smtp']
+                email_from = config['email_from']
+                emails_to = config['emails_to'].split(',')
+                username = config['username']
+                password = config['password']
+
+                self._create_and_start_email_alerts_handler(
+                    smtp, email_from, emails_to, channel_id, channel_name,
+                    username, password)
+                correct_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                smtp = config['smtp']
+                email_from = config['email_from']
+                emails_to = config['emails_to'].split(',')
+                username = config['username']
+                password = config['password']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+
+                log_and_print("Restarting the alerts handler of {} with "
+                              "latest configuration".format(channel_name),
+                              self.logger)
+                self._create_and_start_email_alerts_handler(
+                    smtp, email_from, emails_to, channel_id, channel_name,
+                    username, password)
+                correct_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+                    log_and_print("Killed the alerts handler of {} ".format(
+                        channel_name), self.logger)
+
+                del self.channel_process_dict[channel_id]
+                del correct_configs[config_id]
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.exception(e)
+
+        return correct_configs
+
+    def _process_pagerduty_configs(self, sent_configs: Dict) -> Dict:
+        if ChannelTypes.PAGERDUTY.value in self.channel_configs:
+            current_configs = self.channel_configs[ChannelTypes.PAGERDUTY.value]
+        else:
+            current_configs = {}
+
+        # This contains all the correct latest channel configs. All current
+        # configs are correct configs, therefore start from the current and
+        # modify as we go along according to the updates. This is done just in
+        # case an error occurs.
+        correct_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                integration_key = config['integration_key']
+
+                self._create_and_start_pagerduty_alerts_handler(
+                    integration_key, channel_id, channel_name)
+                correct_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                integration_key = config['integration_key']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+
+                log_and_print("Restarting the alerts handler of {} with "
+                              "latest configuration".format(channel_name),
+                              self.logger)
+                self._create_and_start_pagerduty_alerts_handler(
+                    integration_key, channel_id, channel_name)
+                correct_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+                    log_and_print("Killed the alerts handler of {} ".format(
+                        channel_name), self.logger)
+
+                del self.channel_process_dict[channel_id]
+                del correct_configs[config_id]
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.exception(e)
+
+        return correct_configs
+
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -586,8 +740,17 @@ class ChannelsManager:
         elif method.routing_key == 'channels.twilio_config':
             updated_configs = self._process_twilio_configs(sent_configs)
             self._channel_configs[ChannelTypes.TWILIO.value] = updated_configs
+        elif method.routing_key == 'channels.email_config':
+            updated_configs = self._process_email_configs(sent_configs)
+            self._channel_configs[ChannelTypes.EMAIL.value] = updated_configs
+        elif method.routing_key == 'channels.pagerduty_config':
+            updated_configs = self._process_pagerduty_configs(sent_configs)
+            self._channel_configs[ChannelTypes.PAGERDUTY.value] = \
+                updated_configs
+        elif method.routing_key == 'channels.opsgenie_config':
+            pass
 
-        # TODO: Must do for e-mail, pagerduty and opsgenie
+        # TODO: Must do for opsgenie
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
@@ -638,6 +801,24 @@ class ChannelsManager:
                                 process_details['call_to'],
                                 process_details['twiml'],
                                 process_details['twiml_is_url'])
+                        elif channel_type == ChannelTypes.EMAIL.value:
+                            self._create_and_start_email_alerts_handler(
+                                process_details['smtp'],
+                                process_details['email_from'],
+                                process_details['emails_to'],
+                                process_details['channel_id'],
+                                process_details['channel_name'],
+                                process_details['username'],
+                                process_details['password']
+                            )
+                        elif channel_type == ChannelTypes.PAGERDUTY.value:
+                            self._create_and_start_pagerduty_alerts_handler(
+                                process_details['integration_key'],
+                                process_details['channel_id'],
+                                process_details['channel_name'],
+                            )
+                        elif channel_type == ChannelTypes.OPSGENIE.value:
+                            pass
                         elif channel_type == ChannelTypes.CONSOLE.value:
                             self._create_and_start_console_alerts_handler(
                                 process_details['channel_id'],
@@ -647,7 +828,7 @@ class ChannelsManager:
                                 process_details['channel_id'],
                                 process_details['channel_name'])
 
-                        # TODO: Must add e-mail, pager and opsgenie here.
+                        # TODO: Must add opsgenie here.
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and
