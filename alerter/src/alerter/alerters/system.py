@@ -24,7 +24,9 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
 from src.utils.types import IncreasedAboveThresholdSystemAlert, \
-    DecreasedBelowThresholdSystemAlert, str_to_bool
+    DecreasedBelowThresholdSystemAlert, str_to_bool, \
+    convert_to_int_if_not_none_and_not_empty_str, \
+    convert_to_float_if_not_none_and_not_empty_str
 
 OPEN_FD_LIMITER_NAME = 'open_file_descriptors'
 CPU_USE_LIMITER_NAME = 'system_cpu_usage'
@@ -231,15 +233,19 @@ class SystemAlerter(Alerter):
                     IS_DOWN_LIMITER_NAME]
                 downtime = monitoring_timestamp - current
 
-                critical_threshold = int(is_down['critical_threshold'])
+                critical_threshold = \
+                    convert_to_int_if_not_none_and_not_empty_str(
+                        is_down['critical_threshold'], None)
                 critical_enabled = str_to_bool(is_down['critical_enabled'])
-                warning_threshold = int(is_down['warning_threshold'])
+                warning_threshold = \
+                    convert_to_int_if_not_none_and_not_empty_str(
+                        is_down['warning_threshold'], None)
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
-                if not self._system_initial_downtime_alert_sent[
-                    meta_data['system_id']]:
-                    if (critical_threshold <= downtime and
-                            critical_enabled):
+                if not \
+                        self._system_initial_downtime_alert_sent[
+                            meta_data['system_id']]:
+                    if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',
                             meta_data['time'], meta_data['system_parent_id'],
@@ -252,7 +258,7 @@ class SystemAlerter(Alerter):
                             monitoring_datetime)
                         self._system_initial_downtime_alert_sent[
                             meta_data['system_id']] = True
-                    elif warning_threshold <= downtime and warning_enabled:
+                    elif warning_enabled and warning_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'WARNING',
                             meta_data['time'], meta_data['system_parent_id'],
@@ -356,8 +362,10 @@ class SystemAlerter(Alerter):
             Type[DecreasedBelowThresholdSystemAlert], data_for_alerting: List,
             critical_limiter_name: str
     ) -> None:
-        warning_threshold = float(config['warning_threshold'])
-        critical_threshold = float(config['critical_threshold'])
+        warning_threshold = convert_to_float_if_not_none_and_not_empty_str(
+            config['warning_threshold'], None)
+        critical_threshold = convert_to_float_if_not_none_and_not_empty_str(
+            config['critical_threshold'], None)
         warning_enabled = str_to_bool(config['warning_enabled'])
         critical_enabled = str_to_bool(config['critical_enabled'])
         critical_limiters = self._system_critical_timed_task_limiters[
