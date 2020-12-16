@@ -13,7 +13,8 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
+    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -57,25 +58,25 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
+        self.logger.info("Creating queue '{}'".format(
+            SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                    False, True, False, False)
         self.logger.info(
-            "Creating queue 'system_alerters_manager_configs_queue'")
-        self.rabbitmq.queue_declare(
-            'system_alerters_manager_configs_queue', False, True, False, False)
-        self.logger.info(
-            "Binding queue 'system_alerters_manager_configs_queue' to "
-            "exchange '{}' with routing key "
-            "'chains.*.*.alerts_config'".format(CONFIG_EXCHANGE))
-        self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'chains.*.*.alerts_config'".format(
+                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
         self.logger.info(
-            "Binding queue 'system_alerters_manager_configs_queue' to "
-            "exchange '{}' with routing key "
-            "'general.alerts_config'".format(CONFIG_EXCHANGE))
-        self.rabbitmq.queue_bind('system_alerters_manager_configs_queue',
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'general.alerts_config'".format(
+                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'general.alerts_config')
-        self.logger.info("Declaring consuming intentions on "
-                         "system_alerters_manager_configs_queue")
-        self.rabbitmq.basic_consume('system_alerters_manager_configs_queue',
+        self.logger.info("Declaring consuming intentions on {}".format(
+            SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions

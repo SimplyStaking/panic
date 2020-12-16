@@ -12,12 +12,11 @@ from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, \
-    HEALTH_CHECK_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, ALERT_ROUTER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
@@ -49,11 +48,11 @@ class AlertRouter(QueuingPublisherComponent):
         self._rabbit.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            _ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
             "channels.*"
         )
         self._rabbit.basic_consume(
-            queue=_ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+            queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
             on_message_callback=self._process_configs, auto_ack=False,
             exclusive=False, consumer_tag=None)
 

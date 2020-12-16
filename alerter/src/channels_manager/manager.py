@@ -20,7 +20,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
+    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
@@ -88,17 +89,19 @@ class ChannelsManager:
         self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue 'channels_manager_configs_queue'")
-        self.rabbitmq.queue_declare('channels_manager_configs_queue',
+        self.logger.info("Creating queue '{}'".format(
+            CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.queue_declare(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
         self.logger.info(
-            "Binding queue 'channels_manager_configs_queue' to exchange '{}' "
-            "with routing key 'channels.*'".format(CONFIG_EXCHANGE))
-        self.rabbitmq.queue_bind('channels_manager_configs_queue',
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'channels.*'".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                  CONFIG_EXCHANGE))
+        self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'channels.*')
         self.logger.info("Declaring consuming intentions on "
-                         "channels_manager_configs_queue")
-        self.rabbitmq.basic_consume('channels_manager_configs_queue',
+                         "{}".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions

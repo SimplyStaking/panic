@@ -9,6 +9,7 @@ class AlertCode(str, Enum):
     No checks are made to ensure all values are unique. You need to make sure
     that no values are duplicated across the subclasses
     """
+
     @classmethod
     def get_enum_by_value(cls: type, value: str) -> 'AlertCode':
         for class_ in [cls] + cls.__subclasses__():

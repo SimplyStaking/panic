@@ -16,10 +16,16 @@ from src.channels_manager.manager import ChannelsManager
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
+from src.utils.constants import ALERT_ROUTER_CONFIGS_QUEUE_NAME, \
+    CONFIG_EXCHANGE, SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, \
+    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, \
+    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
+    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
@@ -446,7 +452,148 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     sys.exit()
 
 
+def _initialise_and_declare_config_queues() -> None:
+    # TODO: This can be refactored by storing the queue configurations in
+    #     : constant.py so that it is easier to maintain
+    dummy_logger = logging.getLogger('Dummy')
+
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(dummy_logger, env.RABBIT_IP)
+            log_and_print("Connecting with RabbitMQ to create and bind "
+                          "configuration queues.", dummy_logger)
+            ret = rabbitmq.connect()
+            if ret == -1:
+                log_and_print('RabbitMQ is temporarily unavailable. Re-trying '
+                              'in 10 seconds.', dummy_logger)
+                time.sleep(10)
+                continue
+
+            # Config exchange declaration
+            log_and_print("Creating {} exchange.".format(CONFIG_EXCHANGE),
+                          dummy_logger)
+            rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, 'topic', False, True, False, False
+            )
+
+            # Alert router queues
+            log_and_print("Creating queue '{}'".format(
+                ALERT_ROUTER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(ALERT_ROUTER_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
+            log_and_print("Binding queue '{}' to '{}' exchange with routing "
+                          "key {}.".format(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+                                           CONFIG_EXCHANGE, 'channels.*'),
+                          dummy_logger)
+            rabbitmq.queue_bind(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'channels.*')
+
+            # System Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'chains.*.*.alerts_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'general.alerts_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'general.alerts_config')
+
+            # Channels manager queues
+            log_and_print("Creating queue '{}'".format(
+                CHANNELS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'channels.*'),
+                dummy_logger)
+            rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'channels.*')
+
+            # GitHub Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'chains.*.*.repos_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'chains.*.*.repos_config')
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'general.repos_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'general.repos_config')
+
+            # System Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'chains.*.*.systems_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'chains.*.*.systems_config')
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, 'general.systems_config'),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, 'general.systems_config')
+
+            ret = rabbitmq.disconnect()
+            if ret == -1:
+                log_and_print('RabbitMQ is temporarily unavailable. Re-trying '
+                              'in 10 seconds.', dummy_logger)
+                time.sleep(10)
+                continue
+
+            log_and_print("Configuration queues initialisation procedure has "
+                          "completed successfully. Disconnecting with "
+                          "RabbitMQ.", dummy_logger)
+            break
+        except pika.exceptions.AMQPChannelError as e:
+            log_and_print("Channel error while initializing the configuration "
+                          "queues: {}. Re-trying in 10 "
+                          "seconds.".format(repr(e)), dummy_logger)
+            time.sleep(10)
+        except pika.exceptions.AMQPConnectionError as e:
+            log_and_print("RabbitMQ connection error while initializing the "
+                          "configuration queues: {}. Re-trying in 10 "
+                          "seconds.".format(repr(e)), dummy_logger)
+            time.sleep(10)
+        except Exception as e:
+            log_and_print("Unexpected exception while initializing the "
+                          "configuration queues: {}. Re-trying in 10 "
+                          "seconds.".format(repr(e)), dummy_logger)
+            time.sleep(10)
+
+
 if __name__ == '__main__':
+    # First initialize the config queues so that no config is lost if the
+    # individual components
+    _initialise_and_declare_config_queues()
+
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
         target=run_system_monitors_manager, args=())
@@ -509,12 +656,3 @@ if __name__ == '__main__':
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
-
-    # TODO: Make sure that all queues and configs are declared before hand in
-    #     : the run alerter before start sending configs, as otherwise configs
-    #     : manager would not be able to send configs on start-up. Therefore
-    #     : start the config manager last. Similarly, components must be started
-    #     : from left to right according to the design (to avoid message not
-    #     : delivered exceptions). Also, to fully solve these problems, we
-    #     : should perform checks in the run alerter to see if a queue/exchange
-    #     : has been created

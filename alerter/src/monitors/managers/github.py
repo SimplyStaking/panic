@@ -14,7 +14,8 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
+    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -53,25 +54,25 @@ class GitHubMonitorsManager(MonitorsManager):
         self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info(
-            "Creating queue 'github_monitors_manager_configs_queue'")
-        self.rabbitmq.queue_declare('github_monitors_manager_configs_queue',
+        self.logger.info("Creating queue '{}'".format(
+            GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
         self.logger.info(
-            "Binding queue 'github_monitors_manager_configs_queue' to "
-            "exchange '{}' with routing key "
-            "'chains.*.*.repos_config'".format(CONFIG_EXCHANGE))
-        self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'chains.*.*.repos_config'".format(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'chains.*.*.repos_config')
         self.logger.info(
-            "Binding queue 'github_monitors_manager_configs_queue' to "
-            "exchange '{}' with routing key "
-            "'general.repos_config'".format(CONFIG_EXCHANGE))
-        self.rabbitmq.queue_bind('github_monitors_manager_configs_queue',
+            "Binding queue '{}' to exchange '{}' with routing key "
+            "'general.repos_config'".format(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'general.repos_config')
-        self.logger.info("Declaring consuming intentions on "
-                         "'github_monitors_manager_configs_queue'")
-        self.rabbitmq.basic_consume('github_monitors_manager_configs_queue',
+        self.logger.info("Declaring consuming intentions on '{}'".format(
+            GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.rabbitmq.basic_consume(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
