@@ -226,7 +226,8 @@ def _initialize_config_manager() -> Tuple[ConfigManager, logging.Logger]:
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            config_manager = ConfigManager(config_manager_logger, '../config',
+            config_manager = ConfigManager(ConfigManager.__name__,
+                                           config_manager_logger, '../config',
                                            rabbit_ip)
             return config_manager, config_manager_logger
         except ConnectionNotInitializedException:

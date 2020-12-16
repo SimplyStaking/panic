@@ -35,7 +35,7 @@ class ConfigManager(Component):
     topic in Rabbit MQ. Updated configs are sent as well
     """
 
-    def __init__(self, logger: logging.Logger, config_directory: str,
+    def __init__(self, name: str, logger: logging.Logger, config_directory: str,
                  rabbit_ip: str, file_patterns: Optional[List[str]] = None,
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True, case_sensitive: bool = False):
@@ -56,6 +56,7 @@ class ConfigManager(Component):
         if not file_patterns:
             file_patterns = ['*.ini']
 
+        self._name = name
         self._logger = logger
         self._config_directory = config_directory
         self._file_patterns = file_patterns
@@ -81,6 +82,13 @@ class ConfigManager(Component):
         self._observer = PollingObserver()
         self._observer.schedule(self._event_handler, config_directory,
                                 recursive=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def _initialize_rabbitmq(self) -> None:
         config_ping_queue = "config_ping_queue"
@@ -168,7 +176,7 @@ class ConfigManager(Component):
 
         self._logger.debug("Received %s. Let's pong", body)
         heartbeat = {
-            'component_name': "ConfigManager",
+            'component_name': self.name,
             'is_alive': self._observer.is_alive(),
             'timestamp': datetime.now().timestamp(),
         }
@@ -283,6 +291,8 @@ class ConfigManager(Component):
         the files.  It also sends the configuration files for the first time
         :return None
         """
+        log_and_print("{} started.".format(self), self._logger)
+
         self._initialize_rabbitmq()
 
         def do_first_run_event(name: str) -> None:
