@@ -72,6 +72,7 @@ For example the node operator may have the following setup:
 Telegram bots in PANIC serve two purposes. As mentioned above, they are used to send alerts. However they can also accept commands, allowing the node operator to have some control over the alerter and check its status.
 
 PANIC supports the following commands:
+
 | Command | Parameters | Description |
 |---|---|---|
 | `/start` | None | A welcome message is returned |
@@ -100,6 +101,8 @@ In the lists below we will show which alerts have severity thresholds and which 
 | `SystemWentDownAtAlert` | `WARNING` <br\> `CRITICAL` | `N\A` | ✓ <br\> ✓ | ✓ <br\> ✓ | A `WARNING` alert is raised if `warning_threshold` seconds pass after a system is down and a `CRITICAL` alert is periodically raised each time `critical_threshold` seconds pass after the system is down. |
 
 ## GitHub Repository Alerts
+
+###### TODO CONTENT
 
 ---
 [Back to front page](../README.md)
