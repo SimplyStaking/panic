@@ -113,13 +113,9 @@ class AlertRouter(QueuingPublisherComponent):
             # Taking what we need, and checking types
             try:
                 for key in recv_config.sections():
-                    self._config[config_filename][key] = {
-                        'id': recv_config.get(key, 'id'),
-                        'info': recv_config.getboolean(key, 'info'),
-                        'warning': recv_config.getboolean(key, 'warning'),
-                        'critical': recv_config.getboolean(key, 'critical'),
-                        'error': recv_config.getboolean(key, 'error')
-                    }
+                    self._config[config_filename][key] = self._extract_config(
+                        recv_config[key], config_filename
+                    )
             except (NoOptionError, NoSectionError) as missing_error:
                 self._logger.error(
                     "The configuration file %s is missing some configs",
@@ -236,3 +232,22 @@ class AlertRouter(QueuingPublisherComponent):
         self.disconnect()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
+
+    @staticmethod
+    def _extract_config(section, config_filename: str) -> Dict[str, str]:
+        if "twilio" in config_filename:
+            return {
+                'id': section.get('id'),
+                'info': False,
+                'warning': False,
+                'error': False,
+                'critical': True,
+            }
+
+        return {
+            'id': section.get('id'),
+            'info': section.getboolean('info'),
+            'warning': section.getboolean('warning'),
+            'error': section.getboolean('error'),
+            'critical': section.getboolean('critical'),
+        }
