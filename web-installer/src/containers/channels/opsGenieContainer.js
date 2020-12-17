@@ -37,7 +37,11 @@ const Form = withFormik({
 })(OpsGenieForm);
 
 const mapStateToProps = (state) => ({
+  emails: state.EmailsReducer,
   opsGenies: state.OpsGenieReducer,
+  pagerDuties: state.PagerDutyReducer,
+  telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
 });
 
 function mapDispatchToProps(dispatch) {
