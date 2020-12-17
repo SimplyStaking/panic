@@ -85,7 +85,21 @@ PANIC supports the following commands:
 
 ## List of Alerts
 
-###### TODO: Content
+A complete list of alerts will now be presented. These are grouped into [System Alerts](#system-alerts) and [GitHub Repository Alerts](#github-repository-alerts) for easier understanding.
+
+Each alert has either severity thresholds associated, or is associated a single severity. A severity threshold is a `value`, `severity` pair such that when a metric associated with the alert reaches the value `value`, an alert with severity `severity` is raised. For example, the user can configure the `SystemCPUUsageDecreasedBelowThresholdAlert` to be raised as `CRITICAL` whenever the System CPU Usage of a system reaches 95%. On the other hand, if the alert is associated a single severity, that alert will always be raised with the same severity whenever the alert rule is obeyed. For example, when a System is back up again after it was down, a `SystemBackUpAgainAlert` with severity `INFO` is raised. In addition to this, not all alerts have their severities or severity thresholds configurable, also some alerts can be even disabled altogether.
+
+In the lists below we will show which alerts have severity thresholds and which alerts have a single severity associated. In addition to this we will state which are configurable/non-configurable and which can be disabled/enabled.
+
+**Note**: Alerts can be configured and/or enabled/disabled using the installation procedure described [here](../README.md)
+
+## System Alerts
+
+| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|---|---|---|---|
+| `SystemWentDownAtAlert` | `WARNING` <br\> `CRITICAL` | `N\A` | ✓ <br\> ✓ | ✓ <br\> ✓ | A `WARNING` alert is raised if `warning_threshold` seconds pass after a system is down and a `CRITICAL` alert is periodically raised each time `critical_threshold` seconds pass after the system is down. |
+
+## GitHub Repository Alerts
 
 ---
 [Back to front page](../README.md)
