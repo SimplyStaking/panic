@@ -480,7 +480,7 @@ async function getFiles(dir) {
 // folder
 app.get('/server/paths', verify, async(req, res) => {
   console.log('Received GET request for %s', req.url);
-  const configPath = path.join(__dirname, '../../', 'config');
+  const configPath = path.join(__dirname, '../', 'config');
   try{
     const files = getFiles(configPath)
       .then(function(files) {
@@ -558,7 +558,6 @@ app.post('/server/config', verify, async (req, res) => {
     configType, fileName, chain_name, baseChain,
   } = req.query;
   const { config } = req.body;
-  console.log(config);
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
   const missingParamsList = utils.missingValues({

@@ -42,7 +42,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
     stepChanger({ step });
   }
 
-  // Next page is infact returning back to the Chains Setings Page
+  // Next page is in fact returning back to the Chains settings page
   // but keeping the name the same for consistency
   function nextPage(page) {
     // Clear the current chain, id we are working on.
