@@ -54,8 +54,8 @@ PANIC supports the following alerting channels:
 | `Telegram` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts delivered to a Telegram chat via a Telegram bot in the form of a text message. |
 | `E-mail` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts sent as emails using an SMTP server, with option for authentication. |
 | `Twilio` | `CRITICAL` | None | Alerts trigger a phone call to grab the node operator's attention. |
-| `Opsenie` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's Opsgenie space using the following severity mapping: `CRITICAL` `&#8594;` `P1`, `WARNING` `&#8594;` `P3`, `ERROR` `&#8594;` `P3`, `INFO` `&#8594;` `P5`|
-| `PagerDuty` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's PagerDuty space using the following severity mapping: `CRITICAL` `&#8594;` `critical`, `WARNING` `&#8594;` `warning`, `ERROR` `&#8594;` `error`, `INFO` `&#8594;` `info`|
+| `Opsenie` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's Opsgenie space using the following severity mapping: `CRITICAL` → `P1`, `WARNING` → `P3`, `ERROR` → `P3`, `INFO` → `P5`|
+| `PagerDuty` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's PagerDuty space using the following severity mapping: `CRITICAL` → `critical`, `WARNING` → `warning`, `ERROR` → `error`, `INFO` → `info`|
 
 Using the installation procedure, the user is able to specify the chain a system/GitHub repository belongs to (if the system/GitHub repository is not associated with a chain, it is associated automatically under the GENERAL chain). Due to this, the user is given the capability of associating channels with specific chains, hence obtaining a more organized alerting system. In addition to this, the user can set multiple alerting channels of the same type and enable/disable alert severities on each channel.
 
