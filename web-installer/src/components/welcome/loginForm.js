@@ -3,8 +3,6 @@ import { makeStyles } from "@material-ui/core/styles";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { LoginButton } from 'utils/buttons';
-import { CHANNELS_PAGE } from 'constants/constants';
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import Card from "components/material_ui/Card/Card.js";
@@ -12,28 +10,21 @@ import CardHeader from "components/material_ui/Card/CardHeader.js";
 import CardBody from "components/material_ui/Card/CardBody.js";
 import CardFooter from "components/material_ui/Card/CardFooter.js";
 import CustomInput from "components/material_ui/CustomInput/CustomInput.js";
-import styles from "assets/jss/material-kit-react/views/componentsSections/loginStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/componentsSections/loginStyle.js";
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Tooltip } from '@material-ui/core';
 import { theme } from 'components/theme/default';
 import InfoIcon from '@material-ui/icons/Info';
+import StartDialog from 'components/welcome/startDialog';
 import Data from 'data/welcome';
 
 const useStyles = makeStyles(styles);
 
 const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
-  authenticate}) => {
+  authenticate, checkForConfigs}) => {
 
   const classes = useStyles();
-
-  // If authentication is accepted by the backend, change the page
-  // to the channels setup and set authenticated.
-  function setAuthentication(authenticated) {
-    if (authenticated) {
-      pageChanger({ page: CHANNELS_PAGE });
-      authenticate(authenticated);
-    }
-  }
 
   return (
     <div>
@@ -99,11 +90,12 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                   />
                 </CardBody>
                 <CardFooter className={classes.cardFooter}>
-                  <LoginButton
-                    username={values.username}
-                    password={values.password}
-                    disabled={(Object.keys(errors).length !== 0)}
-                    setAuthentication={setAuthentication}
+                  <StartDialog
+                    values={values}
+                    errors={errors}
+                    pageChanger={pageChanger}
+                    authenticate={authenticate}
+                    checkForConfigs={checkForConfigs}
                   />
                 </CardFooter>
               </form>
