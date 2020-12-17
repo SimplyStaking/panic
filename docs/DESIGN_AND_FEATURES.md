@@ -10,7 +10,7 @@
 
 The PANIC alerter can alert the node operator about the host a node is running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter), and new GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
-<img src="./images/IMG_PANIC_DESIGN_10X.png" alt="PANIC Design" width="900"/>
+<img src="./images/IMG_PANIC_DESIGN_10X.png" alt="PANIC Design"/>
 
 **Note**: In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on the metrics of these nodes.
 
