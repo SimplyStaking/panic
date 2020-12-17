@@ -49,19 +49,22 @@ function GeneralsPage() {
                     </Box>
                   </Box>
                 </Grid>
+                <Grid item xs={12} />
+                <Grid item xs={4} />
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={BACK}
                     navigation={CHAINS_PAGE}
                   />
                 </Grid>
-                <Grid item xs={8} />
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={NEXT}
                     navigation={USERS_PAGE}
                   />
                 </Grid>
+                <Grid item xs={4} />
+                <Grid item xs={12} />
               </Grid>
             </div>
           </CardBody>

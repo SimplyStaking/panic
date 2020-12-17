@@ -131,6 +131,7 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
               <Grid item xs={12} />
               <br/>
               <br/>
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -140,7 +141,6 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -150,6 +150,8 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>

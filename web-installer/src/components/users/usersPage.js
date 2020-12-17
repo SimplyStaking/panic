@@ -57,16 +57,21 @@ function UsersPage() {
                     </Box>
                   </Box>
                 </Grid>
+                <Grid item xs={12} />
+                <br />
+                <br />
+                <Grid item xs={4} />
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={BACK}
                     navigation={GENERAL_PAGE}
                   />
                 </Grid>
-                <Grid item xs={8} />
                 <Grid item xs={2}>
                   <SaveConfig />
                 </Grid>
+                <Grid item xs={4} />
+                <Grid item xs={12} />
               </Grid>
             </div>
           </CardBody>

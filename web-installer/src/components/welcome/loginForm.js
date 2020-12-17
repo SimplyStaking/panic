@@ -49,7 +49,7 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                   <CustomInput
                     error={errors.username}
                     value={values.username}
-                    helperText={errors.username ? errors.username : ''}
+                    helperText={''}
                     handleChange={handleChange}
                     name="username"
                     placeHolder="Username"
@@ -73,7 +73,7 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                   <CustomInput
                     error={errors.password}
                     value={values.password}
-                    helperText={errors.password ? errors.password : ''}
+                    helperText={''}
                     handleChange={handleChange}
                     name="password"
                     placeHolder="Password"

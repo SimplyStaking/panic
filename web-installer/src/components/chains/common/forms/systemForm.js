@@ -166,6 +166,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={12} />
               <br/>
               <br/>
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <NavigationButton
@@ -176,7 +177,6 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -186,6 +186,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>

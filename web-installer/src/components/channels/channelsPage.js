@@ -7,12 +7,18 @@ import TwilioIcon from 'assets/icons/twilio.svg';
 import EmailIcon from 'assets/icons/email.svg';
 import PagerDuty from 'assets/icons/pagerduty.svg';
 import OpsGenie from 'assets/icons/opsGenie.svg';
-import { TelegramFormContainer, TelegramTableContainer } from 'containers/channels/telegramContainer';
-import { TwilioFormContainer, TwilioTableContainer } from 'containers/channels/twilioContainer';
-import { EmailFormContainer, EmailTableContainer } from 'containers/channels/emailContainer';
-import { PagerDutyFormContainer, PagerDutyTableContainer } from 'containers/channels/pagerDutyContainer';
-import { OpsGenieFormContainer, OpsGenieTableContainer } from 'containers/channels/opsGenieContainer';
-import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import { TelegramFormContainer, TelegramTableContainer } from
+  'containers/channels/telegramContainer';
+import { TwilioFormContainer, TwilioTableContainer } from
+  'containers/channels/twilioContainer';
+import { EmailFormContainer, EmailTableContainer } from
+  'containers/channels/emailContainer';
+import { PagerDutyFormContainer, PagerDutyTableContainer } from
+  'containers/channels/pagerDutyContainer';
+import { OpsGenieFormContainer, OpsGenieTableContainer } from
+  'containers/channels/opsGenieContainer';
+import NavigationButtonContainer from
+  'containers/global/navigationButtonContainer';
 import {
   WELCOME_PAGE, CHAINS_PAGE, NEXT, BACK, TELEGRAM, TWILIO, EMAIL,
   PAGERDUTY, OPSGENIE,
@@ -22,7 +28,8 @@ import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import Card from "components/material_ui/Card/Card.js";
 import CardBody from "components/material_ui/Card/CardBody.js";
-import styles from "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
 import Parallax from "components/material_ui/Parallax/Parallax.js";
 import DescriptionSection from "components/channels/descriptionSection.js";
 
@@ -87,19 +94,21 @@ function ChannelsPage() {
                 </div>
               </Grid>
               <Grid item xs={12} />
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <NavigationButtonContainer
                   text={BACK}
                   navigation={WELCOME_PAGE}
                 />
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <NavigationButtonContainer
                   text={NEXT}
                   navigation={CHAINS_PAGE}
                 />
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
               </Grid>
             </div>
           </CardBody>

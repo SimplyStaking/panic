@@ -862,10 +862,11 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
             </Table>
           </TableContainer>
         </Box>
-        <Grid item xs={12} />
-        <br/>
-        <br/>
         <Grid container spacing={2}>
+          <Grid item xs={12} />
+          <br/>
+          <br/>
+          <Grid item xs={4} />
           <Grid item xs={2}>
             <Box px={2}>
               <StepButtonContainer
@@ -875,7 +876,6 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
               />
             </Box>
           </Grid>
-          <Grid item xs={8} />
           <Grid item xs={2}>
             <Box px={2}>
               <NavigationButton
@@ -886,6 +886,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
               />
             </Box>
           </Grid>
+          <Grid item xs={4} />
+          <Grid item xs={12} />
         </Grid>
       </div>
     </MuiThemeProvider>

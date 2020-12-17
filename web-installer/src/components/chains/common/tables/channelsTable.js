@@ -291,6 +291,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
         <br />
         <br />
         <br />
+        <Grid item xs={4} />
         <Grid item xs={2}>
           <Box px={2}>
             <StepButtonContainer
@@ -300,7 +301,6 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
             />
           </Box>
         </Grid>
-        <Grid item xs={8} />
         <Grid item xs={2}>
           <Box px={2}>
             <StepButtonContainer
@@ -310,6 +310,8 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
             />
           </Box>
         </Grid>
+        <Grid item xs={4} />
+        <Grid item xs={4} />
       </Grid>
     </div>
   );

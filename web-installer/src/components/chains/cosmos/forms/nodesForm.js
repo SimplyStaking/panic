@@ -320,6 +320,10 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   </Button>
                 </Grid>
               </Grid>
+              <Grid item xs={12} />
+              <br />
+              <br />
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -329,7 +333,6 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -339,6 +342,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>

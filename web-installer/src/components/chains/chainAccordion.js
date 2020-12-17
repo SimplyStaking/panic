@@ -36,13 +36,23 @@ function ChainAccordion({icon, name, button, table}) {
         </AccordionSummary>
         <AccordionDetails>
           <Grid container>
-            <Grid item xs={10} />
+            <Grid item xs={12} />
+            <br />
+            <br />
+            <Grid item xs={5} />
             <Grid item xs={2}>
               {button}
             </Grid>
+            <Grid item xs={5} />
+            <Grid item xs={12} />
+            <br />
+            <br />
             <Grid item xs={12}>
               {table}
             </Grid>
+            <br />
+            <br />
+            <Grid item xs={12} />
           </Grid>
         </AccordionDetails>
       </Accordion>
