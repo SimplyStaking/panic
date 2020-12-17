@@ -28,8 +28,6 @@ For GitHub repository monitoring and alerting, PANIC operates similarly to the a
 
 **Note**: In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on metrics obtained from various data sources.
 
-###### TODO: Content
-
 ## Alerting Channels
 
 ###### TODO: Content
