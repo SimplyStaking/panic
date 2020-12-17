@@ -1,14 +1,16 @@
 # Design and Features of PANIC
 
 - [**High-Level Design**](#high-level-design)
-- [**Alerting Channels**](#alerting-channels)
 - [**Alert Types**](#alert-types)
+- [**Alerting Channels**](#alerting-channels)
 - [**Telegram Commands**](#telegram-commands)
 - [**List of Alerts**](#list-of-alerts)
 
 ## High-Level Design
 
-The PANIC alerter can alert the node operator about the host a node is running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter), and new GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
+The PANIC alerter can alert a Cosmos-SDK-based or Substrate-based node operator about the host a Cosmos-SDK/Substrate node is running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter), and new Cosmos-SDK-based or Substrate-based GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). Having said that, system monitoring and GitHub repository monitoring where developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository.
+
+The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
 <img src="./images/IMG_PANIC_DESIGN_10X.png" alt="PANIC Design"/>
 
@@ -26,15 +28,41 @@ For system monitoring and alerting, PANIC operates as follows:
 
 For GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes.
 
-**Note**: In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on metrics obtained from various data sources.
-
-## Alerting Channels
-
-###### TODO: Content
+**Note**: In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on blockchain-specific metrics obtained from various data sources.
 
 ## Alert Types
 
-###### TODO: Content
+Different events vary in severity. We cannot treat an alert for a new version of the Cosmos-SDK as being on the same level as an alert for 100% Storage usage. PANIC makes use of four alert types:
+
+- **CRITICAL**: Alerts of this type are the most severe. Such alerts are raised to inform the node operator of a situation which requires immediate action. **Example**: System's storage usage reached 100%.
+- **WARNING**: A less severe alert type but which still requires attention as it may be a warning of an incoming critical alert. **Example**: System's storage usage reached 85%.
+- **INFO**: Alerts of this type have little to zero severity but consists of information which is still important to acknowledge. Info alerts also include positive events. **Example**: System's storage usage is no longer at a critical level.
+- **ERROR**: Alerts of this type are triggered by abnormal events and ranges from zero to high severity based on the error that has occurred and how many times it is triggered. **Example**: Cannot access GitHub page alert.
+
+**Note:** The critical and warning values (100% and 85%) mentioned in the examples above are configurable, and these can be configured using the installation procedure mentioned [here](../README.md)
+
+## Alerting Channels
+
+PANIC supports multiple alerting channels. By default, only the console and logging channels are enabled, allowing the node operator to run the alerter without having to set up extra alerting channels. This is not enough for a more serious and longer-term alerting setup, for which the node operator should set up the remaining alerting channels using the installation process described [here](../README.md).
+
+PANIC supports the following alerting channels:
+
+| Channel | Severities Supported | Configurable Severities | Description |
+|---|---|---|---|
+| `Console` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts printed to standard output (`stdout`) of the alerter's docker container. |
+| `Log` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts logged to an alerts log (`alerter/log/alerts.log`). |
+| `Telegram` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts delivered to a Telegram chat via a Telegram bot in the form of a text message. |
+| `E-mail` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts sent as emails using an SMTP server, with option for authentication. |
+| `Twilio` | `CRITICAL` | None | Alerts trigger a phone call to grab the node operator's attention. |
+| `Opsenie` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's Opsgenie space using the following severity mapping: `CRITICAL` `&#8594;` `P1`, `WARNING` `&#8594;` `P3`, `ERROR` `&#8594;` `P3`, `INFO` `&#8594;` `P5`|
+| `PagerDuty` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's PagerDuty space using the following severity mapping: `CRITICAL` `&#8594;` `critical`, `WARNING` `&#8594;` `warning`, `ERROR` `&#8594;` `error`, `INFO` `&#8594;` `info`|
+
+Using the installation procedure, the user is able to specify the chain a system/GitHub repository belongs to (if the system/GitHub repository is not associated with a chain, it is associated automatically under the GENERAL chain). Due to this, the user is given the capability of associating channels with specific chains, hence obtaining a more organized alerting system. In addition to this, the user can set multiple alerting channels of the same type and enable/disable alert severities on each channel.
+
+For example the node operator may have the following setup:
+- A Telegram Channel for Polkadot alerts with only WARNING and CRITICAL alerts enabled.
+- A Telegram Channel for Cosmos alerts with all severities enabled.
+- A Twilio Channel for all chains added to PANIC.
 
 ## Telegram Commands
 
