@@ -87,6 +87,7 @@ export const LOAD_REPOSITORY_GENERAL = 'LOAD_REPOSITORY_GENERAL';
 // Users Page, containing only actions to set and remove users
 export const ADD_USER = 'ADD_USER';
 export const REMOVE_USER = 'REMOVE_USER';
+export const LOAD_USERS = 'LOAD_USERS';
 
 // Login actions
 export const LOGIN = 'LOGIN';

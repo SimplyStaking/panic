@@ -23,15 +23,15 @@ const UsersTable = ({users, removeUserDetails}) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.username}>
+          {users.map((username) => (
+            <TableRow key={username}>
               <TableCell align="center">
-                {user.username}
+                {username}
               </TableCell>
               <TableCell align="center">*************</TableCell>
               <TableCell align="center">
                 <DeleteAccount
-                  username={user.username}
+                  username={username}
                   removeFromRedux={removeUserDetails}
                 />
               </TableCell>

@@ -22,7 +22,7 @@ import Data from 'data/welcome';
 const useStyles = makeStyles(styles);
 
 const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
-  authenticate, checkForConfigs}) => {
+  authenticate, checkForConfigs, loadUsersFromMongo, addUserRedux}) => {
 
   const classes = useStyles();
 
@@ -96,6 +96,8 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                     pageChanger={pageChanger}
                     authenticate={authenticate}
                     checkForConfigs={checkForConfigs}
+                    loadUsersFromMongo={loadUsersFromMongo}
+                    addUserRedux={addUserRedux}
                   />
                 </CardFooter>
               </form>

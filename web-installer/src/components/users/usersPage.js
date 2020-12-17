@@ -53,6 +53,8 @@ function UsersPage() {
                       borderColor="grey.300"
                     >
                       <UsersFormContainer />
+                      <br />
+                      <br />
                       <UsersTableContainer />
                     </Box>
                   </Box>

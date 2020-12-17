@@ -437,6 +437,21 @@ app.post('/server/account/exists', verify, async (req, res) => {
   }
 });
 
+// This endpoint returns all the usernames of the accounts saved
+app.get('/server/account/all', verify, async (req, res) => {
+  console.log('Received GET request for %s', req.url);
+  try {
+    const result = await mongo.getRecords(
+      mongoDBUrl, dbname, accountsCollection,
+    )
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
+  } catch (err) {
+    // Inform the user of any errors.
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 // ---------------------------------------- MongoDB
 
 // This endpoint saves an account inside the database

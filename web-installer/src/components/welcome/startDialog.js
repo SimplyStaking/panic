@@ -11,7 +11,7 @@ import {StartNewButton } from 'utils/buttons';
 import Data from 'data/welcome';
 
 const StartDialog = ({values, errors, pageChanger, authenticate,
-    checkForConfigs }) => {
+    checkForConfigs, loadUsersFromMongo, addUserRedux }) => {
   const [open, setOpen] = React.useState(false);
 
   // If authentication is accepted by the backend, change the page
@@ -19,6 +19,8 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
   async function setAuthentication(authenticated) {
     if (authenticated) {
       authenticate(authenticated);
+      // Load users from mongo into redux
+      loadUsersFromMongo(addUserRedux);
       // Since it's authenticated we should check for configs
       const configResult = await checkForConfigs();
       if (configResult) {

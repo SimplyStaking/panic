@@ -1,9 +1,12 @@
 import { withFormik } from 'formik';
+import { ToastsStore } from 'react-toasts';
 import { connect } from 'react-redux';
 import LoginForm from 'components/welcome/loginForm';
 import { login, setAuthenticated } from 'redux/actions/loginActions';
 import { changePage } from 'redux/actions/pageActions';
 import { getConfigPaths } from 'utils/data';
+import { loadAccounts } from 'utils/data';
+import { addUser } from 'redux/actions/usersActions';
 import LoginSchema from './loginSchema';
 
 async function CheckForConfigs() {
@@ -30,6 +33,20 @@ async function CheckForConfigs() {
     }
   }
   return false;
+}
+
+async function LoadUsersFromMongo(addUserRedux) {
+  const accounts = await loadAccounts();
+  try {
+    Object.keys(accounts.data.result).forEach((key, index) => {
+      console.log(accounts.data.result[key].username);
+      addUserRedux(accounts.data.result[key].username);
+    });
+  }catch (err) {
+    console.log(err);
+    ToastsStore.info('An error has occurred when retrieving accounts from '
+                   + 'mongo.', 5000);
+  }
 }
 
 const Form = withFormik({
@@ -63,7 +80,9 @@ function mapDispatchToProps(dispatch) {
     loginDetails: (details) => dispatch(login(details)),
     authenticate: (details) => dispatch(setAuthenticated(details)),
     pageChanger: (page) => dispatch(changePage(page)),
+    addUserRedux: (details) => dispatch(addUser(details)),
     checkForConfigs: CheckForConfigs,
+    loadUsersFromMongo: LoadUsersFromMongo,
   };
 }
 

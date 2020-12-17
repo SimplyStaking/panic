@@ -27,7 +27,7 @@ const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography> Password: </Typography>
+            <Typography> Password </Typography>
           </Grid>
           <Grid item xs={10}>
             <TextField

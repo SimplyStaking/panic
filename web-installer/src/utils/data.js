@@ -42,6 +42,10 @@ function sendConfig(configType, fileName, chain_name, baseChain, config) {
   }, { config });
 }
 
+function loadAccounts() {
+  return fetchData('/server/account/all', {}, {});
+}
+
 function saveAccount(username, password) {
   return sendData('/server/account/save', {}, { username, password });
 }
@@ -87,5 +91,5 @@ export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
-  deleteAccount, getConfigPaths, getConfig,
+  deleteAccount, getConfigPaths, getConfig, loadAccounts,
 };
