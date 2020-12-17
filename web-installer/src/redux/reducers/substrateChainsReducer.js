@@ -576,6 +576,9 @@ function substrateChainsById(state = {}, action) {
     case REMOVE_CHAIN_SUBSTRATE:
       return _.omit(state, action.payload.id);
     case ADD_NODE_SUBSTRATE:
+      if (!(state[action.payload.parent_id].hasOwnProperty("nodes"))){
+        state[action.payload.node.parent_id].nodes = [];
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -592,6 +595,23 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.node.parent_id].nodes = [];
         state[action.payload.node.parent_id].chain_name = action.payload.
           chain_name;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = 
+          substrateTimeWindowAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          substrateThresholdAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts =
+          substrateSeverityAlerts;
       }
       if (!(state[action.payload.node.parent_id].nodes.includes(
           action.payload.node.id))){
@@ -622,6 +642,9 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
+        state[action.payload.node.parent_id].repositories = [];
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -637,6 +660,23 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repositories"))){
         state[action.payload.repo.parent_id].repositories = [];
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = 
+          substrateTimeWindowAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          substrateThresholdAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts =
+          substrateSeverityAlerts;
       }
       if (!(state[action.payload.repo.parent_id].repositories.includes(
           action.payload.repo.id))){
@@ -693,6 +733,20 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].repeatAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = 
+          substrateTimeWindowAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          substrateThresholdAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts =
+          substrateSeverityAlerts;
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -728,6 +782,18 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].timeWindowAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          substrateThresholdAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts =
+          substrateSeverityAlerts;
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -762,6 +828,18 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].thresholdAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = 
+          substrateTimeWindowAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+        state[action.payload.parent_id].severityAlerts =
+          substrateSeverityAlerts;
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -795,6 +873,19 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
         state[action.payload.parent_id].severityAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "timeWindowAlerts"))){
+        state[action.payload.parent_id].timeWindowAlerts = 
+          substrateTimeWindowAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          substrateThresholdAlerts;
       }
       return {
         ...state,

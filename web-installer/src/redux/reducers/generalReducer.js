@@ -166,6 +166,14 @@ function GeneralReducer(state = generalState, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
         state[action.payload.parent_id].repositories = [];
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          generalThresholdAlerts;
+      }
       if (!(state[action.payload.parent_id].repositories.includes(
           action.payload.id))){
         return {
@@ -223,6 +231,14 @@ function GeneralReducer(state = generalState, action) {
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("systems"))){
         state[action.payload.parent_id].systems = [];
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          generalThresholdAlerts;
       }
       if (!(state[action.payload.parent_id].systems.includes(action.payload.id))){
         return {
@@ -284,6 +300,11 @@ function GeneralReducer(state = generalState, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = {};
       }
+      if (!(state[action.payload.parent_id].hasOwnProperty(
+        "thresholdAlerts"))){
+        state[action.payload.parent_id].thresholdAlerts =
+          generalThresholdAlerts;
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -319,6 +340,9 @@ function GeneralReducer(state = generalState, action) {
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
         state[action.payload.parent_id].thresholdAlerts = {};
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
       }
       return {
         ...state,
