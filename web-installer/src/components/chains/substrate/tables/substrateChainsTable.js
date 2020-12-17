@@ -10,7 +10,11 @@ import Paper from '@material-ui/core/Paper';
 import { SUBSTRATE_SETUP_PAGE } from 'constants/constants';
 
 const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
-  removeChainDetails, removeNodeDetails, removeRepositoryDetails}) => {
+  removeChainDetails, removeNodeDetails, removeRepositoryDetails,
+  removeOpsGenieDetails, removePagerDutyDetails, removeEmailDetails,
+  removeTwilioDetails, removeTelegramDetails, telegrams, twilios, emails,
+  pagerduties, opsgenies,
+  }) => {
 
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -23,6 +27,92 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
     const payload = { parent_id: chainID, id: '' };
+    let telegramPayload = {}
+    let twilioPayload = {}
+    let emailPayload = {} 
+    let opsGeniePayload = {}
+    let pagerDutyPayload = {}
+
+    for (let i = 0; i < telegrams.allIds.length; i += 1) {
+      telegramPayload = JSON.parse(JSON.stringify(
+        telegrams.byId[telegrams.allIds[i]]));
+      if (telegramPayload.parent_ids.includes(chainID)) {
+        var index = telegramPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          telegramPayload.parent_ids.splice(index, 1);
+        }
+        index =  telegramPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          telegramPayload.parent_names.splice(index, 1);
+        }
+        removeTelegramDetails(telegramPayload);
+      }
+    }
+
+    for (let i = 0; i < twilios.allIds.length; i += 1) {
+      twilioPayload = JSON.parse(JSON.stringify(
+        twilios.byId[twilios.allIds[i]]));
+      if (twilioPayload.parent_ids.includes(chainID)) {
+        var index = twilioPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          twilioPayload.parent_ids.splice(index, 1);
+        }
+        index =  twilioPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          twilioPayload.parent_names.splice(index, 1);
+        }
+        removeTwilioDetails(twilioPayload);
+      }
+    }
+
+
+    for (let i = 0; i < emails.allIds.length; i += 1) {
+      emailPayload = JSON.parse(JSON.stringify(
+        emails.byId[emails.allIds[i]]));
+      if (emailPayload.parent_ids.includes(chainID)) {
+        var index = emailPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          emailPayload.parent_ids.splice(index, 1);
+        }
+        index =  emailPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          emailPayload.parent_names.splice(index, 1);
+        }
+        removeEmailDetails(emailPayload);
+      }
+    }
+
+    for (let i = 0; i < opsgenies.allIds.length; i += 1) {
+      opsGeniePayload = JSON.parse(JSON.stringify(
+        opsgenies.byId[opsgenies.allIds[i]]));
+      if (opsGeniePayload.parent_ids.includes(chainID)) {
+        var index = opsGeniePayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          opsGeniePayload.parent_ids.splice(index, 1);
+        }
+        index =  opsGeniePayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          opsGeniePayload.parent_names.splice(index, 1);
+        }
+        removeOpsGenieDetails(opsGeniePayload);
+      }
+    }
+
+    for (let i = 0; i < pagerduties.allIds.length; i += 1) {
+      pagerDutyPayload = JSON.parse(JSON.stringify(
+        pagerduties.byId[pagerduties.allIds[i]]));
+      if (pagerDutyPayload.parent_ids.includes(chainID)) {
+        var index = pagerDutyPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          pagerDutyPayload.parent_ids.splice(index, 1);
+        }
+        index =  pagerDutyPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          pagerDutyPayload.parent_names.splice(index, 1);
+        }
+        removePagerDutyDetails(pagerDutyPayload);
+      }
+    }
 
     // Clear all the configured nodes from state
     for (let i = 0; i < currentConfig.nodes.length; i += 1) {
@@ -96,6 +186,11 @@ SubstrateChainsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
+  removeOpsGenieDetails: PropTypes.func.isRequired,
+  removePagerDutyDetails: PropTypes.func.isRequired,
+  removeEmailDetails: PropTypes.func.isRequired,
+  removeTwilioDetails: PropTypes.func.isRequired,
+  removeTelegramDetails:PropTypes.func.isRequired,
 });
 
 export default SubstrateChainsTable;
