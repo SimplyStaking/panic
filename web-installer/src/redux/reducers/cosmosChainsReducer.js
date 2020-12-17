@@ -458,6 +458,9 @@ function cosmosChainsById(state = {}, action) {
     case REMOVE_CHAIN_COSMOS:
       return _.omit(state, action.payload.id);
     case ADD_NODE_COSMOS:
+      if (!(state[action.payload.parent_id].hasOwnProperty("nodes"))){
+        state[action.payload.parent_id].nodes = [];
+      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -501,6 +504,9 @@ function cosmosChainsById(state = {}, action) {
       // it must be conditional. Checking if parent id exists is enough.
       if (state[action.payload.parent_id] === undefined) {
         return state;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
+        state[action.payload.parent_id].repositories = [];
       }
       return {
         ...state,
@@ -551,6 +557,9 @@ function cosmosChainsById(state = {}, action) {
       // it must be conditional. Checking if parent id exists is enough.
       if (state[action.payload.parent_id] === undefined) {
         return state;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("kmses"))){
+        state[action.payload.parent_id].kmses = [];
       }
       return {
         ...state,

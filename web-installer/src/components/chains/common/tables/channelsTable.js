@@ -79,7 +79,8 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                             control={(
                               <Checkbox
                                 checked={
-                                  telegrams.byId[id].parent_ids.includes(currentChain)
+                                  telegrams.byId[id].parent_ids.includes(
+                                    currentChain)
                                 }
                                 onClick={() => {
                                   createPayload(

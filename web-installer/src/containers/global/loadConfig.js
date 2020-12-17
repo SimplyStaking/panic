@@ -152,7 +152,8 @@ class LoadConfig extends Component {
           Object.keys(config.data.result).forEach(function(key) {
             parent_id = config.data.result[key].parent_id;
             if (key in repeatAlerts.byId) {
-              repeatAlerts.byId[key].parent_id = config.data.result[key].parent_id;
+              repeatAlerts.byId[key].parent_id = config.data.result[key].
+                parent_id;
               warning = {
                 repeat: config.data.result[key].warning_repeat,
                 enabled: config.data.result[key].warning_enabled,
@@ -165,7 +166,8 @@ class LoadConfig extends Component {
               repeatAlerts.byId[key].critical = critical;
               repeatAlerts.byId[key].enabled = config.data.result[key].enabled;
             }else if (key in thresholdAlerts.byId) {
-              thresholdAlerts.byId[key].parent_id = config.data.result[key].parent_id;
+              thresholdAlerts.byId[key].parent_id = config.data.result[key].
+                parent_id;
               warning = {
                 threshold: config.data.result[key].warning_threshold,
                 enabled: config.data.result[key].warning_enabled,
@@ -177,7 +179,8 @@ class LoadConfig extends Component {
               }
               thresholdAlerts.byId[key].warning = warning;
               thresholdAlerts.byId[key].critical = critical;
-              thresholdAlerts.byId[key].enabled = config.data.result[key].enabled;
+              thresholdAlerts.byId[key].enabled = config.data.result[key].
+                enabled;
             }
           });
           payload = { parent_id: parent_id, alerts: repeatAlerts }

@@ -123,6 +123,8 @@ const periodicState = {
 const generalState = {
   byId: {
     GLOBAL: {
+      chain_name: GLOBAL,
+      id: GLOBAL,
       repositories: [],
       systems: [],
       periodic: periodicState,
@@ -143,14 +145,17 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-
+      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
+        state[action.payload.parent_id].repositories = [];
+      }
       return {
         ...state,
         byId: {
           ...state.byId,
           GLOBAL: {
             ...state.byId[GLOBAL],
-            repositories: state.byId[GLOBAL].repositories.concat(action.payload.id),
+            repositories: state.byId[GLOBAL].repositories.concat(
+              action.payload.id),
           },
         },
       };
@@ -198,6 +203,9 @@ function GeneralReducer(state = generalState, action) {
       // it must be conditional. Checking if parent id exists is enough.
       if (action.payload.parent_id !== GLOBAL) {
         return state;
+      }
+      if (!(state[action.payload.parent_id].hasOwnProperty("systems"))){
+        state[action.payload.parent_id].systems = [];
       }
       return {
         ...state,

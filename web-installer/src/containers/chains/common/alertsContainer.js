@@ -13,6 +13,7 @@ import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import GeneralData from 'data/general';
 
+
 // ------------------------- Cosmos Based Chain Data --------------------
 
 // Cosmos redux data that will be used to control the alerts table.
