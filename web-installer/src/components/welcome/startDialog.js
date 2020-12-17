@@ -1,5 +1,4 @@
 import React from 'react';
-import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -17,11 +16,11 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
 
   // If authentication is accepted by the backend, change the page
   // to the channels setup and set authenticated.
-  const setAuthentication = (authenticated) => {
+  async function setAuthentication(authenticated) {
     if (authenticated) {
       authenticate(authenticated);
       // Since it's authenticated we should check for configs
-      const configResult = checkForConfigs();
+      const configResult = await checkForConfigs();
       if (configResult) {
         setOpen(true);
       }else {
