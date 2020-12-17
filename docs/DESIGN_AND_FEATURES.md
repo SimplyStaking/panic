@@ -28,7 +28,10 @@ For system monitoring and alerting, PANIC operates as follows:
 
 For GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes.
 
-**Note**: In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on blockchain-specific metrics obtained from various data sources.
+**Notes**: 
+
+- In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on blockchain-specific metrics obtained from various data sources.
+- Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` command described [here](#telegram-commands).
 
 ## Alert Types
 
@@ -49,7 +52,7 @@ PANIC supports the following alerting channels:
 
 | Channel | Severities Supported | Configurable Severities | Description |
 |---|---|---|---|
-| `Console` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts printed to standard output (`stdout`) of the alerter's docker container. |
+| `Console` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts printed to standard output (`stdout`) of the alerter's Docker container. |
 | `Log` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts logged to an alerts log (`alerter/log/alerts.log`). |
 | `Telegram` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts delivered to a Telegram chat via a Telegram bot in the form of a text message. |
 | `E-mail` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts sent as emails using an SMTP server, with option for authentication. |
@@ -66,7 +69,19 @@ For example the node operator may have the following setup:
 
 ## Telegram Commands
 
-###### TODO: Content
+Telegram bots in PANIC serve two purposes. As mentioned above, they are used to send alerts. However they can also accept commands, allowing the node operator to have some control over the alerter and check its status.
+
+PANIC supports the following commands:
+| Command | Parameters | Description |
+|---|---|---|
+| `/start` | None | A welcome message is returned |
+| `/ping` | None | Pings the Telegram Commands Handler associated with the Telegram Chat and returns `PONG!` if it is running. The user can use this command to check that the associated Telegram Commands Handler is running. |
+| `/help` | None | Returns a guide of acceptable commands and their description. |
+| `/mute` | `Optional( List(<severity>) )` | Mutes List(<severity>) alerts on all channels (Including all other channels which are set-up ex. Opsgenie) for the chains associated with the Telegram Channel. If the list of severities is not given, all alerts for the chains associated with the Telegram Channel are muted on all channels. |
+| `/unmute` | None | Unmutes all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for chains associated with the Telegram channel. |
+| `/mute_all` | `Optional( List(<severity>) )` | Mutes List(<severity>) alerts on all channels (Including all other channels which are set-up ex. Opsgenie) for every chain being monitored (including the GENERAL chain). If the list of severities is not given, all alerts for all chains being monitored are muted on all channels. |
+| `/unmute_all` | None | Unmutes all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for every chain being monitored (including the GENERAL chain). |
+| `/status` | None | Returns whether the components that constitute PANIC are running or not. If there are problems, the problems are highlighted in the status message. |
 
 ## List of Alerts
 
