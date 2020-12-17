@@ -170,7 +170,7 @@ function GeneralReducer(state = generalState, action) {
         state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
+          "thresholdAlerts"))){
         state[action.payload.parent_id].thresholdAlerts =
           generalThresholdAlerts;
       }
@@ -236,11 +236,12 @@ function GeneralReducer(state = generalState, action) {
         state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
+          "thresholdAlerts"))){
         state[action.payload.parent_id].thresholdAlerts =
           generalThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].systems.includes(action.payload.id))){
+      if (!(state[action.payload.parent_id].systems.includes(
+          action.payload.id))){
         return {
           ...state,
           [action.payload.parent_id]: {

@@ -476,20 +476,24 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.node.parent_id].nodes = [];
         state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
+      if (!(state[action.payload.node.parent_id].hasOwnProperty(
+        "repeatAlerts"))){
+        state[action.payload.node.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
+      if (!(state[action.payload.node.parent_id].hasOwnProperty(
         "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
+        state[action.payload.node.parent_id].timeWindowAlerts = 
           cosmosTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
+      if (!(state[action.payload.node.parent_id].hasOwnProperty(
         "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts = cosmosThresholdAlerts;
+        state[action.payload.node.parent_id].thresholdAlerts =
+          cosmosThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts = cosmosSeverityAlerts;
+      if (!(state[action.payload.node.parent_id].hasOwnProperty(
+          "severityAlerts"))){
+        state[action.payload.node.parent_id].severityAlerts =
+          cosmosSeverityAlerts;
       }
       if (!(state[action.payload.node.parent_id].nodes.includes(
           action.payload.node.id))){
@@ -541,21 +545,25 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.repo.parent_id].chain_name = action.payload.
           chain_name;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
+      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
+          "repeatAlerts"))){
+        state[action.payload.repo.parent_id].repeatAlerts =
+          cosmosRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
+      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
+          "timeWindowAlerts"))){
+        state[action.payload.repo.parent_id].timeWindowAlerts = 
           cosmosTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
+      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
+          "thresholdAlerts"))){
+        state[action.payload.repo.parent_id].thresholdAlerts =
           cosmosThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts = cosmosSeverityAlerts;
+      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
+          "severityAlerts"))){
+        state[action.payload.repo.parent_id].severityAlerts =
+          cosmosSeverityAlerts;
       }
       if (!(state[action.payload.repo.parent_id].repositories.includes(
           action.payload.repo.id))){
@@ -611,21 +619,24 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.kms.parent_id].chain_name = action.payload.
           chain_name;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
+      if (!(state[action.payload.kms.parent_id].hasOwnProperty(
+          "repeatAlerts"))){
+        state[action.payload.kms.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
+      if (!(state[action.payload.kms.parent_id].hasOwnProperty(
+          "timeWindowAlerts"))){
+        state[action.payload.kms.parent_id].timeWindowAlerts = 
           cosmosTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
+      if (!(state[action.payload.kms.parent_id].hasOwnProperty(
+          "thresholdAlerts"))){
+        state[action.payload.kms.parent_id].thresholdAlerts =
           cosmosThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts = cosmosSeverityAlerts;
+      if (!(state[action.payload.kms.parent_id].hasOwnProperty(
+          "severityAlerts"))){
+        state[action.payload.kms.parent_id].severityAlerts =
+          cosmosSeverityAlerts;
       }
       if (!(state[action.payload.kms.parent_id].kmses.
           includes(action.payload.kms.id))){
@@ -683,7 +694,7 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
+          "timeWindowAlerts"))){
         state[action.payload.parent_id].timeWindowAlerts = 
           cosmosTimeWindowAlerts;
       }

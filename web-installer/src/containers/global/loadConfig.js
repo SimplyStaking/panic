@@ -192,7 +192,9 @@ class LoadConfig extends Component {
         if (res[2] == 'email_config.ini') {
           config = await getConfig('channel', 'email_config.ini', '', '')
           Object.keys(config.data.result).forEach(function(key) {
-            loadEmailDetails(config.data.result[key]);
+            payload = config.data.result[key];
+            payload.emails_to = config.data.result[key].emails_to.split(',');
+            loadEmailDetails(payload);
           });
         }else if (res[2] == 'opsgenie_config.ini') {
           config = await getConfig('channel', 'opsgenie_config.ini', '', '')
@@ -212,7 +214,10 @@ class LoadConfig extends Component {
         }else if (res[2] == 'twilio_config.ini') {
           config = await getConfig('channel', 'twilio_config.ini', '', '')
           Object.keys(config.data.result).forEach(function(key) {
-            loadTwilioDetails(config.data.result[key]);
+            payload = config.data.result[key];
+            payload.twilio_phone_numbers_to_dial = config.data.result[key].
+              twilio_phone_numbers_to_dial.split(',');
+            loadTwilioDetails(payload);
           });
         }
       } else if (res[1] == 'chains') {
