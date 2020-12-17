@@ -9,7 +9,7 @@ import {
   LOAD_CONFIG_SUBSTRATE, LOAD_NODE_SUBSTRATE, LOAD_REPOSITORY_SUBSTRATE,
   LOAD_REPEAT_ALERTS_SUBSTRATE, LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
   LOAD_THRESHOLD_ALERTS_SUBSTRATE, LOAD_SEVERITY_ALERTS_SUBSTRATE,
-} from '../actions/types';
+} from 'redux/actions/types';
 
 const substrateRepeatAlerts = {
   byId: {
@@ -517,7 +517,7 @@ function nodesById(state = {}, action) {
     case LOAD_NODE_SUBSTRATE:
       return {
         ...state,
-        [action.payload.id]: action.payload,
+        [action.payload.id]: action.payload.node,
       };
     case REMOVE_NODE_SUBSTRATE:
       return _.omit(state, action.payload.id);
@@ -532,8 +532,8 @@ function allNodes(state = [], action) {
     case ADD_NODE_SUBSTRATE:
       return state.concat(action.payload.id);
     case LOAD_NODE_SUBSTRATE:
-      if (!(state.includes(action.payload.id))){
-        return state.concat(action.payload.id);
+      if (!(state.includes(action.payload.node.id))){
+        return state.concat(action.payload.node.id);
       }else{
         return state;
       }

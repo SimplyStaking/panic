@@ -398,7 +398,7 @@ function nodesById(state = {}, action) {
     case LOAD_NODE_COSMOS:
       return {
         ...state,
-        [action.payload.id]: action.payload,
+        [action.payload.node.id]: action.payload.node,
       };
     case REMOVE_NODE_COSMOS:
       return _.omit(state, action.payload.id);
@@ -413,8 +413,8 @@ function allNodes(state = [], action) {
     case ADD_NODE_COSMOS:
       return state.concat(action.payload.id);
     case LOAD_NODE_COSMOS:
-      if (!(state.includes(action.payload.id))){
-        return state.concat(action.payload.id);
+      if (!(state.includes(action.payload.node.id))){
+        return state.concat(action.payload.node.id);
       }else{
         return state;
       }
@@ -466,7 +466,7 @@ function cosmosChainsById(state = {}, action) {
         },
       };
     case LOAD_NODE_COSMOS:
-      if (!(state.hasOwnProperty(action.node.parent_id))){
+      if (!(state.hasOwnProperty(action.payload.node.parent_id))){
         state[action.payload.node.parent_id] = {};
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
@@ -519,7 +519,7 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
       }
       if (!(state[action.payload.repo.parent_id].repositories.includes(
-          action.repo.payload.id))){
+          action.payload.repo.id))){
         return {
           ...state,
           [action.payload.repo.parent_id]: {
@@ -556,7 +556,8 @@ function cosmosChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          kmses: state[action.payload.parent_id].kmses.concat(action.payload.id),
+          kmses: state[action.payload.parent_id].kmses.concat(
+            action.payload.id),
         },
       };
     case LOAD_KMS_COSMOS:
@@ -565,7 +566,8 @@ function cosmosChainsById(state = {}, action) {
       }
       if (!(state[action.payload.kms.parent_id].hasOwnProperty("kmses"))){
         state[action.payload.kms.parent_id].kmses = [];
-        state[action.payload.kms.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.kms.parent_id].chain_name = action.payload.
+          chain_name;
       }
       if (!(state[action.payload.kms.parent_id].kmses.
           includes(action.payload.kms.id))){

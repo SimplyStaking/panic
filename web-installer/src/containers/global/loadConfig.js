@@ -132,8 +132,7 @@ class LoadConfig extends Component {
       if (res[1] == 'general') {
         if (res[2] == 'periodic_config.ini') {
           config = await getConfig('general', 'periodic_config.ini', '', '')
-          console.log(config.data.result);
-          updatePeriodicDetails(config.data.result);
+          updatePeriodicDetails(config.data.result.periodic);
         }else if (res[2] == 'repos_config.ini') {
           config = await getConfig('general', 'repos_config.ini', '', '')
           Object.keys(config.data.result).forEach(function(key) {
@@ -216,8 +215,8 @@ class LoadConfig extends Component {
       } else if (res[1] == 'chains') {
         if (res[2] == 'cosmos'){
           if (res[4] == 'nodes_config.ini') {
-            config = await getConfig('chain', 'nodes_config.ini', 'cosmos',
-                                      res[3])
+            config = await getConfig('chain', 'nodes_config.ini', res[3],
+              'cosmos')
             Object.keys(config.data.result).forEach(function(key) {
               payload = {
                 chain_name: res[3],
@@ -226,24 +225,24 @@ class LoadConfig extends Component {
               loadNodeCosmosDetails(payload);
             });
           } else if (res[4] == 'repos_config.ini') {
-            config = await getConfig('chain', 'repos_config.ini', 'cosmos',
-                                      res[3])
+            config = await getConfig('chain', 'repos_config.ini', res[3],
+              'cosmos')
             Object.keys(config.data.result).forEach(function(key) {
               loadRepositoryDetails(config.data.result[key]);
               payload = { chain_name: res[3], repo: config.data.result[key] }
               loadReposCosmosDetails(payload);
             });
           } else if (res[4] == 'kms_config.ini') {
-            config = await getConfig('chain', 'kms_config.ini', 'cosmos',
-                                      res[3])
+            config = await getConfig('chain', 'kms_config.ini', res[3],
+              'cosmos')
             Object.keys(config.data.result).forEach(function(key) {
               loadKMSDetails(config.data.result[key]);
               payload = { chain_name: res[3], kms: config.data.result[key] }
               loadKMSCosmosDetails(payload);
             });
           } else if (res[4] == 'alerts_config.ini') {
-            config = await getConfig('chain', 'alerts_config.ini', 'cosmos',
-              res[3])
+            config = await getConfig('chain', 'alerts_config.ini', res[3],
+              'cosmos')
             // Create copies of alerts
             repeatAlerts = JSON.parse(JSON.stringify(cosmosRepeatAlerts));
             thresholdAlerts = JSON.parse(JSON.stringify(cosmosThresholdAlerts));
@@ -290,8 +289,8 @@ class LoadConfig extends Component {
                   time_window: config.data.result[key].critical_time_window,
                   enabled: config.data.result[key].critical_enabled,
                 }
-                timeWindowAlerts.byId[key].warning = config.data.result[key].warning;
-                timeWindowAlerts.byId[key].critical = config.data.result[key].critical;
+                timeWindowAlerts.byId[key].warning = warning;
+                timeWindowAlerts.byId[key].critical = critical;
                 timeWindowAlerts.byId[key].enabled = config.data.result[key].enabled;
               }else if (key in severityAlerts.byId) {
                 severityAlerts.byId[key].parent_id = config.data.result[key].parent_id;
@@ -326,8 +325,8 @@ class LoadConfig extends Component {
           }
         } else if (res[2] == 'substrate') {
           if (res[4] == 'nodes_config.ini') {
-            config = await getConfig('chain', 'nodes_config.ini', 'substrate',
-                                      res[3])
+            config = await getConfig('chain', 'nodes_config.ini', res[3],
+              'substrate')
             Object.keys(config.data.result).forEach(function(key) {
               payload = {
                 chain_name: res[3],
@@ -336,8 +335,8 @@ class LoadConfig extends Component {
               loadNodeSubstrateDetails(payload);
             });
           } else if (res[4] == 'repos_config.ini') {
-            config = await getConfig('chain', 'repos_config.ini', 'substrate',
-                                      res[3])
+            config = await getConfig('chain', 'repos_config.ini', res[3],
+              'substrate')
             Object.keys(config.data.result).forEach(function(key) {
               loadRepositoryDetails(config.data.result[key]);
               payload = {
@@ -347,8 +346,8 @@ class LoadConfig extends Component {
               loadReposSubstrateDetails(payload);
             });
           } else if (res[4] == 'alerts_config.ini') {
-            config = await getConfig('chain', 'alerts_config.ini', 'substrate',
-              res[3])
+            config = await getConfig('chain', 'alerts_config.ini', res[3],
+              'substrate')
             // Create copies of alerts
             repeatAlerts = JSON.parse(JSON.stringify(substrateRepeatAlerts));
             thresholdAlerts = JSON.parse(JSON.stringify(substrateThresholdAlerts));
@@ -395,8 +394,8 @@ class LoadConfig extends Component {
                   time_window: config.data.result[key].critical_time_window,
                   enabled: config.data.result[key].critical_enabled,
                 }
-                timeWindowAlerts.byId[key].warning = config.data.result[key].warning;
-                timeWindowAlerts.byId[key].critical = config.data.result[key].critical;
+                timeWindowAlerts.byId[key].warning = warning;
+                timeWindowAlerts.byId[key].critical = critical;
                 timeWindowAlerts.byId[key].enabled = config.data.result[key].enabled;
               }else if (key in severityAlerts.byId) {
                 severityAlerts.byId[key].parent_id = config.data.result[key].parent_id;
