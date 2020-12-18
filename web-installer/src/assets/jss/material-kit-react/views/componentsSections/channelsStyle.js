@@ -1,8 +1,6 @@
 import { container } from "assets/jss/material-kit-react.js";
 import Background from "assets/img/backgrounds/background.png"
 
-import image from "assets/img/sign.jpg";
-
 const channelStyle = {
   backgroundImage:{
     backgroundImage: `url(${Background})`,
@@ -37,7 +35,6 @@ const channelStyle = {
     border: "0",
     display: "flex",
     alignItems: "center",
-    backgroundImage: "url(" + image + ")"
   },
   container,
   form: {
