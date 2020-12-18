@@ -280,6 +280,8 @@ class SaveConfig extends Component {
           .byId[id].enabled;
         thresholdAlertsConfig[id].critical_threshold = chainConfig
           .thresholdAlerts.byId[id].critical.threshold;
+        thresholdAlertsConfig[id].critical_repeat = chainConfig
+          .thresholdAlerts.byId[id].critical.repeat;
         thresholdAlertsConfig[id].critical_enabled = chainConfig
           .thresholdAlerts.byId[id].critical.enabled;
         thresholdAlertsConfig[id].warning_threshold = chainConfig
@@ -364,6 +366,8 @@ class SaveConfig extends Component {
       thresholdAlertsConfig[id].parent_id = 'GLOBAL';
       thresholdAlertsConfig[id].critical_threshold = general.thresholdAlerts
         .byId[id].critical.threshold;
+      thresholdAlertsConfig[id].critical_repeat = general.thresholdAlerts
+        .byId[id].critical.repeat;
       thresholdAlertsConfig[id].critical_enabled = general
         .thresholdAlerts.byId[id].critical.enabled;
       thresholdAlertsConfig[id].warning_threshold = general
