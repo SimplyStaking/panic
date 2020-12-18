@@ -7,7 +7,8 @@ import { resetCurrentChainIdCosmos } from 'redux/actions/cosmosActions';
 import { resetCurrentChainIdSubstrate } from 'redux/actions/substrateActions';
 import { changePage, changeStep } from 'redux/actions/pageActions';
 import AlertsTable from 'components/chains/common/tables/alertsTable';
-import GeneralAlertsTable from 'components/chains/common/tables/generalAlertsTable';
+import GeneralAlertsTable from
+  'components/chains/common/tables/generalAlertsTable';
 import { GLOBAL } from 'constants/constants';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
@@ -23,7 +24,7 @@ const mapCosmosStateToProps = (state) => ({
   data: CosmosData,
 });
 
-// Functions to be used in the Cosmos Alerts tabnle to save the alert's details
+// Functions to be used in the Cosmos Alerts table to save the alert's details
 function mapCosmosDispatchToProps(dispatch) {
   return {
     stepChanger: (step) => dispatch(changeStep(step)),

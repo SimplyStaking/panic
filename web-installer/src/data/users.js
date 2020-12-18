@@ -7,6 +7,6 @@ export default {
              + 'PANIC UI.',
   dialog_title: 'Setup Completed!',
   dialog_description: 'You are about to finish the installation process and '
-                    + 'begin the PANIC monitoring and alerting process. Would you like to '
-                    + 'continue?',
+                    + 'begin the PANIC monitoring and alerting process. Would '
+                    + 'you like to continue?',
 };

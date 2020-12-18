@@ -115,7 +115,8 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   type="text"
                   name="twilio_phone_num"
                   placeholder="+12025551234"
-                  helperText={errors.twilio_phone_num ? errors.twilio_phone_num : ''}
+                  helperText={errors.twilio_phone_num
+                      ? errors.twilio_phone_num : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth
@@ -147,9 +148,11 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       error={errors.twilio_phone_numbers_to_dial}
                       type="text"
                       name="twilio_phone_numbers_to_dial"
-                      placeholder="Add Phone Numbers [Press Enter after each Number]"
+                      placeholder={"Add Phone Numbers "
+                        + "[Press Enter after each Number]"}
                       variant="standard"
-                      helperText={errors.twilio_phone_numbers_to_dial ? errors.twilio_phone_numbers_to_dial : ''}
+                      helperText={errors.twilio_phone_numbers_to_dial
+                          ? errors.twilio_phone_numbers_to_dial : ''}
                       autoComplete='off'
                       fullWidth
                     />
@@ -167,7 +170,12 @@ const TwilioForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <TestCallButton
                       disabled={(Object.keys(errors).length !== 0)}

@@ -12,7 +12,8 @@ import GridItem from "components/material_ui/Grid/GridItem.js";
 import InfoArea from "components/material_ui/InfoArea/InfoArea.js";
 import Data from 'data/channels';
 import AlertSection from "components/channels/alertSection.js";
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 
 const useStyles = makeStyles(styles);
 

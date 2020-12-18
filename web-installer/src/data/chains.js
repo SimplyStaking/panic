@@ -26,17 +26,18 @@ export default {
   },
   chain_name: {
     description: 'We will now go through the setup of cosmos based chains.',
-    name: 'This will be used to identify the current chain that you are setting up.',
+    name: 'This will be used to identify the current chain that you are '
+        + 'setting up.',
   },
   kms: {
     description: '',
-    name: 'This will be used to identify the curren KMS configuration.',
+    name: 'This will be used to identify the current KMS configuration.',
     exporter_url: '',
     monitor_kms: '',
   },
   systems: {
     description: '',
-    name: 'This will be used to identify the curren System configuration.',
+    name: 'This will be used to identify the current System configuration.',
     exporter_url: '',
     monitor_system: '',
   },

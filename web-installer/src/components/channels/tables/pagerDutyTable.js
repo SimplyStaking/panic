@@ -41,19 +41,26 @@ const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
                 {pagerDuties.byId[pagerDuty].integration_key
               }</TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].info ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].info ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].warning ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].warning ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].critical ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].critical ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].error ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].error ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removePagerDutyDetails(pagerDuties.byId[pagerDuty]); }}>
+                <Button onClick={() => {
+                    removePagerDutyDetails(pagerDuties.byId[pagerDuty]);
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

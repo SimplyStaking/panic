@@ -45,7 +45,12 @@ const UsersForm = ({errors, values, handleSubmit, handleChange}) => {
           </Grid>
           <Grid item xs={8} />
           <Grid item xs={4}>
-            <Grid container direction="row" justify="flex-end" alignItems="center">
+            <Grid
+              container
+              direction="row"
+              justify="flex-end"
+              alignItems="center"
+            >
               <AddAccount
                 disabled={(Object.keys(errors).length !== 0)}
                 username={values.username}

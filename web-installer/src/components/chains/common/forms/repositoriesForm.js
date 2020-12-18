@@ -12,7 +12,8 @@ import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import { PingRepoButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from "components/material_ui/CustomButtons/Button.js";
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";

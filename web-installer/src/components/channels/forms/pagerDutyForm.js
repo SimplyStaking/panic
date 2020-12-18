@@ -85,7 +85,8 @@ const PagerDutyForm = ({errors, values, handleSubmit, handleChange}) => {
                   type="text"
                   name="integration_key"
                   placeholder="9ba187h1f52176l75131dl5hxr6fdb1c8"
-                  helperText={errors.integration_key ? errors.integration_key : ''}
+                  helperText={errors.integration_key
+                      ? errors.integration_key : ''}
                   onChange={handleChange}
                   autoComplete='off'
                   fullWidth

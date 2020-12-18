@@ -2,8 +2,11 @@ import React from 'react';
 import { makeStyles } from "@material-ui/core/styles";
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { TextField, Typography, Grid, Switch, FormControlLabel, Box } from '@material-ui/core';
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import {
+  TextField, Typography, Grid, Switch, FormControlLabel, Box,
+} from '@material-ui/core';
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import InputAdornment from '@material-ui/core/InputAdornment';
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";

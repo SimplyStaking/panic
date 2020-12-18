@@ -41,7 +41,11 @@ function UsersPage() {
         <Card>
           <CardBody>
             <div className={classes.container}>
-              <Typography variant="subtitle1" gutterBottom className="greyBackground">
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                className="greyBackground"
+              >
                 <Box m={2} p={3}>
                   <p>{Data.description}</p>
                 </Box>

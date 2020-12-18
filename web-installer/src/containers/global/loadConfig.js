@@ -75,22 +75,35 @@ function mapDispatchToProps(dispatch) {
     loadNodeCosmosDetails: (details) => dispatch(loadNodeCosmos(details)),
     loadReposCosmosDetails: (details) => dispatch(loadReposCosmos(details)),
     loadKMSCosmosDetails: (details) => dispatch(loadKMSCosmos(details)),
-    loadRepeatAlertsCosmosDetails: (details) => dispatch(loadRepeatAlertsCosmos(details)),
-    loadTimeWindowAlertsCosmosDetails: (details) => dispatch(loadTimeWindowAlertsCosmos(details)),
-    loadThresholdAlertsCosmosDetails: (details) => dispatch(loadThresholdAlertsCosmos(details)),
-    loadSeverityAlertsCosmosDetails: (details) => dispatch(loadSeverityAlertsCosmos(details)),
+    loadRepeatAlertsCosmosDetails: (details) =>
+      dispatch(loadRepeatAlertsCosmos(details)),
+    loadTimeWindowAlertsCosmosDetails: (details) =>
+      dispatch(loadTimeWindowAlertsCosmos(details)),
+    loadThresholdAlertsCosmosDetails: (details) =>
+      dispatch(loadThresholdAlertsCosmos(details)),
+    loadSeverityAlertsCosmosDetails: (details) =>
+      dispatch(loadSeverityAlertsCosmos(details)),
   
     loadNodeSubstrateDetails: (details) => dispatch(loadNodeSubstrate(details)),
-    loadReposSubstrateDetails: (details) => dispatch(loadReposSubstrate(details)),
-    loadRepeatAlertsSubstrateDetails: (details) => dispatch(loadRepeatAlertsSubstrate(details)),
-    loadTimeWindowAlertsSubstrateDetails: (details) => dispatch(loadTimeWindowAlertsSubstrate(details)),
-    loadThresholdAlertsSubstrateDetails: (details) => dispatch(loadThresholdAlertsSubstrate(details)),
-    loadSeverityAlertsSubstrateDetails: (details) => dispatch(loadSeverityAlertsSubstrate(details)),
+    loadReposSubstrateDetails: (details) =>
+      dispatch(loadReposSubstrate(details)),
+    loadRepeatAlertsSubstrateDetails: (details) =>
+      dispatch(loadRepeatAlertsSubstrate(details)),
+    loadTimeWindowAlertsSubstrateDetails: (details) =>
+      dispatch(loadTimeWindowAlertsSubstrate(details)),
+    loadThresholdAlertsSubstrateDetails: (details) =>
+      dispatch(loadThresholdAlertsSubstrate(details)),
+    loadSeverityAlertsSubstrateDetails: (details) =>
+      dispatch(loadSeverityAlertsSubstrate(details)),
   
-    loadReposGeneralDetails: (details) => dispatch(loadReposGeneral(details)),
-    loadSystemGeneralDetails: (details) => dispatch(loadSystemGeneral(details)),
-    loadRepeatAlertsGeneralDetails: (details) => dispatch(loadRepeatAlertsGeneral(details)),
-    loadThresholdAlertsGeneralDetails: (details) => dispatch(loadThresholdAlertsGeneral(details)),
+    loadReposGeneralDetails: (details) =>
+      dispatch(loadReposGeneral(details)),
+    loadSystemGeneralDetails: (details) =>
+      dispatch(loadSystemGeneral(details)),
+    loadRepeatAlertsGeneralDetails: (details) =>
+      dispatch(loadRepeatAlertsGeneral(details)),
+    loadThresholdAlertsGeneralDetails: (details) =>
+      dispatch(loadThresholdAlertsGeneral(details)),
     updatePeriodicDetails: (details) => dispatch(updatePeriodic(details)),
   };
 }

@@ -8,7 +8,8 @@ import {
 import Paper from '@material-ui/core/Paper';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
@@ -220,7 +221,8 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                                   onClick={() => {
                                     createPayload(
                                       pagerduties.byId[id], currentConfig,
-                                      addPagerDutyDetails, removePagerDutyDetails,
+                                      addPagerDutyDetails,
+                                      removePagerDutyDetails,
                                     );
                                   }}
                                   name="pagerduties"

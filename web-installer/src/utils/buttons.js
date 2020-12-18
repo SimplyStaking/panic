@@ -250,8 +250,8 @@ function AddAccount({ username, password, disabled }) {
       if (e.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        ToastsStore.error(`Could not save account in databse ${username}. Error: ${
-          e.response.data.message}`, 5000);
+        ToastsStore.error(`Could not save account in database ${username}. `
+          +  `Error: ${e.response.data.message}`, 5000);
       } else {
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(

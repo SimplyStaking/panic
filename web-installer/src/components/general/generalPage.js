@@ -1,7 +1,8 @@
 import React from 'react';
 import { makeStyles } from "@material-ui/core/styles";
 import { Box } from '@material-ui/core';
-import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import NavigationButtonContainer from
+  'containers/global/navigationButtonContainer';
 import { NEXT, USERS_PAGE, CHAINS_PAGE, BACK } from 'constants/constants';
 import { Grid } from '@material-ui/core';
 import PeriodicFormContainer from 'containers/general/periodicContainer';
@@ -9,7 +10,8 @@ import Data from 'data/general';
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import Parallax from "components/material_ui/Parallax/Parallax.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
-import styles from "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
 import Card from "components/material_ui/Card/Card.js";
 import CardBody from "components/material_ui/Card/CardBody.js";
 

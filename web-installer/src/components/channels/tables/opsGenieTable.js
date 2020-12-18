@@ -34,7 +34,9 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].channel_name}
               </TableCell>
-              <TableCell align="center">{opsGenies.byId[opsgenie].api_token}</TableCell>
+              <TableCell align="center">
+                {opsGenies.byId[opsgenie].api_token}
+              </TableCell>
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].eu ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -42,16 +44,21 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
                 {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {opsGenies.byId[opsgenie].warning ? <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].warning ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {opsGenies.byId[opsgenie].critical ? <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].critical ?
+                  <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeOpsGenieDetails(opsGenies.byId[opsgenie]); }}>
+                <Button onClick={() => {
+                    removeOpsGenieDetails(opsGenies.byId[opsgenie]);
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

@@ -124,7 +124,8 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       error={errors.emails_to}
                       type="text"
                       name="emails_to"
-                      placeholder="Add a destination email [Press Enter after each Email]."
+                      placeholder={"Add a destination email "
+                        + "[Press Enter after each Email]."}
                       variant="standard"
                       helperText={errors.emails_to ? errors.emails_to : ''}
                       autoComplete='off'
@@ -252,7 +253,12 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               </Grid>
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <Box px={2}>
                     <SendTestEmailButton
                       disabled={(Object.keys(errors).length !== 0)}

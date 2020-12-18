@@ -38,8 +38,12 @@ const EmailTable = ({emails, removeEmailDetails}) => {
               <TableCell align="center">
                 {emails.byId[email].channel_name}
               </TableCell>
-              <TableCell align="center">{emails.byId[email].smtp}</TableCell>
-              <TableCell align="center">{emails.byId[email].email_from}</TableCell>
+              <TableCell align="center">
+                {emails.byId[email].smtp}
+              </TableCell>
+              <TableCell align="center">
+                {emails.byId[email].email_from}
+              </TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
@@ -51,8 +55,12 @@ const EmailTable = ({emails, removeEmailDetails}) => {
                   </List>
                 </div>
               </TableCell>
-              <TableCell align="center">{emails.byId[email].username}</TableCell>
-              <TableCell align="center">{emails.byId[email].password}</TableCell>
+              <TableCell align="center">
+                {emails.byId[email].username}
+              </TableCell>
+              <TableCell align="center">
+                {emails.byId[email].password}
+              </TableCell>
               <TableCell align="center">
                 {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -66,7 +74,10 @@ const EmailTable = ({emails, removeEmailDetails}) => {
                 {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeEmailDetails(emails.byId[email]); }}>
+                <Button onClick={() => {
+                    removeEmailDetails(emails.byId[email]);
+                  }
+                }>
                   <CancelIcon />
                 </Button>
               </TableCell>
