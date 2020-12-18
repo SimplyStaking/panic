@@ -99,6 +99,7 @@ In the lists below we will show which alerts have severity thresholds and which 
 | Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
 |---|---|---|:-:|:-:|---|
 | `SystemWentDownAtAlert` | `WARNING`, `CRITICAL` |  | ✓ | ✓ | A `WARNING` alert is raised if `warning_threshold` seconds pass after a system is down and a `CRITICAL` alert is periodically raised each time `critical_threshold` seconds pass after the system is down. |
+| `SystemBackUpAgainAlert` | | `INFO` | ✗ | ✗ | An `INFO` alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively. |
 
 ## GitHub Repository Alerts
 
