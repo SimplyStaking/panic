@@ -39,7 +39,6 @@ async function LoadUsersFromMongo(addUserRedux) {
   const accounts = await loadAccounts();
   try {
     Object.keys(accounts.data.result).forEach((key, index) => {
-      console.log(accounts.data.result[key].username);
       addUserRedux(accounts.data.result[key].username);
     });
   }catch (err) {

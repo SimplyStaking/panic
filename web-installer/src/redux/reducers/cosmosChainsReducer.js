@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
   ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS,
-  REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
+  REMOVE_CHAIN_COSMOS, UPDATE_CHAIN_NAME_COSMOS, RESET_CHAIN_COSMOS, ADD_REPOSITORY,
   REMOVE_REPOSITORY, ADD_KMS, REMOVE_KMS, UPDATE_REPEAT_ALERT,
   UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
   LOAD_CONFIG_COSMOS, LOAD_NODE_COSMOS, LOAD_REPOSITORY_COSMOS,
@@ -447,7 +447,7 @@ function cosmosChainsById(state = {}, action) {
           severityAlerts: cosmosSeverityAlerts,
         },
       };
-    case UPDATE_CHAIN_NAME:
+    case UPDATE_CHAIN_NAME_COSMOS:
       return {
         ...state,
         [action.payload.id]: {
@@ -474,7 +474,9 @@ function cosmosChainsById(state = {}, action) {
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
         state[action.payload.node.parent_id].nodes = [];
-        state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.node.parent_id].chain_name = action.payload.
+          chain_name;
+        state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty(
         "repeatAlerts"))){
@@ -544,6 +546,7 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.repo.parent_id].repositories = [];
         state[action.payload.repo.parent_id].chain_name = action.payload.
           chain_name;
+        state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repeatAlerts"))){
@@ -618,6 +621,7 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.kms.parent_id].kmses = [];
         state[action.payload.kms.parent_id].chain_name = action.payload.
           chain_name;
+        state[action.payload.kms.parent_id].id = action.payload.kms.parent_id;
       }
       if (!(state[action.payload.kms.parent_id].hasOwnProperty(
           "repeatAlerts"))){
@@ -692,6 +696,7 @@ function cosmosChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty(
           "timeWindowAlerts"))){
@@ -738,6 +743,7 @@ function cosmosChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("timeWindowAlerts"))){
         state[action.payload.parent_id].timeWindowAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
@@ -782,6 +788,7 @@ function cosmosChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
         state[action.payload.parent_id].thresholdAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
@@ -827,6 +834,7 @@ function cosmosChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
         state[action.payload.parent_id].severityAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;

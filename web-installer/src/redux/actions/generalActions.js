@@ -6,7 +6,7 @@ import {
   REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL,
   LOAD_REPOSITORY, LOAD_REPOSITORY_GENERAL, LOAD_KMS,
   LOAD_THRESHOLD_ALERTS_GENERAL, LOAD_REPEAT_ALERTS_GENERAL,
-  LOAD_SYSTEM_GENERAL
+  LOAD_SYSTEM_GENERAL, LOAD_SYSTEM
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -25,7 +25,7 @@ export function addRepository(payload) {
       id: `repo_${uuidv4()}`,
       parent_id: payload.parent_id,
       repo_name: payload.repo_name,
-      monito_repo: payload.monitor_repo,
+      monitor_repo: payload.monitor_repo,
     },
   };
 }
@@ -54,6 +54,13 @@ export function addSystem(payload) {
       exporter_url: payload.exporter_url,
       monitor_system: payload.monitor_system,
     },
+  };
+}
+
+export function loadSystem(payload) {
+  return {
+    type: LOAD_SYSTEM,
+    payload,
   };
 }
 

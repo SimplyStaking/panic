@@ -332,7 +332,7 @@ class SaveConfig extends Component {
       }
 
       await sendConfig('chain', 'alerts_config.ini',
-        chainConfig.chain_name, 'cosmos', allAlertsConfig);
+        chainConfig.chain_name, 'substrate', allAlertsConfig);
     });
 
     ToastsStore.success('Saved Substrate Configs!', 5000);

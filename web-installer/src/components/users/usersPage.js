@@ -12,6 +12,7 @@ import Card from "components/material_ui/Card/Card.js";
 import CardBody from "components/material_ui/Card/CardBody.js";
 import SaveConfig from 'containers/global/saveConfig';
 import Divider from '@material-ui/core/Divider';
+import EndDialog from 'components/users/endDialog';
 import Data from 'data/users';
 
 const useStyles = makeStyles(styles);
@@ -70,7 +71,7 @@ function UsersPage() {
                   />
                 </Grid>
                 <Grid item xs={2}>
-                  <SaveConfig />
+                  <EndDialog />
                 </Grid>
                 <Grid item xs={4} />
                 <Grid item xs={12} />

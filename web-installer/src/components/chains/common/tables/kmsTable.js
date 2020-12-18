@@ -39,7 +39,10 @@ const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
               </TableCell>
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeKmsDetails(kmsConfig.byId[id]);
+                  removeKmsDetails({
+                    id: kmsConfig.byId[id].id,
+                    parent_id: currentChain,
+                  });
                 }}
                 >
                   <CancelIcon />
@@ -49,6 +52,9 @@ const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
           ))}
         </TableBody>
       </Table>
+      <br/>
+      <br/>
+      <br/>
     </TableContainer>
   );
 };

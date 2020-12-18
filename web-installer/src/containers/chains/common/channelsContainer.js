@@ -14,7 +14,6 @@ import GeneralData from 'data/general';
 // ------------------------- Common Functions ---------------------------
 
 function createPayload(channelData, currentConfig, addDetails, removeDetails){
-
   let payload = JSON.parse(JSON.stringify(channelData));
   if (channelData.parent_ids.includes(currentConfig.id)) {
     var index = payload.parent_ids.indexOf(currentConfig.id);

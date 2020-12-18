@@ -83,6 +83,9 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
           ))}
         </TableBody>
       </Table>
+      <br/>
+      <br/>
+      <br/>
     </TableContainer>
   );
 };

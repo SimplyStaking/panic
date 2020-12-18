@@ -37,7 +37,10 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
               </TableCell>
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeRepositoryDetails(reposConfig.byId[id]);
+                  removeRepositoryDetails({
+                    id: reposConfig.byId[id].id,
+                    parent_id: currentChain,
+                  });
                 }}
                 >
                   <CancelIcon />
@@ -47,6 +50,9 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
           ))}
         </TableBody>
       </Table>
+      <br/>
+      <br/>
+      <br/>
     </TableContainer>
   );
 };

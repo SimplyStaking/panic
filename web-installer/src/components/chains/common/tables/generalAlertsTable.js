@@ -299,6 +299,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   identifier: ThresholdAlerts.byId[id].identifier,
                                   description: ThresholdAlerts.byId[id].description,
                                   adornment: ThresholdAlerts.byId[id].adornment,
+                                  adornment_time: ThresholdAlerts.byId[id].adornment_time,
                                   warning: ThresholdAlerts.byId[id].warning,
                                   critical: ThresholdAlerts.byId[id].critical,
                                   enabled: !ThresholdAlerts.byId[id].enabled,
@@ -432,7 +433,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             <TextField
                               value={RepeatAlerts.byId[id].critical.repeat}
                               type="text"
-                              name="repeatWarning"
+                              name="repeatCritical"
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {
@@ -444,11 +445,11 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                     identifier: RepeatAlerts.byId[id].identifier,
                                     description: RepeatAlerts.byId[id].description,
                                     adornment: RepeatAlerts.byId[id].adornment,
-                                    warning: {
+                                    warning: RepeatAlerts.byId[id].warning,
+                                    critical: {
                                       repeat: event.target.value,
                                       enabled: RepeatAlerts.byId[id].critical.enabled,
                                     },
-                                    critical: RepeatAlerts.byId[id].critical,
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });

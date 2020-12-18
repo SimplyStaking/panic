@@ -74,7 +74,8 @@ export const ADD_PAGERDUTY_CHANNEL = 'ADD_PAGERDUTY_CHANNEL';
 export const REMOVE_PAGERDUTY_CHANNEL = 'REMOVE_PAGERDUTY_CHANNEL';
 
 // General alert configuration action types
-export const UPDATE_CHAIN_NAME = 'UPDATE_CHAIN_NAME';
+export const UPDATE_CHAIN_NAME_COSMOS = 'UPDATE_CHAIN_NAME_COSMOS';
+export const UPDATE_CHAIN_NAME_SUBSTRATE = 'UPDATE_CHAIN_NAME_SUBSTRATE';
 export const UPDATE_REPEAT_ALERT = 'UPDATE_REPEAT_ALERT';
 export const UPDATE_TIMEWINDOW_ALERT = 'UPDATE_TIMEWINDOW_ALERT';
 export const UPDATE_THRESHOLD_ALERT = 'UPDATE_THRESHOLD_ALERT';
@@ -87,7 +88,6 @@ export const LOAD_REPOSITORY_GENERAL = 'LOAD_REPOSITORY_GENERAL';
 // Users Page, containing only actions to set and remove users
 export const ADD_USER = 'ADD_USER';
 export const REMOVE_USER = 'REMOVE_USER';
-export const LOAD_USERS = 'LOAD_USERS';
 
 // Login actions
 export const LOGIN = 'LOGIN';

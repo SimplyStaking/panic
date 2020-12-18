@@ -30,7 +30,7 @@ const CosmosChainsTable = ({config, loadConfigDetails, pageChanger,
   function clearAllChainDetails(chainID) {
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
-    const payload = { parent_id: chainID, id: '' };
+    let payload = { parent_id: chainID, id: '' };
     let telegramPayload = {}
     let twilioPayload = {}
     let emailPayload = {} 

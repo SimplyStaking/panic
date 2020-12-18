@@ -145,8 +145,9 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
-        state[action.payload.parent_id].repositories = [];
+      if (!(state.byId[action.payload.parent_id].hasOwnProperty(
+          "repositories"))){
+        state.byId[action.payload.parent_id].repositories = [];
       }
       return {
         ...state,
@@ -160,30 +161,19 @@ function GeneralReducer(state = generalState, action) {
         },
       };
     case LOAD_REPOSITORY_GENERAL:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
-        state[action.payload.parent_id] = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
-        state[action.payload.parent_id].repositories = [];
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-          "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          generalThresholdAlerts;
-      }
-      if (!(state[action.payload.parent_id].repositories.includes(
+      if (!(state.byId[GLOBAL].repositories.includes(
           action.payload.id))){
         return {
           ...state,
-          [action.payload.parent_id]: {
-            ...state[action.payload.parent_id],
-            repositories: state[action.payload.parent_id].repositories.concat(
-              action.payload.id),
+          byId: {
+            ...state.byId,
+            GLOBAL: {
+              ...state.byId[GLOBAL],
+              repositories: state.byId[GLOBAL].repositories.concat(action.payload.
+                id),
+            },
           },
-        }
+        };
       }else{
         return state;
       };
@@ -193,7 +183,6 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-
       return {
         ...state,
         byId: {
@@ -212,9 +201,6 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("systems"))){
-        state[action.payload.parent_id].systems = [];
-      }
       return {
         ...state,
         byId: {
@@ -226,28 +212,16 @@ function GeneralReducer(state = generalState, action) {
         },
       };
     case LOAD_SYSTEM_GENERAL:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
-        state[action.payload.parent_id] = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("systems"))){
-        state[action.payload.parent_id].systems = [];
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-          "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          generalThresholdAlerts;
-      }
-      if (!(state[action.payload.parent_id].systems.includes(
+      if (!(state.byId[action.payload.parent_id].systems.includes(
           action.payload.id))){
         return {
           ...state,
-          [action.payload.parent_id]: {
-            ...state[action.payload.parent_id],
-            systems: state[action.payload.parent_id].systems.concat(
-              action.payload.id),
+          byId: {
+            ...state.byId,
+            GLOBAL: {
+              ...state.byId[GLOBAL],
+              systems: state.byId[GLOBAL].systems.concat(action.payload.id),
+            },
           },
         };
       }else{
@@ -295,22 +269,14 @@ function GeneralReducer(state = generalState, action) {
         },
       };
     case LOAD_REPEAT_ALERTS_GENERAL:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
-        state[action.payload.parent_id] = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          generalThresholdAlerts;
-      }
       return {
         ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          repeatAlerts: action.payload.alerts,
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            repeatAlerts: action.payload.alerts,
+          },
         },
       };
     case UPDATE_THRESHOLD_ALERT:
@@ -336,20 +302,14 @@ function GeneralReducer(state = generalState, action) {
         },
       };
     case LOAD_THRESHOLD_ALERTS_GENERAL:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
-        state[action.payload.parent_id] = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts = {};
-      }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
-        state[action.payload.parent_id].repeatAlerts = generalRepeatAlerts;
-      }
       return {
         ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          thresholdAlerts: action.payload.alerts,
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            thresholdAlerts: action.payload.alerts,
+          },
         },
       };
     default:
@@ -361,6 +321,7 @@ function GeneralReducer(state = generalState, action) {
 function PeriodicReducer(state = periodicState, action) {
   switch (action.type) {
     case UPDATE_PERIODIC:
+      console.log(action.payload);
       return action.payload;
     default:
       return state;

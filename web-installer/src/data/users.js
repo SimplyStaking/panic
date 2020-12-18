@@ -5,4 +5,8 @@ export default {
              + 'multiple accounts to have access to it by having multiple '
              + 'users. You will be able to change passwords later on, on the '
              + 'PANIC UI.',
+  dialog_title: 'Setup Completed!',
+  dialog_description: 'You are about to finish the installation process and '
+                    + 'begin the PANIC monitoring and alerting process. Would you like to '
+                    + 'continue?',
 };

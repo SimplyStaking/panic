@@ -9,7 +9,8 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import NavigationButton from 'components/global/navigationButton';
 import { defaultTheme, theme } from 'components/theme/default';
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 

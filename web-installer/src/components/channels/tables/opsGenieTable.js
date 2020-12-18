@@ -20,6 +20,7 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
           <TableRow>
             <TableCell align="center">Name</TableCell>
             <TableCell align="center">API Token</TableCell>
+            <TableCell align="center">EU</TableCell>
             <TableCell align="center">Info</TableCell>
             <TableCell align="center">Warning</TableCell>
             <TableCell align="center">Critical</TableCell>
@@ -34,6 +35,9 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
                 {opsGenies.byId[opsgenie].channel_name}
               </TableCell>
               <TableCell align="center">{opsGenies.byId[opsgenie].api_token}</TableCell>
+              <TableCell align="center">
+                {opsGenies.byId[opsgenie].eu ? <CheckIcon /> : <ClearIcon />}
+              </TableCell>
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -65,6 +69,7 @@ OpsGenieTable.propTypes = forbidExtraProps({
       id: PropTypes.string,
       channel_name: PropTypes.string,
       api_token: PropTypes.string,
+      eu: PropTypes.bool,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

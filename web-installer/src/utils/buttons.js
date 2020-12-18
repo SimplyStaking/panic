@@ -351,6 +351,14 @@ function SaveConfigButton({ onClick }) {
   );
 }
 
+function BackButton({ onClick }) {
+  return (
+    <Button onClick={onClick} size="lg" color="primary">
+      Back
+    </Button>
+  );
+}
+
 function StartNewButton({ onClick }) {
   return (
     <Button onClick={onClick} size="lg" color="primary">
@@ -469,6 +477,10 @@ SaveConfigButton.propTypes = forbidExtraProps({
   onClick: PropTypes.func.isRequired,
 });
 
+BackButton.propTypes = forbidExtraProps({
+  onClick: PropTypes.func.isRequired,
+});
+
 LoadConfigButton.propTypes = forbidExtraProps({
   onClick: PropTypes.func.isRequired,
 });
@@ -516,5 +528,5 @@ export {
   SendTestAlertButton, TestCallButton, SendTestEmailButton,
   SendTestPagerDutyButton, SendTestOpsGenieButton, LoginButton,
   PingRepoButton, PingCosmosButton, PingNodeExporter, SaveConfigButton,
-  LoadConfigButton, AddAccount, DeleteAccount, StartNewButton,
+  LoadConfigButton, AddAccount, DeleteAccount, StartNewButton, BackButton,
 };

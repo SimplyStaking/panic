@@ -169,6 +169,9 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
           ))}
         </TableBody>
       </Table>
+      <br/>
+      <br/>
+      <br/>
     </TableContainer>
   );
 };

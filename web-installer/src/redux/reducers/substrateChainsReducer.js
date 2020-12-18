@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
   ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE,
-  REMOVE_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME, RESET_CHAIN_SUBSTRATE,
+  REMOVE_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME_SUBSTRATE, RESET_CHAIN_SUBSTRATE,
   ADD_REPOSITORY, REMOVE_REPOSITORY, UPDATE_REPEAT_ALERT,
   UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
   LOAD_CONFIG_SUBSTRATE, LOAD_NODE_SUBSTRATE, LOAD_REPOSITORY_SUBSTRATE,
@@ -517,7 +517,7 @@ function nodesById(state = {}, action) {
     case LOAD_NODE_SUBSTRATE:
       return {
         ...state,
-        [action.payload.id]: action.payload.node,
+        [action.payload.node.id]: action.payload.node,
       };
     case REMOVE_NODE_SUBSTRATE:
       return _.omit(state, action.payload.id);
@@ -565,7 +565,7 @@ function substrateChainsById(state = {}, action) {
           severityAlerts: substrateSeverityAlerts,
         },
       };
-    case UPDATE_CHAIN_NAME:
+    case UPDATE_CHAIN_NAME_SUBSTRATE:
       return {
         ...state,
         [action.payload.id]: {
@@ -595,6 +595,7 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.node.parent_id].nodes = [];
         state[action.payload.node.parent_id].chain_name = action.payload.
           chain_name;
+        state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty(
           "repeatAlerts"))){
@@ -663,6 +664,9 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repositories"))){
         state[action.payload.repo.parent_id].repositories = [];
+        state[action.payload.repo.parent_id].chain_name = action.payload.
+          chain_name;
+        state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repeatAlerts"))){
@@ -703,6 +707,8 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
+      console.log("INSIDE SUBSTRATE");
+      console.log(action.payload);
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -738,6 +744,7 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty(
         "timeWindowAlerts"))){
@@ -787,6 +794,7 @@ function substrateChainsById(state = {}, action) {
           "timeWindowAlerts"))){
         state[action.payload.parent_id].timeWindowAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
@@ -833,6 +841,7 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
         state[action.payload.parent_id].thresholdAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
@@ -879,6 +888,7 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
         state[action.payload.parent_id].severityAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
+        state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;

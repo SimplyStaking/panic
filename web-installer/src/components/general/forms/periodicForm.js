@@ -41,7 +41,7 @@ const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
           </Grid>
           <Grid item xs={10}>
             <TextField
-              value={values.time}
+              value={periodic.time}
               autoComplete='off'
               type="text"
               name="time"
@@ -65,13 +65,13 @@ const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography> Enabled: </Typography>
+            <Typography> Enabled </Typography>
           </Grid>
           <Grid item xs={1}>
             <FormControlLabel
               control={(
                 <Switch
-                  checked={values.enabled}
+                  checked={periodic.enabled}
                   onClick={() => {
                     savePeriodicDetails({
                       time: periodic.time,

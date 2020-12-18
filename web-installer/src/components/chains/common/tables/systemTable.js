@@ -43,7 +43,10 @@ const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
               </TableCell>
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeSystemDetails(systemConfig.byId[id]);
+                  removeSystemDetails({
+                    id: systemConfig.byId[id].id,
+                    parent_id: GLOBAL,
+                  });
                 }}
                 >
                   <CancelIcon />
@@ -53,6 +56,9 @@ const SystemTable = ({config, systemConfig, removeSystemDetails}) => {
           ))}
         </TableBody>
       </Table>
+      <br/>
+      <br/>
+      <br/>
     </TableContainer>
   );
 };
