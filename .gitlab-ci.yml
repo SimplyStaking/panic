@@ -15,6 +15,7 @@ install:
   stage: build
   script:
     - npm install
+    - npm i gulp
   artifacts:
     paths:
       - node_modules/
