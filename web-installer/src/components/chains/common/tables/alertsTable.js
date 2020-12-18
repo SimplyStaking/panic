@@ -9,10 +9,12 @@ import {
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import NavigationButton from 'components/global/navigationButton';
-import { CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP } from 'constants/constants';
+import { CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP } from
+  'constants/constants';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { defaultTheme } from 'components/theme/default';
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from
+  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";
 import InputAdornment from '@material-ui/core/InputAdornment';
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
@@ -206,7 +208,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             <TextField
                               value={RepeatAlerts.byId[id].critical.repeat}
                               type="text"
-                              name="repeatWarning"
+                              name="repeatCritical"
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {
@@ -218,11 +220,11 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                     identifier: RepeatAlerts.byId[id].identifier,
                                     description: RepeatAlerts.byId[id].description,
                                     adornment: RepeatAlerts.byId[id].adornment,
-                                    warning: {
+                                    warning: RepeatAlerts.byId[id].warning,
+                                    critical: {
                                       repeat: event.target.value,
                                       enabled: RepeatAlerts.byId[id].critical.enabled,
                                     },
-                                    critical: RepeatAlerts.byId[id].critical,
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });
@@ -434,7 +436,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                           <TextField
                             value={TimeWindowAlerts.byId[id].critical.threshold}
                             type="text"
-                            name="thresholdWarning"
+                            name="thresholdCritical"
                             label="Threshold"
                             placeholder="60"
                             onChange={(event) => {
@@ -474,7 +476,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                           <TextField
                             value={TimeWindowAlerts.byId[id].critical.time_window}
                             type="text"
-                            name="timewindowWarning"
+                            name="timewindowCritical"
                             label="Repeat"
                             placeholder="60"
                             onChange={(event) => {
@@ -704,7 +706,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             <TextField
                               value={ThresholdAlerts.byId[id].critical.repeat}
                               type="text"
-                              name="thresholdCritical"
+                              name="thresholdRepeatCritical"
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {

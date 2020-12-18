@@ -496,7 +496,7 @@ async function getFiles(dir) {
 // folder
 app.get('/server/paths', verify, async(req, res) => {
   console.log('Received GET request for %s', req.url);
-  const configPath = path.join(__dirname, '../', 'config');
+  const configPath = path.join(__dirname, '../../', 'config');
   try{
     const files = getFiles(configPath)
       .then(function(files) {
@@ -571,20 +571,8 @@ app.post('/server/config/delete', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
 
   try {
-    const configPath = path.join(__dirname, '../', 'config');
+    const configPath = path.join(__dirname, '../../', 'config');
     fsExtra.emptyDirSync(configPath);
-    // const configPath = path.join(__dirname, '../', 'config');
-    // fs.rmdir(configPath, { recursive: true })
-    //   .then(function(files) {
-    //       var processedPaths = []
-    //       for (var i = 0; i < files.length; i++) {
-    //         var newPath = files[i].replace(configPath, '');
-    //         processedPaths.push(newPath);
-    //       }
-    //       return processedPaths;
-    //     }
-    //   )
-    //   .catch(e => console.error(e));
     const msg = new msgs.DeleteDirectory();
     return res.status(utils.SUCCESS_STATUS).send(
       utils.resultJson(msg.message));
