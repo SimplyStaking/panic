@@ -23,7 +23,7 @@ function CosmosSetupPage() {
 
   return (
     <div>
-      <Parallax image={require("assets/img/backgrounds/5.png")}>
+      <Parallax image={require("assets/img/backgrounds/background.png")}>
         <div className={classes.container}>
           <GridContainer>
             <GridItem>

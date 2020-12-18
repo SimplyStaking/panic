@@ -1,5 +1,5 @@
 import { container } from "assets/jss/material-kit-react.js";
-import Background from "assets/img/backgrounds/5.png"
+import Background from "assets/img/backgrounds/background.png"
 
 const componentsStyle = {
   container,
