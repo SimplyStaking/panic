@@ -98,8 +98,23 @@ In the lists below we will show which alerts have severity thresholds and which 
 
 | Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
 |---|---|---|:-:|:-:|---|
-| `SystemWentDownAtAlert` | `WARNING`, `CRITICAL` |  | ✓ | ✓ | A `WARNING` alert is raised if `warning_threshold` seconds pass after a system is down and a `CRITICAL` alert is periodically raised each time `critical_threshold` seconds pass after the system is down. |
-| `SystemBackUpAgainAlert` | | `INFO` | ✗ | ✗ | An `INFO` alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively. |
+| `SystemWentDownAtAlert` | `WARNING`, `CRITICAL` |  | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if `warning_threshold`/`critical_threshold` seconds pass after a system is down respectively. |
+| `SystemBackUpAgainAlert` | | `INFO` | ✗ | ✗ | This alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively. |
+| `SystemStillDownAlert` | `CRITICAL` | | ✓ | ✓ | This alert is raised periodically every `critical_repeat` seconds if a `SystemWentDownAt` alert has already been raised. |
+| `InvalidUrlAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if the System's provided Node Exporter endpoint has an invalid URL schema. |
+| `MetricNotFoundErrorAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if a metric that is being monitored cannot be found at the system's Node Exporter endpoint. |
+| `OpenFileDescriptorsIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the number of open file descriptors increase above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the number of open file descriptors are still above `critical_threshold`. |
+| `OpenFileDescriptorsDecreasedBelowThresholdAlert` | | `INFO` | ✗ | ✗ | This alert is raised if the number of open file descriptors decrease below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `OpenFileDescriptorsIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemCPUUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's CPU usage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's CPU usage is still above `critical_threshold`. |
+| `SystemCPUUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | ✗ | This alert is raised if the system's CPU usage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemCPUUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemRAMUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's RAM usage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's RAM usage is still above `critical_threshold`. |
+| `SystemRAMUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | ✗ | This alert is raised if the system's RAM usage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemRAMUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemStorageUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's storage usage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's storage usage is still above `critical_threshold`. |
+| `SystemStorageUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | ✗ | This alert is raised if the system's storage usage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemStorageUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+
+**Note:** 
+- `warning_threshold` and `critical_threshold` represent the `WARNING` and `CRITICAL` configurable thresholds respectively. These are set by the user during installation.
+- `critical_repeat` represents the amount of time that needs to pass for a `CRITICAL` alert that has already been raised to be raised again. This can also be set by the user during installation.
 
 ## GitHub Repository Alerts
 
