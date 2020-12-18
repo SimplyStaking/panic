@@ -12,7 +12,7 @@ import Data from 'data/general';
 
 const useStyles = makeStyles(styles);
 
-const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
+const PeriodicForm = ({ periodic, savePeriodicDetails}) => {
   const classes = useStyles();
 
   return (
@@ -59,8 +59,6 @@ const PeriodicForm = ({values, periodic, savePeriodicDetails}) => {
                       Seconds
                     </InputAdornment>,
                 }}
-              inputProps={{min: 0, style: { textAlign: 'right' }}}
-              autoComplete='off'
               fullWidth
             />
           </Grid>

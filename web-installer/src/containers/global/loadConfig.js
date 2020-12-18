@@ -134,66 +134,69 @@ class LoadConfig extends Component {
     try {
       for (var i = 0; i < files.length; i++) {
         var res = files[i].split("/");
-        if (res[1] == 'general') {
-          if (res[2] == 'periodic_config.ini') {
+        if (res[1] === 'general') {
+          if (res[2] === 'periodic_config.ini') {
             config = await getConfig('general', 'periodic_config.ini', '', '');
             payload = JSON.parse(JSON.stringify(config.data.result));
-            payload.periodic.enabled = (payload.periodic.enabled  == 'true');
+            payload.periodic.enabled = (payload.periodic.enabled  === 'true');
             updatePeriodicDetails(payload.periodic);
-          }else if (res[2] == 'repos_config.ini') {
+          }else if (res[2] === 'repos_config.ini') {
             config = await getConfig('general', 'repos_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.monitor_repo = (payload.monitor_repo  == 'true');
+              payload.monitor_repo = (payload.monitor_repo  === 'true');
               loadRepositoryDetails(payload);
               loadReposGeneralDetails(payload);
             });
-          }else if (res[2] == 'systems_config.ini') {
+          }else if (res[2] === 'systems_config.ini') {
             config = await getConfig('general', 'systems_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.monitor_system = (payload.monitor_system  == 'true');
+              payload.monitor_system = (payload.monitor_system  === 'true');
               loadSystemDetails(payload);
               loadSystemGeneralDetails(payload);
             });
-          }else if (res[2] == 'alerts_config.ini') {
+          }else if (res[2] === 'alerts_config.ini') {
             config = await getConfig('general', 'alerts_config.ini', '', '')
             // Create copies of alerts
             repeatAlerts = JSON.parse(JSON.stringify(generalRepeatAlerts));
-            thresholdAlerts = JSON.parse(JSON.stringify(generalThresholdAlerts));
+            thresholdAlerts = JSON.parse(JSON.stringify(
+              generalThresholdAlerts));
             Object.keys(config.data.result).forEach(function(key) {
               parent_id = config.data.result[key].parent_id;
               if (key in repeatAlerts.byId) {
-                repeatAlerts.byId[key].parent_id = config.data.result[key].
-                  parent_id;
+                repeatAlerts.byId[key].parent_id = config.data.result[key]
+                  .parent_id;
                 warning = {
                   repeat: config.data.result[key].warning_repeat,
-                  enabled: (config.data.result[key].warning_enabled == 'true'),
+                  enabled: (config.data.result[key].warning_enabled === 'true'),
                 }
                 critical = {
                   repeat: config.data.result[key].critical_repeat,
-                  enabled: (config.data.result[key].critical_enabled == 'true'),
+                  enabled: (config.data.result[key].critical_enabled ===
+                    'true'),
                 }
                 repeatAlerts.byId[key].warning = warning;
                 repeatAlerts.byId[key].critical = critical;
                 repeatAlerts.byId[key].enabled = (
-                  config.data.result[key].enabled == 'true');
+                  config.data.result[key].enabled === 'true');
               }else if (key in thresholdAlerts.byId) {
                 thresholdAlerts.byId[key].parent_id = config.data.result[key].
                   parent_id;
                 warning = {
                   threshold: config.data.result[key].warning_threshold,
-                  enabled: (config.data.result[key].warning_enabled == 'true'),
+                  enabled: (config.data.result[key].warning_enabled === 'true'),
                 }
                 critical = {
                   threshold: config.data.result[key].critical_threshold,
                   repeat: config.data.result[key].critical_repeat,
-                  enabled: (config.data.result[key].critical_enabled == 'true'),
+                  enabled: (config.data.result[key].critical_enabled ===
+                    'true'),
                 }
                 thresholdAlerts.byId[key].warning = warning;
                 thresholdAlerts.byId[key].critical = critical;
-                thresholdAlerts.byId[key].enabled = (config.data.result[key].
-                  enabled == 'true');
+                thresholdAlerts.byId[key].enabled = (config.data.result[key]
+                  .enabled === 'true');
               }
             });
             payload = { parent_id: parent_id, alerts: repeatAlerts }
@@ -201,174 +204,182 @@ class LoadConfig extends Component {
             payload = { parent_id: parent_id, alerts: thresholdAlerts }
             loadThresholdAlertsGeneralDetails(payload);
           }
-        }else if (res[1] == 'channels') {
-          if (res[2] == 'email_config.ini') {
+        }else if (res[1] === 'channels') {
+          if (res[2] === 'email_config.ini') {
             config = await getConfig('channel', 'email_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.emails_to = config.data.result[key].emails_to.split(',');
-              payload.info = (payload.info  == 'true');
-              payload.warning = (payload.warning  == 'true');
-              payload.critical = (payload.critical  == 'true');
-              payload.error = (payload.error  == 'true');
+              payload.info = (payload.info  === 'true');
+              payload.warning = (payload.warning  === 'true');
+              payload.critical = (payload.critical  === 'true');
+              payload.error = (payload.error  === 'true');
               payload.parent_ids = payload.parent_ids .split(',');
               payload.parent_names = payload.parent_names .split(',');
               loadEmailDetails(payload);
             });
-          }else if (res[2] == 'opsgenie_config.ini') {
+          }else if (res[2] === 'opsgenie_config.ini') {
             config = await getConfig('channel', 'opsgenie_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.info = (payload.info  == 'true');
-              payload.warning = (payload.warning  == 'true');
-              payload.critical = (payload.critical  == 'true');
-              payload.error = (payload.error  == 'true');
+              payload.info = (payload.info  === 'true');
+              payload.warning = (payload.warning  === 'true');
+              payload.critical = (payload.critical  === 'true');
+              payload.error = (payload.error  === 'true');
               payload.eu = (payload.eu = 'true');
               payload.parent_ids = payload.parent_ids .split(',');
               payload.parent_names = payload.parent_names .split(',');
               loadOpsgenieDetails(payload);
             });
-          }else if (res[2] == 'pagerduty_config.ini') {
+          }else if (res[2] === 'pagerduty_config.ini') {
             config = await getConfig('channel', 'pagerduty_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.info = (payload.info  == 'true');
-              payload.warning = (payload.warning  == 'true');
-              payload.critical = (payload.critical  == 'true');
-              payload.error = (payload.error  == 'true');
+              payload.info = (payload.info  === 'true');
+              payload.warning = (payload.warning  === 'true');
+              payload.critical = (payload.critical  === 'true');
+              payload.error = (payload.error  === 'true');
               payload.parent_ids = payload.parent_ids .split(',');
               payload.parent_names = payload.parent_names .split(',');
               loadPagerdutyDetails(payload);
             });
-          }else if (res[2] == 'telegram_config.ini') {
+          }else if (res[2] === 'telegram_config.ini') {
             config = await getConfig('channel', 'telegram_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.info = (payload.info  == 'true');
-              payload.warning = (payload.warning  == 'true');
-              payload.critical = (payload.critical  == 'true');
-              payload.error = (payload.error  == 'true');
-              payload.alerts = (payload.alerts == 'true');
-              payload.commands = (payload.commands == 'true');
+              payload.info = (payload.info  === 'true');
+              payload.warning = (payload.warning  === 'true');
+              payload.critical = (payload.critical  === 'true');
+              payload.error = (payload.error  === 'true');
+              payload.alerts = (payload.alerts === 'true');
+              payload.commands = (payload.commands === 'true');
               payload.parent_ids = payload.parent_ids .split(',');
               payload.parent_names = payload.parent_names .split(',');
               loadTelegramDetails(payload);
             });
-          }else if (res[2] == 'twilio_config.ini') {
+          }else if (res[2] === 'twilio_config.ini') {
             config = await getConfig('channel', 'twilio_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = config.data.result[key];
-              payload.twilio_phone_numbers_to_dial = config.data.result[key].
-                twilio_phone_numbers_to_dial.split(',');
-              payload.parent_ids = payload.parent_ids .split(',');
-              payload.parent_names = payload.parent_names .split(',');
+              payload.twilio_phone_numbers_to_dial = config.data.result[key]
+                .twilio_phone_numbers_to_dial.split(',');
+              payload.parent_ids = payload.parent_ids.split(',');
+              payload.parent_names = payload.parent_names.split(',');
               loadTwilioDetails(payload);
             });
           }
-        } else if (res[1] == 'chains') {
-          if (res[2] == 'cosmos'){
-            if (res[4] == 'nodes_config.ini') {
+        } else if (res[1] === 'chains') {
+          if (res[2] === 'cosmos'){
+            if (res[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', res[3],
                 'cosmos')
               Object.keys(config.data.result).forEach(function(key) {
                 node = JSON.parse(JSON.stringify(config.data.result[key]));
-                node.is_archive_node = (node.is_archive_node  == 'true');
-                node.is_validator = (node.is_validator == 'true');
-                node.monitor_node = (node.monitor_node == 'true');
-                node.use_as_data_source = (node.use_as_data_source == 'true');
+                node.is_archive_node = (node.is_archive_node  === 'true');
+                node.is_validator = (node.is_validator === 'true');
+                node.monitor_node = (node.monitor_node === 'true');
+                node.use_as_data_source = (node.use_as_data_source === 'true');
                 payload = {
                   chain_name: res[3],
                   node: node,
                 }
                 loadNodeCosmosDetails(payload);
               });
-            } else if (res[4] == 'repos_config.ini') {
+            } else if (res[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', res[3],
                 'cosmos')
               Object.keys(config.data.result).forEach(function(key) {
                 repo = JSON.parse(JSON.stringify(config.data.result[key]));
-                repo.monitor_repo = (repo.monitor_repo  == 'true');
+                repo.monitor_repo = (repo.monitor_repo  === 'true');
                 loadRepositoryDetails(repo);
                 payload = { chain_name: res[3], repo: repo }
                 loadReposCosmosDetails(payload);
               });
-            } else if (res[4] == 'kms_config.ini') {
+            } else if (res[4] === 'kms_config.ini') {
               config = await getConfig('chain', 'kms_config.ini', res[3],
                 'cosmos')
               Object.keys(config.data.result).forEach(function(key) {
                 kms = JSON.parse(JSON.stringify(config.data.result[key]));
-                kms.monitor_kms = (kms.monitor_kms  == 'true');
+                kms.monitor_kms = (kms.monitor_kms  === 'true');
                 loadKMSDetails(kms);
                 payload = { chain_name: res[3], kms: kms }
                 loadKMSCosmosDetails(payload);
               });
-            } else if (res[4] == 'alerts_config.ini') {
+            } else if (res[4] === 'alerts_config.ini') {
               config = await getConfig('chain', 'alerts_config.ini', res[3],
                 'cosmos')
               // Create copies of alerts
-              repeatAlerts = JSON.parse(JSON.stringify(cosmosRepeatAlerts));
-              thresholdAlerts = JSON.parse(JSON.stringify(cosmosThresholdAlerts));
-              timeWindowAlerts = JSON.parse(JSON.stringify(cosmosTimeWindowAlerts));
-              severityAlerts = JSON.parse(JSON.stringify(cosmosSeverityAlerts));
+              repeatAlerts = JSON.parse(JSON.stringify(
+                cosmosRepeatAlerts));
+              thresholdAlerts = JSON.parse(JSON.stringify(
+                cosmosThresholdAlerts));
+              timeWindowAlerts = JSON.parse(JSON.stringify(
+                cosmosTimeWindowAlerts));
+              severityAlerts = JSON.parse(JSON.stringify(
+                cosmosSeverityAlerts));
               Object.keys(config.data.result).forEach(function(key) {
                 parent_id = config.data.result[key].parent_id;
                 if (key in repeatAlerts.byId) {
-                  repeatAlerts.byId[key].parent_id = config.data.result[key].parent_id;
+                  repeatAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
                   warning = {
                     repeat: config.data.result[key].warning_repeat,
-                    enabled: (config.data.result[key].warning_enabled == 'true'),
+                    enabled: (config.data.result[key].warning_enabled ===
+                        'true'),
                   }
                   critical = {
                     repeat: config.data.result[key].critical_repeat,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   repeatAlerts.byId[key].warning = warning;
                   repeatAlerts.byId[key].critical = critical;
-                  repeatAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  repeatAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in thresholdAlerts.byId) {
-                  thresholdAlerts.byId[key].parent_id = config.data.result[key].
-                    parent_id;
+                  thresholdAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
                   warning = {
                     threshold: config.data.result[key].warning_threshold,
-                    enabled: (config.data.result[key].warning_enabled == 
+                    enabled: (config.data.result[key].warning_enabled === 
                       'true'),
                   }
                   critical = {
                     threshold: config.data.result[key].critical_threshold,
                     repeat: config.data.result[key].critical_repeat,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   thresholdAlerts.byId[key].warning = warning;
                   thresholdAlerts.byId[key].critical = critical;
-                  thresholdAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  thresholdAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in timeWindowAlerts.byId) {
-                  timeWindowAlerts.byId[key].parent_id = config.data.
-                    result[key].parent_id;
+                  timeWindowAlerts.byId[key].parent_id = config.data
+                    .result[key].parent_id;
                   warning = {
                     threshold: config.data.result[key].warning_threshold,
                     time_window: config.data.result[key].warning_time_window,
-                    enabled: (config.data.result[key].warning_enabled ==
+                    enabled: (config.data.result[key].warning_enabled ===
                         'true'),
                   }
                   critical = {
                     threshold: config.data.result[key].critical_threshold,
                     time_window: config.data.result[key].critical_time_window,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   timeWindowAlerts.byId[key].warning = warning;
                   timeWindowAlerts.byId[key].critical = critical;
-                  timeWindowAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  timeWindowAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in severityAlerts.byId) {
-                  severityAlerts.byId[key].parent_id = config.data.result[key].parent_id;
-                  severityAlerts.byId[key].severity = config.data.result[key].severity;
-                  severityAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  severityAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
+                  severityAlerts.byId[key].severity = config.data.result[key]
+                    .severity;
+                  severityAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }
               });
               payload = {
@@ -396,28 +407,28 @@ class LoadConfig extends Component {
               }
               loadSeverityAlertsCosmosDetails(payload);
             }
-          } else if (res[2] == 'substrate') {
-            if (res[4] == 'nodes_config.ini') {
+          } else if (res[2] === 'substrate') {
+            if (res[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', res[3],
                 'substrate')
               Object.keys(config.data.result).forEach(function(key) {
                 node = JSON.parse(JSON.stringify(config.data.result[key]));
-                node.is_archive_node = (node.is_archive_node  == 'true');
-                node.is_validator = (node.is_validator == 'true');
-                node.monitor_node = (node.monitor_node == 'true');
-                node.use_as_data_source = (node.use_as_data_source == 'true');
+                node.is_archive_node = (node.is_archive_node  === 'true');
+                node.is_validator = (node.is_validator === 'true');
+                node.monitor_node = (node.monitor_node === 'true');
+                node.use_as_data_source = (node.use_as_data_source === 'true');
                 payload = {
                   chain_name: res[3],
                   node: node,
                 }
                 loadNodeSubstrateDetails(payload);
               });
-            } else if (res[4] == 'repos_config.ini') {
+            } else if (res[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', res[3],
                 'substrate')
               Object.keys(config.data.result).forEach(function(key) {
                 repo = JSON.parse(JSON.stringify(config.data.result[key]));
-                repo.monitor_repo = (repo.monitor_repo  == 'true');
+                repo.monitor_repo = (repo.monitor_repo  === 'true');
                 payload = {
                   chain_name: res[3],
                   repo: repo,
@@ -425,7 +436,7 @@ class LoadConfig extends Component {
                 loadRepositoryDetails(repo);
                 loadReposSubstrateDetails(payload);
               });
-            } else if (res[4] == 'alerts_config.ini') {
+            } else if (res[4] === 'alerts_config.ini') {
               config = await getConfig('chain', 'alerts_config.ini', res[3],
                 'substrate')
               // Create copies of alerts
@@ -440,66 +451,66 @@ class LoadConfig extends Component {
               Object.keys(config.data.result).forEach(function(key) {
                 parent_id = config.data.result[key].parent_id;
                 if (key in repeatAlerts.byId) {
-                  repeatAlerts.byId[key].parent_id = config.data.result[key].
-                    parent_id;
+                  repeatAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
                   warning = {
                     repeat: config.data.result[key].warning_repeat,
-                    enabled: (config.data.result[key].warning_enabled == 
+                    enabled: (config.data.result[key].warning_enabled === 
                       'true'),
                   }
                   critical = {
                     repeat: config.data.result[key].critical_repeat,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   repeatAlerts.byId[key].warning = warning;
                   repeatAlerts.byId[key].critical = critical;
-                  repeatAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  repeatAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in thresholdAlerts.byId) {
-                  thresholdAlerts.byId[key].parent_id = config.data.result[key].
-                    parent_id;
+                  thresholdAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
                   warning = {
                     threshold: config.data.result[key].warning_threshold,
-                    enabled: (config.data.result[key].warning_enabled ==
+                    enabled: (config.data.result[key].warning_enabled ===
                       'true'),
                   }
                   critical = {
                     threshold: config.data.result[key].critical_threshold,
                     repeat: config.data.result[key].critical_repeat,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   thresholdAlerts.byId[key].warning = warning;
                   thresholdAlerts.byId[key].critical = critical;
-                  thresholdAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  thresholdAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in timeWindowAlerts.byId) {
-                  timeWindowAlerts.byId[key].parent_id = config.data.
-                    result[key].parent_id;
+                  timeWindowAlerts.byId[key].parent_id = config.data
+                    .result[key].parent_id;
                   warning = {
                     threshold: config.data.result[key].warning_threshold,
                     time_window: config.data.result[key].warning_time_window,
-                    enabled: (config.data.result[key].warning_enabled ==
+                    enabled: (config.data.result[key].warning_enabled ===
                       'true'),
                   }
                   critical = {
                     threshold: config.data.result[key].critical_threshold,
                     time_window: config.data.result[key].critical_time_window,
-                    enabled: (config.data.result[key].critical_enabled ==
+                    enabled: (config.data.result[key].critical_enabled ===
                       'true'),
                   }
                   timeWindowAlerts.byId[key].warning = warning;
                   timeWindowAlerts.byId[key].critical = critical;
-                  timeWindowAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  timeWindowAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }else if (key in severityAlerts.byId) {
-                  severityAlerts.byId[key].parent_id = config.data.result[key].
-                    parent_id;
-                  severityAlerts.byId[key].severity = config.data.result[key].
-                    severity;
-                  severityAlerts.byId[key].enabled = (config.data.result[key].
-                    enabled == 'true');
+                  severityAlerts.byId[key].parent_id = config.data.result[key]
+                    .parent_id;
+                  severityAlerts.byId[key].severity = config.data.result[key]
+                    .severity;
+                  severityAlerts.byId[key].enabled = (config.data.result[key]
+                    .enabled === 'true');
                 }
               });
               payload = {

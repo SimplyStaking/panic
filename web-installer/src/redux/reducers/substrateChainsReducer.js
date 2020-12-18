@@ -593,8 +593,8 @@ function substrateChainsById(state = {}, action) {
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
         state[action.payload.node.parent_id].nodes = [];
-        state[action.payload.node.parent_id].chain_name = action.payload.
-          chain_name;
+        state[action.payload.node.parent_id].chain_name = action.payload
+          .chain_name;
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty(
@@ -664,8 +664,8 @@ function substrateChainsById(state = {}, action) {
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repositories"))){
         state[action.payload.repo.parent_id].repositories = [];
-        state[action.payload.repo.parent_id].chain_name = action.payload.
-          chain_name;
+        state[action.payload.repo.parent_id].chain_name = action.payload
+          .chain_name;
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
@@ -694,8 +694,8 @@ function substrateChainsById(state = {}, action) {
           ...state,
           [action.payload.repo.parent_id]: {
             ...state[action.payload.repo.parent_id],
-            repositories: state[action.payload.repo.parent_id].repositories.
-              concat(action.payload.repo.id),
+            repositories: state[action.payload.repo.parent_id].repositories
+              .concat(action.payload.repo.id),
           },
         }
       }else{

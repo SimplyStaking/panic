@@ -474,8 +474,8 @@ function cosmosChainsById(state = {}, action) {
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
         state[action.payload.node.parent_id].nodes = [];
-        state[action.payload.node.parent_id].chain_name = action.payload.
-          chain_name;
+        state[action.payload.node.parent_id].chain_name = action.payload
+          .chain_name;
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
       if (!(state[action.payload.node.parent_id].hasOwnProperty(
@@ -544,8 +544,8 @@ function cosmosChainsById(state = {}, action) {
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
           "repositories"))){
         state[action.payload.repo.parent_id].repositories = [];
-        state[action.payload.repo.parent_id].chain_name = action.payload.
-          chain_name;
+        state[action.payload.repo.parent_id].chain_name = action.payload
+          .chain_name;
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
       if (!(state[action.payload.repo.parent_id].hasOwnProperty(
@@ -574,8 +574,8 @@ function cosmosChainsById(state = {}, action) {
           ...state,
           [action.payload.repo.parent_id]: {
             ...state[action.payload.repo.parent_id],
-            repositories: state[action.payload.repo.parent_id].repositories.
-              concat(action.payload.repo.id),
+            repositories: state[action.payload.repo.parent_id].repositories
+              .concat(action.payload.repo.id),
           },
         }
       }else{
@@ -619,8 +619,8 @@ function cosmosChainsById(state = {}, action) {
       }
       if (!(state[action.payload.kms.parent_id].hasOwnProperty("kmses"))){
         state[action.payload.kms.parent_id].kmses = [];
-        state[action.payload.kms.parent_id].chain_name = action.payload.
-          chain_name;
+        state[action.payload.kms.parent_id].chain_name = action.payload
+          .chain_name;
         state[action.payload.kms.parent_id].id = action.payload.kms.parent_id;
       }
       if (!(state[action.payload.kms.parent_id].hasOwnProperty(
@@ -642,8 +642,8 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.kms.parent_id].severityAlerts =
           cosmosSeverityAlerts;
       }
-      if (!(state[action.payload.kms.parent_id].kmses.
-          includes(action.payload.kms.id))){
+      if (!(state[action.payload.kms.parent_id].kmses
+          .includes(action.payload.kms.id))){
         return {
           ...state,
           [action.payload.kms.parent_id]: {

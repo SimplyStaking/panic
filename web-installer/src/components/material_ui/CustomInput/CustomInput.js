@@ -6,8 +6,6 @@ import classNames from "classnames";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 import FormControl from "@material-ui/core/FormControl";
-import InputLabel from "@material-ui/core/InputLabel";
-import Input from "@material-ui/core/Input";
 import TextField from "@material-ui/core/TextField";
 import styles from "assets/jss/material-kit-react/components/customInputStyle.js";
 
@@ -17,9 +15,6 @@ export default function CustomInput(props) {
   const classes = useStyles();
   const {
     formControlProps,
-    labelText,
-    id,
-    labelProps,
     inputProps,
     placeHolder,
     error,
@@ -28,28 +23,8 @@ export default function CustomInput(props) {
     handleChange,
     type,
     name,
-    white,
-    inputRootCustomClasses,
-    success
   } = props;
 
-  const labelClasses = classNames({
-    [" " + classes.labelRootError]: error,
-    [" " + classes.labelRootSuccess]: success && !error
-  });
-  const underlineClasses = classNames({
-    [classes.underlineError]: error,
-    [classes.underlineSuccess]: success && !error,
-    [classes.underline]: true,
-    [classes.whiteUnderline]: white
-  });
-  const marginTop = classNames({
-    [inputRootCustomClasses]: inputRootCustomClasses !== undefined
-  });
-  const inputClasses = classNames({
-    [classes.input]: true,
-    [classes.whiteInput]: white
-  });
   var formControlClasses;
   if (formControlProps !== undefined) {
     formControlClasses = classNames(

@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { Box } from '@material-ui/core';
 import Button from "components/material_ui/CustomButtons/Button.js";
 
 const NavigationButton = ({disabled, navigation, nextPage, buttonText}) => {

@@ -2,13 +2,15 @@ import React from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 // @material-ui/icons
-import Check from "@material-ui/icons/Check";
 import Warning from "@material-ui/icons/Warning";
 // core components
-import SnackbarContent from "components/material_ui/Snackbar/SnackbarContent.js";
-import Clearfix from "components/material_ui/Clearfix/Clearfix.js";
+import SnackbarContent from
+  'components/material_ui/Snackbar/SnackbarContent.js';
+import Clearfix from
+  'components/material_ui/Clearfix/Clearfix.js';
 import NewReleasesIcon from '@material-ui/icons/NewReleases';
-import styles from "assets/jss/material-kit-react/views/componentsSections/notificationsStyles.js";
+import styles from
+  'assets/jss/material-kit-react/views/componentsSections/notificationsStyles.js';
 import ErrorIcon from '@material-ui/icons/Error';
 import Data from 'data/channels';
 

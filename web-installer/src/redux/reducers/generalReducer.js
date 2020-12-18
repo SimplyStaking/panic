@@ -169,8 +169,8 @@ function GeneralReducer(state = generalState, action) {
             ...state.byId,
             GLOBAL: {
               ...state.byId[GLOBAL],
-              repositories: state.byId[GLOBAL].repositories.concat(action.payload.
-                id),
+              repositories: state.byId[GLOBAL].repositories.concat(action
+                .payload.id),
             },
           },
         };

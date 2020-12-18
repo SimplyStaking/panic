@@ -32,12 +32,13 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
     let emailPayload = {} 
     let opsGeniePayload = {}
     let pagerDutyPayload = {}
+    let index = 0;
 
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
       telegramPayload = JSON.parse(JSON.stringify(
         telegrams.byId[telegrams.allIds[i]]));
       if (telegramPayload.parent_ids.includes(chainID)) {
-        var index = telegramPayload.parent_ids.indexOf(chainID);
+        index = telegramPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
           telegramPayload.parent_ids.splice(index, 1);
         }
@@ -53,7 +54,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
       twilioPayload = JSON.parse(JSON.stringify(
         twilios.byId[twilios.allIds[i]]));
       if (twilioPayload.parent_ids.includes(chainID)) {
-        var index = twilioPayload.parent_ids.indexOf(chainID);
+        index = twilioPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
           twilioPayload.parent_ids.splice(index, 1);
         }
@@ -70,7 +71,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
       emailPayload = JSON.parse(JSON.stringify(
         emails.byId[emails.allIds[i]]));
       if (emailPayload.parent_ids.includes(chainID)) {
-        var index = emailPayload.parent_ids.indexOf(chainID);
+        index = emailPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
           emailPayload.parent_ids.splice(index, 1);
         }
@@ -86,7 +87,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
       opsGeniePayload = JSON.parse(JSON.stringify(
         opsgenies.byId[opsgenies.allIds[i]]));
       if (opsGeniePayload.parent_ids.includes(chainID)) {
-        var index = opsGeniePayload.parent_ids.indexOf(chainID);
+        index = opsGeniePayload.parent_ids.indexOf(chainID);
         if (index > -1) {
           opsGeniePayload.parent_ids.splice(index, 1);
         }
@@ -102,7 +103,7 @@ const SubstrateChainsTable = ({config, loadConfigDetails, pageChanger,
       pagerDutyPayload = JSON.parse(JSON.stringify(
         pagerduties.byId[pagerduties.allIds[i]]));
       if (pagerDutyPayload.parent_ids.includes(chainID)) {
-        var index = pagerDutyPayload.parent_ids.indexOf(chainID);
+        index = pagerDutyPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
           pagerDutyPayload.parent_ids.splice(index, 1);
         }
