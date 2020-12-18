@@ -299,8 +299,10 @@ class SystemAlerter(Alerter):
             critical_limiters = self._system_critical_timed_task_limiters[
                 meta_data['system_id']]
             is_down_critical_limiter = critical_limiters[IS_DOWN_LIMITER_NAME]
+            initial_downtime_alert_sent = \
+                self._system_initial_downtime_alert_sent[meta_data['system_id']]
 
-            if previous is not None:
+            if previous is not None and initial_downtime_alert_sent:
                 alert = SystemBackUpAgainAlert(
                     meta_data['system_name'], 'INFO',
                     meta_data['last_monitored'], meta_data['system_parent_id'],
