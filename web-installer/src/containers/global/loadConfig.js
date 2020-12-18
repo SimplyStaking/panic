@@ -154,7 +154,8 @@ class LoadConfig extends Component {
             payload.periodic.enabled = (payload.periodic.enabled  === 'true');
             updatePeriodicDetails(payload.periodic);
           }else if (res[2] === 'repos_config.ini') {
-            config = await getConfig('general', 'repos_config.ini', '', '')
+            config = await getConfig('general', 'repos_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.monitor_repo = (payload.monitor_repo  === 'true');
@@ -162,7 +163,8 @@ class LoadConfig extends Component {
               loadReposGeneralDetails(payload);
             });
           }else if (res[2] === 'systems_config.ini') {
-            config = await getConfig('general', 'systems_config.ini', '', '')
+            config = await getConfig('general', 'systems_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.monitor_system = (payload.monitor_system  === 'true');
@@ -170,11 +172,12 @@ class LoadConfig extends Component {
               loadSystemGeneralDetails(payload);
             });
           }else if (res[2] === 'alerts_config.ini') {
-            config = await getConfig('general', 'alerts_config.ini', '', '')
+            config = await getConfig('general', 'alerts_config.ini', '', '');
             // Create copies of alerts
             repeatAlerts = JSON.parse(JSON.stringify(generalRepeatAlerts));
             thresholdAlerts = JSON.parse(JSON.stringify(
               generalThresholdAlerts));
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               parent_id = config.data.result[key].parent_id;
               if (key in repeatAlerts.byId) {
@@ -194,8 +197,8 @@ class LoadConfig extends Component {
                 repeatAlerts.byId[key].enabled = (
                   config.data.result[key].enabled === 'true');
               }else if (key in thresholdAlerts.byId) {
-                thresholdAlerts.byId[key].parent_id = config.data.result[key].
-                  parent_id;
+                thresholdAlerts.byId[key].parent_id = config.data.result[key]
+                  .parent_id;
                 warning = {
                   threshold: config.data.result[key].warning_threshold,
                   enabled: (config.data.result[key].warning_enabled === 'true'),
@@ -219,13 +222,14 @@ class LoadConfig extends Component {
           }
         }else if (res[1] === 'channels') {
           if (res[2] === 'email_config.ini') {
-            config = await getConfig('channel', 'email_config.ini', '', '')
+            config = await getConfig('channel', 'email_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               if (payload.emails_to.length === 0){
                 payload.emails_to = [];
               }else {
-                payload.emails_to = payload.emails_to .split(',');
+                payload.emails_to = payload.emails_to.split(',');
               }
               payload.info = (payload.info  === 'true');
               payload.warning = (payload.warning  === 'true');
@@ -241,7 +245,8 @@ class LoadConfig extends Component {
               loadEmailDetails(payload);
             });
           }else if (res[2] === 'opsgenie_config.ini') {
-            config = await getConfig('channel', 'opsgenie_config.ini', '', '')
+            config = await getConfig('channel', 'opsgenie_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.info = (payload.info  === 'true');
@@ -259,7 +264,8 @@ class LoadConfig extends Component {
               loadOpsgenieDetails(payload);
             });
           }else if (res[2] === 'pagerduty_config.ini') {
-            config = await getConfig('channel', 'pagerduty_config.ini', '', '')
+            config = await getConfig('channel', 'pagerduty_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.info = (payload.info  === 'true');
@@ -276,7 +282,8 @@ class LoadConfig extends Component {
               loadPagerdutyDetails(payload);
             });
           }else if (res[2] === 'telegram_config.ini') {
-            config = await getConfig('channel', 'telegram_config.ini', '', '')
+            config = await getConfig('channel', 'telegram_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               payload.info = (payload.info  === 'true');
@@ -295,7 +302,8 @@ class LoadConfig extends Component {
               loadTelegramDetails(payload);
             });
           }else if (res[2] === 'twilio_config.ini') {
-            config = await getConfig('channel', 'twilio_config.ini', '', '')
+            config = await getConfig('channel', 'twilio_config.ini', '', '');
+            // eslint-disable-next-line 
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
               if (payload.twilio_phone_numbers_to_dial.length === 0){
@@ -318,7 +326,8 @@ class LoadConfig extends Component {
           if (res[2] === 'cosmos'){
             if (res[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', res[3],
-                'cosmos')
+                'cosmos');
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 node = JSON.parse(JSON.stringify(config.data.result[key]));
                 node.is_archive_node = (node.is_archive_node  === 'true');
@@ -333,7 +342,8 @@ class LoadConfig extends Component {
               });
             } else if (res[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', res[3],
-                'cosmos')
+                'cosmos');
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 repo = JSON.parse(JSON.stringify(config.data.result[key]));
                 repo.monitor_repo = (repo.monitor_repo  === 'true');
@@ -343,7 +353,8 @@ class LoadConfig extends Component {
               });
             } else if (res[4] === 'kms_config.ini') {
               config = await getConfig('chain', 'kms_config.ini', res[3],
-                'cosmos')
+                'cosmos');
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 kms = JSON.parse(JSON.stringify(config.data.result[key]));
                 kms.monitor_kms = (kms.monitor_kms  === 'true');
@@ -353,7 +364,7 @@ class LoadConfig extends Component {
               });
             } else if (res[4] === 'alerts_config.ini') {
               config = await getConfig('chain', 'alerts_config.ini', res[3],
-                'cosmos')
+                'cosmos');
               // Create copies of alerts
               repeatAlerts = JSON.parse(JSON.stringify(
                 cosmosRepeatAlerts));
@@ -363,6 +374,7 @@ class LoadConfig extends Component {
                 cosmosTimeWindowAlerts));
               severityAlerts = JSON.parse(JSON.stringify(
                 cosmosSeverityAlerts));
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 parent_id = config.data.result[key].parent_id;
                 if (key in repeatAlerts.byId) {
@@ -456,7 +468,8 @@ class LoadConfig extends Component {
           } else if (res[2] === 'substrate') {
             if (res[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', res[3],
-                'substrate')
+                'substrate');
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 node = JSON.parse(JSON.stringify(config.data.result[key]));
                 node.is_archive_node = (node.is_archive_node  === 'true');
@@ -471,7 +484,8 @@ class LoadConfig extends Component {
               });
             } else if (res[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', res[3],
-                'substrate')
+                'substrate');
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 repo = JSON.parse(JSON.stringify(config.data.result[key]));
                 repo.monitor_repo = (repo.monitor_repo  === 'true');
@@ -484,7 +498,7 @@ class LoadConfig extends Component {
               });
             } else if (res[4] === 'alerts_config.ini') {
               config = await getConfig('chain', 'alerts_config.ini', res[3],
-                'substrate')
+                'substrate');
               // Create copies of alerts
               repeatAlerts = JSON.parse(JSON.stringify(
                 substrateRepeatAlerts));
@@ -494,6 +508,7 @@ class LoadConfig extends Component {
                 substrateTimeWindowAlerts));
               severityAlerts = JSON.parse(JSON.stringify(
                 substrateSeverityAlerts));
+              // eslint-disable-next-line 
               Object.keys(config.data.result).forEach(function(key) {
                 parent_id = config.data.result[key].parent_id;
                 if (key in repeatAlerts.byId) {
