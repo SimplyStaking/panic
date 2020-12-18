@@ -14,7 +14,7 @@ const ALL_CHANNELS_CONFIG_FILES = [
   USER_CONFIG_TELEGRAM, USER_CONFIG_EMAIL, USER_CONFIG_TWILIO,
   USER_CONFIG_PAGERDUTY, USER_CONFIG_OPSGENIE,
 ];
-const CHANNELS_CONFIGS_LOCATION = path.join('config', 'channels');
+const CHANNELS_CONFIGS_LOCATION = path.join('../config', 'channels');
 
 // Chain configs and config locations
 const USER_CONFIG_NODES = 'nodes_config.ini';
@@ -33,11 +33,12 @@ const ALL_CHAINS_CONFIG_FILES = [
   USER_CONFIG_ALERTS, USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
   USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS,
 ];
-const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('config', 'chains', 'cosmos');
+const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains',
+  'cosmos');
 const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join(
-  'config', 'chains', 'substrate',
+  '../config', 'chains', 'substrate',
 );
-const GENERAL_CONFIGS_LOCATION = path.join('config', 'general');
+const GENERAL_CONFIGS_LOCATION = path.join('../config', 'general');
 // Other configs and config locations
 const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_GENERAL_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS,

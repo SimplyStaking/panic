@@ -113,10 +113,8 @@ const generalRepeatAlerts = {
 
 // Initial periodic state
 const periodicState = {
-  periodic: {
-    time: 0,
-    enabled: false,
-  },
+  time: 0,
+  enabled: false,
 };
 
 // Initial general state
@@ -321,7 +319,6 @@ function GeneralReducer(state = generalState, action) {
 function PeriodicReducer(state = periodicState, action) {
   switch (action.type) {
     case UPDATE_PERIODIC:
-      console.log(action.payload);
       return action.payload;
     default:
       return state;

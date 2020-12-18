@@ -14,7 +14,7 @@ const useStyles = makeStyles(styles);
 
 const PeriodicForm = ({ periodic, savePeriodicDetails}) => {
   const classes = useStyles();
-
+  let payload = {}
   return (
     <div>
       <div className={classes.subsection}>
