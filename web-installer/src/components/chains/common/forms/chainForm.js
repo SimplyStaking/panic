@@ -124,8 +124,8 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                 <Box px={2}>
                   <NavigationButton
                     disabled={
-                      (Object.keys(errors).length !== 0) &&
-                      (values.chain_name.length === 0)
+                      ((Object.keys(errors).length !== 0) ||
+                      (values.chain_name.length === 0))
                     }
                     nextPage={nextStep}
                     buttonText={NEXT}
