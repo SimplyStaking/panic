@@ -209,13 +209,22 @@ class LoadConfig extends Component {
             config = await getConfig('channel', 'email_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              payload.emails_to = config.data.result[key].emails_to.split(',');
+              if (payload.emails_to.length === 0){
+                payload.emails_to = [];
+              }else {
+                payload.emails_to = payload.emails_to .split(',');
+              }
               payload.info = (payload.info  === 'true');
               payload.warning = (payload.warning  === 'true');
               payload.critical = (payload.critical  === 'true');
               payload.error = (payload.error  === 'true');
-              payload.parent_ids = payload.parent_ids .split(',');
-              payload.parent_names = payload.parent_names .split(',');
+              if (payload.parent_ids.length === 0){
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              }else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
               loadEmailDetails(payload);
             });
           }else if (res[2] === 'opsgenie_config.ini') {
@@ -227,8 +236,13 @@ class LoadConfig extends Component {
               payload.critical = (payload.critical  === 'true');
               payload.error = (payload.error  === 'true');
               payload.eu = (payload.eu = 'true');
-              payload.parent_ids = payload.parent_ids .split(',');
-              payload.parent_names = payload.parent_names .split(',');
+              if (payload.parent_ids.length === 0){
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              }else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
               loadOpsgenieDetails(payload);
             });
           }else if (res[2] === 'pagerduty_config.ini') {
@@ -239,8 +253,13 @@ class LoadConfig extends Component {
               payload.warning = (payload.warning  === 'true');
               payload.critical = (payload.critical  === 'true');
               payload.error = (payload.error  === 'true');
-              payload.parent_ids = payload.parent_ids .split(',');
-              payload.parent_names = payload.parent_names .split(',');
+              if (payload.parent_ids.length === 0){
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              }else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
               loadPagerdutyDetails(payload);
             });
           }else if (res[2] === 'telegram_config.ini') {
@@ -253,18 +272,32 @@ class LoadConfig extends Component {
               payload.error = (payload.error  === 'true');
               payload.alerts = (payload.alerts === 'true');
               payload.commands = (payload.commands === 'true');
-              payload.parent_ids = payload.parent_ids .split(',');
-              payload.parent_names = payload.parent_names .split(',');
+              if (payload.parent_ids.length === 0){
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              }else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
               loadTelegramDetails(payload);
             });
           }else if (res[2] === 'twilio_config.ini') {
             config = await getConfig('channel', 'twilio_config.ini', '', '')
             Object.keys(config.data.result).forEach(function(key) {
-              payload = config.data.result[key];
-              payload.twilio_phone_numbers_to_dial = config.data.result[key]
-                .twilio_phone_numbers_to_dial.split(',');
-              payload.parent_ids = payload.parent_ids.split(',');
-              payload.parent_names = payload.parent_names.split(',');
+              payload = JSON.parse(JSON.stringify(config.data.result[key]));
+              if (payload.twilio_phone_numbers_to_dial.length === 0){
+                payload.twilio_phone_numbers_to_dial = [];
+              }else {
+                payload.twilio_phone_numbers_to_dial = payload
+                  .twilio_phone_numbers_to_dial.split(',');
+              }
+              if (payload.parent_ids.length === 0){
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              }else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
               loadTwilioDetails(payload);
             });
           }
