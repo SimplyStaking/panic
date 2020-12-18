@@ -25,7 +25,6 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
 from src.utils.timing import TimedTaskLimiter
 from src.utils.types import IncreasedAboveThresholdSystemAlert, \
     DecreasedBelowThresholdSystemAlert, str_to_bool, \
-    convert_to_int_if_not_none_and_not_empty_str, \
     convert_to_float_if_not_none_and_not_empty_str
 
 OPEN_FD_LIMITER_NAME = 'open_file_descriptors'
@@ -67,21 +66,42 @@ class SystemAlerter(Alerter):
             system_critical_limiters = \
                 self._system_critical_timed_task_limiters[system_id]
 
+            open_fd_critical_repeat = \
+                convert_to_float_if_not_none_and_not_empty_str(
+                    open_fd['critical_repeat'],
+                    timedelta.max.total_seconds() - 1)
+            cpu_use_critical_repeat = \
+                convert_to_float_if_not_none_and_not_empty_str(
+                    cpu_use['critical_repeat'],
+                    timedelta.max.total_seconds() - 1)
+            storage_critical_repeat = \
+                convert_to_float_if_not_none_and_not_empty_str(
+                    storage['critical_repeat'],
+                    timedelta.max.total_seconds() - 1)
+            ram_use_critical_repeat = \
+                convert_to_float_if_not_none_and_not_empty_str(
+                    ram_use['critical_repeat'],
+                    timedelta.max.total_seconds() - 1)
+            is_down_critical_repeat = \
+                convert_to_float_if_not_none_and_not_empty_str(
+                    is_down['critical_repeat'],
+                    timedelta.max.total_seconds() - 1)
+
             system_critical_limiters[OPEN_FD_LIMITER_NAME] = TimedTaskLimiter(
-                timedelta(seconds=int(open_fd['critical_repeat']))
+                timedelta(seconds=float(open_fd_critical_repeat))
             )
             system_critical_limiters[CPU_USE_LIMITER_NAME] = TimedTaskLimiter(
-                timedelta(seconds=int(cpu_use['critical_repeat']))
+                timedelta(seconds=float(cpu_use_critical_repeat))
             )
             system_critical_limiters[STORAGE_USE_LIMITER_NAME] = \
                 TimedTaskLimiter(
-                    timedelta(seconds=int(storage['critical_repeat']))
+                    timedelta(seconds=float(storage_critical_repeat))
                 )
             system_critical_limiters[RAM_USE_LIMITER_NAME] = TimedTaskLimiter(
-                timedelta(seconds=int(ram_use['critical_repeat']))
+                timedelta(seconds=float(ram_use_critical_repeat))
             )
             system_critical_limiters[IS_DOWN_LIMITER_NAME] = TimedTaskLimiter(
-                timedelta(seconds=int(is_down['critical_repeat']))
+                timedelta(seconds=float(is_down_critical_repeat))
             )
 
     def _initialize_rabbitmq(self) -> None:
@@ -234,11 +254,11 @@ class SystemAlerter(Alerter):
                 downtime = monitoring_timestamp - current
 
                 critical_threshold = \
-                    convert_to_int_if_not_none_and_not_empty_str(
+                    convert_to_float_if_not_none_and_not_empty_str(
                         is_down['critical_threshold'], None)
                 critical_enabled = str_to_bool(is_down['critical_enabled'])
                 warning_threshold = \
-                    convert_to_int_if_not_none_and_not_empty_str(
+                    convert_to_float_if_not_none_and_not_empty_str(
                         is_down['warning_threshold'], None)
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
