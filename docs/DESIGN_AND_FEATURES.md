@@ -118,10 +118,10 @@ In the lists below we will show which alerts have severity thresholds and which 
 
 ## GitHub Repository Alerts
 
-| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
-|---|---|---|:-:|:-:|---|
-| `NewGitHubReleaseAlert` | | `INFO` | ✗ | ✗ | This alert is raised whenever a new release is published for a GitHub repository. Some release details are also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
-| `CannotAccessGitHubPageAlert` | | `ERROR` | ✗ | ✗ | This alert is raised when the alerter cannot access the GitHub repository's Releases API Page. |
+| Alert Class | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|:-:|:-:|---|
+| `NewGitHubReleaseAlert` | `INFO` | ✗ | ✗ | This alert is raised whenever a new release is published for a GitHub repository. Some release details are also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
+| `CannotAccessGitHubPageAlert` | `ERROR` | ✗ | ✗ | This alert is raised when the alerter cannot access the GitHub repository's Releases API Page. |
 
 ---
 [Back to front page](../README.md)
