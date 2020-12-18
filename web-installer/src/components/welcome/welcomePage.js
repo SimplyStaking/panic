@@ -1,12 +1,9 @@
 import React from 'react';
-import { Box } from '@material-ui/core';
 import { makeStyles } from "@material-ui/core/styles";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
 import LoginContainer from 'containers/welcome/loginContainer';
 import styles from "assets/jss/material-kit-react/views/components.js";
-import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
-import { CHANNELS_PAGE, START } from 'constants/constants';
 import Data from 'data/welcome';
 
 const useStyles = makeStyles(styles);
@@ -34,10 +31,6 @@ function WelcomePage() {
         <div className={classes.topPadded}>
           <LoginContainer />        
         </div>
-        <NavigationButtonContainer
-          text={START}
-          navigation={CHANNELS_PAGE}
-        />
     </div>
   );
 }

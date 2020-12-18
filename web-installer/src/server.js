@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
+const fsExtra = require('fs-extra');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
@@ -561,6 +562,34 @@ app.get('/server/config', verify, async (req, res) => {
         .send(utils.errorJson(errNotFound.message));
     }
     // Otherwise inform the user about the error.
+    return res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// Endpoint to delete all directories so they can be re-written
+app.post('/server/config/delete', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+
+  try {
+    const configPath = path.join(__dirname, '../', 'config');
+    fsExtra.emptyDirSync(configPath);
+    // const configPath = path.join(__dirname, '../', 'config');
+    // fs.rmdir(configPath, { recursive: true })
+    //   .then(function(files) {
+    //       var processedPaths = []
+    //       for (var i = 0; i < files.length; i++) {
+    //         var newPath = files[i].replace(configPath, '');
+    //         processedPaths.push(newPath);
+    //       }
+    //       return processedPaths;
+    //     }
+    //   )
+    //   .catch(e => console.error(e));
+    const msg = new msgs.DeleteDirectory();
+    return res.status(utils.SUCCESS_STATUS).send(
+      utils.resultJson(msg.message));
+  } catch (err) {
+    // If error inform the user
     return res.status(err.code).send(utils.errorJson(err.message));
   }
 });

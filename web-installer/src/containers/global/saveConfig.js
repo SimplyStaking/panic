@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
 import { SaveConfigButton } from 'utils/buttons';
-import { sendConfig } from 'utils/data';
+import { sendConfig, deleteConfigs } from 'utils/data';
 import { GLOBAL } from 'constants/constants';
 
 // List of all the data that needs to be saved in the server
@@ -42,6 +42,8 @@ class SaveConfig extends Component {
       cosmosNodes, repositories, kmses, substrateChains, substrateNodes,
       general, systems, periodic,
     } = this.props;
+
+    await deleteConfigs();
 
     ToastsStore.info('Starting to save data config.', 5000);
     // Save all the channels configurations if any

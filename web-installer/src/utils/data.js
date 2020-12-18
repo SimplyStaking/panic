@@ -23,6 +23,10 @@ function pingNodeExporter(exporter_url) {
     { exporter_url });
 }
 
+function deleteConfigs() {
+  return sendData('/server/config/delete', {}, {});
+}
+
 function pingRepo(url) {
   return fetchData(url);
 }
@@ -91,5 +95,5 @@ export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
-  deleteAccount, getConfigPaths, getConfig, loadAccounts,
+  deleteAccount, getConfigPaths, getConfig, loadAccounts, deleteConfigs,
 };
