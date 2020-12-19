@@ -1,5 +1,7 @@
 import logging
 
+from opsgenie_sdk import SuccessResponse
+
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.apis.opsgenie_api import OpsgenieApi
 from src.channels_manager.channels import Channel
@@ -23,14 +25,20 @@ class OpsgenieChannel(Channel):
         }.get(alert.severity.lower(), OpsgenieSeverities.INFO)
 
         try:
-            self._opsgenie_api.create_alert(
+            response = self._opsgenie_api.create_alert(
                 "PANIC - {}".format(alert.alert_code.lower()), alert.message,
                 severity, alert.origin_id, alert.timestamp,
                 alias=alert.alert_code.value
             )
-            self.logger.info("Sent %s to OpsGenie channel %s",
-                             alert.alert_code.name, self.__str__())
-            return RequestStatus.SUCCESS
+            self.logger.info(
+                "Sent %s to OpsGenie channel %s, received response %s",
+                alert.alert_code.name, self.__str__(), response
+            )
+
+            if type(response) == SuccessResponse:
+                return RequestStatus.SUCCESS
+            else:
+                return RequestStatus.FAILED
         except Exception as e:
             self.logger.error("Error when sending %s to OpsGenie channel %s",
                               alert.alert_code.name, self.__str__())
