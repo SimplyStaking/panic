@@ -1,30 +1,36 @@
 import React from 'react';
-import { makeStyles } from "@material-ui/core/styles";
 import { Grid } from '@material-ui/core';
-import NavigationButtonContainer from
-  'containers/global/navigationButtonContainer';
-import CosmosChainsTableContainer from
-  'containers/chains/cosmos/cosmosChainsTableContainer';
-import SubstrateChainsTableContainer from
-  'containers/chains/substrate/substrateChainsTableContainer';
-import ChainAccordion from './chainAccordion';
+import { makeStyles } from '@material-ui/core/styles';
+import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import CosmosChainsTableContainer from 'containers/chains/cosmos/cosmosChainsTableContainer';
+import SubstrateChainsTableContainer from 'containers/chains/substrate/substrateChainsTableContainer';
 import CosmosIcon from 'assets/icons/cosmos.png';
 import SubstrateIcon from 'assets/icons/substrate.png';
 import {
-  CHANNELS_PAGE, NEXT, BACK, COSMOS_SETUP_PAGE, NEW,
-  COSMOS, SUBSTRATE, SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, OTHER,
-  OTHER_SETUP_PAGE, CONFIGURE
+  CHANNELS_PAGE,
+  NEXT,
+  BACK,
+  COSMOS_SETUP_PAGE,
+  NEW,
+  COSMOS,
+  SUBSTRATE,
+  SUBSTRATE_SETUP_PAGE,
+  GENERAL_PAGE,
+  OTHER,
+  OTHER_SETUP_PAGE,
+  CONFIGURE,
 } from 'constants/constants';
 import Data from 'data/chains';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import Parallax from "components/material_ui/Parallax/Parallax.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
-import styles from
-  "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
-import Card from "components/material_ui/Card/Card.js";
-import CardBody from "components/material_ui/Card/CardBody.js";
-import DescriptionSection from "components/chains/descriptionSection.js";
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import Parallax from 'components/material_ui/Parallax/Parallax.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
+import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
+import Card from 'components/material_ui/Card/Card.js';
+import CardBody from 'components/material_ui/Card/CardBody.js';
+import DescriptionSection from 'components/chains/descriptionSection.js';
 import SystemIcon from 'assets/icons/system.svg';
+import Background from 'assets/img/backgrounds/background.png';
+import ChainAccordion from './chainAccordion';
 
 const useStyles = makeStyles(styles);
 
@@ -37,14 +43,12 @@ function Chains() {
 
   return (
     <div>
-      <Parallax image={require("assets/img/backgrounds/background.png")}>
+      <Parallax image={Background}>
         <div className={classes.container}>
           <GridContainer>
             <GridItem>
               <div className={classes.brand}>
-                <h1 className={classes.title}>
-                  {Data.chains.title}
-                </h1>
+                <h1 className={classes.title}>{Data.chains.title}</h1>
               </div>
             </GridItem>
           </GridContainer>
@@ -67,7 +71,7 @@ function Chains() {
                           navigation={COSMOS_SETUP_PAGE}
                         />
                       )}
-                      table={(<CosmosChainsTableContainer />)}
+                      table={<CosmosChainsTableContainer />}
                     />
                     <ChainAccordion
                       icon={SubstrateIcon}
@@ -78,9 +82,7 @@ function Chains() {
                           navigation={SUBSTRATE_SETUP_PAGE}
                         />
                       )}
-                      table={(
-                        <SubstrateChainsTableContainer />
-                      )}
+                      table={<SubstrateChainsTableContainer />}
                     />
                     <ChainAccordion
                       icon={SystemIcon}
@@ -91,7 +93,7 @@ function Chains() {
                           navigation={OTHER_SETUP_PAGE}
                         />
                       )}
-                      table={<div/>}
+                      table={<div />}
                     />
                   </div>
                 </Grid>

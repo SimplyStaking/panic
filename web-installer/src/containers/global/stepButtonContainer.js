@@ -47,5 +47,7 @@ StepButtonContainer.propTypes = {
   navigation: PropTypes.string.isRequired,
 };
 
-export default connect(mapStateToProps,
-    mapDispatchToProps)(StepButtonContainer);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(StepButtonContainer);

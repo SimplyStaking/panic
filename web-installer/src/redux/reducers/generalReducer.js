@@ -1,10 +1,21 @@
 import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
-  UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
-  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, UPDATE_THRESHOLD_ALERT,
-  UPDATE_REPEAT_ALERT, LOAD_REPOSITORY, LOAD_SYSTEM, LOAD_KMS,
-  LOAD_REPOSITORY_GENERAL, LOAD_SYSTEM_GENERAL, LOAD_REPEAT_ALERTS_GENERAL,
+  UPDATE_PERIODIC,
+  ADD_REPOSITORY,
+  ADD_SYSTEM,
+  REMOVE_REPOSITORY,
+  REMOVE_SYSTEM,
+  ADD_KMS,
+  REMOVE_KMS,
+  UPDATE_THRESHOLD_ALERT,
+  UPDATE_REPEAT_ALERT,
+  LOAD_REPOSITORY,
+  LOAD_SYSTEM,
+  LOAD_KMS,
+  LOAD_REPOSITORY_GENERAL,
+  LOAD_SYSTEM_GENERAL,
+  LOAD_REPEAT_ALERTS_GENERAL,
   LOAD_THRESHOLD_ALERTS_GENERAL,
 } from 'redux/actions/types';
 import { GLOBAL } from 'constants/constants';
@@ -14,8 +25,8 @@ const generalThresholdAlerts = {
     1: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
-      description: 'Open File Descriptors alerted on based on percentage usage'
-                 + '.',
+      description:
+        'Open File Descriptors alerted on based on percentage usage .',
       adornment: '%',
       adornment_time: 'Seconds',
       parent_id: 'GLOBAL',
@@ -93,8 +104,9 @@ const generalRepeatAlerts = {
     5: {
       name: 'System Is Down',
       identifier: 'system_is_down',
-      description: 'The Node Exporter URL is un-reachable therefore the '
-                 + 'system is taken to be down.',
+      description:
+        'The Node Exporter URL is un-reachable therefore the '
+        + 'system is taken to be down.',
       adornment: 'Seconds',
       parent_id: 'GLOBAL',
       warning: {
@@ -109,7 +121,7 @@ const generalRepeatAlerts = {
     },
   },
   allIds: ['5'],
-}
+};
 
 // Initial periodic state
 const periodicState = {
@@ -143,8 +155,11 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-      if (!(state.byId[action.payload.parent_id].hasOwnProperty(
-          "repositories"))){
+      if (
+        // eslint-disable-next-line no-prototype-builtins
+        !state.byId[action.payload.parent_id].hasOwnProperty('repositories')
+      ) {
+        // eslint-disable-next-line no-param-reassign
         state.byId[action.payload.parent_id].repositories = [];
       }
       return {
@@ -154,27 +169,28 @@ function GeneralReducer(state = generalState, action) {
           GLOBAL: {
             ...state.byId[GLOBAL],
             repositories: state.byId[GLOBAL].repositories.concat(
-              action.payload.id),
+              action.payload.id,
+            ),
           },
         },
       };
     case LOAD_REPOSITORY_GENERAL:
-      if (!(state.byId[GLOBAL].repositories.includes(
-          action.payload.id))){
+      if (!state.byId[GLOBAL].repositories.includes(action.payload.id)) {
         return {
           ...state,
           byId: {
             ...state.byId,
             GLOBAL: {
               ...state.byId[GLOBAL],
-              repositories: state.byId[GLOBAL].repositories.concat(action
-                .payload.id),
+              repositories: state.byId[GLOBAL].repositories.concat(
+                action.payload.id,
+              ),
             },
           },
         };
-      }else{
-        return state;
-      };
+      }
+      return state;
+
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -210,8 +226,11 @@ function GeneralReducer(state = generalState, action) {
         },
       };
     case LOAD_SYSTEM_GENERAL:
-      if (!(state.byId[action.payload.parent_id].systems.includes(
-          action.payload.id))){
+      if (
+        !state.byId[action.payload.parent_id].systems.includes(
+          action.payload.id,
+        )
+      ) {
         return {
           ...state,
           byId: {
@@ -222,9 +241,9 @@ function GeneralReducer(state = generalState, action) {
             },
           },
         };
-      }else{
-        return state;
-      };
+      }
+      return state;
+
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -351,11 +370,11 @@ function allRepositories(state = [], action) {
     case ADD_REPOSITORY:
       return state.concat(action.payload.id);
     case LOAD_REPOSITORY:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_REPOSITORY:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -394,11 +413,11 @@ function allSystems(state = [], action) {
     case ADD_SYSTEM:
       return state.concat(action.payload.id);
     case LOAD_SYSTEM:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_SYSTEM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -437,11 +456,11 @@ function allKmses(state = [], action) {
     case ADD_KMS:
       return state.concat(action.payload.id);
     case LOAD_KMS:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_KMS:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -455,6 +474,11 @@ const KmsReducer = combineReducers({
 });
 
 export {
-  RepositoryReducer, SystemsReducer, KmsReducer, PeriodicReducer,
-  GeneralReducer, generalThresholdAlerts, generalRepeatAlerts,
+  RepositoryReducer,
+  SystemsReducer,
+  KmsReducer,
+  PeriodicReducer,
+  GeneralReducer,
+  generalThresholdAlerts,
+  generalRepeatAlerts,
 };

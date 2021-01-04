@@ -1,15 +1,24 @@
 import {
-  ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS, LOAD_CONFIG_COSMOS,
-  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME_COSMOS, REMOVE_CHAIN_COSMOS,
-  LOAD_NODE_COSMOS, LOAD_REPOSITORY_COSMOS, LOAD_KMS_COSMOS,
-  LOAD_REPEAT_ALERTS_COSMOS, LOAD_TIMEWINDOW_ALERTS_COSMOS,
-  LOAD_THRESHOLD_ALERTS_COSMOS, LOAD_SEVERITY_ALERTS_COSMOS
+  ADD_CHAIN_COSMOS,
+  ADD_NODE_COSMOS,
+  REMOVE_NODE_COSMOS,
+  LOAD_CONFIG_COSMOS,
+  RESET_CHAIN_COSMOS,
+  UPDATE_CHAIN_NAME_COSMOS,
+  REMOVE_CHAIN_COSMOS,
+  LOAD_NODE_COSMOS,
+  LOAD_REPOSITORY_COSMOS,
+  LOAD_KMS_COSMOS,
+  LOAD_REPEAT_ALERTS_COSMOS,
+  LOAD_TIMEWINDOW_ALERTS_COSMOS,
+  LOAD_THRESHOLD_ALERTS_COSMOS,
+  LOAD_SEVERITY_ALERTS_COSMOS,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
-// a new identifer, from then on you re-used the old one.
+// a new identifier, from then on you re-used the old one.
 // When creating a new chain, we must add empty lists as we need to initialize
 // the key/value pairs beforehand.
 export function addChainCosmos(payload) {
@@ -50,7 +59,7 @@ export function resetCurrentChainIdCosmos() {
 }
 
 // Action to add a cosmos node to a configuration, payload is intercepted,
-// and a unqiue id is generated for it.
+// and a unique id is generated for it.
 export function addNodeCosmos(payload) {
   return {
     type: ADD_NODE_COSMOS,

@@ -1,8 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -14,8 +19,12 @@ import CancelIcon from '@material-ui/icons/Cancel';
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
-const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
-  }) => {
+const NodesTable = ({
+  chainConfig,
+  nodesConfig,
+  currentChain,
+  removeNodeDetails,
+}) => {
   if (chainConfig.byId[currentChain].nodes.length === 0) {
     return <div />;
   }
@@ -59,25 +68,38 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
                 {nodesConfig.byId[id].stash_address}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_validator
-                  ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].is_validator ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitor_node
-                  ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].monitor_node ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_archive_node
-                  ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].is_archive_node ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].use_as_data_source
-                  ? <CheckIcon /> : <ClearIcon />}
+                {nodesConfig.byId[id].use_as_data_source ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
-                  removeNodeDetails(nodesConfig.byId[id]);
-                }}
+                <Button
+                  onClick={() => {
+                    removeNodeDetails(nodesConfig.byId[id]);
+                  }}
                 >
                   <CancelIcon />
                 </Button>

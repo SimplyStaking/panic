@@ -20,7 +20,9 @@ const PagerDutySchema = (props) => Yup.object().shape({
           }
         }
         for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value) {
+          if (
+            pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value
+          ) {
             return false;
           }
         }
@@ -38,10 +40,8 @@ const PagerDutySchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  api_token: Yup.string()
-    .required('API token is required.'),
-  integration_key: Yup.string()
-    .required('Integration key is required.'),
+  api_token: Yup.string().required('API token is required.'),
+  integration_key: Yup.string().required('Integration key is required.'),
 });
 
 export default PagerDutySchema;

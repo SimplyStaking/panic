@@ -71,7 +71,4 @@ const TelegramTableContainer = connect(
   mapDispatchToPropsRemove,
 )(TelegramTable);
 
-export {
-  TelegramFormContainer,
-  TelegramTableContainer,
-};
+export { TelegramFormContainer, TelegramTableContainer };

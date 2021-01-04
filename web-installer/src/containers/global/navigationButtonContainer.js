@@ -46,5 +46,7 @@ NavigationButtonContainer.propTypes = {
   navigation: PropTypes.string.isRequired,
 };
 
-export default connect(mapStateToProps,
-  mapDispatchToProps)(NavigationButtonContainer);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(NavigationButtonContainer);

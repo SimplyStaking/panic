@@ -1,36 +1,54 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  FormControlLabel, Checkbox, Typography, TextField, Grid, Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  TextField,
+  Grid,
+  Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import NavigationButton from 'components/global/navigationButton';
 import {
-  DONE, BACK, CHANNELS_STEP, CHAINS_STEP, CHAINS_PAGE
+  DONE,
+  BACK,
+  CHANNELS_STEP,
+  CHAINS_STEP,
+  CHAINS_PAGE,
 } from 'constants/constants';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
 import { defaultTheme } from 'components/theme/default';
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+
 import InputAdornment from '@material-ui/core/InputAdornment';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 import Divider from '@material-ui/core/Divider';
 import Data from 'data/alert';
 
 /*
  * AlertsTable will show display the alert types needed for general
  * configuration together with the function to directly edit them.
-*/
+ */
 const useStyles = makeStyles(styles);
 
-const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
-  updateThresholdAlertDetails, pageChanger, stepChanger}) => {
-
+const AlertsTable = ({
+  config,
+  currentChain,
+  updateRepeatAlertDetails,
+  updateThresholdAlertDetails,
+  pageChanger,
+  stepChanger,
+}) => {
   // Assigning buffer values as they become too long
   const RepeatAlerts = config.byId[currentChain].repeatAlerts;
   const ThresholdAlerts = config.byId[currentChain].thresholdAlerts;
@@ -52,9 +70,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                {Data.title}
-              </h1>
+              <h1 className={classes.title}>{Data.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -67,9 +83,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                {Data.subtitle_1}
-              </h1>
+              <h1 className={classes.title}>{Data.subtitle_1}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -88,7 +102,9 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {ThresholdAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{ThresholdAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{ThresholdAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{ThresholdAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
@@ -97,36 +113,35 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={ThresholdAlerts.byId[id].warning
-                                    .enabled}
+                                checked={
+                                  ThresholdAlerts.byId[id].warning.enabled
+                                }
                                 onClick={() => {
-                                  updateThresholdAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: ThresholdAlerts.byId[id].name,
-                                        identifier: ThresholdAlerts.byId[id]
-                                          .identifier,
-                                        description: ThresholdAlerts.byId[id]
-                                          .description,
-                                        adornment: ThresholdAlerts.byId[id]
-                                          .adornment,
-                                        adornment_time: ThresholdAlerts
-                                          .byId[id].adornment_time,
-                                        warning: {
-                                          threshold: ThresholdAlerts.byId[id]
-                                            .warning.threshold,
-                                          enabled: !ThresholdAlerts.byId[id]
-                                            .warning.enabled,
-                                        },
-                                        critical: ThresholdAlerts.byId[id]
-                                          .critical,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .enabled,
+                                  updateThresholdAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      identifier:
+                                        ThresholdAlerts.byId[id].identifier,
+                                      description:
+                                        ThresholdAlerts.byId[id].description,
+                                      adornment:
+                                        ThresholdAlerts.byId[id].adornment,
+                                      adornment_time:
+                                        ThresholdAlerts.byId[id].adornment_time,
+                                      warning: {
+                                        threshold:
+                                          ThresholdAlerts.byId[id].warning
+                                            .threshold,
+                                        enabled: !ThresholdAlerts.byId[id]
+                                          .warning.enabled,
                                       },
+                                      critical:
+                                        ThresholdAlerts.byId[id].critical,
+                                      enabled: ThresholdAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
@@ -144,41 +159,42 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               label="Threshold"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: {
-                                        threshold: event.target.value,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .warning.enabled,
-                                      },
-                                      critical: ThresholdAlerts.byId[id]
-                                        .critical,
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: {
+                                      threshold: event.target.value,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].warning
+                                          .enabled,
                                     },
+                                    critical: ThresholdAlerts.byId[id].critical,
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              autoComplete="off"
+                              /* eslint-disable-next-line react/jsx-no-duplicate-props */
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -192,36 +208,34 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={ThresholdAlerts.byId[id].critical
-                                    .enabled}
+                                checked={
+                                  ThresholdAlerts.byId[id].critical.enabled
+                                }
                                 onClick={() => {
-                                  updateThresholdAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: ThresholdAlerts.byId[id].name,
-                                        identifier: ThresholdAlerts.byId[id]
-                                          .identifier,
-                                        description: ThresholdAlerts.byId[id]
-                                          .description,
-                                        adornment: ThresholdAlerts.byId[id]
-                                          .adornment,
-                                        adornment_time: ThresholdAlerts
-                                          .byId[id].adornment_time,
-                                        warning: ThresholdAlerts.byId[id]
-                                          .warning,
-                                        critical: {
-                                          threshold: ThresholdAlerts.byId[id]
-                                            .critical.threshold,
-                                          enabled: !ThresholdAlerts.byId[id]
-                                            .critical.enabled,
-                                        },
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .enabled,
+                                  updateThresholdAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      identifier:
+                                        ThresholdAlerts.byId[id].identifier,
+                                      description:
+                                        ThresholdAlerts.byId[id].description,
+                                      adornment:
+                                        ThresholdAlerts.byId[id].adornment,
+                                      adornment_time:
+                                        ThresholdAlerts.byId[id].adornment_time,
+                                      warning: ThresholdAlerts.byId[id].warning,
+                                      critical: {
+                                        threshold:
+                                          ThresholdAlerts.byId[id].critical
+                                            .threshold,
+                                        enabled: !ThresholdAlerts.byId[id]
+                                          .critical.enabled,
                                       },
+                                      enabled: ThresholdAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
@@ -233,49 +247,53 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                         <Grid item>
                           <Grid container>
                             <TextField
-                              value={ThresholdAlerts.byId[id].critical
-                                  .threshold}
+                              value={
+                                ThresholdAlerts.byId[id].critical.threshold
+                              }
                               type="text"
                               name="thresholdCritical"
                               label="Threshold"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: ThresholdAlerts.byId[id].warning,
-                                      critical: {
-                                        threshold: event.target.value,
-                                        repeat: ThresholdAlerts.byId[id]
-                                          .critical.repeat,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .critical.enabled,
-                                      },
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: ThresholdAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold: event.target.value,
+                                      repeat:
+                                        ThresholdAlerts.byId[id].critical
+                                          .repeat,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].critical
+                                          .enabled,
                                     },
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              autoComplete="off"
+                              /* eslint-disable-next-line react/jsx-no-duplicate-props */
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -288,42 +306,45 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: ThresholdAlerts.byId[id].warning,
-                                      critical: {
-                                        threshold: ThresholdAlerts.byId[id]
-                                          .critical.threshold,
-                                        repeat: event.target.value,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .critical.enabled,
-                                      },
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: ThresholdAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold:
+                                        ThresholdAlerts.byId[id].critical
+                                          .threshold,
+                                      repeat: event.target.value,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].critical
+                                          .enabled,
                                     },
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              autoComplete="off"
+                              /* eslint-disable-next-line react/jsx-no-duplicate-props */
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment_time}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -342,13 +363,13 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 parent_id: currentChain,
                                 alert: {
                                   name: ThresholdAlerts.byId[id].name,
-                                  identifier: ThresholdAlerts.byId[id]
-                                    .identifier,
-                                  description: ThresholdAlerts.byId[id]
-                                    .description,
+                                  identifier:
+                                    ThresholdAlerts.byId[id].identifier,
+                                  description:
+                                    ThresholdAlerts.byId[id].description,
                                   adornment: ThresholdAlerts.byId[id].adornment,
-                                  adornment_time: ThresholdAlerts.byId[id]
-                                    .adornment_time,
+                                  adornment_time:
+                                    ThresholdAlerts.byId[id].adornment_time,
                                   warning: ThresholdAlerts.byId[id].warning,
                                   critical: ThresholdAlerts.byId[id].critical,
                                   enabled: !ThresholdAlerts.byId[id].enabled,
@@ -359,6 +380,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             color="primary"
                           />
                         )}
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -366,7 +388,9 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {RepeatAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{RepeatAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{RepeatAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{RepeatAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
@@ -377,30 +401,27 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].warning.enabled}
                                 onClick={() => {
-                                  updateRepeatAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: RepeatAlerts.byId[id].name,
-                                        identifier: RepeatAlerts.byId[id]
-                                          .identifier,
-                                        description: RepeatAlerts.byId[id]
-                                          .description,
-                                        adornment: RepeatAlerts.byId[id]
-                                          .adornment,
-                                        warning: {
-                                          repeat: RepeatAlerts.byId[id]
-                                            .warning.repeat,
-                                          enabled: !RepeatAlerts.byId[id]
-                                            .warning.enabled,
-                                        },
-                                        critical: RepeatAlerts.byId[id]
-                                          .critical,
-                                        enabled: RepeatAlerts.byId[id].enabled,
+                                  updateRepeatAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      identifier:
+                                        RepeatAlerts.byId[id].identifier,
+                                      description:
+                                        RepeatAlerts.byId[id].description,
+                                      adornment:
+                                        RepeatAlerts.byId[id].adornment,
+                                      warning: {
+                                        repeat:
+                                          RepeatAlerts.byId[id].warning.repeat,
+                                        enabled: !RepeatAlerts.byId[id].warning
+                                          .enabled,
                                       },
+                                      critical: RepeatAlerts.byId[id].critical,
+                                      enabled: RepeatAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
@@ -423,30 +444,33 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
-                                    identifier: RepeatAlerts.byId[id]
-                                      .identifier,
-                                    description: RepeatAlerts.byId[id]
-                                      .description,
+                                    identifier:
+                                      RepeatAlerts.byId[id].identifier,
+                                    description:
+                                      RepeatAlerts.byId[id].description,
                                     adornment: RepeatAlerts.byId[id].adornment,
                                     warning: {
                                       repeat: event.target.value,
-                                      enabled: RepeatAlerts.byId[id].warning
-                                        .enabled,
+                                      enabled:
+                                        RepeatAlerts.byId[id].warning.enabled,
                                     },
                                     critical: RepeatAlerts.byId[id].critical,
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              autoComplete="off"
+                              /* eslint-disable-next-line react/jsx-no-duplicate-props */
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -462,29 +486,27 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].critical.enabled}
                                 onClick={() => {
-                                  updateRepeatAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: RepeatAlerts.byId[id].name,
-                                        identifier: RepeatAlerts.byId[id]
-                                          .identifier,
-                                        description: RepeatAlerts.byId[id]
-                                          .description,
-                                        adornment: RepeatAlerts.byId[id]
-                                          .adornment,
-                                        warning: RepeatAlerts.byId[id].warning,
-                                        critical: {
-                                          repeat: RepeatAlerts.byId[id]
-                                            .critical.repeat,
-                                          enabled: !RepeatAlerts.byId[id]
-                                            .critical.enabled,
-                                        },
-                                        enabled: RepeatAlerts.byId[id].enabled,
+                                  updateRepeatAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      identifier:
+                                        RepeatAlerts.byId[id].identifier,
+                                      description:
+                                        RepeatAlerts.byId[id].description,
+                                      adornment:
+                                        RepeatAlerts.byId[id].adornment,
+                                      warning: RepeatAlerts.byId[id].warning,
+                                      critical: {
+                                        repeat:
+                                          RepeatAlerts.byId[id].critical.repeat,
+                                        enabled: !RepeatAlerts.byId[id].critical
+                                          .enabled,
                                       },
+                                      enabled: RepeatAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
@@ -507,31 +529,33 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
-                                    identifier: RepeatAlerts.byId[id]
-                                      .identifier,
-                                    description: RepeatAlerts.byId[id]
-                                      .description,
-                                    adornment: RepeatAlerts.byId[id]
-                                      .adornment,
+                                    identifier:
+                                      RepeatAlerts.byId[id].identifier,
+                                    description:
+                                      RepeatAlerts.byId[id].description,
+                                    adornment: RepeatAlerts.byId[id].adornment,
                                     warning: RepeatAlerts.byId[id].warning,
                                     critical: {
                                       repeat: event.target.value,
-                                      enabled: RepeatAlerts.byId[id].critical
-                                        .enabled,
+                                      enabled:
+                                        RepeatAlerts.byId[id].critical.enabled,
                                     },
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              autoComplete="off"
+                              /* eslint-disable-next-line react/jsx-no-duplicate-props */
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -551,8 +575,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 alert: {
                                   name: RepeatAlerts.byId[id].name,
                                   identifier: RepeatAlerts.byId[id].identifier,
-                                  description: RepeatAlerts.byId[id]
-                                    .description,
+                                  description:
+                                    RepeatAlerts.byId[id].description,
                                   adornment: RepeatAlerts.byId[id].adornment,
                                   warning: RepeatAlerts.byId[id].warning,
                                   critical: RepeatAlerts.byId[id].critical,
@@ -564,6 +588,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             color="primary"
                           />
                         )}
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -574,8 +599,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         </Box>
         <Grid container spacing={2}>
           <Grid item xs={12} />
-          <br/>
-          <br/>
+          <br />
+          <br />
           <Grid item xs={4} />
           <Grid item xs={2}>
             <Box px={2}>
@@ -623,7 +648,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
       thresholdAlerts: PropTypes.shape({
         byId: PropTypes.shape({
@@ -638,7 +663,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
     }).isRequired,
   }).isRequired,

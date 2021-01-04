@@ -1,18 +1,36 @@
 import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
-  ADD_TELEGRAM, REMOVE_TELEGRAM, ADD_TWILIO, REMOVE_TWILIO, ADD_EMAIL,
-  REMOVE_EMAIL, ADD_PAGERDUTY, REMOVE_PAGERDUTY, ADD_OPSGENIE, REMOVE_OPSGENIE,
-  ADD_TELEGRAM_CHANNEL, REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL,
-  REMOVE_TWILIO_CHANNEL, ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL,
-  ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, LOAD_TELEGRAM, LOAD_TWILIO, LOAD_EMAIL,
-  LOAD_PAGERDUTY, LOAD_OPSGENIE
+  ADD_TELEGRAM,
+  REMOVE_TELEGRAM,
+  ADD_TWILIO,
+  REMOVE_TWILIO,
+  ADD_EMAIL,
+  REMOVE_EMAIL,
+  ADD_PAGERDUTY,
+  REMOVE_PAGERDUTY,
+  ADD_OPSGENIE,
+  REMOVE_OPSGENIE,
+  ADD_TELEGRAM_CHANNEL,
+  REMOVE_TELEGRAM_CHANNEL,
+  ADD_TWILIO_CHANNEL,
+  REMOVE_TWILIO_CHANNEL,
+  ADD_EMAIL_CHANNEL,
+  REMOVE_EMAIL_CHANNEL,
+  ADD_PAGERDUTY_CHANNEL,
+  REMOVE_PAGERDUTY_CHANNEL,
+  ADD_OPSGENIE_CHANNEL,
+  REMOVE_OPSGENIE_CHANNEL,
+  LOAD_TELEGRAM,
+  LOAD_TWILIO,
+  LOAD_EMAIL,
+  LOAD_PAGERDUTY,
+  LOAD_OPSGENIE,
 } from 'redux/actions/types';
 
 // Reducers to add and remove telegram configurations from global state
 function telegramsById(state = {}, action) {
-  let parsed = {}
+  let parsed = {};
   switch (action.type) {
     case ADD_TELEGRAM:
       return {
@@ -49,11 +67,11 @@ function allTelegrams(state = [], action) {
     case ADD_TELEGRAM:
       return state.concat(action.payload.id);
     case LOAD_TELEGRAM:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_TELEGRAM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -68,7 +86,7 @@ const TelegramsReducer = combineReducers({
 
 // Reducers to add and remove twilio configurations from global state
 function twiliosById(state = {}, action) {
-  let parsed = {}
+  let parsed = {};
   switch (action.type) {
     case ADD_TWILIO:
       return {
@@ -105,11 +123,11 @@ function allTwilios(state = [], action) {
     case ADD_TWILIO:
       return state.concat(action.payload.id);
     case LOAD_TWILIO:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_TWILIO:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -124,7 +142,7 @@ const TwiliosReducer = combineReducers({
 
 // Reducers to add and remove email configurations from global state
 function emailsById(state = {}, action) {
-  let parsed = {}
+  let parsed = {};
   switch (action.type) {
     case ADD_EMAIL:
       return {
@@ -161,11 +179,12 @@ function allEmails(state = [], action) {
     case ADD_EMAIL:
       return state.concat(action.payload.id);
     case LOAD_EMAIL:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
-      }    case REMOVE_EMAIL:
+      }
+      return state;
+
+    case REMOVE_EMAIL:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;
@@ -179,7 +198,7 @@ const EmailsReducer = combineReducers({
 
 // Reducers to add and remove pagerduty configurations from global state
 function pagerdutyById(state = {}, action) {
-  let parsed = {}
+  let parsed = {};
   switch (action.type) {
     case ADD_PAGERDUTY:
       return {
@@ -216,11 +235,12 @@ function allPagerDuties(state = [], action) {
     case ADD_PAGERDUTY:
       return state.concat(action.payload.id);
     case LOAD_PAGERDUTY:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
-      }    case REMOVE_PAGERDUTY:
+      }
+      return state;
+
+    case REMOVE_PAGERDUTY:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;
@@ -234,7 +254,7 @@ const PagerDutyReducer = combineReducers({
 
 // Reducers to add and remove pagerduty configurations from global state
 function opsgenieById(state = {}, action) {
-  let parsed = {}
+  let parsed = {};
   switch (action.type) {
     case ADD_OPSGENIE:
       return {
@@ -271,11 +291,12 @@ function allOpsGenies(state = [], action) {
     case ADD_OPSGENIE:
       return state.concat(action.payload.id);
     case LOAD_OPSGENIE:
-      if (!(state.includes(action.payload.id))){
+      if (!state.includes(action.payload.id)) {
         return state.concat(action.payload.id);
-      }else{
-        return state;
-      }    case REMOVE_OPSGENIE:
+      }
+      return state;
+
+    case REMOVE_OPSGENIE:
       return state.filter((config) => config !== action.payload.id);
     default:
       return state;
@@ -288,6 +309,9 @@ const OpsGenieReducer = combineReducers({
 });
 
 export {
-  OpsGenieReducer, PagerDutyReducer, EmailsReducer, TwiliosReducer,
+  OpsGenieReducer,
+  PagerDutyReducer,
+  EmailsReducer,
+  TwiliosReducer,
   TelegramsReducer,
 };

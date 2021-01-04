@@ -1,16 +1,13 @@
-import React from "react";
+import React from 'react';
 // @material-ui/core components
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from '@material-ui/core/styles';
 // @material-ui/icons
-import Warning from "@material-ui/icons/Warning";
+import Warning from '@material-ui/icons/Warning';
 // core components
-import SnackbarContent from
-  'components/material_ui/Snackbar/SnackbarContent.js';
-import Clearfix from
-  'components/material_ui/Clearfix/Clearfix.js';
+import SnackbarContent from 'components/material_ui/Snackbar/SnackbarContent.js';
+import Clearfix from 'components/material_ui/Clearfix/Clearfix.js';
 import NewReleasesIcon from '@material-ui/icons/NewReleases';
-import styles from
-  'assets/jss/material-kit-react/views/componentsSections/notificationsStyles.js';
+import styles from 'assets/jss/material-kit-react/views/componentsSections/notificationsStyles.js';
 import ErrorIcon from '@material-ui/icons/Error';
 import Data from 'data/channels';
 
@@ -21,41 +18,41 @@ export default function AlertsSection() {
   return (
     <div className={classes.section} id="notifications">
       <SnackbarContent
-        message={
+        message={(
           <span>
             <b>{Data.alerts.info}</b>
           </span>
-        }
+        )}
         color="default"
         icon="info_outline"
         icon_color="#339900"
       />
       <SnackbarContent
-        message={
+        message={(
           <span>
             <b>{Data.alerts.warning}</b>
           </span>
-        }
+        )}
         color="default"
         icon={Warning}
         icon_color="#EED202"
       />
       <SnackbarContent
-        message={
+        message={(
           <span>
             <b>{Data.alerts.critical}</b>
           </span>
-        }
+        )}
         color="default"
         icon={NewReleasesIcon}
         icon_color="#cc3300"
       />
       <SnackbarContent
-        message={
+        message={(
           <span>
             <b>{Data.alerts.error}</b>
           </span>
-        }
+        )}
         color="default"
         icon={ErrorIcon}
         icon_color="#000000"

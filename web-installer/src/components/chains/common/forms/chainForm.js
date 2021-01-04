@@ -1,28 +1,35 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
-import { makeStyles } from "@material-ui/core/styles";
-import { TextField, Typography, Box, Grid, Tooltip } from '@material-ui/core';
-import Divider from '@material-ui/core/Divider';
+import forbidExtraProps from 'airbnb-prop-types';
+import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
+import {
+  TextField, Typography, Box, Grid, Tooltip, Divider,
+} from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/Info';
-import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import NavigationButton from 'components/global/navigationButton';
 import { defaultTheme, theme } from 'components/theme/default';
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 
 const useStyles = makeStyles(styles);
 
 /*
  * This form allows for the input of a chain name.
  */
-const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
-  saveChainDetails, currentChain, updateChainDetails, pageChanger,
-  clearChainId}) => {
-  
+const ChainNameForm = ({
+  errors,
+  handleChange,
+  values,
+  data,
+  stepChanger,
+  saveChainDetails,
+  currentChain,
+  updateChainDetails,
+  pageChanger,
+  clearChainId,
+}) => {
   const classes = useStyles();
   // NextStep function will save the chain name, step changer
   function nextStep(step) {
@@ -54,21 +61,15 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
-      <div> 
+      <div>
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                  {data.chainForm.title}
-              </h1>
+              <h1 className={classes.title}>{data.chainForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
-        <Typography
-          variant="subtitle1"
-          gutterBottom
-          className="greyBackground"
-        >
+        <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.chainForm.description}</p>
           </Box>
@@ -76,7 +77,9 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
         <Divider />
         <Box py={4}>
           <form
-            onSubmit={(e) => { e.preventDefault(); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+            }}
             className="root"
           >
             <Grid container spacing={3} justify="center" alignItems="center">
@@ -92,8 +95,8 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                   placeholder={data.chainForm.placeholder}
                   helperText={errors.chain_name ? errors.chain_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -107,8 +110,8 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
                 </Grid>
               </Grid>
               <Grid item xs={12} />
-              <br/>
-              <br/>
+              <br />
+              <br />
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
@@ -123,10 +126,7 @@ const ChainNameForm = ({errors, handleChange, values, data, stepChanger,
               <Grid item xs={2}>
                 <Box px={2}>
                   <NavigationButton
-                    disabled={
-                      ((Object.keys(errors).length !== 0) ||
-                      (values.chain_name.length === 0))
-                    }
+                    disabled={Object.keys(errors).length !== 0 || values.chain_name.length === 0}
                     nextPage={nextStep}
                     buttonText={NEXT}
                     navigation={data.chainForm.nextStep}
@@ -159,6 +159,7 @@ ChainNameForm.propTypes = forbidExtraProps({
   clearChainId: PropTypes.func.isRequired,
   data: PropTypes.shape({
     chainForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       placeholder: PropTypes.string.isRequired,
       tooltip: PropTypes.string.isRequired,

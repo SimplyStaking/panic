@@ -3,12 +3,19 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { AlertsGeneralTableContainer } from 'containers/chains/common/alertsContainer';
 import { ChannelsGeneralTableContainer } from 'containers/chains/common/channelsContainer';
-import { SystemFormContainer, SystemTableContainer } from 'containers/chains/common/systemsContainer';
 import {
-  RepositoriesGeneralFormContainer, RepositoriesGeneralTableContainer,
+  SystemFormContainer,
+  SystemTableContainer,
+} from 'containers/chains/common/systemsContainer';
+import {
+  RepositoriesGeneralFormContainer,
+  RepositoriesGeneralTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  ALERTS_STEP, CHANNELS_STEP, REPOSITORIES_STEP, SYSTEMS_STEP,
+  ALERTS_STEP,
+  CHANNELS_STEP,
+  REPOSITORIES_STEP,
+  SYSTEMS_STEP,
 } from 'constants/constants';
 
 const mapStateToProps = (state) => ({
@@ -49,11 +56,7 @@ function getStep(stepName) {
 // Step Selector changes according to the step set
 function StepManager(props) {
   const { step } = props;
-  return (
-    <div>
-      {getStep(step)}
-    </div>
-  );
+  return <div>{getStep(step)}</div>;
 }
 
 StepManager.propTypes = {

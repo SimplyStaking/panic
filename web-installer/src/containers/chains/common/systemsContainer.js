@@ -52,17 +52,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const SystemFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const SystemFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const SystemTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(SystemTable);
 
-export {
-  SystemFormContainer,
-  SystemTableContainer,
-};
+export { SystemFormContainer, SystemTableContainer };

@@ -1,19 +1,19 @@
 import { connect } from 'react-redux';
 import {
-  updateRepeatAlert, updateTimeWindowAlert, updateThresholdAlert,
+  updateRepeatAlert,
+  updateTimeWindowAlert,
+  updateThresholdAlert,
   updateSeverityAlert,
 } from 'redux/actions/alertActions';
 import { resetCurrentChainIdCosmos } from 'redux/actions/cosmosActions';
 import { resetCurrentChainIdSubstrate } from 'redux/actions/substrateActions';
 import { changePage, changeStep } from 'redux/actions/pageActions';
 import AlertsTable from 'components/chains/common/tables/alertsTable';
-import GeneralAlertsTable from
-  'components/chains/common/tables/generalAlertsTable';
+import GeneralAlertsTable from 'components/chains/common/tables/generalAlertsTable';
 import { GLOBAL } from 'constants/constants';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import GeneralData from 'data/general';
-
 
 // ------------------------- Cosmos Based Chain Data --------------------
 
@@ -30,14 +30,10 @@ function mapCosmosDispatchToProps(dispatch) {
     stepChanger: (step) => dispatch(changeStep(step)),
     pageChanger: (page) => dispatch(changePage(page)),
     clearChainId: () => dispatch(resetCurrentChainIdCosmos()),
-    updateRepeatAlertDetails:
-      (details) => dispatch(updateRepeatAlert(details)),
-    updateTimeWindowAlertDetails:
-      (details) => dispatch(updateTimeWindowAlert(details)),
-    updateThresholdAlertDetails:
-      (details) => dispatch(updateThresholdAlert(details)),
-    updateSeverityAlertDetails:
-      (details) => dispatch(updateSeverityAlert(details)),
+    updateRepeatAlertDetails: (details) => dispatch(updateRepeatAlert(details)),
+    updateTimeWindowAlertDetails: (details) => dispatch(updateTimeWindowAlert(details)),
+    updateThresholdAlertDetails: (details) => dispatch(updateThresholdAlert(details)),
+    updateSeverityAlertDetails: (details) => dispatch(updateSeverityAlert(details)),
   };
 }
 
@@ -63,14 +59,10 @@ function mapSubstrateDispatchToProps(dispatch) {
     stepChanger: (step) => dispatch(changeStep(step)),
     pageChanger: (page) => dispatch(changePage(page)),
     clearChainId: () => dispatch(resetCurrentChainIdSubstrate()),
-    updateRepeatAlertDetails:
-      (details) => dispatch(updateRepeatAlert(details)),
-    updateTimeWindowAlertDetails:
-      (details) => dispatch(updateTimeWindowAlert(details)),
-    updateThresholdAlertDetails:
-      (details) => dispatch(updateThresholdAlert(details)),
-    updateSeverityAlertDetails:
-      (details) => dispatch(updateSeverityAlert(details)),
+    updateRepeatAlertDetails: (details) => dispatch(updateRepeatAlert(details)),
+    updateTimeWindowAlertDetails: (details) => dispatch(updateTimeWindowAlert(details)),
+    updateThresholdAlertDetails: (details) => dispatch(updateThresholdAlert(details)),
+    updateSeverityAlertDetails: (details) => dispatch(updateSeverityAlert(details)),
   };
 }
 
@@ -96,10 +88,8 @@ function mapGeneralDispatchToProps(dispatch) {
     stepChanger: (step) => dispatch(changeStep(step)),
     pageChanger: (page) => dispatch(changePage(page)),
     clearChainId: () => dispatch(resetCurrentChainIdSubstrate()),
-    updateThresholdAlertDetails:
-      (details) => dispatch(updateThresholdAlert(details)),
-    updateRepeatAlertDetails:
-      (details) => dispatch(updateRepeatAlert(details)),
+    updateThresholdAlertDetails: (details) => dispatch(updateThresholdAlert(details)),
+    updateRepeatAlertDetails: (details) => dispatch(updateRepeatAlert(details)),
   };
 }
 
@@ -110,6 +100,7 @@ const AlertsGeneralTableContainer = connect(
 )(GeneralAlertsTable);
 
 export {
-  AlertsCosmosTableContainer, AlertsSubstrateTableContainer,
+  AlertsCosmosTableContainer,
+  AlertsSubstrateTableContainer,
   AlertsGeneralTableContainer,
 };

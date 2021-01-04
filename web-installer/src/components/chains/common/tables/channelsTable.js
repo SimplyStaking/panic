@@ -1,28 +1,51 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Grid, FormControlLabel, Checkbox, Typography, Box,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Grid,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import { makeStyles } from '@material-ui/core/styles';
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 import Divider from '@material-ui/core/Divider';
 
 const useStyles = makeStyles(styles);
 
-const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
-  emails, pagerduties, twilios, addTelegramDetails, removeTelegramDetails,
-  addTwilioDetails, removeTwilioDetails, addEmailDetails, removeEmailDetails,
-  addPagerDutyDetails, removePagerDutyDetails, addOpsGenieDetails,
-  removeOpsGenieDetails, createPayload }) => {
-
+const ChannelsTable = ({
+  data,
+  config,
+  currentChain,
+  telegrams,
+  opsgenies,
+  emails,
+  pagerduties,
+  twilios,
+  addTelegramDetails,
+  removeTelegramDetails,
+  addTwilioDetails,
+  removeTwilioDetails,
+  addEmailDetails,
+  removeEmailDetails,
+  addPagerDutyDetails,
+  removePagerDutyDetails,
+  addOpsGenieDetails,
+  removeOpsGenieDetails,
+  createPayload,
+}) => {
   const currentConfig = config.byId[currentChain];
   const classes = useStyles();
 
@@ -31,33 +54,28 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
       <div className={classes.subsection}>
         <GridContainer justify="center">
           <GridItem xs={12} sm={12} md={8}>
-            <h1 className={classes.title}>
-                {data.channelsTable.title}
-            </h1>
+            <h1 className={classes.title}>{data.channelsTable.title}</h1>
           </GridItem>
         </GridContainer>
       </div>
       <Typography variant="subtitle1" gutterBottom className="greyBackground">
-          <Box m={2} p={3}>
-            <p>{data.channelsTable.description}</p>
-          </Box>
+        <Box m={2} p={3}>
+          <p>{data.channelsTable.description}</p>
+        </Box>
       </Typography>
       <Divider />
       <div className={classes.subsection}>
-        {telegrams.allIds.length === 0 &&
-          opsgenies.allIds.length === 0 &&
-          emails.allIds.length === 0 &&
-          pagerduties.allIds.length === 0 &&
-          twilios.allIds.length === 0 && (
+        {telegrams.allIds.length === 0
+          && opsgenies.allIds.length === 0
+          && emails.allIds.length === 0
+          && pagerduties.allIds.length === 0
+          && twilios.allIds.length === 0 && (
             <GridContainer justify="center">
               <GridItem xs={12} sm={12} md={8}>
-                <h1 className={classes.title}>
-                    {data.channelsTable.empty}
-                </h1>
+                <h1 className={classes.title}>{data.channelsTable.empty}</h1>
               </GridItem>
             </GridContainer>
-          )
-        }
+        )}
       </div>
       <Grid container spacing={3} className={classes.root}>
         {telegrams.allIds.length !== 0 && (
@@ -67,9 +85,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                 <Table className="table" aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">
-                        Telegram
-                      </TableCell>
+                      <TableCell align="center">Telegram</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -79,14 +95,15 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={
-                                  telegrams.byId[id].parent_ids.includes(
-                                    currentChain)
-                                }
+                                checked={telegrams.byId[id].parent_ids.includes(
+                                  currentChain,
+                                )}
                                 onClick={() => {
                                   createPayload(
-                                    telegrams.byId[id], currentConfig,
-                                    addTelegramDetails, removeTelegramDetails,
+                                    telegrams.byId[id],
+                                    currentConfig,
+                                    addTelegramDetails,
+                                    removeTelegramDetails,
                                   );
                                 }}
                                 name="telegrams"
@@ -112,9 +129,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                 <Table className="table" aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">
-                        Twilio
-                      </TableCell>
+                      <TableCell align="center">Twilio</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -124,14 +139,15 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={
-                                  twilios.byId[id].parent_ids.includes(
-                                    currentChain)
-                                }
+                                checked={twilios.byId[id].parent_ids.includes(
+                                  currentChain,
+                                )}
                                 onClick={() => {
                                   createPayload(
-                                    twilios.byId[id], currentConfig,
-                                    addTwilioDetails, removeTwilioDetails,
+                                    twilios.byId[id],
+                                    currentConfig,
+                                    addTwilioDetails,
+                                    removeTwilioDetails,
                                   );
                                 }}
                                 name="twilios"
@@ -157,9 +173,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                 <Table className="table" aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">
-                        Email
-                      </TableCell>
+                      <TableCell align="center">Email</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -169,14 +183,15 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={
-                                  emails.byId[id].parent_ids.includes(
-                                    currentChain)
-                                }
+                                checked={emails.byId[id].parent_ids.includes(
+                                  currentChain,
+                                )}
                                 onClick={() => {
                                   createPayload(
-                                    emails.byId[id], currentConfig,
-                                    addEmailDetails, removeEmailDetails,
+                                    emails.byId[id],
+                                    currentConfig,
+                                    addEmailDetails,
+                                    removeEmailDetails,
                                   );
                                 }}
                                 name="emails"
@@ -202,39 +217,37 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                 <Table className="table" aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">
-                        PagerDuty
-                      </TableCell>
+                      <TableCell align="center">PagerDuty</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                      {pagerduties.allIds.map((id) => (
-                        <TableRow key={id}>
-                          <TableCell key={id} align="center">
-                            <FormControlLabel
-                              control={(
-                                <Checkbox
-                                  checked={
-                                    pagerduties.byId[id].parent_ids.includes(
-                                      currentChain)
-                                  }
-                                  onClick={() => {
-                                    createPayload(
-                                      pagerduties.byId[id], currentConfig,
-                                      addPagerDutyDetails,
-                                      removePagerDutyDetails,
-                                    );
-                                  }}
-                                  name="pagerduties"
-                                  color="primary"
-                                />
-                              )}
-                              label={pagerduties.byId[id].channel_name}
-                              labelPlacement="start"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                    {pagerduties.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
+                          <FormControlLabel
+                            control={(
+                              <Checkbox
+                                checked={pagerduties.byId[
+                                  id
+                                ].parent_ids.includes(currentChain)}
+                                onClick={() => {
+                                  createPayload(
+                                    pagerduties.byId[id],
+                                    currentConfig,
+                                    addPagerDutyDetails,
+                                    removePagerDutyDetails,
+                                  );
+                                }}
+                                name="pagerduties"
+                                color="primary"
+                              />
+                            )}
+                            label={pagerduties.byId[id].channel_name}
+                            labelPlacement="start"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -248,9 +261,7 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                 <Table className={classes.paper} aria-label="simple table">
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center">
-                        OpsGenie
-                      </TableCell>
+                      <TableCell align="center">OpsGenie</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -260,15 +271,15 @@ const ChannelsTable = ({data, config, currentChain, telegrams, opsgenies,
                           <FormControlLabel
                             control={(
                               <Checkbox
-                                checked={
-                                  opsgenies.byId[id].parent_ids.includes(
-                                    currentChain)
-                                }
+                                checked={opsgenies.byId[id].parent_ids.includes(
+                                  currentChain,
+                                )}
                                 onClick={() => {
                                   createPayload(
-                                    opsgenies.byId[id], currentConfig,
+                                    opsgenies.byId[id],
+                                    currentConfig,
                                     addOpsGenieDetails,
-                                    removeOpsGenieDetails
+                                    removeOpsGenieDetails,
                                   );
                                 }}
                                 name="opsgenies"
@@ -378,6 +389,9 @@ ChannelsTable.propTypes = forbidExtraProps({
   currentChain: PropTypes.string.isRequired,
   data: PropTypes.shape({
     channelsTable: PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+      empty: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,
     }).isRequired,

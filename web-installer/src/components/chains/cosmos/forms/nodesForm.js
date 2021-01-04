@@ -1,27 +1,38 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import { PingCosmosButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
-import Button from "components/material_ui/CustomButtons/Button.js";
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import Button from 'components/material_ui/CustomButtons/Button.js';
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 
 const useStyles = makeStyles(styles);
 
-const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
-  data}) => {
-
+const NodesForm = ({
+  errors,
+  values,
+  handleSubmit,
+  handleChange,
+  setFieldValue,
+  data,
+}) => {
   const classes = useStyles();
 
   return (
@@ -30,9 +41,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                  {data.nodeForm.title}
-              </h1>
+              <h1 className={classes.title}>{data.nodeForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -55,11 +64,12 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   type="text"
                   name="cosmos_node_name"
                   placeholder={data.nodeForm.nameHolder}
-                  helperText={errors.cosmos_node_name
-                    ? errors.cosmos_node_name : ''}
+                  helperText={
+                    errors.cosmos_node_name ? errors.cosmos_node_name : ''
+                  }
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -82,8 +92,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="tendermint_rpc_url"
                   placeholder={data.nodeForm.tendermintHolder}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -109,8 +119,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="cosmos_rpc_url"
                   placeholder={data.nodeForm.sdkHolder}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -133,8 +143,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="prometheus_url"
                   placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -160,8 +170,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -204,6 +214,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={2}>
@@ -227,12 +238,16 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                     <Switch
                       checked={values.is_archive_node}
                       onClick={() => {
-                        setFieldValue('is_archive_node', !values.is_archive_node);
+                        setFieldValue(
+                          'is_archive_node',
+                          !values.is_archive_node,
+                        );
                       }}
                       name="is_archive_node"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={4} />
@@ -263,6 +278,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={2}>
@@ -286,13 +302,16 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                     <Switch
                       checked={values.use_as_data_source}
                       onClick={() => {
-                        setFieldValue('use_as_data_source',
-                          !values.use_as_data_source);
+                        setFieldValue(
+                          'use_as_data_source',
+                          !values.use_as_data_source,
+                        );
                       }}
                       name="use_as_data_source"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={4} />
@@ -313,10 +332,10 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   <Button
                     color="primary"
                     size="md"
-                    disabled={(Object.keys(errors).length !== 0)}
+                    disabled={Object.keys(errors).length !== 0}
                     type="submit"
                   >
-                      Add Node
+                    Add Node
                   </Button>
                 </Grid>
               </Grid>
@@ -372,6 +391,7 @@ NodesForm.propTypes = forbidExtraProps({
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
     nodeForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,

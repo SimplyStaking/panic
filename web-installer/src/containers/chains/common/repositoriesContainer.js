@@ -1,14 +1,13 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import RepositoriesForm from 'components/chains/common/forms/repositoriesForm';
-import RepositoriesTable from
-  'components/chains/common/tables/repositoriesTable';
+import RepositoriesTable from 'components/chains/common/tables/repositoriesTable';
 import { addRepository, removeRepository } from 'redux/actions/generalActions';
 import { GLOBAL } from 'constants/constants';
-import RepositorySchema from './schemas/repositorySchema';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import RepositorySchema from './schemas/repositorySchema';
 
 // This performs repository validation, by checking if the repository is already
 // setup.
@@ -39,8 +38,7 @@ const Form = withFormik({
 // details to the redux state.
 function mapDispatchToProps(dispatch) {
   return {
-    saveRepositoryDetails:
-      (details) => dispatch(addRepository(details)),
+    saveRepositoryDetails: (details) => dispatch(addRepository(details)),
   };
 }
 
@@ -48,8 +46,7 @@ function mapDispatchToProps(dispatch) {
 // details from the table and state.
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeRepositoryDetails:
-      (details) => dispatch(removeRepository(details)),
+    removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
   };
 }
 

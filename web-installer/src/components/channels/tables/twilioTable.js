@@ -1,14 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Button, List, ListItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  List,
+  ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const TwilioTable = ({twilios, removeTwilioDetails}) => {
+const TwilioTable = ({ twilios, removeTwilioDetails }) => {
   if (twilios.allIds.length === 0) {
     return <div />;
   }
@@ -45,15 +52,15 @@ const TwilioTable = ({twilios, removeTwilioDetails}) => {
                   <List>
                     {twilios.byId[twilio].twilio_phone_numbers_to_dial.map(
                       (number) => (
-                        <ListItem key={number}>
-                          { number }
-                        </ListItem>
-                    ))}
+                        <ListItem key={number}>{number}</ListItem>
+                      ),
+                    )}
                   </List>
                 </div>
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
+                <Button
+                  onClick={() => {
                     removeTwilioDetails(twilios.byId[twilio]);
                   }}
                 >
@@ -76,9 +83,7 @@ TwilioTable.propTypes = forbidExtraProps({
       account_sid: PropTypes.string,
       auth_token: PropTypes.string,
       twilio_phone_num: PropTypes.string,
-      twilio_phone_numbers_to_dial: PropTypes.arrayOf(
-        PropTypes.string,
-      ),
+      twilio_phone_numbers_to_dial: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

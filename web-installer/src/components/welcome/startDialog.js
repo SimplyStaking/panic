@@ -5,13 +5,21 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { CHANNELS_PAGE } from 'constants/constants';
-import { LoginButton } from 'utils/buttons';
+import { LoginButton, StartNewButton } from 'utils/buttons';
 import LoadConfig from 'containers/global/loadConfig';
-import {StartNewButton } from 'utils/buttons';
+import PropTypes from 'prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import Data from 'data/welcome';
 
-const StartDialog = ({values, errors, pageChanger, authenticate,
-    checkForConfigs, loadUsersFromMongo, addUserRedux }) => {
+const StartDialog = ({
+  values,
+  errors,
+  pageChanger,
+  authenticate,
+  checkForConfigs,
+  loadUsersFromMongo,
+  addUserRedux,
+}) => {
   const [open, setOpen] = React.useState(false);
 
   // If authentication is accepted by the backend, change the page
@@ -25,7 +33,7 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
       const configResult = await checkForConfigs();
       if (configResult) {
         setOpen(true);
-      }else {
+      } else {
         pageChanger({ page: CHANNELS_PAGE });
       }
     }
@@ -41,7 +49,7 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
       <LoginButton
         username={values.username}
         password={values.password}
-        disabled={(Object.keys(errors).length !== 0)}
+        disabled={Object.keys(errors).length !== 0}
         setAuthentication={setAuthentication}
       />
       <Dialog
@@ -50,9 +58,7 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {Data.dialog_title}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">{Data.dialog_title}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {Data.dialog_description}
@@ -65,6 +71,22 @@ const StartDialog = ({values, errors, pageChanger, authenticate,
       </Dialog>
     </div>
   );
-}
+};
+
+StartDialog.propTypes = forbidExtraProps({
+  checkForConfigs: PropTypes.func.isRequired,
+  loadUsersFromMongo: PropTypes.func.isRequired,
+  addUserRedux: PropTypes.func.isRequired,
+  errors: PropTypes.shape({
+    username: PropTypes.string,
+    password: PropTypes.string,
+  }).isRequired,
+  values: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+    password: PropTypes.string.isRequired,
+  }).isRequired,
+  pageChanger: PropTypes.func.isRequired,
+  authenticate: PropTypes.func.isRequired,
+});
 
 export default StartDialog;

@@ -1,11 +1,17 @@
 import { connect } from 'react-redux';
-import SubstrateChainsTable from
-  'components/chains/substrate/tables/substrateChainsTable';
-import { removeChainSubstrate, loadConfigSubstrate, removeNodeSubstrate } from
-  'redux/actions/substrateActions';
+import SubstrateChainsTable from 'components/chains/substrate/tables/substrateChainsTable';
 import {
-  removeRepository, removeTelegramChannel, removeTwilioChannel,
-  removeEmailChannel, removePagerDutyChannel, removeOpsGenieChannel,
+  removeChainSubstrate,
+  loadConfigSubstrate,
+  removeNodeSubstrate,
+} from 'redux/actions/substrateActions';
+import {
+  removeRepository,
+  removeTelegramChannel,
+  removeTwilioChannel,
+  removeEmailChannel,
+  removePagerDutyChannel,
+  removeOpsGenieChannel,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
@@ -28,15 +34,11 @@ function mapDispatchToProps(dispatch) {
     removeNodeDetails: (details) => dispatch(removeNodeSubstrate(details)),
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
     loadConfigDetails: (details) => dispatch(loadConfigSubstrate(details)),
-    removeOpsGenieDetails:
-      (details) => dispatch(removeOpsGenieChannel(details)),
-    removePagerDutyDetails:
-      (details) => dispatch(removePagerDutyChannel(details)),
+    removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
+    removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
     removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
-    removeTwilioDetails:
-      (details) => dispatch(removeTwilioChannel(details)),
-    removeTelegramDetails:
-      (details) => dispatch(removeTelegramChannel(details)),
+    removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
+    removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
   };
 }
 

@@ -1,15 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
+const PagerDutyTable = ({ pagerDuties, removePagerDutyDetails }) => {
   if (pagerDuties.allIds.length === 0) {
     return <div />;
   }
@@ -38,26 +44,39 @@ const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
                 {pagerDuties.byId[pagerDuty].api_token}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].integration_key
-              }</TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].info ?
-                  <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].integration_key}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].warning ?
-                  <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].info ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].critical ?
-                  <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].warning ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].error ?
-                  <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].critical ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
+                {pagerDuties.byId[pagerDuty].error ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
+              </TableCell>
+              <TableCell align="center">
+                <Button
+                  onClick={() => {
                     removePagerDutyDetails(pagerDuties.byId[pagerDuty]);
                   }}
                 >

@@ -1,21 +1,22 @@
 import React from 'react';
 import { Grid, Box, Typography } from '@material-ui/core';
-import { makeStyles } from "@material-ui/core/styles";
-import NavigationButtonContainer from
-  'containers/global/navigationButtonContainer';
-import { UsersFormContainer, UsersTableContainer } from
-  'containers/users/usersContainer';
+import { makeStyles } from '@material-ui/core/styles';
+import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import {
+  UsersFormContainer,
+  UsersTableContainer,
+} from 'containers/users/usersContainer';
 import { GENERAL_PAGE, BACK } from 'constants/constants';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import Parallax from "components/material_ui/Parallax/Parallax.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
-import styles from
-  "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
-import Card from "components/material_ui/Card/Card.js";
-import CardBody from "components/material_ui/Card/CardBody.js";
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import Parallax from 'components/material_ui/Parallax/Parallax.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
+import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
+import Card from 'components/material_ui/Card/Card.js';
+import CardBody from 'components/material_ui/Card/CardBody.js';
 import Divider from '@material-ui/core/Divider';
 import EndDialog from 'components/users/endDialog';
 import Data from 'data/users';
+import Background from 'assets/img/backgrounds/background.png';
 
 const useStyles = makeStyles(styles);
 
@@ -24,14 +25,12 @@ function UsersPage() {
 
   return (
     <div>
-      <Parallax image={require("assets/img/backgrounds/background.png")}>
+      <Parallax image={Background}>
         <div className={classes.container}>
           <GridContainer>
             <GridItem>
               <div className={classes.brand}>
-                <h1 className={classes.title}>
-                  {Data.title}
-                </h1>
+                <h1 className={classes.title}>{Data.title}</h1>
               </div>
             </GridItem>
           </GridContainer>

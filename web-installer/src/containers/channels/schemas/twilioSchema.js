@@ -20,7 +20,9 @@ const TwilioSchema = (props) => Yup.object().shape({
           }
         }
         for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value) {
+          if (
+            pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value
+          ) {
             return false;
           }
         }
@@ -38,14 +40,12 @@ const TwilioSchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  account_sid: Yup.string()
-    .required('Account Sid is required.'),
-  auth_token: Yup.string()
-    .required('Authentication token is required.'),
-  twilio_phone_num: Yup.string()
-    .required('Twilio phone number is required.'),
-  twilio_phone_numbers_to_dial: Yup.array()
-    .required('Phone numbers to dial are required.'),
+  account_sid: Yup.string().required('Account Sid is required.'),
+  auth_token: Yup.string().required('Authentication token is required.'),
+  twilio_phone_num: Yup.string().required('Twilio phone number is required.'),
+  twilio_phone_numbers_to_dial: Yup.array().required(
+    'Phone numbers to dial are required.',
+  ),
 });
 
 export default TwilioSchema;

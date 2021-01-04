@@ -55,17 +55,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const TwilioFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const TwilioFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const TwilioTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(TwilioTable);
 
-export {
-  TwilioFormContainer,
-  TwilioTableContainer,
-};
+export { TwilioFormContainer, TwilioTableContainer };

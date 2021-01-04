@@ -1,22 +1,26 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsCosmosTableContainer } from
-  'containers/chains/common/alertsContainer';
-import { CosmosChainFormContainer } from
-  'containers/chains/common/chainContainer';
-import { ChannelsCosmosTableContainer } from
-  'containers/chains/common/channelsContainer';
-import { KmsCosmosFormContainer, KmsCosmosTableContainer } from
-  'containers/chains/common/kmsContainer';
-import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
+import { AlertsCosmosTableContainer } from 'containers/chains/common/alertsContainer';
+import { CosmosChainFormContainer } from 'containers/chains/common/chainContainer';
+import { ChannelsCosmosTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  RepositoriesCosmosFormContainer, RepositoriesCosmosTableContainer,
+  KmsCosmosFormContainer,
+  KmsCosmosTableContainer,
+} from 'containers/chains/common/kmsContainer';
+import {
+  RepositoriesCosmosFormContainer,
+  RepositoriesCosmosTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, KMS_STEP, NODES_STEP,
+  ALERTS_STEP,
+  CHAINS_STEP,
+  CHANNELS_STEP,
+  KMS_STEP,
+  NODES_STEP,
   REPOSITORIES_STEP,
 } from 'constants/constants';
+import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
@@ -60,11 +64,7 @@ function getStep(stepName) {
 // Step Selector changes according to the step set
 function StepManager(props) {
   const { step } = props;
-  return (
-    <div>
-      {getStep(step)}
-    </div>
-  );
+  return <div>{getStep(step)}</div>;
 }
 
 StepManager.propTypes = {

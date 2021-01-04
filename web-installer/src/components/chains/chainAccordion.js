@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import { Accordion, Grid } from '@material-ui/core';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
@@ -10,8 +10,10 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 /*
  * Accordion, drop down that contains the chain icon, name, table containing
  * all the setup chains which can be loaded.
-*/
-function ChainAccordion({icon, name, button, table}) {
+ */
+function ChainAccordion({
+  icon, name, button, table,
+}) {
   return (
     <div className="flex_root">
       <Accordion>
@@ -20,11 +22,7 @@ function ChainAccordion({icon, name, button, table}) {
           aria-controls="panel1a-content"
           id="panel1a-header"
         >
-          <img
-            src={icon}
-            className="icon"
-            alt="Chain Icon"
-          />
+          <img src={icon} className="icon" alt="Chain Icon" />
           <Typography
             style={{ textAlign: 'center' }}
             variant="h5"

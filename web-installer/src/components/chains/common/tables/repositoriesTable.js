@@ -1,8 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -10,8 +15,12 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const RepositoriesTable = ({currentChain, config, reposConfig,
-  removeRepositoryDetails}) => {
+const RepositoriesTable = ({
+  currentChain,
+  config,
+  reposConfig,
+  removeRepositoryDetails,
+}) => {
   if (config.byId[currentChain].repositories.length === 0) {
     return <div />;
   }
@@ -32,16 +41,20 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
                 {reposConfig.byId[id].repo_name}
               </TableCell>
               <TableCell align="center">
-                {reposConfig.byId[id].monitor_repo
-                  ? <CheckIcon /> : <ClearIcon />}
+                {reposConfig.byId[id].monitor_repo ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
-                  removeRepositoryDetails({
-                    id: reposConfig.byId[id].id,
-                    parent_id: currentChain,
-                  });
-                }}
+                <Button
+                  onClick={() => {
+                    removeRepositoryDetails({
+                      id: reposConfig.byId[id].id,
+                      parent_id: currentChain,
+                    });
+                  }}
                 >
                   <CancelIcon />
                 </Button>
@@ -50,9 +63,9 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
           ))}
         </TableBody>
       </Table>
-      <br/>
-      <br/>
-      <br/>
+      <br />
+      <br />
+      <br />
     </TableContainer>
   );
 };

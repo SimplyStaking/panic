@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button,
@@ -10,7 +10,9 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
+const KmsTable = ({
+  currentChain, chainConfig, kmsConfig, removeKmsDetails,
+}) => {
   if (chainConfig.byId[currentChain].kmses.length === 0) {
     return <div />;
   }
@@ -52,9 +54,9 @@ const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
           ))}
         </TableBody>
       </Table>
-      <br/>
-      <br/>
-      <br/>
+      <br />
+      <br />
+      <br />
     </TableContainer>
   );
 };

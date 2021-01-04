@@ -2,13 +2,25 @@ import _ from 'lodash';
 import { combineReducers } from 'redux';
 import { INFO, WARNING, CRITICAL } from 'constants/constants';
 import {
-  ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE,
-  REMOVE_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME_SUBSTRATE, RESET_CHAIN_SUBSTRATE,
-  ADD_REPOSITORY, REMOVE_REPOSITORY, UPDATE_REPEAT_ALERT,
-  UPDATE_TIMEWINDOW_ALERT, UPDATE_THRESHOLD_ALERT, UPDATE_SEVERITY_ALERT,
-  LOAD_CONFIG_SUBSTRATE, LOAD_NODE_SUBSTRATE, LOAD_REPOSITORY_SUBSTRATE,
-  LOAD_REPEAT_ALERTS_SUBSTRATE, LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
-  LOAD_THRESHOLD_ALERTS_SUBSTRATE, LOAD_SEVERITY_ALERTS_SUBSTRATE,
+  ADD_CHAIN_SUBSTRATE,
+  ADD_NODE_SUBSTRATE,
+  REMOVE_NODE_SUBSTRATE,
+  REMOVE_CHAIN_SUBSTRATE,
+  UPDATE_CHAIN_NAME_SUBSTRATE,
+  RESET_CHAIN_SUBSTRATE,
+  ADD_REPOSITORY,
+  REMOVE_REPOSITORY,
+  UPDATE_REPEAT_ALERT,
+  UPDATE_TIMEWINDOW_ALERT,
+  UPDATE_THRESHOLD_ALERT,
+  UPDATE_SEVERITY_ALERT,
+  LOAD_CONFIG_SUBSTRATE,
+  LOAD_NODE_SUBSTRATE,
+  LOAD_REPOSITORY_SUBSTRATE,
+  LOAD_REPEAT_ALERTS_SUBSTRATE,
+  LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+  LOAD_THRESHOLD_ALERTS_SUBSTRATE,
+  LOAD_SEVERITY_ALERTS_SUBSTRATE,
 } from 'redux/actions/types';
 
 const substrateRepeatAlerts = {
@@ -48,8 +60,9 @@ const substrateRepeatAlerts = {
     3: {
       name: 'Lost connection with specific peer',
       identifier: 'lost_connection_with_peer',
-      description: 'If a node loses connection with a specific peer after some '
-                 + 'time you will receive an alert.',
+      description:
+        'If a node loses connection with a specific peer after some '
+        + 'time you will receive an alert.',
       adornment: 'Seconds',
       parent_id: '',
       warning: {
@@ -65,8 +78,9 @@ const substrateRepeatAlerts = {
     4: {
       name: 'System Is Down',
       identifier: 'system_is_down',
-      description: 'The Node Exporter URL is un-reachable therefore the '
-                 + 'system is taken to be down.',
+      description:
+        'The Node Exporter URL is un-reachable therefore the '
+        + 'system is taken to be down.',
       adornment: 'Seconds',
       parent_id: '',
       warning: {
@@ -88,8 +102,8 @@ const substrateTimeWindowAlerts = {
     5: {
       name: 'No change in best block height above threshold',
       identifier: 'no_change_in_best_block_height',
-      description: 'There hasn\'t been a change in best block height after some'
-                 + 'time.',
+      description:
+        "There hasn't been a change in best block height after some" + 'time.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -108,8 +122,9 @@ const substrateTimeWindowAlerts = {
     6: {
       name: 'No change in finalized block height above threshold',
       identifier: 'no_change_in_finalized_block_height',
-      description: 'There hasn\'t been a change in finalized block height after'
-                 + ' some time.',
+      description:
+        "There hasn't been a change in finalized block height after"
+        + ' some time.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -134,8 +149,9 @@ const substrateThresholdAlerts = {
     7: {
       name: 'Time of last activity is above threshold',
       identifier: 'time_of_last_activity',
-      description: 'Alerts will be sent based on how much time has passed '
-                 + 'since last pre-commit/pre-vote activity.',
+      description:
+        'Alerts will be sent based on how much time has passed '
+        + 'since last pre-commit/pre-vote activity.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -153,8 +169,9 @@ const substrateThresholdAlerts = {
     8: {
       name: 'Mempool Size',
       identifier: 'mempool_size',
-      description: 'Alerts will be sent based on how many transactions are in '
-                 + 'the mempool.',
+      description:
+        'Alerts will be sent based on how many transactions are in '
+        + 'the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -172,7 +189,8 @@ const substrateThresholdAlerts = {
     9: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
-      description: 'Open File Descriptors alerted on based on percentage usage.',
+      description:
+        'Open File Descriptors alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -240,7 +258,7 @@ const substrateThresholdAlerts = {
         enabled: true,
       },
       enabled: true,
-    }
+    },
   },
   allIds: ['7', '8', '9', '10', '11', '12'],
 };
@@ -250,7 +268,7 @@ const substrateSeverityAlerts = {
     13: {
       name: 'Validator inaccessible on startup',
       identifier: 'validator_inaccessible_on_startup',
-      description: 'Validator was not accessible on startup.', 
+      description: 'Validator was not accessible on startup.',
       severity: CRITICAL,
       parent_id: '',
       enabled: true,
@@ -266,7 +284,7 @@ const substrateSeverityAlerts = {
     15: {
       name: 'Slashed',
       identifier: 'slashed',
-      description: 'Occurs when your validator has been slashed.', 
+      description: 'Occurs when your validator has been slashed.',
       severity: CRITICAL,
       parent_id: '',
       enabled: true,
@@ -274,8 +292,9 @@ const substrateSeverityAlerts = {
     16: {
       name: 'Node is syncing',
       identifier: 'node_is_syncing',
-      description: 'Occurs when your node is still catching up to the rest of '
-                 + 'the blockchain network in terms of block height.',
+      description:
+        'Occurs when your node is still catching up to the rest of '
+        + 'the blockchain network in terms of block height.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
@@ -283,8 +302,9 @@ const substrateSeverityAlerts = {
     17: {
       name: 'Validator is not active in this session',
       identifier: 'validator_not_active_in_session',
-      description: 'Occurs when your validator is not participating in the '
-                 + 'current consensus round.',
+      description:
+        'Occurs when your validator is not participating in the '
+        + 'current consensus round.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
@@ -316,8 +336,9 @@ const substrateSeverityAlerts = {
     21: {
       name: 'Validator not authoring',
       identifier: 'validator_not_authoring',
-      description: 'The Validator did not author a block and sent no heartbeats'
-                 + ' in the previous session',
+      description:
+        'The Validator did not author a block and sent no heartbeats'
+        + ' in the previous session',
       severity: WARNING,
       parent_id: '',
       enabled: false,
@@ -349,8 +370,8 @@ const substrateSeverityAlerts = {
     25: {
       name: 'Delegated balance increase',
       identifier: 'delegated_balance_increase',
-      description: 'The amount of tokens delegated to your validator has '
-                 + 'increased.',
+      description:
+        'The amount of tokens delegated to your validator has ' + 'increased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -358,8 +379,8 @@ const substrateSeverityAlerts = {
     26: {
       name: 'Delegated balance decrease',
       identifier: 'delegated_balance_decrease',
-      description: 'The amount of tokens delegated to your validator has '
-                 + 'decreased.',
+      description:
+        'The amount of tokens delegated to your validator has ' + 'decreased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -501,9 +522,39 @@ const substrateSeverityAlerts = {
       enabled: true,
     },
   },
-  allIds: ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23',
-           '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34',
-           '35', '36', '37', '38', '39', '40', '41', '42', '43'],
+  allIds: [
+    '13',
+    '14',
+    '15',
+    '16',
+    '17',
+    '18',
+    '19',
+    '20',
+    '21',
+    '22',
+    '23',
+    '24',
+    '25',
+    '26',
+    '27',
+    '28',
+    '29',
+    '30',
+    '31',
+    '32',
+    '33',
+    '34',
+    '35',
+    '36',
+    '37',
+    '38',
+    '39',
+    '40',
+    '41',
+    '42',
+    '43',
+  ],
 };
 
 // Reducers to add and remove substrate node configurations from global state
@@ -532,11 +583,11 @@ function allNodes(state = [], action) {
     case ADD_NODE_SUBSTRATE:
       return state.concat(action.payload.id);
     case LOAD_NODE_SUBSTRATE:
-      if (!(state.includes(action.payload.node.id))){
+      if (!state.includes(action.payload.node.id)) {
         return state.concat(action.payload.node.id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_NODE_SUBSTRATE:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -576,7 +627,7 @@ function substrateChainsById(state = {}, action) {
     case REMOVE_CHAIN_SUBSTRATE:
       return _.omit(state, action.payload.id);
     case ADD_NODE_SUBSTRATE:
-      if (!(state[action.payload.parent_id].hasOwnProperty("nodes"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
         state[action.payload.node.parent_id].nodes = [];
       }
       return {
@@ -584,52 +635,64 @@ function substrateChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           nodes: state[action.payload.parent_id].nodes.concat(
-            action.payload.id),
+            action.payload.id,
+          ),
         },
       };
     case LOAD_NODE_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.node.parent_id))){
+      if (!state.hasOwnProperty(action.payload.node.parent_id)) {
         state[action.payload.node.parent_id] = {};
       }
-      if (!(state[action.payload.node.parent_id].hasOwnProperty("nodes"))){
+      if (!state[action.payload.node.parent_id].hasOwnProperty('nodes')) {
         state[action.payload.node.parent_id].nodes = [];
-        state[action.payload.node.parent_id].chain_name = action.payload
-          .chain_name;
+        state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
-      if (!(state[action.payload.node.parent_id].hasOwnProperty(
-          "repeatAlerts"))){
-        state[action.payload.node.parent_id].repeatAlerts =
-          substrateRepeatAlerts;
+      if (
+        !state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')
+      ) {
+        state[
+          action.payload.node.parent_id
+        ].repeatAlerts = substrateRepeatAlerts;
       }
-      if (!(state[action.payload.node.parent_id].hasOwnProperty(
-          "timeWindowAlerts"))){
-        state[action.payload.node.parent_id].timeWindowAlerts = 
-          substrateTimeWindowAlerts;
+      if (
+        !state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')
+      ) {
+        state[
+          action.payload.node.parent_id
+        ].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (!(state[action.payload.node.parent_id].hasOwnProperty(
-          "thresholdAlerts"))){
-        state[action.payload.node.parent_id].thresholdAlerts =
-          substrateThresholdAlerts;
+      if (
+        !state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')
+      ) {
+        state[
+          action.payload.node.parent_id
+        ].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (!(state[action.payload.node.parent_id].hasOwnProperty(
-          "severityAlerts"))){
-        state[action.payload.node.parent_id].severityAlerts =
-          substrateSeverityAlerts;
+      if (
+        !state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')
+      ) {
+        state[
+          action.payload.node.parent_id
+        ].severityAlerts = substrateSeverityAlerts;
       }
-      if (!(state[action.payload.node.parent_id].nodes.includes(
-          action.payload.node.id))){
+      if (
+        !state[action.payload.node.parent_id].nodes.includes(
+          action.payload.node.id,
+        )
+      ) {
         return {
           ...state,
           [action.payload.node.parent_id]: {
             ...state[action.payload.node.parent_id],
             nodes: state[action.payload.node.parent_id].nodes.concat(
-                action.payload.node.id),
+              action.payload.node.id,
+            ),
           },
         };
-      }else{
-        return state;
-      };
+      }
+      return state;
+
     case REMOVE_NODE_SUBSTRATE:
       return {
         ...state,
@@ -646,7 +709,7 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repositories"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
         state[action.payload.node.parent_id].repositories = [];
       }
       return {
@@ -654,60 +717,73 @@ function substrateChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           repositories: state[action.payload.parent_id].repositories.concat(
-            action.payload.id),
+            action.payload.id,
+          ),
         },
       };
     case LOAD_REPOSITORY_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.repo.parent_id))){
+      if (!state.hasOwnProperty(action.payload.repo.parent_id)) {
         state[action.payload.repo.parent_id] = {};
       }
-      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
-          "repositories"))){
+      if (
+        !state[action.payload.repo.parent_id].hasOwnProperty('repositories')
+      ) {
         state[action.payload.repo.parent_id].repositories = [];
-        state[action.payload.repo.parent_id].chain_name = action.payload
-          .chain_name;
+        state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
-      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
-          "repeatAlerts"))){
-        state[action.payload.repo.parent_id].repeatAlerts =
-          substrateRepeatAlerts;
+      if (
+        !state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')
+      ) {
+        state[
+          action.payload.repo.parent_id
+        ].repeatAlerts = substrateRepeatAlerts;
       }
-      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
-          "timeWindowAlerts"))){
-        state[action.payload.repo.parent_id].timeWindowAlerts = 
-          substrateTimeWindowAlerts;
+      if (
+        !state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')
+      ) {
+        state[
+          action.payload.repo.parent_id
+        ].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.repo.parent_id].thresholdAlerts =
-          substrateThresholdAlerts;
+      if (
+        !state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')
+      ) {
+        state[
+          action.payload.repo.parent_id
+        ].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (!(state[action.payload.repo.parent_id].hasOwnProperty(
-          "severityAlerts"))){
-        state[action.payload.repo.parent_id].severityAlerts =
-          substrateSeverityAlerts;
+      if (
+        !state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')
+      ) {
+        state[
+          action.payload.repo.parent_id
+        ].severityAlerts = substrateSeverityAlerts;
       }
-      if (!(state[action.payload.repo.parent_id].repositories.includes(
-          action.payload.repo.id))){
+      if (
+        !state[action.payload.repo.parent_id].repositories.includes(
+          action.payload.repo.id,
+        )
+      ) {
         return {
           ...state,
           [action.payload.repo.parent_id]: {
             ...state[action.payload.repo.parent_id],
-            repositories: state[action.payload.repo.parent_id].repositories
-              .concat(action.payload.repo.id),
+            repositories: state[
+              action.payload.repo.parent_id
+            ].repositories.concat(action.payload.repo.id),
           },
-        }
-      }else{
-        return state;
-      };
+        };
+      }
+      return state;
+
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      console.log("INSIDE SUBSTRATE");
+      console.log('INSIDE SUBSTRATE');
       console.log(action.payload);
       return {
         ...state,
@@ -738,27 +814,28 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_REPEAT_ALERTS_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
+      if (!state.hasOwnProperty(action.payload.parent_id)) {
         state[action.payload.parent_id] = {};
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
-          substrateTimeWindowAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[
+          action.payload.parent_id
+        ].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          substrateThresholdAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[
+          action.payload.parent_id
+        ].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts =
-          substrateSeverityAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
+        state[
+          action.payload.parent_id
+        ].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -787,26 +864,26 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_TIMEWINDOW_ALERTS_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
+      if (!state.hasOwnProperty(action.payload.parent_id)) {
         state[action.payload.parent_id] = {};
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-          "timeWindowAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
         state[action.payload.parent_id].timeWindowAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          substrateThresholdAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[
+          action.payload.parent_id
+        ].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts =
-          substrateSeverityAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
+        state[
+          action.payload.parent_id
+        ].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -835,25 +912,26 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_THRESHOLD_ALERTS_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
+      if (!state.hasOwnProperty(action.payload.parent_id)) {
         state[action.payload.parent_id] = {};
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("thresholdAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
         state[action.payload.parent_id].thresholdAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
-          substrateTimeWindowAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[
+          action.payload.parent_id
+        ].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
-        state[action.payload.parent_id].severityAlerts =
-          substrateSeverityAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
+        state[
+          action.payload.parent_id
+        ].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -882,26 +960,26 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_SEVERITY_ALERTS_SUBSTRATE:
-      if (!(state.hasOwnProperty(action.payload.parent_id))){
+      if (!state.hasOwnProperty(action.payload.parent_id)) {
         state[action.payload.parent_id] = {};
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("severityAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
         state[action.payload.parent_id].severityAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty("repeatAlerts"))){
+      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "timeWindowAlerts"))){
-        state[action.payload.parent_id].timeWindowAlerts = 
-          substrateTimeWindowAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[
+          action.payload.parent_id
+        ].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (!(state[action.payload.parent_id].hasOwnProperty(
-        "thresholdAlerts"))){
-        state[action.payload.parent_id].thresholdAlerts =
-          substrateThresholdAlerts;
+      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[
+          action.payload.parent_id
+        ].thresholdAlerts = substrateThresholdAlerts;
       }
       return {
         ...state,
@@ -920,41 +998,41 @@ function allSubstrateChains(state = [], action) {
     case ADD_CHAIN_SUBSTRATE:
       return state.concat(action.payload.id);
     case LOAD_NODE_SUBSTRATE:
-      if (!(state.includes(action.payload.node.parent_id))){
+      if (!state.includes(action.payload.node.parent_id)) {
         return state.concat(action.payload.node.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case LOAD_REPOSITORY_SUBSTRATE:
-      if (!(state.includes(action.payload.repo.parent_id))){
+      if (!state.includes(action.payload.repo.parent_id)) {
         return state.concat(action.payload.repo.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case LOAD_REPEAT_ALERTS_SUBSTRATE:
-      if (!(state.includes(action.payload.parent_id))){
+      if (!state.includes(action.payload.parent_id)) {
         return state.concat(action.payload.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case LOAD_TIMEWINDOW_ALERTS_SUBSTRATE:
-      if (!(state.includes(action.payload.parent_id))){
+      if (!state.includes(action.payload.parent_id)) {
         return state.concat(action.payload.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case LOAD_THRESHOLD_ALERTS_SUBSTRATE:
-      if (!(state.includes(action.payload.parent_id))){
+      if (!state.includes(action.payload.parent_id)) {
         return state.concat(action.payload.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case LOAD_SEVERITY_ALERTS_SUBSTRATE:
-      if (!(state.includes(action.payload.parent_id))){
+      if (!state.includes(action.payload.parent_id)) {
         return state.concat(action.payload.parent_id);
-      }else{
-        return state;
       }
+      return state;
+
     case REMOVE_CHAIN_SUBSTRATE:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -981,7 +1059,11 @@ function CurrentSubstrateChain(state = '', action) {
 }
 
 export {
-  SubstrateNodesReducer, SubstrateChainsReducer, CurrentSubstrateChain,
-  substrateRepeatAlerts, substrateThresholdAlerts, substrateTimeWindowAlerts,
+  SubstrateNodesReducer,
+  SubstrateChainsReducer,
+  CurrentSubstrateChain,
+  substrateRepeatAlerts,
+  substrateThresholdAlerts,
+  substrateTimeWindowAlerts,
   substrateSeverityAlerts,
 };

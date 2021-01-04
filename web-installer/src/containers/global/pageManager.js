@@ -11,8 +11,14 @@ import OtherSetupPage from 'components/chains/other/otherSetupPage';
 import GeneralPage from 'components/general/generalPage';
 import UsersPage from 'components/users/usersPage';
 import {
-  WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
-  SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, USERS_PAGE, OTHER_SETUP_PAGE,
+  WELCOME_PAGE,
+  CHANNELS_PAGE,
+  CHAINS_PAGE,
+  COSMOS_SETUP_PAGE,
+  SUBSTRATE_SETUP_PAGE,
+  GENERAL_PAGE,
+  USERS_PAGE,
+  OTHER_SETUP_PAGE,
 } from 'constants/constants';
 import { refreshAccessToken } from 'utils/data';
 
@@ -54,9 +60,7 @@ class PageManager extends Component {
   // This is used to refresh the JWT token
   componentDidMount() {
     this.refreshToken();
-    this.dataTimer = setInterval(
-      this.refreshToken.bind(this), 100000,
-    );
+    this.dataTimer = setInterval(this.refreshToken.bind(this), 100000);
   }
 
   componentWillUnmount() {
@@ -75,14 +79,15 @@ class PageManager extends Component {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           ToastsStore.error(
-            `Could not get authentication status. Error: ${
-              e.response.data.error}`, 5000,
+            `Could not get authentication status. Error: ${e.response.data.error}`,
+            5000,
           );
         } else {
           // Something happened in setting up the request that triggered an
           // error
           ToastsStore.error(
-            `Could not get authentication status. Error: ${e.message}`, 5000,
+            `Could not get authentication status. Error: ${e.message}`,
+            5000,
           );
         }
       }
@@ -91,11 +96,7 @@ class PageManager extends Component {
 
   render() {
     const { page } = this.props;
-    return (
-      <div>
-        {getPage(page)}
-      </div>
-    );
+    return <div>{getPage(page)}</div>;
   }
 }
 

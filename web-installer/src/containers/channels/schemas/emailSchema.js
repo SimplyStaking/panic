@@ -20,7 +20,9 @@ const EmailSchema = (props) => Yup.object().shape({
           }
         }
         for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value) {
+          if (
+            pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value
+          ) {
             return false;
           }
         }
@@ -38,18 +40,18 @@ const EmailSchema = (props) => Yup.object().shape({
       },
     )
     .required('Config name is required.'),
-  smtp: Yup.string()
-    .required('SMTP is required.'),
+  smtp: Yup.string().required('SMTP is required.'),
   email_from: Yup.string()
     .email('Email is not valid.')
     .required('Email From is required.'),
   emails_to: Yup.array()
-    .transform(function(value, originalValue) {
+    .transform(function (value, originalValue) {
       if (this.isType(value) && value !== null) {
         return value;
       }
       return originalValue ? originalValue.split(/[\s,]+/) : [];
-    }).of(Yup.string().email(({ value }) => `${value} is not a valid email `))
+    })
+    .of(Yup.string().email(({ value }) => `${value} is not a valid email `))
     .required('Email To is required.'),
 });
 

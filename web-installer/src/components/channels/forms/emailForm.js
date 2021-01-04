@@ -1,10 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  TextField, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
+  TextField,
+  Box,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+  Grid,
+  Tooltip,
 } from '@material-ui/core';
-import Button from "components/material_ui/CustomButtons/Button.js";
+import Button from 'components/material_ui/CustomButtons/Button.js';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -13,11 +19,15 @@ import { SendTestEmailButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/channels';
 
-const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
-  }) => {
-
-  const updateToEmails = (event, emails_to) => {
-    setFieldValue('emails_to', emails_to);
+const EmailForm = ({
+  errors,
+  values,
+  handleSubmit,
+  handleChange,
+  setFieldValue,
+}) => {
+  const updateToEmails = (event, emailsTo) => {
+    setFieldValue('emails_to', emailsTo);
   };
 
   return (
@@ -44,7 +54,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="main_email_channel"
                   helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
-                  autoComplete='off'
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -69,7 +79,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="my.smtp.com"
                   helperText={errors.smtp ? errors.smtp : ''}
                   onChange={handleChange}
-                  autoComplete='off'
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -94,7 +104,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="alerter@email.com"
                   helperText={errors.email_from ? errors.email_from : ''}
                   onChange={handleChange}
-                  autoComplete='off'
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -124,11 +134,13 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                       error={errors.emails_to}
                       type="text"
                       name="emails_to"
-                      placeholder={"Add a destination email "
-                        + "[Press Enter after each Email]."}
+                      placeholder={
+                        'Add a destination email '
+                        + '[Press Enter after each Email].'
+                      }
                       variant="standard"
                       helperText={errors.emails_to ? errors.emails_to : ''}
-                      autoComplete='off'
+                      autoComplete="off"
                       fullWidth
                     />
                   )}
@@ -153,7 +165,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="username"
                   placeholder="my_username"
                   onChange={handleChange}
-                  autoComplete='off'
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -176,7 +188,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="password"
                   placeholder="*****************"
                   onChange={handleChange}
-                  autoComplete='off'
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -261,7 +273,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 >
                   <Box px={2}>
                     <SendTestEmailButton
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       to={values.emails_to}
                       from={values.email_from}
                       smtp={values.smtp}
@@ -271,7 +283,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                     <Button
                       color="primary"
                       size="md"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
                       Add
@@ -299,9 +311,7 @@ EmailForm.propTypes = forbidExtraProps({
     channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
     email_from: PropTypes.string.isRequired,
-    emails_to: PropTypes.arrayOf(
-      PropTypes.string.isRequired,
-    ).isRequired,
+    emails_to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
     username: PropTypes.string.isRequired,
     password: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,

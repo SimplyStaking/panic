@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 import NodesForm from 'components/chains/cosmos/forms/nodesForm';
 import NodesTable from 'components/chains/cosmos/tables/nodesTable';
 import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
-import NodeSchema from './schemas/nodeSchema';
 import CosmosData from 'data/cosmos';
+import NodeSchema from './schemas/nodeSchema';
 
 // This performs cosmos node name validation, by checking if the node name
 // already exists under the same chain being configured.
@@ -69,10 +69,7 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine cosmos state and dispatch functions to the node form
-const NodesFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 // Combine cosmos state and dispatch functions to the node table
 const NodesTableContainer = connect(
@@ -80,7 +77,4 @@ const NodesTableContainer = connect(
   mapDispatchToPropsRemove,
 )(NodesTable);
 
-export {
-  NodesFormContainer,
-  NodesTableContainer,
-};
+export { NodesFormContainer, NodesTableContainer };

@@ -1,6 +1,4 @@
-import {
-  ADD_USER, REMOVE_USER
-} from 'redux/actions/types';
+import { ADD_USER, REMOVE_USER } from 'redux/actions/types';
 
 const initialstate = {
   users: [],

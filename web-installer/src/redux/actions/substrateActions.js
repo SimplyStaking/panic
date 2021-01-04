@@ -1,15 +1,23 @@
 import {
-  ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE,
-  LOAD_CONFIG_SUBSTRATE, RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME_SUBSTRATE,
-  REMOVE_CHAIN_SUBSTRATE, LOAD_NODE_SUBSTRATE, LOAD_REPOSITORY_SUBSTRATE,
-  LOAD_REPEAT_ALERTS_SUBSTRATE, LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
-  LOAD_THRESHOLD_ALERTS_SUBSTRATE, LOAD_SEVERITY_ALERTS_SUBSTRATE,
+  ADD_CHAIN_SUBSTRATE,
+  ADD_NODE_SUBSTRATE,
+  REMOVE_NODE_SUBSTRATE,
+  LOAD_CONFIG_SUBSTRATE,
+  RESET_CHAIN_SUBSTRATE,
+  UPDATE_CHAIN_NAME_SUBSTRATE,
+  REMOVE_CHAIN_SUBSTRATE,
+  LOAD_NODE_SUBSTRATE,
+  LOAD_REPOSITORY_SUBSTRATE,
+  LOAD_REPEAT_ALERTS_SUBSTRATE,
+  LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+  LOAD_THRESHOLD_ALERTS_SUBSTRATE,
+  LOAD_SEVERITY_ALERTS_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
-// a new identifer, from then on you re-used the old one.
+// a new identifier, from then on you re-used the old one.
 // When creating a new chain, we must add empty lists as we need to initialize
 // the key/value pairs beforehand.
 export function addChainSubstrate(payload) {
@@ -50,7 +58,7 @@ export function resetCurrentChainIdSubstrate() {
 }
 
 // Action to add a substrate node to a configuration, payload is intercepted,
-// and a unqiue id is generated for it.
+// and a unique id is generated for it.
 export function addNodeSubstrate(payload) {
   return {
     type: ADD_NODE_SUBSTRATE,

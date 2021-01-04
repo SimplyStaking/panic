@@ -1,11 +1,17 @@
 import { connect } from 'react-redux';
-import CosmosChainsTable from
-  'components/chains/cosmos/tables/cosmosChainsTable';
-import { removeChainCosmos, loadConfigCosmos, removeNodeCosmos } from
-  'redux/actions/cosmosActions';
+import CosmosChainsTable from 'components/chains/cosmos/tables/cosmosChainsTable';
 import {
-  removeRepository, removeKms, removeTelegramChannel,
-  removeTwilioChannel, removeEmailChannel, removePagerDutyChannel,
+  removeChainCosmos,
+  loadConfigCosmos,
+  removeNodeCosmos,
+} from 'redux/actions/cosmosActions';
+import {
+  removeRepository,
+  removeKms,
+  removeTelegramChannel,
+  removeTwilioChannel,
+  removeEmailChannel,
+  removePagerDutyChannel,
   removeOpsGenieChannel,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
@@ -30,15 +36,11 @@ function mapDispatchToProps(dispatch) {
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
     removeKmsDetails: (details) => dispatch(removeKms(details)),
     loadConfigDetails: (details) => dispatch(loadConfigCosmos(details)),
-    removeOpsGenieDetails:
-      (details) => dispatch(removeOpsGenieChannel(details)),
-    removePagerDutyDetails:
-      (details) => dispatch(removePagerDutyChannel(details)),
+    removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
+    removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
     removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
-    removeTwilioDetails:
-      (details) => dispatch(removeTwilioChannel(details)),
-    removeTelegramDetails:
-      (details) => dispatch(removeTelegramChannel(details)),
+    removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
+    removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
   };
 }
 

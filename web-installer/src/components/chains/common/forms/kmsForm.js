@@ -1,23 +1,26 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
+  Divider,
 } from '@material-ui/core';
-import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
-import StepButtonContainer from
-  'containers/chains/common/stepButtonContainer';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
-import Button from "components/material_ui/CustomButtons/Button.js";
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import Button from 'components/material_ui/CustomButtons/Button.js';
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 
 /*
  * Contains the details to setup a KMS configuration to be monitored, this also
@@ -25,8 +28,9 @@ import GridItem from "components/material_ui/Grid/GridItem.js";
  */
 const useStyles = makeStyles(styles);
 
-const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
-  data}) => {
+const KmsForm = ({
+  errors, values, handleSubmit, handleChange, setFieldValue, data,
+}) => {
   const classes = useStyles();
 
   return (
@@ -35,9 +39,7 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                  {data.kmsForm.title}
-              </h1>
+              <h1 className={classes.title}>{data.kmsForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -62,8 +64,8 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={data.kmsForm.nameHolder}
                   helperText={errors.kms_name ? errors.kms_name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -88,18 +90,15 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={data.kmsForm.exporterUrlHolder}
                   helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.exporterUrlTip}
-                      placement="left"
-                    >
+                    <Tooltip title={data.kmsForm.exporterUrlTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -120,15 +119,13 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.monitorKmsTip}
-                      placement="left"
-                    >
+                    <Tooltip title={data.kmsForm.monitorKmsTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -137,31 +134,26 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid
-                  container
-                  direction="row"
-                  justify="flex-end"
-                  alignItems="center"
-                >
+                <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <PingNodeExporter
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       exporter_url={values.exporter_url}
                     />
                     <Button
                       color="primary"
                       size="md"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
-                        Add KMS
+                      Add KMS
                     </Button>
                   </Box>
                 </Grid>
               </Grid>
               <Grid item xs={12} />
-              <br/>
-              <br/>
+              <br />
+              <br />
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
@@ -206,6 +198,7 @@ KmsForm.propTypes = forbidExtraProps({
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
     kmsForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,

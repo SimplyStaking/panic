@@ -67,7 +67,4 @@ const PagerDutyTableContainer = connect(
   mapDispatchToPropsRemove,
 )(PagerDutyTable);
 
-export {
-  PagerDutyFormContainer,
-  PagerDutyTableContainer,
-};
+export { PagerDutyFormContainer, PagerDutyTableContainer };

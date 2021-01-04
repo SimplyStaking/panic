@@ -66,7 +66,4 @@ const OpsGenieTableContainer = connect(
   mapDispatchToPropsRemove,
 )(OpsGenieTable);
 
-export {
-  OpsGenieFormContainer,
-  OpsGenieTableContainer,
-};
+export { OpsGenieFormContainer, OpsGenieTableContainer };

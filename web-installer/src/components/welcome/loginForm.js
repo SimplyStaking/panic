@@ -1,18 +1,17 @@
-import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
-import InputAdornment from "@material-ui/core/InputAdornment";
+import React from 'react';
+import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
+import InputAdornment from '@material-ui/core/InputAdornment';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
-import Card from "components/material_ui/Card/Card.js";
-import CardHeader from "components/material_ui/Card/CardHeader.js";
-import CardBody from "components/material_ui/Card/CardBody.js";
-import CardFooter from "components/material_ui/Card/CardFooter.js";
-import CustomInput from "components/material_ui/CustomInput/CustomInput.js";
-import styles from
-  "assets/jss/material-kit-react/views/componentsSections/loginStyle.js";
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import forbidExtraProps from 'airbnb-prop-types';
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
+import Card from 'components/material_ui/Card/Card.js';
+import CardHeader from 'components/material_ui/Card/CardHeader.js';
+import CardBody from 'components/material_ui/Card/CardBody.js';
+import CardFooter from 'components/material_ui/Card/CardFooter.js';
+import CustomInput from 'components/material_ui/CustomInput/CustomInput.js';
+import styles from 'assets/jss/material-kit-react/views/componentsSections/loginStyle.js';
+
 import { Tooltip } from '@material-ui/core';
 import { theme } from 'components/theme/default';
 import InfoIcon from '@material-ui/icons/Info';
@@ -21,9 +20,17 @@ import Data from 'data/welcome';
 
 const useStyles = makeStyles(styles);
 
-const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
-  authenticate, checkForConfigs, loadUsersFromMongo, addUserRedux}) => {
-
+const LoginForm = ({
+  errors,
+  values,
+  handleSubmit,
+  handleChange,
+  pageChanger,
+  authenticate,
+  checkForConfigs,
+  loadUsersFromMongo,
+  addUserRedux,
+}) => {
   const classes = useStyles();
 
   return (
@@ -40,14 +47,14 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                   <CustomInput
                     error={errors.username}
                     value={values.username}
-                    helperText={''}
+                    helperText=""
                     handleChange={handleChange}
                     name="username"
                     placeHolder="Username"
                     id="username"
                     type="text"
                     formControlProps={{
-                      fullWidth: true
+                      fullWidth: true,
                     }}
                     inputProps={{
                       endAdornment: (
@@ -58,34 +65,32 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
                             </Tooltip>
                           </MuiThemeProvider>
                         </InputAdornment>
-                      )
+                      ),
                     }}
                   />
                   <CustomInput
                     error={errors.password}
                     value={values.password}
-                    helperText={''}
+                    helperText=""
                     handleChange={handleChange}
                     name="password"
                     placeHolder="Password"
                     id="password"
                     type="password"
                     formControlProps={{
-                      fullWidth: true
+                      fullWidth: true,
                     }}
                     inputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip
-                              title={Data.password}
-                              placement="left">
+                            <Tooltip title={Data.password} placement="left">
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
                         </InputAdornment>
                       ),
-                      autoComplete: "off"
+                      autoComplete: 'off',
                     }}
                   />
                 </CardBody>
@@ -107,9 +112,12 @@ const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
       </div>
     </div>
   );
-}
+};
 
 LoginForm.propTypes = forbidExtraProps({
+  checkForConfigs: PropTypes.func.isRequired,
+  loadUsersFromMongo: PropTypes.func.isRequired,
+  addUserRedux: PropTypes.func.isRequired,
   errors: PropTypes.shape({
     username: PropTypes.string,
     password: PropTypes.string,

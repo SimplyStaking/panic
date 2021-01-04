@@ -2,9 +2,15 @@ import { connect } from 'react-redux';
 import ChannelsTable from 'components/chains/common/tables/channelsTable';
 import { GLOBAL } from 'constants/constants';
 import {
-  addTelegramChannel, removeTelegramChannel, addTwilioChannel,
-  removeTwilioChannel, addEmailChannel, removeEmailChannel,
-  addPagerDutyChannel, removePagerDutyChannel, addOpsGenieChannel,
+  addTelegramChannel,
+  removeTelegramChannel,
+  addTwilioChannel,
+  removeTwilioChannel,
+  addEmailChannel,
+  removeEmailChannel,
+  addPagerDutyChannel,
+  removePagerDutyChannel,
+  addOpsGenieChannel,
   removeOpsGenieChannel,
 } from 'redux/actions/generalActions';
 import CosmosData from 'data/cosmos';
@@ -13,14 +19,14 @@ import GeneralData from 'data/general';
 
 // ------------------------- Common Functions ---------------------------
 
-function createPayload(channelData, currentConfig, addDetails, removeDetails){
-  let payload = JSON.parse(JSON.stringify(channelData));
+function createPayload(channelData, currentConfig, addDetails, removeDetails) {
+  const payload = JSON.parse(JSON.stringify(channelData));
   if (channelData.parent_ids.includes(currentConfig.id)) {
-    var index = payload.parent_ids.indexOf(currentConfig.id);
+    let index = payload.parent_ids.indexOf(currentConfig.id);
     if (index > -1) {
       payload.parent_ids.splice(index, 1);
     }
-    index =  payload.parent_names.indexOf(currentConfig.chain_name);
+    index = payload.parent_names.indexOf(currentConfig.chain_name);
     if (index > -1) {
       payload.parent_names.splice(index, 1);
     }
@@ -38,27 +44,17 @@ function createPayload(channelData, currentConfig, addDetails, removeDetails){
 // which alerting channel will be utilized for that particular setup.
 function mapDispatchToProps(dispatch) {
   return {
-    addTelegramDetails:
-      (details) => dispatch(addTelegramChannel(details)),
-    removeTelegramDetails:
-      (details) => dispatch(removeTelegramChannel(details)),
-    addTwilioDetails:
-      (details) => dispatch(addTwilioChannel(details)),
-    removeTwilioDetails:
-      (details) => dispatch(removeTwilioChannel(details)),
-    addEmailDetails:
-      (details) => dispatch(addEmailChannel(details)),
-    removeEmailDetails:
-      (details) => dispatch(removeEmailChannel(details)),
-    addPagerDutyDetails:
-      (details) => dispatch(addPagerDutyChannel(details)),
-    removePagerDutyDetails:
-      (details) => dispatch(removePagerDutyChannel(details)),
-    addOpsGenieDetails:
-      (details) => dispatch(addOpsGenieChannel(details)),
-    removeOpsGenieDetails:
-      (details) => dispatch(removeOpsGenieChannel(details)),
-    createPayload: createPayload,
+    addTelegramDetails: (details) => dispatch(addTelegramChannel(details)),
+    removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
+    addTwilioDetails: (details) => dispatch(addTwilioChannel(details)),
+    removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
+    addEmailDetails: (details) => dispatch(addEmailChannel(details)),
+    removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
+    addPagerDutyDetails: (details) => dispatch(addPagerDutyChannel(details)),
+    removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
+    addOpsGenieDetails: (details) => dispatch(addOpsGenieChannel(details)),
+    removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
+    createPayload,
   };
 }
 
@@ -125,6 +121,7 @@ const ChannelsGeneralTableContainer = connect(
 )(ChannelsTable);
 
 export {
-  ChannelsCosmosTableContainer, ChannelsSubstrateTableContainer,
+  ChannelsCosmosTableContainer,
+  ChannelsSubstrateTableContainer,
   ChannelsGeneralTableContainer,
 };

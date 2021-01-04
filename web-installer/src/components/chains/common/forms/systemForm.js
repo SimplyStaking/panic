@@ -1,26 +1,30 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
 import {
-  NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE
+  NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
 } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import NavigationButton from 'components/global/navigationButton';
 import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/system';
-import Button from "components/material_ui/CustomButtons/Button.js";
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import Button from 'components/material_ui/CustomButtons/Button.js';
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
 
 /*
  * Systems form contains all the information and structure needed to setup
@@ -30,9 +34,9 @@ import GridItem from "components/material_ui/Grid/GridItem.js";
 
 const useStyles = makeStyles(styles);
 
-const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
-  pageChanger}) => {
-
+const SystemForm = ({
+  errors, values, handleSubmit, handleChange, setFieldValue, pageChanger,
+}) => {
   const classes = useStyles();
 
   // Next page is in fact returning back to the Chains Settings Page
@@ -48,9 +52,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                  {Data.title}
-              </h1>
+              <h1 className={classes.title}>{Data.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -75,8 +77,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={Data.name_holder}
                   helperText={errors.name ? errors.name : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -101,8 +103,8 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   placeholder={Data.exporter_url_holder}
                   helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
-                  inputProps={{min: 0, style: { textAlign: 'right' }}}
-                  autoComplete='off'
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -130,6 +132,7 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -144,31 +147,26 @@ const SystemForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid
-                  container
-                  direction="row"
-                  justify="flex-end"
-                  alignItems="center"
-                >
+                <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <PingNodeExporter
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       exporter_url={values.exporter_url}
                     />
                     <Button
                       color="primary"
                       size="md"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
-                        Add
+                      Add
                     </Button>
                   </Box>
                 </Grid>
               </Grid>
               <Grid item xs={12} />
-              <br/>
-              <br/>
+              <br />
+              <br />
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>

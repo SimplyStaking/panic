@@ -1,37 +1,60 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import React from "react";
+import PropTypes from "prop-types";
+import forbidExtraProps from "airbnb-prop-types";
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  FormControlLabel, Checkbox, Typography, TextField, Grid, Box, MenuItem,
-  Select, FormControl,
-} from '@material-ui/core';
-import Paper from '@material-ui/core/Paper';
-import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import NavigationButton from 'components/global/navigationButton';
-import { CHAINS_PAGE, DONE, BACK, CHANNELS_STEP, CHAINS_STEP } from
-  'constants/constants';
-import { MuiThemeProvider } from '@material-ui/core/styles';
-import { defaultTheme } from 'components/theme/default';
-import styles from
-  "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  TextField,
+  Grid,
+  Box,
+  MenuItem,
+  Select,
+  FormControl,
+} from "@material-ui/core";
+import Paper from "@material-ui/core/Paper";
+import StepButtonContainer from "containers/chains/common/stepButtonContainer";
+import NavigationButton from "components/global/navigationButton";
+import {
+  CHAINS_PAGE,
+  DONE,
+  BACK,
+  CHANNELS_STEP,
+  CHAINS_STEP,
+} from "constants/constants";
+import { MuiThemeProvider } from "@material-ui/core/styles";
+import { defaultTheme } from "components/theme/default";
+import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
 import { makeStyles } from "@material-ui/core/styles";
-import InputAdornment from '@material-ui/core/InputAdornment';
+import InputAdornment from "@material-ui/core/InputAdornment";
 import GridContainer from "components/material_ui/Grid/GridContainer.js";
 import GridItem from "components/material_ui/Grid/GridItem.js";
-import Divider from '@material-ui/core/Divider';
-import Data from 'data/alert';
+import Divider from "@material-ui/core/Divider";
+import Data from "data/alert";
 
 /*
  * AlertsTable will show display all the 4 alert types together with the
  * functions to directly edit them.
-*/
+ */
 const useStyles = makeStyles(styles);
 
-const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
-  updateTimeWindowAlertDetails, updateThresholdAlertDetails,
-  updateSeverityAlertDetails, pageChanger, stepChanger, clearChainId}) => {
-
+const AlertsTable = ({
+  config,
+  currentChain,
+  updateRepeatAlertDetails,
+  updateTimeWindowAlertDetails,
+  updateThresholdAlertDetails,
+  updateSeverityAlertDetails,
+  pageChanger,
+  stepChanger,
+  clearChainId,
+}) => {
   // Assigning buffer values as they become too long
   const RepeatAlerts = config.byId[currentChain].repeatAlerts;
   const TimeWindowAlerts = config.byId[currentChain].timeWindowAlerts;
@@ -56,9 +79,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                {Data.title}
-              </h1>
+              <h1 className={classes.title}>{Data.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -71,9 +92,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                {Data.subtitle_1}
-              </h1>
+              <h1 className={classes.title}>{Data.subtitle_1}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -92,45 +111,44 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {RepeatAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{RepeatAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{RepeatAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{RepeatAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].warning.enabled}
                                 onClick={() => {
-                                  updateRepeatAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: RepeatAlerts.byId[id].name,
-                                        identifier: RepeatAlerts.byId[id]
-                                          .identifier,
-                                        description: RepeatAlerts.byId[id]
-                                          .description,
-                                        adornment: RepeatAlerts.byId[id]
-                                          .adornment,
-                                        warning: {
-                                          repeat: RepeatAlerts.byId[id]
-                                            .warning.repeat,
-                                          enabled: !RepeatAlerts.byId[id]
-                                            .warning.enabled,
-                                        },
-                                        critical: RepeatAlerts.byId[id]
-                                          .critical,
-                                        enabled: RepeatAlerts.byId[id].enabled,
+                                  updateRepeatAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      identifier:
+                                        RepeatAlerts.byId[id].identifier,
+                                      description:
+                                        RepeatAlerts.byId[id].description,
+                                      adornment:
+                                        RepeatAlerts.byId[id].adornment,
+                                      warning: {
+                                        repeat:
+                                          RepeatAlerts.byId[id].warning.repeat,
+                                        enabled: !RepeatAlerts.byId[id].warning
+                                          .enabled,
                                       },
+                                      critical: RepeatAlerts.byId[id].critical,
+                                      enabled: RepeatAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -149,32 +167,33 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
-                                    identifier: RepeatAlerts.byId[id]
-                                      .identifier,
-                                    description: RepeatAlerts.byId[id]
-                                      .description,
-                                    adornment: RepeatAlerts.byId[id]
-                                      .adornment,
+                                    identifier:
+                                      RepeatAlerts.byId[id].identifier,
+                                    description:
+                                      RepeatAlerts.byId[id].description,
+                                    adornment: RepeatAlerts.byId[id].adornment,
                                     warning: {
                                       repeat: event.target.value,
-                                      enabled: RepeatAlerts.byId[id].warning
-                                        .enabled,
+                                      enabled:
+                                        RepeatAlerts.byId[id].warning.enabled,
                                     },
                                     critical: RepeatAlerts.byId[id].critical,
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
-                              autoComplete='off'
+                              autoComplete="off"
                               fullWidth
                             />
                           </Grid>
@@ -185,38 +204,35 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].critical.enabled}
                                 onClick={() => {
-                                  updateRepeatAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: RepeatAlerts.byId[id].name,
-                                        identifier: RepeatAlerts.byId[id]
-                                          .identifier,
-                                        description: RepeatAlerts.byId[id]
-                                          .description,
-                                        adornment: RepeatAlerts.byId[id]
-                                          .adornment,
-                                        warning: RepeatAlerts.byId[id]
-                                          .warning,
-                                        critical: {
-                                          repeat: RepeatAlerts.byId[id]
-                                            .critical.repeat,
-                                          enabled: !RepeatAlerts.byId[id]
-                                            .critical.enabled,
-                                        },
-                                        enabled: RepeatAlerts.byId[id].enabled,
+                                  updateRepeatAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      identifier:
+                                        RepeatAlerts.byId[id].identifier,
+                                      description:
+                                        RepeatAlerts.byId[id].description,
+                                      adornment:
+                                        RepeatAlerts.byId[id].adornment,
+                                      warning: RepeatAlerts.byId[id].warning,
+                                      critical: {
+                                        repeat:
+                                          RepeatAlerts.byId[id].critical.repeat,
+                                        enabled: !RepeatAlerts.byId[id].critical
+                                          .enabled,
                                       },
+                                      enabled: RepeatAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -235,31 +251,32 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   parent_id: currentChain,
                                   alert: {
                                     name: RepeatAlerts.byId[id].name,
-                                    identifier: RepeatAlerts.byId[id]
-                                      .identifier,
-                                    description: RepeatAlerts.byId[id]
-                                      .description,
-                                    adornment: RepeatAlerts.byId[id]
-                                      .adornment,
+                                    identifier:
+                                      RepeatAlerts.byId[id].identifier,
+                                    description:
+                                      RepeatAlerts.byId[id].description,
+                                    adornment: RepeatAlerts.byId[id].adornment,
                                     warning: RepeatAlerts.byId[id].warning,
                                     critical: {
                                       repeat: event.target.value,
-                                      enabled: RepeatAlerts.byId[id].critical
-                                        .enabled,
+                                      enabled:
+                                        RepeatAlerts.byId[id].critical.enabled,
                                     },
                                     enabled: RepeatAlerts.byId[id].enabled,
                                   },
                                 });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -269,7 +286,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={(
+                        control={
                           <Checkbox
                             checked={RepeatAlerts.byId[id].enabled}
                             onClick={() => {
@@ -279,8 +296,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 alert: {
                                   name: RepeatAlerts.byId[id].name,
                                   identifier: RepeatAlerts.byId[id].identifier,
-                                  description: RepeatAlerts.byId[id]
-                                    .description,
+                                  description:
+                                    RepeatAlerts.byId[id].description,
                                   adornment: RepeatAlerts.byId[id].adornment,
                                   warning: RepeatAlerts.byId[id].warning,
                                   critical: RepeatAlerts.byId[id].critical,
@@ -291,7 +308,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             name="enabled"
                             color="primary"
                           />
-                        )}
+                        }
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -299,51 +317,56 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {TimeWindowAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{TimeWindowAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{TimeWindowAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{TimeWindowAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
-                                checked={TimeWindowAlerts.byId[id].warning
-                                    .enabled}
+                                checked={
+                                  TimeWindowAlerts.byId[id].warning.enabled
+                                }
                                 onClick={() => {
-                                  updateTimeWindowAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: TimeWindowAlerts.byId[id].name,
-                                        identifier: TimeWindowAlerts.byId[id]
-                                          .identifier,
-                                        description: TimeWindowAlerts.byId[id]
-                                          .description,
-                                        adornment_threshold: TimeWindowAlerts
-                                          .byId[id].adornment_threshold,
-                                        adornment_time: TimeWindowAlerts
-                                          .byId[id].adornment_time,
-                                        warning: {
-                                          threshold: TimeWindowAlerts.byId[id]
-                                            .warning.threshold,
-                                          time_window: TimeWindowAlerts
-                                            .byId[id].warning.time_window,
-                                          enabled: !TimeWindowAlerts.byId[id]
-                                            .warning.enabled,
-                                        },
-                                        critical: TimeWindowAlerts.byId[id]
-                                          .critical,
-                                        enabled: TimeWindowAlerts.byId[id]
-                                          .enabled,
+                                  updateTimeWindowAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: TimeWindowAlerts.byId[id].name,
+                                      identifier:
+                                        TimeWindowAlerts.byId[id].identifier,
+                                      description:
+                                        TimeWindowAlerts.byId[id].description,
+                                      adornment_threshold:
+                                        TimeWindowAlerts.byId[id]
+                                          .adornment_threshold,
+                                      adornment_time:
+                                        TimeWindowAlerts.byId[id]
+                                          .adornment_time,
+                                      warning: {
+                                        threshold:
+                                          TimeWindowAlerts.byId[id].warning
+                                            .threshold,
+                                        time_window:
+                                          TimeWindowAlerts.byId[id].warning
+                                            .time_window,
+                                        enabled: !TimeWindowAlerts.byId[id]
+                                          .warning.enabled,
                                       },
+                                      critical:
+                                        TimeWindowAlerts.byId[id].critical,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -351,62 +374,68 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                         <Grid item>
                           <Grid container>
                             <TextField
-                              value={TimeWindowAlerts.byId[id].warning
-                                  .threshold}
+                              value={
+                                TimeWindowAlerts.byId[id].warning.threshold
+                              }
                               type="text"
                               name="thresholdWarning"
                               label="Threshold"
                               placeholder="60"
                               onChange={(event) => {
-                                updateTimeWindowAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: TimeWindowAlerts.byId[id].name,
-                                      identifier: TimeWindowAlerts.byId[id]
-                                        .identifier,
-                                      description: TimeWindowAlerts.byId[id]
-                                        .description,
-                                      adornment_threshold: TimeWindowAlerts
-                                        .byId[id].adornment_threshold,
-                                      adornment_time: TimeWindowAlerts
-                                        .byId[id].adornment_time,
-                                      warning: {
-                                        threshold: event.target.value,
-                                        time_window: TimeWindowAlerts.byId[id]
-                                          .warning.time_window,
-                                        enabled: TimeWindowAlerts.byId[id]
-                                          .warning.enabled,
-                                      },
-                                      critical: TimeWindowAlerts.byId[id]
-                                        .critical,
-                                      enabled: TimeWindowAlerts.byId[id]
-                                        .enabled,
+                                updateTimeWindowAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: TimeWindowAlerts.byId[id].name,
+                                    identifier:
+                                      TimeWindowAlerts.byId[id].identifier,
+                                    description:
+                                      TimeWindowAlerts.byId[id].description,
+                                    adornment_threshold:
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold,
+                                    adornment_time:
+                                      TimeWindowAlerts.byId[id].adornment_time,
+                                    warning: {
+                                      threshold: event.target.value,
+                                      time_window:
+                                        TimeWindowAlerts.byId[id].warning
+                                          .time_window,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].warning
+                                          .enabled,
                                     },
+                                    critical:
+                                      TimeWindowAlerts.byId[id].critical,
+                                    enabled: TimeWindowAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
-                                    {TimeWindowAlerts.byId[id]
-                                      .adornment_threshold}
-                                  </InputAdornment>,
+                                    {
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold
+                                    }
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
                           </Grid>
                           <Grid container>
                             <TextField
-                              value={TimeWindowAlerts.byId[id].warning
-                                  .time_window}
+                              value={
+                                TimeWindowAlerts.byId[id].warning.time_window
+                              }
                               type="text"
-                              name="timewindowWarning"
+                              name="time_window_Warning"
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {
@@ -415,36 +444,41 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                   parent_id: currentChain,
                                   alert: {
                                     name: TimeWindowAlerts.byId[id].name,
-                                    identifier: TimeWindowAlerts.byId[id]
-                                      .identifier,
-                                    description: TimeWindowAlerts.byId[id]
-                                      .description,
-                                    adornment_threshold: TimeWindowAlerts
-                                      .byId[id].adornment_threshold,
-                                    adornment_time: TimeWindowAlerts.byId[id]
-                                      .adornment_time,
+                                    identifier:
+                                      TimeWindowAlerts.byId[id].identifier,
+                                    description:
+                                      TimeWindowAlerts.byId[id].description,
+                                    adornment_threshold:
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold,
+                                    adornment_time:
+                                      TimeWindowAlerts.byId[id].adornment_time,
                                     warning: {
-                                      threshold: TimeWindowAlerts.byId[id]
-                                        .warning.threshold,
+                                      threshold:
+                                        TimeWindowAlerts.byId[id].warning
+                                          .threshold,
                                       time_window: event.target.value,
-                                      enabled: TimeWindowAlerts.byId[id]
-                                        .warning.enabled,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].warning
+                                          .enabled,
                                     },
-                                    critical: TimeWindowAlerts.byId[id]
-                                      .critical,
+                                    critical:
+                                      TimeWindowAlerts.byId[id].critical,
                                     enabled: TimeWindowAlerts.byId[id].enabled,
                                   },
                                 });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {TimeWindowAlerts.byId[id].adornment_time}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -456,147 +490,167 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
-                                checked={TimeWindowAlerts.byId[id].critical
-                                    .enabled}
+                                checked={
+                                  TimeWindowAlerts.byId[id].critical.enabled
+                                }
                                 onClick={() => {
-                                  updateTimeWindowAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: TimeWindowAlerts.byId[id].name,
-                                        identifier: TimeWindowAlerts.byId[id]
-                                          .identifier,
-                                        description: TimeWindowAlerts.byId[id]
-                                          .description,
-                                        adornment_threshold: TimeWindowAlerts
-                                          .byId[id].adornment_threshold,
-                                        adornment_time: TimeWindowAlerts
-                                          .byId[id].adornment_time,
-                                        warning: TimeWindowAlerts.byId[id]
-                                          .warning,
-                                        critical: {
-                                          threshold: TimeWindowAlerts.byId[id]
-                                            .critical.threshold,
-                                          time_window: TimeWindowAlerts
-                                            .byId[id].critical.time_window,
-                                          enabled: !TimeWindowAlerts.byId[id]
-                                            .critical.enabled,
-                                        },
-                                        enabled: TimeWindowAlerts.byId[id]
-                                          .enabled,
+                                  updateTimeWindowAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: TimeWindowAlerts.byId[id].name,
+                                      identifier:
+                                        TimeWindowAlerts.byId[id].identifier,
+                                      description:
+                                        TimeWindowAlerts.byId[id].description,
+                                      adornment_threshold:
+                                        TimeWindowAlerts.byId[id]
+                                          .adornment_threshold,
+                                      adornment_time:
+                                        TimeWindowAlerts.byId[id]
+                                          .adornment_time,
+                                      warning:
+                                        TimeWindowAlerts.byId[id].warning,
+                                      critical: {
+                                        threshold:
+                                          TimeWindowAlerts.byId[id].critical
+                                            .threshold,
+                                        time_window:
+                                          TimeWindowAlerts.byId[id].critical
+                                            .time_window,
+                                        enabled: !TimeWindowAlerts.byId[id]
+                                          .critical.enabled,
                                       },
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
-                      </Grid>
-                      <Grid item>
-                        <Grid container>
-                          <TextField
-                            value={TimeWindowAlerts.byId[id].critical.threshold}
-                            type="text"
-                            name="thresholdCritical"
-                            label="Threshold"
-                            placeholder="60"
-                            onChange={(event) => {
-                              updateTimeWindowAlertDetails(
-                                {
+                        </Grid>
+                        <Grid item>
+                          <Grid container>
+                            <TextField
+                              value={
+                                TimeWindowAlerts.byId[id].critical.threshold
+                              }
+                              type="text"
+                              name="thresholdCritical"
+                              label="Threshold"
+                              placeholder="60"
+                              onChange={(event) => {
+                                updateTimeWindowAlertDetails({
                                   id,
                                   parent_id: currentChain,
                                   alert: {
                                     name: TimeWindowAlerts.byId[id].name,
-                                    identifier: TimeWindowAlerts.byId[id]
-                                      .identifier,
-                                    description: TimeWindowAlerts.byId[id]
-                                      .description,
-                                    adornment_threshold: TimeWindowAlerts
-                                      .byId[id].adornment_threshold,
-                                    adornment_time: TimeWindowAlerts.byId[id]
-                                      .adornment_time,
+                                    identifier:
+                                      TimeWindowAlerts.byId[id].identifier,
+                                    description:
+                                      TimeWindowAlerts.byId[id].description,
+                                    adornment_threshold:
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold,
+                                    adornment_time:
+                                      TimeWindowAlerts.byId[id].adornment_time,
                                     warning: TimeWindowAlerts.byId[id].warning,
                                     critical: {
                                       threshold: event.target.value,
-                                      time_window: TimeWindowAlerts.byId[id]
-                                        .critical.time_window,
-                                      enabled: TimeWindowAlerts.byId[id]
-                                        .critical.enabled,
+                                      time_window:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .time_window,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .enabled,
                                     },
                                     enabled: TimeWindowAlerts.byId[id].enabled,
                                   },
-                                },
-                              );
-                            }}
-                            inputProps={{min: 0, style: { textAlign: 'right' }}}
-                            autoComplete='off'
-                            InputProps={{
-                              endAdornment:
-                                <InputAdornment position="end">
-                                  {TimeWindowAlerts.byId[id]
-                                    .adornment_threshold}
-                                </InputAdornment>,
-                            }}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid container>
-                          <TextField
-                            value={TimeWindowAlerts.byId[id].critical
-                                .time_window}
-                            type="text"
-                            name="timewindowCritical"
-                            label="Repeat"
-                            placeholder="60"
-                            onChange={(event) => {
-                              updateTimeWindowAlertDetails({
-                                id,
-                                parent_id: currentChain,
-                                alert: {
-                                  name: TimeWindowAlerts.byId[id].name,
-                                  identifier: TimeWindowAlerts.byId[id]
-                                    .identifier,
-                                  description: TimeWindowAlerts.byId[id]
-                                    .description,
-                                  adornment_threshold: TimeWindowAlerts
-                                    .byId[id].adornment_threshold,
-                                  adornment_time: TimeWindowAlerts.byId[id]
-                                    .adornment_time,
-                                  warning: TimeWindowAlerts.byId[id].warning,
-                                  critical: {
-                                    threshold: TimeWindowAlerts.byId[id]
-                                      .critical.threshold,
-                                    time_window: event.target.value,
-                                    enabled: TimeWindowAlerts.byId[id].critical
-                                      .enabled,
+                                });
+                              }}
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    {
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold
+                                    }
+                                  </InputAdornment>
+                                ),
+                              }}
+                              fullWidth
+                            />
+                          </Grid>
+                          <Grid container>
+                            <TextField
+                              value={
+                                TimeWindowAlerts.byId[id].critical.time_window
+                              }
+                              type="text"
+                              name="time_window_Critical"
+                              label="Repeat"
+                              placeholder="60"
+                              onChange={(event) => {
+                                updateTimeWindowAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: TimeWindowAlerts.byId[id].name,
+                                    identifier:
+                                      TimeWindowAlerts.byId[id].identifier,
+                                    description:
+                                      TimeWindowAlerts.byId[id].description,
+                                    adornment_threshold:
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold,
+                                    adornment_time:
+                                      TimeWindowAlerts.byId[id].adornment_time,
+                                    warning: TimeWindowAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .threshold,
+                                      time_window: event.target.value,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .enabled,
+                                    },
+                                    enabled: TimeWindowAlerts.byId[id].enabled,
                                   },
-                                  enabled: TimeWindowAlerts.byId[id].enabled,
-                                },
-                              });
-                            }}
-                            inputProps={{min: 0, style: { textAlign: 'right' }}}
-                            autoComplete='off'
-                            InputProps={{
-                              endAdornment:
-                                <InputAdornment position="end">
-                                  {TimeWindowAlerts.byId[id].adornment_time}
-                                </InputAdornment>,
-                            }}
-                            fullWidth
-                          />
+                                });
+                              }}
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    {TimeWindowAlerts.byId[id].adornment_time}
+                                  </InputAdornment>
+                                ),
+                              }}
+                              fullWidth
+                            />
+                          </Grid>
                         </Grid>
                       </Grid>
-                    </Grid>
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={(
+                        control={
                           <Checkbox
                             checked={TimeWindowAlerts.byId[id].enabled}
                             onClick={() => {
@@ -605,14 +659,15 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 parent_id: currentChain,
                                 alert: {
                                   name: TimeWindowAlerts.byId[id].name,
-                                  identifier: TimeWindowAlerts.byId[id]
-                                    .identifier,
-                                  description: TimeWindowAlerts.byId[id]
-                                    .description,
-                                  adornment_threshold: TimeWindowAlerts
-                                    .byId[id].adornment_threshold,
-                                  adornment_time: TimeWindowAlerts.byId[id]
-                                    .adornment_time,
+                                  identifier:
+                                    TimeWindowAlerts.byId[id].identifier,
+                                  description:
+                                    TimeWindowAlerts.byId[id].description,
+                                  adornment_threshold:
+                                    TimeWindowAlerts.byId[id]
+                                      .adornment_threshold,
+                                  adornment_time:
+                                    TimeWindowAlerts.byId[id].adornment_time,
                                   warning: TimeWindowAlerts.byId[id].warning,
                                   critical: TimeWindowAlerts.byId[id].critical,
                                   enabled: !TimeWindowAlerts.byId[id].enabled,
@@ -622,7 +677,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             name="enabled"
                             color="primary"
                           />
-                        )}
+                        }
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -630,49 +686,50 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {ThresholdAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{ThresholdAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{ThresholdAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{ThresholdAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
-                                checked={ThresholdAlerts.byId[id].warning
-                                    .enabled}
+                                checked={
+                                  ThresholdAlerts.byId[id].warning.enabled
+                                }
                                 onClick={() => {
-                                  updateThresholdAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: ThresholdAlerts.byId[id].name,
-                                        identifier: ThresholdAlerts.byId[id]
-                                          .identifier,
-                                        description: ThresholdAlerts.byId[id]
-                                          .description,
-                                        adornment: ThresholdAlerts.byId[id]
-                                          .adornment,
-                                        adornment_time: ThresholdAlerts.byId[id]
-                                          .adornment_time,
-                                        warning: {
-                                          threshold: ThresholdAlerts.byId[id]
-                                            .warning.threshold,
-                                          enabled: !ThresholdAlerts.byId[id]
-                                            .warning.enabled,
-                                        },
-                                        critical: ThresholdAlerts.byId[id]
-                                          .critical,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .enabled,
+                                  updateThresholdAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      identifier:
+                                        ThresholdAlerts.byId[id].identifier,
+                                      description:
+                                        ThresholdAlerts.byId[id].description,
+                                      adornment:
+                                        ThresholdAlerts.byId[id].adornment,
+                                      adornment_time:
+                                        ThresholdAlerts.byId[id].adornment_time,
+                                      warning: {
+                                        threshold:
+                                          ThresholdAlerts.byId[id].warning
+                                            .threshold,
+                                        enabled: !ThresholdAlerts.byId[id]
+                                          .warning.enabled,
                                       },
+                                      critical:
+                                        ThresholdAlerts.byId[id].critical,
+                                      enabled: ThresholdAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -686,41 +743,41 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               label="Threshold"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: {
-                                        threshold: event.target.value,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .warning.enabled,
-                                      },
-                                      critical: ThresholdAlerts.byId[id]
-                                        .critical,
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: {
+                                      threshold: event.target.value,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].warning
+                                          .enabled,
                                     },
+                                    critical: ThresholdAlerts.byId[id].critical,
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -732,42 +789,40 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={(
+                            control={
                               <Checkbox
-                                checked={ThresholdAlerts.byId[id].critical
-                                    .enabled}
+                                checked={
+                                  ThresholdAlerts.byId[id].critical.enabled
+                                }
                                 onClick={() => {
-                                  updateThresholdAlertDetails(
-                                    {
-                                      id,
-                                      parent_id: currentChain,
-                                      alert: {
-                                        name: ThresholdAlerts.byId[id].name,
-                                        identifier: ThresholdAlerts.byId[id]
-                                          .identifier,
-                                        description: ThresholdAlerts.byId[id]
-                                          .description,
-                                        adornment: ThresholdAlerts.byId[id]
-                                          .adornment,
-                                        adornment_time: ThresholdAlerts
-                                          .byId[id].adornment_time,
-                                        warning: ThresholdAlerts.byId[id]
-                                          .warning,
-                                        critical: {
-                                          threshold: ThresholdAlerts.byId[id]
-                                            .critical.threshold,
-                                          enabled: !ThresholdAlerts.byId[id]
-                                            .critical.enabled,
-                                        },
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .enabled,
+                                  updateThresholdAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      identifier:
+                                        ThresholdAlerts.byId[id].identifier,
+                                      description:
+                                        ThresholdAlerts.byId[id].description,
+                                      adornment:
+                                        ThresholdAlerts.byId[id].adornment,
+                                      adornment_time:
+                                        ThresholdAlerts.byId[id].adornment_time,
+                                      warning: ThresholdAlerts.byId[id].warning,
+                                      critical: {
+                                        threshold:
+                                          ThresholdAlerts.byId[id].critical
+                                            .threshold,
+                                        enabled: !ThresholdAlerts.byId[id]
+                                          .critical.enabled,
                                       },
+                                      enabled: ThresholdAlerts.byId[id].enabled,
                                     },
-                                  );
+                                  });
                                 }}
                                 color="primary"
                               />
-                            )}
+                            }
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -775,49 +830,52 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                         <Grid item>
                           <Grid container>
                             <TextField
-                              value={ThresholdAlerts.byId[id].critical
-                                  .threshold}
+                              value={
+                                ThresholdAlerts.byId[id].critical.threshold
+                              }
                               type="text"
                               name="thresholdCritical"
                               label="Threshold"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: ThresholdAlerts.byId[id].warning,
-                                      critical: {
-                                        threshold: event.target.value,
-                                        repeat: ThresholdAlerts.byId[id]
-                                          .critical.repeat,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .critical.enabled,
-                                      },
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: ThresholdAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold: event.target.value,
+                                      repeat:
+                                        ThresholdAlerts.byId[id].critical
+                                          .repeat,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].critical
+                                          .enabled,
                                     },
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -830,43 +888,44 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                               label="Repeat"
                               placeholder="60"
                               onChange={(event) => {
-                                updateThresholdAlertDetails(
-                                  {
-                                    id,
-                                    parent_id: currentChain,
-                                    alert: {
-                                      name: ThresholdAlerts.byId[id].name,
-                                      identifier: ThresholdAlerts.byId[id]
-                                        .identifier,
-                                      description: ThresholdAlerts.byId[id]
-                                        .description,
-                                      adornment: ThresholdAlerts.byId[id]
-                                        .adornment,
-                                      adornment_time: ThresholdAlerts.byId[id]
-                                        .adornment_time,
-                                      warning: ThresholdAlerts.byId[id]
-                                        .warning,
-                                      critical: {
-                                        threshold: ThresholdAlerts.byId[id]
-                                          .critical.threshold,
-                                        repeat: event.target.value,
-                                        enabled: ThresholdAlerts.byId[id]
-                                          .critical.enabled,
-                                      },
-                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                updateThresholdAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: ThresholdAlerts.byId[id].name,
+                                    identifier:
+                                      ThresholdAlerts.byId[id].identifier,
+                                    description:
+                                      ThresholdAlerts.byId[id].description,
+                                    adornment:
+                                      ThresholdAlerts.byId[id].adornment,
+                                    adornment_time:
+                                      ThresholdAlerts.byId[id].adornment_time,
+                                    warning: ThresholdAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold:
+                                        ThresholdAlerts.byId[id].critical
+                                          .threshold,
+                                      repeat: event.target.value,
+                                      enabled:
+                                        ThresholdAlerts.byId[id].critical
+                                          .enabled,
                                     },
+                                    enabled: ThresholdAlerts.byId[id].enabled,
                                   },
-                                );
+                                });
                               }}
-                              inputProps={
-                                {min: 0, style: { textAlign: 'right' }}
-                              }
-                              autoComplete='off'
+                              inputProps={{
+                                min: 0,
+                                style: { textAlign: "right" },
+                              }}
+                              autoComplete="off"
                               InputProps={{
-                                endAdornment:
+                                endAdornment: (
                                   <InputAdornment position="end">
                                     {ThresholdAlerts.byId[id].adornment_time}
-                                  </InputAdornment>,
+                                  </InputAdornment>
+                                ),
                               }}
                               fullWidth
                             />
@@ -876,7 +935,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={(
+                        control={
                           <Checkbox
                             checked={ThresholdAlerts.byId[id].enabled}
                             onClick={() => {
@@ -885,14 +944,13 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                                 parent_id: currentChain,
                                 alert: {
                                   name: ThresholdAlerts.byId[id].name,
-                                  identifier: ThresholdAlerts.byId[id]
-                                    .identifier,
-                                  description: ThresholdAlerts.byId[id]
-                                    .description,
-                                  adornment: ThresholdAlerts.byId[id]
-                                    .adornment,
-                                  adornment_time: ThresholdAlerts.byId[id]
-                                    .adornment_time,
+                                  identifier:
+                                    ThresholdAlerts.byId[id].identifier,
+                                  description:
+                                    ThresholdAlerts.byId[id].description,
+                                  adornment: ThresholdAlerts.byId[id].adornment,
+                                  adornment_time:
+                                    ThresholdAlerts.byId[id].adornment_time,
                                   warning: ThresholdAlerts.byId[id].warning,
                                   critical: ThresholdAlerts.byId[id].critical,
                                   enabled: !ThresholdAlerts.byId[id].enabled,
@@ -902,7 +960,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                             name="enabled"
                             color="primary"
                           />
-                        )}
+                        }
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -914,9 +973,7 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>
-                {Data.subtitle_2}
-              </h1>
+              <h1 className={classes.title}>{Data.subtitle_2}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -934,7 +991,9 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                 {SeverityAlerts.allIds.map((id) => (
                   <TableRow key={id}>
                     <TableCell align="center">
-                      <h4><b>{SeverityAlerts.byId[id].name}</b></h4>
+                      <h4>
+                        <b>{SeverityAlerts.byId[id].name}</b>
+                      </h4>
                       <p>{SeverityAlerts.byId[id].description}</p>
                     </TableCell>
                     <TableCell align="center">
@@ -944,21 +1003,18 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                           id="severity-selection"
                           value={SeverityAlerts.byId[id].severity}
                           onChange={(event) => {
-                            updateSeverityAlertDetails(
-                              {
-                                id,
-                                parent_id: currentChain,
-                                alert: {
-                                  name: SeverityAlerts.byId[id].name,
-                                  identifier: SeverityAlerts.byId[id]
-                                    .identifier,
-                                  description: SeverityAlerts.byId[id]
-                                    .description,
-                                  severity: event.target.value,
-                                  enabled: SeverityAlerts.byId[id].enabled,
-                                },
+                            updateSeverityAlertDetails({
+                              id,
+                              parent_id: currentChain,
+                              alert: {
+                                name: SeverityAlerts.byId[id].name,
+                                identifier: SeverityAlerts.byId[id].identifier,
+                                description:
+                                  SeverityAlerts.byId[id].description,
+                                severity: event.target.value,
+                                enabled: SeverityAlerts.byId[id].enabled,
                               },
-                            );
+                            });
                           }}
                         >
                           <MenuItem value="INFO">Info</MenuItem>
@@ -969,30 +1025,29 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={(
+                        control={
                           <Checkbox
                             checked={SeverityAlerts.byId[id].enabled}
                             onClick={() => {
-                              updateSeverityAlertDetails(
-                                {
-                                  id,
-                                  parent_id: currentChain,
-                                  alert: {
-                                    name: SeverityAlerts.byId[id].name,
-                                    identifier: SeverityAlerts.byId[id]
-                                      .identifier,
-                                    description: SeverityAlerts.byId[id]
-                                      .description,
-                                    severity: SeverityAlerts.byId[id].severity,
-                                    enabled: !SeverityAlerts.byId[id].enabled,
-                                  },
+                              updateSeverityAlertDetails({
+                                id,
+                                parent_id: currentChain,
+                                alert: {
+                                  name: SeverityAlerts.byId[id].name,
+                                  identifier:
+                                    SeverityAlerts.byId[id].identifier,
+                                  description:
+                                    SeverityAlerts.byId[id].description,
+                                  severity: SeverityAlerts.byId[id].severity,
+                                  enabled: !SeverityAlerts.byId[id].enabled,
                                 },
-                              );
+                              });
                             }}
                             name="enabled"
                             color="primary"
                           />
-                        )}
+                        }
+                        label=""
                       />
                     </TableCell>
                   </TableRow>
@@ -1003,8 +1058,8 @@ const AlertsTable = ({config, currentChain, updateRepeatAlertDetails,
         </Box>
         <Grid container spacing={2}>
           <Grid item xs={12} />
-          <br/>
-          <br/>
+          <br />
+          <br />
           <Grid item xs={4} />
           <Grid item xs={2}>
             <Box px={2}>
@@ -1042,6 +1097,9 @@ AlertsTable.propTypes = forbidExtraProps({
         byId: PropTypes.shape({
           name: PropTypes.string,
           description: PropTypes.string,
+          identifier: PropTypes.string,
+          adornment: PropTypes.string,
+          parent_id: PropTypes.string,
           warning: PropTypes.shape({
             repeat: PropTypes.number,
             enabled: PropTypes.bool,
@@ -1052,12 +1110,16 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
       timeWindowAlerts: PropTypes.shape({
         byId: PropTypes.shape({
           name: PropTypes.string,
+          identifier: PropTypes.string,
           description: PropTypes.string,
+          adornment_threshold: PropTypes.string,
+          adornment_time: PropTypes.string,
+          parent_id: PropTypes.string,
           warning: PropTypes.shape({
             threshold: PropTypes.number,
             time_window: PropTypes.number,
@@ -1070,35 +1132,42 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
       thresholdAlerts: PropTypes.shape({
         byId: PropTypes.shape({
           name: PropTypes.string,
+          identifier: PropTypes.string,
           description: PropTypes.string,
+          adornment: PropTypes.string,
+          adornment_time: PropTypes.string,
+          parent_id: PropTypes.string,
           warning: PropTypes.shape({
             threshold: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
       severityAlerts: PropTypes.shape({
         byId: PropTypes.shape({
           name: PropTypes.string,
+          identifier: PropTypes.string,
           description: PropTypes.string,
+          parent_id: PropTypes.string,
           severity: PropTypes.string,
           enabled: PropTypes.bool,
         }),
-        allIds: [],
+        allIds: PropTypes.array,
       }),
     }).isRequired,
-    allIds: [],
+    allIds: PropTypes.array,
   }).isRequired,
   currentChain: PropTypes.string.isRequired,
   clearChainId: PropTypes.func.isRequired,

@@ -13,7 +13,7 @@ const EndDialog = () => {
 
   const handleOpen = () => {
     setOpen(true);
-  }
+  };
 
   const handleClose = () => {
     setOpen(false);
@@ -21,18 +21,14 @@ const EndDialog = () => {
 
   return (
     <div>
-      <SaveConfigButton
-        onClick={handleOpen}
-      />
+      <SaveConfigButton onClick={handleOpen} />
       <Dialog
         open={open}
         onClose={handleClose}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {Data.dialog_title}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">{Data.dialog_title}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {Data.dialog_description}
@@ -45,6 +41,6 @@ const EndDialog = () => {
       </Dialog>
     </div>
   );
-}
+};
 
 export default EndDialog;

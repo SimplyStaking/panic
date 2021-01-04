@@ -1,15 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
+const OpsGenieTable = ({ opsGenies, removeOpsGenieDetails }) => {
   if (opsGenies.allIds.length === 0) {
     return <div />;
   }
@@ -44,18 +50,25 @@ const OpsGenieTable = ({opsGenies, removeOpsGenieDetails}) => {
                 {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {opsGenies.byId[opsgenie].warning ?
-                  <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].warning ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {opsGenies.byId[opsgenie].critical ?
-                  <CheckIcon /> : <ClearIcon />}
+                {opsGenies.byId[opsgenie].critical ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
                 {opsGenies.byId[opsgenie].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
+                <Button
+                  onClick={() => {
                     removeOpsGenieDetails(opsGenies.byId[opsgenie]);
                   }}
                 >

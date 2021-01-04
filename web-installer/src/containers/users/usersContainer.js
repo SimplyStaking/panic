@@ -42,17 +42,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const UsersFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const UsersFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const UsersTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(UsersTable);
 
-export {
-  UsersFormContainer,
-  UsersTableContainer,
-};
+export { UsersFormContainer, UsersTableContainer };

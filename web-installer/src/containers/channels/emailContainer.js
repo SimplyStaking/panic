@@ -64,17 +64,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const EmailFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const EmailFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const EmailTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(EmailTable);
 
-export {
-  EmailFormContainer,
-  EmailTableContainer,
-};
+export { EmailFormContainer, EmailTableContainer };

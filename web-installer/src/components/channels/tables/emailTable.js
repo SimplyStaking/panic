@@ -1,16 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
+import forbidExtraProps from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
-  List, ListItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  List,
+  ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const EmailTable = ({emails, removeEmailDetails}) => {
+const EmailTable = ({ emails, removeEmailDetails }) => {
   if (emails.allIds.length === 0) {
     return <div />;
   }
@@ -38,9 +45,7 @@ const EmailTable = ({emails, removeEmailDetails}) => {
               <TableCell align="center">
                 {emails.byId[email].channel_name}
               </TableCell>
-              <TableCell align="center">
-                {emails.byId[email].smtp}
-              </TableCell>
+              <TableCell align="center">{emails.byId[email].smtp}</TableCell>
               <TableCell align="center">
                 {emails.byId[email].email_from}
               </TableCell>
@@ -48,9 +53,7 @@ const EmailTable = ({emails, removeEmailDetails}) => {
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
                     {emails.byId[email].emails_to.map((to) => (
-                      <ListItem key={to}>
-                        { to }
-                      </ListItem>
+                      <ListItem key={to}>{to}</ListItem>
                     ))}
                   </List>
                 </div>
@@ -74,10 +77,11 @@ const EmailTable = ({emails, removeEmailDetails}) => {
                 {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
+                <Button
+                  onClick={() => {
                     removeEmailDetails(emails.byId[email]);
-                  }
-                }>
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>

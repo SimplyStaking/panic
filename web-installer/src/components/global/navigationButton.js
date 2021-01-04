@@ -1,10 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
-import Button from "components/material_ui/CustomButtons/Button.js";
+import forbidExtraProps from 'airbnb-prop-types';
+import Button from 'components/material_ui/CustomButtons/Button.js';
 
-const NavigationButton = ({disabled, navigation, nextPage, buttonText}) => {
-
+const NavigationButton = ({
+  disabled, navigation, nextPage, buttonText,
+}) => {
   function triggerNextPage(e) {
     e.preventDefault();
     nextPage(navigation);

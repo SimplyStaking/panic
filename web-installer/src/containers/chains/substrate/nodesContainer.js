@@ -2,9 +2,12 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from 'components/chains/substrate/forms/nodesForm';
 import NodesTable from 'components/chains/substrate/tables/nodesTable';
-import { addNodeSubstrate, removeNodeSubstrate } from 'redux/actions/substrateActions';
-import NodeSchema from './schemas/nodeSchema';
+import {
+  addNodeSubstrate,
+  removeNodeSubstrate,
+} from 'redux/actions/substrateActions';
 import SubstrateData from 'data/substrate';
+import NodeSchema from './schemas/nodeSchema';
 
 // This performs substrate node name validation, by checking if the node name
 // already exists under the same chain being configured.
@@ -71,10 +74,7 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine substrate state and dispatch functions to the node form
-const NodesFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 // Combine substrate state and dispatch functions to the node table
 const NodesTableContainer = connect(
@@ -82,7 +82,4 @@ const NodesTableContainer = connect(
   mapDispatchToPropsRemove,
 )(NodesTable);
 
-export {
-  NodesFormContainer,
-  NodesTableContainer,
-};
+export { NodesFormContainer, NodesTableContainer };

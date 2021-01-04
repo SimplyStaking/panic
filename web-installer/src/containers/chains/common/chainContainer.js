@@ -2,15 +2,19 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import ChainForm from 'components/chains/common/forms/chainForm';
 import {
-  addChainCosmos, updateChainCosmos, resetCurrentChainIdCosmos,
+  addChainCosmos,
+  updateChainCosmos,
+  resetCurrentChainIdCosmos,
 } from 'redux/actions/cosmosActions';
 import {
-  addChainSubstrate, updateChainSubstrate, resetCurrentChainIdSubstrate,
+  addChainSubstrate,
+  updateChainSubstrate,
+  resetCurrentChainIdSubstrate,
 } from 'redux/actions/substrateActions';
 import { changeStep, changePage } from 'redux/actions/pageActions';
-import ChainSchema from './schemas/chainSchema';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import ChainSchema from './schemas/chainSchema';
 
 // This performs chain name validation, by checking if the base chain already
 // has a chain configured under the same name.
@@ -22,7 +26,8 @@ const Form = withFormik({
   // return the blank output for the chain name form.
   mapPropsToValues: (props) => ({
     chain_name: props.currentChain
-      ? props.config.byId[props.currentChain].chain_name : props.currentChain,
+      ? props.config.byId[props.currentChain].chain_name
+      : props.currentChain,
   }),
   validationSchema: (props) => ChainSchema(props),
 })(ChainForm);

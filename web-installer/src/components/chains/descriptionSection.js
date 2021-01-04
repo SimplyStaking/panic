@@ -1,16 +1,14 @@
-import React from "react";
+import React from 'react';
 // @material-ui/core components
-import { makeStyles } from "@material-ui/core/styles";
-
-// @material-ui/icons
+import { makeStyles } from '@material-ui/core/styles';
 import HelpIcon from '@material-ui/icons/Help';
 import SettingsIcon from '@material-ui/icons/Settings';
 import ComputerIcon from '@material-ui/icons/Computer';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
-import InfoArea from "components/material_ui/InfoArea/InfoArea.js";
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
+import InfoArea from 'components/material_ui/InfoArea/InfoArea.js';
 import Data from 'data/chains';
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
+import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
 
 const useStyles = makeStyles(styles);
 
@@ -20,9 +18,7 @@ export default function DescriptionSection() {
     <div className={classes.section}>
       <GridContainer justify="center">
         <GridItem xs={12} sm={12} md={8}>
-          <h1 className={classes.title}>
-              {Data.chains.subtitle_1}
-          </h1>
+          <h1 className={classes.title}>{Data.chains.subtitle_1}</h1>
         </GridItem>
       </GridContainer>
       <div>
@@ -30,14 +26,14 @@ export default function DescriptionSection() {
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
               title={Data.chains.what_title}
-              description={
+              description={(
                 <div>
                   <ul>
                     <li>{Data.chains.what_1}</li>
                     <li>{Data.chains.what_2}</li>
                   </ul>
                 </div>
-              }
+              )}
               icon={HelpIcon}
               iconColor="#00000"
               vertical
@@ -46,7 +42,7 @@ export default function DescriptionSection() {
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
               title={Data.chains.supported_title}
-              description={
+              description={(
                 <div>
                   <ul>
                     <li>{Data.chains.chain_1}</li>
@@ -54,7 +50,7 @@ export default function DescriptionSection() {
                     <li>{Data.chains.chain_3}</li>
                   </ul>
                 </div>
-              }
+              )}
               icon={ComputerIcon}
               iconColor="#00000"
               vertical
@@ -63,7 +59,7 @@ export default function DescriptionSection() {
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
               title={Data.chains.how_title}
-              description={
+              description={(
                 <div>
                   <ul>
                     <li>{Data.chains.how_1}</li>
@@ -71,7 +67,7 @@ export default function DescriptionSection() {
                     <li>{Data.chains.how_3}</li>
                   </ul>
                 </div>
-              }
+              )}
               icon={SettingsIcon}
               iconColor="#00000"
               vertical
@@ -80,9 +76,7 @@ export default function DescriptionSection() {
         </GridContainer>
         <GridContainer>
           <GridItem xs={12} sm={12} md={12}>
-            <h1 className={classes.title}>
-              {Data.chains.subtitle_2}
-            </h1>
+            <h1 className={classes.title}>{Data.chains.subtitle_2}</h1>
           </GridItem>
         </GridContainer>
       </div>

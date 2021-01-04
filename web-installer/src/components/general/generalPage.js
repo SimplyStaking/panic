@@ -1,19 +1,20 @@
 import React from 'react';
-import { makeStyles } from "@material-ui/core/styles";
-import { Box } from '@material-ui/core';
-import NavigationButtonContainer from
-  'containers/global/navigationButtonContainer';
-import { NEXT, USERS_PAGE, CHAINS_PAGE, BACK } from 'constants/constants';
-import { Grid } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
+import { Box, Grid } from '@material-ui/core';
+import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
+import {
+  NEXT, USERS_PAGE, CHAINS_PAGE, BACK,
+} from 'constants/constants';
+
 import PeriodicFormContainer from 'containers/general/periodicContainer';
 import Data from 'data/general';
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import Parallax from "components/material_ui/Parallax/Parallax.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
-import styles from
-  "assets/jss/material-kit-react/views/componentsSections/channelsStyle.js";
-import Card from "components/material_ui/Card/Card.js";
-import CardBody from "components/material_ui/Card/CardBody.js";
+import GridContainer from 'components/material_ui/Grid/GridContainer.js';
+import Parallax from 'components/material_ui/Parallax/Parallax.js';
+import GridItem from 'components/material_ui/Grid/GridItem.js';
+import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
+import Card from 'components/material_ui/Card/Card.js';
+import CardBody from 'components/material_ui/Card/CardBody.js';
+import Background from 'assets/img/backgrounds/background.png';
 
 const useStyles = makeStyles(styles);
 
@@ -22,14 +23,12 @@ function GeneralsPage() {
 
   return (
     <div>
-      <Parallax image={require("assets/img/backgrounds/background.png")}>
+      <Parallax image={Background}>
         <div className={classes.container}>
           <GridContainer>
             <GridItem>
               <div className={classes.brand}>
-                <h1 className={classes.title}>
-                  {Data.general.title}
-                </h1>
+                <h1 className={classes.title}>{Data.general.title}</h1>
               </div>
             </GridItem>
           </GridContainer>
