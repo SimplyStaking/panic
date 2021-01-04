@@ -372,7 +372,7 @@ class ChannelsManager:
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
-                chain_names = config['chain_names'].split(',')
+                chain_names = config['parent_names'].split(',')
                 associated_chains = dict(zip(parent_ids, chain_names))
 
                 # If Telegram Alerts are enabled on this channel, start an
@@ -402,7 +402,7 @@ class ChannelsManager:
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
-                chain_names = config['chain_names'].split(',')
+                chain_names = config['parent_names'].split(',')
                 associated_chains = dict(zip(parent_ids, chain_names))
 
                 alerts_handler_type = ChannelHandlerTypes.ALERTS.value
