@@ -11,6 +11,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
+from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
     ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, ALERT_ROUTER_CONFIGS_QUEUE_NAME
@@ -22,16 +23,20 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 
 class AlertRouter(QueuingPublisherComponent):
-    def __init__(self, logger: Logger, rabbit_ip: str,
+    def __init__(self, logger: Logger, rabbit_ip: str, redis_ip: str,
+                 redis_db: int, redis_port: int, unique_alerter_identifier: str,
                  enable_console_alerts: bool):
-        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
+        self._rabbit = RabbitMQApi(logger.getChild(RabbitMQApi.__name__),
+                                   host=rabbit_ip)
+        self._redis = RedisApi(logger.getChild(RedisApi.__name__),
+                               host=redis_ip, db=redis_db, port=redis_port,
+                               namespace=unique_alerter_identifier)
+
         self._enable_console_alerts = enable_console_alerts
 
         self._config = {}
 
-        self._logger = logger
-        super().__init__(
-            logger.getChild(QueuingPublisherComponent.__name__), self._rabbit)
+        super().__init__(logger, self._rabbit)
 
     def _initialise_rabbit(self) -> None:
         """
@@ -117,7 +122,6 @@ class AlertRouter(QueuingPublisherComponent):
                           config_filename)
         self._logger.debug("recv_config = %s", recv_config)
 
-        self._logger.debug("Got a lock on the config")
         previous_config = self._config.get(config_filename, None)
         self._config[config_filename] = {}
 
@@ -145,7 +149,6 @@ class AlertRouter(QueuingPublisherComponent):
                     "The previous configuration will be used instead")
                 self._config[config_filename] = previous_config
             self._logger.debug(self._config)
-        self._logger.debug("Removed the lock from the config dict")
 
         self._rabbit.basic_ack(method.delivery_tag, False)
 
@@ -159,11 +162,22 @@ class AlertRouter(QueuingPublisherComponent):
         if not recv_alert:
             self._rabbit.basic_ack(method.delivery_tag, False)
             return
-
+        self._logger.info("Received an alert to route")
         self._logger.debug("recv_alert = %s", recv_alert)
         # Where to route this alert to
-        self._logger.debug("Got a lock on the config")
-        self._logger.debug("Obtaining list of channels to alert")
+
+        self._logger.info("Checking if alert is muted")
+        is_all_muted = self.is_all_muted(recv_alert.get('severity'))
+        is_chain_severity_muted = self.is_chain_severity_muted(
+            recv_alert.get('parent_id'), recv_alert.get('severity'))
+        if is_all_muted or is_chain_severity_muted:
+            self._logger.info("This alert has been muted")
+            self._logger.debug(
+                "is_all_muted=%s, is_chain_severity_muted=%s", is_all_muted,
+                is_chain_severity_muted)
+            self._rabbit.basic_ack(method.delivery_tag, False)
+            return
+        self._logger.info("Obtaining list of channels to alert")
         self._logger.debug(
             [channel.get('id') for channel_type in self._config.values()
              for channel in channel_type.values()])
@@ -171,11 +185,11 @@ class AlertRouter(QueuingPublisherComponent):
             channel.get('id') for channel_type in self._config.values()
             for channel in channel_type.values()
             if channel.get(recv_alert.get('severity').lower()) and
-            recv_alert.get('parent_id') in channel.get('parent_ids')
+               recv_alert.get('parent_id') in channel.get('parent_ids')
         ]
 
-        self._logger.debug("Removed the lock from the config dict")
         self._logger.debug("send_to_ids = %s", send_to_ids)
+        self._logger.info("Alert routed successfully")
 
         for channel_id in send_to_ids:
             send_alert: Dict = {**recv_alert,
@@ -291,3 +305,29 @@ class AlertRouter(QueuingPublisherComponent):
             'error': section.getboolean('error'),
             'critical': section.getboolean('critical'),
         }
+
+    def is_all_muted(self, severity: str) -> bool:
+        self._logger.debug("Getting mute_all key")
+        alerter_mute_key = Keys.get_alerter_mute()
+
+        self._logger.debug("Getting severities mute status")
+        severities_muted = json.loads(
+            self._redis.get(alerter_mute_key, default=b"{}")
+        )
+        print(severities_muted)
+        return bool(severities_muted.get(severity, False))
+
+    def is_chain_severity_muted(self, parent_id: str, severity: str) -> bool:
+        self._logger.debug("Getting chain mute key")
+        mute_alerts_key = Keys.get_chain_mute_alerts()
+
+        self._logger.debug("Getting chain hashes")
+        chain_hash = Keys.get_hash_parent(parent_id)
+
+        self._logger.debug("Getting severities mute status")
+        severities_muted = json.loads(
+            self._redis.hget(chain_hash, mute_alerts_key, default=b"{}")
+        )
+
+        print(severities_muted)
+        return bool(severities_muted.get(severity, False))

@@ -212,9 +212,15 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     )
 
     rabbit_ip = env.RABBIT_IP
+    redis_ip = env.REDIS_IP
+    redis_db = env.REDIS_DB
+    redis_port = env.REDIS_PORT
+    unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
-    alert_router = AlertRouter(alert_router_logger, rabbit_ip,
-                               env.ENABLE_CONSOLE_ALERTS)
+    alert_router = AlertRouter(
+        alert_router_logger, rabbit_ip, redis_ip, redis_db, redis_port,
+        unique_alerter_identifier, env.ENABLE_CONSOLE_ALERTS
+    )
     return alert_router, alert_router_logger
 
 
