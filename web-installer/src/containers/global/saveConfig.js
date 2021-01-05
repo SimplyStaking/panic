@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
-import { ToastsStore } from 'react-toasts';
-import { SaveConfigButton } from 'utils/buttons';
-import { sendConfig, deleteConfigs } from 'utils/data';
-import { GLOBAL } from 'constants/constants';
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+import { ToastsStore } from "react-toasts";
+import { SaveConfigButton } from "utils/buttons";
+import { sendConfig, deleteConfigs } from "utils/data";
+import { GLOBAL } from "constants/constants";
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
@@ -306,7 +306,8 @@ class SaveConfig extends Component {
       for (let i = 0; i < chainConfig.repeatAlerts.allIds.length; i += 1) {
         const id = chainConfig.repeatAlerts.allIds[i];
         repeatAlertsConfig[id] = {};
-        repeatAlertsConfig[id].name = chainConfig.repeatAlerts.byId[id].name;
+        repeatAlertsConfig[id].name =
+          chainConfig.repeatAlerts.byId[id].identifier;
         repeatAlertsConfig[id].enabled =
           chainConfig.repeatAlerts.byId[id].enabled;
         repeatAlertsConfig[id].parent_id = currentChainId;
@@ -331,7 +332,7 @@ class SaveConfig extends Component {
         const id = chainConfig.thresholdAlerts.allIds[i];
         thresholdAlertsConfig[id] = {};
         thresholdAlertsConfig[id].name =
-          chainConfig.thresholdAlerts.byId[id].name;
+          chainConfig.thresholdAlerts.byId[id].identifier;
         thresholdAlertsConfig[id].parent_id = currentChainId;
         thresholdAlertsConfig[id].enabled =
           chainConfig.thresholdAlerts.byId[id].enabled;
@@ -354,7 +355,7 @@ class SaveConfig extends Component {
         const id = chainConfig.timeWindowAlerts.allIds[i];
         timeWindowAlertsConfig[id] = {};
         timeWindowAlertsConfig[id].name =
-          chainConfig.timeWindowAlerts.byId[id].name;
+          chainConfig.timeWindowAlerts.byId[id].identifier;
         timeWindowAlertsConfig[id].parent_id = currentChainId;
         timeWindowAlertsConfig[id].enabled =
           chainConfig.timeWindowAlerts.byId[id].enabled;
@@ -425,7 +426,8 @@ class SaveConfig extends Component {
     for (let i = 0; i < general.thresholdAlerts.allIds.length; i += 1) {
       const id = general.thresholdAlerts.allIds[i];
       thresholdAlertsConfig[id] = {};
-      thresholdAlertsConfig[id].name = general.thresholdAlerts.byId[id].name;
+      thresholdAlertsConfig[id].name =
+        general.thresholdAlerts.byId[id].identifier;
       thresholdAlertsConfig[id].enabled =
         general.thresholdAlerts.byId[id].enabled;
       thresholdAlertsConfig[id].parent_id = "GLOBAL";
@@ -447,7 +449,7 @@ class SaveConfig extends Component {
     for (let i = 0; i < general.repeatAlerts.allIds.length; i += 1) {
       const id = general.repeatAlerts.allIds[i];
       repeatAlertsConfig[id] = {};
-      repeatAlertsConfig[id].name = general.repeatAlerts.byId[id].name;
+      repeatAlertsConfig[id].name = general.repeatAlerts.byId[id].identifier;
       repeatAlertsConfig[id].enabled = general.repeatAlerts.byId[id].enabled;
       repeatAlertsConfig[id].parent_id = "GLOBAL";
       repeatAlertsConfig[id].critical_delayed =
