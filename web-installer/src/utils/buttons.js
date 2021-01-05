@@ -44,15 +44,15 @@ function SendTestEmailButton({
   );
 }
 
-// Sends test calls to every phone number provided in the "twilio_phone_num" array.
+// Sends test calls to every phone number provided in the "twilio_phone_no" array.
 function TestCallButton({
-  disabled, twilio_phone_numbers_to_dial, account_sid, auth_token, twilio_phone_num,
+  disabled, twilio_phone_nobers_to_dial, account_sid, auth_token, twilio_phone_no,
 }) {
   const onClick = async () => {
-    twilio_phone_numbers_to_dial.forEach(async (twilioNumber) => {
+    twilio_phone_nobers_to_dial.forEach(async (twilioNumber) => {
       try {
         ToastsStore.info(`Calling number ${twilioNumber}`, 5000);
-        await testCall(account_sid, auth_token, twilio_phone_num, twilioNumber);
+        await testCall(account_sid, auth_token, twilio_phone_no, twilioNumber);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
@@ -460,8 +460,8 @@ TestCallButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   account_sid: PropTypes.string.isRequired,
   auth_token: PropTypes.string.isRequired,
-  twilio_phone_num: PropTypes.string.isRequired,
-  twilio_phone_numbers_to_dial: PropTypes.arrayOf(
+  twilio_phone_no: PropTypes.string.isRequired,
+  twilio_phone_nobers_to_dial: PropTypes.arrayOf(
     PropTypes.string.isRequired,
   ).isRequired,
 });

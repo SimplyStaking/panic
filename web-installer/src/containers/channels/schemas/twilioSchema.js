@@ -42,8 +42,8 @@ const TwilioSchema = (props) => Yup.object().shape({
     .required('Config name is required.'),
   account_sid: Yup.string().required('Account Sid is required.'),
   auth_token: Yup.string().required('Authentication token is required.'),
-  twilio_phone_num: Yup.string().required('Twilio phone number is required.'),
-  twilio_phone_numbers_to_dial: Yup.array().required(
+  twilio_phone_no: Yup.string().required('Twilio phone number is required.'),
+  twilio_phone_nobers_to_dial: Yup.array().required(
     'Phone numbers to dial are required.',
   ),
 });

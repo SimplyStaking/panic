@@ -1,10 +1,10 @@
-import React, { Component } from "react";
-import { connect } from "react-redux";
-import PropTypes from "prop-types";
-import { ToastsStore } from "react-toasts";
-import { SaveConfigButton } from "utils/buttons";
-import { sendConfig, deleteConfigs } from "utils/data";
-import { GLOBAL } from "constants/constants";
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
+import { ToastsStore } from 'react-toasts';
+import { SaveConfigButton } from 'utils/buttons';
+import { sendConfig, deleteConfigs } from 'utils/data';
+import { GLOBAL } from 'constants/constants';
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
@@ -56,7 +56,7 @@ class SaveConfig extends Component {
 
     await deleteConfigs();
 
-    ToastsStore.info("Starting to save data config.", 5000);
+    ToastsStore.info('Starting to save data config.', 5000);
     // Save all the channels configurations if any
     if (emails.allIds.length !== 0) {
       await sendConfig("channel", "email_config.ini", "", "", emails.byId);
@@ -545,8 +545,8 @@ SaveConfig.propTypes = {
       channel_name: PropTypes.string,
       account_sid: PropTypes.string,
       auth_token: PropTypes.string,
-      twilio_phone_num: PropTypes.string,
-      twilio_phone_numbers_to_dial: PropTypes.arrayOf(PropTypes.string),
+      twilio_phone_no: PropTypes.string,
+      twilio_phone_nobers_to_dial: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

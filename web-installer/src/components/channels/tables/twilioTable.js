@@ -45,12 +45,12 @@ const TwilioTable = ({ twilios, removeTwilioDetails }) => {
                 {twilios.byId[twilio].auth_token}
               </TableCell>
               <TableCell align="center">
-                {twilios.byId[twilio].twilio_phone_num}
+                {twilios.byId[twilio].twilio_phone_no}
               </TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {twilios.byId[twilio].twilio_phone_numbers_to_dial.map(
+                    {twilios.byId[twilio].twilio_phone_nobers_to_dial.map(
                       (number) => (
                         <ListItem key={number}>{number}</ListItem>
                       ),
@@ -82,8 +82,8 @@ TwilioTable.propTypes = forbidExtraProps({
       channel_name: PropTypes.string,
       account_sid: PropTypes.string,
       auth_token: PropTypes.string,
-      twilio_phone_num: PropTypes.string,
-      twilio_phone_numbers_to_dial: PropTypes.arrayOf(PropTypes.string),
+      twilio_phone_no: PropTypes.string,
+      twilio_phone_nobers_to_dial: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
