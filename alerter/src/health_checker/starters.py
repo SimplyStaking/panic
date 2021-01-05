@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from typing import Union
 
@@ -8,6 +7,7 @@ import pika.exceptions
 from src.data_store.redis import RedisApi
 from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
+from src.utils import env
 from src.utils.logging import create_logger, log_and_print
 
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
@@ -20,9 +20,8 @@ def _initialize_health_checker_logger(component_name: str) -> logging.Logger:
     while True:
         try:
             component_logger = create_logger(
-                os.environ['HEALTH_CHECKER_LOG_FILE_TEMPLATE'].format(
-                    component_name), component_name,
-                os.environ['LOGGING_LEVEL'], rotating=True)
+                env.HEALTH_CHECKER_LOG_FILE_TEMPLATE.format(component_name),
+                component_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
@@ -42,10 +41,10 @@ def _initialize_component_redis(
     # attempt to use it.
     while True:
         try:
-            redis_db = int(os.environ['REDIS_DB'])
-            redis_port = int(os.environ['REDIS_PORT'])
-            redis_host = os.environ['REDIS_IP']
-            unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
+            redis_db = int(env.REDIS_DB)
+            redis_port = int(env.REDIS_PORT)
+            redis_host = env.REDIS_IP
+            unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
             redis = RedisApi(logger=component_logger, db=redis_db,
                              host=redis_host, port=redis_port,
