@@ -25,10 +25,10 @@ def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
             msg = '!!! Error when initializing {}: {} !!!' \
                 .format(log_name, e)
             # Use a dummy logger in this case because we cannot create the
-            # managers's logger.
+            # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(msg, dummy_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
+            log_and_print("Re-attempting initialization procedure of {}."
                           .format(log_name), dummy_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -53,7 +53,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
             msg = "!!! Error when initialising {}: {} !!!" \
                 .format(manager_name, e)
             log_and_print(msg, health_checker_manager_logger)
-            log_and_print("Re-attempting initialization procedure of {}"
+            log_and_print("Re-attempting initialization procedure of {}."
                           .format(manager_name), health_checker_manager_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -61,6 +61,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
 
 
 def run_health_checker_manager() -> None:
+    sleep_period = 10
     health_checker_manager = _initialize_health_checker_manager()
 
     while True:
@@ -72,6 +73,10 @@ def run_health_checker_manager() -> None:
             health_checker_manager.logger.exception(e)
             log_and_print("{} stopped.".format(health_checker_manager),
                           health_checker_manager.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                health_checker_manager, sleep_period),
+                health_checker_manager.logger)
+            time.sleep(sleep_period)
 
 
 # If termination signals are received, terminate all child process and exit
@@ -79,7 +84,7 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("The Health Checker is terminating. All components will be "
                   "stopped gracefully.", dummy_logger)
 
-    log_and_print("Terminating the Health Checker Manager", dummy_logger)
+    log_and_print("Terminating the Health Checker Manager.", dummy_logger)
     health_checker_manager_process.terminate()
     health_checker_manager_process.join()
 

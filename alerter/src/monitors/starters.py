@@ -96,6 +96,8 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
 
 
 def start_monitor(monitor: Monitor) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(monitor), monitor.logger)
@@ -109,3 +111,6 @@ def start_monitor(monitor: Monitor) -> None:
             # exception, and start again
             monitor.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(monitor), monitor.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                monitor, sleep_period), monitor.logger)
+            time.sleep(sleep_period)
