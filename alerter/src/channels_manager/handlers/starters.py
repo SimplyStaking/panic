@@ -4,7 +4,9 @@ from typing import List, Dict, Optional
 
 import pika.exceptions
 
+from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.apis.opsgenie_api import OpsgenieApi
+from src.channels_manager.apis.pagerduty_api import PagerDutyApi
 from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
 from src.channels_manager.channels import PagerDutyChannel
@@ -200,8 +202,9 @@ def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
     # Try initializing handler until successful
     while True:
         try:
+            pagerduty_api = PagerDutyApi(integration_key)
             pagerduty_channel = PagerDutyChannel(
-                channel_name, channel_id, handler_logger, integration_key)
+                channel_name, channel_id, handler_logger, pagerduty_api)
 
             pagerduty_alerts_handler = PagerDutyAlertsHandler(
                 handler_name, handler_logger, env.RABBIT_IP,
@@ -236,9 +239,9 @@ def _initialize_email_alerts_handler(
     # Try initializing handler until successful
     while True:
         try:
+            email_api = EmailApi(smtp, email_from, username, password)
             email_channel = EmailChannel(
-                channel_name, channel_id, handler_logger, smtp, email_from,
-                emails_to, username, password)
+                channel_name, channel_id, handler_logger, emails_to, email_api)
 
             email_alerts_handler = EmailAlertsHandler(
                 handler_name, handler_logger, env.RABBIT_IP,

@@ -176,7 +176,7 @@ class EmailAlertsHandler(ChannelHandler):
                                     True, False, False)
 
         self.logger.info(
-            "Binding queue '%s' to exchange '%s' with routing key 'channel.%s'",
+            "Binding queue '%s' to exchange '%s' with routing key '%s'",
             self._email_alerts_handler_queue, ALERT_EXCHANGE,
             email_channel_routing_key
         )

@@ -178,7 +178,7 @@ class PagerDutyAlertsHandler(ChannelHandler):
                                     True, False, False)
 
         self.logger.info(
-            "Binding queue '%s' to exchange '%s' with routing key 'channel.%s'",
+            "Binding queue '%s' to exchange '%s' with routing key '%s'",
             self._pd_alerts_handler_queue, ALERT_EXCHANGE,
             pager_duty_routing_key
         )

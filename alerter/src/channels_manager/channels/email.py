@@ -61,14 +61,13 @@ Origin ID: {origin_id}
 
 class EmailChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
-                 logger: logging.Logger, smtp: str, email_from: str,
-                 emails_to: List[str], username: Optional[str],
-                 password: Optional[str]):
+                 logger: logging.Logger, emails_to: List[str],
+                 email_api: EmailApi):
         super().__init__(channel_name, channel_id,
                          logger.getChild(channel_name))
 
         self._emails_to = emails_to
-        self._email_api = EmailApi(smtp, email_from, username, password)
+        self._email_api = email_api
 
     def alert(self, alert: Alert) -> RequestStatus:
         subject = "PANIC {}".format(alert.severity)

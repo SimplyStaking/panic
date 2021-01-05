@@ -9,10 +9,11 @@ from src.utils.types import PagerDutySeverities
 
 class PagerDutyChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
-                 logger: logging.Logger, integration_key: str):
-        super().__init__(channel_name, channel_id, logger)
+                 logger: logging.Logger, pagerduty_api: PagerDutyApi):
+        super().__init__(channel_name, channel_id,
+                         logger.getChild(channel_name))
 
-        self._pager_duty_api = PagerDutyApi(integration_key)
+        self._pager_duty_api = pagerduty_api
 
     def alert(self, alert: Alert) -> RequestStatus:
         severity = PagerDutySeverities(alert.severity.lower())
