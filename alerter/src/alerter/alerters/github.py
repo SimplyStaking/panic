@@ -35,10 +35,9 @@ class GithubAlerter(Alerter):
                                     auto_delete=False)
         self.logger.info("Binding queue 'github_alerter_queue' to exchange "
                          "'alert' with routing key 'alerter.github'")
-        routing_key = 'alerter.github'
         self.rabbitmq.queue_bind(queue='github_alerter_queue',
                                  exchange=ALERT_EXCHANGE,
-                                 routing_key=routing_key)
+                                 routing_key='alerter.github')
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)

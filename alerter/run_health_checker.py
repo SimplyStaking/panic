@@ -1,32 +1,30 @@
 import logging
 import multiprocessing
-import os
 import signal
 import sys
 import time
 from types import FrameType
 
 from src.health_checker.manager import HealthCheckerManager
+from src.utils import env
 from src.utils.logging import create_logger, log_and_print
 
 
-def _initialize_logger(log_name: str, os_env_name: str) -> logging.Logger:
+def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             new_logger = create_logger(
-                os.environ[os_env_name].format(log_name), log_name,
-                os.environ["LOGGING_LEVEL"], rotating=True
-            )
+                log_file_template.format(log_name), log_name, env.LOGGING_LEVEL,
+                rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initializing {}: {} !!!' \
                 .format(log_name, e)
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
-            dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(msg, dummy_logger)
             log_and_print("Re-attempting initialization procedure of {}."
                           .format(log_name), dummy_logger)
@@ -39,9 +37,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
     manager_name = 'Health Checker Manager'
 
     health_checker_manager_logger = _initialize_logger(
-        manager_name,
-        "MANAGERS_LOG_FILE_TEMPLATE"
-    )
+        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE)
 
     # Attempt to initialize the health checker manager
     while True:
