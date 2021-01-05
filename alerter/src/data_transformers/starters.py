@@ -115,6 +115,8 @@ def start_github_data_transformer() -> None:
 
 
 def start_transformer(transformer: DataTransformer) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(transformer), transformer.logger)
@@ -128,3 +130,6 @@ def start_transformer(transformer: DataTransformer) -> None:
             # exception, and start again
             transformer.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(transformer), transformer.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                transformer, sleep_period), transformer.logger)
+            time.sleep(sleep_period)

@@ -116,6 +116,8 @@ def start_ping_publisher() -> None:
 
 def start_health_checker_component(component: HealthCheckerComponentType) \
         -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(component), component.logger)
@@ -129,3 +131,6 @@ def start_health_checker_component(component: HealthCheckerComponentType) \
             # exception, and start again
             component.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(component), component.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                component, sleep_period), component.logger)
+            time.sleep(sleep_period)

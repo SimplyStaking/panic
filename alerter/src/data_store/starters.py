@@ -112,6 +112,8 @@ def start_alert_store() -> None:
 
 
 def start_store(store: Store) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(store), store.logger)
@@ -126,3 +128,6 @@ def start_store(store: Store) -> None:
             # exception, and start again
             store.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped. {}".format(store, e), store.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                store, sleep_period), store.logger)
+            time.sleep(sleep_period)

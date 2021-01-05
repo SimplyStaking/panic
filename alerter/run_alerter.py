@@ -50,7 +50,7 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
-            # managers's logger.
+            # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(_get_initialisation_error_message(log_name, e),
                           dummy_logger)
@@ -189,6 +189,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
 
 def _initialize_config_manager() -> ConfigManager:
+    sleep_period = 10
     config_manager_logger = _initialize_logger(
         ConfigManager.__name__, env.CONFIG_MANAGER_LOG_FILE
     )
@@ -202,9 +203,10 @@ def _initialize_config_manager() -> ConfigManager:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
             # up
-            config_manager_logger.info("Trying to set up the configurations "
-                                       "manager again")
-            continue
+            config_manager_logger.info(
+                "Trying to set up the configurations manager again in {} "
+                "seconds.".format(sleep_period))
+            time.sleep(sleep_period)
 
 
 def _initialize_data_store_manager() -> StoreManager:
@@ -232,6 +234,7 @@ def _initialize_data_store_manager() -> StoreManager:
 
 
 def run_data_stores_manager() -> None:
+    sleep_period = 10
     stores_manager = _initialize_data_store_manager()
 
     while True:
@@ -243,12 +246,15 @@ def run_data_stores_manager() -> None:
             # Since we have to re-initialize just break the loop.
             log_and_print(_get_stopped_message(stores_manager),
                           stores_manager.logger)
-        except Exception as e:
+        except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             stores_manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(stores_manager),
                           stores_manager.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                stores_manager, sleep_period), stores_manager.logger)
+            time.sleep(sleep_period)
 
 
 def run_system_monitors_manager() -> None:
@@ -272,6 +278,8 @@ def run_github_alerters_manager() -> None:
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
+    sleep_period = 10
+
     while True:
         try:
             manager.manage()
@@ -285,9 +293,14 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(manager), manager.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                manager, sleep_period), manager.logger)
+            time.sleep(sleep_period)
 
 
 def run_alerters_manager(manager: AlertersManager) -> None:
+    sleep_period = 10
+
     while True:
         try:
             manager.manage()
@@ -296,14 +309,18 @@ def run_alerters_manager(manager: AlertersManager) -> None:
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
             log_and_print(_get_stopped_message(manager), manager.logger)
-        except Exception as e:
+        except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(manager), manager.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                manager, sleep_period), manager.logger)
+            time.sleep(sleep_period)
 
 
 def run_data_transformers_manager() -> None:
+    sleep_period = 10
     data_transformers_manager = _initialize_data_transformers_manager()
 
     while True:
@@ -315,15 +332,20 @@ def run_data_transformers_manager() -> None:
             # Since we have to re-initialize just break the loop.
             log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
-        except Exception as e:
+        except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             data_transformers_manager.rabbitmq.disconnect_till_successful()
             log_and_print(_get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                data_transformers_manager, sleep_period),
+                data_transformers_manager.logger)
+            time.sleep(sleep_period)
 
 
 def run_alert_router() -> None:
+    sleep_period = 10
     alert_router, alert_router_logger = _initialize_alert_router()
 
     while True:
@@ -339,6 +361,9 @@ def run_alert_router() -> None:
             alert_router.disconnect()
             log_and_print(_get_stopped_message(alert_router),
                           alert_router_logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                alert_router, sleep_period), alert_router_logger)
+            time.sleep(sleep_period)
 
 
 def run_config_manager(command_queue: multiprocessing.Queue) -> None:

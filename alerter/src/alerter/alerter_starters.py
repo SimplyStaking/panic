@@ -89,6 +89,8 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig,
 
 
 def start_alerter(alerter: Alerter) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(alerter), alerter.logger)
@@ -103,3 +105,6 @@ def start_alerter(alerter: Alerter) -> None:
             # exception, and start again
             alerter.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(alerter), alerter.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                alerter, sleep_period), alerter.logger)
+            time.sleep(sleep_period)
