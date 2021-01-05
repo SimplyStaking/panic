@@ -368,6 +368,8 @@ def start_log_alerts_handler(channel_id: str, channel_name: str) -> None:
 
 
 def start_handler(handler: ChannelHandler) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(handler), handler.logger)
@@ -382,3 +384,6 @@ def start_handler(handler: ChannelHandler) -> None:
             # exception, and start again
             handler.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(handler), handler.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                handler, sleep_period), handler.logger)
+            time.sleep(sleep_period)
