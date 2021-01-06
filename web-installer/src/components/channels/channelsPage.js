@@ -108,7 +108,7 @@ function ChannelsPage() {
                   </div>
                 </Grid>
                 <Grid item xs={12} />
-                <Grid item xs={4} />
+                <Grid item xs={5} />
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={BACK}
@@ -121,7 +121,7 @@ function ChannelsPage() {
                     navigation={CHAINS_PAGE}
                   />
                 </Grid>
-                <Grid item xs={4} />
+                <Grid item xs={5} />
                 <Grid item xs={12} />
               </Grid>
             </div>

@@ -78,6 +78,12 @@ const cosmosRepeatAlerts = {
       },
       enabled: true,
     },
+  },
+  allIds: ['1', '2', '3'],
+};
+
+const cosmosThresholdAlerts = {
+  byId: {
     4: {
       name: 'System Is Down',
       identifier: 'system_is_down',
@@ -85,23 +91,19 @@ const cosmosRepeatAlerts = {
         'The Node Exporter URL is unreachable therefore the '
         + 'system is declared to be down.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
         repeat: 0,
         enabled: true,
       },
       critical: {
+        threshold: 200,
         repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
-  },
-  allIds: ['1', '2', '3', '4'],
-};
-
-const cosmosThresholdAlerts = {
-  byId: {
     5: {
       name: 'Peer count decreased below threshold',
       identifier: 'peer_count_decreased',
@@ -253,7 +255,7 @@ const cosmosThresholdAlerts = {
       enabled: true,
     },
   },
-  allIds: ['5', '6', '7', '8', '9', '10', '11', '12'],
+  allIds: ['4', '5', '6', '7', '8', '9', '10', '11', '12'],
 };
 
 const cosmosTimeWindowAlerts = {

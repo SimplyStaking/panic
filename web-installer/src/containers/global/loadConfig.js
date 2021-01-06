@@ -26,7 +26,6 @@ import {
   loadReposGeneral,
   loadKMS,
   loadSystemGeneral,
-  loadRepeatAlertsGeneral,
   loadThresholdAlertsGeneral,
   updatePeriodic,
   loadSystem,
@@ -53,7 +52,6 @@ import {
 } from 'redux/reducers/substrateChainsReducer';
 import {
   generalThresholdAlerts,
-  generalRepeatAlerts,
 } from 'redux/reducers/generalReducer';
 
 // List of all the data that needs to be saved in the server
@@ -110,7 +108,6 @@ function mapDispatchToProps(dispatch) {
 
     loadReposGeneralDetails: (details) => dispatch(loadReposGeneral(details)),
     loadSystemGeneralDetails: (details) => dispatch(loadSystemGeneral(details)),
-    loadRepeatAlertsGeneralDetails: (details) => dispatch(loadRepeatAlertsGeneral(details)),
     loadThresholdAlertsGeneralDetails: (details) => dispatch(loadThresholdAlertsGeneral(details)),
     updatePeriodicDetails: (details) => dispatch(updatePeriodic(details)),
   };
@@ -141,7 +138,6 @@ class LoadConfig extends Component {
       loadSeverityAlertsCosmosDetails,
       loadReposGeneralDetails,
       loadSystemGeneralDetails,
-      loadRepeatAlertsGeneralDetails,
       loadThresholdAlertsGeneralDetails,
       loadNodeSubstrateDetails,
       loadReposSubstrateDetails,
@@ -198,27 +194,13 @@ class LoadConfig extends Component {
           } else if (res[2] === 'alerts_config.ini') {
             config = await getConfig('general', 'alerts_config.ini', '', '');
             // Create copies of alerts
-            repeatAlerts = JSON.parse(JSON.stringify(generalRepeatAlerts));
             thresholdAlerts = JSON.parse(
               JSON.stringify(generalThresholdAlerts),
             );
             // eslint-disable-next-line
             Object.keys(config.data.result).forEach(function (key) {
               parent_id = config.data.result[key].parent_id;
-              if (key in repeatAlerts.byId) {
-                repeatAlerts.byId[key].parent_id = config.data.result[key].parent_id;
-                warning = {
-                  repeat: config.data.result[key].warning_repeat,
-                  enabled: config.data.result[key].warning_enabled === 'true',
-                };
-                critical = {
-                  repeat: config.data.result[key].critical_repeat,
-                  enabled: config.data.result[key].critical_enabled === 'true',
-                };
-                repeatAlerts.byId[key].warning = warning;
-                repeatAlerts.byId[key].critical = critical;
-                repeatAlerts.byId[key].enabled = config.data.result[key].enabled === 'true';
-              } else if (key in thresholdAlerts.byId) {
+              if (key in thresholdAlerts.byId) {
                 thresholdAlerts.byId[key].parent_id = config.data.result[key].parent_id;
                 warning = {
                   threshold: config.data.result[key].warning_threshold,
@@ -234,8 +216,6 @@ class LoadConfig extends Component {
                 thresholdAlerts.byId[key].enabled = config.data.result[key].enabled === 'true';
               }
             });
-            payload = { parent_id, alerts: repeatAlerts };
-            loadRepeatAlertsGeneralDetails(payload);
             payload = { parent_id, alerts: thresholdAlerts };
             loadThresholdAlertsGeneralDetails(payload);
           }

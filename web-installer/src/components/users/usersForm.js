@@ -5,7 +5,7 @@ import { TextField, Typography, Grid } from '@material-ui/core';
 import { AddAccount } from 'utils/buttons';
 
 const UsersForm = ({
-  errors, values, handleSubmit, handleChange,
+  errors, values, handleSubmit, handleChange, saveUserDetails,
 }) => (
   <div>
     <form onSubmit={handleSubmit} className="root">
@@ -56,6 +56,7 @@ const UsersForm = ({
               disabled={Object.keys(errors).length !== 0}
               username={values.username}
               password={values.password}
+              saveUserDetails={saveUserDetails}
             />
           </Grid>
         </Grid>
@@ -69,6 +70,7 @@ UsersForm.propTypes = forbidExtraProps({
     username: PropTypes.string,
     password: PropTypes.string,
   }).isRequired,
+  saveUserDetails: PropTypes.func.isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     username: PropTypes.string.isRequired,

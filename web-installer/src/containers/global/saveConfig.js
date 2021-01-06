@@ -443,35 +443,7 @@ class SaveConfig extends Component {
         general.thresholdAlerts.byId[id].warning.enabled;
     }
 
-    // Redo the structure of these alerts to be able to save them in the .ini
-    // file
-    const repeatAlertsConfig = {};
-    for (let i = 0; i < general.repeatAlerts.allIds.length; i += 1) {
-      const id = general.repeatAlerts.allIds[i];
-      repeatAlertsConfig[id] = {};
-      repeatAlertsConfig[id].name = general.repeatAlerts.byId[id].identifier;
-      repeatAlertsConfig[id].enabled = general.repeatAlerts.byId[id].enabled;
-      repeatAlertsConfig[id].parent_id = "GLOBAL";
-      repeatAlertsConfig[id].critical_delayed =
-        general.repeatAlerts.byId[id].critical.delayed;
-      repeatAlertsConfig[id].critical_enabled =
-        general.repeatAlerts.byId[id].critical.enabled;
-      repeatAlertsConfig[id].critical_repeat =
-        general.repeatAlerts.byId[id].critical.repeat;
-      repeatAlertsConfig[id].warning_delayed =
-        general.repeatAlerts.byId[id].warning.delayed;
-      repeatAlertsConfig[id].warning_enabled =
-        general.repeatAlerts.byId[id].warning.enabled;
-      repeatAlertsConfig[id].warning_repeat =
-        general.repeatAlerts.byId[id].warning.repeat;
-    }
-
-    const allAlertsConfig = {
-      ...repeatAlertsConfig,
-      ...thresholdAlertsConfig,
-    };
-
-    await sendConfig("general", "alerts_config.ini", "", "", allAlertsConfig);
+    await sendConfig("general", "alerts_config.ini", "", "", thresholdAlertsConfig);
 
     // await sendConfig("general", "periodic_config.ini", "", "", { periodic });
 

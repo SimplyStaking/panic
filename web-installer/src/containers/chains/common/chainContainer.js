@@ -38,7 +38,7 @@ const Form = withFormik({
 const mapCosmosStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
   config: state.CosmosChainsReducer,
-  config_2: state.SubstrateChainsReducer,
+  config2: state.SubstrateChainsReducer,
   currentChain: state.CurrentCosmosChain,
   data: CosmosData,
 });
@@ -66,7 +66,7 @@ const CosmosChainFormContainer = connect(
 const mapSubstrateStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
   config: state.SubstrateChainsReducer,
-  config_2: state.CosmosChainsReducer,
+  config2: state.CosmosChainsReducer,
   currentChain: state.CurrentSubstrateChain,
   data: SubstrateData,
 });

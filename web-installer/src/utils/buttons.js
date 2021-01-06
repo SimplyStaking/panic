@@ -238,13 +238,13 @@ function DeleteAccount({ username, removeFromRedux }) {
   );
 }
 
-function AddAccount({ username, password, disabled }) {
+function AddAccount({ username, password, disabled, saveUserDetails }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Saving account ${username}`, 5000);
 
       await saveAccount(username, password);
-
+      saveUserDetails(username);
       ToastsStore.success('Successfully added new account', 5000);
     } catch (e) {
       if (e.response) {
@@ -516,6 +516,7 @@ AddAccount.propTypes = forbidExtraProps({
   username: PropTypes.string.isRequired,
   password: PropTypes.string.isRequired,
   disabled: PropTypes.bool.isRequired,
+  saveUserDetails: PropTypes.func.isRequired,
 });
 
 DeleteAccount.propTypes = forbidExtraProps({

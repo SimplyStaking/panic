@@ -15,13 +15,7 @@ const Form = withFormik({
     password: '',
   }),
   validationSchema: (props) => UserSchema(props),
-  handleSubmit: (values, { resetForm, props }) => {
-    const { saveUserDetails } = props;
-    const payload = {
-      username: values.username,
-      password: values.password,
-    };
-    saveUserDetails(payload);
+  handleSubmit: ({ resetForm }) => {
     resetForm();
   },
 })(UsersForm);

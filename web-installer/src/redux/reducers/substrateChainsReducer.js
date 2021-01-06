@@ -75,31 +75,13 @@ const substrateRepeatAlerts = {
       },
       enabled: true,
     },
-    4: {
-      name: 'System Is Down',
-      identifier: 'system_is_down',
-      description:
-        'The Node Exporter URL is unreachable therefore the '
-        + 'system is declared to be down.',
-      adornment: 'Seconds',
-      parent_id: '',
-      warning: {
-        repeat: 0,
-        enabled: true,
-      },
-      critical: {
-        repeat: 300,
-        enabled: true,
-      },
-      enabled: true,
-    },
   },
-  allIds: ['1', '2', '3', '4'],
+  allIds: ['1', '2', '3'],
 };
 
 const substrateTimeWindowAlerts = {
   byId: {
-    5: {
+    4: {
       name: 'No change in best block height above threshold',
       identifier: 'no_change_in_best_block_height',
       description:
@@ -119,7 +101,7 @@ const substrateTimeWindowAlerts = {
       },
       enabled: true,
     },
-    6: {
+    5: {
       name: 'No change in finalized block height above threshold',
       identifier: 'no_change_in_finalized_block_height',
       description:
@@ -141,11 +123,31 @@ const substrateTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['5', '6'],
+  allIds: ['4', '5'],
 };
 
 const substrateThresholdAlerts = {
   byId: {
+    6: {
+      name: 'System Is Down',
+      identifier: 'system_is_down',
+      description:
+        'The Node Exporter URL is unreachable therefore the '
+        + 'system is declared to be down.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        repeat: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 200,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
     7: {
       name: 'Time of last activity is above threshold',
       identifier: 'time_of_last_activity',
@@ -260,7 +262,7 @@ const substrateThresholdAlerts = {
       enabled: true,
     },
   },
-  allIds: ['7', '8', '9', '10', '11', '12'],
+  allIds: ['6', '7', '8', '9', '10', '11', '12'],
 };
 
 const substrateSeverityAlerts = {

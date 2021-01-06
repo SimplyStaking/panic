@@ -21,7 +21,6 @@ import {
   LOAD_REPOSITORY_GENERAL,
   LOAD_KMS,
   LOAD_THRESHOLD_ALERTS_GENERAL,
-  LOAD_REPEAT_ALERTS_GENERAL,
   LOAD_SYSTEM_GENERAL,
   LOAD_SYSTEM,
 } from './types';
@@ -202,13 +201,6 @@ export function loadReposGeneral(payload) {
 export function loadKMS(payload) {
   return {
     type: LOAD_KMS,
-    payload,
-  };
-}
-
-export function loadRepeatAlertsGeneral(payload) {
-  return {
-    type: LOAD_REPEAT_ALERTS_GENERAL,
     payload,
   };
 }

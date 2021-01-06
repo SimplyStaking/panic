@@ -15,7 +15,6 @@ import {
   LOAD_KMS,
   LOAD_REPOSITORY_GENERAL,
   LOAD_SYSTEM_GENERAL,
-  LOAD_REPEAT_ALERTS_GENERAL,
   LOAD_THRESHOLD_ALERTS_GENERAL,
 } from 'redux/actions/types';
 import { GLOBAL } from 'constants/constants';
@@ -95,12 +94,6 @@ const generalThresholdAlerts = {
       },
       enabled: true,
     },
-  },
-  allIds: ['1', '2', '3', '4'],
-};
-
-const generalRepeatAlerts = {
-  byId: {
     5: {
       name: 'System Is Down',
       identifier: 'system_is_down',
@@ -108,19 +101,21 @@ const generalRepeatAlerts = {
         'The Node Exporter URL is unreachable therefore the '
         + 'system is taken to be down.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: 'GLOBAL',
       warning: {
         repeat: 0,
         enabled: true,
       },
       critical: {
+        threshold: 200,
         repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
   },
-  allIds: ['5'],
+  allIds: ['1', '2', '3', '4', '5'],
 };
 
 // Initial periodic state
@@ -139,7 +134,6 @@ const generalState = {
       systems: [],
       periodic: periodicState,
       thresholdAlerts: generalThresholdAlerts,
-      repeatAlerts: generalRepeatAlerts,
     },
   },
   allIds: [GLOBAL],
@@ -282,17 +276,6 @@ function GeneralReducer(state = generalState, action) {
                 [action.payload.id]: action.payload.alert,
               },
             },
-          },
-        },
-      };
-    case LOAD_REPEAT_ALERTS_GENERAL:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            repeatAlerts: action.payload.alerts,
           },
         },
       };
@@ -480,5 +463,4 @@ export {
   PeriodicReducer,
   GeneralReducer,
   generalThresholdAlerts,
-  generalRepeatAlerts,
 };
