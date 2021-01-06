@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import forbidExtraProps from 'airbnb-prop-types';
+import{ forbidExtraProps }from 'airbnb-prop-types';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button,

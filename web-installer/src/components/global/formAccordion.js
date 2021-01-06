@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import forbidExtraProps from 'airbnb-prop-types';
+import{ forbidExtraProps }from 'airbnb-prop-types';
 import { Accordion, Grid } from '@material-ui/core';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';

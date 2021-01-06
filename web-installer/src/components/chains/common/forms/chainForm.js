@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import forbidExtraProps from 'airbnb-prop-types';
+import{ forbidExtraProps }from 'airbnb-prop-types';
 import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
 import {
   TextField, Typography, Box, Grid, Tooltip, Divider,

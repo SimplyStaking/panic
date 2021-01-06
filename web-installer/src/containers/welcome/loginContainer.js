@@ -54,9 +54,7 @@ async function LoadUsersFromMongo(addUserRedux) {
   } catch (err) {
     console.log(err);
     ToastsStore.info(
-      'An error has occurred when retrieving accounts from ' + 'mongo.',
-      5000,
-    );
+      'An error has occurred when retrieving accounts from mongo.', 5000,);
   }
 }
 

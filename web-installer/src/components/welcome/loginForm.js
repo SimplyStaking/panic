@@ -2,7 +2,7 @@ import React from 'react';
 import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import PropTypes from 'prop-types';
-import forbidExtraProps from 'airbnb-prop-types';
+import{ forbidExtraProps }from 'airbnb-prop-types';
 import GridContainer from 'components/material_ui/Grid/GridContainer.js';
 import GridItem from 'components/material_ui/Grid/GridItem.js';
 import Card from 'components/material_ui/Card/Card.js';
