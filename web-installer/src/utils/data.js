@@ -35,19 +35,19 @@ function getConfigPaths() {
   return fetchData('/server/paths', {}, {});
 }
 
-function getConfig(configType, fileName, chain_name, baseChain) {
-  return fetchData('/server/config', {configType, fileName, chain_name,
+function getConfig(configType, fileName, chainName, baseChain) {
+  return fetchData('/server/config', {configType, fileName, chainName,
     baseChain})
 }
 
-function sendConfig(configType, fileName, chain_name, baseChain, config) {
+function sendConfig(configType, fileName, chainName, baseChain, config) {
   return sendData('/server/config', {
-    configType, fileName, chain_name, baseChain,
+    configType, fileName, chainName, baseChain,
   }, { config });
 }
 
 function loadAccounts() {
-  return fetchData('/server/account/all', {}, {});
+  return fetchData('/server/account/usernames', {}, {});
 }
 
 function saveAccount(username, password) {

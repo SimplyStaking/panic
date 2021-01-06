@@ -28,7 +28,7 @@ const substrateRepeatAlerts = {
     1: {
       name: 'Cannot access validator',
       identifier: 'cannot_access_validator',
-      description: 'If a validator is in-accessible you will be alerted.',
+      description: 'If a validator is inaccessible you will be alerted.',
       adornment: 'Seconds',
       parent_id: '',
       warning: {
@@ -44,7 +44,7 @@ const substrateRepeatAlerts = {
     2: {
       name: 'Cannot access node',
       identifier: 'cannot_access_node',
-      description: 'If a node is in-accessible you will be alerted.',
+      description: 'If a node is inaccessible you will be alerted.',
       adornment: 'Seconds',
       parent_id: '',
       warning: {
@@ -79,8 +79,8 @@ const substrateRepeatAlerts = {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
-        'The Node Exporter URL is un-reachable therefore the '
-        + 'system is taken to be down.',
+        'The Node Exporter URL is unreachable therefore the '
+        + 'system is declared to be down.',
       adornment: 'Seconds',
       parent_id: '',
       warning: {
@@ -103,7 +103,7 @@ const substrateTimeWindowAlerts = {
       name: 'No change in best block height above threshold',
       identifier: 'no_change_in_best_block_height',
       description:
-        "There hasn't been a change in best block height after some" + 'time.',
+        "There hasn't been a change in best block height after some time.",
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -371,7 +371,7 @@ const substrateSeverityAlerts = {
       name: 'Delegated balance increase',
       identifier: 'delegated_balance_increase',
       description:
-        'The amount of tokens delegated to your validator has ' + 'increased.',
+        'The amount of tokens delegated to your validator has increased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -380,7 +380,7 @@ const substrateSeverityAlerts = {
       name: 'Delegated balance decrease',
       identifier: 'delegated_balance_decrease',
       description:
-        'The amount of tokens delegated to your validator has ' + 'decreased.',
+        'The amount of tokens delegated to your validator has decreased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -783,8 +783,6 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      console.log('INSIDE SUBSTRATE');
-      console.log(action.payload);
       return {
         ...state,
         [action.payload.parent_id]: {

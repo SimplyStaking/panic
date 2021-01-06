@@ -105,7 +105,7 @@ const generalRepeatAlerts = {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
-        'The Node Exporter URL is un-reachable therefore the '
+        'The Node Exporter URL is unreachable therefore the '
         + 'system is taken to be down.',
       adornment: 'Seconds',
       parent_id: 'GLOBAL',
