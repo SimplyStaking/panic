@@ -50,18 +50,18 @@ const ALL_GENERAL_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS,
 
 // Gets the full path of the config with the name of the config included. This
 // method restricts writing and reading from specific locations (adds security).
-function getConfigPath(configType, file, chain_name = null, baseChain = null) {
-  // Determine the full path according to the config type, chain_name and
+function getConfigPath(configType, file, chainName = null, baseChain = null) {
+  // Determine the full path according to the config type, chainName and
   // baseChain (Only if configType = Chain)
   switch (configType.toLowerCase()) {
     case 'channel':
       return path.join(CHANNELS_CONFIGS_LOCATION, file);
     case 'chain':
       if (baseChain.toLowerCase() === 'cosmos') {
-        return path.join(COSMOS_CHAINS_CONFIGS_LOCATION, chain_name, file);
+        return path.join(COSMOS_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       if (baseChain.toLowerCase() === 'substrate') {
-        return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chain_name, file);
+        return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       throw new errors.InvalidBaseChain();
     case 'general':

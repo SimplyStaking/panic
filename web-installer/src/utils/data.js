@@ -8,19 +8,19 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
-function pingTendermint(tendermint_rpc_url) {
+function pingTendermint(tendermintRpcUrl) {
   return sendData('/server/cosmos/tendermint', {},
-    { tendermint_rpc_url });
+    { tendermintRpcUrl });
 }
 
-function pingCosmosPrometheus(prometheus_url) {
+function pingCosmosPrometheus(prometheusUrl) {
   return sendData('/server/cosmos/prometheus', {},
-    { prometheus_url });
+    { prometheusUrl });
 }
 
-function pingNodeExporter(exporter_url) {
+function pingNodeExporter(exporterUrl) {
   return sendData('/server/system/exporter', {},
-    { exporter_url });
+    { exporterUrl });
 }
 
 function deleteConfigs() {
@@ -64,9 +64,9 @@ function sendTestEmail(smtp, from, to, user, pass) {
   });
 }
 
-function sendTestPagerDuty(api_token, integration_key) {
+function sendTestPagerDuty(apiToken, integrationKey) {
   return sendData('/server/pagerduty/test', {}, {
-    api_token, integration_key,
+    apiToken, integrationKey,
   });
 }
 
@@ -76,10 +76,10 @@ function sendTestOpsGenie(apiKey, eu) {
   });
 }
 
-function testCall(account_sid, auth_token, twilioPhoneNumber,
+function testCall(accountSid, authToken, twilioPhoneNumber,
   phoneNumberToDial) {
   return sendData('/server/twilio/test', {}, {
-    account_sid, auth_token, twilioPhoneNumber, phoneNumberToDial,
+    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
   });
 }
 

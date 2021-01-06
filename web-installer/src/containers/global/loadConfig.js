@@ -325,10 +325,10 @@ class LoadConfig extends Component {
             // eslint-disable-next-line
             Object.keys(config.data.result).forEach(function (key) {
               payload = JSON.parse(JSON.stringify(config.data.result[key]));
-              if (payload.twilio_phone_nobers_to_dial.length === 0) {
-                payload.twilio_phone_nobers_to_dial = [];
+              if (payload.twilio_phone_numbers_to_dial_valid.length === 0) {
+                payload.twilio_phone_numbers_to_dial_valid = [];
               } else {
-                payload.twilio_phone_nobers_to_dial = payload.twilio_phone_nobers_to_dial.split(
+                payload.twilio_phone_numbers_to_dial_valid = payload.twilio_phone_numbers_to_dial_valid.split(
                   ',',
                 );
               }

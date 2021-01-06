@@ -61,7 +61,7 @@ export function addTwilio(payload) {
       account_sid: payload.account_sid,
       auth_token: payload.auth_token,
       twilio_phone_no: payload.twilio_phone_no,
-      twilio_phone_nobers_to_dial: payload.twilio_phone_nobers_to_dial,
+      twilio_phone_numbers_to_dial_valid: payload.twilio_phone_numbers_to_dial_valid,
       parent_ids: [],
       parent_names: [],
     },

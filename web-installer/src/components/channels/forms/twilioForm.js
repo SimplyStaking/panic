@@ -21,7 +21,7 @@ const TwilioForm = ({
   setFieldValue,
 }) => {
   const updateTwilioNumbers = (events, phoneNums) => {
-    setFieldValue('twilio_phone_nobers_to_dial', phoneNums);
+    setFieldValue('twilio_phone_numbers_to_dial_valid', phoneNums);
   };
 
   return (
@@ -147,22 +147,22 @@ const TwilioForm = ({
                   freeSolo
                   options={[]}
                   onChange={updateTwilioNumbers}
-                  value={values.twilio_phone_nobers_to_dial}
+                  value={values.twilio_phone_numbers_to_dial_valid}
                   renderInput={(params) => (
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={errors.twilio_phone_nobers_to_dial}
+                      error={errors.twilio_phone_numbers_to_dial_valid}
                       type="text"
-                      name="twilio_phone_nobers_to_dial"
+                      name="twilio_phone_numbers_to_dial_valid"
                       placeholder={
                         // eslint-disable-next-line no-useless-concat
                         'Add Phone Numbers ' + '[Press Enter after each Number]'
                       }
                       variant="standard"
                       helperText={
-                        errors.twilio_phone_nobers_to_dial
-                          ? errors.twilio_phone_nobers_to_dial
+                        errors.twilio_phone_numbers_to_dial_valid
+                          ? errors.twilio_phone_numbers_to_dial_valid
                           : ''
                       }
                       autoComplete="off"
@@ -191,9 +191,9 @@ const TwilioForm = ({
                   <Box px={2}>
                     <TestCallButton
                       disabled={Object.keys(errors).length !== 0}
-                      twilio_phone_nobers_to_dial={
-                        values.twilio_phone_nobers_to_dial
-                          ? values.twilio_phone_nobers_to_dial
+                      twilio_phone_numbers_to_dial_valid={
+                        values.twilio_phone_numbers_to_dial_valid
+                          ? values.twilio_phone_numbers_to_dial_valid
                           : []
                       }
                       account_sid={values.account_sid}
@@ -225,7 +225,7 @@ TwilioForm.propTypes = forbidExtraProps({
     account_sid: PropTypes.string,
     auth_token: PropTypes.string,
     twilio_phone_no: PropTypes.string,
-    twilio_phone_nobers_to_dial: PropTypes.string,
+    twilio_phone_numbers_to_dial_valid: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
@@ -233,7 +233,7 @@ TwilioForm.propTypes = forbidExtraProps({
     account_sid: PropTypes.string.isRequired,
     auth_token: PropTypes.string.isRequired,
     twilio_phone_no: PropTypes.string.isRequired,
-    twilio_phone_nobers_to_dial: PropTypes.arrayOf(PropTypes.string.isRequired)
+    twilio_phone_numbers_to_dial_valid: PropTypes.arrayOf(PropTypes.string.isRequired)
       .isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,

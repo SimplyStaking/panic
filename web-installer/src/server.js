@@ -651,17 +651,17 @@ app.post('/server/config', verify, async (req, res) => {
 app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    account_sid,
-    auth_token,
+    accountSid,
+    authToken,
     twilioPhoneNumber,
     phoneNumberToDial,
   } = req.body;
 
-  // Check if account_sid, auth_token, twilioPhoneNumber and phoneNumberToDial
+  // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
   const missingParamsList = utils.missingValues({
-    account_sid,
-    auth_token,
+    accountSid,
+    authToken,
     twilioPhoneNumber,
     phoneNumberToDial,
   });
@@ -676,7 +676,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
   // Create Twilio client
   let twilioClient;
   try {
-    twilioClient = twilio(account_sid, auth_token);
+    twilioClient = twilio(accountSid, authToken);
   } catch (err) {
     console.error(err);
     const error = new errors.TwilioError(err.message);
@@ -769,10 +769,10 @@ app.post('/server/email/test', verify, async (req, res) => {
 // This endpoint triggers an test alert event to the PagerDuty space.
 app.post('/server/pagerduty/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { api_token, integration_key } = req.body;
+  const { apiToken, integrationKey } = req.body;
 
-  // Check if api_token and integration_key are missing.
-  const missingParamsList = utils.missingValues({ api_token, integration_key });
+  // Check if apiToken and integrationKey are missing.
+  const missingParamsList = utils.missingValues({ apiToken, integrationKey });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -782,13 +782,13 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
   }
 
   // Create PagerDuty client and test alert message
-  const pdClient = new PdClient(api_token);
+  const pdClient = new PdClient(apiToken);
   const testAlert = new msgs.TestAlert();
 
   // Send test alert event
   pdClient.events
     .sendEvent({
-      routing_key: integration_key,
+      routing_key: integrationKey,
       event_action: 'trigger',
       payload: {
         summary: testAlert.message,
@@ -860,10 +860,10 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
 
 app.post('/server/cosmos/tendermint', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { tendermint_rpc_url } = req.body;
+  const { tendermintRpcUrl } = req.body;
 
-  // Check if tendermint_rpc_url is missing.
-  const missingParamsList = utils.missingValues({ tendermint_rpc_url });
+  // Check if tendermintRpcUrl is missing.
+  const missingParamsList = utils.missingValues({ tendermintRpcUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -872,7 +872,7 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     return;
   }
 
-  const url = `${tendermint_rpc_url}/health?`;
+  const url = `${tendermintRpcUrl}/health?`;
 
   axios
     .get(url, { params: {} })
@@ -895,10 +895,10 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
 
 app.post('/server/cosmos/prometheus', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { prometheus_url } = req.body;
+  const { prometheusUrl } = req.body;
 
-  // Check if prometheus_url is missing.
-  const missingParamsList = utils.missingValues({ prometheus_url });
+  // Check if prometheusUrl is missing.
+  const missingParamsList = utils.missingValues({ prometheusUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -907,7 +907,7 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
     return;
   }
 
-  const url = `${prometheus_url}`;
+  const url = `${prometheusUrl}`;
 
   axios
     .get(url, { params: {} })
@@ -933,10 +933,10 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 
 app.post('/server/system/exporter', async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { exporter_url } = req.body;
+  const { exporterUrl } = req.body;
 
-  // Check if exporter_url is missing.
-  const missingParamsList = utils.missingValues({ exporter_url });
+  // Check if exporterUrl is missing.
+  const missingParamsList = utils.missingValues({ exporterUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -945,7 +945,7 @@ app.post('/server/system/exporter', async (req, res) => {
     return;
   }
 
-  const url = `${exporter_url}/metrics`;
+  const url = `${exporterUrl}/metrics`;
 
   axios
     .get(url, { params: {} })
