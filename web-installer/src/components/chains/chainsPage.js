@@ -15,7 +15,7 @@ import {
   COSMOS,
   SUBSTRATE,
   SUBSTRATE_SETUP_PAGE,
-  GENERAL_PAGE,
+  USERS_PAGE,
   OTHER,
   OTHER_SETUP_PAGE,
   CONFIGURE,
@@ -108,7 +108,7 @@ function Chains() {
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={NEXT}
-                    navigation={GENERAL_PAGE}
+                    navigation={USERS_PAGE}
                   />
                 </Grid>
                 <Grid item xs={4} />

@@ -24,10 +24,10 @@ const mapStateToProps = (state) => ({
 
   // General data related to
   repositories: state.RepositoryReducer,
-  kmses: state.KmsReducer,
+  // kmses: state.KmsReducer,
   general: state.GeneralReducer.byId[GLOBAL],
   systems: state.SystemsReducer,
-  periodic: state.PeriodicReducer,
+  // periodic: state.PeriodicReducer,
 });
 
 class SaveConfig extends Component {
@@ -46,12 +46,12 @@ class SaveConfig extends Component {
       cosmosChains,
       cosmosNodes,
       repositories,
-      kmses,
+      // kmses,
       substrateChains,
       substrateNodes,
       general,
       systems,
-      periodic,
+      // periodic,
     } = this.props;
 
     await deleteConfigs();
@@ -138,24 +138,24 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for kms configs
-      if (chainConfig.kmses.length !== 0) {
-        const kmsToSave = {};
-        for (let j = 0; j < chainConfig.kmses.length; j += 1) {
-          const currentId = chainConfig.kmses[j];
-          kmsToSave[currentId] = kmses.byId[currentId];
-        }
+      // // Repeat the above process for kms configs
+      // if (chainConfig.kmses.length !== 0) {
+      //   const kmsToSave = {};
+      //   for (let j = 0; j < chainConfig.kmses.length; j += 1) {
+      //     const currentId = chainConfig.kmses[j];
+      //     kmsToSave[currentId] = kmses.byId[currentId];
+      //   }
 
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          "chain",
-          "kms_config.ini",
-          chainConfig.chain_name,
-          "cosmos",
-          kmsToSave
-        );
-      }
+      //   // Once the node details are extracted from the list of all nodes, we
+      //   // save it to it's own file
+      //   await sendConfig(
+      //     "chain",
+      //     "kms_config.ini",
+      //     chainConfig.chain_name,
+      //     "cosmos",
+      //     kmsToSave
+      //   );
+      // }
 
       // Redo the structure of these alerts to be able to save them in the .ini
       // file
@@ -473,7 +473,7 @@ class SaveConfig extends Component {
 
     await sendConfig("general", "alerts_config.ini", "", "", allAlertsConfig);
 
-    await sendConfig("general", "periodic_config.ini", "", "", { periodic });
+    // await sendConfig("general", "periodic_config.ini", "", "", { periodic });
 
     ToastsStore.success("Saved General configs!", 5000);
   }
@@ -612,16 +612,16 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: [],
   }).isRequired,
-  kmses: PropTypes.shape({
-    byId: PropTypes.shape({
-      id: PropTypes.string,
-      parent_id: PropTypes.string,
-      kms_name: PropTypes.string,
-      exporter_url: PropTypes.string,
-      monitor_kms: PropTypes.bool,
-    }).isRequired,
-    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-  }).isRequired,
+  // kmses: PropTypes.shape({
+  //   byId: PropTypes.shape({
+  //     id: PropTypes.string,
+  //     parent_id: PropTypes.string,
+  //     kms_name: PropTypes.string,
+  //     exporter_url: PropTypes.string,
+  //     monitor_kms: PropTypes.bool,
+  //   }).isRequired,
+  //   allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  // }).isRequired,
   systems: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -760,10 +760,10 @@ SaveConfig.propTypes = {
       allIds: [],
     }),
   }).isRequired,
-  periodic: PropTypes.shape({
-    time: PropTypes.string,
-    enabled: PropTypes.bool,
-  }).isRequired,
+  // periodic: PropTypes.shape({
+  //   time: PropTypes.string,
+  //   enabled: PropTypes.bool,
+  // }).isRequired,
 };
 
 export default connect(mapStateToProps)(SaveConfig);

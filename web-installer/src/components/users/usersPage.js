@@ -6,7 +6,7 @@ import {
   UsersFormContainer,
   UsersTableContainer,
 } from 'containers/users/usersContainer';
-import { GENERAL_PAGE, BACK } from 'constants/constants';
+import { CHAINS_PAGE, BACK } from 'constants/constants';
 import GridContainer from 'components/material_ui/Grid/GridContainer.js';
 import Parallax from 'components/material_ui/Parallax/Parallax.js';
 import GridItem from 'components/material_ui/Grid/GridItem.js';
@@ -72,7 +72,7 @@ function UsersPage() {
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={BACK}
-                    navigation={GENERAL_PAGE}
+                    navigation={CHAINS_PAGE}
                   />
                 </Grid>
                 <Grid item xs={2}>
