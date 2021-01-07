@@ -12,6 +12,7 @@ from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
     ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, ALERT_ROUTER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -31,7 +32,9 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._logger = logger
         super().__init__(
-            logger.getChild(QueuingPublisherComponent.__name__), self._rabbit)
+            logger.getChild(QueuingPublisherComponent.__name__), self._rabbit,
+            env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE
+        )
 
     def _initialise_rabbit(self) -> None:
         """
