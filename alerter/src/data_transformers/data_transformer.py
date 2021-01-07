@@ -36,7 +36,7 @@ class DataTransformer(Component):
         max_queue_size = env.DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ['RABBIT_IP']
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
         super().__init__()
 

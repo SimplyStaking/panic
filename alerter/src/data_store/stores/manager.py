@@ -13,6 +13,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.starters import start_system_store, start_github_store, \
     start_alert_store
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -24,7 +25,7 @@ class StoreManager:
         self._logger = logger
         self._store_process_dict = {}
 
-        rabbit_ip = os.environ['RABBIT_IP']
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully

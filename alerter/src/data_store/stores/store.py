@@ -11,6 +11,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
@@ -18,14 +19,14 @@ from src.utils.logging import log_and_print
 class Store(ABC):
     def __init__(self, store_name: str, logger: logging.Logger):
         self._store_name = store_name
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._mongo_ip = os.environ['DB_IP']
-        self._mongo_db = os.environ['DB_NAME']
-        self._mongo_port = int(os.environ['DB_PORT'])
-        redis_ip = os.environ['REDIS_IP']
-        redis_db = os.environ['REDIS_DB']
-        redis_port = os.environ['REDIS_PORT']
-        unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
+        rabbit_ip = env.RABBIT_IP
+        self._mongo_ip = env.DB_IP
+        self._mongo_db = env.DB_NAME
+        self._mongo_port = int(env.DB_PORT)
+        redis_ip = env.REDIS_IP
+        redis_db = env.REDIS_DB
+        redis_port = env.REDIS_PORT
+        unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
         self._logger = logger
         self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)

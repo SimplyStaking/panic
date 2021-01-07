@@ -8,6 +8,7 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
+from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
@@ -20,8 +21,8 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     while True:
         try:
             alerter_logger = create_logger(
-                os.environ['ALERTERS_LOG_FILE_TEMPLATE'].format(alerter_name),
-                alerter_name, os.environ['LOGGING_LEVEL'], rotating=True)
+                env.ALERTERS_LOG_FILE_TEMPLATE.format(alerter_name),
+                alerter_name,env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(

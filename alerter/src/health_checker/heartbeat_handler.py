@@ -13,6 +13,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException
 from src.utils.logging import log_and_print
@@ -26,7 +27,7 @@ class HeartbeatHandler:
         self._logger = logger
         self._redis = redis
 
-        rabbit_ip = os.environ['RABBIT_IP']
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
         # This dict stores the keys-values that should have been stored to redis

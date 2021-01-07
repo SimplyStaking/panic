@@ -8,6 +8,7 @@ from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
+from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
@@ -20,9 +21,8 @@ def _initialize_store_logger(store_name: str) -> logging.Logger:
     while True:
         try:
             store_logger = create_logger(
-                os.environ['DATA_STORE_LOG_FILE_TEMPLATE'].format(
-                    store_name), store_name,
-                os.environ['LOGGING_LEVEL'], rotating=True)
+                env.DATA_STORE_LOG_FILE_TEMPLATE.format(store_name),
+                store_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(

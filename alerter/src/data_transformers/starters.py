@@ -8,6 +8,7 @@ from src.data_store.redis import RedisApi
 from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
+from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
@@ -20,9 +21,8 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
     while True:
         try:
             transformer_logger = create_logger(
-                os.environ['TRANSFORMERS_LOG_FILE_TEMPLATE'].format(
-                    transformer_name), transformer_name,
-                os.environ['LOGGING_LEVEL'], rotating=True)
+                env.TRANSFORMERS_LOG_FILE_TEMPLATE.format(transformer_name),
+                transformer_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
@@ -43,10 +43,10 @@ def _initialize_transformer_redis(
     # attempt to use it.
     while True:
         try:
-            redis_db = int(os.environ['REDIS_DB'])
-            redis_port = int(os.environ['REDIS_PORT'])
-            redis_host = os.environ['REDIS_IP']
-            unique_alerter_identifier = os.environ['UNIQUE_ALERTER_IDENTIFIER']
+            redis_db = int(env.REDIS_DB)
+            redis_port = int(env.REDIS_PORT)
+            redis_host = env.REDIS_IP
+            unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
             redis = RedisApi(logger=transformer_logger, db=redis_db,
                              host=redis_host, port=redis_port,
