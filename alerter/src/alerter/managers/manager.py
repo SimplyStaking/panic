@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 from abc import ABC, abstractmethod
 from types import FrameType

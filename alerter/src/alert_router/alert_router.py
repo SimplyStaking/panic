@@ -181,7 +181,7 @@ class AlertRouter(QueuingPublisherComponent):
             channel.get('id') for channel_type in self._config.values()
             for channel in channel_type.values()
             if channel.get(recv_alert.get('severity').lower()) and
-            recv_alert.get('parent_id') in channel.get('parent_ids')
+               recv_alert.get('parent_id') in channel.get('parent_ids')
         ]
 
         self._logger.debug("Removed the lock from the config dict")

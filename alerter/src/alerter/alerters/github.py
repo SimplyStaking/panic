@@ -99,8 +99,6 @@ class GithubAlerter(Alerter):
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))
-
-            self.logger.info("Data processed successfully.")
         except Exception as e:
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)

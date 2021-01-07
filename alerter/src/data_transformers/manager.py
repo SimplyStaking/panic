@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 import signal
 import sys
 from datetime import datetime
@@ -92,7 +91,7 @@ class DataTransformersManager:
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received {}".format(data))
+        self.logger.debug("Received {}".format(data))
 
         heartbeat = {}
         try:

@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 
 import pika.exceptions
@@ -22,7 +21,7 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
         try:
             alerter_logger = create_logger(
                 env.ALERTERS_LOG_FILE_TEMPLATE.format(alerter_name),
-                alerter_name,env.LOGGING_LEVEL, rotating=True)
+                alerter_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(

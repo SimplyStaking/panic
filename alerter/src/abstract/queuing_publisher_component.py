@@ -1,6 +1,5 @@
 import copy
 import logging
-import time
 from abc import ABC
 from queue import Queue
 from typing import Dict
@@ -9,7 +8,6 @@ from pika import BasicProperties
 
 from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.exceptions import ConnectionNotInitializedException
 
 
 class QueuingPublisherComponent(Component, ABC):

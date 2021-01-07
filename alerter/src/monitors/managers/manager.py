@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from abc import ABC, abstractmethod

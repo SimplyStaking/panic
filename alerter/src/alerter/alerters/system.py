@@ -182,8 +182,6 @@ class SystemAlerter(Alerter):
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_data".format(self))
-
-            self.logger.info("Data processed successfully.")
         except Exception as e:
             self.logger.error("Error when processing {}".format(data_received))
             self.logger.exception(e)
@@ -231,8 +229,8 @@ class SystemAlerter(Alerter):
                 meta_data['system_parent_id'], meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
-            self.logger.debug('Successfully classified alert {}'
-                              ''.format(alert.alert_data))
+            self.logger.debug("Successfully classified alert {}"
+                              "".format(alert.alert_data))
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 error_data['message'], 'ERROR', meta_data['time'],

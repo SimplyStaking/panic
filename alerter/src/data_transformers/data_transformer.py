@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from abc import abstractmethod
 from queue import Queue

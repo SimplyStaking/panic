@@ -230,7 +230,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(_get_initialisation_error_message(
                 AlertRouter.__name__, e),
-                          dummy_logger)
+                dummy_logger)
             log_and_print(_get_reattempting_message(AlertRouter.__name__),
                           dummy_logger)
             # sleep before trying again
