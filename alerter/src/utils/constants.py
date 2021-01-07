@@ -15,3 +15,6 @@ GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'github_monitors_manager_configs_queue'
 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_monitors_manager_configs_queue'
+
+RESTART_SLEEPING_PERIOD = 10
+RE_INITIALIZE_SLEEPING_PERIOD = 10

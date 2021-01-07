@@ -31,15 +31,6 @@ class QueuingPublisherComponent(Component, ABC):
         self._logger = logger
         self._rabbitmq = rabbitmq
 
-        prefetch_count = round(self._publishing_queue.maxsize / 5)
-        self._rabbitmq.connect_till_successful()
-        try:
-            self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        except ConnectionNotInitializedException as cnie:
-            self._logger.error("A connection was not initialised. Retrying in "
-                               "10 seconds")
-            self._logger.exception(cnie)
-            time.sleep(10)
         super().__init__()
 
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
@@ -96,7 +87,7 @@ class QueuingPublisherComponent(Component, ABC):
             except KeyError as ke:
                 self._logger.error("Enqueued datum %s was incomplete", data)
                 self._logger.exception(ke)
-                self._logger.warn("Discarding this datum")
+                self._logger.warning("Discarding this datum")
 
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "

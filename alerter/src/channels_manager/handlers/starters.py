@@ -28,6 +28,8 @@ from src.channels_manager.handlers.telegram.commands import \
     TelegramCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.utils import env
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -47,7 +49,8 @@ def _initialize_channel_handler_logger(handler_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # handlers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return handler_logger
 
@@ -67,7 +70,8 @@ def _initialize_alerts_logger() -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return alerts_logger
 
@@ -99,7 +103,8 @@ def _initialize_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return telegram_alerts_handler
 
@@ -138,7 +143,8 @@ def _initialize_telegram_commands_handler(
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return telegram_commands_handler
 
@@ -177,7 +183,8 @@ def _initialize_twilio_alerts_handler(
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return twilio_alerts_handler
 
@@ -216,7 +223,8 @@ def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return pagerduty_alerts_handler
 
@@ -253,7 +261,8 @@ def _initialize_email_alerts_handler(
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return email_alerts_handler
 
@@ -293,7 +302,8 @@ def _initialize_opsgenie_alerts_handler(api_key: str, eu_host: bool,
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return opsgenie_alerts_handler
 
@@ -326,7 +336,8 @@ def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return console_alerts_handler
 
@@ -359,7 +370,8 @@ def _initialize_log_alerts_handler(channel_id: str, channel_name: str) \
             msg = "!!! Error when initialising {}: {} !!!".format(
                 handler_name, e)
             log_and_print(msg, handler_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return log_alerts_handler
 
@@ -371,8 +383,6 @@ def start_log_alerts_handler(channel_id: str, channel_name: str) -> None:
 
 
 def start_handler(handler: ChannelHandler) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(handler), handler.logger)
@@ -388,5 +398,5 @@ def start_handler(handler: ChannelHandler) -> None:
             handler.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(handler), handler.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                handler, sleep_period), handler.logger)
-            time.sleep(sleep_period)
+                handler, RESTART_SLEEPING_PERIOD), handler.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

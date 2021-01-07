@@ -8,6 +8,8 @@ from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -28,7 +30,8 @@ def _initialize_store_logger(store_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return store_logger
 
@@ -49,7 +52,8 @@ def _initialize_system_store() -> SystemStore:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 store_name, e)
             log_and_print(msg, store_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return system_store
 
@@ -70,7 +74,8 @@ def _initialize_github_store() -> GithubStore:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 store_name, e)
             log_and_print(msg, store_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return github_store
 
@@ -91,7 +96,8 @@ def _initialize_alert_store() -> AlertStore:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 store_name, e)
             log_and_print(msg, store_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return alert_store
 
@@ -112,8 +118,6 @@ def start_alert_store() -> None:
 
 
 def start_store(store: Store) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(store), store.logger)
@@ -129,5 +133,5 @@ def start_store(store: Store) -> None:
             store.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped. {}".format(store, e), store.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                store, sleep_period), store.logger)
-            time.sleep(sleep_period)
+                store, RESTART_SLEEPING_PERIOD), store.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

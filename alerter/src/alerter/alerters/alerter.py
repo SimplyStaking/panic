@@ -10,6 +10,7 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -25,11 +26,10 @@ class Alerter(ABC):
 
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 'ALERTER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.ALERTER_PUBLISHING_QUEUE_SIZE
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ['RABBIT_IP']
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
 
         # Handle termination signals by stopping the monitor gracefully

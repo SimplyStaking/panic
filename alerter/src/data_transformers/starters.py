@@ -8,6 +8,8 @@ from src.data_store.redis import RedisApi
 from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -28,7 +30,8 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return transformer_logger
 
@@ -53,7 +56,8 @@ def _initialize_transformer_redis(
             msg = "!!! Error when initialising {}: {} !!!".format(
                 transformer_name, e)
             log_and_print(msg, transformer_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return redis
 
@@ -76,7 +80,8 @@ def _initialize_system_data_transformer() -> SystemDataTransformer:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 transformer_name, e)
             log_and_print(msg, transformer_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return system_data_transformer
 
@@ -99,7 +104,8 @@ def _initialize_github_data_transformer() -> GitHubDataTransformer:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 transformer_name, e)
             log_and_print(msg, transformer_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return github_data_transformer
 
@@ -115,8 +121,6 @@ def start_github_data_transformer() -> None:
 
 
 def start_transformer(transformer: DataTransformer) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(transformer), transformer.logger)
@@ -131,5 +135,5 @@ def start_transformer(transformer: DataTransformer) -> None:
             transformer.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(transformer), transformer.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                transformer, sleep_period), transformer.logger)
-            time.sleep(sleep_period)
+                transformer, RESTART_SLEEPING_PERIOD), transformer.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

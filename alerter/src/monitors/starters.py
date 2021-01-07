@@ -9,6 +9,8 @@ from src.configs.system import SystemConfig
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -28,7 +30,8 @@ def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # monitor's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return monitor_logger
 
@@ -53,7 +56,8 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 monitor_name, e)
             log_and_print(msg, system_monitor_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return system_monitor
 
@@ -80,7 +84,8 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 monitor_name, e)
             log_and_print(msg, github_monitor_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return github_monitor
 
@@ -96,8 +101,6 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
 
 
 def start_monitor(monitor: Monitor) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(monitor), monitor.logger)
@@ -112,5 +115,5 @@ def start_monitor(monitor: Monitor) -> None:
             monitor.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(monitor), monitor.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                monitor, sleep_period), monitor.logger)
-            time.sleep(sleep_period)
+                monitor, RESTART_SLEEPING_PERIOD), monitor.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

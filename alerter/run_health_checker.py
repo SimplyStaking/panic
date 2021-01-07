@@ -7,6 +7,8 @@ from types import FrameType
 
 from src.health_checker.manager import HealthCheckerManager
 from src.utils import env
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -28,7 +30,8 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
             log_and_print(msg, dummy_logger)
             log_and_print("Re-attempting initialization procedure of {}."
                           .format(log_name), dummy_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return new_logger
 
@@ -51,13 +54,13 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
             log_and_print(msg, health_checker_manager_logger)
             log_and_print("Re-attempting initialization procedure of {}."
                           .format(manager_name), health_checker_manager_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return health_checker_manager
 
 
 def run_health_checker_manager() -> None:
-    sleep_period = 10
     health_checker_manager = _initialize_health_checker_manager()
 
     while True:
@@ -70,9 +73,9 @@ def run_health_checker_manager() -> None:
             log_and_print("{} stopped.".format(health_checker_manager),
                           health_checker_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                health_checker_manager, sleep_period),
+                health_checker_manager, RESTART_SLEEPING_PERIOD),
                 health_checker_manager.logger)
-            time.sleep(sleep_period)
+            time.sleep(RESTART_SLEEPING_PERIOD)
 
 
 # If termination signals are received, terminate all child process and exit

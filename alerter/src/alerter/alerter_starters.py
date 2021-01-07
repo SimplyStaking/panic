@@ -8,6 +8,8 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -27,7 +29,8 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # alerter's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return alerter_logger
 
@@ -51,7 +54,8 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
             msg = "!!! Error when initialising {}: {} !!!".format(
                 alerter_name, e)
             log_and_print(msg, system_alerter_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return system_alerter
 
@@ -72,7 +76,8 @@ def _initialize_github_alerter() -> GithubAlerter:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 alerter_name, e)
             log_and_print(msg, github_alerter_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep 10 seconds before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return github_alerter
 
@@ -89,8 +94,6 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig,
 
 
 def start_alerter(alerter: Alerter) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(alerter), alerter.logger)
@@ -106,5 +109,5 @@ def start_alerter(alerter: Alerter) -> None:
             alerter.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(alerter), alerter.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                alerter, sleep_period), alerter.logger)
-            time.sleep(sleep_period)
+                alerter, RESTART_SLEEPING_PERIOD), alerter.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

@@ -43,8 +43,8 @@ class AlertRouter(QueuingPublisherComponent):
             "Setting delivery confirmation on RabbitMQ channel")
         self._rabbit.confirm_delivery()
 
-        # Pre-fetch count is set to 300
-        prefetch_count = round(300)
+        # Pre-fetch count is 5 times less the maximum queue size
+        prefetch_count = round(self._publishing_queue.maxsize / 5)
         self._rabbit.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(

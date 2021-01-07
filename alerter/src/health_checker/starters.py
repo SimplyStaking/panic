@@ -8,6 +8,8 @@ from src.data_store.redis import RedisApi
 from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils import env
+from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
+    RESTART_SLEEPING_PERIOD
 from src.utils.logging import create_logger, log_and_print
 
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
@@ -29,7 +31,8 @@ def _initialize_health_checker_logger(component_name: str) -> logging.Logger:
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return component_logger
 
@@ -54,7 +57,8 @@ def _initialize_component_redis(
             msg = "!!! Error when initialising {}: {} !!!".format(
                 component_name, e)
             log_and_print(msg, component_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return redis
 
@@ -76,7 +80,8 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 component_name, e)
             log_and_print(msg, logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return heartbeat_handler
 
@@ -98,7 +103,8 @@ def _initialize_ping_publisher() -> PingPublisher:
             msg = "!!! Error when initialising {}: {} !!!".format(
                 component_name, e)
             log_and_print(msg, logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return ping_publisher
 
@@ -115,8 +121,6 @@ def start_ping_publisher() -> None:
 
 def start_health_checker_component(component: HealthCheckerComponentType) \
         -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(component), component.logger)
@@ -131,5 +135,5 @@ def start_health_checker_component(component: HealthCheckerComponentType) \
             component.rabbitmq.disconnect_till_successful()
             log_and_print("{} stopped.".format(component), component.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                component, sleep_period), component.logger)
-            time.sleep(sleep_period)
+                component, RESTART_SLEEPING_PERIOD), component.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)
