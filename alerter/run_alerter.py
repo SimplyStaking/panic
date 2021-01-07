@@ -583,10 +583,10 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.systems_config'),
+                                 CONFIG_EXCHANGE, 'chains.*.*.nodes_config'),
                 dummy_logger)
             rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.systems_config')
+                                CONFIG_EXCHANGE, 'chains.*.*.nodes_config')
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,

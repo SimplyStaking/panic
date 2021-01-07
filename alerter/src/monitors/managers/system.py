@@ -59,10 +59,10 @@ class SystemMonitorsManager(MonitorsManager):
                                     False, True, False, False)
         self.logger.info(
             "Binding queue '{}' to exchange '{}' with routing key "
-            "'chains.*.*.systems_config'".format(
+            "'chains.*.*.nodes_config'".format(
                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.systems_config')
+                                 CONFIG_EXCHANGE, 'chains.*.*.nodes_config')
         self.logger.info(
             "Binding queue '{}' to exchange '{}' with routing key "
             "'general.systems_config'".format(
