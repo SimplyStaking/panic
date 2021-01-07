@@ -68,8 +68,8 @@ class DataTransformersManager:
                          "'ping'".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind('data_transformers_manager_queue',
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'data_transformers_manager_queue'")
+        self.logger.debug("Declaring consuming intentions on "
+                          "'data_transformers_manager_queue'")
         self.rabbitmq.basic_consume('data_transformers_manager_queue',
                                     self._process_ping, True, False, None)
 

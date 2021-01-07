@@ -129,7 +129,7 @@ class ConfigManager(Component):
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
-                self._logger.info("Declaring consuming intentions")
+                self._logger.debug("Declaring consuming intentions")
                 self._heartbeat_rabbit.basic_consume(config_ping_queue,
                                                      self._process_ping,
                                                      True, False, None)

@@ -46,7 +46,7 @@ class GithubAlerter(Alerter):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(queue='github_alerter_queue',
                                     on_message_callback=self._process_data,
                                     auto_ack=False,

@@ -131,7 +131,7 @@ class SystemAlerter(Alerter):
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(queue=self._queue_used,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,

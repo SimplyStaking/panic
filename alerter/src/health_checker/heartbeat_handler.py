@@ -77,7 +77,7 @@ class HeartbeatHandler:
         # Pre-fetch count is set to 300
         prefetch_count = round(300)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume('heartbeat_handler_queue',
                                     self._process_heartbeat, False, False, None)
 

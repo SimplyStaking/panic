@@ -50,7 +50,7 @@ class LogAlertsHandler(ChannelHandler):
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(self._log_alerts_handler_queue,
                                     self._process_alert, False, False, None)
 

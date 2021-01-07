@@ -45,8 +45,8 @@ class SystemMonitorsManager(MonitorsManager):
                          "'ping'".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind('system_monitors_manager_ping_queue',
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'system_monitors_manager_ping_queue'")
+        self.logger.debug("Declaring consuming intentions on "
+                          "'system_monitors_manager_ping_queue'")
         self.rabbitmq.basic_consume('system_monitors_manager_ping_queue',
                                     self._process_ping, True, False, None)
 
@@ -69,7 +69,7 @@ class SystemMonitorsManager(MonitorsManager):
                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'general.systems_config')
-        self.logger.info("Declaring consuming intentions on '{}'".format(
+        self.logger.debug("Declaring consuming intentions on '{}'".format(
             SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
         self.rabbitmq.basic_consume(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)

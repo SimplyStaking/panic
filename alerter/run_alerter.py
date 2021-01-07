@@ -239,7 +239,8 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            alert_router = AlertRouter(alert_router_logger, rabbit_ip,
+            alert_router = AlertRouter(AlertRouter.__name__,
+                                       alert_router_logger, rabbit_ip,
                                        env.ENABLE_CONSOLE_ALERTS)
             return alert_router, alert_router_logger
         except ConnectionNotInitializedException:
@@ -482,26 +483,26 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
-    terminate_and_join_process(config_manager_runner_process, "Configs Manager")
+    terminate_and_join_process(config_manager_runner_process, 'Configs Manager')
 
     terminate_and_join_process(system_monitors_manager_process,
-                               "System Monitors Manager")
+                               'System Monitors Manager')
 
     terminate_and_join_process(github_monitors_manager_process,
-                               "GitHub Monitors Manager")
+                               'GitHub Monitors Manager')
 
     terminate_and_join_process(data_transformers_manager_process,
-                               "Data Transformers Manager")
+                               'Data Transformers Manager')
 
     terminate_and_join_process(system_alerters_manager_process,
-                               "System Alerters Manager")
+                               'System Alerters Manager')
 
     terminate_and_join_process(github_alerter_manager_process,
-                               "Github Alerter Manager")
+                               'Github Alerter Manager')
 
-    terminate_and_join_process(data_store_process, "Data Store Process")
+    terminate_and_join_process(data_store_process, 'Data Store Process')
 
-    terminate_and_join_process(alert_router_process, "Alert Router")
+    terminate_and_join_process(alert_router_process, 'Alert Router')
 
     terminate_and_join_process(channels_manager_process, 'Channels Manager')
 
@@ -514,7 +515,7 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
 def _initialise_and_declare_config_queues() -> None:
     # TODO: This can be refactored by storing the queue configurations in
-    #     : constant.py so that it is easier to maintain
+    #     : constant.py so that it is easier to maintain.
     dummy_logger = logging.getLogger('Dummy')
 
     while True:
@@ -524,8 +525,8 @@ def _initialise_and_declare_config_queues() -> None:
                           "configuration queues.", dummy_logger)
             ret = rabbitmq.connect()
             if ret == -1:
-                log_and_print('RabbitMQ is temporarily unavailable. Re-trying '
-                              'in 10 seconds.', dummy_logger)
+                log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
+                              "in 10 seconds.", dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 
@@ -623,8 +624,8 @@ def _initialise_and_declare_config_queues() -> None:
 
             ret = rabbitmq.disconnect()
             if ret == -1:
-                log_and_print('RabbitMQ is temporarily unavailable. Re-trying '
-                              'in 10 seconds.', dummy_logger)
+                log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
+                              "in 10 seconds.", dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 

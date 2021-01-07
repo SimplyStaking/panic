@@ -50,8 +50,8 @@ class SystemAlertersManager(AlertersManager):
                          "'ping'".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind('system_alerters_manager_ping_queue',
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'system_alerters_manager_ping_queue'")
+        self.logger.debug("Declaring consuming intentions on "
+                          "'system_alerters_manager_ping_queue'")
         self.rabbitmq.basic_consume('system_alerters_manager_ping_queue',
                                     self._process_ping, True, False, None)
 
@@ -74,7 +74,7 @@ class SystemAlertersManager(AlertersManager):
                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'general.alerts_config')
-        self.logger.info("Declaring consuming intentions on {}".format(
+        self.logger.debug("Declaring consuming intentions on {}".format(
             SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME))
         self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)

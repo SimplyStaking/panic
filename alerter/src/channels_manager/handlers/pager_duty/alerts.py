@@ -188,7 +188,7 @@ class PagerDutyAlertsHandler(ChannelHandler):
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(self._pd_alerts_handler_queue,
                                     self._process_alert, False, False, None)
 

@@ -23,18 +23,25 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 
 class AlertRouter(QueuingPublisherComponent):
-    def __init__(self, logger: Logger, rabbit_ip: str,
+    def __init__(self, name: str, logger: Logger, rabbit_ip: str,
                  enable_console_alerts: bool):
+
+        self._name = name
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
         self._enable_console_alerts = enable_console_alerts
 
         self._config = {}
 
         self._logger = logger
-        super().__init__(
-            logger.getChild(QueuingPublisherComponent.__name__), self._rabbit,
-            env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE
-        )
+        super().__init__(logger, self._rabbit,
+                         env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE)
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def _initialise_rabbit(self) -> None:
         """
@@ -51,8 +58,8 @@ class AlertRouter(QueuingPublisherComponent):
         self._rabbit.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
-            "channels.*"
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
+            'channels.*'
         )
         self._rabbit.basic_consume(
             queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
@@ -60,8 +67,8 @@ class AlertRouter(QueuingPublisherComponent):
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
-            "alert_router.*"
+            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
+            'alert_router.*'
         )
         self._rabbit.basic_consume(
             queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
@@ -77,10 +84,10 @@ class AlertRouter(QueuingPublisherComponent):
                                       internal=False)
 
         self._declare_exchange_and_bind_queue(
-            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic", "ping"
+            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic', 'ping'
         )
 
-        self._logger.info("Declaring consuming intentions")
+        self._logger.debug("Declaring consuming intentions")
         self._rabbit.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
                                    True, False, None)
 
@@ -190,22 +197,22 @@ class AlertRouter(QueuingPublisherComponent):
             self._push_to_queue(send_alert, ALERT_EXCHANGE,
                                 "channel.{}".format(channel_id),
                                 mandatory=True)
-            self._logger.info("Routed Alert queued")
+            self._logger.debug("Routed Alert queued")
 
         # Enqueue once to the console
         if self._enable_console_alerts:
             self._push_to_queue(
-                {**recv_alert, 'destination_id': "console"},
-                ALERT_EXCHANGE, "channel.console", mandatory=True)
+                {**recv_alert, 'destination_id': 'console'},
+                ALERT_EXCHANGE, 'channel.console', mandatory=True)
 
         self._push_to_queue(
-            {**recv_alert, 'destination_id': "log"},
-            ALERT_EXCHANGE, "channel.log", mandatory=True)
+            {**recv_alert, 'destination_id': 'log'},
+            ALERT_EXCHANGE, 'channel.log', mandatory=True)
 
         self._rabbit.basic_ack(method.delivery_tag, False)
 
         # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
+        self._push_to_queue(recv_alert, STORE_EXCHANGE, 'alert')
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -222,7 +229,7 @@ class AlertRouter(QueuingPublisherComponent):
 
         self._logger.debug("Received %s. Let's pong", body)
         heartbeat = {
-            'component_name': "AlertRouter",
+            'component_name': self.name,
             'is_alive': True,
             'timestamp': datetime.now().timestamp(),
         }
@@ -236,6 +243,7 @@ class AlertRouter(QueuingPublisherComponent):
                           HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
+        log_and_print("{} started.".format(self), self._logger)
         self._initialise_rabbit()
         while True:
             try:

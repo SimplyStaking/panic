@@ -47,8 +47,8 @@ class GitHubMonitorsManager(MonitorsManager):
                          "'ping'".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind('github_monitors_manager_ping_queue',
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'github_monitors_manager_ping_queue'")
+        self.logger.debug("Declaring consuming intentions on "
+                          "'github_monitors_manager_ping_queue'")
         self.rabbitmq.basic_consume('github_monitors_manager_ping_queue',
                                     self._process_ping, True, False, None)
 
@@ -71,7 +71,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'general.repos_config')
-        self.logger.info("Declaring consuming intentions on '{}'".format(
+        self.logger.debug("Declaring consuming intentions on '{}'".format(
             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
         self.rabbitmq.basic_consume(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)

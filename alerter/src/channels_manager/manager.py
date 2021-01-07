@@ -81,8 +81,8 @@ class ChannelsManager:
                          "'ping'".format(HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind('channels_manager_ping_queue',
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'channels_manager_ping_queue'")
+        self.logger.debug("Declaring consuming intentions on "
+                          "'channels_manager_ping_queue'")
         self.rabbitmq.basic_consume('channels_manager_ping_queue',
                                     self._process_ping, True, False, None)
 
@@ -99,8 +99,8 @@ class ChannelsManager:
                                   CONFIG_EXCHANGE))
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, 'channels.*')
-        self.logger.info("Declaring consuming intentions on "
-                         "{}".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.debug("Declaring consuming intentions on "
+                          "{}".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
