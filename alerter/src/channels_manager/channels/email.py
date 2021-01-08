@@ -12,8 +12,7 @@ class EmailChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger, emails_to: List[str],
                  email_api: EmailApi):
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+        super().__init__(channel_name, channel_id, logger)
 
         self._emails_to = emails_to
         self._email_api = email_api

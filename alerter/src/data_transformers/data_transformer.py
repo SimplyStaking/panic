@@ -36,7 +36,8 @@ class DataTransformer(Component):
         self._publishing_queue = Queue(max_queue_size)
 
         rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
         super().__init__()
 
     def __str__(self) -> str:

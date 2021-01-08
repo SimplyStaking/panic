@@ -30,7 +30,7 @@ _FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 
 
-class ConfigManager(Component):
+class ConfigsManager(Component):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -41,7 +41,7 @@ class ConfigManager(Component):
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True, case_sensitive: bool = False):
         """
-        Constructs the ConfigManager instance
+        Constructs the ConfigsManager instance
         :param config_directory: The root config directory to watch.
             This is searched recursively.
         :param file_patterns: The file patterns in the directory to watch.

@@ -10,8 +10,7 @@ from src.utils.types import PagerDutySeverities
 class PagerDutyChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger, pagerduty_api: PagerDutyApi):
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+        super().__init__(channel_name, channel_id, logger)
 
         self._pager_duty_api = pagerduty_api
 

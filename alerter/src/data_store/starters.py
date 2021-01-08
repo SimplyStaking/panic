@@ -13,19 +13,20 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
 from src.utils.logging import create_logger, log_and_print
 
 
-def _initialize_store_logger(store_name: str) -> logging.Logger:
+def _initialize_store_logger(
+        store_display_name: str, store_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             store_logger = create_logger(
-                env.DATA_STORE_LOG_FILE_TEMPLATE.format(store_name),
-                store_name, env.LOGGING_LEVEL, rotating=True)
+                env.DATA_STORE_LOG_FILE_TEMPLATE.format(store_display_name),
+                store_module_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+                store_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -36,20 +37,21 @@ def _initialize_store_logger(store_name: str) -> logging.Logger:
 
 
 def _initialize_system_store() -> SystemStore:
-    store_name = 'System Store'
+    store_display_name = 'System Store'
 
-    store_logger = _initialize_store_logger(store_name)
+    store_logger = _initialize_store_logger(store_display_name,
+                                            SystemStore.__name__)
 
     # Try initializing the system store until successful
     while True:
         try:
-            system_store = SystemStore(store_name, store_logger)
-            log_and_print("Successfully initialized {}".format(store_name),
-                          store_logger)
+            system_store = SystemStore(store_display_name, store_logger)
+            log_and_print("Successfully initialized {}".format(
+                store_display_name), store_logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+                store_display_name, e)
             log_and_print(msg, store_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -58,20 +60,21 @@ def _initialize_system_store() -> SystemStore:
 
 
 def _initialize_github_store() -> GithubStore:
-    store_name = 'GitHub Store'
+    store_display_name = 'GitHub Store'
 
-    store_logger = _initialize_store_logger(store_name)
+    store_logger = _initialize_store_logger(store_display_name,
+                                            GithubStore.__name__)
 
     # Try initializing the github store until successful
     while True:
         try:
-            github_store = GithubStore(store_name, store_logger)
-            log_and_print("Successfully initialized {}".format(store_name),
-                          store_logger)
+            github_store = GithubStore(store_display_name, store_logger)
+            log_and_print("Successfully initialized {}".format(
+                store_display_name), store_logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+                store_display_name, e)
             log_and_print(msg, store_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -80,20 +83,21 @@ def _initialize_github_store() -> GithubStore:
 
 
 def _initialize_alert_store() -> AlertStore:
-    store_name = 'Alert Store'
+    store_display_name = 'Alert Store'
 
-    store_logger = _initialize_store_logger(store_name)
+    store_logger = _initialize_store_logger(store_display_name,
+                                            AlertStore.__name__)
 
     # Try initializing the alert store until successful
     while True:
         try:
-            alert_store = AlertStore(store_name, store_logger)
-            log_and_print("Successfully initialized {}".format(store_name),
-                          store_logger)
+            alert_store = AlertStore(store_display_name, store_logger)
+            log_and_print("Successfully initialized {}".format(
+                store_display_name), store_logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+                store_display_name, e)
             log_and_print(msg, store_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)

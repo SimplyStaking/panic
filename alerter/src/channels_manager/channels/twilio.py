@@ -9,8 +9,7 @@ class TwilioChannel(Channel):
 
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger, twilio_api: TwilioApi) -> None:
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+        super().__init__(channel_name, channel_id, logger)
 
         self._twilio_api = twilio_api
 

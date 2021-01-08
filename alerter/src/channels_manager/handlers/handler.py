@@ -15,8 +15,8 @@ class ChannelHandler(Component):
 
         self._handler_name = handler_name
         self._logger = logger
-        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
-                                     host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild(
+            RabbitMQApi.__name__), host=rabbit_ip)
 
     def __str__(self) -> str:
         return self.handler_name

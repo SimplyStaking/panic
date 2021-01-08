@@ -50,8 +50,9 @@ class GithubStore(Store):
                                        True, False, False)
 
     def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
-                               host=self.mongo_ip, port=self.mongo_port)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue='github_store_queue',
                                     on_message_callback=self._process_data,
                                     auto_ack=False,

@@ -29,7 +29,8 @@ class Alerter(ABC):
         self._publishing_queue = Queue(max_queue_size)
 
         rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)

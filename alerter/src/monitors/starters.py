@@ -14,19 +14,20 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
 from src.utils.logging import create_logger, log_and_print
 
 
-def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
+def _initialize_monitor_logger(monitor_display_name: str,
+                               monitor_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             monitor_logger = create_logger(
-                env.MONITORS_LOG_FILE_TEMPLATE.format(monitor_name),
-                monitor_name, env.LOGGING_LEVEL, rotating=True)
+                env.MONITORS_LOG_FILE_TEMPLATE.format(monitor_display_name),
+                monitor_module_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                monitor_name, e)
+                monitor_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # monitor's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -37,24 +38,26 @@ def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
 
 
 def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
-    # Monitor name based on system
-    monitor_name = 'System monitor ({})'.format(system_config.system_name)
+    # Monitor display name based on system
+    monitor_display_name = 'System monitor ({})'.format(
+        system_config.system_name)
 
-    system_monitor_logger = _initialize_monitor_logger(monitor_name)
+    system_monitor_logger = _initialize_monitor_logger(monitor_display_name,
+                                                       SystemMonitor.__name__)
 
     # Try initializing a monitor until successful
     while True:
         try:
             system_monitor = SystemMonitor(
-                monitor_name, system_config, system_monitor_logger,
+                monitor_display_name, system_config, system_monitor_logger,
                 int(env.SYSTEM_MONITOR_PERIOD_SECONDS)
             )
-            log_and_print("Successfully initialized {}".format(monitor_name),
-                          system_monitor_logger)
+            log_and_print("Successfully initialized {}".format(
+                monitor_display_name), system_monitor_logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                monitor_name, e)
+                monitor_display_name, e)
             log_and_print(msg, system_monitor_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -63,26 +66,27 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
 
 
 def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
-    # Monitor name based on repo name. The '/' are replaced with spaces, and the
-    # last space is removed.
-    monitor_name = 'GitHub monitor ({})'.format(
+    # Monitor display name based on repo name. The '/' are replaced with spaces,
+    # and the last space is removed.
+    monitor_display_name = 'GitHub monitor ({})'.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
 
-    github_monitor_logger = _initialize_monitor_logger(monitor_name)
+    github_monitor_logger = _initialize_monitor_logger(monitor_display_name,
+                                                       GitHubMonitor.__name__)
 
     # Try initializing a monitor until successful
     while True:
         try:
             github_monitor = GitHubMonitor(
-                monitor_name, repo_config, github_monitor_logger,
+                monitor_display_name, repo_config, github_monitor_logger,
                 int(env.GITHUB_MONITOR_PERIOD_SECONDS)
             )
-            log_and_print("Successfully initialized {}".format(monitor_name),
-                          github_monitor_logger)
+            log_and_print("Successfully initialized {}".format(
+                monitor_display_name), github_monitor_logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                monitor_name, e)
+                monitor_display_name, e)
             log_and_print(msg, github_monitor_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)

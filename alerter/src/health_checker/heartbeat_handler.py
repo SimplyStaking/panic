@@ -27,7 +27,8 @@ class HeartbeatHandler:
         self._redis = redis
 
         rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # This dict stores the keys-values that should have been stored to redis
         # but where not saved due to an error in redis. This is done so that the

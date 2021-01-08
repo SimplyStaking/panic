@@ -28,10 +28,11 @@ class Store(ABC):
         unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
         self._logger = logger
-        self._rabbitmq = RabbitMQApi(logger=self._logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(
+            logger=self._logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
         self._mongo = None
-        self._redis = RedisApi(logger=self._logger, db=redis_db,
-                               host=redis_ip, port=redis_port,
+        self._redis = RedisApi(logger=self._logger.getChild(RedisApi.__name__),
+                               db=redis_db, host=redis_ip, port=redis_port,
                                namespace=unique_alerter_identifier)
 
         # Handle termination signals by stopping the manager gracefully

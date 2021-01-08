@@ -10,8 +10,7 @@ class ConsoleChannel(Channel):
 
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger) -> None:
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+        super().__init__(channel_name, channel_id, logger)
 
     def alert(self, alert: Alert) -> RequestStatus:
         msg = "PANIC {} - {}".format(alert.severity.upper(), alert.message)

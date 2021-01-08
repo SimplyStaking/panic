@@ -27,14 +27,14 @@ class TelegramCommandHandlers(CmdHandler):
                  unique_alerter_identifier: str, mongo_ip: str, mongo_db: str,
                  mongo_port: int, associated_chains: Dict,
                  telegram_channel: TelegramChannel) -> None:
-        super().__init__(handler_name, logger.getChild(handler_name))
+        super().__init__(handler_name, logger)
 
-        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
-                                     host=rabbit_ip)
-        self._redis = RedisApi(logger=self.logger.getChild('redis'),
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
+        self._redis = RedisApi(logger=self.logger.getChild(RedisApi.__name__),
                                host=redis_ip, db=redis_db, port=redis_port,
                                namespace=unique_alerter_identifier)
-        self._mongo = MongoApi(logger=self.logger.getChild('mongo'),
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                host=mongo_ip, db_name=mongo_db, port=mongo_port)
 
         self._associated_chains = associated_chains
@@ -276,8 +276,8 @@ class TelegramCommandHandlers(CmdHandler):
         system_alerters_manager_str = 'System Alerters Manager'
         github_alerter_manager_str = 'GitHub Alerter Manager'
         data_store_manager_str = 'Data Store Manager'
-        alert_router_str = 'AlertRouter'
-        config_manager_str = 'ConfigManager'
+        alert_router_str = 'Alert Router'
+        config_manager_str = 'Configs Manager'
         channels_manager_str = 'Channels Manager'
 
         key_sys_mon_man_hb = Keys.get_component_heartbeat(

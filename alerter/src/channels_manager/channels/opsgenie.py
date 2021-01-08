@@ -11,10 +11,8 @@ from src.utils.types import OpsgenieSeverities
 
 class OpsgenieChannel(Channel):
     def __init__(self, channel_name: str, channel_id: str,
-                 logger: logging.Logger,
-                 opsgenie_api: OpsgenieApi):
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+                 logger: logging.Logger, opsgenie_api: OpsgenieApi):
+        super().__init__(channel_name, channel_id, logger)
         self._opsgenie_api = opsgenie_api
 
     def alert(self, alert: Alert) -> RequestStatus:

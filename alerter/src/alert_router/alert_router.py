@@ -27,7 +27,8 @@ class AlertRouter(QueuingPublisherComponent):
                  enable_console_alerts: bool):
 
         self._name = name
-        self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
+        self._rabbit = RabbitMQApi(logger=logger.getChild(RabbitMQApi.__name__),
+                                   host=rabbit_ip)
         self._enable_console_alerts = enable_console_alerts
 
         self._config = {}

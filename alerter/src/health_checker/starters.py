@@ -15,19 +15,22 @@ from src.utils.logging import create_logger, log_and_print
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
 
-def _initialize_health_checker_logger(component_name: str) -> logging.Logger:
+def _initialize_health_checker_logger(
+        component_display_name: str,
+        component_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             component_logger = create_logger(
-                env.HEALTH_CHECKER_LOG_FILE_TEMPLATE.format(component_name),
-                component_name, env.LOGGING_LEVEL, rotating=True)
+                env.HEALTH_CHECKER_LOG_FILE_TEMPLATE.format(
+                    component_display_name), component_module_name,
+                env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+                component_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -37,8 +40,8 @@ def _initialize_health_checker_logger(component_name: str) -> logging.Logger:
     return component_logger
 
 
-def _initialize_component_redis(
-        component_name: str, component_logger: logging.Logger) -> RedisApi:
+def _initialize_component_redis(component_display_name: str,
+                                component_logger: logging.Logger) -> RedisApi:
     # Try initializing the Redis API until successful. This had to be done
     # separately to avoid instances when Redis creation failed and we
     # attempt to use it.
@@ -49,13 +52,14 @@ def _initialize_component_redis(
             redis_host = env.REDIS_IP
             unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
-            redis = RedisApi(logger=component_logger, db=redis_db,
-                             host=redis_host, port=redis_port,
-                             namespace=unique_alerter_identifier)
+            redis = RedisApi(
+                logger=component_logger.getChild(RedisApi.__name__),
+                db=redis_db, host=redis_host, port=redis_port,
+                namespace=unique_alerter_identifier)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+                component_display_name, e)
             log_and_print(msg, component_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -64,21 +68,23 @@ def _initialize_component_redis(
 
 
 def _initialize_heartbeat_handler() -> HeartbeatHandler:
-    component_name = 'Heartbeat Handler'
+    component_display_name = 'Heartbeat Handler'
 
-    logger = _initialize_health_checker_logger(component_name)
-    redis = _initialize_component_redis(component_name, logger)
+    logger = _initialize_health_checker_logger(component_display_name,
+                                               HeartbeatHandler.__name__)
+    redis = _initialize_component_redis(component_display_name, logger)
 
     # Try initializing the heartbeat handler until successful
     while True:
         try:
-            heartbeat_handler = HeartbeatHandler(logger, redis, component_name)
-            log_and_print("Successfully initialized {}".format(component_name),
-                          logger)
+            heartbeat_handler = HeartbeatHandler(logger, redis,
+                                                 component_display_name)
+            log_and_print("Successfully initialized {}".format(
+                component_display_name), logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+                component_display_name, e)
             log_and_print(msg, logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -87,21 +93,23 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
 
 
 def _initialize_ping_publisher() -> PingPublisher:
-    component_name = 'Ping Publisher'
+    component_display_name = 'Ping Publisher'
 
-    logger = _initialize_health_checker_logger(component_name)
-    redis = _initialize_component_redis(component_name, logger)
+    logger = _initialize_health_checker_logger(component_display_name,
+                                               PingPublisher.__name__)
+    redis = _initialize_component_redis(component_display_name, logger)
 
     # Try initializing the ping publisher until successful
     while True:
         try:
-            ping_publisher = PingPublisher(30, logger, redis, component_name)
-            log_and_print("Successfully initialized {}".format(component_name),
-                          logger)
+            ping_publisher = PingPublisher(30, logger, redis,
+                                           component_display_name)
+            log_and_print("Successfully initialized {}".format(
+                component_display_name), logger)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+                component_display_name, e)
             log_and_print(msg, logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)

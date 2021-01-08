@@ -12,24 +12,25 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
 from src.utils.logging import create_logger, log_and_print
 
 
-def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
+def _initialize_logger(component_display_name: str, component_module_name: str,
+                       log_file_template: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             new_logger = create_logger(
-                log_file_template.format(log_name), log_name, env.LOGGING_LEVEL,
-                rotating=True)
+                log_file_template.format(component_display_name),
+                component_module_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = '!!! Error when initializing {}: {} !!!' \
-                .format(log_name, e)
+                .format(component_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             log_and_print(msg, dummy_logger)
             log_and_print("Re-attempting initialization procedure of {}."
-                          .format(log_name), dummy_logger)
+                          .format(component_display_name), dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -37,23 +38,25 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
 
 
 def _initialize_health_checker_manager() -> HealthCheckerManager:
-    manager_name = 'Health Checker Manager'
+    manager_display_name = 'Health Checker Manager'
 
     health_checker_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE)
+        manager_display_name, HealthCheckerManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE)
 
     # Attempt to initialize the health checker manager
     while True:
         try:
             health_checker_manager = HealthCheckerManager(
-                health_checker_manager_logger, manager_name)
+                health_checker_manager_logger, manager_display_name)
             break
         except Exception as e:
             msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_name, e)
+                .format(manager_display_name, e)
             log_and_print(msg, health_checker_manager_logger)
             log_and_print("Re-attempting initialization procedure of {}."
-                          .format(manager_name), health_checker_manager_logger)
+                          .format(manager_display_name),
+                          health_checker_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -87,7 +90,7 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     health_checker_manager_process.terminate()
     health_checker_manager_process.join()
 
-    log_and_print("The health checker process has ended.", dummy_logger)
+    log_and_print("The Health Checker process has ended.", dummy_logger)
     sys.exit()
 
 
@@ -107,5 +110,5 @@ if __name__ == '__main__':
     # exit
     health_checker_manager_process.join()
 
-    log_and_print("The health checker process has ended.", dummy_logger)
+    log_and_print("The Health Checker process has ended.", dummy_logger)
     sys.stdout.flush()

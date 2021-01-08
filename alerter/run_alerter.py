@@ -13,7 +13,7 @@ from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
-from src.config_manager import ConfigManager
+from src.config_manager import ConfigsManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -46,23 +46,24 @@ def _get_stopped_message(what_stopped: Any) -> str:
     return "{} stopped.".format(what_stopped)
 
 
-def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
+def _initialize_logger(component_display_name: str, component_module_name: str,
+                       log_file_template: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
-            new_logger = create_logger(
-                log_file_template.format(log_name), log_name, env.LOGGING_LEVEL,
-                rotating=True)
+            new_logger = create_logger(log_file_template.format(
+                component_display_name), component_module_name,
+                env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
-            log_and_print(_get_initialisation_error_message(log_name, e),
-                          dummy_logger)
-            log_and_print(_get_reattempting_message(log_name),
+            log_and_print(_get_initialisation_error_message(
+                component_display_name, e), dummy_logger)
+            log_and_print(_get_reattempting_message(component_display_name),
                           dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -71,22 +72,23 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
 
 
 def _initialize_system_alerters_manager() -> SystemAlertersManager:
-    manager_name = "System Alerters Manager"
+    manager_display_name = "System Alerters Manager"
 
     system_alerters_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, SystemAlertersManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager
     while True:
         try:
             system_alerters_manager = SystemAlertersManager(
-                system_alerters_manager_logger, manager_name)
+                system_alerters_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          system_alerters_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), system_alerters_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           system_alerters_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -94,22 +96,23 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
 
 
 def _initialize_github_alerter_manager() -> GithubAlerterManager:
-    manager_name = "GitHub Alerter Manager"
+    manager_display_name = "GitHub Alerter Manager"
 
     github_alerter_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, GithubAlerterManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system alerters manager
     while True:
         try:
             github_alerter_manager = GithubAlerterManager(
-                github_alerter_manager_logger, manager_name)
+                github_alerter_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          github_alerter_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), github_alerter_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           github_alerter_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -118,22 +121,23 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
 
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
-    manager_name = 'System Monitors Manager'
+    manager_display_name = 'System Monitors Manager'
 
     system_monitors_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, SystemMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the system monitors manager
     while True:
         try:
             system_monitors_manager = SystemMonitorsManager(
-                system_monitors_manager_logger, manager_name)
+                system_monitors_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          system_monitors_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), system_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           system_monitors_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -142,22 +146,23 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 
 
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
-    manager_name = 'GitHub Monitors Manager'
+    manager_display_name = 'GitHub Monitors Manager'
 
     github_monitors_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, GitHubMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the github monitors manager
     while True:
         try:
             github_monitors_manager = GitHubMonitorsManager(
-                github_monitors_manager_logger, manager_name)
+                github_monitors_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          github_monitors_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), github_monitors_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           github_monitors_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -166,22 +171,23 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
 
 
 def _initialize_data_transformers_manager() -> DataTransformersManager:
-    manager_name = 'Data Transformers Manager'
+    manager_display_name = 'Data Transformers Manager'
 
     data_transformers_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, DataTransformersManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data transformers manager
     while True:
         try:
             data_transformers_manager = DataTransformersManager(
-                data_transformers_manager_logger, manager_name)
+                data_transformers_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          data_transformers_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), data_transformers_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           data_transformers_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -190,22 +196,23 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
 
 
 def _initialize_channels_manager() -> ChannelsManager:
-    manager_name = 'Channels Manager'
+    manager_display_name = 'Channels Manager'
 
     channels_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, ChannelsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data transformers manager
     while True:
         try:
             channels_manager = ChannelsManager(channels_manager_logger,
-                                               manager_name)
+                                               manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(manager_name, e),
-                          channels_manager_logger)
-            log_and_print(_get_reattempting_message(manager_name),
+            log_and_print(_get_initialisation_error_message(
+                manager_display_name, e), channels_manager_logger)
+            log_and_print(_get_reattempting_message(manager_display_name),
                           channels_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -214,6 +221,8 @@ def _initialize_channels_manager() -> ChannelsManager:
 
 
 def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
+    display_name = 'Alert Router'
+
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -229,68 +238,66 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
             # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
             log_and_print(_get_initialisation_error_message(
-                AlertRouter.__name__, e),
-                dummy_logger)
-            log_and_print(_get_reattempting_message(AlertRouter.__name__),
-                          dummy_logger)
+                display_name, e), dummy_logger)
+            log_and_print(_get_reattempting_message(display_name), dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            alert_router = AlertRouter(AlertRouter.__name__,
-                                       alert_router_logger, rabbit_ip,
-                                       env.ENABLE_CONSOLE_ALERTS)
+            alert_router = AlertRouter(display_name, alert_router_logger,
+                                       rabbit_ip, env.ENABLE_CONSOLE_ALERTS)
             return alert_router, alert_router_logger
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
             # up
             alert_router_logger.info(
-                "Trying to set up the alert router again in {} "
-                "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD))
+                "Trying to set up the {} again in {} seconds.".format(
+                    display_name, RE_INITIALIZE_SLEEPING_PERIOD))
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 
-def _initialize_config_manager() -> Tuple[ConfigManager, logging.Logger]:
+def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
+    display_name = 'Configs Manager'
     config_manager_logger = _initialize_logger(
-        ConfigManager.__name__, env.CONFIG_MANAGER_LOG_FILE
+        display_name, ConfigsManager.__name__, env.CONFIG_MANAGER_LOG_FILE
     )
 
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            config_manager = ConfigManager(ConfigManager.__name__,
-                                           config_manager_logger, '../config',
-                                           rabbit_ip)
+            config_manager = ConfigsManager(display_name, config_manager_logger,
+                                            '../config', rabbit_ip)
             return config_manager, config_manager_logger
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
             # up
             config_manager_logger.info(
-                "Trying to set up the configurations manager again in {} "
-                "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD))
+                "Trying to set up the {} again in {} seconds.".format(
+                    display_name, RE_INITIALIZE_SLEEPING_PERIOD))
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 
 def _initialize_data_store_manager() -> StoreManager:
-    manager_name = "Data Store Manager"
+    manager_display_name = "Data Store Manager"
 
     data_store_manager_logger = _initialize_logger(
-        manager_name, env.MANAGERS_LOG_FILE_TEMPLATE
+        manager_display_name, StoreManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
     # Attempt to initialize the data store manager
     while True:
         try:
             data_store_manager = StoreManager(
-                data_store_manager_logger, manager_name)
+                data_store_manager_logger, manager_display_name)
             break
         except Exception as e:
             msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_name, e)
+                .format(manager_display_name, e)
             log_and_print(msg, data_store_manager_logger)
             log_and_print('Re-attempting the initialization procedure',
                           data_store_manager_logger)
