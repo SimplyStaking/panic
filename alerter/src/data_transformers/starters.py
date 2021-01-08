@@ -9,13 +9,14 @@ from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, SYSTEM_DATA_TRANSFORMER_NAME, \
+    GITHUB_DATA_TRANSFORMER_NAME
 from src.utils.logging import create_logger, log_and_print
 
 
 def _initialize_transformer_logger(
-        transformer_display_name: str,
-        transformer_module_name: str) -> logging.Logger:
+        transformer_display_name: str, transformer_module_name: str) \
+        -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -65,7 +66,7 @@ def _initialize_transformer_redis(
 
 
 def _initialize_system_data_transformer() -> SystemDataTransformer:
-    transformer_display_name = 'System Data Transformer'
+    transformer_display_name = SYSTEM_DATA_TRANSFORMER_NAME
 
     transformer_logger = _initialize_transformer_logger(
         transformer_display_name, SystemDataTransformer.__name__)
@@ -91,7 +92,7 @@ def _initialize_system_data_transformer() -> SystemDataTransformer:
 
 
 def _initialize_github_data_transformer() -> GitHubDataTransformer:
-    transformer_display_name = 'GitHub Data Transformer'
+    transformer_display_name = GITHUB_DATA_TRANSFORMER_NAME
 
     transformer_logger = _initialize_transformer_logger(
         transformer_display_name, GitHubDataTransformer.__name__)

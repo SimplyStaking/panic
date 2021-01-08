@@ -14,7 +14,7 @@ from src.monitors.starters import start_system_monitor
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, SYSTEM_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -89,7 +89,7 @@ class SystemMonitorsManager(MonitorsManager):
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
-            'System monitor ({})'.format(system_config.system_name)
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(system_config.system_name)
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain
 

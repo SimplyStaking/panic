@@ -171,7 +171,7 @@ class AlertRouter(QueuingPublisherComponent):
             self._rabbit.basic_ack(method.delivery_tag, False)
             return
 
-        self._logger.debug("recv_alert = %s", recv_alert)
+        self._logger.info("recv_alert = %s", recv_alert)
         # Where to route this alert to
         self._logger.debug("Got a lock on the config")
         self._logger.debug("Obtaining list of channels to alert")

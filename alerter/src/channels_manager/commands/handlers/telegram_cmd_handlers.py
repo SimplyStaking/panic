@@ -18,6 +18,11 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import Severity
+from src.utils.constants import SYSTEM_MONITORS_MANAGER_NAME, \
+    GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
+    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME, \
+    DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
+    CHANNELS_MANAGER_NAME, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
 
 
 class TelegramCommandHandlers(CmdHandler):
@@ -270,32 +275,23 @@ class TelegramCommandHandlers(CmdHandler):
                    'Checker.\n'.format(self._get_running_icon(False))
 
         status = ''
-        system_monitors_manager_str = 'System Monitors Manager'
-        github_monitors_manager_str = 'GitHub Monitors Manager'
-        data_transformers_manager_str = 'Data Transformers Manager'
-        system_alerters_manager_str = 'System Alerters Manager'
-        github_alerter_manager_str = 'GitHub Alerter Manager'
-        data_store_manager_str = 'Data Store Manager'
-        alert_router_str = 'Alert Router'
-        config_manager_str = 'Configs Manager'
-        channels_manager_str = 'Channels Manager'
 
         key_sys_mon_man_hb = Keys.get_component_heartbeat(
-            system_monitors_manager_str)
+            SYSTEM_MONITORS_MANAGER_NAME)
         key_gh_mon_man_hb = Keys.get_component_heartbeat(
-            github_monitors_manager_str)
+            GITHUB_MONITORS_MANAGER_NAME)
         key_data_trans_man_hb = Keys.get_component_heartbeat(
-            data_transformers_manager_str)
+            DATA_TRANSFORMERS_MANAGER_NAME)
         key_sys_alerters_man_hb = Keys.get_component_heartbeat(
-            system_alerters_manager_str)
+            SYSTEM_ALERTERS_MANAGER_NAME)
         key_gh_alerter_man_hb = Keys.get_component_heartbeat(
-            github_alerter_manager_str)
-        key_store_man_hb = Keys.get_component_heartbeat(data_store_manager_str)
-        key_alert_router_hb = Keys.get_component_heartbeat(alert_router_str)
+            GITHUB_ALERTER_MANAGER_NAME)
+        key_store_man_hb = Keys.get_component_heartbeat(DATA_STORE_MANAGER_NAME)
+        key_alert_router_hb = Keys.get_component_heartbeat(ALERT_ROUTER_NAME)
         key_config_manager_hb = Keys.get_component_heartbeat(
-            config_manager_str)
+            CONFIGS_MANAGER_NAME)
         key_channels_manager_hb = Keys.get_component_heartbeat(
-            channels_manager_str)
+            CHANNELS_MANAGER_NAME)
 
         if self.redis.exists_unsafe(key_sys_mon_man_hb):
             sys_mon_man_hb = json.loads(
@@ -303,7 +299,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(sys_mon_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(system_monitors_manager_str,
+                .format(SYSTEM_MONITORS_MANAGER_NAME,
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_gh_mon_man_hb):
@@ -312,7 +308,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(gh_mon_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(github_monitors_manager_str,
+                .format(GITHUB_MONITORS_MANAGER_NAME,
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_data_trans_man_hb):
@@ -321,7 +317,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(data_trans_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(data_transformers_manager_str,
+                .format(DATA_TRANSFORMERS_MANAGER_NAME,
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_sys_alerters_man_hb):
@@ -330,7 +326,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(sys_alerters_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(system_alerters_manager_str,
+                .format(SYSTEM_ALERTERS_MANAGER_NAME,
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_gh_alerter_man_hb):
@@ -339,7 +335,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(gh_alerter_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(github_alerter_manager_str,
+                .format(GITHUB_ALERTER_MANAGER_NAME,
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_store_man_hb):
@@ -348,7 +344,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(store_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(data_store_manager_str, self._get_running_icon(False))
+                .format(DATA_STORE_MANAGER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_alert_router_hb):
             alert_router_hb = json.loads(
@@ -356,7 +352,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_worker_component_hb_status(alert_router_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(alert_router_str, self._get_running_icon(False))
+                .format(ALERT_ROUTER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_config_manager_hb):
             config_manager_hb = json.loads(
@@ -364,7 +360,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_worker_component_hb_status(config_manager_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(config_manager_str, self._get_running_icon(False))
+                .format(CONFIGS_MANAGER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_channels_manager_hb):
             channels_man_hb = json.loads(
@@ -372,7 +368,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(channels_man_hb)
         else:
             status += '- *{}*: {} - No heartbeats yet.\n' \
-                .format(channels_manager_str, self._get_running_icon(False))
+                .format(CHANNELS_MANAGER_NAME, self._get_running_icon(False))
 
         # Just say that PANIC's components are ok if there are no issues.
         if status == '':
@@ -383,14 +379,12 @@ class TelegramCommandHandlers(CmdHandler):
 
     def _get_health_checker_status(self) -> Tuple[str, bool]:
         status = ''
-        heartbeat_handler_str = 'Heartbeat Handler'
-        ping_publisher_str = 'Ping Publisher'
         problems_in_checker = False
 
         key_heartbeat_handler_hb = Keys.get_component_heartbeat(
-            heartbeat_handler_str)
+            HEARTBEAT_HANDLER_NAME)
         key_ping_publisher_hb = Keys.get_component_heartbeat(
-            ping_publisher_str)
+            PING_PUBLISHER_NAME)
 
         if self.redis.exists_unsafe(key_heartbeat_handler_hb):
             heartbeat_handler_hb = json.loads(
@@ -406,14 +400,15 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += '- *Health Checker (Heartbeat Handler)*: {} - ' \
-                          'Missed {} heartbeats.\n' \
-                    .format(self._get_running_icon(False), missed_hbs)
+                status += '- *Health Checker ({})*: {} - Missed {} ' \
+                          'heartbeats.\n' .format(HEARTBEAT_HANDLER_NAME,
+                                                  self._get_running_icon(False),
+                                                  missed_hbs)
                 problems_in_checker = True
         else:
-            status += '- *Health Checker (Heartbeat Handler)*: {} - No ' \
-                      'heartbeat yet.\n' \
-                .format(self._get_running_icon(False))
+            status += '- *Health Checker ({})*: {} - No heartbeat ' \
+                      'yet.\n'.format(HEARTBEAT_HANDLER_NAME,
+                                      self._get_running_icon(False))
             problems_in_checker = True
 
         if self.redis.exists_unsafe(key_ping_publisher_hb):
@@ -430,14 +425,15 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += '- *Health Checker (Ping Publisher)*: {} - Missed ' \
-                          '{} heartbeats.\n' \
-                    .format(self._get_running_icon(False), missed_hbs)
+                status += '- *Health Checker ({})*: {} - Missed {} ' \
+                          'heartbeats.\n'.format(PING_PUBLISHER_NAME,
+                                                 self._get_running_icon(False),
+                                                 missed_hbs)
                 problems_in_checker = True
         else:
-            status += '- * Health Checker (Ping Publisher)*: {} - No ' \
-                      'heartbeat yet.\n' \
-                .format(self._get_running_icon(False))
+            status += '- * Health Checker ({})*: {} - No heartbeat ' \
+                      'yet.\n'.format(PING_PUBLISHER_NAME,
+                                      self._get_running_icon(False))
             problems_in_checker = True
 
         # Just say that PANIC's components are ok if there are no issues.

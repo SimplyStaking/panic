@@ -14,7 +14,8 @@ from src.data_transformers.starters import start_system_data_transformer, \
     start_github_data_transformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
+    SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -133,31 +134,31 @@ class DataTransformersManager:
         # Start the system data transformer in a separate process if it is not
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
-        if 'System Data Transformer' not in self.transformer_process_dict or \
-                not self.transformer_process_dict[
-                    'System Data Transformer'].is_alive():
-            log_and_print("Attempting to start the System Data Transformer.",
-                          self.logger)
+        if SYSTEM_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
+                or not self.transformer_process_dict[
+                    SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
             system_data_transformer_process = multiprocessing.Process(
                 target=start_system_data_transformer, args=())
             system_data_transformer_process.daemon = True
             system_data_transformer_process.start()
-            self._transformer_process_dict['System Data Transformer'] = \
+            self._transformer_process_dict[SYSTEM_DATA_TRANSFORMER_NAME] = \
                 system_data_transformer_process
 
         # Start the github data transformer in a separate process if it is not
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
-        if 'GitHub Data Transformer' not in self.transformer_process_dict or \
-                not self.transformer_process_dict[
-                    'System Data Transformer'].is_alive():
-            log_and_print("Attempting to start the GitHub Data Transformer.",
-                          self.logger)
+        if GITHUB_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
+                or not self.transformer_process_dict[
+                    GITHUB_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_DATA_TRANSFORMER_NAME), self.logger)
             github_data_transformer_process = multiprocessing.Process(
                 target=start_github_data_transformer, args=())
             github_data_transformer_process.daemon = True
             github_data_transformer_process.start()
-            self._transformer_process_dict['GitHub Data Transformer'] = \
+            self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
                 github_data_transformer_process
 
     def manage(self) -> None:

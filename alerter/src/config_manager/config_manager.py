@@ -208,8 +208,7 @@ class ConfigsManager(Component):
                 break
             except MessageWasNotDeliveredException as mwnde:
                 self._logger.error("Config was not successfully sent to "
-                                   "routing key %s",
-                                   routing_key)
+                                   "routing key %s", routing_key)
                 self._logger.exception(mwnde)
                 self._logger.info("Will attempt sending the config again to "
                                   "routing key %s", routing_key)

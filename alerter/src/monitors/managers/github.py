@@ -15,7 +15,7 @@ from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, GITHUB_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -90,7 +90,7 @@ class GitHubMonitorsManager(MonitorsManager):
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
-            'GitHub monitor ({})'.format(
+            GITHUB_MONITOR_NAME_TEMPLATE.format(
                 repo_config.repo_name.replace('/', ' ')[:-1])
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain

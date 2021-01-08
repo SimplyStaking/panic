@@ -10,7 +10,8 @@ from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, SYSTEM_MONITOR_NAME_TEMPLATE, \
+    GITHUB_MONITOR_NAME_TEMPLATE
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -39,7 +40,7 @@ def _initialize_monitor_logger(monitor_display_name: str,
 
 def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     # Monitor display name based on system
-    monitor_display_name = 'System monitor ({})'.format(
+    monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
         system_config.system_name)
 
     system_monitor_logger = _initialize_monitor_logger(monitor_display_name,
@@ -68,7 +69,7 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
 def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
     # Monitor display name based on repo name. The '/' are replaced with spaces,
     # and the last space is removed.
-    monitor_display_name = 'GitHub monitor ({})'.format(
+    monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
 
     github_monitor_logger = _initialize_monitor_logger(monitor_display_name,

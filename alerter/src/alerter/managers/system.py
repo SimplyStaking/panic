@@ -14,7 +14,7 @@ from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME
+    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, SYSTEM_ALERTER_NAME_TEMPLATE
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
     MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -94,7 +94,7 @@ class SystemAlertersManager(AlertersManager):
         process.start()
         self._parent_id_process_dict[parent_id] = {}
         self._parent_id_process_dict[parent_id]['component_name'] = \
-            "System alerter ({})".format(chain)
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
         self._parent_id_process_dict[parent_id]['process'] = process
         self._parent_id_process_dict[parent_id]['parent_id'] = parent_id
         self._parent_id_process_dict[parent_id]['chain'] = chain

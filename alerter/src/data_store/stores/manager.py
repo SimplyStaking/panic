@@ -13,7 +13,8 @@ from src.data_store.starters import start_system_store, start_github_store, \
     start_alert_store
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME, \
+    GITHUB_STORE_NAME, ALERT_STORE_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -126,29 +127,32 @@ class StoreManager:
     def _start_stores_processes(self) -> None:
         # Start each store in a separate process if it is not yet started or it
         # is not alive. This must be done in case of a restart of the manager.
-        if 'System Store' not in self._store_process_dict or \
-                not self._store_process_dict['System Store'].is_alive():
-            log_and_print("Attempting to start the System Store.", self.logger)
+        if SYSTEM_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[SYSTEM_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                SYSTEM_STORE_NAME), self.logger)
             system_store_process = Process(target=start_system_store, args=())
             system_store_process.daemon = True
             system_store_process.start()
-            self._store_process_dict['System Store'] = system_store_process
+            self._store_process_dict[SYSTEM_STORE_NAME] = system_store_process
 
-        if 'GitHub Store' not in self._store_process_dict or \
-                not self._store_process_dict['GitHub Store'].is_alive():
-            log_and_print("Attempting to start the GitHub Store.", self.logger)
+        if GITHUB_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[GITHUB_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_STORE_NAME), self.logger)
             github_store_process = Process(target=start_github_store, args=())
             github_store_process.daemon = True
             github_store_process.start()
-            self._store_process_dict['GitHub Store'] = github_store_process
+            self._store_process_dict[GITHUB_STORE_NAME] = github_store_process
 
-        if 'Alert Store' not in self._store_process_dict or \
-                not self._store_process_dict['Alert Store'].is_alive():
-            log_and_print("Attempting to start the Alert Store.", self.logger)
+        if ALERT_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[ALERT_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                ALERT_STORE_NAME), self.logger)
             alert_store_process = Process(target=start_alert_store, args=())
             alert_store_process.daemon = True
             alert_store_process.start()
-            self._store_process_dict['Alert Store'] = alert_store_process
+            self._store_process_dict[ALERT_STORE_NAME] = alert_store_process
 
     def manage(self) -> None:
         log_and_print("{} started.".format(self), self.logger)

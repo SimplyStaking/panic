@@ -26,7 +26,11 @@ from src.utils.constants import ALERT_ROUTER_CONFIGS_QUEUE_NAME, \
     CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, \
     GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
     SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, SYSTEM_ALERTERS_MANAGER_NAME, \
+    GITHUB_ALERTER_MANAGER_NAME, SYSTEM_MONITORS_MANAGER_NAME, \
+    GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
+    CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
+    DATA_STORE_MANAGER_NAME
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 
@@ -72,7 +76,7 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
 
 
 def _initialize_system_alerters_manager() -> SystemAlertersManager:
-    manager_display_name = "System Alerters Manager"
+    manager_display_name = SYSTEM_ALERTERS_MANAGER_NAME
 
     system_alerters_manager_logger = _initialize_logger(
         manager_display_name, SystemAlertersManager.__name__,
@@ -96,7 +100,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
 
 
 def _initialize_github_alerter_manager() -> GithubAlerterManager:
-    manager_display_name = "GitHub Alerter Manager"
+    manager_display_name = GITHUB_ALERTER_MANAGER_NAME
 
     github_alerter_manager_logger = _initialize_logger(
         manager_display_name, GithubAlerterManager.__name__,
@@ -121,7 +125,7 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
 
 
 def _initialize_system_monitors_manager() -> SystemMonitorsManager:
-    manager_display_name = 'System Monitors Manager'
+    manager_display_name = SYSTEM_MONITORS_MANAGER_NAME
 
     system_monitors_manager_logger = _initialize_logger(
         manager_display_name, SystemMonitorsManager.__name__,
@@ -146,7 +150,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
 
 
 def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
-    manager_display_name = 'GitHub Monitors Manager'
+    manager_display_name = GITHUB_MONITORS_MANAGER_NAME
 
     github_monitors_manager_logger = _initialize_logger(
         manager_display_name, GitHubMonitorsManager.__name__,
@@ -171,7 +175,7 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
 
 
 def _initialize_data_transformers_manager() -> DataTransformersManager:
-    manager_display_name = 'Data Transformers Manager'
+    manager_display_name = DATA_TRANSFORMERS_MANAGER_NAME
 
     data_transformers_manager_logger = _initialize_logger(
         manager_display_name, DataTransformersManager.__name__,
@@ -196,7 +200,7 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
 
 
 def _initialize_channels_manager() -> ChannelsManager:
-    manager_display_name = 'Channels Manager'
+    manager_display_name = CHANNELS_MANAGER_NAME
 
     channels_manager_logger = _initialize_logger(
         manager_display_name, ChannelsManager.__name__,
@@ -221,7 +225,7 @@ def _initialize_channels_manager() -> ChannelsManager:
 
 
 def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
-    display_name = 'Alert Router'
+    display_name = ALERT_ROUTER_NAME
 
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
@@ -260,7 +264,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
 
 def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
-    display_name = 'Configs Manager'
+    display_name = CONFIGS_MANAGER_NAME
     config_manager_logger = _initialize_logger(
         display_name, ConfigsManager.__name__, env.CONFIG_MANAGER_LOG_FILE
     )
@@ -282,7 +286,7 @@ def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
 
 
 def _initialize_data_store_manager() -> StoreManager:
-    manager_display_name = "Data Store Manager"
+    manager_display_name = DATA_STORE_MANAGER_NAME
 
     data_store_manager_logger = _initialize_logger(
         manager_display_name, StoreManager.__name__,
@@ -490,28 +494,30 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
 
-    terminate_and_join_process(config_manager_runner_process, 'Configs Manager')
+    terminate_and_join_process(config_manager_runner_process,
+                               CONFIGS_MANAGER_NAME)
 
     terminate_and_join_process(system_monitors_manager_process,
-                               'System Monitors Manager')
+                               SYSTEM_MONITORS_MANAGER_NAME)
 
     terminate_and_join_process(github_monitors_manager_process,
-                               'GitHub Monitors Manager')
+                               GITHUB_MONITORS_MANAGER_NAME)
 
     terminate_and_join_process(data_transformers_manager_process,
-                               'Data Transformers Manager')
+                               DATA_TRANSFORMERS_MANAGER_NAME)
 
     terminate_and_join_process(system_alerters_manager_process,
-                               'System Alerters Manager')
+                               SYSTEM_ALERTERS_MANAGER_NAME)
 
     terminate_and_join_process(github_alerter_manager_process,
-                               'Github Alerter Manager')
+                               GITHUB_ALERTER_MANAGER_NAME)
 
-    terminate_and_join_process(data_store_process, 'Data Store Process')
+    terminate_and_join_process(data_store_process,
+                               DATA_STORE_MANAGER_NAME)
 
-    terminate_and_join_process(alert_router_process, 'Alert Router')
+    terminate_and_join_process(alert_router_process, ALERT_ROUTER_NAME)
 
-    terminate_and_join_process(channels_manager_process, 'Channels Manager')
+    terminate_and_join_process(channels_manager_process, CHANNELS_MANAGER_NAME)
 
     log_and_print("PANIC process terminated.", dummy_logger)
 

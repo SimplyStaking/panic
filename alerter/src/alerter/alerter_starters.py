@@ -9,7 +9,7 @@ from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -39,7 +39,7 @@ def _initialize_alerter_logger(alerter_display_name: str,
 def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
                                chain: str) -> SystemAlerter:
     # Alerter display name based on system
-    alerter_display_name = "System alerter ({})".format(chain)
+    alerter_display_name = SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
 
     system_alerter_logger = _initialize_alerter_logger(alerter_display_name,
                                                        SystemAlerter.__name__)
@@ -64,7 +64,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
 
 
 def _initialize_github_alerter() -> GithubAlerter:
-    alerter_display_name = "GitHub Alerter"
+    alerter_display_name = GITHUB_ALERTER_NAME
 
     github_alerter_logger = _initialize_alerter_logger(alerter_display_name,
                                                        GithubAlerter.__name__)

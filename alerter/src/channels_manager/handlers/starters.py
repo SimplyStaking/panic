@@ -29,7 +29,11 @@ from src.channels_manager.handlers.telegram.commands import \
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE, \
+    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE, \
+    TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE, \
+    EMAIL_ALERTS_HANDLER_NAME_TEMPLATE, OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, \
+    CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE, LOG_ALERTS_HANDLER_NAME_TEMPLATE
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -82,7 +86,8 @@ def _initialize_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
                                         channel_id: str, channel_name: str) \
         -> TelegramAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Telegram Alerts Handler ({})".format(channel_name)
+    handler_display_name = TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, TelegramAlertsHandler.__name__)
 
@@ -124,7 +129,8 @@ def _initialize_telegram_commands_handler(
         bot_token: str, bot_chat_id: str, channel_id: str, channel_name: str,
         associated_chains: Dict) -> TelegramCommandsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Telegram Commands Handler ({})".format(channel_name)
+    handler_display_name = TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, TelegramCommandsHandler.__name__)
 
@@ -168,7 +174,8 @@ def _initialize_twilio_alerts_handler(
         call_from: str, call_to: List[str], twiml: str, twiml_is_url: bool) \
         -> TwilioAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Twilio Alerts Handler ({})".format(channel_name)
+    handler_display_name = TWILIO_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, TwilioAlertsHandler.__name__)
 
@@ -211,7 +218,8 @@ def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
                                          channel_name: str) \
         -> PagerDutyAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "PagerDuty Alerts Handler ({})".format(channel_name)
+    handler_display_name = PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, PagerDutyAlertsHandler.__name__)
 
@@ -251,7 +259,8 @@ def _initialize_email_alerts_handler(
         channel_id: str, channel_name: str, username: Optional[str],
         password: Optional[str]) -> EmailAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Email Alerts Handler ({})".format(channel_name)
+    handler_display_name = EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, EmailAlertsHandler.__name__)
 
@@ -293,7 +302,8 @@ def _initialize_opsgenie_alerts_handler(api_key: str, eu_host: bool,
                                         channel_id: str, channel_name: str) \
         -> OpsgenieAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Opsgenie Alerts Handler ({})".format(channel_name)
+    handler_display_name = OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, OpsgenieAlertsHandler.__name__)
 
@@ -332,7 +342,8 @@ def start_opsgenie_alerts_handler(api_key: str, eu_host: bool, channel_id: str,
 def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
         -> ConsoleAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Console Alerts Handler ({})".format(channel_name)
+    handler_display_name = CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, ConsoleAlertsHandler.__name__)
 
@@ -368,7 +379,7 @@ def start_console_alerts_handler(channel_id: str, channel_name: str) -> None:
 def _initialize_log_alerts_handler(channel_id: str, channel_name: str) \
         -> LogAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = "Log Alerts Handler ({})".format(channel_name)
+    handler_display_name = LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
     handler_logger = _initialize_channel_handler_logger(
         handler_display_name, LogAlertsHandler.__name__)
     alerts_logger = _initialize_alerts_logger()

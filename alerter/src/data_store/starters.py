@@ -9,7 +9,8 @@ from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME, GITHUB_STORE_NAME, \
+    ALERT_STORE_NAME
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -37,7 +38,7 @@ def _initialize_store_logger(
 
 
 def _initialize_system_store() -> SystemStore:
-    store_display_name = 'System Store'
+    store_display_name = SYSTEM_STORE_NAME
 
     store_logger = _initialize_store_logger(store_display_name,
                                             SystemStore.__name__)
@@ -60,7 +61,7 @@ def _initialize_system_store() -> SystemStore:
 
 
 def _initialize_github_store() -> GithubStore:
-    store_display_name = 'GitHub Store'
+    store_display_name = GITHUB_STORE_NAME
 
     store_logger = _initialize_store_logger(store_display_name,
                                             GithubStore.__name__)
@@ -83,7 +84,7 @@ def _initialize_github_store() -> GithubStore:
 
 
 def _initialize_alert_store() -> AlertStore:
-    store_display_name = 'Alert Store'
+    store_display_name = ALERT_STORE_NAME
 
     store_logger = _initialize_store_logger(store_display_name,
                                             AlertStore.__name__)

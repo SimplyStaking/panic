@@ -21,7 +21,13 @@ from src.utils import env
 from src.utils.configs import get_newly_added_configs, get_modified_configs, \
     get_removed_configs
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME
+    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE, \
+    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE, \
+    TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, EMAIL_ALERTS_HANDLER_NAME_TEMPLATE, \
+    PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE, \
+    OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE, \
+    LOG_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME, \
+    LOG_CHANNEL_ID, LOG_CHANNEL_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
@@ -138,7 +144,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Telegram Alerts Handler ({})".format(channel_name)
+            TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['bot_token'] = bot_token
         process_details['bot_chat_id'] = bot_chat_id
@@ -166,7 +172,7 @@ class ChannelsManager:
         process_details = self._channel_process_dict[channel_id][
             commands_handler_type]
         process_details['component_name'] = \
-            "Telegram Commands Handler ({})".format(channel_name)
+            TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['bot_token'] = bot_token
         process_details['bot_chat_id'] = bot_chat_id
@@ -195,7 +201,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Twilio Alerts Handler ({})".format(channel_name)
+            TWILIO_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['account_sid'] = account_sid
         process_details['auth_token'] = auth_token
@@ -227,7 +233,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Email Alerts Handler ({})".format(channel_name)
+            EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['smtp'] = smtp
         process_details['email_from'] = email_from
@@ -256,7 +262,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "PagerDuty Alerts Handler ({})".format(channel_name)
+            PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['integration_key'] = integration_key
         process_details['channel_id'] = channel_id
@@ -281,7 +287,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Opsgenie Alerts Handler ({})".format(channel_name)
+            OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['api_key'] = api_key
         process_details['channel_id'] = channel_id
@@ -305,7 +311,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Console Alerts Handler ({})".format(channel_name)
+            CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
@@ -327,7 +333,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Log Alerts Handler ({})".format(channel_name)
+            LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
@@ -338,18 +344,20 @@ class ChannelsManager:
         # started or it is not alive. This must be done in case of a restart of
         # the manager.
         alerts_handler_type = ChannelHandlerTypes.ALERTS.value
-        if 'CONSOLE' not in self._channel_process_dict or \
-                not self.channel_process_dict['CONSOLE'][alerts_handler_type][
-                    'process'].is_alive():
-            self._create_and_start_console_alerts_handler('CONSOLE', 'CONSOLE')
+        if CONSOLE_CHANNEL_ID not in self._channel_process_dict or \
+                not self.channel_process_dict[CONSOLE_CHANNEL_ID][
+                    alerts_handler_type]['process'].is_alive():
+            self._create_and_start_console_alerts_handler(CONSOLE_CHANNEL_ID,
+                                                          CONSOLE_CHANNEL_NAME)
 
         # Start the LOG channel in a separate process if it is not yet started
         # or it is not alive. This must be done in case of a restart of the
         # manager.
-        if 'LOG' not in self._channel_process_dict or \
-                not self.channel_process_dict['LOG'][alerts_handler_type][
-                    'process'].is_alive():
-            self._create_and_start_log_alerts_handler('LOG', 'LOG')
+        if LOG_CHANNEL_ID not in self._channel_process_dict or \
+                not self.channel_process_dict[LOG_CHANNEL_ID][
+                    alerts_handler_type]['process'].is_alive():
+            self._create_and_start_log_alerts_handler(LOG_CHANNEL_ID,
+                                                      LOG_CHANNEL_NAME)
 
     def _process_telegram_configs(self, sent_configs: Dict) -> Dict:
         if ChannelTypes.TELEGRAM.value in self.channel_configs:

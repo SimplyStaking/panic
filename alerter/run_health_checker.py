@@ -8,7 +8,7 @@ from types import FrameType
 from src.health_checker.manager import HealthCheckerManager
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, HEALTH_CHECKER_MANAGER_NAME
 from src.utils.logging import create_logger, log_and_print
 
 
@@ -38,7 +38,7 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
 
 
 def _initialize_health_checker_manager() -> HealthCheckerManager:
-    manager_display_name = 'Health Checker Manager'
+    manager_display_name = HEALTH_CHECKER_MANAGER_NAME
 
     health_checker_manager_logger = _initialize_logger(
         manager_display_name, HealthCheckerManager.__name__,
@@ -86,7 +86,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     log_and_print("The Health Checker is terminating. All components will be "
                   "stopped gracefully.", dummy_logger)
 
-    log_and_print("Terminating the Health Checker Manager.", dummy_logger)
+    log_and_print("Terminating the {}.".format(HEALTH_CHECKER_MANAGER_NAME),
+                  dummy_logger)
     health_checker_manager_process.terminate()
     health_checker_manager_process.join()
 

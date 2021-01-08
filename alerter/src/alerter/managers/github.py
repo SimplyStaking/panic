@@ -11,7 +11,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.managers.manager import AlertersManager
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -96,15 +96,15 @@ class GithubAlerterManager(AlertersManager):
         # Start the system data transformer in a separate process if it is not
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
-        if 'GitHub Alerter' not in self.alerter_process_dict or \
-                not self.alerter_process_dict['GitHub Alerter'].is_alive():
-            log_and_print("Attempting to start the GitHub Alerter.",
-                          self.logger)
+        if GITHUB_ALERTER_NAME not in self.alerter_process_dict or \
+                not self.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_ALERTER_NAME), self.logger)
             github_alerter_process = Process(target=start_github_alerter,
                                              args=())
             github_alerter_process.daemon = True
             github_alerter_process.start()
-            self._alerter_process_dict['GitHub Alerter'] = \
+            self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
                 github_alerter_process
 
     def manage(self) -> None:

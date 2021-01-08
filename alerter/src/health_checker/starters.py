@@ -9,15 +9,15 @@ from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD
+    RESTART_SLEEPING_PERIOD, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
 from src.utils.logging import create_logger, log_and_print
 
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
 
 def _initialize_health_checker_logger(
-        component_display_name: str,
-        component_module_name: str) -> logging.Logger:
+        component_display_name: str, component_module_name: str) \
+        -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -68,7 +68,7 @@ def _initialize_component_redis(component_display_name: str,
 
 
 def _initialize_heartbeat_handler() -> HeartbeatHandler:
-    component_display_name = 'Heartbeat Handler'
+    component_display_name = HEARTBEAT_HANDLER_NAME
 
     logger = _initialize_health_checker_logger(component_display_name,
                                                HeartbeatHandler.__name__)
@@ -93,7 +93,7 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
 
 
 def _initialize_ping_publisher() -> PingPublisher:
-    component_display_name = 'Ping Publisher'
+    component_display_name = PING_PUBLISHER_NAME
 
     logger = _initialize_health_checker_logger(component_display_name,
                                                PingPublisher.__name__)
