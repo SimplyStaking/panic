@@ -19,6 +19,9 @@ from src.utils.exceptions import ReceivedUnexpectedDataException, \
 from src.utils.types import convert_to_float_if_not_none, \
     convert_to_int_if_not_none
 
+_GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
+_GITHUB_DT_INPUT_ROUTING_KEY = 'github'
+
 
 class GitHubDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
@@ -32,38 +35,35 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info(
-            "Creating queue 'github_data_transformer_raw_data_queue'")
-        self.rabbitmq.queue_declare(
-            'github_data_transformer_raw_data_queue', False, True, False,
-            False)
-        self.logger.info(
-            "Binding queue 'github_data_transformer_raw_data_queue' to "
-            "exchange '{}' with routing key 'github'".format(
-                RAW_DATA_EXCHANGE))
-        self.rabbitmq.queue_bind('github_data_transformer_raw_data_queue',
-                                 RAW_DATA_EXCHANGE, 'github')
+        self.logger.info("Creating queue '%s'", _GITHUB_DT_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_GITHUB_DT_INPUT_QUEUE, False, True, False,
+                                    False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         _GITHUB_DT_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                                 _GITHUB_DT_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.info('Declaring consuming intentions')
-        self.rabbitmq.basic_consume('github_data_transformer_raw_data_queue',
+        self.rabbitmq.basic_consume(_GITHUB_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(STORE_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -72,7 +72,7 @@ class GitHubDataTransformer(DataTransformer):
         # If Redis is down, the data passed as default will be stored as
         # the repo state.
 
-        self.logger.debug("Loading the state of {} from Redis".format(repo))
+        self.logger.debug("Loading the state of %s from Redis", repo)
         redis_hash = Keys.get_hash_parent(repo.parent_id)
         repo_id = repo.repo_id
 
@@ -207,8 +207,7 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.debug("Processing successful.")
 
     def _transform_data(self, data: Dict) -> None:
-        self.logger.debug("Performing data transformation on {} ..."
-                          .format(data))
+        self.logger.debug("Performing data transformation on %s ...", data)
 
         if 'result' in data:
             meta_data = data['result']['meta_data']
@@ -270,8 +269,8 @@ class GitHubDataTransformer(DataTransformer):
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info("Received {} from monitors. Now processing this data."
-                         .format(raw_data))
+        self.logger.info("Received %s from monitors. Now processing this data.",
+                         raw_data)
 
         processing_error = False
         try:
@@ -290,12 +289,12 @@ class GitHubDataTransformer(DataTransformer):
 
                 self._transform_data(raw_data)
                 self._update_state()
-                self.logger.info("Successfully processed {}".format(raw_data))
+                self.logger.info("Successfully processed %s", raw_data)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_raw_data".format(self))
         except Exception as e:
-            self.logger.error("Error when processing {}".format(raw_data))
+            self.logger.error("Error when processing %s", raw_data)
             self.logger.exception(e)
             processing_error = True
 

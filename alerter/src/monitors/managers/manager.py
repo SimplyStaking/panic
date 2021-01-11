@@ -59,8 +59,8 @@ class MonitorsManager(ABC):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     @abstractmethod
     def _process_configs(
@@ -90,6 +90,13 @@ class MonitorsManager(ABC):
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
     def on_terminate(self, signum: int, stack: FrameType) -> None:
@@ -97,7 +104,7 @@ class MonitorsManager(ABC):
                       "closed, and any running monitors will be stopped "
                       "gracefully. Afterwards the {} process will exit."
                       .format(self, self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for config_id, process_details in self.config_process_dict.items():
             log_and_print("Terminating the process of {}".format(config_id),

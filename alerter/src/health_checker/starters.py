@@ -9,6 +9,7 @@ from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils import env
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
@@ -24,8 +25,7 @@ def _initialize_health_checker_logger(component_name: str) -> logging.Logger:
                 component_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+            msg = get_initialisation_error_message(component_name, e)
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -51,8 +51,7 @@ def _initialize_component_redis(
                              namespace=unique_alerter_identifier)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+            msg = get_initialisation_error_message(component_name, e)
             log_and_print(msg, component_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -73,8 +72,7 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
                           logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+            msg = get_initialisation_error_message(component_name, e)
             log_and_print(msg, logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -95,8 +93,7 @@ def _initialize_ping_publisher() -> PingPublisher:
                           logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                component_name, e)
+            msg = get_initialisation_error_message(component_name, e)
             log_and_print(msg, logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -128,7 +125,7 @@ def start_health_checker_component(component: HealthCheckerComponentType) \
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            component.rabbitmq.disconnect_till_successful()
+            component.disconnect_from_rabbit()
             log_and_print("{} stopped.".format(component), component.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 component, sleep_period), component.logger)

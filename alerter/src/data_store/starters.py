@@ -9,6 +9,7 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 
 def _initialize_store_logger(store_name: str) -> logging.Logger:
@@ -23,8 +24,7 @@ def _initialize_store_logger(store_name: str) -> logging.Logger:
                 os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+            msg = get_initialisation_error_message(store_name, e)
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -46,8 +46,7 @@ def _initialize_system_store() -> SystemStore:
                           store_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+            msg = get_initialisation_error_message(store_name, e)
             log_and_print(msg, store_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -67,8 +66,7 @@ def _initialize_github_store() -> GithubStore:
                           store_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+            msg = get_initialisation_error_message(store_name, e)
             log_and_print(msg, store_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -88,8 +86,7 @@ def _initialize_alert_store() -> AlertStore:
                           store_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                store_name, e)
+            msg = get_initialisation_error_message(store_name, e)
             log_and_print(msg, store_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -126,7 +123,7 @@ def start_store(store: Store) -> None:
         except Exception as e:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            store.rabbitmq.disconnect_till_successful()
+            store.disconnect_from_rabbit()
             log_and_print("{} stopped. {}".format(store, e), store.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 store, sleep_period), store.logger)

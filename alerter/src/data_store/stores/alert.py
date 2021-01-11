@@ -11,6 +11,9 @@ from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     MessageWasNotDeliveredException
 
+_ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
+_ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
+
 
 class AlertStore(Store):
     def __init__(self, store_name: str, logger: logging.Logger) -> None:
@@ -30,26 +33,27 @@ class AlertStore(Store):
                                        exchange_type='direct', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare('alert_store_queue', passive=False,
+        self.rabbitmq.queue_declare(_ALERT_STORE_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='alert_store_queue',
-                                 exchange=STORE_EXCHANGE, routing_key='alert')
+        self.rabbitmq.queue_bind(queue=_ALERT_STORE_INPUT_QUEUE,
+                                 exchange=STORE_EXCHANGE,
+                                 routing_key=_ALERT_STORE_INPUT_ROUTING_KEY)
 
         # Set producing configuration for heartbeat
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
                                host=self.mongo_ip, port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue='alert_store_queue',
+        self.rabbitmq.basic_consume(queue=_ALERT_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False, consumer_tag=None)
+                                    auto_ack=False, exclusive=False,
+                                    consumer_tag=None)
         self.rabbitmq.start_consuming()
 
     def _process_data(self,
@@ -64,18 +68,17 @@ class AlertStore(Store):
         redis. If successful, a heartbeat will be sent.
         """
         alert_data = json.loads(body.decode())
-        self.logger.info("Received {}. Now processing this data.".format(
-            alert_data))
+        self.logger.info("Received %s. Now processing this data.", alert_data)
 
         processing_error = False
         try:
             self._process_mongo_store(alert_data)
         except KeyError as e:
-            self.logger.error("Error when parsing {}.".format(alert_data))
+            self.logger.error("Error when parsing %s.", alert_data)
             self.logger.exception(e)
             processing_error = True
         except ReceivedUnexpectedDataException as e:
-            self.logger.error("Error when processing {}".format(alert_data))
+            self.logger.error("Error when processing %s.", alert_data)
             self.logger.exception(e)
             processing_error = True
         except Exception as e:

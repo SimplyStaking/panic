@@ -11,6 +11,9 @@ from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException, \
     SystemIsDownException, MessageWasNotDeliveredException
 
+_SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
+_SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
+
 
 class SystemStore(Store):
     def __init__(self, store_name: str, logger: logging.Logger) -> None:
@@ -35,23 +38,24 @@ class SystemStore(Store):
                                        exchange_type='direct',
                                        passive=False, durable=True,
                                        auto_delete=False, internal=False)
-        self.rabbitmq.queue_declare('system_store_queue', passive=False,
+        self.rabbitmq.queue_declare(_SYSTEM_STORE_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue='system_store_queue',
-                                 exchange=STORE_EXCHANGE, routing_key='system')
+        self.rabbitmq.queue_bind(queue=_SYSTEM_STORE_INPUT_QUEUE,
+                                 exchange=STORE_EXCHANGE,
+                                 routing_key=_SYSTEM_STORE_INPUT_ROUTING_KEY)
 
         # Set producing configuration for heartbeat
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
     def _start_listening(self) -> None:
         self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
                                host=self.mongo_ip, port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue='system_store_queue',
+        self.rabbitmq.basic_consume(queue=_SYSTEM_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)
@@ -68,19 +72,18 @@ class SystemStore(Store):
         sent.
         """
         system_data = json.loads(body.decode())
-        self.logger.info("Received {}. Now processing this data.".format(
-            system_data))
+        self.logger.info("Received %s. Now processing this data.", system_data)
 
         processing_error = False
         try:
             self._process_redis_store(system_data)
             self._process_mongo_store(system_data)
         except KeyError as e:
-            self.logger.error("Error when parsing {}.".format(system_data))
+            self.logger.error("Error when parsing %s.", system_data)
             self.logger.exception(e)
             processing_error = True
         except ReceivedUnexpectedDataException as e:
-            self.logger.error("Error when processing {}".format(system_data))
+            self.logger.error("Error when processing %s", system_data)
             self.logger.exception(e)
             processing_error = True
         except Exception as e:

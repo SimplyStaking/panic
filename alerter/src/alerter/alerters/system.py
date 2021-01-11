@@ -23,14 +23,14 @@ from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
-from src.utils.types import IncreasedAboveThresholdSystemAlert, \
-    DecreasedBelowThresholdSystemAlert, str_to_bool
+from src.utils.types import (IncreasedAboveThresholdSystemAlert,
+                             DecreasedBelowThresholdSystemAlert, str_to_bool)
 
-OPEN_FD_LIMITER_NAME = 'open_file_descriptors'
-CPU_USE_LIMITER_NAME = 'system_cpu_usage'
-STORAGE_USE_LIMITER_NAME = 'system_storage_usage'
-RAM_USE_LIMITER_NAME = 'system_ram_usage'
-IS_DOWN_LIMITER_NAME = 'system_is_down'
+_OPEN_FD_LIMITER_NAME = 'open_file_descriptors'
+_CPU_USE_LIMITER_NAME = 'system_cpu_usage'
+_STORAGE_USE_LIMITER_NAME = 'system_storage_usage'
+_RAM_USE_LIMITER_NAME = 'system_ram_usage'
+_IS_DOWN_LIMITER_NAME = 'system_is_down'
 
 
 class SystemAlerter(Alerter):
@@ -65,20 +65,20 @@ class SystemAlerter(Alerter):
             system_critical_limiters = \
                 self._system_critical_timed_task_limiters[system_id]
 
-            system_critical_limiters[OPEN_FD_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[_OPEN_FD_LIMITER_NAME] = TimedTaskLimiter(
                 timedelta(seconds=int(open_fd['critical_repeat']))
             )
-            system_critical_limiters[CPU_USE_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[_CPU_USE_LIMITER_NAME] = TimedTaskLimiter(
                 timedelta(seconds=int(cpu_use['critical_repeat']))
             )
-            system_critical_limiters[STORAGE_USE_LIMITER_NAME] = \
+            system_critical_limiters[_STORAGE_USE_LIMITER_NAME] = \
                 TimedTaskLimiter(
                     timedelta(seconds=int(storage['critical_repeat']))
                 )
-            system_critical_limiters[RAM_USE_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[_RAM_USE_LIMITER_NAME] = TimedTaskLimiter(
                 timedelta(seconds=int(ram_use['critical_repeat']))
             )
-            system_critical_limiters[IS_DOWN_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[_IS_DOWN_LIMITER_NAME] = TimedTaskLimiter(
                 timedelta(seconds=int(is_down['critical_repeat']))
             )
 
@@ -88,20 +88,21 @@ class SystemAlerter(Alerter):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self._queue_used = "system_alerter_queue_" + \
                            self.alerts_configs.parent_id
-        self.logger.info("Creating queue '{}'".format(self._queue_used))
+        self.logger.info("Creating queue '%s'", self._queue_used)
         self.rabbitmq.queue_declare(self._queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
         routing_key = "alerter.system." + self.alerts_configs.parent_id
-        self.logger.info("Binding queue '{}' to exchange 'alert' with routing "
-                         "key '{}'".format(self._queue_used, routing_key))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", self._queue_used, ALERT_EXCHANGE,
+                         routing_key)
         self.rabbitmq.queue_bind(queue=self._queue_used,
                                  exchange=ALERT_EXCHANGE,
                                  routing_key=routing_key)
@@ -119,10 +120,7 @@ class SystemAlerter(Alerter):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
-                                       False, False)
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -132,8 +130,8 @@ class SystemAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
-        self.logger.info("Received {}. Now processing this data.".format(
-            data_received))
+        self.logger.info("Received %s. Now processing this data.",
+                         data_received)
 
         parsed_routing_key = method.routing_key.split('.')
         processing_error = False
@@ -163,7 +161,7 @@ class SystemAlerter(Alerter):
 
             self.logger.info("Data processed successfully.")
         except Exception as e:
-            self.logger.error("Error when processing {}".format(data_received))
+            self.logger.error("Error when processing %s", data_received)
             self.logger.exception(e)
             processing_error = True
 
@@ -209,16 +207,16 @@ class SystemAlerter(Alerter):
                 meta_data['system_parent_id'], meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
-            self.logger.debug('Successfully classified alert {}'
-                              ''.format(alert.alert_data))
+            self.logger.debug('Successfully classified alert %s',
+                              alert.alert_data)
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 error_data['message'], 'ERROR', meta_data['time'],
                 meta_data['system_parent_id'], meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
-            self.logger.debug("Successfully classified alert {}"
-                              "".format(alert.alert_data))
+            self.logger.debug('Successfully classified alert %s',
+                              alert.alert_data)
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
                 current = float(data['went_down_at']['current'])
@@ -228,7 +226,7 @@ class SystemAlerter(Alerter):
                 critical_limiters = self._system_critical_timed_task_limiters[
                     meta_data['system_id']]
                 is_down_critical_limiter = critical_limiters[
-                    IS_DOWN_LIMITER_NAME]
+                    _IS_DOWN_LIMITER_NAME]
                 downtime = monitoring_timestamp - current
 
                 critical_threshold = int(is_down['critical_threshold'])
@@ -246,8 +244,8 @@ class SystemAlerter(Alerter):
                             meta_data['system_id']
                         )
                         data_for_alerting.append(alert.alert_data)
-                        self.logger.debug("Successfully classified alert {}"
-                                          "".format(alert.alert_data))
+                        self.logger.debug('Successfully classified alert %s',
+                                          alert.alert_data)
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
                         self._system_initial_downtime_alert_sent[
@@ -259,8 +257,8 @@ class SystemAlerter(Alerter):
                             meta_data['system_id']
                         )
                         data_for_alerting.append(alert.alert_data)
-                        self.logger.debug("Successfully classified alert {}"
-                                          "".format(alert.alert_data))
+                        self.logger.debug('Successfully classified alert %s',
+                                          alert.alert_data)
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
                         self._system_initial_downtime_alert_sent[
@@ -275,8 +273,8 @@ class SystemAlerter(Alerter):
                             meta_data['system_id']
                         )
                         data_for_alerting.append(alert.alert_data)
-                        self.logger.debug("Successfully classified alert {}"
-                                          "".format(alert.alert_data))
+                        self.logger.debug('Successfully classified alert %s',
+                                          alert.alert_data)
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
 
@@ -292,7 +290,7 @@ class SystemAlerter(Alerter):
             previous = metrics['went_down_at']['previous']
             critical_limiters = self._system_critical_timed_task_limiters[
                 meta_data['system_id']]
-            is_down_critical_limiter = critical_limiters[IS_DOWN_LIMITER_NAME]
+            is_down_critical_limiter = critical_limiters[_IS_DOWN_LIMITER_NAME]
 
             if previous is not None:
                 alert = SystemBackUpAgainAlert(
@@ -301,8 +299,8 @@ class SystemAlerter(Alerter):
                     meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert {}"
-                                  "".format(alert.alert_data))
+                self.logger.debug('Successfully classified alert %s',
+                                  alert.alert_data)
                 self._system_initial_downtime_alert_sent[
                     meta_data['system_id']] = False
                 is_down_critical_limiter.reset()
@@ -315,7 +313,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsDecreasedBelowThresholdAlert,
-                    data_for_alerting, OPEN_FD_LIMITER_NAME
+                    data_for_alerting, _OPEN_FD_LIMITER_NAME
                 )
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
@@ -325,7 +323,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
                     SystemStorageUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, STORAGE_USE_LIMITER_NAME
+                    data_for_alerting, _STORAGE_USE_LIMITER_NAME
                 )
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
@@ -335,7 +333,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
                     SystemCPUUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, CPU_USE_LIMITER_NAME
+                    data_for_alerting, _CPU_USE_LIMITER_NAME
                 )
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
@@ -345,7 +343,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), cpu_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, RAM_USE_LIMITER_NAME
+                    data_for_alerting, _RAM_USE_LIMITER_NAME
                 )
 
     def _classify_alert(
@@ -375,8 +373,8 @@ class SystemAlerter(Alerter):
                         meta_data['system_id']
                     )
                 data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert {}"
-                                  "".format(alert.alert_data))
+                self.logger.debug('Successfully classified alert %s',
+                                  alert.alert_data)
             elif current < warning_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
@@ -386,8 +384,8 @@ class SystemAlerter(Alerter):
                         meta_data['system_id']
                     )
                 data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert {}"
-                                  "".format(alert.alert_data))
+                self.logger.debug('Successfully classified alert %s',
+                                  alert.alert_data)
 
         if critical_enabled:
             monitoring_datetime = datetime.fromtimestamp(
@@ -402,8 +400,8 @@ class SystemAlerter(Alerter):
                         meta_data['system_id']
                     )
                 data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert {}"
-                                  "".format(alert.alert_data))
+                self.logger.debug('Successfully classified alert %s',
+                                  alert.alert_data)
                 critical_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
             elif warning_threshold < current < critical_threshold <= previous:
@@ -415,21 +413,20 @@ class SystemAlerter(Alerter):
                         meta_data['system_id']
                     )
                 data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert {}"
-                                  "".format(alert.alert_data))
+                self.logger.debug('Successfully classified alert %s',
+                                  alert.alert_data)
                 critical_limiter.reset()
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
         # queue is full, remove old data.
         for alert in data_list:
-            self.logger.debug("Adding {} to the publishing queue.".format(
-                alert))
+            self.logger.debug("Adding %s to the publishing queue.", alert)
             if self.publishing_queue.full():
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.system',
                 'data': copy.deepcopy(alert)})
-            self.logger.debug("{} added to the publishing queue "
-                              "successfully.".format(alert))
+            self.logger.debug("%s added to the publishing queue successfully.",
+                              alert)

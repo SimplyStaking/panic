@@ -8,6 +8,7 @@ from types import FrameType
 from src.health_checker.manager import HealthCheckerManager
 from src.utils import env
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 
 def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
@@ -21,8 +22,7 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
                 rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initializing {}: {} !!!' \
-                .format(log_name, e)
+            msg = get_initialisation_error_message(log_name, e)
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             log_and_print(msg, dummy_logger)
@@ -46,8 +46,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
                 health_checker_manager_logger, manager_name)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_name, e)
+            msg = get_initialisation_error_message(manager_name, e)
             log_and_print(msg, health_checker_manager_logger)
             log_and_print("Re-attempting initialization procedure of {}."
                           .format(manager_name), health_checker_manager_logger)
