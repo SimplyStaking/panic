@@ -1,10 +1,9 @@
 import * as Yup from 'yup';
 
-const SystemSchema = (props) => Yup.object().shape({
+const NodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
-    .test('unique-system-name', 'System name is not unique.', (value) => {
-      const { systemConfig, nodesConfig, nodesConfig2, reposConfig } = props;
-
+    .test('unique-node-name', 'Node name is not unique.', (value) => {
+      const { nodesConfig, nodesConfig2, systemConfig, reposConfig } = props;
       for (let i = 0; i < nodesConfig.allIds.length; i += 1) {
         if (nodesConfig.byId[nodesConfig.allIds[i]].name === value) {
           return false;
@@ -27,8 +26,7 @@ const SystemSchema = (props) => Yup.object().shape({
       }
       return true;
     })
-    .required('System name is required.'),
-  exporter_url: Yup.string().required('Node Exporter Url is required.'),
+    .required('Node name is required.'),
 });
 
-export default SystemSchema;
+export default NodeSchema;

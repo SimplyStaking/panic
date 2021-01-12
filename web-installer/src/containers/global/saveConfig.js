@@ -608,7 +608,7 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      cosmos_node_name: PropTypes.string,
+      name: PropTypes.string,
       tendermint_rpc_url: PropTypes.string,
       cosmos_rpc_url: PropTypes.string,
       prometheus_url: PropTypes.string,
@@ -695,7 +695,7 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      substrate_node_name: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
       node_ws_url: PropTypes.string,
       telemetry_url: PropTypes.string,
       prometheus_url: PropTypes.string,

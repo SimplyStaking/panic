@@ -7,20 +7,24 @@ import {
   removeNodeSubstrate,
 } from 'redux/actions/substrateActions';
 import SubstrateData from 'data/substrate';
-import NodeSchema from './schemas/nodeSchema';
+import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs substrate node name validation, by checking if the node name
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    substrate_node_name: '',
+    name: '',
   }),
   mapPropsToValues: () => ({
-    substrate_node_name: '',
+    name: '',
     node_ws_url: '',
+    monitor_ws: false,
     telemetry_url: '',
+    monitor_telemetry: false,
     prometheus_url: '',
+    monitor_prometheus: false,
     exporter_url: '',
+    monitor_system: false,
     stash_address: '',
     is_validator: false,
     monitor_node: true,
@@ -32,11 +36,15 @@ const Form = withFormik({
     const { saveNodeDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
-      substrate_node_name: values.substrate_node_name,
+      name: values.name,
       node_ws_url: values.node_ws_url,
+      monitor_ws: values.monitor_ws,
       telemetry_url: values.telemetry_url,
+      monitor_telemetry: values.monitor_telemetry,
       prometheus_url: values.prometheus_url,
+      monitor_prometheus: values.monitor_prometheus,
       exporter_url: values.exporter_url,
+      monitor_system: values.monitor_system,
       stash_address: values.stash_address,
       is_validator: values.is_validator,
       monitor_node: values.monitor_node,
@@ -55,6 +63,9 @@ const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   chainConfig: state.SubstrateChainsReducer,
   nodesConfig: state.SubstrateNodesReducer,
+  nodesConfig2: state.CosmosNodesReducer,
+  reposConfig: state.RepositoryReducer,
+  systemConfig: state.SystemsReducer,
   data: SubstrateData,
 });
 

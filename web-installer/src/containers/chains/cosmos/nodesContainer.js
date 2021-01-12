@@ -4,20 +4,24 @@ import NodesForm from 'components/chains/cosmos/forms/nodesForm';
 import NodesTable from 'components/chains/cosmos/tables/nodesTable';
 import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
 import CosmosData from 'data/cosmos';
-import NodeSchema from './schemas/nodeSchema';
+import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs cosmos node name validation, by checking if the node name
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    cosmos_node_name: '',
+    name: '',
   }),
   mapPropsToValues: () => ({
-    cosmos_node_name: '',
+    name: '',
     tendermint_rpc_url: '',
+    monitor_tendermint: false,
     cosmos_rpc_url: '',
+    monitor_rpc: false,
     prometheus_url: '',
+    monitor_prometheus: false,
     exporter_url: '',
+    monitor_system: false,
     is_validator: false,
     monitor_node: true,
     is_archive_node: true,
@@ -28,11 +32,15 @@ const Form = withFormik({
     const { saveNodeDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
-      cosmos_node_name: values.cosmos_node_name,
+      name: values.name,
       tendermint_rpc_url: values.tendermint_rpc_url,
+      monitor_tendermint: values.monitor_tendermint,
       cosmos_rpc_url: values.cosmos_rpc_url,
+      monitor_rpc: values.monitor_rpc,
       prometheus_url: values.prometheus_url,
+      monitor_prometheus: values.monitor_prometheus,
       exporter_url: values.exporter_url,
+      monitor_system: values.monitor_system,
       is_validator: values.is_validator,
       monitor_node: values.monitor_node,
       is_archive_node: values.is_archive_node,
@@ -50,6 +58,9 @@ const mapStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   chainConfig: state.CosmosChainsReducer,
   nodesConfig: state.CosmosNodesReducer,
+  nodesConfig2: state.SubstrateNodesReducer,
+  reposConfig: state.RepositoryReducer,
+  systemConfig: state.SystemsReducer,
   data: CosmosData,
 });
 

@@ -50,7 +50,7 @@ const NodesTable = ({
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].cosmos_node_name}
+                {nodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].tendermint_rpc_url}
@@ -123,7 +123,7 @@ NodesTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      cosmos_node_name: PropTypes.string,
+      name: PropTypes.string,
       tendermint_rpc_url: PropTypes.string,
       cosmos_rpc_url: PropTypes.string,
       prometheus_url: PropTypes.string,

@@ -56,15 +56,15 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Name </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  error={errors.substrate_node_name}
-                  value={values.substrate_node_name}
+                  error={errors.name}
+                  value={values.name}
                   type="text"
-                  name="substrate_node_name"
+                  name="name"
                   placeholder={data.nodeForm.nameHolder}
                   helperText={
-                    errors.substrate_node_name ? errors.substrate_node_name : ''
+                    errors.name ? errors.name : ''
                   }
                   onChange={handleChange}
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
@@ -72,6 +72,7 @@ const NodesForm = ({
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
@@ -84,7 +85,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node WS URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.node_ws_url}
                   type="text"
@@ -94,6 +95,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_ws}
+                      onClick={() => {
+                        setFieldValue('monitor_ws', !values.monitor_ws);
+                      }}
+                      name="monitor_ws"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -111,7 +130,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Telemetry URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.telemetry_url}
                   type="text"
@@ -121,6 +140,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_telemetry}
+                      onClick={() => {
+                        setFieldValue('monitor_telemetry', !values.monitor_telemetry);
+                      }}
+                      name="monitor_telemetry"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -138,7 +175,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.prometheus_url}
                   type="text"
@@ -148,6 +185,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_prometheus}
+                      onClick={() => {
+                        setFieldValue('monitor_prometheus', !values.monitor_prometheus);
+                      }}
+                      name="monitor_prometheus"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -165,7 +220,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Exporter URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.exporter_url}
                   type="text"
@@ -175,6 +230,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_system}
+                      onClick={() => {
+                        setFieldValue('monitor_system', !values.monitor_system);
+                      }}
+                      name="monitor_system"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -192,7 +265,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Stash Address </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.stash_address}
                   type="text"
@@ -204,6 +277,7 @@ const NodesForm = ({
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
@@ -396,15 +470,19 @@ const NodesForm = ({
 
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    substrate_node_name: PropTypes.string,
+    name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    substrate_node_name: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
     node_ws_url: PropTypes.string,
+    monitor_ws: PropTypes.bool.isRequired,
     telemetry_url: PropTypes.string,
+    monitor_telemetry: PropTypes.bool.isRequired,
     prometheus_url: PropTypes.string,
+    monitor_prometheus: PropTypes.bool.isRequired,
     exporter_url: PropTypes.string,
+    monitor_system: PropTypes.bool.isRequired,
     stash_address: PropTypes.string,
     is_validator: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,

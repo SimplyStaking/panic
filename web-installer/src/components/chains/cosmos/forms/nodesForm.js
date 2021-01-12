@@ -57,15 +57,15 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Name </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  error={errors.cosmos_node_name}
-                  value={values.cosmos_node_name}
+                  error={errors.name}
+                  value={values.name}
                   type="text"
-                  name="cosmos_node_name"
+                  name="name"
                   placeholder={data.nodeForm.nameHolder}
                   helperText={
-                    errors.cosmos_node_name ? errors.cosmos_node_name : ''
+                    errors.name ? errors.name : ''
                   }
                   onChange={handleChange}
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
@@ -73,6 +73,7 @@ const NodesForm = ({
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
@@ -85,7 +86,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Tendermint RPC URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.tendermint_rpc_url}
                   type="text"
@@ -95,6 +96,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_tendermint}
+                      onClick={() => {
+                        setFieldValue('monitor_tendermint', !values.monitor_tendermint);
+                      }}
+                      name="monitor_tendermint"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -112,7 +131,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Cosmos Rest Server </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.cosmos_rpc_url}
                   type="text"
@@ -122,6 +141,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_rpc}
+                      onClick={() => {
+                        setFieldValue('monitor_rpc', !values.monitor_rpc);
+                      }}
+                      name="monitor_rpc"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -136,7 +173,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.prometheus_url}
                   type="text"
@@ -146,6 +183,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_prometheus}
+                      onClick={() => {
+                        setFieldValue('monitor_prometheus', !values.monitor_prometheus);
+                      }}
+                      name="monitor_prometheus"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -163,7 +218,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Exporter URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
                   value={values.exporter_url}
                   type="text"
@@ -173,6 +228,24 @@ const NodesForm = ({
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_system}
+                      onClick={() => {
+                        setFieldValue('monitor_system', !values.monitor_system);
+                      }}
+                      name="monitor_system"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -373,15 +446,19 @@ const NodesForm = ({
 
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    cosmos_node_name: PropTypes.string,
+    name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    cosmos_node_name: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
     tendermint_rpc_url: PropTypes.string,
+    monitor_tendermint: PropTypes.bool.isRequired,
     cosmos_rpc_url: PropTypes.string,
+    monitor_rpc: PropTypes.bool.isRequired,
     prometheus_url: PropTypes.string,
+    monitor_prometheus: PropTypes.bool.isRequired,
     exporter_url: PropTypes.string,
+    monitor_system: PropTypes.bool.isRequired,
     is_validator: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
     is_archive_node: PropTypes.bool.isRequired,

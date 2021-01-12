@@ -50,7 +50,7 @@ const NodesTable = ({
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].substrate_node_name}
+                {nodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
                 {nodesConfig.byId[id].node_ws_url}
@@ -123,7 +123,7 @@ NodesTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      substrate_node_name: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
       node_ws_url: PropTypes.string,
       telemetry_url: PropTypes.string,
       prometheus_url: PropTypes.string,

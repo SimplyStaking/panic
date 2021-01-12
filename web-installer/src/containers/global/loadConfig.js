@@ -55,7 +55,6 @@ import {
 } from 'redux/reducers/generalReducer';
 
 // List of all the data that needs to be saved in the server
-
 const mapStateToProps = (state) => ({
   // Cosmos related data
   cosmosChains: state.CosmosChainsReducer,

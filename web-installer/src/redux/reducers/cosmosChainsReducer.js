@@ -454,7 +454,6 @@ function allNodes(state = [], action) {
         return state.concat(action.payload.node.id);
       }
       return state;
-
     case REMOVE_NODE_COSMOS:
       return state.filter((config) => config !== action.payload.id);
     default:
