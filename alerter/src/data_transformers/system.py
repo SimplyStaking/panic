@@ -41,9 +41,8 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.queue_declare(_SYSTEM_DT_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'".format(_SYSTEM_DT_INPUT_QUEUE,
-                                           RAW_DATA_EXCHANGE,
-                                           _SYSTEM_DT_INPUT_ROUTING_KEY))
+                         "key '%s'", _SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         _SYSTEM_DT_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(_SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
                                  _SYSTEM_DT_INPUT_ROUTING_KEY)
 

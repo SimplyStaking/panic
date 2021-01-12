@@ -173,9 +173,9 @@ class RedisApi:
         try:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
-            self._logger.error(
-                "Could not convert value %s of key %s to an integer. "
-                "Defaulting to value %s.", get_ret, key, default)
+            self._logger.error("Could not convert value %s of key %s to an "
+                               "integer. Defaulting to value %s.", get_ret, key,
+                               default)
             return default
 
     def hget_int_unsafe(self, name: str, key: str,
@@ -186,9 +186,9 @@ class RedisApi:
         try:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
-            self._logger.error(
-                "Could not convert value %s of key %s to an integer. "
-                "Defaulting to value %s.", get_ret, key, default)
+            self._logger.error("Could not convert value %s of key %s to an "
+                               "integer. Defaulting to value %s.", get_ret, key,
+                               default)
             return default
 
     def get_bool_unsafe(self, key: str, default: Optional[bool] = None) \

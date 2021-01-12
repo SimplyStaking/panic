@@ -33,6 +33,8 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self._pd_alerts_handler_queue = \
             "pager_duty_{}_alerts_handler_queue".format(
                 self._pagerduty_channel.channel_id)
+        self._pager_duty_routing_key = "channel.{}".format(
+            self.pagerduty_channel.channel_id)
 
     @property
     def pagerduty_channel(self) -> PagerDutyChannel:
@@ -47,8 +49,8 @@ class PagerDutyAlertsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
@@ -66,9 +68,9 @@ class PagerDutyAlertsHandler(ChannelHandler):
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'])
-            self.logger.info("Successfully processed {}".format(alert_json))
+            self.logger.info("Successfully processed %s", alert_json)
         except Exception as e:
-            self.logger.error("Error when processing {}".format(alert_json))
+            self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)
             processing_error = True
 
@@ -112,8 +114,7 @@ class PagerDutyAlertsHandler(ChannelHandler):
             self._alerts_queue.get()
         self._alerts_queue.put(alert)
 
-        self.logger.debug("%s added to the alerts queue",
-                          alert.alert_code.name)
+        self.logger.debug("%s added to the alerts queue", alert.alert_code.name)
 
     def _send_data(self) -> None:
         empty = True
@@ -144,9 +145,9 @@ class PagerDutyAlertsHandler(ChannelHandler):
             status = self.pagerduty_channel.alert(alert)
             while status != RequestStatus.SUCCESS \
                     and attempts < self._max_attempts:
-                self.logger.info(
-                    "Will re-trying sending in 10 seconds. "
-                    "Attempts left: %s", self._max_attempts - attempts)
+                self.logger.info("Will re-trying sending in 10 seconds. "
+                                 "Attempts left: %s",
+                                 self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(10)
                 status = self.pagerduty_channel.alert(alert)
                 attempts += 1
@@ -163,27 +164,21 @@ class PagerDutyAlertsHandler(ChannelHandler):
                              "queue")
 
     def _initialise_rabbitmq(self) -> None:
-        pager_duty_routing_key = "channel.{}".format(
-            self.pagerduty_channel.channel_id)
-
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
         self.logger.info("Creating %s exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info(
-            "Creating queue '%s'", self._pd_alerts_handler_queue)
+        self.logger.info("Creating queue '%s'", self._pd_alerts_handler_queue)
         self.rabbitmq.queue_declare(self._pd_alerts_handler_queue, False,
                                     True, False, False)
 
-        self.logger.info(
-            "Binding queue '%s' to exchange '%s' with routing key '%s'",
-            self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-            pager_duty_routing_key
-        )
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", self._pd_alerts_handler_queue, ALERT_EXCHANGE,
+                         self._pager_duty_routing_key)
         self.rabbitmq.queue_bind(self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                                 pager_duty_routing_key)
+                                 self._pager_duty_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
@@ -195,7 +190,7 @@ class PagerDutyAlertsHandler(ChannelHandler):
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -223,6 +218,6 @@ class PagerDutyAlertsHandler(ChannelHandler):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will "
                       "exit.".format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

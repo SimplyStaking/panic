@@ -75,7 +75,7 @@ class MonitorsManager(ABC):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:

@@ -16,6 +16,8 @@ from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
+_CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
+
 
 class ConsoleAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
@@ -35,19 +37,19 @@ class ConsoleAlertsHandler(ChannelHandler):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info(
-            "Creating queue '{}'".format(self._console_alerts_handler_queue))
+        self.logger.info("Creating queue '%s'",
+                         self._console_alerts_handler_queue)
         self.rabbitmq.queue_declare(self._console_alerts_handler_queue, False,
                                     True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'channel.console'".format(self._console_alerts_handler_queue,
-                                       ALERT_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", self._console_alerts_handler_queue,
+                         ALERT_EXCHANGE, _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._console_alerts_handler_queue,
-                                 ALERT_EXCHANGE, 'channel.console')
+                                 ALERT_EXCHANGE,
+                                 _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
@@ -58,7 +60,7 @@ class ConsoleAlertsHandler(ChannelHandler):
         # Set producing configuration for heartbeat publishing
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -67,16 +69,15 @@ class ConsoleAlertsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
                        properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
-        self.logger.info("Received {}. Now processing this alert.".format(
-            alert_json))
+        self.logger.info("Received %s. Now processing this alert.", alert_json)
 
         processing_error = False
         alert = None
@@ -87,9 +88,9 @@ class ConsoleAlertsHandler(ChannelHandler):
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'])
 
-            self.logger.info("Successfully processed {}".format(alert_json))
+            self.logger.info("Successfully processed %s", alert_json)
         except Exception as e:
-            self.logger.error("Error when processing {}".format(alert_json))
+            self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)
             processing_error = True
 
@@ -139,6 +140,6 @@ class ConsoleAlertsHandler(ChannelHandler):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will "
                       "exit.".format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

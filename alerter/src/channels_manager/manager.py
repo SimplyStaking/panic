@@ -32,6 +32,10 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
 
+_CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
+_CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
+_CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+
 
 class ChannelsManager:
 
@@ -77,37 +81,39 @@ class ChannelsManager:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'channels_manager_ping_queue'")
-        self.rabbitmq.queue_declare('channels_manager_ping_queue', False, True,
+        self.logger.info("Creating queue '%s'", _CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_CHANNELS_MANAGER_INPUT_QUEUE, False, True,
                                     False, False)
-        self.logger.info("Binding queue 'channels_manager_ping_queue' to "
-                         "exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('channels_manager_ping_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.debug("Declaring consuming intentions on "
-                          "'channels_manager_ping_queue'")
-        self.rabbitmq.basic_consume('channels_manager_ping_queue',
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _CHANNELS_MANAGER_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE,
+                         _CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_CHANNELS_MANAGER_INPUT_QUEUE,
+                                 HEALTH_CHECK_EXCHANGE,
+                                 _CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_CHANNELS_MANAGER_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
-        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '{}'".format(
-            CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.info("Creating queue '%s'",
+                         CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'channels.*'".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                  CONFIG_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'channels.*')
-        self.logger.debug("Declaring consuming intentions on "
-                          "{}".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+                                 CONFIG_EXCHANGE,
+                                 _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on %s",
+                          CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -123,8 +129,8 @@ class ChannelsManager:
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _create_and_start_telegram_alerts_handler(
             self, bot_token: str, bot_chat_id: str, channel_id: str,
@@ -596,7 +602,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -678,7 +684,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -750,7 +756,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -824,7 +830,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -834,8 +840,7 @@ class ChannelsManager:
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs {}. Now processing.".format(
-            sent_configs))
+        self.logger.info("Received configs %s. Now processing.", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
@@ -864,7 +869,7 @@ class ChannelsManager:
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.debug("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -942,7 +947,7 @@ class ChannelsManager:
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 
@@ -957,7 +962,7 @@ class ChannelsManager:
             # For any other exception raise it.
             raise e
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:
@@ -974,6 +979,13 @@ class ChannelsManager:
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
     def on_terminate(self, signum: int, stack: FrameType) -> None:
@@ -982,7 +994,7 @@ class ChannelsManager:
             "any running channel handlers will be stopped gracefully. "
             "Afterwards the {} process will exit.".format(self, self),
             self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for _, handlers in self.channel_process_dict.items():
             for handler, process_details in handlers.items():

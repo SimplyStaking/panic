@@ -160,7 +160,7 @@ class ConfigsManager(Component):
             self._logger.info(
                 "Already connected to RabbitMQ, will not connect again")
 
-    def _disconnect_from_rabbit(self) -> None:
+    def disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from RabbitMQ")
             self._config_rabbit.disconnect_till_successful()
@@ -330,7 +330,7 @@ class ConfigsManager(Component):
             self._logger.debug("Config file observer stopped")
         else:
             self._logger.info("Config file observer already stopped")
-        self._disconnect_from_rabbit()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 

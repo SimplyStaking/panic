@@ -112,7 +112,7 @@ class GithubAlerterManager(AlertersManager):
             self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
                 github_alerter_process
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:

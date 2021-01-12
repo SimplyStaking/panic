@@ -139,7 +139,7 @@ class DataTransformersManager:
         # restart of the manager.
         if SYSTEM_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
                 or not self.transformer_process_dict[
-                    SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
+            SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
             log_and_print("Attempting to start the {}.".format(
                 SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
             system_data_transformer_process = multiprocessing.Process(
@@ -154,7 +154,7 @@ class DataTransformersManager:
         # restart of the manager.
         if GITHUB_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
                 or not self.transformer_process_dict[
-                    GITHUB_DATA_TRANSFORMER_NAME].is_alive():
+            GITHUB_DATA_TRANSFORMER_NAME].is_alive():
             log_and_print("Attempting to start the {}.".format(
                 GITHUB_DATA_TRANSFORMER_NAME), self.logger)
             github_data_transformer_process = multiprocessing.Process(
@@ -164,7 +164,7 @@ class DataTransformersManager:
             self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
                 github_data_transformer_process
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:

@@ -11,7 +11,8 @@ from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message
+from src.utils.starters import get_initialisation_error_message, \
+    get_stopped_message
 
 
 def _initialize_alerter_logger(alerter_display_name: str,
@@ -105,12 +106,12 @@ def start_alerter(alerter: Alerter) -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print("{} stopped.".format(alerter), alerter.logger)
+            log_and_print(get_stopped_message(alerter), alerter.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             alerter.disconnect_from_rabbit()
-            log_and_print("{} stopped.".format(alerter), alerter.logger)
+            log_and_print(get_stopped_message(alerter), alerter.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 alerter, RESTART_SLEEPING_PERIOD), alerter.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

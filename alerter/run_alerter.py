@@ -31,7 +31,6 @@ from src.utils.constants import ALERT_ROUTER_CONFIGS_QUEUE_NAME, \
     GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
     CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
     DATA_STORE_MANAGER_NAME
-from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import get_initialisation_error_message, \
     get_reattempting_message, get_stopped_message
@@ -240,13 +239,12 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
             alert_router = AlertRouter(display_name, alert_router_logger,
                                        rabbit_ip, env.ENABLE_CONSOLE_ALERTS)
             return alert_router, alert_router_logger
-        except ConnectionNotInitializedException:
-            # This is already logged, we need to try again. This exception
-            # should not happen, but if it does the program can't fully start
-            # up
-            alert_router_logger.info(
-                "Trying to set up the {} again in {} seconds.".format(
-                    display_name, RE_INITIALIZE_SLEEPING_PERIOD))
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(display_name, e),
+                          alert_router_logger)
+            log_and_print(get_reattempting_message(display_name),
+                          alert_router_logger)
+            # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 
@@ -262,13 +260,15 @@ def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
             config_manager = ConfigsManager(display_name, config_manager_logger,
                                             '../config', rabbit_ip)
             return config_manager, config_manager_logger
-        except ConnectionNotInitializedException:
+        except Exception as e:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
             # up
-            config_manager_logger.info("Trying to set up the %s again in %s "
-                                       "seconds.", display_name,
-                                       RE_INITIALIZE_SLEEPING_PERIOD)
+            log_and_print(get_initialisation_error_message(display_name, e),
+                          config_manager_logger)
+            log_and_print(get_reattempting_message(display_name),
+                          config_manager_logger)
+            # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 
@@ -290,7 +290,7 @@ def _initialize_data_store_manager() -> StoreManager:
             log_and_print(get_initialisation_error_message(
                 manager_display_name, e), data_store_manager_logger)
             log_and_print(get_reattempting_message(manager_display_name),
-                          channels_manager_logger)
+                          data_store_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -302,7 +302,7 @@ def run_data_stores_manager() -> None:
 
     while True:
         try:
-            stores_manager.manage()
+            stores_manager.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
@@ -343,7 +343,7 @@ def run_github_alerters_manager() -> None:
 def run_monitors_manager(manager: MonitorsManager) -> None:
     while True:
         try:
-            manager.manage()
+            manager.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
@@ -362,7 +362,7 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
 def run_alerters_manager(manager: AlertersManager) -> None:
     while True:
         try:
-            manager.manage()
+            manager.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
@@ -383,7 +383,7 @@ def run_data_transformers_manager() -> None:
 
     while True:
         try:
-            data_transformers_manager.manage()
+            data_transformers_manager.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
@@ -436,7 +436,7 @@ def run_config_manager() -> None:
             log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
         except Exception:
-            config_manager.disconnect()
+            config_manager.disconnect_from_rabbit()
             log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
             log_and_print("Restarting {} in {} seconds.".format(
@@ -449,7 +449,7 @@ def run_channels_manager() -> None:
 
     while True:
         try:
-            channels_manager.manage()
+            channels_manager.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
@@ -459,7 +459,7 @@ def run_channels_manager() -> None:
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            channels_manager.rabbitmq.disconnect_till_successful()
+            channels_manager.disconnect_from_rabbit()
             log_and_print(get_stopped_message(channels_manager),
                           channels_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
@@ -524,9 +524,10 @@ def _initialise_and_declare_config_queues() -> None:
                           "configuration queues.", dummy_logger)
             ret = rabbitmq.connect()
             if ret == -1:
-                log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
-                              "in {} seconds.".format(
-                    RE_INITIALIZE_SLEEPING_PERIOD), dummy_logger)
+                log_and_print(
+                    "RabbitMQ is temporarily unavailable. Re-trying in {} "
+                    "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD),
+                    dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 
@@ -624,9 +625,10 @@ def _initialise_and_declare_config_queues() -> None:
 
             ret = rabbitmq.disconnect()
             if ret == -1:
-                log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
-                              "in {} seconds.".format(
-                    RE_INITIALIZE_SLEEPING_PERIOD), dummy_logger)
+                log_and_print(
+                    "RabbitMQ is temporarily unavailable. Re-trying in {} "
+                    "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD),
+                    dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 

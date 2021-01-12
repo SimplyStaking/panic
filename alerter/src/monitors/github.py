@@ -81,10 +81,10 @@ class GitHubMonitor(Monitor):
                 release_data['name']
             processed_data['result']['data'][i]['tag_name'] = \
                 release_data['tag_name']
-            self.logger.debug(
-                "%s releases_info: %s", self.repo_config,
-                json.dumps(processed_data['result']['data'][i],
-                           ensure_ascii=False).encode('utf8').decode())
+            self.logger.debug("%s releases_info: %s", self.repo_config,
+                              json.dumps(processed_data['result']['data'][i],
+                                         ensure_ascii=False).encode('utf8')
+                              .decode())
             self._releases_info[i] = processed_data['result']['data'][i]
 
         self._data = processed_data

@@ -19,7 +19,7 @@ class TelegramChannel(Channel):
         return self._telegram_bot
 
     def alert(self, alert: Alert) -> RequestStatus:
-        subject = 'PANIC {}'.format(alert.severity.upper())
+        subject = "PANIC {}".format(alert.severity.upper())
         try:
             ret = self._telegram_bot.send_message('*{}*: `{}`'.format(
                 subject, alert.message))

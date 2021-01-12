@@ -72,7 +72,7 @@ class TelegramCommandHandlers(CmdHandler):
         except (RedisError, ConnectionResetError):
             pass
         except Exception as e:
-            self.logger.error('Unrecognized error when accessing Redis: %s', e)
+            self.logger.error("Unrecognized error when accessing Redis: %s", e)
             raise e
         return False
 
@@ -81,9 +81,9 @@ class TelegramCommandHandlers(CmdHandler):
             self.mongo.ping_unsafe()
             return True
         except PyMongoError as e:
-            self.logger.error('Mongo error when accessing Mongo: %s', e)
+            self.logger.error("Mongo error when accessing Mongo: %s", e)
         except Exception as e:
-            self.logger.error('Unrecognized error when accessing Mongo: %s', e)
+            self.logger.error("Unrecognized error when accessing Mongo: %s", e)
             raise e
         return False
 
@@ -98,7 +98,7 @@ class TelegramCommandHandlers(CmdHandler):
         except pika.exceptions.AMQPConnectionError as e:
             self.logger.error("Error when accessing RabbitMQ: %s", e)
         except Exception as e:
-            self.logger.error('Unrecognized error when accessing RabbitMQ: %s',
+            self.logger.error("Unrecognized error when accessing RabbitMQ: %s",
                               e)
             raise e
         return False
@@ -110,21 +110,21 @@ class TelegramCommandHandlers(CmdHandler):
 
     def unknown_callback(self, update: Update,
                          context: CallbackContext) -> None:
-        self.logger.info('Received unrecognized command: update=%s, '
-                         'context=%s', update, context)
+        self.logger.info("Received unrecognized command: update=%s, "
+                         "context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
         # Send a default message for unrecognized commands
-        update.message.reply_text('I did not understand (Type /help)')
+        update.message.reply_text("I did not understand (Type /help)")
 
     def ping_callback(self, update: Update, context: CallbackContext) -> None:
-        self.logger.info('/ping: update=%s, context=%s', update, context)
+        self.logger.info("/ping: update=%s, context=%s", update, context)
 
         if self._authorise(update, context):
-            update.message.reply_text('PONG!')
+            update.message.reply_text("PONG!")
 
     @staticmethod
     def _get_running_icon(running: bool) -> str:
@@ -137,14 +137,14 @@ class TelegramCommandHandlers(CmdHandler):
         status = ""
         try:
             if self.mongo_running():
-                status += '- *Mongo*: {} \n'.format(self._get_running_icon(
+                status += "- *Mongo*: {} \n".format(self._get_running_icon(
                     True))
             else:
-                status += '- *Mongo*: {} \n'.format(self._get_running_icon(
+                status += "- *Mongo*: {} \n".format(self._get_running_icon(
                     False))
         except Exception:
-            status += '- Could not get Mongo status due to an unrecognized ' \
-                      'error. Check the logs to debug the issue.\n'
+            status += "- Could not get Mongo status due to an unrecognized " \
+                      "error. Check the logs to debug the issue.\n"
 
         return status
 
@@ -152,14 +152,14 @@ class TelegramCommandHandlers(CmdHandler):
         status = ""
         try:
             if self.rabbit_running():
-                status += '- *RabbitMQ*: {} \n'.format(
+                status += "- *RabbitMQ*: {} \n".format(
                     self._get_running_icon(True))
             else:
-                status += '- *RabbitMQ*: {} \n'.format(self._get_running_icon(
+                status += "- *RabbitMQ*: {} \n".format(self._get_running_icon(
                     False))
         except Exception:
-            status += '- Could not get RabbitMQ status due to an ' \
-                      'unrecognized error. Check the logs to debug the issue.\n'
+            status += "- Could not get RabbitMQ status due to an " \
+                      "unrecognized error. Check the logs to debug the issue.\n"
 
         return status
 
@@ -174,11 +174,11 @@ class TelegramCommandHandlers(CmdHandler):
             for severity, severity_muted in muted_severities.items():
                 if severity_muted:
                     all_chains_muted_severities.append(severity)
-            status += '- All chains have {} alerts ' \
-                      'muted.\n'.format(', '.join(all_chains_muted_severities))
+            status += "- All chains have {} alerts " \
+                      "muted.\n".format(', '.join(all_chains_muted_severities))
         else:
-            status += '- There is no severity which was muted using ' \
-                      'mute\\_all \n'
+            status += "- There is no severity which was muted using " \
+                      "mute\\_all \n"
 
         associated_chains = self.associated_chains
 
@@ -196,10 +196,10 @@ class TelegramCommandHandlers(CmdHandler):
                         chain_muted_severities.append(severity)
                 chain_muted_severities = list(set().union(
                     chain_muted_severities, all_chains_muted_severities))
-                status += '- {} has {} alerts muted.\n'.format(
+                status += "- {} has {} alerts muted.\n".format(
                     chain_name, ', '.join(chain_muted_severities))
             elif not all_chains_muted_severities:
-                status += '- {} has no alerts muted.\n'.format(chain_name)
+                status += "- {} has no alerts muted.\n".format(chain_name)
 
         return status
 
@@ -221,17 +221,17 @@ class TelegramCommandHandlers(CmdHandler):
 
         if time_elapsed_since_hb > hb_cut_off_time:
             missed_hbs = int((current_timestamp - hb_timestamp) // hb_interval)
-            status = '- *{}*: {} - Missed {} heartbeats, either the ' \
-                     'health-checker found problems when saving the ' \
-                     'heartbeat or the {} is running into problems. ' \
-                     'Please check the ' \
-                     'logs.\n'.format(component, self._get_running_icon(False),
+            status = "- *{}*: {} - Missed {} heartbeats, either the " \
+                     "health-checker found problems when saving the " \
+                     "heartbeat or the {} is running into problems. " \
+                     "Please check the " \
+                     "logs.\n".format(component, self._get_running_icon(False),
                                       missed_hbs, component)
         else:
             if len(dead_processes) != 0:
                 for sub_process in dead_processes:
                     # To avoid special character errors in telegram
-                    status += '- *{}*: {} - Not running. \n'.format(
+                    status += "- *{}*: {} - Not running. \n".format(
                         sub_process, self._get_running_icon(False))
 
         return status
@@ -254,15 +254,15 @@ class TelegramCommandHandlers(CmdHandler):
 
         if time_elapsed_since_hb > hb_cut_off_time:
             missed_hbs = int((current_timestamp - hb_timestamp) // hb_interval)
-            status = '- *{}*: {} - Missed {} heartbeats, either the ' \
-                     'health-checker found problems when saving the ' \
-                     'heartbeat or the {} is running into problems. ' \
-                     'Please check the ' \
-                     'logs.\n'.format(component, self._get_running_icon(False),
+            status = "- *{}*: {} - Missed {} heartbeats, either the " \
+                     "health-checker found problems when saving the " \
+                     "heartbeat or the {} is running into problems. " \
+                     "Please check the " \
+                     "logs.\n".format(component, self._get_running_icon(False),
                                       missed_hbs, component)
         else:
             if not alive:
-                status += '- *{}*: {} - Not running. \n'.format(
+                status += "- *{}*: {} - Not running. \n".format(
                     component, self._get_running_icon(False))
 
         return status
@@ -270,9 +270,9 @@ class TelegramCommandHandlers(CmdHandler):
     def _get_panic_components_status(self, problems_in_health_checker: bool) \
             -> str:
         if problems_in_health_checker:
-            return '- *PANIC Components*: {} - Cannot get live status as ' \
-                   'there seems to be an issue with the Health ' \
-                   'Checker.\n'.format(self._get_running_icon(False))
+            return "- *PANIC Components*: {} - Cannot get live status as " \
+                   "there seems to be an issue with the Health " \
+                   "Checker.\n".format(self._get_running_icon(False))
 
         status = ''
 
@@ -298,7 +298,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_sys_mon_man_hb).decode())
             status += self._get_manager_component_hb_status(sys_mon_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(SYSTEM_MONITORS_MANAGER_NAME,
                         self._get_running_icon(False))
 
@@ -307,7 +307,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_gh_mon_man_hb).decode())
             status += self._get_manager_component_hb_status(gh_mon_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(GITHUB_MONITORS_MANAGER_NAME,
                         self._get_running_icon(False))
 
@@ -316,7 +316,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_data_trans_man_hb).decode())
             status += self._get_manager_component_hb_status(data_trans_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(DATA_TRANSFORMERS_MANAGER_NAME,
                         self._get_running_icon(False))
 
@@ -325,7 +325,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_sys_alerters_man_hb).decode())
             status += self._get_manager_component_hb_status(sys_alerters_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(SYSTEM_ALERTERS_MANAGER_NAME,
                         self._get_running_icon(False))
 
@@ -334,7 +334,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_gh_alerter_man_hb).decode())
             status += self._get_manager_component_hb_status(gh_alerter_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(GITHUB_ALERTER_MANAGER_NAME,
                         self._get_running_icon(False))
 
@@ -343,7 +343,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_store_man_hb).decode())
             status += self._get_manager_component_hb_status(store_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(DATA_STORE_MANAGER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_alert_router_hb):
@@ -351,7 +351,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_alert_router_hb).decode())
             status += self._get_worker_component_hb_status(alert_router_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(ALERT_ROUTER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_config_manager_hb):
@@ -359,7 +359,7 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_config_manager_hb).decode())
             status += self._get_worker_component_hb_status(config_manager_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(CONFIGS_MANAGER_NAME, self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_channels_manager_hb):
@@ -367,12 +367,12 @@ class TelegramCommandHandlers(CmdHandler):
                 self.redis.get_unsafe(key_channels_manager_hb).decode())
             status += self._get_manager_component_hb_status(channels_man_hb)
         else:
-            status += '- *{}*: {} - No heartbeats yet.\n' \
+            status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(CHANNELS_MANAGER_NAME, self._get_running_icon(False))
 
         # Just say that PANIC's components are ok if there are no issues.
         if status == '':
-            status += '- *PANIC Components*: {}\n'.format(
+            status += "- *PANIC Components*: {}\n".format(
                 self._get_running_icon(True))
 
         return status
@@ -400,14 +400,14 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += '- *Health Checker ({})*: {} - Missed {} ' \
-                          'heartbeats.\n' .format(HEARTBEAT_HANDLER_NAME,
+                status += "- *Health Checker ({})*: {} - Missed {} " \
+                          "heartbeats.\n ".format(HEARTBEAT_HANDLER_NAME,
                                                   self._get_running_icon(False),
                                                   missed_hbs)
                 problems_in_checker = True
         else:
-            status += '- *Health Checker ({})*: {} - No heartbeat ' \
-                      'yet.\n'.format(HEARTBEAT_HANDLER_NAME,
+            status += "- *Health Checker ({})*: {} - No heartbeat " \
+                      "yet.\n".format(HEARTBEAT_HANDLER_NAME,
                                       self._get_running_icon(False))
             problems_in_checker = True
 
@@ -425,20 +425,20 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += '- *Health Checker ({})*: {} - Missed {} ' \
-                          'heartbeats.\n'.format(PING_PUBLISHER_NAME,
+                status += "- *Health Checker ({})*: {} - Missed {} " \
+                          "heartbeats.\n".format(PING_PUBLISHER_NAME,
                                                  self._get_running_icon(False),
                                                  missed_hbs)
                 problems_in_checker = True
         else:
-            status += '- * Health Checker ({})*: {} - No heartbeat ' \
-                      'yet.\n'.format(PING_PUBLISHER_NAME,
+            status += "- * Health Checker ({})*: {} - No heartbeat " \
+                      "yet.\n".format(PING_PUBLISHER_NAME,
                                       self._get_running_icon(False))
             problems_in_checker = True
 
         # Just say that PANIC's components are ok if there are no issues.
         if status == '':
-            status += '- *Health Checker*: {}\n'.format(
+            status += "- *Health Checker*: {}\n".format(
                 self._get_running_icon(True))
 
         return status, problems_in_checker
@@ -468,7 +468,7 @@ class TelegramCommandHandlers(CmdHandler):
             "- Cannot get PANIC components' status due to an unrecognized " \
             "error. \n"
         try:
-            redis_accessible_status += '- *Redis*: {} \n'.format(
+            redis_accessible_status += "- *Redis*: {} \n".format(
                 self._get_running_icon(True))
             redis_accessible_status += self._get_muted_status()
             health_checker_status, problems_in_health_checker = \
@@ -478,25 +478,25 @@ class TelegramCommandHandlers(CmdHandler):
                 self._get_panic_components_status(problems_in_health_checker)
         except (RedisError, ConnectionResetError) as e:
             self.logger.exception(e)
-            self.logger.error('Error in redis when getting redis based '
-                              'status: %s', e)
+            self.logger.error("Error in redis when getting redis based "
+                              "status: %s", e)
             return redis_error_status
         except Exception as e:
             self.logger.exception(e)
-            self.logger.error('Could not get redis based status: %s', e)
+            self.logger.error("Could not get redis based status: %s", e)
             return unrecognized_error_status
 
         return redis_accessible_status
 
     def status_callback(self, update: Update, context: CallbackContext) -> None:
-        self._logger.info('/status: update=%s, context=%s', update, context)
+        self._logger.info("/status: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
         # Start forming the status message
-        update.message.reply_text('Generating status...')
+        update.message.reply_text("Generating status...")
 
         mongo_based_status = self._get_mongo_based_status()
         rabbit_based_status = self._get_rabbit_based_status()
@@ -509,13 +509,13 @@ class TelegramCommandHandlers(CmdHandler):
             update, status[:-1] if status.endswith('\n') else status)
 
     def unmute_callback(self, update: Update, context: CallbackContext) -> None:
-        self.logger.info('/unmute: update=%s, context=%s', update, context)
+        self.logger.info("/unmute: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text('Performing unmute...')
+        update.message.reply_text("Performing unmute...")
 
         associated_chains = self.associated_chains
 
@@ -540,24 +540,24 @@ class TelegramCommandHandlers(CmdHandler):
                     self.logger.info("%s has no muted severities.", chain_name)
             except (RedisError, ConnectionResetError) as e:
                 self.logger.exception(e)
-                self.logger.error('Could not unmute %s alerts due to a redis '
-                                  'error: %s', chain_name, e)
+                self.logger.error("Could not unmute %s alerts due to a redis "
+                                  "error: %s", chain_name, e)
                 update.message.reply_text(
-                    'Redis error. Unmuting may not have been successful for '
-                    'all chains. Please check /status or the logs to see '
-                    'which chains were unmuted (if any) and that Redis is '
-                    'online. Re-try again when the issue is solved.')
+                    "Redis error. Unmuting may not have been successful for "
+                    "all chains. Please check /status or the logs to see "
+                    "which chains were unmuted (if any) and that Redis is "
+                    "online. Re-try again when the issue is solved.")
                 return
             except Exception as e:
                 self.logger.exception(e)
-                self.logger.error('Could not unmute %s alerts due to an '
-                                  'unrecognized error: %s', chain_name, e)
+                self.logger.error("Could not unmute %s alerts due to an "
+                                  "unrecognized error: %s", chain_name, e)
                 update.message.reply_text(
-                    'Unrecognized error. Please debug the issue by looking at '
-                    'the logs. Unmuting may not have been successful for all '
-                    'chains. Please check /status or the logs to see which '
-                    'chains were unmuted (if any) and that Redis is online. '
-                    'Re-try again when the issue is solved.')
+                    "Unrecognized error. Please debug the issue by looking at "
+                    "the logs. Unmuting may not have been successful for all "
+                    "chains. Please check /status or the logs to see which "
+                    "chains were unmuted (if any) and that Redis is online. "
+                    "Re-try again when the issue is solved.")
                 return
 
         res = "*Unmute result*:\n\n"
@@ -572,13 +572,13 @@ class TelegramCommandHandlers(CmdHandler):
         self.formatted_reply(update, res[:-1] if res.endswith('\n') else res)
 
     def mute_callback(self, update: Update, context: CallbackContext) -> None:
-        self._logger.info('/mute: update=%s, context=%s', update, context)
+        self._logger.info("/mute: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text('Performing mute...')
+        update.message.reply_text("Performing mute...")
 
         # Expected: /mute or /mute List[<severity>]
         inputted_severities = update.message.text.split(' ')[1:]
@@ -602,14 +602,14 @@ class TelegramCommandHandlers(CmdHandler):
                     unrecognized_severities.append(severity)
 
         if len(unrecognized_severities) != 0:
-            self.logger.error('Unrecognized severity/severities {}'.format(
-                ', '.join(unrecognized_severities)))
+            self.logger.error("Unrecognized severity/severities %s",
+                              ', '.join(unrecognized_severities))
             update.message.reply_text(
-                'Muting Failed: Invalid severity/severities {}. Please enter '
-                'a combination of CRITICAL, WARNING, INFO or ERROR separated '
-                'by spaces after the /mute command. You can enter no '
-                'severities and PANIC will automatically mute all alerts for '
-                '{}'.format(', '.join(unrecognized_severities),
+                "Muting Failed: Invalid severity/severities {}. Please enter "
+                "a combination of CRITICAL, WARNING, INFO or ERROR separated "
+                "by spaces after the /mute command. You can enter no "
+                "severities and PANIC will automatically mute all alerts for "
+                "{}".format(', '.join(unrecognized_severities),
                             ', '.join(chain_names)))
             return
 
@@ -635,24 +635,24 @@ class TelegramCommandHandlers(CmdHandler):
                 self.logger.info("Successfully muted %s alerts.", chain_name)
             except (RedisError, ConnectionResetError) as e:
                 self.logger.exception(e)
-                self.logger.error('Could not mute %s alerts due to a redis '
-                                  'error: %s', chain_name, e)
+                self.logger.error("Could not mute %s alerts due to a redis "
+                                  "error: %s", chain_name, e)
                 update.message.reply_text(
-                    'Redis error. Muting may not have been successful for all '
-                    'chains. Please check /status or the logs to see which '
-                    'chains were muted (if any) and that Redis is online. '
-                    'Re-try again when the issue is solved.')
+                    "Redis error. Muting may not have been successful for all "
+                    "chains. Please check /status or the logs to see which "
+                    "chains were muted (if any) and that Redis is online. "
+                    "Re-try again when the issue is solved.")
                 return
             except Exception as e:
                 self.logger.exception(e)
-                self.logger.error('Could not mute %s alerts due to an '
-                                  'unrecognized error: %s', chain_name, e)
+                self.logger.error("Could not mute %s alerts due to an "
+                                  "unrecognized error: %s", chain_name, e)
                 update.message.reply_text(
-                    'Unrecognized error. Please debug the issue by looking at '
-                    'the logs. Muting may not have been successful for all '
-                    'chains. Please check /status or the logs to see which '
-                    'chains were muted (if any) and that Redis is online. '
-                    'Re-try again when the issue is solved.')
+                    "Unrecognized error. Please debug the issue by looking at "
+                    "the logs. Muting may not have been successful for all "
+                    "chains. Please check /status or the logs to see which "
+                    "chains were muted (if any) and that Redis is online. "
+                    "Re-try again when the issue is solved.")
                 return
 
         update.message.reply_text(
@@ -662,13 +662,13 @@ class TelegramCommandHandlers(CmdHandler):
 
     def mute_all_callback(self, update: Update, context: CallbackContext) \
             -> None:
-        self._logger.info('/mute_all: update=%s, context=%s', update, context)
+        self._logger.info("/mute_all: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text('Performing mute_all...')
+        update.message.reply_text("Performing mute_all...")
 
         # Expected: /mute_all or /mute_all List[<severity>]
         inputted_severities = update.message.text.split(' ')[1:]
@@ -688,14 +688,14 @@ class TelegramCommandHandlers(CmdHandler):
                     unrecognized_severities.append(severity)
 
         if len(unrecognized_severities) != 0:
-            self.logger.error('Unrecognized severity/severities {}'.format(
-                ', '.join(unrecognized_severities)))
+            self.logger.error("Unrecognized severity/severities %s",
+                              ', '.join(unrecognized_severities))
             update.message.reply_text(
-                'Muting Failed: Invalid severity/severities {}. Please enter '
-                'a combination of CRITICAL, WARNING, INFO or ERROR separated '
-                'by spaces after the /mute_all command. You can enter no '
-                'severities and PANIC will automatically mute all alerts for '
-                'all chains'.format(', '.join(unrecognized_severities)))
+                "Muting Failed: Invalid severity/severities {}. Please enter "
+                "a combination of CRITICAL, WARNING, INFO or ERROR separated "
+                "by spaces after the /mute_all command. You can enter no "
+                "severities and PANIC will automatically mute all alerts for "
+                "all chains".format(', '.join(unrecognized_severities)))
             return
 
         try:
@@ -717,41 +717,40 @@ class TelegramCommandHandlers(CmdHandler):
 
             self.redis.set_unsafe(mute_alerter_key,
                                   json.dumps(severities_muted))
-            self.logger.info('Successfully muted all {} alerts for every '
-                             'chain.'.format(', '.join(recognized_severities)))
+            self.logger.info("Successfully muted all %s alerts for every "
+                             "chain.", ', '.join(recognized_severities))
             update.message.reply_text(
-                'Successfully muted all {} alerts for every chain. Give a few '
-                'seconds until the alerter picks this up.'.format(
+                "Successfully muted all {} alerts for every chain. Give a few "
+                "seconds until the alerter picks this up.".format(
                     ', '.join(recognized_severities)))
         except (RedisError, ConnectionResetError) as e:
             self.logger.exception(e)
-            self.logger.error(
-                'I could not mute all {} alerts due to a Redis error.'
-                ''.format(', '.join(recognized_severities)))
+            self.logger.error("I could not mute all %s alerts due to a Redis "
+                              "error.", ', '.join(recognized_severities))
             update.message.reply_text(
-                'I could not mute all {} alerts due to a Redis error. Please '
-                'check /status or the logs to see if Redis is online and/or '
-                're-try again.'.format(', '.join(recognized_severities)))
+                "I could not mute all {} alerts due to a Redis error. Please "
+                "check /status or the logs to see if Redis is online and/or "
+                "re-try again.".format(', '.join(recognized_severities)))
         except Exception as e:
             self.logger.exception(e)
-            self.logger.error(
-                'I could not mute all {} alerts due to an unrecognized error.'
-                ''.format(', '.join(recognized_severities)))
+            self.logger.error("I could not mute all %s alerts due to an "
+                              "unrecognized error.",
+                              ', '.join(recognized_severities))
             update.message.reply_text(
-                'Unrecognized error, please check the logs to debug the '
-                'issue. Please also check /status to see if the muting was '
-                'successful and that Redis is online. Re-try again when the '
-                'issue is solved.')
+                "Unrecognized error, please check the logs to debug the "
+                "issue. Please also check /status to see if the muting was "
+                "successful and that Redis is online. Re-try again when the "
+                "issue is solved.")
 
     def unmute_all_callback(self, update: Update, context: CallbackContext) \
             -> None:
-        self.logger.info('/unmute_all: update=%s, context=%s', update, context)
+        self.logger.info("/unmute_all: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text('Performing unmute_all ...')
+        update.message.reply_text("Performing unmute_all ...")
 
         at_least_one_chain_was_muted = False
         try:
@@ -765,22 +764,22 @@ class TelegramCommandHandlers(CmdHandler):
                 at_least_one_chain_was_muted = True
         except (RedisError, ConnectionResetError) as e:
             self.logger.exception(e)
-            self.logger.error('Unmuting unsuccessful due to an issue with '
-                              'redis %s', e)
+            self.logger.error("Unmuting unsuccessful due to an issue with "
+                              "redis %s", e)
             update.message.reply_text(
-                'Unmuting unsuccessful due to an issue with Redis. Check '
-                '/status or the logs to see if Redis is online and/or re-try '
-                'again.')
+                "Unmuting unsuccessful due to an issue with Redis. Check "
+                "/status or the logs to see if Redis is online and/or re-try "
+                "again.")
             return
         except Exception as e:
             self.logger.exception(e)
             self.logger.error("It may be that not all chains were unmuted "
                               "due to an unrecognized issue: %s", e)
             update.message.reply_text(
-                'Unrecognized error, please check the logs to debug the '
-                'issue. Please also check /status to see if the unmuting was '
-                'successful and that Redis is online. Re-try again when the '
-                'issue is solved.')
+                "Unrecognized error, please check the logs to debug the "
+                "issue. Please also check /status to see if the unmuting was "
+                "successful and that Redis is online. Re-try again when the "
+                "issue is solved.")
             return
 
         try:
@@ -793,42 +792,41 @@ class TelegramCommandHandlers(CmdHandler):
                 mute_alerts_key = Keys.get_chain_mute_alerts()
                 if self.redis.hexists_unsafe(chain_hash, mute_alerts_key):
                     self.redis.hremove_unsafe(chain_hash, mute_alerts_key)
-                    self.logger.info(
-                        "All alert severities have been unmuted "
-                        "for chain with hash %s.", chain_hash)
+                    self.logger.info("All alert severities have been unmuted "
+                                     "for chain with hash %s.", chain_hash)
                     at_least_one_chain_was_muted = True
         except (RedisError, ConnectionResetError) as e:
             self.logger.exception(e)
             self.logger.error("It may be that not all chains were unmuted "
                               "due to an issue with redis: %s", e)
             update.message.reply_text(
-                'It may be that not all chains were unmuted due to a Redis '
-                'error. Check /status or the logs to see if unmuting was '
-                'successful and that redis is online. Re-try again when the '
-                'issue is solved.')
+                "It may be that not all chains were unmuted due to a Redis "
+                "error. Check /status or the logs to see if unmuting was "
+                "successful and that redis is online. Re-try again when the "
+                "issue is solved.")
             return
         except Exception as e:
             self.logger.exception(e)
             self.logger.error("It may be that not all chains were unmuted "
                               "due to an unrecognized issue: %s", e)
             update.message.reply_text(
-                'It may be that not all chains were unmuted due to an '
-                'unrecognized error. Check /status or the logs to see if the '
-                'unmuting was successful and that redis is online. Re-try '
-                'again when the issue is solved.')
+                "It may be that not all chains were unmuted due to an "
+                "unrecognized error. Check /status or the logs to see if the "
+                "unmuting was successful and that redis is online. Re-try "
+                "again when the issue is solved.")
             return
 
         if at_least_one_chain_was_muted:
             update.message.reply_text(
-                'Successfully unmuted all alert severities of all chains '
-                'being monitored in panic (including general repositories and '
-                'general systems, as they belong to the chain GENERAL).')
+                "Successfully unmuted all alert severities of all chains "
+                "being monitored in panic (including general repositories and "
+                "general systems, as they belong to the chain GENERAL).")
         else:
-            update.message.reply_text(
-                'No alert severity was muted for any chain.')
+            update.message.reply_text("No alert severity was muted for any "
+                                      "chain.")
 
     def help_callback(self, update: Update, context: CallbackContext) -> None:
-        self._logger.info('/help: update=%s, context=%s', update, context)
+        self._logger.info("/help: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
@@ -860,7 +858,7 @@ class TelegramCommandHandlers(CmdHandler):
                 ', '.join(chain_names), ', '.join(chain_names)))
 
     def start_callback(self, update: Update, context: CallbackContext) -> None:
-        self.logger.info('/start: update=%s, context=%s', update, context)
+        self.logger.info("/start: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
@@ -879,20 +877,19 @@ class TelegramCommandHandlers(CmdHandler):
                                       "This event has been reported.")
             try:
                 ret = self.telegram_channel.telegram_bot.send_message(
-                    'Received command from unrecognised user: '
-                    'update={}, context={}'.format(update, context))
+                    "Received command from unrecognised user: "
+                    "update={}, context={}".format(update, context))
                 self.logger.debug("authorise: telegram_ret: %s", ret)
                 if ret['ok']:
                     self.logger.info("Sent unrecognized user warning to "
                                      "Telegram channel.")
                 else:
-                    self.logger.error(
-                        "Error when sending unrecognized user warning to "
-                        "Telegram channel {}: {}.".format(self.telegram_channel,
-                                                          ret['description']))
+                    self.logger.error("Error when sending unrecognized user "
+                                      "warning to Telegram channel %s: %s.",
+                                      self.telegram_channel, ret['description'])
             except Exception as e:
-                self.logger.error(
-                    "Error when sending unrecognized user warning to Telegram "
-                    "channel {}.".format(self.telegram_channel))
+                self.logger.error("Error when sending unrecognized user "
+                                  "warning to Telegram channel %s.",
+                                  self.telegram_channel)
                 self.logger.exception(e)
             return False

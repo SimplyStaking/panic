@@ -12,7 +12,8 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, SYSTEM_DATA_TRANSFORMER_NAME, \
     GITHUB_DATA_TRANSFORMER_NAME
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message
+from src.utils.starters import get_initialisation_error_message, \
+    get_stopped_message
 
 
 def _initialize_transformer_logger(
@@ -132,12 +133,12 @@ def start_transformer(transformer: DataTransformer) -> None:
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            log_and_print("{} stopped.".format(transformer), transformer.logger)
+            log_and_print(get_stopped_message(transformer), transformer.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             transformer.disconnect_from_rabbit()
-            log_and_print("{} stopped.".format(transformer), transformer.logger)
+            log_and_print(get_stopped_message(transformer), transformer.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 transformer, RESTART_SLEEPING_PERIOD), transformer.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

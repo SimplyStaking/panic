@@ -159,7 +159,7 @@ class StoreManager:
             alert_store_process.start()
             self._store_process_dict[ALERT_STORE_NAME] = alert_store_process
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:

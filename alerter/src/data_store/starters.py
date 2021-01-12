@@ -12,7 +12,8 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME, GITHUB_STORE_NAME, \
     ALERT_STORE_NAME
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message
+from src.utils.starters import get_initialisation_error_message, \
+    get_stopped_message
 
 
 def _initialize_store_logger(
@@ -122,17 +123,17 @@ def start_store(store: Store) -> None:
     while True:
         try:
             log_and_print("{} started.".format(store), store.logger)
-            store.begin_store()
+            store.start()
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print("{} stopped.".format(store), store.logger)
+            log_and_print(get_stopped_message(store), store.logger)
         except Exception as e:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             store.disconnect_from_rabbit()
-            log_and_print("{} stopped. {}".format(store, e), store.logger)
+            log_and_print(get_stopped_message(store), store.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 store, RESTART_SLEEPING_PERIOD), store.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

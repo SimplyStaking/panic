@@ -76,7 +76,7 @@ class AlertersManager(ABC):
         pass
 
     @abstractmethod
-    def manage(self) -> None:
+    def start(self) -> None:
         pass
 
     @abstractmethod

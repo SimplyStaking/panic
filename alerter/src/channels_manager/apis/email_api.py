@@ -22,7 +22,7 @@ class EmailApi:
 
     def send_email(self, subject: str, message: str, to: str) -> None:
         msg = EmailMessage()
-        msg.set_content('{}\nDate - {}'.format(message, datetime.now()))
+        msg.set_content("{}\nDate - {}".format(message, datetime.now()))
 
         msg['Subject'] = subject
         msg['From'] = self._sender

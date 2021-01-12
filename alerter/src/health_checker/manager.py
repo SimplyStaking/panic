@@ -38,7 +38,7 @@ class HealthCheckerManager:
     def component_process_dict(self) -> Dict:
         return self._component_process_dict
 
-    def manage(self) -> None:
+    def start(self) -> None:
         while True:
             # Start the heartbeat handler in a separate process if it is not
             # yet started or it is not alive.

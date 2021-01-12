@@ -105,7 +105,7 @@ class Store(ABC):
         self.logger.info("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
 
-    def begin_store(self) -> None:
+    def start(self) -> None:
         self._initialize_store()
         while True:
             try:

@@ -10,7 +10,8 @@ from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, HEALTH_CHECKER_MANAGER_NAME
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message
+from src.utils.starters import get_initialisation_error_message, \
+    get_reattempting_message, get_stopped_message
 
 
 def _initialize_logger(component_display_name: str, component_module_name: str,
@@ -29,8 +30,8 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             log_and_print(msg, dummy_logger)
-            log_and_print("Re-attempting initialization procedure of {}."
-                          .format(component_display_name), dummy_logger)
+            log_and_print(get_reattempting_message(component_display_name),
+                          dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -53,8 +54,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
         except Exception as e:
             msg = get_initialisation_error_message(manager_display_name, e)
             log_and_print(msg, health_checker_manager_logger)
-            log_and_print("Re-attempting initialization procedure of {}."
-                          .format(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           health_checker_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -69,10 +69,10 @@ def run_health_checker_manager() -> None:
         try:
             log_and_print("{} started.".format(health_checker_manager),
                           health_checker_manager.logger)
-            health_checker_manager.manage()
+            health_checker_manager.start()
         except Exception as e:
             health_checker_manager.logger.exception(e)
-            log_and_print("{} stopped.".format(health_checker_manager),
+            log_and_print(get_stopped_message(health_checker_manager),
                           health_checker_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 health_checker_manager, RESTART_SLEEPING_PERIOD),

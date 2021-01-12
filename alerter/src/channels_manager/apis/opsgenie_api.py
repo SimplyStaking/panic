@@ -28,7 +28,7 @@ class OpsgenieApi:
             -> Optional[SuccessResponse]:
         payload = opsgenie_sdk.CreateAlertPayload(
             message=alert_name,
-            description='Message: {} \n Triggered at: {}'.format(
+            description="Message: {} \n Triggered at: {}".format(
                 alert_message, datetime.fromtimestamp(timestamp)),
             priority=severity.value,
             source=origin,

@@ -35,6 +35,8 @@ from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     EMAIL_ALERTS_HANDLER_NAME_TEMPLATE, OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, \
     CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE, LOG_ALERTS_HANDLER_NAME_TEMPLATE
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message, \
+    get_stopped_message
 
 
 def _initialize_channel_handler_logger(
@@ -50,8 +52,7 @@ def _initialize_channel_handler_logger(
                 env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # handlers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -71,8 +72,7 @@ def _initialize_alerts_logger() -> logging.Logger:
                                           env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising Alerts Log File: {} " \
-                  "!!!".format(e)
+            msg = get_initialisation_error_message('Alerts Log File', e)
             # Use a dummy logger in this case because we cannot create the
             # logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -109,8 +109,7 @@ def _initialize_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -152,8 +151,7 @@ def _initialize_telegram_commands_handler(
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -195,8 +193,7 @@ def _initialize_twilio_alerts_handler(
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -238,8 +235,7 @@ def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -279,8 +275,7 @@ def _initialize_email_alerts_handler(
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -323,8 +318,7 @@ def _initialize_opsgenie_alerts_handler(api_key: str, eu_host: bool,
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -361,8 +355,7 @@ def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -398,8 +391,7 @@ def _initialize_log_alerts_handler(channel_id: str, channel_name: str) \
                 handler_display_name), handler_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                handler_display_name, e)
+            msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -422,12 +414,12 @@ def start_handler(handler: ChannelHandler) -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-connect just break the loop.
-            log_and_print("{} stopped.".format(handler), handler.logger)
+            log_and_print(get_stopped_message(handler), handler.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            handler.rabbitmq.disconnect_till_successful()
-            log_and_print("{} stopped.".format(handler), handler.logger)
+            handler.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(handler), handler.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 handler, RESTART_SLEEPING_PERIOD), handler.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

@@ -39,3 +39,10 @@ class ChannelHandler(Component):
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
         pass
+
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
