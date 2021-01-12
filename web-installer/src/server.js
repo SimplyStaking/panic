@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
 const fsExtra = require('fs-extra');
@@ -260,6 +261,7 @@ app.post('/server/login', async (req, res) => {
   } else {
     // If inputted credentials are incorrect inform the user
     const err = new errors.AuthenticationError('Incorrect Credentials');
+    console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }
 });
@@ -519,6 +521,7 @@ app.get('/server/paths', verify, async (req, res) => {
       .status(utils.SUCCESS_STATUS)
       .send(utils.resultJson(await foundFiles));
   } catch (err) {
+    console.log(err);
     // Inform the user about the error.
     return res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -568,10 +571,12 @@ app.get('/server/config', verify, async (req, res) => {
     // If the config cannot be found in the inferred location inform the client
     if (err.code === 'ENOENT') {
       const errNotFound = new errors.ConfigNotFound(fileName);
+      console.log(err);
       return res
         .status(errNotFound.code)
         .send(utils.errorJson(errNotFound.message));
     }
+    console.log(err);
     // Otherwise inform the user about the error.
     return res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -583,10 +588,17 @@ app.post('/server/config/delete', verify, async (req, res) => {
 
   try {
     const configPath = path.join(__dirname, '../../', 'config');
+    const gitKeep = path.join(configPath, '/', '.gitkeep')
     fsExtra.emptyDirSync(configPath);
+    try {
+      await fs.openSync(gitKeep, 'w');
+    } catch (error) {
+      console.log(error);
+    }
     const msg = new msgs.DeleteDirectory();
     return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (err) {
+    console.log(err);
     // If error inform the user
     return res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -617,6 +629,7 @@ app.post('/server/config', verify, async (req, res) => {
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
+    console.log(err);
     return res.status(err.code).send(utils.errorJson(err.message));
   }
 
@@ -640,6 +653,7 @@ app.post('/server/config', verify, async (req, res) => {
     const err = new errors.ConfigUnrecognized(fileName);
     return res.status(err.code).send(utils.errorJson(err.message));
   } catch (err) {
+    console.log(err);
     // If error inform the user
     return res.status(err.code).send(utils.errorJson(err.message));
   }
