@@ -30,6 +30,7 @@ const Form = withFormik({
       : props.currentChain,
   }),
   validationSchema: (props) => ChainSchema(props),
+  validateOnMount: true,
 })(ChainForm);
 
 // ------------------------- Cosmos Based Chain Data --------------------
