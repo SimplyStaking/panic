@@ -2,7 +2,7 @@ from typing import Dict
 from enum import Enum
 
 
-class Alert():
+class Alert:
 
     def __init__(self, alert_code: Enum, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
@@ -16,6 +16,7 @@ class Alert():
     def __str__(self) -> str:
         return self.message
 
+    @property
     def message(self) -> str:
         return self._message
 

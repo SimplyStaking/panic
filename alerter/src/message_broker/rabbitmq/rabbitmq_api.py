@@ -200,10 +200,9 @@ class RabbitMQApi:
                 break
             except Exception as e:
                 self._logger.exception(e)
-                self._logger.info(
-                    "Could not connect. Will attempt to connect in {} "
-                    "seconds".format(
-                        self.connection_check_time_interval_seconds))
+                self._logger.info("Could not connect. Will attempt to connect "
+                                  "in %s seconds",
+                                  self.connection_check_time_interval_seconds)
                 time.sleep(self.connection_check_time_interval_seconds)
                 self._logger.info("Attempting another connection ...")
                 continue
@@ -220,10 +219,9 @@ class RabbitMQApi:
                 break
             except Exception as e:
                 self._logger.exception(e)
-                self._logger.info(
-                    "Could not disconnect. Will attempt to disconnect in {} "
-                    "seconds".format(
-                        self.connection_check_time_interval_seconds))
+                self._logger.info("Could not disconnect. Will attempt to "
+                                  "disconnect in %s seconds",
+                                  self.connection_check_time_interval_seconds)
                 time.sleep(self.connection_check_time_interval_seconds)
                 self._logger.info("Attempting another disconnection ...")
                 continue
@@ -329,10 +327,11 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.queue_purge, args, -1)
 
-    def queue_delete(self, queue: str) -> Optional[int]:
+    def queue_delete(self, queue: str, if_unused: bool = False,
+                     if_empty: bool = False) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
         # this function will throw a ConnectionNotInitialized exception
-        args = [queue]
+        args = [queue, if_unused, if_empty]
         if self._connection_initialized():
             return self._safe(self.channel.queue_delete, args, -1)
 
