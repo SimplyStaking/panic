@@ -4,7 +4,7 @@ import signal
 import sys
 import time
 from types import FrameType
-from typing import Tuple, Any
+from typing import Tuple
 
 import pika.exceptions
 
@@ -33,21 +33,8 @@ from src.utils.constants import ALERT_ROUTER_CONFIGS_QUEUE_NAME, \
     DATA_STORE_MANAGER_NAME
 from src.utils.exceptions import ConnectionNotInitializedException
 from src.utils.logging import create_logger, log_and_print
-
-REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
-
-
-def _get_initialisation_error_message(name: str, exception: Exception) -> str:
-    return "'!!! Error when initialising {}: {} !!!".format(name, exception)
-
-
-def _get_reattempting_message(reattempting_what: str) -> str:
-    return "Re-attempting initialization procedure of {}".format(
-        reattempting_what)
-
-
-def _get_stopped_message(what_stopped: Any) -> str:
-    return "{} stopped.".format(what_stopped)
+from src.utils.starters import get_initialisation_error_message, \
+    get_reattempting_message, get_stopped_message
 
 
 def _initialize_logger(component_display_name: str, component_module_name: str,
@@ -65,9 +52,9 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 component_display_name, e), dummy_logger)
-            log_and_print(_get_reattempting_message(component_display_name),
+            log_and_print(get_reattempting_message(component_display_name),
                           dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -90,9 +77,9 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
                 system_alerters_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), system_alerters_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           system_alerters_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -114,9 +101,9 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
                 github_alerter_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), github_alerter_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           github_alerter_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -139,9 +126,9 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
                 system_monitors_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), system_monitors_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           system_monitors_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -164,9 +151,9 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
                 github_monitors_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), github_monitors_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           github_monitors_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -189,9 +176,9 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
                 data_transformers_manager_logger, manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), data_transformers_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           data_transformers_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -214,9 +201,9 @@ def _initialize_channels_manager() -> ChannelsManager:
                                                manager_display_name)
             break
         except Exception as e:
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 manager_display_name, e), channels_manager_logger)
-            log_and_print(_get_reattempting_message(manager_display_name),
+            log_and_print(get_reattempting_message(manager_display_name),
                           channels_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -241,9 +228,9 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             dummy_logger = logging.getLogger('DUMMY_LOGGER')
-            log_and_print(_get_initialisation_error_message(
+            log_and_print(get_initialisation_error_message(
                 display_name, e), dummy_logger)
-            log_and_print(_get_reattempting_message(display_name), dummy_logger)
+            log_and_print(get_reattempting_message(display_name), dummy_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -279,9 +266,9 @@ def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
             # up
-            config_manager_logger.info(
-                "Trying to set up the {} again in {} seconds.".format(
-                    display_name, RE_INITIALIZE_SLEEPING_PERIOD))
+            config_manager_logger.info("Trying to set up the %s again in %s "
+                                       "seconds.", display_name,
+                                       RE_INITIALIZE_SLEEPING_PERIOD)
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 
@@ -300,11 +287,10 @@ def _initialize_data_store_manager() -> StoreManager:
                 data_store_manager_logger, manager_display_name)
             break
         except Exception as e:
-            msg = '!!! Error when initialising {}: {} !!!' \
-                .format(manager_display_name, e)
-            log_and_print(msg, data_store_manager_logger)
-            log_and_print('Re-attempting the initialization procedure',
-                          data_store_manager_logger)
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), data_store_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          channels_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
@@ -321,13 +307,13 @@ def run_data_stores_manager() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(stores_manager),
+            log_and_print(get_stopped_message(stores_manager),
                           stores_manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            stores_manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(stores_manager),
+            stores_manager.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(stores_manager),
                           stores_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 stores_manager, RESTART_SLEEPING_PERIOD), stores_manager.logger)
@@ -362,12 +348,12 @@ def run_monitors_manager(manager: MonitorsManager) -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(manager), manager.logger)
+            log_and_print(get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(manager), manager.logger)
+            manager.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(manager), manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 manager, RESTART_SLEEPING_PERIOD), manager.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)
@@ -381,12 +367,12 @@ def run_alerters_manager(manager: AlertersManager) -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(manager), manager.logger)
+            log_and_print(get_stopped_message(manager), manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(manager), manager.logger)
+            manager.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(manager), manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 manager, RESTART_SLEEPING_PERIOD), manager.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)
@@ -402,13 +388,13 @@ def run_data_transformers_manager() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(data_transformers_manager),
+            log_and_print(get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            data_transformers_manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(data_transformers_manager),
+            data_transformers_manager.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(data_transformers_manager),
                           data_transformers_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 data_transformers_manager, RESTART_SLEEPING_PERIOD),
@@ -426,11 +412,11 @@ def run_alert_router() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(alert_router),
+            log_and_print(get_stopped_message(alert_router),
                           alert_router_logger)
         except Exception:
-            alert_router.disconnect()
-            log_and_print(_get_stopped_message(alert_router),
+            alert_router.disconnect_from_rabbit()
+            log_and_print(get_stopped_message(alert_router),
                           alert_router_logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 alert_router, RESTART_SLEEPING_PERIOD), alert_router_logger)
@@ -447,11 +433,11 @@ def run_config_manager() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(config_manager),
+            log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
         except Exception:
             config_manager.disconnect()
-            log_and_print(_get_stopped_message(config_manager),
+            log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 config_manager, RESTART_SLEEPING_PERIOD), config_manager_logger)
@@ -468,13 +454,13 @@ def run_channels_manager() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialize just break the loop.
-            log_and_print(_get_stopped_message(channels_manager),
+            log_and_print(get_stopped_message(channels_manager),
                           channels_manager.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             channels_manager.rabbitmq.disconnect_till_successful()
-            log_and_print(_get_stopped_message(channels_manager),
+            log_and_print(get_stopped_message(channels_manager),
                           channels_manager.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 channels_manager, RESTART_SLEEPING_PERIOD),
@@ -539,7 +525,8 @@ def _initialise_and_declare_config_queues() -> None:
             ret = rabbitmq.connect()
             if ret == -1:
                 log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
-                              "in 10 seconds.", dummy_logger)
+                              "in {} seconds.".format(
+                    RE_INITIALIZE_SLEEPING_PERIOD), dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 
@@ -638,7 +625,8 @@ def _initialise_and_declare_config_queues() -> None:
             ret = rabbitmq.disconnect()
             if ret == -1:
                 log_and_print("RabbitMQ is temporarily unavailable. Re-trying "
-                              "in 10 seconds.", dummy_logger)
+                              "in {} seconds.".format(
+                    RE_INITIALIZE_SLEEPING_PERIOD), dummy_logger)
                 time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 continue
 
@@ -648,18 +636,24 @@ def _initialise_and_declare_config_queues() -> None:
             break
         except pika.exceptions.AMQPChannelError as e:
             log_and_print("Channel error while initializing the configuration "
-                          "queues: {}. Re-trying in 10 "
-                          "seconds.".format(repr(e)), dummy_logger)
+                          "queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                          dummy_logger)
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
         except pika.exceptions.AMQPConnectionError as e:
             log_and_print("RabbitMQ connection error while initializing the "
-                          "configuration queues: {}. Re-trying in 10 "
-                          "seconds.".format(repr(e)), dummy_logger)
+                          "configuration queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                          dummy_logger)
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
         except Exception as e:
             log_and_print("Unexpected exception while initializing the "
-                          "configuration queues: {}. Re-trying in 10 "
-                          "seconds.".format(repr(e)), dummy_logger)
+                          "configuration queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                          dummy_logger)
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
 

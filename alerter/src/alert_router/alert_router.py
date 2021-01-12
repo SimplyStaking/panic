@@ -268,7 +268,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
-    def disconnect(self) -> None:
+    def disconnect_from_rabbit(self) -> None:
         """
         Disconnects the component from RabbitMQ
         :return:
@@ -279,7 +279,7 @@ class AlertRouter(QueuingPublisherComponent):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
-        self.disconnect()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 

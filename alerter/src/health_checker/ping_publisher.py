@@ -60,7 +60,7 @@ class PingPublisher:
         self.rabbitmq.connect_till_successful()
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -70,8 +70,7 @@ class PingPublisher:
             is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.info("Sent data to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent data to '%s' exchange", HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
         self._initialize_rabbitmq()
@@ -92,7 +91,7 @@ class PingPublisher:
                 self.logger.exception(e)
                 raise e
 
-            self.logger.info('Saving {} heartbeat to Redis'.format(self))
+            self.logger.info('Saving %s heartbeat to Redis', self)
             key_heartbeat = Keys.get_component_heartbeat(self.name)
             ping_pub_heartbeat = {'component_name': self.name,
                                   'timestamp': datetime.now().timestamp()}
@@ -108,10 +107,17 @@ class PingPublisher:
             # Use the BlockingConnection sleep to avoid dropped connections
             self.rabbitmq.connection.sleep(self.interval)
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

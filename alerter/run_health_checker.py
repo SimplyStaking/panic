@@ -10,6 +10,7 @@ from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, HEALTH_CHECKER_MANAGER_NAME
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 
 def _initialize_logger(component_display_name: str, component_module_name: str,
@@ -24,8 +25,7 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
                 component_module_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
-            msg = '!!! Error when initializing {}: {} !!!' \
-                .format(component_display_name, e)
+            msg = get_initialisation_error_message(component_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # manager's logger.
             log_and_print(msg, dummy_logger)
@@ -51,8 +51,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
                 health_checker_manager_logger, manager_display_name)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!" \
-                .format(manager_display_name, e)
+            msg = get_initialisation_error_message(manager_display_name, e)
             log_and_print(msg, health_checker_manager_logger)
             log_and_print("Re-attempting initialization procedure of {}."
                           .format(manager_display_name),

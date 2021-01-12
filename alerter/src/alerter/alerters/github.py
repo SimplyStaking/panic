@@ -13,6 +13,9 @@ from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 
+_GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
+_GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'
+
 
 class GithubAlerter(Alerter):
     def __init__(self, alerter_name: str, logger: logging.Logger) -> None:
@@ -24,20 +27,21 @@ class GithubAlerter(Alerter):
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
-        self.logger.info("Creating '{}' exchange".format(ALERT_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.logger.info("Creating queue 'github_alerter_queue'")
-        self.rabbitmq.queue_declare('github_alerter_queue', passive=False,
+        self.logger.info("Creating queue '%s'", _GITHUB_ALERTER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_GITHUB_ALERTER_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.logger.info("Binding queue 'github_alerter_queue' to exchange "
-                         "'alert' with routing key 'alerter.github'")
-        self.rabbitmq.queue_bind(queue='github_alerter_queue',
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _GITHUB_ALERTER_INPUT_QUEUE, ALERT_EXCHANGE,
+                         _GITHUB_ALERTER_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(queue=_GITHUB_ALERTER_INPUT_QUEUE,
                                  exchange=ALERT_EXCHANGE,
-                                 routing_key='alerter.github')
+                                 routing_key=_GITHUB_ALERTER_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -47,12 +51,12 @@ class GithubAlerter(Alerter):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(queue='github_alerter_queue',
+        self.rabbitmq.basic_consume(queue=_GITHUB_ALERTER_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False,
                                     consumer_tag=None)
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
@@ -62,8 +66,8 @@ class GithubAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
-        self.logger.info("Received {}. Now processing this data.".format(
-            data_received))
+        self.logger.info("Received %s. Now processing this data.",
+                         data_received)
 
         processing_error = False
         data_for_alerting = []
@@ -83,8 +87,8 @@ class GithubAlerter(Alerter):
                             meta['repo_id']
                         )
                         data_for_alerting.append(alert.alert_data)
-                        self.logger.debug("Successfully classified alert {}"
-                                          "".format(alert.alert_data))
+                        self.logger.debug("Successfully classified alert %s",
+                                          alert.alert_data)
             elif 'error' in data_received:
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']
@@ -93,14 +97,13 @@ class GithubAlerter(Alerter):
                         meta_data['repo_parent_id'], meta_data['repo_id']
                     )
                     data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert {}".format(
-                        alert.alert_data)
-                    )
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))
         except Exception as e:
-            self.logger.error("Error when processing {}".format(data_received))
+            self.logger.error("Error when processing %s", data_received)
             self.logger.exception(e)
             processing_error = True
 
@@ -135,13 +138,12 @@ class GithubAlerter(Alerter):
         # Place the latest alert data on the publishing queue. If the
         # queue is full, remove old data.
         for alert in data_list:
-            self.logger.debug("Adding {} to the publishing queue.".format(
-                alert))
+            self.logger.debug("Adding %s to the publishing queue.", alert)
             if self.publishing_queue.full():
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.github',
                 'data': copy.deepcopy(alert)})
-            self.logger.debug("{} added to the publishing queue "
-                              "successfully.".format(alert))
+            self.logger.debug("%s added to the publishing queue successfully.",
+                              alert)

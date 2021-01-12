@@ -18,6 +18,9 @@ from src.utils.exceptions import ReceivedUnexpectedDataException
 from src.utils.logging import log_and_print
 from src.utils.types import RedisType
 
+_HB_HANDLER_INPUT_QUEUE = 'heartbeat_handler_queue'
+_HB_HANDLER_INPUT_ROUTING_KEY = 'heartbeat.*'
+
 
 class HeartbeatHandler:
     def __init__(self, logger: logging.Logger, redis: RedisApi, name: str) \
@@ -62,23 +65,23 @@ class HeartbeatHandler:
     def _initialize_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'heartbeat_handler_queue'")
-        self.rabbitmq.queue_declare('heartbeat_handler_queue', False, True,
+        self.logger.info("Creating queue '%s'", _HB_HANDLER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_HB_HANDLER_INPUT_QUEUE, False, True,
                                     False, False)
-        self.logger.info(
-            "Binding queue 'heartbeat_handler_queue' to exchange '{}' with "
-            "routing key 'heartbeat.*'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('heartbeat_handler_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'heartbeat.*')
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", _HB_HANDLER_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE, _HB_HANDLER_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_HB_HANDLER_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                 _HB_HANDLER_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is set to 300
         prefetch_count = round(300)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume('heartbeat_handler_queue',
+        self.rabbitmq.basic_consume(_HB_HANDLER_INPUT_QUEUE,
                                     self._process_heartbeat, False, False, None)
 
     def _listen_for_data(self) -> None:
@@ -130,8 +133,7 @@ class HeartbeatHandler:
                            properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         heartbeat = json.loads(body)
-        self.logger.info("Received {}. Now processing this data.".format(
-            heartbeat))
+        self.logger.info("Received %s. Now processing this data.", heartbeat)
 
         try:
             if method.routing_key == 'heartbeat.worker' or \
@@ -145,17 +147,17 @@ class HeartbeatHandler:
 
                 self._dump_unsavable_redis_data()
 
-                self.logger.info("Successfully processed {}".format(heartbeat))
+                self.logger.info("Successfully processed %s", heartbeat)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_heartbeat".format(self))
         except Exception as e:
-            self.logger.error("Error when processing {}".format(heartbeat))
+            self.logger.error("Error when processing %s", heartbeat)
             self.logger.exception(e)
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        self.logger.debug('Saving {} heartbeat to Redis'.format(self))
+        self.logger.debug('Saving %s heartbeat to Redis', self)
         key_heartbeat = Keys.get_component_heartbeat(self.name)
         handler_heartbeat = {'component_name': self.name,
                              'timestamp': datetime.now().timestamp()}
@@ -180,10 +182,17 @@ class HeartbeatHandler:
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

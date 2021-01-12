@@ -11,6 +11,7 @@ from src.utils import env
 from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
     RESTART_SLEEPING_PERIOD, SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 
 def _initialize_alerter_logger(alerter_display_name: str,
@@ -25,8 +26,7 @@ def _initialize_alerter_logger(alerter_display_name: str,
                 alerter_module_name, env.LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                alerter_display_name, e)
+            msg = get_initialisation_error_message(alerter_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # alerter's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -54,8 +54,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
                 alerter_display_name), system_alerter_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                alerter_display_name, e)
+            msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, system_alerter_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -78,8 +77,7 @@ def _initialize_github_alerter() -> GithubAlerter:
                 alerter_display_name), github_alerter_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                alerter_display_name, e)
+            msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, github_alerter_logger)
             # sleep 10 seconds before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
@@ -111,7 +109,7 @@ def start_alerter(alerter: Alerter) -> None:
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            alerter.rabbitmq.disconnect_till_successful()
+            alerter.disconnect_from_rabbit()
             log_and_print("{} stopped.".format(alerter), alerter.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 alerter, RESTART_SLEEPING_PERIOD), alerter.logger)

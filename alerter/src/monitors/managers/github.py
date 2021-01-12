@@ -20,6 +20,11 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
+_GH_MON_MAN_INPUT_QUEUE = 'github_monitors_manager_ping_queue'
+_GH_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+_GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
+_GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
+
 
 class GitHubMonitorsManager(MonitorsManager):
 
@@ -35,43 +40,42 @@ class GitHubMonitorsManager(MonitorsManager):
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'github_monitors_manager_ping_queue'")
-        self.rabbitmq.queue_declare('github_monitors_manager_ping_queue',
-                                    False, True, False, False)
-        self.logger.info("Binding queue 'github_monitors_manager_ping_queue' "
-                         "to exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('github_monitors_manager_ping_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.debug("Declaring consuming intentions on "
-                          "'github_monitors_manager_ping_queue'")
-        self.rabbitmq.basic_consume('github_monitors_manager_ping_queue',
-                                    self._process_ping, True, False, None)
+        self.logger.info("Creating queue '%s'", _GH_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_GH_MON_MAN_INPUT_QUEUE, False, True, False,
+                                    False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _GH_MON_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE, _GH_MON_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_GH_MON_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                 _GH_MON_MAN_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _GH_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_GH_MON_MAN_INPUT_QUEUE, self._process_ping,
+                                    True, False, None)
 
-        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '{}'".format(
-            GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.info("Creating queue '%s'",
+                         GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'chains.*.*.repos_config'".format(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.repos_config')
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'general.repos_config'".format(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+                                 CONFIG_EXCHANGE,
+                                 _GH_MON_MAN_ROUTING_KEY_CHAINS)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.repos_config')
-        self.logger.debug("Declaring consuming intentions on '{}'".format(
-            GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+                                 CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_GEN)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -102,12 +106,12 @@ class GitHubMonitorsManager(MonitorsManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        self.logger.info("Received configs {}".format(sent_configs))
+        self.logger.info("Received configs %s", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == 'general.repos_config':
+        if method.routing_key == _GH_MON_MAN_ROUTING_KEY_GEN:
             if 'general' in self.repos_configs:
                 current_configs = self.repos_configs['general']
             else:
@@ -204,11 +208,11 @@ class GitHubMonitorsManager(MonitorsManager):
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == 'general.repos_config':
+        if method.routing_key == _GH_MON_MAN_ROUTING_KEY_GEN:
             self._repos_configs['general'] = correct_repos_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -221,7 +225,7 @@ class GitHubMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.debug("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -258,7 +262,7 @@ class GitHubMonitorsManager(MonitorsManager):
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 

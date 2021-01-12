@@ -19,6 +19,11 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
+_SYS_MON_MAN_INPUT_QUEUE = 'system_monitors_manager_ping_queue'
+_SYS_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+_SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.systems_config'
+_SYS_MON_MAN_ROUTING_KEY_GEN = 'general.systems_config'
+
 
 class SystemMonitorsManager(MonitorsManager):
 
@@ -34,43 +39,43 @@ class SystemMonitorsManager(MonitorsManager):
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'system_monitors_manager_ping_queue'")
-        self.rabbitmq.queue_declare('system_monitors_manager_ping_queue',
-                                    False, True, False, False)
-        self.logger.info("Binding queue 'system_monitors_manager_ping_queue' "
-                         "to exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('system_monitors_manager_ping_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.debug("Declaring consuming intentions on "
-                          "'system_monitors_manager_ping_queue'")
-        self.rabbitmq.basic_consume('system_monitors_manager_ping_queue',
+        self.logger.info("Creating queue '%s'", _SYS_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_SYS_MON_MAN_INPUT_QUEUE, False, True,
+                                    False, False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", _SYS_MON_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE, _SYS_MON_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_SYS_MON_MAN_INPUT_QUEUE,
+                                 HEALTH_CHECK_EXCHANGE,
+                                 _SYS_MON_MAN_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _SYS_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_SYS_MON_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
-        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '{}'".format(
-            SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.info("Creating queue '%s'",
+                         SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'chains.*.*.nodes_config'".format(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.nodes_config')
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'general.systems_config'".format(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+                                 CONFIG_EXCHANGE,
+                                 _SYS_MON_MAN_ROUTING_KEY_CHAINS)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.systems_config')
-        self.logger.debug("Declaring consuming intentions on '{}'".format(
-            SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME))
+                                 CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -98,12 +103,12 @@ class SystemMonitorsManager(MonitorsManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs {}".format(sent_configs))
+        self.logger.info("Received configs %s", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == 'general.systems_config':
+        if method.routing_key == _SYS_MON_MAN_ROUTING_KEY_GEN:
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']
             else:
@@ -192,11 +197,11 @@ class SystemMonitorsManager(MonitorsManager):
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == 'general.systems_config':
+        if method.routing_key == _SYS_MON_MAN_ROUTING_KEY_GEN:
             self._systems_configs['general'] = correct_systems_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -209,7 +214,7 @@ class SystemMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.debug("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -243,7 +248,7 @@ class SystemMonitorsManager(MonitorsManager):
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 

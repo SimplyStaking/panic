@@ -94,8 +94,7 @@ class GitHubMonitor(Monitor):
             exchange=RAW_DATA_EXCHANGE, routing_key='github', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug("Sent data to '{}' exchange.".format(
-            RAW_DATA_EXCHANGE))
+        self.logger.debug("Sent data to '%s' exchange.", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
@@ -108,38 +107,38 @@ class GitHubMonitor(Monitor):
                 self._data_retrieval_failed = True
                 data_retrieval_exception = GitHubAPICallException(
                     self.data['message'])
-                self.logger.error("Error when retrieving data from {}: ({}, {})"
-                                  .format(self.repo_config.releases_page,
-                                          data_retrieval_exception.message,
-                                          data_retrieval_exception.code))
+                self.logger.error("Error when retrieving data from %s: "
+                                  "(%s, %s)", self.repo_config.releases_page,
+                                  data_retrieval_exception.message,
+                                  data_retrieval_exception.code)
             else:
                 self._data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
             self._data_retrieval_failed = True
             data_retrieval_exception = CannotAccessGitHubPageException(
                 self.repo_config.releases_page)
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.repo_config.releases_page))
+            self.logger.error("Error when retrieving data from %s",
+                              self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.repo_config.releases_page)
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.repo_config.releases_page))
+            self.logger.error("Error when retrieving data from %s",
+                              self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except json.JSONDecodeError as e:
             self._data_retrieval_failed = True
             data_retrieval_exception = e
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.repo_config.releases_page))
+            self.logger.error("Error when retrieving data from %s",
+                              self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
 
         try:
             self._process_data(data_retrieval_exception)
         except Exception as error:
-            self.logger.error("Error when processing data obtained from {}"
-                              .format(self.repo_config.releases_page))
+            self.logger.error("Error when processing data obtained from %s",
+                              self.repo_config.releases_page)
             self.logger.exception(error)
             # Do not send data if we experienced processing errors
             return
