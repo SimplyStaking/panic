@@ -109,12 +109,17 @@ function ChannelsPage() {
                 </Grid>
                 <Grid item xs={12} />
                 <Grid item xs={5} />
-                <Grid item xs={2}>
+                {
+                // Back button is commented out as it will take too much time
+                // to check for unexpected behaviour if a user were to reload
+                // all the config files while they have already altered the
+                // state in redux.
+                /* <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={BACK}
                     navigation={WELCOME_PAGE}
                   />
-                </Grid>
+                </Grid> */}
                 <Grid item xs={2}>
                   <NavigationButtonContainer
                     text={NEXT}
