@@ -91,7 +91,7 @@ class PingPublisher:
                 self.logger.exception(e)
                 raise e
 
-            self.logger.info('Saving %s heartbeat to Redis', self)
+            self.logger.info("Saving %s heartbeat to Redis", self)
             key_heartbeat = Keys.get_component_heartbeat(self.name)
             ping_pub_heartbeat = {'component_name': self.name,
                                   'timestamp': datetime.now().timestamp()}
@@ -99,7 +99,7 @@ class PingPublisher:
             self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
             ret = self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
             if ret is None:
-                self.logger.error('Could not save %s=%s to Redis.',
+                self.logger.error("Could not save %s=%s to Redis.",
                                   key_heartbeat, transformed_ping_pub_heartbeat)
 
             self.logger.debug("Sleeping for %s seconds.", self.interval)
