@@ -32,11 +32,11 @@ class CommandHandler(ABC):
         pass
 
     @abstractmethod
-    def mute_all_callback(self, *args) -> None:
+    def muteall_callback(self, *args) -> None:
         pass
 
     @abstractmethod
-    def unmute_all_callback(self, *args) -> None:
+    def unmuteall_callback(self, *args) -> None:
         pass
 
     @abstractmethod

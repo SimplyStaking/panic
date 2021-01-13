@@ -178,7 +178,7 @@ class TelegramCommandHandlers(CmdHandler):
                       "muted.\n".format(', '.join(all_chains_muted_severities))
         else:
             status += "- There is no severity which was muted using " \
-                      "mute\\_all \n"
+                      "/muteall \n"
 
         associated_chains = self.associated_chains
 
@@ -660,17 +660,17 @@ class TelegramCommandHandlers(CmdHandler):
             "seconds until the alerter picks this up.".format(
                 ', '.join(recognized_severities), ', '.join(chain_names)))
 
-    def mute_all_callback(self, update: Update, context: CallbackContext) \
+    def muteall_callback(self, update: Update, context: CallbackContext) \
             -> None:
-        self._logger.info("/mute_all: update=%s, context=%s", update, context)
+        self._logger.info("/muteall: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text("Performing mute_all...")
+        update.message.reply_text("Performing muteall...")
 
-        # Expected: /mute_all or /mute_all List[<severity>]
+        # Expected: /muteall or /muteall List[<severity>]
         inputted_severities = update.message.text.split(' ')[1:]
         unrecognized_severities = []
         recognized_severities = []
@@ -690,12 +690,14 @@ class TelegramCommandHandlers(CmdHandler):
         if len(unrecognized_severities) != 0:
             self.logger.error("Unrecognized severity/severities %s",
                               ', '.join(unrecognized_severities))
-            update.message.reply_text(
-                "Muting Failed: Invalid severity/severities {}. Please enter "
-                "a combination of CRITICAL, WARNING, INFO or ERROR separated "
-                "by spaces after the /mute_all command. You can enter no "
-                "severities and PANIC will automatically mute all alerts for "
-                "all chains".format(', '.join(unrecognized_severities)))
+            msg = "Muting Failed: Invalid severity/severities {}. Please " \
+                  "enter a combination of CRITICAL, WARNING, INFO or ERROR " \
+                  "separated by spaces after the /muteall command. " \
+                  "*Example*: /muteall WARNING CRITICAL. You can enter no " \
+                  "severities and PANIC will automatically mute all alerts " \
+                  "for all chains".format(', '.join(unrecognized_severities))
+            self.formatted_reply(
+                update, msg[:-1] if msg.endswith('\n') else msg)
             return
 
         try:
@@ -742,15 +744,15 @@ class TelegramCommandHandlers(CmdHandler):
                 "successful and that Redis is online. Re-try again when the "
                 "issue is solved.")
 
-    def unmute_all_callback(self, update: Update, context: CallbackContext) \
+    def unmuteall_callback(self, update: Update, context: CallbackContext) \
             -> None:
-        self.logger.info("/unmute_all: update=%s, context=%s", update, context)
+        self.logger.info("/unmuteall: update=%s, context=%s", update, context)
 
         # Check that authorised
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text("Performing unmute_all ...")
+        update.message.reply_text("Performing unmuteall ...")
 
         at_least_one_chain_was_muted = False
         try:
@@ -837,25 +839,27 @@ class TelegramCommandHandlers(CmdHandler):
             [chain_name for _, chain_name in associated_chains.items()]
 
         # Send help message with available commands
-        update.message.reply_text(
-            "Hey! These are the available commands:\n"
-            "  /start: welcome message\n"
-            "  /ping: ping the Telegram Commands Handler\n"
-            "  /mute List(<severity>): mutes List(<severity>) on all channels "
-            "for chains {}. If the list of severities is not given, all "
-            "alerts for chains {} are muted on all channels.\n"
-            "  /unmute: unmutes all alert severities on all channels for "
-            "chains {}.\n"
-            "  /mute_all List(<severity>): mutes List(<severity>) on all "
-            "channels for every chain being monitored. If the list of "
-            "severities is not given, all alerts for all chains are muted on "
-            "all channels.\n"
-            "  /unmute_all: unmutes all alert severities on all channels for "
-            "all chains being monitored.\n"
-            "  /status: gives a live status of PANIC's components\n"
-            "  /help: shows this message".format(
-                ', '.join(chain_names), ', '.join(chain_names),
-                ', '.join(chain_names), ', '.join(chain_names)))
+        msg = "Hey! These are the available commands:\n" \
+              "  /start: Welcome message\n" \
+              "  /ping: Ping the Telegram Commands Handler\n" \
+              "  /mute List(<severity>) (*Example*: /mute INFO CRITICAL): " \
+              "Mutes List(<severity>) on all channels for chains {}. If the " \
+              "list of severities is not given, all alerts for chains {} are " \
+              "muted on all channels.\n" \
+              "  /unmute: Unmutes all alert severities on all channels for " \
+              "chains {}.\n" \
+              "  /muteall List(<severity>) (*Example*: /muteall INFO " \
+              "CRITICAL): Mutes List(<severity>) on all channels for every " \
+              "chain being monitored. If the list of severities is not " \
+              "given, all alerts for all chains are muted on all channels.\n" \
+              "  /unmuteall: Unmutes all alert severities on all channels " \
+              "for all chains being monitored.\n" \
+              "  /status: Gives a live status of PANIC's components\n" \
+              "  /help: Shows this message".format(', '.join(chain_names),
+                                                   ', '.join(chain_names),
+                                                   ', '.join(chain_names),
+                                                   ', '.join(chain_names))
+        self.formatted_reply(update, msg[:-1] if msg.endswith('\n') else msg)
 
     def start_callback(self, update: Update, context: CallbackContext) -> None:
         self.logger.info("/start: update=%s, context=%s", update, context)
