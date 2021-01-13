@@ -158,65 +158,80 @@ class AlertRouter(QueuingPublisherComponent):
                        body: bytes) -> None:
         recv_alert: Dict = json.loads(body)
 
-        # If the alert is empty, just acknowledge and return
-        if not recv_alert:
-            self._rabbit.basic_ack(method.delivery_tag, False)
-            return
-        self._logger.info("Received an alert to route")
-        self._logger.debug("recv_alert = %s", recv_alert)
-        # Where to route this alert to
+        need_to_push_to_queue = True
+        send_to_ids = []
+        try:
+            if recv_alert and 'severity' in recv_alert:
+                self._logger.info("Received an alert to route")
+                self._logger.info("recv_alert = %s", recv_alert)
+                # Where to route this alert to
 
-        self._logger.info("Checking if alert is muted")
-        is_all_muted = self.is_all_muted(recv_alert.get('severity'))
-        is_chain_severity_muted = self.is_chain_severity_muted(
-            recv_alert.get('parent_id'), recv_alert.get('severity'))
-        if is_all_muted or is_chain_severity_muted:
-            self._logger.info("This alert has been muted")
-            self._logger.debug(
-                "is_all_muted=%s, is_chain_severity_muted=%s", is_all_muted,
-                is_chain_severity_muted)
-            self._rabbit.basic_ack(method.delivery_tag, False)
-            return
-        self._logger.info("Obtaining list of channels to alert")
-        self._logger.debug(
-            [channel.get('id') for channel_type in self._config.values()
-             for channel in channel_type.values()])
-        send_to_ids = [
-            channel.get('id') for channel_type in self._config.values()
-            for channel in channel_type.values()
-            if channel.get(recv_alert.get('severity').lower()) and
-               recv_alert.get('parent_id') in channel.get('parent_ids')
-        ]
+                self._logger.info("Checking if alert is muted")
+                is_all_muted = self.is_all_muted(recv_alert.get('severity'))
+                is_chain_severity_muted = self.is_chain_severity_muted(
+                    recv_alert.get('parent_id'), recv_alert.get('severity'))
+                if is_all_muted or is_chain_severity_muted:
+                    self._logger.info("This alert has been muted")
+                    self._logger.debug(
+                        "is_all_muted=%s, is_chain_severity_muted=%s",
+                        is_all_muted, is_chain_severity_muted)
+                    need_to_push_to_queue = False
+                else:
+                    self._logger.info("Obtaining list of channels to alert")
+                    self._logger.debug([
+                        channel.get('id') for channel_type in
+                        self._config.values() for channel in
+                        channel_type.values()
+                    ])
+                    send_to_ids = [
+                        channel.get('id') for channel_type in
+                        self._config.values()
+                        for channel in channel_type.values()
+                        if channel.get(recv_alert.get('severity').lower()) and
+                           recv_alert.get('parent_id') in channel.get(
+                            'parent_ids')
+                    ]
 
-        self._logger.debug("send_to_ids = %s", send_to_ids)
-        self._logger.info("Alert routed successfully")
-
-        for channel_id in send_to_ids:
-            send_alert: Dict = {**recv_alert,
-                                'destination_id': channel_id}
-
-            self._logger.debug("Queuing %s to be sent to %s",
-                               send_alert, channel_id)
-
-            self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                "channel.{}".format(channel_id),
-                                mandatory=True)
-            self._logger.info("Routed Alert queued")
-
-        # Enqueue once to the console
-        if self._enable_console_alerts:
-            self._push_to_queue(
-                {**recv_alert, 'destination_id': "console"},
-                ALERT_EXCHANGE, "channel.console", mandatory=True)
-
-        self._push_to_queue(
-            {**recv_alert, 'destination_id': "log"},
-            ALERT_EXCHANGE, "channel.log", mandatory=True)
+                    self._logger.debug("send_to_ids = %s", send_to_ids)
+                    self._logger.info("Alert routed successfully")
+        except Exception as e:
+            self._logger.error("Error when processing alert: %s", recv_alert)
+            self._logger.exception(e)
+            need_to_push_to_queue = False
 
         self._rabbit.basic_ack(method.delivery_tag, False)
 
-        # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
+        if need_to_push_to_queue:
+            for channel_id in send_to_ids:
+                send_alert: Dict = {**recv_alert,
+                                    'destination_id': channel_id}
+
+                self._logger.debug("Queuing %s to be sent to %s",
+                                   send_alert, channel_id)
+
+                self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                    "channel.{}".format(channel_id),
+                                    mandatory=True)
+                self._logger.debug("Routed Alert queued")
+
+            # Enqueue once to the console
+            if self._enable_console_alerts:
+                self._logger.debug("Queuing %s to be sent to console",
+                                   recv_alert)
+                self._push_to_queue(
+                    {**recv_alert, 'destination_id': "console"},
+                    ALERT_EXCHANGE, "channel.console", mandatory=True)
+                self._logger.debug("Routed Alert queued")
+
+            self._logger.debug("Queuing %s to be sent to console",
+                               recv_alert)
+            self._push_to_queue(
+                {**recv_alert, 'destination_id': "log"},
+                ALERT_EXCHANGE, "channel.log", mandatory=True)
+            self._logger.debug("Routed Alert queued")
+
+            # Enqueue once to the data store
+            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -270,7 +285,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
-    def disconnect(self) -> None:
+    def disconnect_from_rabbit(self) -> None:
         """
         Disconnects the component from RabbitMQ
         :return:
@@ -281,7 +296,7 @@ class AlertRouter(QueuingPublisherComponent):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
-        self.disconnect()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 
