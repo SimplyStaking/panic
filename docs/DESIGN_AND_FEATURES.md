@@ -8,7 +8,11 @@
 
 ## High-Level Design
 
-The PANIC alerter can alert a Cosmos-SDK-based or Substrate-based node operator about the host a Cosmos-SDK/Substrate node is running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter), and new Cosmos-SDK-based or Substrate-based GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). Having said that, system monitoring and GitHub repository monitoring where developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository.
+The PANIC alerter can alert a node operator on: 
+- The host a Cosmos-SDK/Substrate node is running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter)
+- GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). 
+
+Having said that, system monitoring and GitHub repository monitoring where developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository (Don't have to be Substrate/Cosmos-sdk based nodes/repositories).
 
 The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
