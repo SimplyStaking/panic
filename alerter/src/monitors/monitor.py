@@ -9,7 +9,7 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import RAW_DATA_EXCHANGE
+from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -71,9 +71,12 @@ class Monitor(ABC):
         self.rabbitmq.connect_till_successful()
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '{}' exchange".format(RAW_DATA_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+                                       True, False, False)
 
     @abstractmethod
     def _get_data(self) -> None:
@@ -101,6 +104,14 @@ class Monitor(ABC):
     def _monitor(self) -> None:
         pass
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
+
     def start(self) -> None:
         self._initialize_rabbitmq()
         while True:
@@ -126,11 +137,18 @@ class Monitor(ABC):
             # Use the BlockingConnection sleep to avoid dropped connections
             self.rabbitmq.connection.sleep(self.monitor_period)
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 

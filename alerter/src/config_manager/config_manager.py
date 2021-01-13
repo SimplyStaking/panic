@@ -80,8 +80,8 @@ class ConfigManager:
                 self._rabbit.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
-                self._logger.debug("Declared {} exchange in Rabbit".format(
-                    CONFIG_EXCHANGE))
+                self._logger.debug("Declared %s exchange in Rabbit",
+                                   CONFIG_EXCHANGE)
                 break
             except (ConnectionNotInitializedException,
                     AMQPConnectionError) as connection_error:

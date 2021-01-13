@@ -1,6 +1,28 @@
 from typing import Union, Any
 
+from src.alerter.alerts.system_alerts import \
+    OpenFileDescriptorsIncreasedAboveThresholdAlert, \
+    SystemCPUUsageIncreasedAboveThresholdAlert, \
+    SystemRAMUsageIncreasedAboveThresholdAlert, \
+    SystemStorageUsageIncreasedAboveThresholdAlert, \
+    OpenFileDescriptorsDecreasedBelowThresholdAlert, \
+    SystemCPUUsageDecreasedBelowThresholdAlert, \
+    SystemRAMUsageDecreasedBelowThresholdAlert, \
+    SystemStorageUsageDecreasedBelowThresholdAlert
+
 RedisType = Union[bytes, str, int, float]
+IncreasedAboveThresholdSystemAlert = Union[
+    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemStorageUsageIncreasedAboveThresholdAlert
+]
+DecreasedBelowThresholdSystemAlert = Union[
+    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+    SystemCPUUsageDecreasedBelowThresholdAlert,
+    SystemRAMUsageDecreasedBelowThresholdAlert,
+    SystemStorageUsageDecreasedBelowThresholdAlert
+]
 
 
 def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],

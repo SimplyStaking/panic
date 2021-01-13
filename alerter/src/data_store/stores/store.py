@@ -1,12 +1,18 @@
 import logging
 import os
+import signal
+import sys
 from abc import ABC, abstractmethod
+from types import FrameType
 
 import pika
 import pika.exceptions
+
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.logging import log_and_print
 
 
 class Store(ABC):
@@ -27,6 +33,11 @@ class Store(ABC):
         self._redis = RedisApi(logger=self._logger, db=redis_db,
                                host=redis_ip, port=redis_port,
                                namespace=unique_alerter_identifier)
+
+        # Handle termination signals by stopping the manager gracefully
+        signal.signal(signal.SIGTERM, self.on_terminate)
+        signal.signal(signal.SIGINT, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.store_name
@@ -85,6 +96,14 @@ class Store(ABC):
     def _start_listening(self):
         pass
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
+
     def begin_store(self) -> None:
         self._initialize_store()
         while True:
@@ -99,3 +118,18 @@ class Store(ABC):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
+
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
+    def on_terminate(self, signum: int, stack: FrameType) -> None:
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.disconnect_from_rabbit()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()
