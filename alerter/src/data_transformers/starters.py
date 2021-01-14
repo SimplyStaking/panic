@@ -9,6 +9,7 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.utils.logging import create_logger, log_and_print
+from src.utils.starters import get_initialisation_error_message
 
 
 def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
@@ -23,8 +24,7 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
                 os.environ['LOGGING_LEVEL'], rotating=True)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                transformer_name, e)
+            msg = get_initialisation_error_message(transformer_name, e)
             # Use a dummy logger in this case because we cannot create the
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
@@ -50,8 +50,7 @@ def _initialize_transformer_redis(
                              namespace=unique_alerter_identifier)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                transformer_name, e)
+            msg = get_initialisation_error_message(transformer_name, e)
             log_and_print(msg, transformer_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -73,8 +72,7 @@ def _initialize_system_data_transformer() -> SystemDataTransformer:
                           .format(transformer_name), transformer_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                transformer_name, e)
+            msg = get_initialisation_error_message(transformer_name, e)
             log_and_print(msg, transformer_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -96,8 +94,7 @@ def _initialize_github_data_transformer() -> GitHubDataTransformer:
                           .format(transformer_name), transformer_logger)
             break
         except Exception as e:
-            msg = "!!! Error when initialising {}: {} !!!".format(
-                transformer_name, e)
+            msg = get_initialisation_error_message(transformer_name, e)
             log_and_print(msg, transformer_logger)
             time.sleep(10)  # sleep 10 seconds before trying again
 
@@ -115,6 +112,8 @@ def start_github_data_transformer() -> None:
 
 
 def start_transformer(transformer: DataTransformer) -> None:
+    sleep_period = 10
+
     while True:
         try:
             log_and_print("{} started.".format(transformer), transformer.logger)
@@ -126,5 +125,8 @@ def start_transformer(transformer: DataTransformer) -> None:
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
-            transformer.rabbitmq.disconnect_till_successful()
+            transformer.disconnect_from_rabbit()
             log_and_print("{} stopped.".format(transformer), transformer.logger)
+            log_and_print("Restarting {} in {} seconds.".format(
+                transformer, sleep_period), transformer.logger)
+            time.sleep(sleep_period)

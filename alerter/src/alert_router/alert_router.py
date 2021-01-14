@@ -162,7 +162,7 @@ class AlertRouter(QueuingPublisherComponent):
         recv_alert: Dict = json.loads(body)
 
         # If the alert is empty, just acknowledge and return
-        if recv_alert:
+        if not recv_alert:
             self._rabbit.basic_ack(method.delivery_tag, False)
             return
 
@@ -263,7 +263,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
-    def disconnect(self) -> None:
+    def disconnect_from_rabbit(self) -> None:
         """
         Disconnects the component from RabbitMQ
         :return:
@@ -274,6 +274,6 @@ class AlertRouter(QueuingPublisherComponent):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
-        self.disconnect()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()

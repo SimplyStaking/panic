@@ -84,10 +84,11 @@ services:
       - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
       - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
       - 'ENABLE_LOG_ALERTS=${ENABLE_LOG_ALERTS}'
+      - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
-      dockerfile: './alerter/Dockerfile'
+      dockerfile: './alerter/Alerter_Dockerfile'
     image: 'simplyvc/panic_alerter:1.0.0'
     volumes:
       - './config:/opt/panic/config'
@@ -99,6 +100,47 @@ services:
     depends_on:
       - mongo
       - redis
+      - rabbitmq
+
+  health-checker:
+    environment:
+      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_IP=${REDIS_IP}'
+      - 'REDIS_PORT=${REDIS_PORT}'
+      - 'RABBIT_IP=${RABBIT_IP}'
+      - 'RABBIT_PORT=${RABBIT_PORT}'
+      - 'LOGGING_LEVEL=${LOGGING_LEVEL}'
+      - 'DATA_STORE_LOG_FILE_TEMPLATE=${DATA_STORE_LOG_FILE_TEMPLATE}'
+      - 'MONITORS_LOG_FILE_TEMPLATE=${MONITORS_LOG_FILE_TEMPLATE}'
+      - 'TRANSFORMERS_LOG_FILE_TEMPLATE=${TRANSFORMERS_LOG_FILE_TEMPLATE}'
+      - 'MANAGERS_LOG_FILE_TEMPLATE=${MANAGERS_LOG_FILE_TEMPLATE}'
+      - 'ALERTERS_LOG_FILE_TEMPLATE=${ALERTERS_LOG_FILE_TEMPLATE}'
+      - 'ALERT_ROUTER_LOG_FILE=${ALERT_ROUTER_LOG_FILE}'
+      - 'CONFIG_MANAGER_LOG_FILE=${CONFIG_MANAGER_LOG_FILE}'
+      - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
+      - 'SYSTEM_MONITOR_PERIOD_SECONDS=${SYSTEM_MONITOR_PERIOD_SECONDS}'
+      - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
+      - 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE=${DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE}'
+      - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
+      - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
+      - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
+      - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
+    build:
+      context: './'
+      dockerfile: './alerter/Health_Checker_Dockerfile'
+    image: 'simplyvc/alerter_health_checker:1.0.0'
+    volumes:
+      - './alerter/logs:/opt/panic/alerter/logs'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${HEALTH_CHECKER_IP}'
+    depends_on:
+      - alerter
       - rabbitmq
 
 networks:

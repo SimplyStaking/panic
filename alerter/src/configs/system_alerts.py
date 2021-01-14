@@ -1,7 +1,4 @@
-from datetime import timedelta
 from typing import Dict
-
-from src.utils.timing import TimedTaskLimiter
 
 
 class SystemAlertsConfig:
@@ -17,42 +14,6 @@ class SystemAlertsConfig:
         self._system_storage_usage = system_storage_usage
         self._system_ram_usage = system_ram_usage
         self._system_is_down = system_is_down
-
-        self._open_file_descriptors['limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._open_file_descriptors['critical_repeat']
-            ))
-        )
-
-        self._system_cpu_usage['limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_cpu_usage['critical_repeat']
-            ))
-        )
-
-        self._system_storage_usage['limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_storage_usage['critical_repeat']
-            ))
-        )
-
-        self._system_ram_usage['limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_ram_usage['critical_repeat']
-            ))
-        )
-
-        self._system_is_down['critical_limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_is_down['critical_repeat']
-            ))
-        )
-
-        self._system_is_down['warning_limiter'] = TimedTaskLimiter(
-            timedelta(seconds=int(
-                self._system_is_down['warning_repeat']
-            ))
-        )
 
     @property
     def parent_id(self) -> str:
@@ -77,21 +38,3 @@ class SystemAlertsConfig:
     @property
     def system_is_down(self) -> Dict:
         return self._system_is_down
-
-    def set_parent_id(self, parent_id: str) -> None:
-        self._parent_id = parent_id
-
-    def set_open_file_descriptors(self, open_file_descriptors:
-                                  Dict) -> None:
-        self._open_file_descriptors = open_file_descriptors
-
-    def set_system_cpu_usage(self, system_cpu_usage:
-                             Dict) -> None:
-        self._system_cpu_usage = system_cpu_usage
-
-    def set_system_storage_usage(self, system_storage_usage:
-                                 Dict) -> None:
-        self._system_storage_usage = system_storage_usage
-
-    def set_system_is_down(self, system_is_down: Dict) -> None:
-        self._system_is_down = system_is_down

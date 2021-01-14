@@ -285,8 +285,7 @@ class SystemMonitor(Monitor):
             exchange=RAW_DATA_EXCHANGE, routing_key='system', body=self.data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self.logger.debug("Sent data to '{}' exchange".format(
-            RAW_DATA_EXCHANGE))
+        self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
         data_retrieval_exception = Exception()
@@ -297,41 +296,48 @@ class SystemMonitor(Monitor):
             self._data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
                 self.system_config.system_name)
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.system_config.node_exporter_url))
+            self.logger.error("Error when retrieving data from %s",
+                              self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
             self._data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.system_config.node_exporter_url))
+            self.logger.error("Error when retrieving data from %s",
+                              self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (InvalidURL, InvalidSchema, MissingSchema):
             self._data_retrieval_failed = True
             data_retrieval_exception = InvalidUrlException(
                 self.system_config.node_exporter_url)
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.system_config.node_exporter_url))
+            self.logger.error("Error when retrieving data from %s",
+                              self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
             self._data_retrieval_failed = True
             data_retrieval_exception = e
-            self.logger.error("Error when retrieving data from {}"
-                              .format(self.system_config.node_exporter_url))
+            self.logger.error("Error when retrieving data from %s",
+                              self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
 
         try:
             self._process_data(data_retrieval_exception)
         except Exception as error:
-            self.logger.error("Error when processing data obtained from {}"
-                              .format(self.system_config.node_exporter_url))
+            self.logger.error("Error when processing data obtained from %s",
+                              self.system_config.node_exporter_url)
             self.logger.exception(error)
             # Do not send data if we experienced processing errors
             return
 
         self._send_data()
 
-        # Only output the gathered data if there was no error
         if not self.data_retrieval_failed:
+            # Only output the gathered data if there was no error
             self.logger.info(self.status())
+
+        # Send a heartbeat only if the entire round was successful
+        heartbeat = {
+            'component_name': self.monitor_name,
+            'timestamp': datetime.now().timestamp()
+        }
+        self._send_heartbeat(heartbeat)
