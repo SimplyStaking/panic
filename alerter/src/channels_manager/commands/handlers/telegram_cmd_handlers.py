@@ -10,6 +10,7 @@ from pymongo.errors import PyMongoError
 from redis import RedisError
 from telegram import Update
 from telegram.ext import CallbackContext
+from telegram.utils.helpers import escape_markdown
 
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.commands.handlers.handler import CommandHandler \
@@ -197,8 +198,7 @@ class TelegramCommandHandlers(CmdHandler):
         associated_chains = self.associated_chains
 
         for chain_id, chain_name in associated_chains.items():
-            chain_name = chain_name.replace("_", "\\_").replace("*", "\\*") \
-                .replace("[", "\\[").replace("`", "\\`")
+            chain_name = escape_markdown(chain_name)
             chain_hash = Keys.get_hash_parent(chain_id)
             mute_alerts_key = Keys.get_chain_mute_alerts()
             if self.redis.hexists_unsafe(chain_hash, mute_alerts_key):
@@ -225,7 +225,7 @@ class TelegramCommandHandlers(CmdHandler):
         status = ''
         dead_processes = heartbeat['dead_processes']
         hb_timestamp = heartbeat['timestamp']
-        component = heartbeat['component_name']
+        component = escape_markdown(heartbeat['component_name'])
 
         current_timestamp = datetime.now().timestamp()
         time_elapsed_since_hb = current_timestamp - hb_timestamp
@@ -244,6 +244,7 @@ class TelegramCommandHandlers(CmdHandler):
         else:
             if len(dead_processes) != 0:
                 for sub_process in dead_processes:
+                    sub_process = escape_markdown(sub_process)
                     # To avoid special character errors in telegram
                     status += "- *{}*: {} - Not running. \n".format(
                         sub_process, self._get_running_icon(False))
@@ -258,7 +259,7 @@ class TelegramCommandHandlers(CmdHandler):
         status = ''
         alive = heartbeat['is_alive']
         hb_timestamp = heartbeat['timestamp']
-        component = heartbeat['component_name']
+        component = escape_markdown(heartbeat['component_name'])
 
         current_timestamp = datetime.now().timestamp()
         time_elapsed_since_hb = current_timestamp - hb_timestamp
@@ -313,7 +314,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(sys_mon_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(SYSTEM_MONITORS_MANAGER_NAME,
+                .format(escape_markdown(SYSTEM_MONITORS_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_gh_mon_man_hb):
@@ -322,7 +323,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(gh_mon_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(GITHUB_MONITORS_MANAGER_NAME,
+                .format(escape_markdown(GITHUB_MONITORS_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_data_trans_man_hb):
@@ -331,7 +332,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(data_trans_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(DATA_TRANSFORMERS_MANAGER_NAME,
+                .format(escape_markdown(DATA_TRANSFORMERS_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_sys_alerters_man_hb):
@@ -340,7 +341,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(sys_alerters_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(SYSTEM_ALERTERS_MANAGER_NAME,
+                .format(escape_markdown(SYSTEM_ALERTERS_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_gh_alerter_man_hb):
@@ -349,7 +350,7 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(gh_alerter_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(GITHUB_ALERTER_MANAGER_NAME,
+                .format(escape_markdown(GITHUB_ALERTER_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_store_man_hb):
@@ -358,7 +359,8 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(store_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(DATA_STORE_MANAGER_NAME, self._get_running_icon(False))
+                .format(escape_markdown(DATA_STORE_MANAGER_NAME),
+                        self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_alert_router_hb):
             alert_router_hb = json.loads(
@@ -366,7 +368,8 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_worker_component_hb_status(alert_router_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(ALERT_ROUTER_NAME, self._get_running_icon(False))
+                .format(escape_markdown(ALERT_ROUTER_NAME),
+                        self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_config_manager_hb):
             config_manager_hb = json.loads(
@@ -374,7 +377,8 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_worker_component_hb_status(config_manager_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(CONFIGS_MANAGER_NAME, self._get_running_icon(False))
+                .format(escape_markdown(CONFIGS_MANAGER_NAME),
+                        self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_channels_manager_hb):
             channels_man_hb = json.loads(
@@ -382,7 +386,8 @@ class TelegramCommandHandlers(CmdHandler):
             status += self._get_manager_component_hb_status(channels_man_hb)
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(CHANNELS_MANAGER_NAME, self._get_running_icon(False))
+                .format(escape_markdown(CHANNELS_MANAGER_NAME),
+                        self._get_running_icon(False))
 
         # Just say that PANIC's components are ok if there are no issues.
         if status == '':
@@ -414,14 +419,15 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += "- *Health Checker ({})*: {} - Missed {} " \
-                          "heartbeats.\n ".format(HEARTBEAT_HANDLER_NAME,
-                                                  self._get_running_icon(False),
-                                                  missed_hbs)
+                status += \
+                    "- *Health Checker ({})*: {} - Missed {} " \
+                    "heartbeats.\n ".format(
+                        escape_markdown(HEARTBEAT_HANDLER_NAME),
+                        self._get_running_icon(False), missed_hbs)
                 problems_in_checker = True
         else:
             status += "- *Health Checker ({})*: {} - No heartbeat " \
-                      "yet.\n".format(HEARTBEAT_HANDLER_NAME,
+                      "yet.\n".format(escape_markdown(HEARTBEAT_HANDLER_NAME),
                                       self._get_running_icon(False))
             problems_in_checker = True
 
@@ -439,14 +445,15 @@ class TelegramCommandHandlers(CmdHandler):
             if time_elapsed_since_hb > hb_cut_off_time:
                 missed_hbs = \
                     int((current_timestamp - hb_timestamp) // hb_interval)
-                status += "- *Health Checker ({})*: {} - Missed {} " \
-                          "heartbeats.\n".format(PING_PUBLISHER_NAME,
-                                                 self._get_running_icon(False),
-                                                 missed_hbs)
+                status += \
+                    "- *Health Checker ({})*: {} - Missed {} " \
+                    "heartbeats.\n".format(escape_markdown(PING_PUBLISHER_NAME),
+                                           self._get_running_icon(False),
+                                           missed_hbs)
                 problems_in_checker = True
         else:
-            status += "- * Health Checker ({})*: {} - No heartbeat " \
-                      "yet.\n".format(PING_PUBLISHER_NAME,
+            status += "- *Health Checker ({})*: {} - No heartbeat " \
+                      "yet.\n".format(escape_markdown(PING_PUBLISHER_NAME),
                                       self._get_running_icon(False))
             problems_in_checker = True
 
@@ -461,10 +468,8 @@ class TelegramCommandHandlers(CmdHandler):
         associated_chains = self.associated_chains
 
         # Avoid errors in Telegram by escaping them.
-        chain_names = \
-            [chain_name.replace("_", "\\_").replace("*", "\\*").replace(
-                "[", "\\[").replace("`", "\\`")
-             for _, chain_name in associated_chains.items()]
+        chain_names = [escape_markdown(chain_name) for _, chain_name in
+                       associated_chains.items()]
 
         redis_accessible_status = ""
         redis_error_status = \
@@ -546,13 +551,10 @@ class TelegramCommandHandlers(CmdHandler):
                     self.redis.hremove_unsafe(chain_hash, mute_alerts_key)
                     self.logger.info("%s alerts have been unmuted.",
                                      chain_name)
-                    successfully_unmuted_chains.append(
-                        chain_name.replace("_", "\\_").replace(
-                            "*", "\\*").replace("[", "\\[").replace("`", "\\`"))
+                    successfully_unmuted_chains.append(escape_markdown(
+                        chain_name))
                 else:
-                    already_unmuted_chains.append(
-                        chain_name.replace("_", "\\_").replace(
-                            "*", "\\*").replace("[", "\\[").replace("`", "\\`"))
+                    already_unmuted_chains.append(escape_markdown(chain_name))
                     self.logger.info("%s has no muted severities.", chain_name)
             except (RedisError, ConnectionResetError) as e:
                 self.logger.exception(e)
@@ -708,12 +710,16 @@ class TelegramCommandHandlers(CmdHandler):
         if len(unrecognized_severities) != 0:
             self.logger.error("Unrecognized severity/severities %s",
                               ', '.join(unrecognized_severities))
+            escaped_unrecognized_severities = \
+                [escape_markdown(unrecognized_severity) for
+                 unrecognized_severity in unrecognized_severities]
             msg = "Muting Failed: Invalid severity/severities {}. Please " \
                   "enter a combination of CRITICAL, WARNING, INFO or ERROR " \
                   "separated by spaces after the /muteall command. " \
                   "*Example*: /muteall WARNING CRITICAL. You can enter no " \
                   "severities and PANIC will automatically mute all alerts " \
-                  "for all chains".format(', '.join(unrecognized_severities))
+                  "for all " \
+                  "chains".format(', '.join(escaped_unrecognized_severities))
             self.formatted_reply(
                 update, msg[:-1] if msg.endswith('\n') else msg)
             return
@@ -856,7 +862,8 @@ class TelegramCommandHandlers(CmdHandler):
 
         associated_chains = self.associated_chains
         chain_names = \
-            [chain_name for _, chain_name in associated_chains.items()]
+            [escape_markdown(chain_name) for _, chain_name in
+             associated_chains.items()]
 
         # Send help message with available commands
         msg = "Hey! These are the available commands:\n" \
