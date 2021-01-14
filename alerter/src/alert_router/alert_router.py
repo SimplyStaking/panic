@@ -225,19 +225,25 @@ class AlertRouter(QueuingPublisherComponent):
                       body: bytes) -> None:
 
         self._logger.debug("Received %s. Let's pong", body)
-        heartbeat = {
-            'component_name': "AlertRouter",
-            'is_alive': True,
-            'timestamp': datetime.now().timestamp(),
-        }
+        try:
+            heartbeat = {
+                'component_name': "AlertRouter",
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp(),
+            }
 
-        self._rabbit.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker', body=heartbeat,
-            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
-        self._logger.info("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+            self._rabbit.basic_publish_confirm(
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker', body=heartbeat,
+                is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self._logger.info("Sent heartbeat to %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as the heartbeats must be
+            # real-time
+            self._logger.error("Problem sending heartbeat")
+            self._logger.exception(e)
 
     def start(self) -> None:
         self._initialise_rabbit()
