@@ -70,7 +70,7 @@ class TelegramCommandHandlers(CmdHandler):
         # Adds Markdown formatting
         update.message.reply_text(reply, parse_mode='Markdown')
 
-    def execute_safely(function):
+    def _execute_safely(function):
         def execute_callback_safely(self, update: Update,
                                     context: CallbackContext) -> None:
             try:
@@ -120,7 +120,7 @@ class TelegramCommandHandlers(CmdHandler):
             raise e
         return False
 
-    @execute_safely
+    @_execute_safely
     def unknown_callback(self, update: Update,
                          context: CallbackContext) -> None:
         self.logger.info("Received unrecognized command: update=%s, "
@@ -133,7 +133,7 @@ class TelegramCommandHandlers(CmdHandler):
         # Send a default message for unrecognized commands
         update.message.reply_text("I did not understand (Type /help)")
 
-    @execute_safely
+    @_execute_safely
     def ping_callback(self, update: Update, context: CallbackContext) -> None:
         self.logger.info("/ping: update=%s, context=%s", update, context)
 
@@ -502,7 +502,7 @@ class TelegramCommandHandlers(CmdHandler):
 
         return redis_accessible_status
 
-    @execute_safely
+    @_execute_safely
     def status_callback(self, update: Update, context: CallbackContext) -> None:
         self._logger.info("/status: update=%s, context=%s", update, context)
 
@@ -523,7 +523,7 @@ class TelegramCommandHandlers(CmdHandler):
         self.formatted_reply(
             update, status[:-1] if status.endswith('\n') else status)
 
-    @execute_safely
+    @_execute_safely
     def unmute_callback(self, update: Update, context: CallbackContext) -> None:
         self.logger.info("/unmute: update=%s, context=%s", update, context)
 
@@ -587,7 +587,7 @@ class TelegramCommandHandlers(CmdHandler):
 
         self.formatted_reply(update, res[:-1] if res.endswith('\n') else res)
 
-    @execute_safely
+    @_execute_safely
     def mute_callback(self, update: Update, context: CallbackContext) -> None:
         self._logger.info("/mute: update=%s, context=%s", update, context)
 
@@ -677,7 +677,7 @@ class TelegramCommandHandlers(CmdHandler):
             "seconds until the alerter picks this up.".format(
                 ', '.join(recognized_severities), ', '.join(chain_names)))
 
-    @execute_safely
+    @_execute_safely
     def muteall_callback(self, update: Update, context: CallbackContext) \
             -> None:
         self._logger.info("/muteall: update=%s, context=%s", update, context)
@@ -762,7 +762,7 @@ class TelegramCommandHandlers(CmdHandler):
                 "successful and that Redis is online. Re-try again when the "
                 "issue is solved.")
 
-    @execute_safely
+    @_execute_safely
     def unmuteall_callback(self, update: Update, context: CallbackContext) \
             -> None:
         self.logger.info("/unmuteall: update=%s, context=%s", update, context)
@@ -846,7 +846,7 @@ class TelegramCommandHandlers(CmdHandler):
             update.message.reply_text("No alert severity was muted for any "
                                       "chain.")
 
-    @execute_safely
+    @_execute_safely
     def help_callback(self, update: Update, context: CallbackContext) -> None:
         self._logger.info("/help: update=%s, context=%s", update, context)
 
@@ -881,7 +881,7 @@ class TelegramCommandHandlers(CmdHandler):
                                                    ', '.join(chain_names))
         self.formatted_reply(update, msg[:-1] if msg.endswith('\n') else msg)
 
-    @execute_safely
+    @_execute_safely
     def start_callback(self, update: Update, context: CallbackContext) -> None:
         self.logger.info("/start: update=%s, context=%s", update, context)
 
@@ -919,4 +919,4 @@ class TelegramCommandHandlers(CmdHandler):
                 self.logger.exception(e)
             return False
 
-    execute_safely = staticmethod(execute_safely)
+    _execute_safely = staticmethod(_execute_safely)
