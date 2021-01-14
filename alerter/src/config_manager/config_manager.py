@@ -62,10 +62,12 @@ class ConfigManager(Component):
         self._watching = False
         self._connected_to_rabbit = False
 
+        self._logger.debug("Creating config RabbitMQ connection")
         self._config_rabbit = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
 
+        self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
             logger.getChild("heartbeat_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
@@ -92,6 +94,7 @@ class ConfigManager(Component):
                 self._config_rabbit.confirm_delivery()
                 self._logger.info("Enabled delivery confirmation on configs"
                                   "RabbitMQ channel")
+
                 self._config_rabbit.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
@@ -126,7 +129,7 @@ class ConfigManager(Component):
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
-                self._logger.info("Declaring consuming intentions")
+                self._logger.info("Declaring consuming intentions for the ping")
                 self._heartbeat_rabbit.basic_consume(config_ping_queue,
                                                      self._process_ping,
                                                      True, False, None)
@@ -148,22 +151,26 @@ class ConfigManager(Component):
 
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
-            self._logger.info("Connecting to RabbitMQ")
+            self._logger.info("Connecting to the config RabbitMQ")
             self._config_rabbit.connect_till_successful()
+            self._logger.info("Connected to config RabbitMQ")
+            self._logger.info("Connecting to the heartbeat RabbitMQ")
             self._heartbeat_rabbit.connect_till_successful()
+            self._logger.info("Connected to heartbeat RabbitMQ")
             self._connected_to_rabbit = True
-            self._logger.info("Connected to RabbitMQ")
         else:
             self._logger.info(
                 "Already connected to RabbitMQ, will not connect again")
 
     def disconnect(self) -> None:
         if self._connected_to_rabbit:
-            self._logger.info("Disconnecting from RabbitMQ")
+            self._logger.info("Disconnecting from the config RabbitMQ")
             self._config_rabbit.disconnect_till_successful()
+            self._logger.info("Disconnected from the config RabbitMQ")
+            self._logger.info("Disconnecting from the heartbeat RabbitMQ")
             self._heartbeat_rabbit.disconnect_till_successful()
+            self._logger.info("Disconnected from the heartbeat RabbitMQ")
             self._connected_to_rabbit = False
-            self._logger.info("Disconnected from RabbitMQ")
         else:
             self._logger.info("Already disconnected from RabbitMQ")
 
@@ -180,6 +187,9 @@ class ConfigManager(Component):
                 'timestamp': datetime.now().timestamp(),
             }
 
+            self._logger.debug("Sending heartbeat to the %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+            self._logger.debug("Sending %s", heartbeat)
             self._heartbeat_rabbit.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=_HEARTBEAT_ROUTING_KEY,
