@@ -1,6 +1,7 @@
 import json
 import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError
+from datetime import datetime
 from logging import Logger
 from types import FrameType
 from typing import Dict
@@ -11,19 +12,22 @@ from pika.exceptions import AMQPConnectionError
 
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE
+from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-ALERT_ROUTER_CONFIGS_QUEUE_NAME = "alert_router_configs_queue"
-ALERT_ROUTER_INPUT_QUEUE_NAME = "alert_router_input_queue"
+_ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
+_ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
+_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 
 class AlertRouter(QueuingPublisherComponent):
     def __init__(self, logger: Logger, rabbit_ip: str,
-                 enable_console_alerts: bool):
+                 enable_console_alerts: bool, enable_log_alerts: bool):
         self._rabbit = RabbitMQApi(logger.getChild("rabbitmq"), host=rabbit_ip)
         self._enable_console_alerts = enable_console_alerts
+        self._enable_log_alerts = enable_log_alerts
 
         self._config = {}
 
@@ -41,19 +45,25 @@ class AlertRouter(QueuingPublisherComponent):
             "Setting delivery confirmation on RabbitMQ channel")
         self._rabbit.confirm_delivery()
 
+        # Pre-fetch count is set to 300
+        prefetch_count = round(300)
+        self._rabbit.basic_qos(prefetch_count=prefetch_count)
+
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
-            "channels.*")
+            _ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
+            "channels.*"
+        )
         self._rabbit.basic_consume(
-            queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+            queue=_ALERT_ROUTER_CONFIGS_QUEUE_NAME,
             on_message_callback=self._process_configs, auto_ack=False,
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
-            "alert_router.*")
+            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
+            "alert_router.*"
+        )
         self._rabbit.basic_consume(
-            queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
+            queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
             on_message_callback=self._process_alert, auto_ack=False,
             exclusive=False, consumer_tag=None
         )
@@ -61,12 +71,17 @@ class AlertRouter(QueuingPublisherComponent):
         # Declare store exchange just in case it hasn't been declared
         # yet
         self._rabbit.exchange_declare(exchange=STORE_EXCHANGE,
-                                      exchange_type='direct',
-                                      passive=False,
+                                      exchange_type='direct', passive=False,
                                       durable=True, auto_delete=False,
                                       internal=False)
 
-        self._rabbit.confirm_delivery()
+        self._declare_exchange_and_bind_queue(
+            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic", "ping"
+        )
+
+        self._logger.info("Declaring consuming intentions")
+        self._rabbit.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
+                                   True, False, None)
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
                                          exchange_name: str, exchange_type: str,
@@ -176,14 +191,19 @@ class AlertRouter(QueuingPublisherComponent):
 
             self._push_to_queue(send_alert, ALERT_EXCHANGE,
                                 "channel.{}".format(channel_id),
-                                mandatory=False)
+                                mandatory=True)
             self._logger.info("Routed Alert queued")
 
         # Enqueue once to the console
         if self._enable_console_alerts:
             self._push_to_queue(
                 {**recv_alert, 'destination_id': "console"},
-                ALERT_EXCHANGE, "channel.console", mandatory=False)
+                ALERT_EXCHANGE, "channel.console", mandatory=True)
+
+        if self._enable_log_alerts:
+            self._push_to_queue(
+                {**recv_alert, 'destination_id': "log"},
+                ALERT_EXCHANGE, "channel.log", mandatory=True)
 
         self._rabbit.basic_ack(method.delivery_tag, False)
 
@@ -196,6 +216,32 @@ class AlertRouter(QueuingPublisherComponent):
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as message is residing in the
             # publisher queue.
+            self._logger.exception(e)
+
+    def _process_ping(self, ch: BlockingChannel,
+                      method: pika.spec.Basic.Deliver,
+                      properties: pika.spec.BasicProperties,
+                      body: bytes) -> None:
+
+        self._logger.debug("Received %s. Let's pong", body)
+        try:
+            heartbeat = {
+                'component_name': "AlertRouter",
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp(),
+            }
+
+            self._rabbit.basic_publish_confirm(
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker', body=heartbeat,
+                is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self._logger.info("Sent heartbeat to %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as the heartbeats must be
+            # real-time
+            self._logger.error("Problem sending heartbeat")
             self._logger.exception(e)
 
     def start(self) -> None:
