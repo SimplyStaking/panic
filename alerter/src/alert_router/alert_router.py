@@ -20,6 +20,7 @@ from src.utils.logging import log_and_print
 
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
+_ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
 class AlertRouter(QueuingPublisherComponent):
@@ -212,7 +213,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._push_to_queue(send_alert, ALERT_EXCHANGE,
                                     "channel.{}".format(channel_id),
                                     mandatory=True)
-                self._logger.debug("Routed Alert queued")
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
             if self._enable_console_alerts:
@@ -221,14 +222,14 @@ class AlertRouter(QueuingPublisherComponent):
                 self._push_to_queue(
                     {**recv_alert, 'destination_id': "console"},
                     ALERT_EXCHANGE, "channel.console", mandatory=True)
-                self._logger.debug("Routed Alert queued")
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             self._logger.debug("Queuing %s to be sent to console",
                                recv_alert)
             self._push_to_queue(
                 {**recv_alert, 'destination_id': "log"},
                 ALERT_EXCHANGE, "channel.log", mandatory=True)
-            self._logger.debug("Routed Alert queued")
+            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the data store
             self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
@@ -329,7 +330,6 @@ class AlertRouter(QueuingPublisherComponent):
         severities_muted = json.loads(
             self._redis.get(alerter_mute_key, default=b"{}")
         )
-        print(severities_muted)
         return bool(severities_muted.get(severity, False))
 
     def is_chain_severity_muted(self, parent_id: str, severity: str) -> bool:
@@ -344,5 +344,4 @@ class AlertRouter(QueuingPublisherComponent):
             self._redis.hget(chain_hash, mute_alerts_key, default=b"{}")
         )
 
-        print(severities_muted)
         return bool(severities_muted.get(severity, False))
