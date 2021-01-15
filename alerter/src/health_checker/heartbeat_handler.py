@@ -133,7 +133,7 @@ class HeartbeatHandler:
                            properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         heartbeat = json.loads(body)
-        self.logger.info("Received %s. Now processing this data.", heartbeat)
+        self.logger.debug("Received %s. Now processing this data.", heartbeat)
 
         try:
             if method.routing_key == 'heartbeat.worker' or \
