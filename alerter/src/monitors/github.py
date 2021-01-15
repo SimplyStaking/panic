@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 from datetime import datetime
@@ -23,26 +24,20 @@ class GitHubMonitor(Monitor):
                  logger: logging.Logger, monitor_period: int) -> None:
         super().__init__(monitor_name, logger, monitor_period)
         self._repo_config = repo_config
-        self._releases_info = {}
 
     @property
     def repo_config(self) -> RepoConfig:
         return self._repo_config
 
-    @property
-    def releases_info(self) -> Dict:
-        return self._releases_info
-
-    def status(self) -> str:
+    def _display_data(self, data: Dict) -> str:
         # To ensure no releases have unicode characters we must first encode
         # as utf-8 and then decode
-        return json.dumps(self.releases_info, ensure_ascii=False) \
-            .encode('utf8').decode()
+        return json.dumps(data, ensure_ascii=False).encode('utf8').decode()
 
-    def _get_data(self) -> None:
-        self._data = get_json(self.repo_config.releases_page, self.logger)
+    def _get_data(self) -> Dict:
+        return get_json(self.repo_config.releases_page, self.logger)
 
-    def _process_data_retrieval_failed(self, error: PANICException) -> None:
+    def _process_error(self, error: PANICException) -> Dict:
         processed_data = {
             'error': {
                 'meta_data': {
@@ -57,9 +52,11 @@ class GitHubMonitor(Monitor):
             }
         }
 
-        self._data = processed_data
+        return processed_data
 
-    def _process_data_retrieval_successful(self) -> None:
+    def _process_retrieved_data(self, data: Dict) -> Dict:
+        data_copy = copy.deepcopy(data)
+
         # Add some meta-data to the processed data
         processed_data = {
             'result': {
@@ -74,8 +71,8 @@ class GitHubMonitor(Monitor):
             }
         }
 
-        for i in range(len(self.data)):
-            release_data = self.data[i]
+        for i in range(len(data_copy)):
+            release_data = data_copy[i]
             processed_data['result']['data'][i] = {}
             processed_data['result']['data'][i]['release_name'] = \
                 release_data['name']
@@ -85,34 +82,33 @@ class GitHubMonitor(Monitor):
                               json.dumps(processed_data['result']['data'][i],
                                          ensure_ascii=False).encode('utf8')
                               .decode())
-            self._releases_info[i] = processed_data['result']['data'][i]
 
-        self._data = processed_data
+        return processed_data
 
-    def _send_data(self) -> None:
+    def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=RAW_DATA_EXCHANGE, routing_key='github', body=self.data,
+            exchange=RAW_DATA_EXCHANGE, routing_key='github', body=data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange.", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
-        data_retrieval_exception = Exception()
+        data_retrieval_exception = None
+        data = None
+        data_retrieval_failed = False
         try:
-            self._get_data()
+            data = self._get_data()
 
-            # If response contains a message this indicate an error in the
+            # If response contains a message this indicates an error in the
             # GitHub API Call
-            if 'message' in self.data:
-                self._data_retrieval_failed = True
+            if 'message' in data:
+                data_retrieval_failed = True
                 data_retrieval_exception = GitHubAPICallException(
-                    self.data['message'])
+                    data['message'])
                 self.logger.error("Error when retrieving data from %s: "
                                   "(%s, %s)", self.repo_config.releases_page,
                                   data_retrieval_exception.message,
                                   data_retrieval_exception.code)
-            else:
-                self._data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
             self._data_retrieval_failed = True
             data_retrieval_exception = CannotAccessGitHubPageException(
@@ -135,7 +131,8 @@ class GitHubMonitor(Monitor):
             self.logger.exception(data_retrieval_exception)
 
         try:
-            self._process_data(data_retrieval_exception)
+            processed_data = self._process_data(data, data_retrieval_failed,
+                                                data_retrieval_exception)
         except Exception as error:
             self.logger.error("Error when processing data obtained from %s",
                               self.repo_config.releases_page)
@@ -143,11 +140,12 @@ class GitHubMonitor(Monitor):
             # Do not send data if we experienced processing errors
             return
 
-        self._send_data()
+        self._send_data(processed_data)
 
-        if not self.data_retrieval_failed:
+        if not data_retrieval_failed:
             # Only output the gathered metrics if there was no error
-            self.logger.info(self.status())
+            self.logger.info(self._display_data(
+                processed_data['result']['data']))
 
         # Send a heartbeat only if the entire round was successful
         heartbeat = {

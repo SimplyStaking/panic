@@ -23,6 +23,7 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 
 class AlertRouter(QueuingPublisherComponent):
+
     def __init__(self, name: str, logger: Logger, rabbit_ip: str,
                  enable_console_alerts: bool, enable_log_alerts: bool):
         self._name = name
@@ -42,7 +43,7 @@ class AlertRouter(QueuingPublisherComponent):
     def name(self) -> str:
         return self._name
 
-    def _initialise_rabbit(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         """
         Initialises the rabbit connection and the exchanges needed
         :return: None
@@ -222,6 +223,16 @@ class AlertRouter(QueuingPublisherComponent):
             # publisher queue.
             self._logger.exception(e)
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self._rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker', body=data_to_send,
+            is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self._logger.info("Sent heartbeat to %s exchange",
+                          HEALTH_CHECK_EXCHANGE)
+
     def _process_ping(self, ch: BlockingChannel,
                       method: pika.spec.Basic.Deliver,
                       properties: pika.spec.BasicProperties,
@@ -235,14 +246,7 @@ class AlertRouter(QueuingPublisherComponent):
                 'timestamp': datetime.now().timestamp(),
             }
 
-            self._rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker', body=heartbeat,
-                is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self._logger.info("Sent heartbeat to %s exchange",
-                              HEALTH_CHECK_EXCHANGE)
+            self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as the heartbeats must be
             # real-time
@@ -251,7 +255,7 @@ class AlertRouter(QueuingPublisherComponent):
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self._logger)
-        self._initialise_rabbit()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -274,14 +278,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from rabbit
-        :return:
-        """
-        self._rabbitmq.disconnect_till_successful()
-
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
