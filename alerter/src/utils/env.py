@@ -65,6 +65,11 @@ ENABLE_CONSOLE_ALERTS: bool = \
     os.getenv('ENABLE_CONSOLE_ALERTS', False).lower() in (
         True, "true", "yes", "y")
 
+# Log Alerts
+ENABLE_LOG_ALERTS: bool = \
+    os.getenv('ENABLE_LOG_ALERTS', False).lower() in (
+        True, "true", "yes", "y")
+
 # Twilio Preferences
 TWIML = os.environ['TWIML']
 TWIML_IS_URL = os.environ['TWIML_IS_URL'].lower() in ["true", "yes", "y"]

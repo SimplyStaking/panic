@@ -237,7 +237,8 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     while True:
         try:
             alert_router = AlertRouter(display_name, alert_router_logger,
-                                       rabbit_ip, env.ENABLE_CONSOLE_ALERTS)
+                                       rabbit_ip, env.ENABLE_CONSOLE_ALERTS,
+                                       env.ENABLE_LOG_ALERTS)
             return alert_router, alert_router_logger
         except Exception as e:
             log_and_print(get_initialisation_error_message(display_name, e),

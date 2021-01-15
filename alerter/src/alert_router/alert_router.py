@@ -24,9 +24,11 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 
 class AlertRouter(QueuingPublisherComponent):
     def __init__(self, name: str, logger: Logger, rabbit_ip: str,
-                 enable_console_alerts: bool):
+                 enable_console_alerts: bool, enable_log_alerts: bool):
         self._name = name
         self._enable_console_alerts = enable_console_alerts
+        self._enable_log_alerts = enable_log_alerts
+
         self._config = {}
 
         super().__init__(logger, RabbitMQApi(
@@ -193,7 +195,7 @@ class AlertRouter(QueuingPublisherComponent):
 
             self._push_to_queue(send_alert, ALERT_EXCHANGE,
                                 "channel.{}".format(channel_id),
-                                mandatory=True)
+                                mandatory=False)
             self._logger.debug("Routed Alert queued")
 
         # Enqueue once to the console
@@ -202,14 +204,15 @@ class AlertRouter(QueuingPublisherComponent):
                 {**recv_alert, 'destination_id': 'console'},
                 ALERT_EXCHANGE, 'channel.console', mandatory=True)
 
-        self._push_to_queue(
-            {**recv_alert, 'destination_id': 'log'},
-            ALERT_EXCHANGE, 'channel.log', mandatory=True)
+        if self._enable_log_alerts:
+            self._push_to_queue(
+                {**recv_alert, 'destination_id': 'log'},
+                ALERT_EXCHANGE, "channel.log", mandatory=True)
 
         self._rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, 'alert')
+        self._push_to_queue(recv_alert, STORE_EXCHANGE, 'alert', mandatory=True)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -225,19 +228,26 @@ class AlertRouter(QueuingPublisherComponent):
                       body: bytes) -> None:
 
         self._logger.debug("Received %s. Let's pong", body)
-        heartbeat = {
-            'component_name': self.name,
-            'is_alive': True,
-            'timestamp': datetime.now().timestamp(),
-        }
+        try:
+            heartbeat = {
+                'component_name': self.name,
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp(),
+            }
 
-        self._rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker', body=heartbeat,
-            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
-        self._logger.info("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+            self._rabbitmq.basic_publish_confirm(
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker', body=heartbeat,
+                is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self._logger.info("Sent heartbeat to %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as the heartbeats must be
+            # real-time
+            self._logger.error("Problem sending heartbeat")
+            self._logger.exception(e)
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self._logger)
