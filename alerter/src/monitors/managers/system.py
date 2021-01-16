@@ -29,13 +29,14 @@ class SystemMonitorsManager(MonitorsManager):
 
     def __init__(self, logger: logging.Logger, manager_name: str) -> None:
         super().__init__(logger, manager_name)
+
         self._systems_configs = {}
 
     @property
     def systems_configs(self) -> Dict:
         return self._systems_configs
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions

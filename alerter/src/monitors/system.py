@@ -290,6 +290,3 @@ class SystemMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
-
-# TODO: Refactor managers, then run everything to see if all is ok still and
-#     : start unit testing.

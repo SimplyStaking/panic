@@ -30,13 +30,14 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def __init__(self, logger: logging.Logger, manager_name: str) -> None:
         super().__init__(logger, manager_name)
+
         self._repos_configs = {}
 
     @property
     def repos_configs(self) -> Dict:
         return self._repos_configs
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
