@@ -12,6 +12,7 @@ from requests.exceptions import ConnectionError as ReqConnectionError, \
 from urllib3.exceptions import ProtocolError
 
 from src.configs.repo import RepoConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_json
@@ -21,8 +22,9 @@ from src.utils.exceptions import DataReadingException, PANICException, \
 
 class GitHubMonitor(Monitor):
     def __init__(self, monitor_name: str, repo_config: RepoConfig,
-                 logger: logging.Logger, monitor_period: int) -> None:
-        super().__init__(monitor_name, logger, monitor_period)
+                 logger: logging.Logger, monitor_period: int,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._repo_config = repo_config
 
     @property

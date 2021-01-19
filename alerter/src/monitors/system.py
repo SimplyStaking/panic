@@ -12,6 +12,7 @@ from requests.exceptions import ConnectionError as ReqConnectionError, \
 from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_prometheus_metrics_data
@@ -22,8 +23,9 @@ from src.utils.exceptions import MetricNotFoundException, \
 
 class SystemMonitor(Monitor):
     def __init__(self, monitor_name: str, system_config: SystemConfig,
-                 logger: logging.Logger, monitor_period: int) -> None:
-        super().__init__(monitor_name, logger, monitor_period)
+                 logger: logging.Logger, monitor_period: int,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._system_config = system_config
         self._metrics_to_monitor = ['process_cpu_seconds_total',
                                     'go_memstats_alloc_bytes',

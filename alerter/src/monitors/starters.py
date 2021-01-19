@@ -5,6 +5,7 @@ import pika.exceptions
 
 from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
@@ -50,9 +51,13 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     # Try initializing a monitor until successful
     while True:
         try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=system_monitor_logger.getChild(RabbitMQApi.__name__),
+                host=rabbit_ip)
             system_monitor = SystemMonitor(
                 monitor_display_name, system_config, system_monitor_logger,
-                int(env.SYSTEM_MONITOR_PERIOD_SECONDS)
+                int(env.SYSTEM_MONITOR_PERIOD_SECONDS), rabbitmq
             )
             log_and_print("Successfully initialized {}".format(
                 monitor_display_name), system_monitor_logger)
@@ -78,9 +83,13 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
     # Try initializing a monitor until successful
     while True:
         try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=github_monitor_logger.getChild(RabbitMQApi.__name__),
+                host=rabbit_ip)
             github_monitor = GitHubMonitor(
                 monitor_display_name, repo_config, github_monitor_logger,
-                int(env.GITHUB_MONITOR_PERIOD_SECONDS)
+                int(env.GITHUB_MONITOR_PERIOD_SECONDS), rabbitmq,
             )
             log_and_print("Successfully initialized {}".format(
                 monitor_display_name), github_monitor_logger)

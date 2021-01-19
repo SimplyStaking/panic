@@ -8,7 +8,6 @@ import pika.exceptions
 
 from src.abstract.publisher import PublisherComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -17,13 +16,9 @@ from src.utils.logging import log_and_print
 class Monitor(PublisherComponent, ABC):
 
     def __init__(self, monitor_name: str, logger: logging.Logger,
-                 monitor_period: int) -> None:
+                 monitor_period: int, rabbitmq: RabbitMQApi) -> None:
         self._monitor_name = monitor_name
         self._monitor_period = monitor_period
-        rabbit_ip = env.RABBIT_IP
-        rabbitmq = RabbitMQApi(logger=logger.getChild(RabbitMQApi.__name__),
-                               host=rabbit_ip)
-
         super().__init__(logger, rabbitmq)
 
     def __str__(self) -> str:
