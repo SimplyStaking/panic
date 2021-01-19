@@ -16,7 +16,7 @@ Given the above, system monitoring and GitHub repository monitoring were develop
 
 The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
-<img src="./images/IMG_PANIC_DESIGN_10X.png" alt="PANIC Design"/>
+![PANIC Design](./images/IMG_PANIC_DESIGN_10X.png)
 
 For both system monitoring/alerting and GitHub repository monitoring/alerting, PANIC starts by loading the configuration (saved during [installation](../README.md)).
 
