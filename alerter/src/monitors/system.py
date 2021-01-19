@@ -54,9 +54,9 @@ class SystemMonitor(Monitor):
     def _display_data(self, data: Dict) -> str:
         # This function assumes that the data has been obtained and processed
         # successfully by the system monitor
-        return "process_cpu_seconds_total={}, process_memory_usage={}," \
-               "virtual_memory_usage={}, open_file_descriptors={}," \
-               "system_cpu_usage={}, system_ram_usage={}," \
+        return "process_cpu_seconds_total={}, process_memory_usage={}, " \
+               "virtual_memory_usage={}, open_file_descriptors={}, " \
+               "system_cpu_usage={}, system_ram_usage={}, " \
                "system_storage_usage={}, network_transmit_bytes_total={}, " \
                "network_receive_bytes_total={}, disk_io_time_seconds_total={}" \
                "".format(data['process_cpu_seconds_total'],

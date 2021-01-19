@@ -5,6 +5,7 @@ from datetime import timedelta
 from unittest import mock
 
 import pika
+from freezegun import freeze_time
 
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -38,6 +39,86 @@ class TestSystemMonitor(unittest.TestCase):
             'timestamp': datetime.now().timestamp()
         }
         self.test_queue_name = 'Test Queue'
+        self.metrics_to_monitor = [
+            'process_cpu_seconds_total', 'go_memstats_alloc_bytes',
+            'go_memstats_alloc_bytes_total', 'process_virtual_memory_bytes',
+            'process_max_fds', 'process_open_fds', 'node_cpu_seconds_total',
+            'node_filesystem_avail_bytes', 'node_filesystem_size_bytes',
+            'node_memory_MemTotal_bytes', 'node_memory_MemAvailable_bytes',
+            'node_network_transmit_bytes_total',
+            'node_network_receive_bytes_total',
+            'node_disk_io_time_seconds_total']
+        self.retrieved_metrics_example = {
+            'go_memstats_alloc_bytes': 2003024.0,
+            'go_memstats_alloc_bytes_total': 435777412600.0,
+            'node_cpu_seconds_total': {
+                '{"cpu": "0", "mode": "idle"}': 3626110.54,
+                '{"cpu": "0", "mode": "iowait"}': 16892.07,
+                '{"cpu": "0", "mode": "irq"}': 0.0,
+                '{"cpu": "0", "mode": "nice"}': 131.77,
+                '{"cpu": "0", "mode": "softirq"}': 8165.66,
+                '{"cpu": "0", "mode": "steal"}': 0.0,
+                '{"cpu": "0", "mode": "system"}': 46168.15,
+                '{"cpu": "0", "mode": "user"}': 238864.68,
+                '{"cpu": "1", "mode": "idle"}': 3630087.24,
+                '{"cpu": "1", "mode": "iowait"}': 17084.42,
+                '{"cpu": "1", "mode": "irq"}': 0.0,
+                '{"cpu": "1", "mode": "nice"}': 145.18,
+                '{"cpu": "1", "mode": "softirq"}': 5126.93,
+                '{"cpu": "1", "mode": "steal"}': 0.0,
+                '{"cpu": "1", "mode": "system"}': 46121.4,
+                '{"cpu": "1", "mode": "user"}': 239419.51},
+            'node_disk_io_time_seconds_total': {
+                '{"device": "dm-0"}': 38359.472,
+                '{"device": "sda"}': 38288.42,
+                '{"device": "sr0"}': 0.0},
+            'node_filesystem_avail_bytes': {
+                '{"device": "/dev/mapper/ubuntu--vg-ubuntu--lv", '
+                '"fstype": "ext4", "mountpoint": "/"}': 57908170752.0,
+                '{"device": "/dev/sda2", "fstype": "ext4", '
+                '"mountpoint": "/boot"}': 729411584.0,
+                '{"device": "lxcfs", "fstype": "fuse.lxcfs", '
+                '"mountpoint": "/var/lib/lxcfs"}': 0.0,
+                '{"device": "tmpfs", "fstype": "tmpfs", '
+                '"mountpoint": "/run"}': 207900672.0,
+                '{"device": "tmpfs", "fstype": "tmpfs", "mountpoint": '
+                '"/run/lock"}': 5242880.0},
+            'node_filesystem_size_bytes': {
+                '{"device": "/dev/mapper/ubuntu--vg-ubuntu--lv", "fstype": '
+                '"ext4", "mountpoint": "/"}': 104560844800.0,
+                '{"device": "/dev/sda2", "fstype": "ext4", "mountpoint": '
+                '"/boot"}': 1023303680.0,
+                '{"device": "lxcfs", "fstype": "fuse.lxcfs", "mountpoint": '
+                '"/var/lib/lxcfs"}': 0.0,
+                '{"device": "tmpfs", "fstype": "tmpfs", "mountpoint": "/run"}':
+                    209027072.0,
+                '{"device": "tmpfs", "fstype": "tmpfs", "mountpoint": '
+                '"/run/lock"}': 5242880.0},
+            'node_memory_MemAvailable_bytes': 1377767424.0,
+            'node_memory_MemTotal_bytes': 2090237952.0,
+            'node_network_receive_bytes_total': {
+                '{"device": "ens160"}': 722358765622.0,
+                '{"device": "lo"}': 381405.0},
+            'node_network_transmit_bytes_total': {
+                '{"device": "ens160"}': 1011571824152.0,
+                '{"device": "lo"}': 381405.0},
+            'process_cpu_seconds_total': 2786.82,
+            'process_max_fds': 1024.0,
+            'process_open_fds': 8.0,
+            'process_virtual_memory_bytes': 118513664.0}
+        self.processed_data_example = {
+            'process_cpu_seconds_total': 2786.82,
+            'process_memory_usage': 0.0,
+            'virtual_memory_usage': 118513664.0,
+            'open_file_descriptors': 20,
+            'system_cpu_usage': 20,
+            'system_ram_usage': 20,
+            'system_storage_usage': 20,
+            'network_transmit_bytes_total': 50,
+            'network_receive_bytes_total': 50,
+            'disk_io_time_seconds_total': 2000,
+        }
+        # TODO: Continue calculating metrics, start from open file descriptors
         self.test_exception = PANICException('test_exception', 1)
         self.system_config = SystemConfig(self.system_id, self.parent_id,
                                           self.system_name, self.monitor_system,
@@ -46,12 +127,12 @@ class TestSystemMonitor(unittest.TestCase):
                                           self.dummy_logger,
                                           self.monitoring_period, self.rabbitmq)
 
-    def tearDown(self) -> None:
-        self.dummy_logger = None
-        self.rabbitmq = None
-        self.test_exception = None
-        self.system_config = None
-        self.test_monitor = None
+    # def tearDown(self) -> None:
+    #     self.dummy_logger = None
+    #     self.rabbitmq = None
+    #     self.test_exception = None
+    #     self.system_config = None
+    #     self.test_monitor = None
 
     def test_str_returns_monitor_name(self) -> None:
         self.assertEqual(self.monitor_name, self.test_monitor.__str__())
@@ -62,6 +143,13 @@ class TestSystemMonitor(unittest.TestCase):
 
     def test_get_monitor_name_returns_monitor_name(self) -> None:
         self.assertEqual(self.monitor_name, self.test_monitor.monitor_name)
+
+    def test_system_config_returns_system_config(self) -> None:
+        self.assertEqual(self.system_config, self.test_monitor.system_config)
+
+    def test_metrics_to_monitor_returns_metrics_to_monitor(self) -> None:
+        self.assertEqual(self.metrics_to_monitor,
+                         self.test_monitor.metrics_to_monitor)
 
     def test_initialize_rabbitmq_initializes_everything_as_expected(
             self) -> None:
@@ -168,3 +256,73 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+    def test_display_data_returns_the_correct_string(self) -> None:
+        expected_output = \
+            "process_cpu_seconds_total={}, process_memory_usage={}, " \
+            "virtual_memory_usage={}, open_file_descriptors={}, " \
+            "system_cpu_usage={}, system_ram_usage={}, " \
+            "system_storage_usage={}, network_transmit_bytes_total={}, " \
+            "network_receive_bytes_total={}, disk_io_time_seconds_total={}" \
+            "".format(self.processed_data_example['process_cpu_seconds_total'],
+                      self.processed_data_example['process_memory_usage'],
+                      self.processed_data_example['virtual_memory_usage'],
+                      self.processed_data_example['open_file_descriptors'],
+                      self.processed_data_example['system_cpu_usage'],
+                      self.processed_data_example['system_ram_usage'],
+                      self.processed_data_example['system_storage_usage'],
+                      self.processed_data_example[
+                          'network_transmit_bytes_total'],
+                      self.processed_data_example[
+                          'network_receive_bytes_total'],
+                      self.processed_data_example['disk_io_time_seconds_total'])
+
+        actual_output = self.test_monitor._display_data(
+            self.processed_data_example)
+        self.assertEqual(expected_output, actual_output)
+
+    @freeze_time("2012-01-01")
+    def test_process_error_returns_expected_data(self) -> None:
+        expected_output = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
+            }
+        }
+
+        actual_output = self.test_monitor._process_error(self.test_exception)
+        self.assertEqual(actual_output, expected_output)
+
+    @freeze_time("2012-01-01")
+    def test_process_retrieved_data_returns_expected_data(self) -> None:
+        expected_output = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.processed_data_example,
+            }
+        }
+
+        actual_output = self.test_monitor._process_retrieved_data(
+            self.retrieved_metrics_example)
+        self.assertEqual(actual_output, expected_output)
+
+    # TODO: In the monitor's _monitor() function we can test different scenarios
+    #     : by checking that certain exceptions are called.
+    # TODO: Remove tearDown() commented code
+    # TODO: Remove SIGHUP comment
+    # TODO: Fix rabbit host
