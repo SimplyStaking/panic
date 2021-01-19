@@ -12,6 +12,7 @@ from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
+from src.alert_router.alert_router import AlertRouter
 from src.config_manager import ConfigManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
@@ -171,11 +172,11 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
     rabbit_ip = env.RABBIT_IP
 
     alert_router = AlertRouter(alert_router_logger, rabbit_ip,
-                               env.ENABLE_CONSOLE_ALERTS)
+                               env.ENABLE_CONSOLE_ALERTS, env.ENABLE_LOG_ALERTS)
     return alert_router, alert_router_logger
 
 
-def _initialize_config_manager() -> ConfigManager:
+def _initialize_config_manager() -> Tuple[ConfigManager, logging.Logger]:
     sleep_period = 10
     config_manager_logger = _initialize_logger(
         ConfigManager.__name__, env.CONFIG_MANAGER_LOG_FILE
@@ -184,8 +185,9 @@ def _initialize_config_manager() -> ConfigManager:
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            cm = ConfigManager(config_manager_logger, '../config', rabbit_ip)
-            return cm
+            config_manager = ConfigManager(config_manager_logger, '../config',
+                                           rabbit_ip)
+            return config_manager, config_manager_logger
         except ConnectionNotInitializedException:
             # This is already logged, we need to try again. This exception
             # should not happen, but if it does the program can't fully start
@@ -353,13 +355,22 @@ def run_alert_router() -> None:
             time.sleep(sleep_period)
 
 
-def run_config_manager(command_queue: multiprocessing.Queue) -> None:
-    config_manager = _initialize_config_manager()
-    config_manager.start_watching_config_files()
+def run_config_manager() -> None:
+    config_manager, config_manager_logger = _initialize_config_manager()
 
-    # We wait until something is sent to this queue
-    command_queue.get()
-    config_manager.stop_watching_config_files()
+    while True:
+        try:
+            config_manager.start()
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError):
+            # Error would have already been logged by RabbitMQ logger.
+            # Since we have to re-initialize just break the loop.
+            log_and_print(get_stopped_message(config_manager),
+                          config_manager_logger)
+        except Exception:
+            config_manager.disconnect()
+            log_and_print(get_stopped_message(config_manager),
+                          config_manager_logger)
 
 
 # If termination signals are received, terminate all child process and exit
@@ -373,6 +384,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     log_and_print("The alerter is terminating. All components will be stopped "
                   "gracefully.", dummy_logger)
+
+    terminate_and_join_process(config_manager_runner_process, "Configs Manager")
 
     terminate_and_join_process(system_monitors_manager_process,
                                "System Monitors Manager")
@@ -394,9 +407,6 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(alert_router_process, "Alert Router")
 
     log_and_print("PANIC process terminated.", dummy_logger)
-
-    # TODO: Need to add configs manager here when Mark finishes the
-    #     : modifications
 
     log_and_print("The alerting and monitoring process has ended.",
                   dummy_logger)
@@ -439,10 +449,8 @@ if __name__ == '__main__':
     # Config manager must be the last to start since it immediately begins by
     # sending the configs. That being said, all previous processes need to wait
     # for the config manager too.
-    config_stop_queue = multiprocessing.Queue()
     config_manager_runner_process = multiprocessing.Process(
-        target=run_config_manager, args=(config_stop_queue,)
-    )
+        target=run_config_manager, args=())
     config_manager_runner_process.start()
 
     signal.signal(signal.SIGTERM, on_terminate)
@@ -451,6 +459,7 @@ if __name__ == '__main__':
 
     # If we don't wait for the processes to terminate the root process will
     # exit
+    config_manager_runner_process.join()
     github_monitors_manager_process.join()
     system_monitors_manager_process.join()
     system_alerters_manager_process.join()
@@ -458,11 +467,6 @@ if __name__ == '__main__':
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
-
-    # To stop the config watcher, we send something in the stop queue, this way
-    # We can ensure the watchers and connections are stopped properly
-    config_stop_queue.put('STOP')
-    config_manager_runner_process.join()
 
     print("The alerting and monitoring process has ended.")
     sys.stdout.flush()
