@@ -12,13 +12,13 @@ The sections below outline the steps in each case.
 
 ## You have a question
 
-1. Use the search functionality [here](https://github.com/SimplyVC/panic_polkadot/issues) to see if someone already filed the same issue;
+1. Use the search functionality [here](https://github.com/SimplyVC/panic/issues) to see if someone already filed the same issue;
 1. If your issue search did not yield any relevant results, make a new issue;
 1. Apply the "Question" label; apply other labels when relevant.
 
 ## You think you may have found a bug
 
-1. Use the search functionality [here](https://github.com/SimplyVC/panic_polkadot/issues) to see if someone already filed the same issue;
+1. Use the search functionality [here](https://github.com/SimplyVC/panic/issues) to see if someone already filed the same issue;
 1. If your issue search did not yield any relevant results, make a new issue, making sure to provide enough information to the rest of the community to understand the cause and context of the problem. Depending on the issue, you may want to include:
     - The [SHA hashcode](https://help.github.com/articles/autolinked-references-and-urls/#commit-shas) of the commit that is causing your problem;
     - Some identifying information (name and version number) for dependencies you're using;
