@@ -126,12 +126,12 @@ class TestSystemMonitor(unittest.TestCase):
                                           self.dummy_logger,
                                           self.monitoring_period, self.rabbitmq)
 
-    # def tearDown(self) -> None:
-    #     self.dummy_logger = None
-    #     self.rabbitmq = None
-    #     self.test_exception = None
-    #     self.system_config = None
-    #     self.test_monitor = None
+    def tearDown(self) -> None:
+        self.dummy_logger = None
+        self.rabbitmq = None
+        self.test_exception = None
+        self.system_config = None
+        self.test_monitor = None
 
     def test_str_returns_monitor_name(self) -> None:
         self.assertEqual(self.monitor_name, self.test_monitor.__str__())
@@ -186,6 +186,8 @@ class TestSystemMonitor(unittest.TestCase):
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
 
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -252,6 +254,8 @@ class TestSystemMonitor(unittest.TestCase):
 
             # Clean before test finishes
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -319,6 +323,147 @@ class TestSystemMonitor(unittest.TestCase):
         actual_output = self.test_monitor._process_retrieved_data(
             self.retrieved_metrics_example)
         self.assertEqual(expected_output, actual_output)
+
+    def test_send_data_sends_data_correctly(self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_data, and checks that the
+        # data is received
+        try:
+            self.test_monitor._initialise_rabbitmq()
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
+            self.test_monitor._send_data(self.processed_data_example)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
+            self, mock_get_data) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        self.test_monitor._initialise_rabbitmq()
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='system')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+
+        self.test_monitor._monitor()
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 2 messages in the queue, the heartbeat and the processed
+        # data
+        self.assertEqual(2, res.method.message_count)
+
+        # Clean before test finishes
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+        self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+        self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+        self.test_monitor.rabbitmq.disconnect()
+
+    # TODO: After initialize data always delete queues and exchanges
+    # TODO: Check whether queue data can be obtained so that we can compare the
+    #     : sent messages.
+
+    def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_system_is_down_data_and_hb_on_req_connection_error(
+            self) -> None:
+        # TODO: Need to Mock get_data to raise an exception
+        pass
+
+    def test_monitor_sends_system_is_down_data_and_hb_on_read_timeout_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_data_reading_exception_data_and_hb_on_incomplete_read_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_data_reading_except_data_and_hb_on_chunked_encoding_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_data_reading_exception_data_and_hb_on_protocol_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_invalid_url_exception_data_and_hb_on_invalid_url_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_invalid_url_exception_data_and_hb_on_invalid_schema_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_invalid_url_exception_data_and_hb_on_missing_schema_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_metric_not_found_data_and_hb_on_metric_not_found_error(
+            self) -> None:
+        pass
+
+    def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
+            self) -> None:
+        pass
+
+    def test_monitor_raises_message_not_delivered_exception_if_data_not_routed(self) -> None:
+        pass
+
+    def test_monitor_raises_message_not_delivered_exception_if_hb_not_routed(self) -> None:
+        pass
+
+    def test_monitor_send_data_raises_amqp_channel_error_on_channel_error(self) -> None:
+        pass
+
+    def test_monitor_send_hb_raises_amqp_channel_error_on_channel_error(
+            self) -> None:
+        pass
+
+    def test_monitor_send_data_raises_amqp_conn_error_on_conn_error(self) -> None:
+        pass
+
+    def test_monitor_send_hb_raises_amqp_conn_error_on_conn_error(
+            self) -> None:
+        pass
+
+    def test_monitor_does_not_send_hb_if_send_data_fails(self) -> None:
+        pass
 
     # TODO: In the monitor's _monitor() function we can test different scenarios
     #     : by checking that certain exceptions are called.
