@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TypeVar, Type
 
 import pika.exceptions
 
@@ -14,8 +15,6 @@ from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
-from typing import TypeVar, Type
-
 
 T = TypeVar('T', bound=Store)  # Restricts the generic to Store or subclasses
 
