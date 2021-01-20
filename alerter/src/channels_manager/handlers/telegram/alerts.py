@@ -157,12 +157,12 @@ class TelegramAlertsHandler(ChannelHandler):
                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
-        # fails, try re-sending max_attempts times in a space of 1 minute. If
-        # this still fails, stop sending alerts until the next alert is
-        # received. If alert_validity_threshold seconds pass since the alert was
-        # first raised, the alert is discarded. Important, remove an item from
-        # the queue only if the sending was successful, so that if an exception
-        # is raised, that message is not popped
+        # fails, try re-sending max_attempts - 1 times with 10 seconds sleep in
+        # between. If this still fails, stop sending alerts until the next alert
+        # is received. If alert_validity_threshold seconds pass since the alert
+        # was first raised, the alert is discarded. Important, remove an item
+        # from the queue only if the sending was successful, so that if an
+        # exception is raised, that message is not popped.
         while not self.alerts_queue.empty():
             alert = self.alerts_queue.queue[0]
 
@@ -174,7 +174,7 @@ class TelegramAlertsHandler(ChannelHandler):
                 self.alerts_queue.task_done()
                 continue
 
-            attempts = 0
+            attempts = 1
             ret = self.telegram_channel.alert(alert)
             while ret != RequestStatus.SUCCESS and \
                     attempts < self._max_attempts:
