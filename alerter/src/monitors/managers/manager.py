@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from abc import ABC, abstractmethod
@@ -10,6 +9,7 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
@@ -20,8 +20,9 @@ class MonitorsManager(ABC):
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -74,7 +75,7 @@ class MonitorsManager(ABC):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:

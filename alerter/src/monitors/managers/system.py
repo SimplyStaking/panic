@@ -11,10 +11,11 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.configs.system import SystemConfig
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -51,8 +52,8 @@ class SystemMonitorsManager(MonitorsManager):
         self.rabbitmq.queue_bind(_SYS_MON_MAN_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
                                  _SYS_MON_MAN_INPUT_ROUTING_KEY)
-        self.logger.info("Declaring consuming intentions on '%s'",
-                         _SYS_MON_MAN_INPUT_QUEUE)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _SYS_MON_MAN_INPUT_QUEUE)
         self.rabbitmq.basic_consume(_SYS_MON_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
@@ -74,8 +75,8 @@ class SystemMonitorsManager(MonitorsManager):
                          CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
-        self.logger.info("Declaring consuming intentions on '%s'",
-                         SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -94,7 +95,7 @@ class SystemMonitorsManager(MonitorsManager):
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
-            'System monitor ({})'.format(system_config.system_name)
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(system_config.system_name)
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain
 
@@ -214,7 +215,7 @@ class SystemMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received %s", data)
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:

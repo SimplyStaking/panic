@@ -1,25 +1,8 @@
 from datetime import datetime, timedelta
-from enum import Enum
 
+from src.alerter.alert_code import SystemAlertCode
 from src.alerter.alerts.alert import Alert
 from src.utils.datetime import strfdelta
-
-
-class SystemAlertCode(Enum):
-    OpenFileDescriptorsIncreasedAboveThresholdAlert = 'system_alert_1',
-    OpenFileDescriptorsDecreasedBelowThresholdAlert = 'system_alert_2',
-    SystemCPUUsageIncreasedAboveThresholdAlert = 'system_alert_3',
-    SystemCPUUsageDecreasedBelowThresholdAlert = 'system_alert_4',
-    SystemRAMUsageIncreasedAboveThresholdAlert = 'system_alert_5',
-    SystemRAMUsageDecreasedBelowThresholdAlert = 'system_alert_6',
-    SystemStorageUsageIncreasedAboveThresholdAlert = 'system_alert_7',
-    SystemStorageUsageDecreasedBelowThresholdAlert = 'system_alert_8',
-    ReceivedUnexpectedDataAlert = 'system_alert_9',
-    InvalidUrlAlert = 'system_alert_10',
-    SystemWentDownAtAlert = 'system_alert_11',
-    SystemBackUpAgainAlert = 'system_alert_12',
-    SystemStillDownAlert = 'system_alert_13',
-    MetricNotFoundErrorAlert = 'system_alert_14'
 
 
 class ReceivedUnexpectedDataAlert(Alert):
@@ -140,9 +123,9 @@ class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
                  timestamp: float, threshold: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
-            "{} system RAM usage INCREASED above {} Threshold. Current value: "
-            "{}%.".format(origin_name, threshold, new_value), severity,
+            SystemAlertCode.SystemStorageUsageIncreasedAboveThresholdAlert,
+            "{} system storage usage INCREASED above {} Threshold. Current "
+            "value: {}%.".format(origin_name, threshold, new_value), severity,
             timestamp, parent_id, origin_id)
 
 

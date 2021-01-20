@@ -4,12 +4,14 @@ from datetime import datetime
 from typing import Dict
 
 import pika.exceptions
+
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException, MessageWasNotDeliveredException
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  SystemIsDownException,
+                                  MessageWasNotDeliveredException)
 
 _SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
 _SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
@@ -53,8 +55,9 @@ class SystemStore(Store):
                                        True, False, False)
 
     def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
-                               host=self.mongo_ip, port=self.mongo_port)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue=_SYSTEM_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,

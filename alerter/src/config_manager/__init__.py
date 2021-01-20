@@ -1,1 +1,1 @@
-from src.config_manager.config_manager import ConfigManager
+from src.config_manager.config_manager import ConfigsManager

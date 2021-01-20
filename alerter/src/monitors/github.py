@@ -6,16 +6,17 @@ from typing import Dict
 
 import pika
 import pika.exceptions
-from requests.exceptions import ConnectionError as ReqConnectionError, \
-    ReadTimeout, ChunkedEncodingError
+from requests.exceptions import (ConnectionError as ReqConnectionError,
+                                 ReadTimeout, ChunkedEncodingError)
 from urllib3.exceptions import ProtocolError
 
 from src.configs.repo import RepoConfig
 from src.monitors.monitor import Monitor
 from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_json
-from src.utils.exceptions import DataReadingException, PANICException, \
-    CannotAccessGitHubPageException, GitHubAPICallException
+from src.utils.exceptions import (DataReadingException, PANICException,
+                                  CannotAccessGitHubPageException,
+                                  GitHubAPICallException)
 
 
 class GitHubMonitor(Monitor):
@@ -81,10 +82,10 @@ class GitHubMonitor(Monitor):
                 release_data['name']
             processed_data['result']['data'][i]['tag_name'] = \
                 release_data['tag_name']
-            self.logger.debug(
-                "%s releases_info: %s", self.repo_config,
-                json.dumps(processed_data['result']['data'][i],
-                           ensure_ascii=False).encode('utf8').decode())
+            self.logger.debug("%s releases_info: %s", self.repo_config,
+                              json.dumps(processed_data['result']['data'][i],
+                                         ensure_ascii=False).encode('utf8')
+                              .decode())
             self._releases_info[i] = processed_data['result']['data'][i]
 
         self._data = processed_data

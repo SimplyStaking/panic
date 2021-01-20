@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import multiprocessing
@@ -12,12 +13,12 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME
-from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
-    MessageWasNotDeliveredException
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
+                                  MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
-import copy
 
 _SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
 _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
@@ -57,8 +58,8 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.queue_bind(_SYS_ALERTERS_MAN_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
                                  _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
-        self.logger.info("Declaring consuming intentions on "
-                         "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
+        self.logger.debug("Declaring consuming intentions on "
+                          "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
         self.rabbitmq.basic_consume(_SYS_ALERTERS_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
@@ -83,8 +84,8 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
                                  _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
-        self.logger.info("Declaring consuming intentions on %s",
-                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.logger.debug("Declaring consuming intentions on %s",
+                          SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -103,7 +104,7 @@ class SystemAlertersManager(AlertersManager):
         process.start()
         self._parent_id_process_dict[parent_id] = {}
         self._parent_id_process_dict[parent_id]['component_name'] = \
-            "System alerter ({})".format(chain)
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
         self._parent_id_process_dict[parent_id]['process'] = process
         self._parent_id_process_dict[parent_id]['parent_id'] = parent_id
         self._parent_id_process_dict[parent_id]['chain'] = chain
@@ -169,7 +170,7 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received %s", data)
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -212,7 +213,7 @@ class SystemAlertersManager(AlertersManager):
             # For any other exception raise it.
             raise e
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:
