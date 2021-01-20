@@ -7,8 +7,9 @@ from typing import List, Dict
 
 import pika
 import pika.exceptions
-from requests.exceptions import ConnectionError as ReqConnectionError, \
-    ReadTimeout, ChunkedEncodingError, MissingSchema, InvalidSchema, InvalidURL
+from requests.exceptions import (ConnectionError as ReqConnectionError,
+                                 ReadTimeout, ChunkedEncodingError,
+                                 MissingSchema, InvalidSchema, InvalidURL)
 from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
@@ -16,9 +17,9 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_prometheus_metrics_data
-from src.utils.exceptions import MetricNotFoundException, \
-    SystemIsDownException, DataReadingException, PANICException, \
-    InvalidUrlException
+from src.utils.exceptions import (MetricNotFoundException,
+                                  SystemIsDownException, DataReadingException,
+                                  PANICException, InvalidUrlException)
 
 
 class SystemMonitor(Monitor):

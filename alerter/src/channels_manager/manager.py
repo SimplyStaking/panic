@@ -11,23 +11,27 @@ from typing import Dict, List, Optional
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.channels_manager.handlers.starters import \
-    start_telegram_alerts_handler, start_telegram_commands_handler, \
-    start_twilio_alerts_handler, start_console_alerts_handler, \
-    start_log_alerts_handler, start_email_alerts_handler, \
-    start_pagerduty_alerts_handler, start_opsgenie_alerts_handler
+from src.channels_manager.handlers.starters import (
+    start_telegram_alerts_handler, start_telegram_commands_handler,
+    start_twilio_alerts_handler, start_console_alerts_handler,
+    start_log_alerts_handler, start_email_alerts_handler,
+    start_pagerduty_alerts_handler, start_opsgenie_alerts_handler)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE, \
-    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE, \
-    TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, EMAIL_ALERTS_HANDLER_NAME_TEMPLATE, \
-    PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE, \
-    OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE, \
-    LOG_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME, \
-    LOG_CHANNEL_ID, LOG_CHANNEL_NAME
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes

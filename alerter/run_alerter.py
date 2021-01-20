@@ -21,19 +21,24 @@ from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
-from src.utils.constants import ALERT_ROUTER_CONFIGS_QUEUE_NAME, \
-    CONFIG_EXCHANGE, SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, \
-    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, \
-    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
-    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_ALERTERS_MANAGER_NAME, \
-    GITHUB_ALERTER_MANAGER_NAME, SYSTEM_MONITORS_MANAGER_NAME, \
-    GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
-    CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
-    DATA_STORE_MANAGER_NAME
+from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 SYSTEM_ALERTERS_MANAGER_NAME,
+                                 GITHUB_ALERTER_MANAGER_NAME,
+                                 SYSTEM_MONITORS_MANAGER_NAME,
+                                 GITHUB_MONITORS_MANAGER_NAME,
+                                 DATA_TRANSFORMERS_MANAGER_NAME,
+                                 CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
+                                 CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_reattempting_message, get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_reattempting_message, get_stopped_message)
 
 
 def _initialize_logger(component_display_name: str, component_module_name: str,

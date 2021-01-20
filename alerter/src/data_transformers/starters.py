@@ -8,12 +8,13 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_DATA_TRANSFORMER_NAME, \
-    GITHUB_DATA_TRANSFORMER_NAME
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 SYSTEM_DATA_TRANSFORMER_NAME,
+                                 GITHUB_DATA_TRANSFORMER_NAME)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
 
 
 def _initialize_transformer_logger(

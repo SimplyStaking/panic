@@ -141,12 +141,12 @@ class TwilioAlertsHandler(ChannelHandler):
                               "ago")
             return RequestStatus.FAILED
 
-        # For each number try calling max_attempts times in a space of 15
-        # seconds until the call is successful. If this threshold is reached,
-        # we move to the next number.
+        # For each number try calling max_attempts times with 5 seconds sleep in
+        # between until the call is successful. If this threshold is reached,
+        # we move on to the next number.
         calling_status = RequestStatus.SUCCESS
         for number in self._call_to:
-            attempts = 0
+            attempts = 1
             ret = self.twilio_channel.alert(call_from=self._call_from,
                                             call_to=number, twiml=self._twiml,
                                             twiml_is_url=self._twiml_is_url)

@@ -3,8 +3,9 @@ import logging
 import os
 import sys
 import time
-from configparser import ConfigParser, DuplicateSectionError, \
-    DuplicateOptionError, InterpolationError, ParsingError
+from configparser import (ConfigParser, DuplicateSectionError,
+                          DuplicateOptionError, InterpolationError,
+                          ParsingError)
 from datetime import datetime
 from types import FrameType
 from typing import Any, Dict, List, Optional, Callable
@@ -17,10 +18,10 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    RE_INITIALIZE_SLEEPING_PERIOD
-from src.utils.exceptions import MessageWasNotDeliveredException, \
-    ConnectionNotInitializedException
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 RE_INITIALIZE_SLEEPING_PERIOD)
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ConnectionNotInitializedException)
 from src.utils.routing_key import get_routing_key
 from .config_update_event_handler import ConfigFileEventHandler
 from ..abstract import Component

@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TypeVar, Type
 
 import pika.exceptions
 
@@ -8,12 +9,14 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME, GITHUB_STORE_NAME, \
-    ALERT_STORE_NAME
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
+
+T = TypeVar('T', bound=Store)  # Restricts the generic to Store or subclasses
 
 
 def _initialize_store_logger(
@@ -38,16 +41,14 @@ def _initialize_store_logger(
     return store_logger
 
 
-def _initialize_system_store() -> SystemStore:
-    store_display_name = SYSTEM_STORE_NAME
-
+def _initialize_store(store_type: Type[T], store_display_name: str) -> T:
     store_logger = _initialize_store_logger(store_display_name,
-                                            SystemStore.__name__)
+                                            store_type.__name__)
 
-    # Try initializing the system store until successful
+    # Try initializing the store until successful
     while True:
         try:
-            system_store = SystemStore(store_display_name, store_logger)
+            store = store_type(store_display_name, store_logger)
             log_and_print("Successfully initialized {}".format(
                 store_display_name), store_logger)
             break
@@ -57,65 +58,21 @@ def _initialize_system_store() -> SystemStore:
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
-    return system_store
-
-
-def _initialize_github_store() -> GithubStore:
-    store_display_name = GITHUB_STORE_NAME
-
-    store_logger = _initialize_store_logger(store_display_name,
-                                            GithubStore.__name__)
-
-    # Try initializing the github store until successful
-    while True:
-        try:
-            github_store = GithubStore(store_display_name, store_logger)
-            log_and_print("Successfully initialized {}".format(
-                store_display_name), store_logger)
-            break
-        except Exception as e:
-            msg = get_initialisation_error_message(store_display_name, e)
-            log_and_print(msg, store_logger)
-            # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
-
-    return github_store
-
-
-def _initialize_alert_store() -> AlertStore:
-    store_display_name = ALERT_STORE_NAME
-
-    store_logger = _initialize_store_logger(store_display_name,
-                                            AlertStore.__name__)
-
-    # Try initializing the alert store until successful
-    while True:
-        try:
-            alert_store = AlertStore(store_display_name, store_logger)
-            log_and_print("Successfully initialized {}".format(
-                store_display_name), store_logger)
-            break
-        except Exception as e:
-            msg = get_initialisation_error_message(store_display_name, e)
-            log_and_print(msg, store_logger)
-            # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
-
-    return alert_store
+    return store
 
 
 def start_system_store() -> None:
-    system_store = _initialize_system_store()
+    system_store = _initialize_store(SystemStore, SYSTEM_STORE_NAME)
     start_store(system_store)
 
 
 def start_github_store() -> None:
-    github_store = _initialize_github_store()
+    github_store = _initialize_store(GithubStore, GITHUB_STORE_NAME)
     start_store(github_store)
 
 
 def start_alert_store() -> None:
-    alert_store = _initialize_alert_store()
+    alert_store = _initialize_store(AlertStore, ALERT_STORE_NAME)
     start_store(alert_store)
 
 

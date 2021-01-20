@@ -12,10 +12,11 @@ from src.configs.repo import RepoConfig
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool

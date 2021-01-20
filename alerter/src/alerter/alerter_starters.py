@@ -8,11 +8,13 @@ from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE,
+                                 GITHUB_ALERTER_NAME)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
 
 
 def _initialize_alerter_logger(alerter_display_name: str,

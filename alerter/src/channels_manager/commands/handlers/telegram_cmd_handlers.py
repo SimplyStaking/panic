@@ -13,20 +13,22 @@ from telegram.ext import CallbackContext
 from telegram.utils.helpers import escape_markdown
 
 from src.channels_manager.channels.telegram import TelegramChannel
-from src.channels_manager.commands.handlers.handler import CommandHandler \
-    as CmdHandler
+from src.channels_manager.commands.handlers.handler import CommandHandler
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import Severity
-from src.utils.constants import SYSTEM_MONITORS_MANAGER_NAME, \
-    GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
-    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME, \
-    DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
-    CHANNELS_MANAGER_NAME, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
+from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
+                                 GITHUB_MONITORS_MANAGER_NAME,
+                                 DATA_TRANSFORMERS_MANAGER_NAME,
+                                 SYSTEM_ALERTERS_MANAGER_NAME,
+                                 GITHUB_ALERTER_MANAGER_NAME,
+                                 DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
+                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
+                                 HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME)
 
 
-class TelegramCommandHandlers(CmdHandler):
+class TelegramCommandHandlers(CommandHandler):
 
     def __init__(self, handler_name: str, logger: logging.Logger,
                  rabbit_ip: str, redis_ip: str, redis_db: int, redis_port: int,
@@ -69,7 +71,7 @@ class TelegramCommandHandlers(CmdHandler):
     @staticmethod
     def formatted_reply(update: Update, reply: str):
         # Adds Markdown formatting
-        update.message.reply_text(reply, parse_mode='Markdown')
+        update.message.reply_text(reply, parse_mode="Markdown")
 
     def _execute_safely(function):
         def execute_callback_safely(self, update: Update,

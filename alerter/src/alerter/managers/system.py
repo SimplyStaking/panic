@@ -13,10 +13,11 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, SYSTEM_ALERTER_NAME_TEMPLATE
-from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
-    MessageWasNotDeliveredException
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
+                                  MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
 
 _SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'

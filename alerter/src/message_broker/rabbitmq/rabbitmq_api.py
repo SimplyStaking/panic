@@ -8,8 +8,8 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.exceptions import ConnectionNotInitializedException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (ConnectionNotInitializedException,
+                                  MessageWasNotDeliveredException)
 from src.utils.timing import TimedTaskLimiter
 
 

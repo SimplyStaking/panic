@@ -9,12 +9,12 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.data_store.starters import start_system_store, start_github_store, \
-    start_alert_store
+from src.data_store.starters import (start_system_store, start_github_store,
+                                     start_alert_store)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME, \
-    GITHUB_STORE_NAME, ALERT_STORE_NAME
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
