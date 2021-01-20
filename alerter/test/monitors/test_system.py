@@ -69,8 +69,8 @@ class TestSystemMonitor(unittest.TestCase):
                 '{"cpu": "1", "mode": "system"}': 46121.4,
                 '{"cpu": "1", "mode": "user"}': 239419.51},
             'node_disk_io_time_seconds_total': {
-                '{"device": "dm-0"}': 38359.472,
-                '{"device": "sda"}': 38288.42,
+                '{"device": "dm-0"}': 38359.0,
+                '{"device": "sda"}': 38288.0,
                 '{"device": "sr0"}': 0.0},
             'node_filesystem_avail_bytes': {
                 '{"device": "/dev/mapper/ubuntu--vg-ubuntu--lv", '
@@ -110,15 +110,14 @@ class TestSystemMonitor(unittest.TestCase):
             'process_cpu_seconds_total': 2786.82,
             'process_memory_usage': 0.0,
             'virtual_memory_usage': 118513664.0,
-            'open_file_descriptors': 20,
-            'system_cpu_usage': 20,
-            'system_ram_usage': 20,
-            'system_storage_usage': 20,
-            'network_transmit_bytes_total': 50,
-            'network_receive_bytes_total': 50,
-            'disk_io_time_seconds_total': 2000,
+            'open_file_descriptors': 0.78125,
+            'system_cpu_usage': 7.85,
+            'system_ram_usage': 34.09,
+            'system_storage_usage': 44.37,
+            'network_transmit_bytes_total': 1011572205557.0,
+            'network_receive_bytes_total': 722359147027.0,
+            'disk_io_time_seconds_total': 76647.0,
         }
-        # TODO: Continue calculating metrics, start from open file descriptors
         self.test_exception = PANICException('test_exception', 1)
         self.system_config = SystemConfig(self.system_id, self.parent_id,
                                           self.system_name, self.monitor_system,
@@ -319,7 +318,7 @@ class TestSystemMonitor(unittest.TestCase):
 
         actual_output = self.test_monitor._process_retrieved_data(
             self.retrieved_metrics_example)
-        self.assertEqual(actual_output, expected_output)
+        self.assertEqual(expected_output, actual_output)
 
     # TODO: In the monitor's _monitor() function we can test different scenarios
     #     : by checking that certain exceptions are called.
