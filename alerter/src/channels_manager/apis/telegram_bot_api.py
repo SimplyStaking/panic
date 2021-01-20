@@ -8,7 +8,7 @@ class TelegramBotApi:
         self._bot_token = bot_token
         self._bot_chat_id = bot_chat_id
 
-        self._base_url = 'https://api.telegram.org/bot' + bot_token
+        self._base_url = "https://api.telegram.org/bot" + bot_token
 
     @property
     def bot_token(self) -> str:

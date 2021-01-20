@@ -258,9 +258,8 @@ class SystemAlerter(Alerter):
                         is_down['warning_threshold'], None)
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
-                if not \
-                        self._system_initial_downtime_alert_sent[
-                            meta_data['system_id']]:
+                if not self._system_initial_downtime_alert_sent[meta_data[
+                        'system_id']]:
                     if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',

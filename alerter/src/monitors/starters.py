@@ -9,12 +9,13 @@ from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_MONITOR_NAME_TEMPLATE, \
-    GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
 
 
 def _initialize_monitor_logger(monitor_display_name: str,

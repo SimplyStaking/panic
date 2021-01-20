@@ -10,12 +10,13 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.data_transformers.starters import start_system_data_transformer, \
-    start_github_data_transformer
+from src.data_transformers.starters import (start_system_data_transformer,
+                                            start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
-    SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_DATA_TRANSFORMER_NAME,
+                                 GITHUB_DATA_TRANSFORMER_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 

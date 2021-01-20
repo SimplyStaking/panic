@@ -6,8 +6,8 @@ import time
 from types import FrameType
 from typing import Dict
 
-from src.health_checker.starters import start_heartbeat_handler, \
-    start_ping_publisher
+from src.health_checker.starters import (start_heartbeat_handler,
+                                         start_ping_publisher)
 from src.utils.constants import HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
 from src.utils.logging import log_and_print
 

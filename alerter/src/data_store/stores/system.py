@@ -9,8 +9,9 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException, MessageWasNotDeliveredException
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  SystemIsDownException,
+                                  MessageWasNotDeliveredException)
 
 _SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
 _SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'

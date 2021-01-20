@@ -11,10 +11,11 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.configs.system import SystemConfig
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, SYSTEM_MONITOR_NAME_TEMPLATE
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool

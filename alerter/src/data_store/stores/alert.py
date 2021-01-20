@@ -8,8 +8,8 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  MessageWasNotDeliveredException)
 
 _ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
 _ALERT_STORE_INPUT_ROUTING_KEY = 'alert'

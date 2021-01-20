@@ -8,12 +8,12 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME, GITHUB_STORE_NAME, \
-    ALERT_STORE_NAME
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
 
 
 def _initialize_store_logger(

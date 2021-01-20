@@ -19,11 +19,14 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import Severity
-from src.utils.constants import SYSTEM_MONITORS_MANAGER_NAME, \
-    GITHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME, \
-    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME, \
-    DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME, \
-    CHANNELS_MANAGER_NAME, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
+from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
+                                 GITHUB_MONITORS_MANAGER_NAME,
+                                 DATA_TRANSFORMERS_MANAGER_NAME,
+                                 SYSTEM_ALERTERS_MANAGER_NAME,
+                                 GITHUB_ALERTER_MANAGER_NAME,
+                                 DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
+                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
+                                 HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME)
 
 
 class TelegramCommandHandlers(CmdHandler):

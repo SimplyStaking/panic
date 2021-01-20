@@ -13,8 +13,9 @@ from pika.exceptions import AMQPConnectionError
 from src.abstract import QueuingPublisherComponent
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
-    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, ALERT_ROUTER_CONFIGS_QUEUE_NAME
+from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
+                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 ALERT_ROUTER_CONFIGS_QUEUE_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -169,7 +170,7 @@ class AlertRouter(QueuingPublisherComponent):
             self._rabbitmq.basic_ack(method.delivery_tag, False)
             return
 
-        self._logger.info("recv_alert = %s", recv_alert)
+        self._logger.debug("recv_alert = %s", recv_alert)
         # Where to route this alert to
         self._logger.debug("Got a lock on the config")
         self._logger.debug("Obtaining list of channels to alert")

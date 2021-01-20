@@ -28,15 +28,19 @@ from src.channels_manager.handlers.telegram.commands import \
     TelegramCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.utils import env
-from src.utils.constants import RE_INITIALIZE_SLEEPING_PERIOD, \
-    RESTART_SLEEPING_PERIOD, TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE, \
-    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE, \
-    TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE, \
-    EMAIL_ALERTS_HANDLER_NAME_TEMPLATE, OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, \
-    CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE, LOG_ALERTS_HANDLER_NAME_TEMPLATE
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message, \
-    get_stopped_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
 
 
 def _initialize_channel_handler_logger(
