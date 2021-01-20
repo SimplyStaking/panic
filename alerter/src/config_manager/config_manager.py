@@ -3,8 +3,9 @@ import logging
 import os
 import sys
 import time
-from configparser import ConfigParser, DuplicateSectionError, \
-    DuplicateOptionError, InterpolationError, ParsingError
+from configparser import (ConfigParser, DuplicateSectionError,
+                          DuplicateOptionError, InterpolationError,
+                          ParsingError)
 from datetime import datetime
 from types import FrameType
 from typing import Any, Dict, List, Optional, Callable
@@ -17,9 +18,10 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import MessageWasNotDeliveredException, \
-    ConnectionNotInitializedException
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 RE_INITIALIZE_SLEEPING_PERIOD)
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ConnectionNotInitializedException)
 from src.utils.routing_key import get_routing_key
 from .config_update_event_handler import ConfigFileEventHandler
 from ..abstract import Component
@@ -29,7 +31,7 @@ _FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 
 
-class ConfigManager(Component):
+class ConfigsManager(Component):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -40,7 +42,7 @@ class ConfigManager(Component):
                  ignore_file_patterns: Optional[List[str]] = None,
                  ignore_directories: bool = True, case_sensitive: bool = False):
         """
-        Constructs the ConfigManager instance
+        Constructs the ConfigsManager instance
         :param config_directory: The root config directory to watch.
             This is searched recursively.
         :param file_patterns: The file patterns in the directory to watch.
@@ -63,10 +65,12 @@ class ConfigManager(Component):
         self._watching = False
         self._connected_to_rabbit = False
 
+        self._logger.debug("Creating config RabbitMQ connection")
         self._config_rabbit = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
 
+        self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
             logger.getChild("heartbeat_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
@@ -90,7 +94,7 @@ class ConfigManager(Component):
     def name(self) -> str:
         return self._name
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         config_ping_queue = "config_ping_queue"
 
         while True:
@@ -98,13 +102,18 @@ class ConfigManager(Component):
                 self._connect_to_rabbit()
                 self._logger.info("Connected to Rabbit")
                 self._config_rabbit.confirm_delivery()
-                self._logger.info("Enabled delivery confirmation on RabbitMQ "
-                                  "channel")
+                self._logger.info("Enabled delivery confirmation on configs"
+                                  "RabbitMQ channel")
+
                 self._config_rabbit.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
+
+                self._heartbeat_rabbit.confirm_delivery()
+                self._logger.info("Enabled delivery confirmation on heartbeat"
+                                  "RabbitMQ channel")
 
                 self._heartbeat_rabbit.exchange_declare(
                     HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False
@@ -119,16 +128,18 @@ class ConfigManager(Component):
 
                 self._heartbeat_rabbit.queue_declare(config_ping_queue, False,
                                                      True, False, False)
+                self._logger.debug("Declared '%s' queue", config_ping_queue)
 
                 self._heartbeat_rabbit.queue_bind(config_ping_queue,
                                                   HEALTH_CHECK_EXCHANGE,
                                                   'ping')
+                self._logger.debug("Bound queue '%s' to exchange '%s'",
+                                   config_ping_queue, HEALTH_CHECK_EXCHANGE)
 
-                self._heartbeat_rabbit.confirm_delivery()
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
-                self._logger.info("Declaring consuming intentions")
+                self._logger.debug("Declaring consuming intentions")
                 self._heartbeat_rabbit.basic_consume(config_ping_queue,
                                                      self._process_ping,
                                                      True, False, None)
@@ -146,26 +157,30 @@ class ConfigManager(Component):
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. As a result we don't need to
                 # anything here, just re-try.
-                time.sleep(10)
+                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
-            self._logger.info("Connecting to RabbitMQ")
+            self._logger.info("Connecting to the config RabbitMQ")
             self._config_rabbit.connect_till_successful()
+            self._logger.info("Connected to config RabbitMQ")
+            self._logger.info("Connecting to the heartbeat RabbitMQ")
             self._heartbeat_rabbit.connect_till_successful()
+            self._logger.info("Connected to heartbeat RabbitMQ")
             self._connected_to_rabbit = True
-            self._logger.info("Connected to RabbitMQ")
         else:
             self._logger.info(
                 "Already connected to RabbitMQ, will not connect again")
 
-    def disconnect(self) -> None:
+    def disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
-            self._logger.info("Disconnecting from RabbitMQ")
+            self._logger.info("Disconnecting from the config RabbitMQ")
             self._config_rabbit.disconnect_till_successful()
+            self._logger.info("Disconnected from the config RabbitMQ")
+            self._logger.info("Disconnecting from the heartbeat RabbitMQ")
             self._heartbeat_rabbit.disconnect_till_successful()
+            self._logger.info("Disconnected from the heartbeat RabbitMQ")
             self._connected_to_rabbit = False
-            self._logger.info("Disconnected from RabbitMQ")
         else:
             self._logger.info("Already disconnected from RabbitMQ")
 
@@ -175,18 +190,29 @@ class ConfigManager(Component):
                       body: bytes) -> None:
 
         self._logger.debug("Received %s. Let's pong", body)
-        heartbeat = {
-            'component_name': self.name,
-            'is_alive': self._observer.is_alive(),
-            'timestamp': datetime.now().timestamp(),
-        }
+        try:
+            heartbeat = {
+                'component_name': self.name,
+                'is_alive': self._observer.is_alive(),
+                'timestamp': datetime.now().timestamp(),
+            }
 
-        self._heartbeat_rabbit.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key=_HEARTBEAT_ROUTING_KEY,
-            body=heartbeat, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self._logger.info("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+            self._logger.debug("Sending heartbeat to the %s exchange",
+                               HEALTH_CHECK_EXCHANGE)
+            self._logger.debug("Sending %s", heartbeat)
+            self._heartbeat_rabbit.basic_publish_confirm(
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=_HEARTBEAT_ROUTING_KEY,
+                body=heartbeat, is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self._logger.info("Sent heartbeat to %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as heartbeats must be
+            # real-time
+            self._logger.error("Error when sending heartbeat")
+            self._logger.exception(e)
 
     def _send_config_to_rabbit_mq(self, config: Dict[str, Any],
                                   routing_key: str) -> None:
@@ -207,8 +233,7 @@ class ConfigManager(Component):
                 break
             except MessageWasNotDeliveredException as mwnde:
                 self._logger.error("Config was not successfully sent to "
-                                   "routing key %s",
-                                   routing_key)
+                                   "routing key %s", routing_key)
                 self._logger.exception(mwnde)
                 self._logger.info("Will attempt sending the config again to "
                                   "routing key %s", routing_key)
@@ -222,8 +247,8 @@ class ConfigManager(Component):
                 self._logger.info("Restarting the connection")
                 self._connected_to_rabbit = False
 
-                # Wait 5 seconds before reconnecting and then retrying
-                time.sleep(5)
+                # Wait some time before reconnecting and then retrying
+                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
                 self._connect_to_rabbit()
 
                 self._logger.info("Connection restored, will attempt sending "
@@ -232,7 +257,7 @@ class ConfigManager(Component):
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. Since a new channel is created
                 # we need to re-initialize RabbitMQ
-                self._initialize_rabbitmq()
+                self._initialise_rabbitmq()
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
@@ -288,12 +313,13 @@ class ConfigManager(Component):
     def start(self) -> None:
         """
         This method is used to start rabbit and the observer and begin watching
-        the files.  It also sends the configuration files for the first time
+        the config files. It also sends the configuration files for the first
+        time
         :return None
         """
         log_and_print("{} started.".format(self), self._logger)
 
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
 
         def do_first_run_event(name: str) -> None:
             event = FileSystemEvent(name)
@@ -330,7 +356,7 @@ class ConfigManager(Component):
             self._logger.debug("Config file observer stopped")
         else:
             self._logger.info("Config file observer already stopped")
-        self.disconnect()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 

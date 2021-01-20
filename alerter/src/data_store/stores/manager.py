@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from datetime import datetime
@@ -10,12 +9,17 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.data_store.starters import start_system_store, start_github_store, \
-    start_alert_store
+from src.data_store.starters import (start_system_store, start_github_store,
+                                     start_alert_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils import env
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+
+_DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
+_DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
 
 
 class StoreManager:
@@ -24,8 +28,9 @@ class StoreManager:
         self._logger = logger
         self._store_process_dict = {}
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -51,20 +56,22 @@ class StoreManager:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'data_stores_manager_queue'")
-        self.rabbitmq.queue_declare('data_stores_manager_queue',
-                                    False, True, False, False)
-        self.logger.info("Binding queue 'data_stores_manager_queue' to "
-                         "exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('data_stores_manager_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'data_stores_manager_queue'")
-        self.rabbitmq.basic_consume('data_stores_manager_queue',
+        self.logger.info("Creating queue '%s'", _DATA_STORE_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_DATA_STORE_MAN_INPUT_QUEUE, False, True,
+                                    False, False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _DATA_STORE_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE,
+                         _DATA_STORE_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_DATA_STORE_MAN_INPUT_QUEUE,
+                                 HEALTH_CHECK_EXCHANGE,
+                                 _DATA_STORE_MAN_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _DATA_STORE_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_DATA_STORE_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -79,14 +86,14 @@ class StoreManager:
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -107,7 +114,7 @@ class StoreManager:
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 
@@ -125,31 +132,34 @@ class StoreManager:
     def _start_stores_processes(self) -> None:
         # Start each store in a separate process if it is not yet started or it
         # is not alive. This must be done in case of a restart of the manager.
-        if 'System Store' not in self._store_process_dict or \
-                not self._store_process_dict['System Store'].is_alive():
-            log_and_print("Attempting to start the System Store.", self.logger)
+        if SYSTEM_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[SYSTEM_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                SYSTEM_STORE_NAME), self.logger)
             system_store_process = Process(target=start_system_store, args=())
             system_store_process.daemon = True
             system_store_process.start()
-            self._store_process_dict['System Store'] = system_store_process
+            self._store_process_dict[SYSTEM_STORE_NAME] = system_store_process
 
-        if 'GitHub Store' not in self._store_process_dict or \
-                not self._store_process_dict['GitHub Store'].is_alive():
-            log_and_print("Attempting to start the GitHub Store.", self.logger)
+        if GITHUB_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[GITHUB_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_STORE_NAME), self.logger)
             github_store_process = Process(target=start_github_store, args=())
             github_store_process.daemon = True
             github_store_process.start()
-            self._store_process_dict['GitHub Store'] = github_store_process
+            self._store_process_dict[GITHUB_STORE_NAME] = github_store_process
 
-        if 'Alert Store' not in self._store_process_dict or \
-                not self._store_process_dict['Alert Store'].is_alive():
-            log_and_print("Attempting to start the Alert Store.", self.logger)
+        if ALERT_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[ALERT_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                ALERT_STORE_NAME), self.logger)
             alert_store_process = Process(target=start_alert_store, args=())
             alert_store_process.daemon = True
             alert_store_process.start()
-            self._store_process_dict['Alert Store'] = alert_store_process
+            self._store_process_dict[ALERT_STORE_NAME] = alert_store_process
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:
@@ -166,13 +176,20 @@ class StoreManager:
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     # If termination signals are received, terminate all child process and exit
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running stores will be stopped gracefully. Afterwards the {} "
             "process will exit.".format(self, self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for store, process in self._store_process_dict.items():
             log_and_print("Terminating the process of {}".format(store),

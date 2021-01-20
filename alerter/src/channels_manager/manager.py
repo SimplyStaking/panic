@@ -11,20 +11,34 @@ from typing import Dict, List, Optional
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.channels_manager.handlers.starters import \
-    start_telegram_alerts_handler, start_telegram_commands_handler, \
-    start_twilio_alerts_handler, start_console_alerts_handler, \
-    start_log_alerts_handler, start_email_alerts_handler, \
-    start_pagerduty_alerts_handler, start_opsgenie_alerts_handler
+from src.channels_manager.handlers.starters import (
+    start_telegram_alerts_handler, start_telegram_commands_handler,
+    start_twilio_alerts_handler, start_console_alerts_handler,
+    start_log_alerts_handler, start_email_alerts_handler,
+    start_pagerduty_alerts_handler, start_opsgenie_alerts_handler)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
+
+_CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
+_CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
+_CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
 
 
 class ChannelsManager:
@@ -36,7 +50,8 @@ class ChannelsManager:
         self._channel_process_dict = {}
 
         rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -70,37 +85,39 @@ class ChannelsManager:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'channels_manager_ping_queue'")
-        self.rabbitmq.queue_declare('channels_manager_ping_queue', False, True,
+        self.logger.info("Creating queue '%s'", _CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_CHANNELS_MANAGER_INPUT_QUEUE, False, True,
                                     False, False)
-        self.logger.info("Binding queue 'channels_manager_ping_queue' to "
-                         "exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('channels_manager_ping_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'channels_manager_ping_queue'")
-        self.rabbitmq.basic_consume('channels_manager_ping_queue',
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _CHANNELS_MANAGER_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE,
+                         _CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_CHANNELS_MANAGER_INPUT_QUEUE,
+                                 HEALTH_CHECK_EXCHANGE,
+                                 _CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_CHANNELS_MANAGER_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
-        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '{}'".format(
-            CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.info("Creating queue '%s'",
+                         CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'channels.*'".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                  CONFIG_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'channels.*')
-        self.logger.info("Declaring consuming intentions on "
-                         "{}".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME))
+                                 CONFIG_EXCHANGE,
+                                 _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on %s",
+                          CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -116,8 +133,8 @@ class ChannelsManager:
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _create_and_start_telegram_alerts_handler(
             self, bot_token: str, bot_chat_id: str, channel_id: str,
@@ -137,7 +154,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Telegram Alerts Handler ({})".format(channel_name)
+            TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['bot_token'] = bot_token
         process_details['bot_chat_id'] = bot_chat_id
@@ -165,7 +182,7 @@ class ChannelsManager:
         process_details = self._channel_process_dict[channel_id][
             commands_handler_type]
         process_details['component_name'] = \
-            "Telegram Commands Handler ({})".format(channel_name)
+            TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['bot_token'] = bot_token
         process_details['bot_chat_id'] = bot_chat_id
@@ -194,7 +211,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Twilio Alerts Handler ({})".format(channel_name)
+            TWILIO_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['account_sid'] = account_sid
         process_details['auth_token'] = auth_token
@@ -226,7 +243,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Email Alerts Handler ({})".format(channel_name)
+            EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['smtp'] = smtp
         process_details['email_from'] = email_from
@@ -255,7 +272,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "PagerDuty Alerts Handler ({})".format(channel_name)
+            PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['integration_key'] = integration_key
         process_details['channel_id'] = channel_id
@@ -280,7 +297,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Opsgenie Alerts Handler ({})".format(channel_name)
+            OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['api_key'] = api_key
         process_details['channel_id'] = channel_id
@@ -304,7 +321,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Console Alerts Handler ({})".format(channel_name)
+            CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
@@ -326,7 +343,7 @@ class ChannelsManager:
         self._channel_process_dict[channel_id][handler_type] = {}
         process_details = self._channel_process_dict[channel_id][handler_type]
         process_details['component_name'] = \
-            "Log Alerts Handler ({})".format(channel_name)
+            LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
@@ -337,18 +354,20 @@ class ChannelsManager:
         # started or it is not alive. This must be done in case of a restart of
         # the manager.
         alerts_handler_type = ChannelHandlerTypes.ALERTS.value
-        if 'CONSOLE' not in self._channel_process_dict or \
-                not self.channel_process_dict['CONSOLE'][alerts_handler_type][
-                    'process'].is_alive():
-            self._create_and_start_console_alerts_handler('CONSOLE', 'CONSOLE')
+        if CONSOLE_CHANNEL_ID not in self._channel_process_dict or \
+                not self.channel_process_dict[CONSOLE_CHANNEL_ID][
+                    alerts_handler_type]['process'].is_alive():
+            self._create_and_start_console_alerts_handler(CONSOLE_CHANNEL_ID,
+                                                          CONSOLE_CHANNEL_NAME)
 
         # Start the LOG channel in a separate process if it is not yet started
         # or it is not alive. This must be done in case of a restart of the
         # manager.
-        if 'LOG' not in self._channel_process_dict or \
-                not self.channel_process_dict['LOG'][alerts_handler_type][
-                    'process'].is_alive():
-            self._create_and_start_log_alerts_handler('LOG', 'LOG')
+        if LOG_CHANNEL_ID not in self._channel_process_dict or \
+                not self.channel_process_dict[LOG_CHANNEL_ID][
+                    alerts_handler_type]['process'].is_alive():
+            self._create_and_start_log_alerts_handler(LOG_CHANNEL_ID,
+                                                      LOG_CHANNEL_NAME)
 
     def _process_telegram_configs(self, sent_configs: Dict) -> Dict:
         if ChannelTypes.TELEGRAM.value in self.channel_configs:
@@ -372,7 +391,7 @@ class ChannelsManager:
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
-                chain_names = config['chain_names'].split(',')
+                chain_names = config['parent_names'].split(',')
                 associated_chains = dict(zip(parent_ids, chain_names))
 
                 # If Telegram Alerts are enabled on this channel, start an
@@ -402,7 +421,7 @@ class ChannelsManager:
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
-                chain_names = config['chain_names'].split(',')
+                chain_names = config['parent_names'].split(',')
                 associated_chains = dict(zip(parent_ids, chain_names))
 
                 alerts_handler_type = ChannelHandlerTypes.ALERTS.value
@@ -587,7 +606,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -669,7 +688,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -741,7 +760,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -815,7 +834,7 @@ class ChannelsManager:
             # If we encounter an error during processing, this error must be
             # logged and the message must be acknowledged so that it is removed
             # from the queue
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         return correct_configs
@@ -825,8 +844,7 @@ class ChannelsManager:
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs {}. Now processing.".format(
-            sent_configs))
+        self.logger.info("Received configs %s. Now processing.", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
@@ -855,7 +873,7 @@ class ChannelsManager:
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -933,7 +951,7 @@ class ChannelsManager:
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 
@@ -948,7 +966,7 @@ class ChannelsManager:
             # For any other exception raise it.
             raise e
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:
@@ -965,6 +983,13 @@ class ChannelsManager:
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
     def on_terminate(self, signum: int, stack: FrameType) -> None:
@@ -973,7 +998,7 @@ class ChannelsManager:
             "any running channel handlers will be stopped gracefully. "
             "Afterwards the {} process will exit.".format(self, self),
             self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for _, handlers in self.channel_process_dict.items():
             for handler, process_details in handlers.items():

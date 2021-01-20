@@ -8,8 +8,8 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.exceptions import ConnectionNotInitializedException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (ConnectionNotInitializedException,
+                                  MessageWasNotDeliveredException)
 from src.utils.timing import TimedTaskLimiter
 
 
@@ -200,10 +200,9 @@ class RabbitMQApi:
                 break
             except Exception as e:
                 self._logger.exception(e)
-                self._logger.info(
-                    "Could not connect. Will attempt to connect in {} "
-                    "seconds".format(
-                        self.connection_check_time_interval_seconds))
+                self._logger.info("Could not connect. Will attempt to connect "
+                                  "in %s seconds",
+                                  self.connection_check_time_interval_seconds)
                 time.sleep(self.connection_check_time_interval_seconds)
                 self._logger.info("Attempting another connection ...")
                 continue
@@ -224,10 +223,9 @@ class RabbitMQApi:
                 break
             except Exception as e:
                 self._logger.exception(e)
-                self._logger.info(
-                    "Could not disconnect. Will attempt to disconnect in {} "
-                    "seconds".format(
-                        self.connection_check_time_interval_seconds))
+                self._logger.info("Could not disconnect. Will attempt to "
+                                  "disconnect in %s seconds",
+                                  self.connection_check_time_interval_seconds)
                 time.sleep(self.connection_check_time_interval_seconds)
                 self._logger.info("Attempting another disconnection ...")
                 continue

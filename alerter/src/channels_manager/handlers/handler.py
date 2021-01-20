@@ -15,8 +15,8 @@ class ChannelHandler(Component):
 
         self._handler_name = handler_name
         self._logger = logger
-        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
-                                     host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild(
+            RabbitMQApi.__name__), host=rabbit_ip)
 
     def __str__(self) -> str:
         return self.handler_name
@@ -39,3 +39,10 @@ class ChannelHandler(Component):
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
         pass
+
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()

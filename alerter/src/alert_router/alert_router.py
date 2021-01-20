@@ -13,8 +13,10 @@ from pika.exceptions import AMQPConnectionError
 from src.abstract import QueuingPublisherComponent
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import CONFIG_EXCHANGE, STORE_EXCHANGE, \
-    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, ALERT_ROUTER_CONFIGS_QUEUE_NAME
+from src.utils import env
+from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
+                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 ALERT_ROUTER_CONFIGS_QUEUE_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -24,9 +26,10 @@ _ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
 class AlertRouter(QueuingPublisherComponent):
-    def __init__(self, logger: Logger, rabbit_ip: str, redis_ip: str,
+    def __init__(self, name: str, logger: Logger, rabbit_ip: str, redis_ip: str,
                  redis_db: int, redis_port: int, unique_alerter_identifier: str,
-                 enable_console_alerts: bool):
+                 enable_console_alerts: bool, enable_log_alerts: bool):
+        self._name = name
         self._rabbit = RabbitMQApi(logger.getChild(RabbitMQApi.__name__),
                                    host=rabbit_ip)
         self._redis = RedisApi(logger.getChild(RedisApi.__name__),
@@ -34,39 +37,49 @@ class AlertRouter(QueuingPublisherComponent):
                                namespace=unique_alerter_identifier)
 
         self._enable_console_alerts = enable_console_alerts
+        self._enable_log_alerts = enable_log_alerts
 
         self._config = {}
 
-        super().__init__(logger, self._rabbit)
+        super().__init__(logger, RabbitMQApi(
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip),
+                         env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE)
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def _initialise_rabbit(self) -> None:
         """
         Initialises the rabbit connection and the exchanges needed
         :return: None
         """
-        self._rabbit.connect_till_successful()
+        self._rabbitmq.connect_till_successful()
         self._logger.info(
             "Setting delivery confirmation on RabbitMQ channel")
-        self._rabbit.confirm_delivery()
+        self._rabbitmq.confirm_delivery()
 
-        # Pre-fetch count is set to 300
-        prefetch_count = round(300)
-        self._rabbit.basic_qos(prefetch_count=prefetch_count)
+        # Pre-fetch count is 5 times less the maximum queue size
+        prefetch_count = round(self._publishing_queue.maxsize / 5)
+        self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, "topic",
-            "channels.*"
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
+            'channels.*'
         )
-        self._rabbit.basic_consume(
+        self._rabbitmq.basic_consume(
             queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
             on_message_callback=self._process_configs, auto_ack=False,
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, "topic",
-            "alert_router.*"
+            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
+            'alert_router.*'
         )
-        self._rabbit.basic_consume(
+        self._rabbitmq.basic_consume(
             queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
             on_message_callback=self._process_alert, auto_ack=False,
             exclusive=False, consumer_tag=None
@@ -74,18 +87,18 @@ class AlertRouter(QueuingPublisherComponent):
 
         # Declare store exchange just in case it hasn't been declared
         # yet
-        self._rabbit.exchange_declare(exchange=STORE_EXCHANGE,
-                                      exchange_type='direct', passive=False,
-                                      durable=True, auto_delete=False,
-                                      internal=False)
+        self._rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
+                                        exchange_type='direct', passive=False,
+                                        durable=True, auto_delete=False,
+                                        internal=False)
 
         self._declare_exchange_and_bind_queue(
-            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, "topic", "ping"
+            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic', 'ping'
         )
 
-        self._logger.info("Declaring consuming intentions")
-        self._rabbit.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
-                                   True, False, None)
+        self._logger.debug("Declaring consuming intentions")
+        self._rabbitmq.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
+                                     True, False, None)
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
                                          exchange_name: str, exchange_type: str,
@@ -99,16 +112,16 @@ class AlertRouter(QueuingPublisherComponent):
         :return: None
         """
         self._logger.info("Creating %s exchange", exchange_name)
-        self._rabbit.exchange_declare(
+        self._rabbitmq.exchange_declare(
             exchange_name, exchange_type, False, True, False, False
         )
         self._logger.info("Creating and binding queue for %s exchange",
                           exchange_name)
         self._logger.debug("Creating queue %s", queue_name)
-        self._rabbit.queue_declare(queue_name, False, True, False, False)
+        self._rabbitmq.queue_declare(queue_name, False, True, False, False)
         self._logger.debug("Binding queue %s to %s exchange", queue_name,
                            exchange_name)
-        self._rabbit.queue_bind(queue_name, exchange_name, routing_key)
+        self._rabbitmq.queue_bind(queue_name, exchange_name, routing_key)
 
     def _process_configs(self, ch: BlockingChannel,
                          method: pika.spec.Basic.Deliver,
@@ -151,7 +164,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._config[config_filename] = previous_config
             self._logger.debug(self._config)
 
-        self._rabbit.basic_ack(method.delivery_tag, False)
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,
@@ -210,10 +223,10 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.debug("Queuing %s to be sent to %s",
                                    send_alert, channel_id)
 
-                self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                    "channel.{}".format(channel_id),
-                                    mandatory=True)
-                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+            self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                "channel.{}".format(channel_id),
+                                mandatory=False)
+            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
             if self._enable_console_alerts:
@@ -224,15 +237,19 @@ class AlertRouter(QueuingPublisherComponent):
                     ALERT_EXCHANGE, "channel.console", mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-            self._logger.debug("Queuing %s to be sent to console",
+        if self._enable_log_alerts:
+            self._logger.debug("Queuing %s to be sent to the alerts log",
                                recv_alert)
+
             self._push_to_queue(
                 {**recv_alert, 'destination_id': "log"},
                 ALERT_EXCHANGE, "channel.log", mandatory=True)
             self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-            # Enqueue once to the data store
-            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert")
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # Enqueue once to the data store
+        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert", mandatory=True)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -248,21 +265,29 @@ class AlertRouter(QueuingPublisherComponent):
                       body: bytes) -> None:
 
         self._logger.debug("Received %s. Let's pong", body)
-        heartbeat = {
-            'component_name': "AlertRouter",
-            'is_alive': True,
-            'timestamp': datetime.now().timestamp(),
-        }
+        try:
+            heartbeat = {
+                'component_name': self.name,
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp(),
+            }
 
-        self._rabbit.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker', body=heartbeat,
-            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
-        self._logger.info("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+            self._rabbitmq.basic_publish_confirm(
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker', body=heartbeat,
+                is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self._logger.info("Sent heartbeat to %s exchange",
+                              HEALTH_CHECK_EXCHANGE)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as the heartbeats must be
+            # real-time
+            self._logger.error("Problem sending heartbeat")
+            self._logger.exception(e)
 
     def start(self) -> None:
+        log_and_print("{} started.".format(self), self._logger)
         self._initialise_rabbit()
         while True:
             try:
@@ -275,7 +300,7 @@ class AlertRouter(QueuingPublisherComponent):
                     self._logger.exception(e)
 
                 self._logger.info("Starting the alert router listeners")
-                self._rabbit.start_consuming()
+                self._rabbitmq.start_consuming()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -288,10 +313,10 @@ class AlertRouter(QueuingPublisherComponent):
 
     def disconnect_from_rabbit(self) -> None:
         """
-        Disconnects the component from RabbitMQ
+        Disconnects the component from rabbit
         :return:
         """
-        self._rabbit.disconnect_till_successful()
+        self._rabbitmq.disconnect_till_successful()
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "

@@ -22,7 +22,7 @@ class EmailApi:
 
     def send_email(self, subject: str, message: str, to: str) -> None:
         msg = EmailMessage()
-        msg.set_content('{}\nDate - {}'.format(message, datetime.now()))
+        msg.set_content("{}\nDate - {}".format(message, datetime.now()))
 
         msg['Subject'] = subject
         msg['From'] = self._sender
@@ -66,7 +66,7 @@ class EmailApi:
 
         self._send_smtp(msg)
 
-    def _send_smtp(self, msg: Message):
+    def _send_smtp(self, msg: Message) -> None:
         # Send the message via the specified SMTP server.
         s = smtplib.SMTP(self._smtp)
         if None not in [self._username, self._password] \

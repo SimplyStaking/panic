@@ -40,6 +40,8 @@ CONFIG_MANAGER_LOG_FILE = os.environ['CONFIG_MANAGER_LOG_FILE']
 CHANNEL_HANDLERS_LOG_FILE_TEMPLATE = \
     os.environ['CHANNEL_HANDLERS_LOG_FILE_TEMPLATE']
 ALERTS_LOG_FILE = os.environ['ALERTS_LOG_FILE']
+HEALTH_CHECKER_LOG_FILE_TEMPLATE = os.environ[
+    'HEALTH_CHECKER_LOG_FILE_TEMPLATE']
 
 # GitHub monitoring configuration
 GITHUB_RELEASES_TEMPLATE = os.environ['GITHUB_RELEASES_TEMPLATE']
@@ -55,10 +57,17 @@ DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE = int(
 ALERTER_PUBLISHING_QUEUE_SIZE = int(os.environ['ALERTER_PUBLISHING_QUEUE_SIZE'])
 CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE = \
     int(os.environ['CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
+ALERT_ROUTER_PUBLISHING_QUEUE_SIZE = int(
+    os.environ['ALERT_ROUTER_PUBLISHING_QUEUE_SIZE'])
 
 # Console Output
 ENABLE_CONSOLE_ALERTS: bool = \
     os.getenv('ENABLE_CONSOLE_ALERTS', False).lower() in (
+        True, "true", "yes", "y")
+
+# Log Alerts
+ENABLE_LOG_ALERTS: bool = \
+    os.getenv('ENABLE_LOG_ALERTS', False).lower() in (
         True, "true", "yes", "y")
 
 # Twilio Preferences

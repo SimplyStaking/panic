@@ -13,11 +13,17 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME
-from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
-    MessageWasNotDeliveredException
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
+                                  MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
+
+_SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
+_SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
+_SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+_SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
 
 
 class SystemAlertersManager(AlertersManager):
@@ -39,43 +45,47 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue 'system_alerters_manager_ping_queue'")
-        self.rabbitmq.queue_declare('system_alerters_manager_ping_queue',
-                                    False, True, False, False)
-        self.logger.info("Binding queue 'system_alerters_manager_ping_queue' "
-                         "to exchange '{}' with routing key "
-                         "'ping'".format(HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('system_alerters_manager_ping_queue',
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'system_alerters_manager_ping_queue'")
-        self.rabbitmq.basic_consume('system_alerters_manager_ping_queue',
+        self.logger.info("Creating queue '%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(_SYS_ALERTERS_MAN_INPUT_QUEUE, False, True,
+                                    False, False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE,
+                         _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(_SYS_ALERTERS_MAN_INPUT_QUEUE,
+                                 HEALTH_CHECK_EXCHANGE,
+                                 _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on "
+                          "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(_SYS_ALERTERS_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
-        self.logger.info("Creating exchange '{}'".format(CONFIG_EXCHANGE))
+        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '{}'".format(
-            SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME))
+        self.logger.info("Creating queue '%s'",
+                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'chains.*.*.alerts_config'".format(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
-        self.logger.info(
-            "Binding queue '{}' to exchange '{}' with routing key "
-            "'general.alerts_config'".format(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE))
+                                 CONFIG_EXCHANGE,
+                                 _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.alerts_config')
-        self.logger.info("Declaring consuming intentions on {}".format(
-            SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME))
+                                 CONFIG_EXCHANGE,
+                                 _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+        self.logger.debug("Declaring consuming intentions on %s",
+                          SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -94,7 +104,7 @@ class SystemAlertersManager(AlertersManager):
         process.start()
         self._parent_id_process_dict[parent_id] = {}
         self._parent_id_process_dict[parent_id]['component_name'] = \
-            "System alerter ({})".format(chain)
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
         self._parent_id_process_dict[parent_id]['process'] = process
         self._parent_id_process_dict[parent_id]['parent_id'] = parent_id
         self._parent_id_process_dict[parent_id]['chain'] = chain
@@ -104,12 +114,12 @@ class SystemAlertersManager(AlertersManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs {}".format(sent_configs))
+        self.logger.info("Received configs %s", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == 'general.alerts_config':
+        if method.routing_key == _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -151,7 +161,7 @@ class SystemAlertersManager(AlertersManager):
                 system_alerts_config, parent_id, chain)
             self._systems_alerts_configs[parent_id] = system_alerts_config
         except Exception as e:
-            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
@@ -160,7 +170,7 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -188,7 +198,7 @@ class SystemAlertersManager(AlertersManager):
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 
@@ -203,7 +213,7 @@ class SystemAlertersManager(AlertersManager):
             # For any other exception raise it.
             raise e
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:
@@ -227,7 +237,7 @@ class SystemAlertersManager(AlertersManager):
             "any running system alerters will be stopped gracefully. "
             "Afterwards the {} process will exit.".format(self, self),
             self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for _, process_details in self.parent_id_process_dict.items():
             log_and_print("Terminating the alerter process of {}".format(

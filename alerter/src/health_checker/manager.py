@@ -6,8 +6,9 @@ import time
 from types import FrameType
 from typing import Dict
 
-from src.health_checker.starters import start_heartbeat_handler, \
-    start_ping_publisher
+from src.health_checker.starters import (start_heartbeat_handler,
+                                         start_ping_publisher)
+from src.utils.constants import HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME
 from src.utils.logging import log_and_print
 
 
@@ -37,44 +38,44 @@ class HealthCheckerManager:
     def component_process_dict(self) -> Dict:
         return self._component_process_dict
 
-    def manage(self) -> None:
+    def start(self) -> None:
         while True:
             # Start the heartbeat handler in a separate process if it is not
             # yet started or it is not alive.
-            if 'Heartbeat Handler' not in self.component_process_dict or \
+            if HEARTBEAT_HANDLER_NAME not in self.component_process_dict or \
                     not self.component_process_dict[
-                        'Heartbeat Handler'].is_alive():
+                        HEARTBEAT_HANDLER_NAME].is_alive():
 
                 # To avoid having unreleased resources
-                if 'Heartbeat Handler' in self.component_process_dict:
-                    self.component_process_dict['Heartbeat Handler'].join()
+                if HEARTBEAT_HANDLER_NAME in self.component_process_dict:
+                    self.component_process_dict[HEARTBEAT_HANDLER_NAME].join()
 
-                log_and_print("Attempting to start the Heartbeat Handler.",
-                              self.logger)
+                log_and_print("Attempting to start the {}.".format(
+                    HEARTBEAT_HANDLER_NAME), self.logger)
                 heartbeat_handler_process = multiprocessing.Process(
                     target=start_heartbeat_handler, args=())
                 heartbeat_handler_process.daemon = True
                 heartbeat_handler_process.start()
-                self.component_process_dict['Heartbeat Handler'] = \
+                self.component_process_dict[HEARTBEAT_HANDLER_NAME] = \
                     heartbeat_handler_process
 
             # Start the ping publisher in a separate process if it is not
             # yet started or it is not alive.
-            if 'Ping Publisher' not in self.component_process_dict or \
+            if PING_PUBLISHER_NAME not in self.component_process_dict or \
                     not self.component_process_dict[
-                        'Ping Publisher'].is_alive():
+                        PING_PUBLISHER_NAME].is_alive():
 
                 # To avoid having unreleased resources
-                if 'Ping Publisher' in self.component_process_dict:
-                    self.component_process_dict['Ping Publisher'].join()
+                if PING_PUBLISHER_NAME in self.component_process_dict:
+                    self.component_process_dict[PING_PUBLISHER_NAME].join()
 
-                log_and_print("Attempting to start the Ping Publisher.",
-                              self.logger)
+                log_and_print("Attempting to start the {}.".format(
+                    PING_PUBLISHER_NAME), self.logger)
                 ping_publisher_process = multiprocessing.Process(
                     target=start_ping_publisher, args=())
                 ping_publisher_process.daemon = True
                 ping_publisher_process.start()
-                self.component_process_dict['Ping Publisher'] = \
+                self.component_process_dict[PING_PUBLISHER_NAME] = \
                     ping_publisher_process
 
             self.logger.debug("Sleeping for %s seconds.", 10)

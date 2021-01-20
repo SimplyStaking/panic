@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from abc import ABC, abstractmethod
@@ -10,8 +9,9 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import (MessageWasNotDeliveredException)
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
@@ -25,12 +25,12 @@ class Alerter(ABC):
 
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 'ALERTER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.ALERTER_PUBLISHING_QUEUE_SIZE
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -76,8 +76,8 @@ class Alerter(ABC):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _send_data(self) -> None:
         empty = True
@@ -96,8 +96,8 @@ class Alerter(ABC):
                 body=data['data'], is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
-            self.logger.debug("Sent {} to '{}' exchange".format(
-                data['data'], data['exchange']))
+            self.logger.debug("Sent %s to '%s' exchange", data['data'],
+                              data['exchange'])
             self.publishing_queue.get()
             self.publishing_queue.task_done()
 
@@ -129,10 +129,17 @@ class Alerter(ABC):
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

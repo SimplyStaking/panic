@@ -10,8 +10,7 @@ class TelegramChannel(Channel):
 
     def __init__(self, channel_name: str, channel_id: str,
                  logger: logging.Logger, telegram_bot: TelegramBotApi) -> None:
-        super().__init__(channel_name, channel_id,
-                         logger.getChild(channel_name))
+        super().__init__(channel_name, channel_id, logger)
 
         self._telegram_bot = telegram_bot
 
@@ -20,7 +19,7 @@ class TelegramChannel(Channel):
         return self._telegram_bot
 
     def alert(self, alert: Alert) -> RequestStatus:
-        subject = 'PANIC {}'.format(alert.severity.upper())
+        subject = "PANIC {}".format(alert.severity.upper())
         try:
             ret = self._telegram_bot.send_message('*{}*: `{}`'.format(
                 subject, alert.message))

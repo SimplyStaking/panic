@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from abc import ABC, abstractmethod
@@ -10,6 +9,7 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
@@ -20,8 +20,9 @@ class MonitorsManager(ABC):
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -59,8 +60,8 @@ class MonitorsManager(ABC):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     @abstractmethod
     def _process_configs(
@@ -74,7 +75,7 @@ class MonitorsManager(ABC):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialize_rabbitmq()
         while True:
@@ -90,6 +91,13 @@ class MonitorsManager(ABC):
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
     def on_terminate(self, signum: int, stack: FrameType) -> None:
@@ -97,7 +105,7 @@ class MonitorsManager(ABC):
                       "closed, and any running monitors will be stopped "
                       "gracefully. Afterwards the {} process will exit."
                       .format(self, self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
         for config_id, process_details in self.config_process_dict.items():
             log_and_print("Terminating the process of {}".format(config_id),
