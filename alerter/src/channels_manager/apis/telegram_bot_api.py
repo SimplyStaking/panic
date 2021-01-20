@@ -22,7 +22,7 @@ class TelegramBotApi:
         data = {
             'chat_id': self.bot_chat_id,
             'text': message,
-            'parse_mode': 'Markdown'
+            'parse_mode': "Markdown"
         }
         return requests.get(self._base_url + '/sendMessage',
                             data=data, timeout=10).json()
