@@ -1570,6 +1570,80 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_all_alerts_above_warning_threshold_then_below_warning(
+            self, mock_system_storage_usage_decrease,
+            mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
+            mock_open_file_usage_decrease, mock_system_storage_usage_increase,
+            mock_system_ram_usage_increase, mock_cpu_usage_increase,
+            mock_open_file_usage_increase) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_warning_alert['result']['data']
+        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_system_storage_usage_increase.assert_called_once_with(
+                self.system_name, data['system_storage_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_system_ram_usage_increase.assert_called_once_with(
+                self.system_name, data['system_ram_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_cpu_usage_increase.assert_called_once_with(
+                self.system_name, data['system_cpu_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_open_file_usage_increase.assert_called_once_with(
+                self.system_name, data['open_file_descriptors']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(4, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data_for_alerting = []
+        data = self.data_received_below_warning_threshold['result']['data']
+        meta_data = self.data_received_below_warning_threshold['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_system_storage_usage_decrease.assert_called_once_with(
+                self.system_name, data['system_storage_usage']['current'],
+                self.info, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_system_ram_usage_decrease.assert_called_once_with(
+                self.system_name, data['system_ram_usage']['current'],
+                self.info, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_cpu_usage_decrease.assert_called_once_with(
+                self.system_name, data['system_cpu_usage']['current'],
+                self.info, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            mock_open_file_usage_decrease.assert_called_once_with(
+                self.system_name, data['open_file_descriptors']['current'],
+                self.info, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(4, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_warning_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1805,7 +1879,7 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
-    def test_alerts_above_warning_threshold_then_below_warning(
+    def test_all_alerts_above_warning_threshold_then_below_warning(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
             mock_open_file_usage_decrease, mock_system_storage_usage_increase,
@@ -1837,6 +1911,10 @@ class TestSystemAlerter(unittest.TestCase):
                 self.warning, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
+            mock_system_storage_usage_decrease.assert_not_called()
+            mock_system_ram_usage_decrease.assert_not_called()
+            mock_cpu_usage_decrease.assert_not_called()
+            mock_open_file_usage_decrease.assert_not_called()
             self.assertEqual(4, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
@@ -1847,6 +1925,10 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
         try:
+            mock_system_storage_usage_increase.assert_called_once()
+            mock_system_ram_usage_increase.assert_called_once()
+            mock_cpu_usage_increase.assert_called_once()
+            mock_open_file_usage_increase.assert_called_once()
             mock_system_storage_usage_decrease.assert_called_once_with(
                 self.system_name, data['system_storage_usage']['current'],
                 self.info, meta_data['last_monitored'], self.warning,
@@ -1868,6 +1950,237 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
             self.assertEqual(4, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    def test_open_file_descriptors_initial_run_warning_alerts_then_increase_in_warning(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['open_file_descriptors']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['open_file_descriptors']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['open_file_descriptors']['current'] = self.percent_usage + 47
+        data['open_file_descriptors']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['open_file_descriptors']['previous'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    def test_open_file_descriptors_initial_run_no_decrease_alerts_on_warning_alert_then_no_decrease_alerts_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['open_file_descriptors']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['open_file_descriptors']['current'] = self.percent_usage + 47
+        data['open_file_descriptors']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_cpu_usage_initial_run_warning_alert_then_no_alert_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_cpu_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_cpu_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_cpu_usage']['current'] = self.percent_usage + 47
+        data['system_cpu_usage']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_with(
+                self.system_name, data['system_cpu_usage']['previous'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_cpu_usage_initial_run_no_decrease_on_warning_then_no_decrease_alerts_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_cpu_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_cpu_usage']['current'] = self.percent_usage + 47
+        data['system_cpu_usage']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_ram_usage_initial_run_warning_alert_then_no_alert_in_warning(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_ram_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_ram_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_ram_usage']['current'] = self.percent_usage + 47
+        data['system_ram_usage']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_with(
+                self.system_name, data['system_ram_usage']['previous'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_ram_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_ram_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_ram_usage']['current'] = self.percent_usage + 56
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_storage_usage_initial_run_warning_alert_then_no_alert_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_storage_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_storage_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_storage_usage']['current'] = self.percent_usage + 47
+        data['system_storage_usage']['previous'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_with(
+                self.system_name, data['system_storage_usage']['previous'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_storage_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_warning_increase(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_storage_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data['system_storage_usage']['current'] = self.percent_usage + 47
+        data['system_storage_usage']['current'] = self.percent_usage + 46
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1905,6 +2218,156 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
             self.assertEqual(4, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemAlerter, "_classify_alert")
+    def test_alerts_initial_run_warning_alerts_count_classify_alert(
+            self, mock_classify_alert) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_warning_alert['result']['data']
+        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            self.assertEqual(4, mock_classify_alert.call_count)
+            self.assertEqual(0, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    def test_open_file_descriptors_initial_run_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['open_file_descriptors']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['open_file_descriptors']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    def test_open_file_descriptors_initial_run_no_decrease_alerts_on_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['open_file_descriptors']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_cpu_usage_initial_run_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_cpu_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_cpu_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_cpu_usage_initial_run_no_decrease_alerts_on_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_cpu_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_ram_usage_initial_run_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_ram_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_ram_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_ram_usage_initial_run_no_decrease_alerts_on_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_ram_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    def test_system_storage_usage_initial_run_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_storage_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_called_once_with(
+                self.system_name, data['system_storage_usage']['current'],
+                self.warning, meta_data['last_monitored'], self.warning,
+                self.parent_id, self.system_id
+            )
+            self.assertEqual(1, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    def test_system_storage_usage_initial_run_no_decrease_alerts_on_warning_alert(
+            self, mock_percentage_usage) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        data['system_storage_usage']['current'] = self.percent_usage + 46
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id)
+        self.test_system_alerter._process_results(data, meta_data, data_for_alerting)
+        try:
+            mock_percentage_usage.assert_not_called()
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
