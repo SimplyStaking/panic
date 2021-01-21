@@ -33,7 +33,7 @@ class GitHubMonitor(Monitor):
         return self._repo_config
 
     def _display_data(self, data: Dict) -> str:
-        # To ensure no releases have unicode characters we must first encode
+        # To cater for releases with unicode characters we must first encode
         # as utf-8 and then decode
         return json.dumps(data, ensure_ascii=False).encode('utf8').decode()
 
@@ -48,7 +48,7 @@ class GitHubMonitor(Monitor):
                     'repo_name': self.repo_config.repo_name,
                     'repo_id': self.repo_config.repo_id,
                     'repo_parent_id': self.repo_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'message': error.message,
                 'code': error.code,
@@ -68,7 +68,7 @@ class GitHubMonitor(Monitor):
                     'repo_name': self.repo_config.repo_name,
                     'repo_id': self.repo_config.repo_id,
                     'repo_parent_id': self.repo_config.parent_id,
-                    'time': str(datetime.now().timestamp())
+                    'time': datetime.now().timestamp()
                 },
                 'data': {},
             }
@@ -76,15 +76,15 @@ class GitHubMonitor(Monitor):
 
         for i in range(len(data_copy)):
             release_data = data_copy[i]
-            processed_data['result']['data'][i] = {}
-            processed_data['result']['data'][i]['release_name'] = \
+            processed_data['result']['data'][str(i)] = {}
+            processed_data['result']['data'][str(i)]['release_name'] = \
                 release_data['name']
-            processed_data['result']['data'][i]['tag_name'] = \
+            processed_data['result']['data'][str(i)]['tag_name'] = \
                 release_data['tag_name']
             self.logger.debug("%s releases_info: %s", self.repo_config,
-                              json.dumps(processed_data['result']['data'][i],
-                                         ensure_ascii=False).encode('utf8')
-                              .decode())
+                              json.dumps(
+                                  processed_data['result']['data'][str(i)],
+                                  ensure_ascii=False).encode('utf8').decode())
 
         return processed_data
 

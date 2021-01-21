@@ -162,7 +162,7 @@ class TestSystemMonitor(unittest.TestCase):
         self.assertEqual(self.metrics_to_monitor,
                          self.test_monitor.metrics_to_monitor)
 
-    def test_initialize_rabbitmq_initializes_everything_as_expected(
+    def test_initialise_rabbitmq_initializes_everything_as_expected(
             self) -> None:
         try:
             # To make sure that there is no connection/channel already
@@ -206,7 +206,7 @@ class TestSystemMonitor(unittest.TestCase):
 
     @mock.patch.object(SystemMonitor, "_process_retrieved_data")
     @mock.patch.object(SystemMonitor, "_process_error")
-    def test_process_data_calls_process_error_retrieval_error(
+    def test_process_data_calls_process_error_on_retrieval_error(
             self, mock_process_error, mock_process_retrieved_data) -> None:
         # Do not test the processing of data for now
         mock_process_error.return_value = self.test_data_dict
@@ -216,11 +216,8 @@ class TestSystemMonitor(unittest.TestCase):
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
-        try:
-            self.assertEqual(1, mock_process_error.call_count)
-            self.assertEqual(0, mock_process_retrieved_data.call_count)
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
+        self.assertEqual(1, mock_process_error.call_count)
+        self.assertEqual(0, mock_process_retrieved_data.call_count)
 
     @mock.patch.object(SystemMonitor, "_process_retrieved_data")
     @mock.patch.object(SystemMonitor, "_process_error")
@@ -233,11 +230,8 @@ class TestSystemMonitor(unittest.TestCase):
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
-        try:
-            self.assertEqual(0, mock_process_error.call_count)
-            self.assertEqual(1, mock_process_retrieved_data.call_count)
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
+        self.assertEqual(0, mock_process_error.call_count)
+        self.assertEqual(1, mock_process_retrieved_data.call_count)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -906,9 +900,3 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-    # TODO: Remove tearDown() commented code
-    # TODO: Remove SIGHUP comment
-    # TODO: Fix rabbit host
-    # TODO: Now since tests finished we need to run in docker environment.
-    #     : Do not forget to do the three TODOs above before.

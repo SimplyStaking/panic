@@ -247,8 +247,6 @@ class AlertRouter(QueuingPublisherComponent):
             self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
                                 mandatory=True)
 
-        self._rabbitmq.basic_ack(method.delivery_tag, False)
-
         # Send any data waiting in the publisher queue, if any
         try:
             self._send_data()
