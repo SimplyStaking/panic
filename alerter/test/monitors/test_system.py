@@ -1,25 +1,36 @@
+import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
+from http.client import IncompleteRead
 from unittest import mock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
+from requests.exceptions import (ConnectionError as ReqConnectionError,
+                                 ReadTimeout, ChunkedEncodingError,
+                                 MissingSchema, InvalidSchema, InvalidURL)
+from urllib3.exceptions import ProtocolError
 
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
+from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, SystemIsDownException, \
+    DataReadingException, InvalidUrlException, MetricNotFoundException, \
+    MessageWasNotDeliveredException
 
 
 class TestSystemMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
-            self.dummy_logger,
+            self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.monitor_name = 'test_monitor'
         self.monitoring_period = 10
@@ -36,7 +47,7 @@ class TestSystemMonitor(unittest.TestCase):
         }
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime.now().timestamp()
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
         self.metrics_to_monitor = [
@@ -234,6 +245,9 @@ class TestSystemMonitor(unittest.TestCase):
         try:
             self.test_monitor._initialise_rabbitmq()
 
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
             res = self.test_monitor.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -251,6 +265,11 @@ class TestSystemMonitor(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is actually the HB
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(self.test_heartbeat, json.loads(body))
 
             # Clean before test finishes
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
@@ -300,7 +319,6 @@ class TestSystemMonitor(unittest.TestCase):
                 'code': self.test_exception.code,
             }
         }
-
         actual_output = self.test_monitor._process_error(self.test_exception)
         self.assertEqual(actual_output, expected_output)
 
@@ -331,6 +349,9 @@ class TestSystemMonitor(unittest.TestCase):
         try:
             self.test_monitor._initialise_rabbitmq()
 
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
             res = self.test_monitor.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -339,6 +360,7 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
                 routing_key='system')
+
             self.test_monitor._send_data(self.processed_data_example)
 
             # By re-declaring the queue again we can get the number of messages
@@ -349,6 +371,125 @@ class TestSystemMonitor(unittest.TestCase):
             )
             self.assertEqual(1, res.method.message_count)
 
+            # Check that the message received is actually the processed data
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(self.processed_data_example, json.loads(body))
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
+            self, mock_get_data) -> None:
+        expected_output_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.processed_data_example,
+            }
+        }
+        expected_output_hb = {
+            'component_name': self.test_monitor.monitor_name,
+            'timestamp': datetime(2012, 1, 1).timestamp()
+        }
+
+        try:
+            mock_get_data.return_value = self.retrieved_metrics_example
+            self.test_monitor._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+
+            self.test_monitor._monitor()
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 2 messages in the queue, the heartbeat and the
+            # processed data
+            self.assertEqual(2, res.method.message_count)
+
+            # Check that the message received is actually the processed data
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(expected_output_data, json.loads(body))
+
+            # Check that the message received is actually the HB
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(expected_output_hb, json.loads(body))
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitor, "_process_data")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
+            self, mock_get_data, mock_process_data) -> None:
+        mock_process_data.side_effect = self.test_exception
+        mock_get_data.return_value = self.retrieved_metrics_example
+        try:
+            self.test_monitor._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+
+            self.test_monitor._monitor()
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 0 messages in the queue.
+            self.assertEqual(0, res.method.message_count)
+
             # Clean before test finishes
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
             self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
@@ -358,115 +499,415 @@ class TestSystemMonitor(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(SystemMonitor, "_get_data")
-    def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
+    def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
+            self, mock_get_data) -> None:
+        mock_get_data.side_effect = self.test_exception
+        try:
+            self.test_monitor._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+
+            self.assertRaises(PANICException, self.test_monitor._monitor)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 0 messages in the queue.
+            self.assertEqual(0, res.method.message_count)
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_sends_exception_data_and_hb_on_expected_exceptions(
+            self, mock_get_data) -> None:
+        errors_exceptions_dict = {
+            ReqConnectionError('test'): SystemIsDownException(
+                self.test_monitor.system_config.system_name),
+            ReadTimeout('test'): SystemIsDownException(
+                self.test_monitor.system_config.system_name),
+            IncompleteRead('test'): DataReadingException(
+                self.test_monitor.monitor_name,
+                self.test_monitor.system_config.system_name),
+            ChunkedEncodingError('test'): DataReadingException(
+                self.test_monitor.monitor_name,
+                self.test_monitor.system_config.system_name),
+            ProtocolError('test'): DataReadingException(
+                self.test_monitor.monitor_name,
+                self.test_monitor.system_config.system_name),
+            InvalidURL('test'): InvalidUrlException(
+                self.test_monitor.system_config.node_exporter_url),
+            InvalidSchema('test'): InvalidUrlException(
+                self.test_monitor.system_config.node_exporter_url),
+            MissingSchema('test'): InvalidUrlException(
+                self.test_monitor.system_config.node_exporter_url),
+            MetricNotFoundException('test_metric', 'test_endpoint'):
+                MetricNotFoundException('test_metric', 'test_endpoint')
+        }
+        try:
+            self.test_monitor._initialise_rabbitmq()
+            for error, data_ret_exception in errors_exceptions_dict.items():
+                mock_get_data.side_effect = error
+                expected_output_data = {
+                    'error': {
+                        'meta_data': {
+                            'monitor_name': self.test_monitor.monitor_name,
+                            'system_name':
+                                self.test_monitor.system_config.system_name,
+                            'system_id':
+                                self.test_monitor.system_config.system_id,
+                            'system_parent_id':
+                                self.test_monitor.system_config.parent_id,
+                            'time': datetime(2012, 1, 1).timestamp()
+                        },
+                        'message': data_ret_exception.message,
+                        'code': data_ret_exception.code,
+                    }
+                }
+                expected_output_hb = {
+                    'component_name': self.test_monitor.monitor_name,
+                    'timestamp': datetime(2012, 1, 1).timestamp()
+                }
+                # Delete the queue before to avoid messages in the queue on
+                # error.
+                self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+                res = self.test_monitor.rabbitmq.queue_declare(
+                    queue=self.test_queue_name, durable=True, exclusive=False,
+                    auto_delete=False, passive=False
+                )
+                self.assertEqual(0, res.method.message_count)
+                self.test_monitor.rabbitmq.queue_bind(
+                    queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                    routing_key='system')
+                self.test_monitor.rabbitmq.queue_bind(
+                    queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                    routing_key='heartbeat.worker')
+
+                self.test_monitor._monitor()
+
+                # By re-declaring the queue again we can get the number of
+                # messages in the queue.
+                res = self.test_monitor.rabbitmq.queue_declare(
+                    queue=self.test_queue_name, durable=True, exclusive=False,
+                    auto_delete=False, passive=True
+                )
+                # There must be 2 messages in the queue, the heartbeat and the
+                # processed data
+                self.assertEqual(2, res.method.message_count)
+
+                # Check that the message received is actually the processed data
+                _, _, body = self.test_monitor.rabbitmq.basic_get(
+                    self.test_queue_name)
+                self.assertEqual(expected_output_data, json.loads(body))
+
+                # Check that the message received is actually the HB
+                _, _, body = self.test_monitor.rabbitmq.basic_get(
+                    self.test_queue_name)
+                self.assertEqual(expected_output_hb, json.loads(body))
+
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_raises_msg_not_delivered_exception_if_data_not_routed(
             self, mock_get_data) -> None:
         mock_get_data.return_value = self.retrieved_metrics_example
-        self.test_monitor._initialise_rabbitmq()
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-        res = self.test_monitor.rabbitmq.queue_declare(
-            queue=self.test_queue_name, durable=True, exclusive=False,
-            auto_delete=False, passive=False
-        )
-        self.assertEqual(0, res.method.message_count)
-        self.test_monitor.rabbitmq.queue_bind(
-            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='system')
-        self.test_monitor.rabbitmq.queue_bind(
-            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            self.assertRaises(MessageWasNotDeliveredException,
+                              self.test_monitor._monitor)
 
-        self.test_monitor._monitor()
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
-        # By re-declaring the queue again we can get the number of messages
-        # in the queue.
-        res = self.test_monitor.rabbitmq.queue_declare(
-            queue=self.test_queue_name, durable=True, exclusive=False,
-            auto_delete=False, passive=True
-        )
-        # There must be 2 messages in the queue, the heartbeat and the processed
-        # data
-        self.assertEqual(2, res.method.message_count)
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_raises_msg_not_del_except_if_hb_not_routed_and_sends_data(
+            self, mock_get_data) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        expected_output_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.processed_data_example,
+            }
+        }
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-        # Clean before test finishes
-        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-        self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-        self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-        self.test_monitor.rabbitmq.disconnect()
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
 
-    # TODO: After initialize data always delete queues and exchanges
-    # TODO: Check whether queue data can be obtained so that we can compare the
-    #     : sent messages.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
 
-    def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
-            self) -> None:
-        pass
+            self.assertRaises(MessageWasNotDeliveredException,
+                              self.test_monitor._monitor)
 
-    def test_monitor_sends_system_is_down_data_and_hb_on_req_connection_error(
-            self) -> None:
-        # TODO: Need to Mock get_data to raise an exception
-        pass
+            # By re-declaring the queue again we can get the number of
+            # messages in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 1 message in the queue, the processed data
+            self.assertEqual(1, res.method.message_count)
 
-    def test_monitor_sends_system_is_down_data_and_hb_on_read_timeout_error(
-            self) -> None:
-        pass
+            # Check that the message received is actually the processed data
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(expected_output_data, json.loads(body))
 
-    def test_monitor_sends_data_reading_exception_data_and_hb_on_incomplete_read_error(
-            self) -> None:
-        pass
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
-    def test_monitor_sends_data_reading_except_data_and_hb_on_chunked_encoding_error(
-            self) -> None:
-        pass
+    @mock.patch.object(SystemMonitor, "_send_data")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_send_data_raises_amqp_channel_error_on_channel_error(
+            self, mock_get_data, mock_send_data) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        mock_send_data.side_effect = pika.exceptions.AMQPChannelError('test')
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-    def test_monitor_sends_data_reading_exception_data_and_hb_on_protocol_error(
-            self) -> None:
-        pass
+            self.assertRaises(pika.exceptions.AMQPChannelError,
+                              self.test_monitor._monitor)
 
-    def test_monitor_sends_invalid_url_exception_data_and_hb_on_invalid_url_error(
-            self) -> None:
-        pass
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
-    def test_monitor_sends_invalid_url_exception_data_and_hb_on_invalid_schema_error(
-            self) -> None:
-        pass
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitor, "_send_heartbeat")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_send_hb_raises_amqp_chan_err_on_chan_err_and_sends_data(
+            self, mock_get_data, mock_send_heartbeat) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        mock_send_heartbeat.side_effect = \
+            pika.exceptions.AMQPChannelError('test')
+        expected_output_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.processed_data_example,
+            }
+        }
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-    def test_monitor_sends_invalid_url_exception_data_and_hb_on_missing_schema_error(
-            self) -> None:
-        pass
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
 
-    def test_monitor_sends_metric_not_found_data_and_hb_on_metric_not_found_error(
-            self) -> None:
-        pass
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
 
-    def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
-            self) -> None:
-        pass
+            self.assertRaises(pika.exceptions.AMQPChannelError,
+                              self.test_monitor._monitor)
 
-    def test_monitor_raises_message_not_delivered_exception_if_data_not_routed(self) -> None:
-        pass
+            # By re-declaring the queue again we can get the number of
+            # messages in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 1 message in the queue, the processed data
+            self.assertEqual(1, res.method.message_count)
 
-    def test_monitor_raises_message_not_delivered_exception_if_hb_not_routed(self) -> None:
-        pass
+            # Check that the message received is actually the processed data
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(expected_output_data, json.loads(body))
 
-    def test_monitor_send_data_raises_amqp_channel_error_on_channel_error(self) -> None:
-        pass
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
-    def test_monitor_send_hb_raises_amqp_channel_error_on_channel_error(
-            self) -> None:
-        pass
+    @mock.patch.object(SystemMonitor, "_send_data")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_send_data_raises_amqp_conn_error_on_conn_error(
+            self, mock_get_data, mock_send_data) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        mock_send_data.side_effect = pika.exceptions.AMQPConnectionError('test')
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-    def test_monitor_send_data_raises_amqp_conn_error_on_conn_error(self) -> None:
-        pass
+            self.assertRaises(pika.exceptions.AMQPConnectionError,
+                              self.test_monitor._monitor)
 
-    def test_monitor_send_hb_raises_amqp_conn_error_on_conn_error(
-            self) -> None:
-        pass
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
-    def test_monitor_does_not_send_hb_if_send_data_fails(self) -> None:
-        pass
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitor, "_send_heartbeat")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_send_hb_raises_amqp_conn_err_on_conn_err_and_sends_data(
+            self, mock_get_data, mock_send_heartbeat) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        mock_send_heartbeat.side_effect = \
+            pika.exceptions.AMQPConnectionError('test')
+        expected_output_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'system_name': self.test_monitor.system_config.system_name,
+                    'system_id': self.test_monitor.system_config.system_id,
+                    'system_parent_id':
+                        self.test_monitor.system_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.processed_data_example,
+            }
+        }
+        try:
+            self.test_monitor._initialise_rabbitmq()
 
-    # TODO: In the monitor's _monitor() function we can test different scenarios
-    #     : by checking that certain exceptions are called.
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                routing_key='system')
+
+            self.assertRaises(pika.exceptions.AMQPConnectionError,
+                              self.test_monitor._monitor)
+
+            # By re-declaring the queue again we can get the number of
+            # messages in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be 1 message in the queue, the processed data
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is actually the processed data
+            _, _, body = self.test_monitor.rabbitmq.basic_get(
+                self.test_queue_name)
+            self.assertEqual(expected_output_data, json.loads(body))
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitor, "_send_data")
+    @mock.patch.object(SystemMonitor, "_get_data")
+    def test_monitor_does_not_send_hb_if_send_data_fails(
+            self, mock_get_data, mock_send_data) -> None:
+        mock_get_data.return_value = self.retrieved_metrics_example
+        mock_send_data.side_effect = Exception('test')
+        try:
+            self.test_monitor._initialise_rabbitmq()
+
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+
+            self.assertRaises(Exception, self.test_monitor._monitor)
+
+            # By re-declaring the queue again we can get the number of
+            # messages in the queue.
+            res = self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            # There must be no messages in the queue.
+            self.assertEqual(0, res.method.message_count)
+
+            # Clean before test finishes
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
     # TODO: Remove tearDown() commented code
     # TODO: Remove SIGHUP comment
     # TODO: Fix rabbit host
+    # TODO: Now since tests finished we need to run in docker environment.
+    #     : Do not forget to do the three TODOs above before.

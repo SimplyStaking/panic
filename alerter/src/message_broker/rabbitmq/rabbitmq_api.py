@@ -285,6 +285,13 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.basic_consume, args, -1)
 
+    def basic_get(self, queue: str, auto_ack: bool = False) -> Optional[int]:
+        args = [queue, auto_ack]
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        if self._connection_initialized():
+            return self._safe(self.channel.basic_get, args, -1)
+
     def start_consuming(self) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
         # this function will throw a ConnectionNotInitialized exception
