@@ -1,5 +1,4 @@
 import logging
-import os
 import signal
 import sys
 from abc import ABC, abstractmethod
@@ -13,6 +12,7 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
 class Alerter(ABC):
@@ -23,14 +23,9 @@ class Alerter(ABC):
         self._alerter_name = alerter_name
         self._logger = logger
 
-        # Set a max queue size so that if the alerter is not able to
-        # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 'ALERTER_PUBLISHING_QUEUE_SIZE'])
-        self._publishing_queue = Queue(max_queue_size)
+        self._publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        self._rabbitmq = RabbitMQApi(logger=self.logger, host=RABBIT_IP)
 
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
