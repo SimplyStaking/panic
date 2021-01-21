@@ -220,10 +220,10 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.debug("Queuing %s to be sent to %s",
                                    send_alert, channel_id)
 
-            self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                "channel.{}".format(channel_id),
-                                mandatory=False)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                    "channel.{}".format(channel_id),
+                                    mandatory=False)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
             if self._enable_console_alerts:

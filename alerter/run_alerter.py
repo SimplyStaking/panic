@@ -246,10 +246,11 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
     while True:
         try:
-            alert_router = AlertRouter(
-                alert_router_logger, rabbit_ip, redis_ip, redis_db, redis_port,
-                unique_alerter_identifier, env.ENABLE_CONSOLE_ALERTS
-            )
+            alert_router = AlertRouter(display_name,  alert_router_logger,
+                                       rabbit_ip, redis_ip, redis_db,
+                                       redis_port, unique_alerter_identifier,
+                                       env.ENABLE_CONSOLE_ALERTS,
+                                       env.ENABLE_LOG_ALERTS)
             return alert_router, alert_router_logger
         except Exception as e:
             log_and_print(get_initialisation_error_message(display_name, e),
