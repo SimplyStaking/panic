@@ -234,19 +234,20 @@ class AlertRouter(QueuingPublisherComponent):
                     ALERT_EXCHANGE, "channel.console", mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-        if self._enable_log_alerts:
-            self._logger.debug("Queuing %s to be sent to the alerts log",
-                               recv_alert)
+            if self._enable_log_alerts:
+                self._logger.debug("Queuing %s to be sent to the alerts log",
+                                   recv_alert)
 
-            self._push_to_queue(
-                {**recv_alert, 'destination_id': "log"},
-                ALERT_EXCHANGE, "channel.log", mandatory=True)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(
+                    {**recv_alert, 'destination_id': "log"},
+                    ALERT_EXCHANGE, "channel.log", mandatory=True)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+
+            # Enqueue once to the data store
+            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
+                                mandatory=True)
 
         self._rabbitmq.basic_ack(method.delivery_tag, False)
-
-        # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert", mandatory=True)
 
         # Send any data waiting in the publisher queue, if any
         try:
