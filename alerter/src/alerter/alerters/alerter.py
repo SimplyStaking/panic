@@ -1,18 +1,17 @@
 import logging
-import os
 import signal
 import sys
-import time
 from abc import ABC, abstractmethod
 from queue import Queue
 from types import FrameType
-from typing import Dict, Union
+from typing import Dict
 
 import pika.exceptions
-from src.configs.system_alerts import SystemAlertsConfig
+
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  PANICException)
+from src.utils import env
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
@@ -23,14 +22,16 @@ class Alerter(ABC):
 
         self._alerter_name = alerter_name
         self._logger = logger
-        self._data_for_alerting = {}
+
         # Set a max queue size so that if the alerter is not able to
         # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 'ALERTER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.ALERTER_PUBLISHING_QUEUE_SIZE
         self._publishing_queue = Queue(max_queue_size)
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
+
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -44,16 +45,8 @@ class Alerter(ABC):
         return self._logger
 
     @property
-    def alerts_configs(self) -> Union[SystemAlertsConfig]:
-        pass
-
-    @property
     def alerter_name(self) -> str:
         return self._alerter_name
-
-    @property
-    def data_for_alerting(self) -> Dict:
-        return self._data_for_alerting
 
     @property
     def publishing_queue(self) -> Queue:
@@ -63,21 +56,28 @@ class Alerter(ABC):
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.start_consuming()
+
     @abstractmethod
-    def _place_latest_data_on_queue(self) -> None:
+    def _place_latest_data_on_queue(self, data_list: Dict) -> None:
         pass
 
     @abstractmethod
-    def _initialize_alerter(self) -> None:
+    def _initialize_rabbitmq(self) -> None:
         pass
 
     @abstractmethod
     def _process_data(self, *args) -> None:
         pass
 
-    @abstractmethod
-    def _alert_classifier_process(self) -> None:
-        pass
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
 
     def _send_data(self) -> None:
         empty = True
@@ -91,37 +91,34 @@ class Alerter(ABC):
         # that if an exception is raised, that message is not popped
         while not self.publishing_queue.empty():
             data = self.publishing_queue.queue[0]
-            try:
-                self.rabbitmq.basic_publish_confirm(
-                    exchange=data['exchange'], routing_key=data['routing_key'],
-                    body=data['data'], is_body_dict=True,
-                    properties=pika.BasicProperties(delivery_mode=2),
-                    mandatory=True)
-                self.logger.debug("Sent {} to \'{}\' exchange"
-                                  .format(data['data'], data['exchange']))
-            except KeyError as e:
-                self.logger.exception(e)
-                raise e
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug("Sent %s to '%s' exchange", data['data'],
+                              data['exchange'])
             self.publishing_queue.get()
             self.publishing_queue.task_done()
 
         if not empty:
             self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
+                             "queue.")
 
-    def start_alert_classification(self) -> None:
-        self._initialize_alerter()
+    def start(self) -> None:
+        self._initialize_rabbitmq()
         while True:
             try:
-                # Before listening for new data send the data waiting to be
+                # Before listening for new data send the data waiting to be sent
                 # in the publishing queue. If the message is not routed, start
                 # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
 
-                self._alert_classifier_process()
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -132,6 +129,17 @@ class Alerter(ABC):
                 self.logger.exception(e)
                 raise e
 
-    @abstractmethod
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        pass
+        log_and_print("{} is terminating. Connections with RabbitMQ will be "
+                      "closed, and afterwards the process will exit."
+                      .format(self), self.logger)
+        self.disconnect_from_rabbit()
+        log_and_print("{} terminated.".format(self), self.logger)
+        sys.exit()

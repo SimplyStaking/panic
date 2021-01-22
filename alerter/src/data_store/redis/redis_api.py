@@ -173,9 +173,9 @@ class RedisApi:
         try:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
-            self._logger.error(
-                "Could not convert value %s of key %s to an integer. "
-                "Defaulting to value %s.", get_ret, key, default)
+            self._logger.error("Could not convert value %s of key %s to an "
+                               "integer. Defaulting to value %s.", get_ret, key,
+                               default)
             return default
 
     def hget_int_unsafe(self, name: str, key: str,
@@ -186,9 +186,9 @@ class RedisApi:
         try:
             return int(get_ret) if get_ret is not None else default
         except ValueError:
-            self._logger.error(
-                "Could not convert value %s of key %s to an integer. "
-                "Defaulting to value %s.", get_ret, key, default)
+            self._logger.error("Could not convert value %s of key %s to an "
+                               "integer. Defaulting to value %s.", get_ret, key,
+                               default)
             return default
 
     def get_bool_unsafe(self, key: str, default: Optional[bool] = None) \
@@ -232,6 +232,13 @@ class RedisApi:
     def remove_unsafe(self, *keys):
         keys = [self._add_namespace(k) for k in keys]
         return self._redis.delete(*keys)
+
+    def hremove_unsafe(self, name: str, *keys):
+        name = self._add_namespace(name)
+        return self._redis.hdel(name, *keys)
+
+    def hremove(self, name: str, *keys):
+        return self._safe(self.hremove_unsafe, [name, *keys], None)
 
     def delete_all_unsafe(self):
         return self._redis.flushdb()
@@ -285,7 +292,7 @@ class RedisApi:
     def get_keys(self, pattern: str = "*") -> List[str]:
         return self._safe(self.get_keys_unsafe, [pattern], [])
 
-    def remove(self, *keys: List[str]):
+    def remove(self, *keys):
         return self._safe(self.remove_unsafe, [keys], None)
 
     def delete_all(self):

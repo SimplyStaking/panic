@@ -1,8 +1,6 @@
 import logging
-import os
-import signal
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from queue import Queue
 from types import FrameType
 from typing import Dict, Union
@@ -10,15 +8,18 @@ from typing import Dict, Union
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.component import Component
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
+from src.utils import env
+from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class DataTransformer(ABC):
+class DataTransformer(Component):
     def __init__(self, transformer_name: str, logger: logging.Logger,
                  redis: RedisApi) -> None:
         self._transformer_name = transformer_name
@@ -31,17 +32,13 @@ class DataTransformer(ABC):
 
         # Set a max queue size so that if the data transformer is not able to
         # send data, old data can be pruned
-        max_queue_size = int(os.environ[
-                                 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE'])
+        max_queue_size = env.DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE
         self._publishing_queue = Queue(max_queue_size)
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
-
-        # Handle termination signals by stopping the monitor gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
+        super().__init__()
 
     def __str__(self) -> str:
         return self.transformer_name
@@ -114,9 +111,31 @@ class DataTransformer(ABC):
     def _place_latest_data_on_queue(self) -> None:
         pass
 
-    @abstractmethod
     def _send_data(self) -> None:
-        pass
+        empty = True
+        if not self.publishing_queue.empty():
+            empty = False
+            self.logger.info("Attempting to send all data waiting in the "
+                             "publishing queue ...")
+
+        # Try sending the data in the publishing queue one by one. Important,
+        # remove an item from the queue only if the sending was successful, so
+        # that if an exception is raised, that message is not popped
+        while not self.publishing_queue.empty():
+            data = self.publishing_queue.queue[0]
+            self.rabbitmq.basic_publish_confirm(
+                exchange=data['exchange'], routing_key=data['routing_key'],
+                body=data['data'], is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.logger.debug("Sent %s to '%s' exchange", data['data'],
+                              data['exchange'])
+            self.publishing_queue.get()
+            self.publishing_queue.task_done()
+
+        if not empty:
+            self.logger.info("Successfully sent all data from the publishing "
+                             "queue")
 
     @abstractmethod
     def _process_raw_data(self, ch: BlockingChannel,
@@ -125,6 +144,14 @@ class DataTransformer(ABC):
             -> None:
         pass
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.logger.info("Sent heartbeat to '%s' exchange",
+                         HEALTH_CHECK_EXCHANGE)
+
     def start(self) -> None:
         self._initialize_rabbitmq()
         while True:
@@ -132,10 +159,11 @@ class DataTransformer(ABC):
                 # Before listening for new data send the data waiting to be sent
                 # in the publishing queue. If the message is not routed, start
                 # consuming and perform sending later.
-                try:
-                    self._send_data()
-                except MessageWasNotDeliveredException as e:
-                    self.logger.exception(e)
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
 
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
@@ -148,10 +176,17 @@ class DataTransformer(ABC):
                 self.logger.exception(e)
                 raise e
 
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
     def on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
