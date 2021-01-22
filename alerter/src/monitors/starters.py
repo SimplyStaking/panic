@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TypeVar, Type, Union
 
 import pika.exceptions
 
@@ -17,6 +18,9 @@ from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
+
+# Restricts the generic to Monitor or subclasses
+T = TypeVar('T', bound=Monitor)
 
 
 def _initialize_monitor_logger(monitor_display_name: str,
@@ -41,76 +45,51 @@ def _initialize_monitor_logger(monitor_display_name: str,
     return monitor_logger
 
 
-def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
-    # Monitor display name based on system
-    monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
-        system_config.system_name)
+def _initialize_monitor(monitor_type: Type[T], monitor_display_name: str,
+                        monitoring_period: int,
+                        config: Union[SystemConfig, RepoConfig]) -> T:
+    monitor_logger = _initialize_monitor_logger(monitor_display_name,
+                                                monitor_type.__name__)
 
-    system_monitor_logger = _initialize_monitor_logger(monitor_display_name,
-                                                       SystemMonitor.__name__)
-
-    # Try initializing a monitor until successful
+    # Try initializing the monitor until successful
     while True:
         try:
             rabbit_ip = env.RABBIT_IP
             rabbitmq = RabbitMQApi(
-                logger=system_monitor_logger.getChild(RabbitMQApi.__name__),
+                logger=monitor_logger.getChild(RabbitMQApi.__name__),
                 host=rabbit_ip)
-            system_monitor = SystemMonitor(
-                monitor_display_name, system_config, system_monitor_logger,
-                int(env.SYSTEM_MONITOR_PERIOD_SECONDS), rabbitmq
-            )
+            monitor = monitor_type(monitor_display_name, config, monitor_logger,
+                                   monitoring_period, rabbitmq)
             log_and_print("Successfully initialized {}".format(
-                monitor_display_name), system_monitor_logger)
+                monitor_display_name), monitor_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(monitor_display_name, e)
-            log_and_print(msg, system_monitor_logger)
+            log_and_print(msg, monitor_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
-    return system_monitor
-
-
-def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
-    # Monitor display name based on repo name. The '/' are replaced with spaces,
-    # and the last space is removed.
-    monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
-        repo_config.repo_name.replace('/', ' ')[:-1])
-
-    github_monitor_logger = _initialize_monitor_logger(monitor_display_name,
-                                                       GitHubMonitor.__name__)
-
-    # Try initializing a monitor until successful
-    while True:
-        try:
-            rabbit_ip = env.RABBIT_IP
-            rabbitmq = RabbitMQApi(
-                logger=github_monitor_logger.getChild(RabbitMQApi.__name__),
-                host=rabbit_ip)
-            github_monitor = GitHubMonitor(
-                monitor_display_name, repo_config, github_monitor_logger,
-                int(env.GITHUB_MONITOR_PERIOD_SECONDS), rabbitmq,
-            )
-            log_and_print("Successfully initialized {}".format(
-                monitor_display_name), github_monitor_logger)
-            break
-        except Exception as e:
-            msg = get_initialisation_error_message(monitor_display_name, e)
-            log_and_print(msg, github_monitor_logger)
-            # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
-
-    return github_monitor
+    return monitor
 
 
 def start_system_monitor(system_config: SystemConfig) -> None:
-    system_monitor = _initialize_system_monitor(system_config)
+    # Monitor display name based on system
+    monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
+        system_config.system_name)
+    monitoring_period = int(env.SYSTEM_MONITOR_PERIOD_SECONDS)
+    system_monitor = _initialize_monitor(SystemMonitor, monitor_display_name,
+                                         monitoring_period, system_config)
     start_monitor(system_monitor)
 
 
 def start_github_monitor(repo_config: RepoConfig) -> None:
-    github_monitor = _initialize_github_monitor(repo_config)
+    # Monitor display name based on repo name. The '/' are replaced with spaces,
+    # and the last space is removed.
+    monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
+        repo_config.repo_name.replace('/', ' ')[:-1])
+    monitoring_period = int(env.GITHUB_MONITOR_PERIOD_SECONDS)
+    github_monitor = _initialize_monitor(GitHubMonitor, monitor_display_name,
+                                         monitoring_period, repo_config)
     start_monitor(github_monitor)
 
 
