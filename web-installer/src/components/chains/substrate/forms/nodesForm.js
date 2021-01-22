@@ -435,9 +435,7 @@ const NodesForm = ({
                   </Button>
                 </Grid>
               </Grid>
-              <Grid item xs={12} />
-              <br />
-              <br />
+              <Grid item xs={12} style={{marginBottom: '150px'}}/>
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>

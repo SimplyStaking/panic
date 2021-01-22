@@ -3,15 +3,17 @@ import * as Yup from 'yup';
 const RepositorySchema = (props) => Yup.object().shape({
   repo_name: Yup.string()
     .test('unique-repository-name', 'Name already exists.', (value) => {
-      const { systemConfig, nodesConfig, nodesConfig2, reposConfig } = props;
+      const {
+        systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
+      } = props;
 
-      for (let i = 0; i < nodesConfig.allIds.length; i += 1) {
-        if (nodesConfig.byId[nodesConfig.allIds[i]].name === value) {
+      for (let i = 0; i < substrateNodesConfig.allIds.length; i += 1) {
+        if (substrateNodesConfig.byId[substrateNodesConfig.allIds[i]].name === value) {
           return false;
         }
       }
-      for (let i = 0; i < nodesConfig2.allIds.length; i += 1) {
-        if (nodesConfig2.byId[nodesConfig2.allIds[i]].name === value) {
+      for (let i = 0; i < cosmosNodesConfig.allIds.length; i += 1) {
+        if (cosmosNodesConfig.byId[cosmosNodesConfig.allIds[i]].name === value) {
           return false;
         }
       }

@@ -26,7 +26,7 @@ const RepositoriesTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="simple table" style={{marginBottom: '150px'}}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -62,10 +62,7 @@ const RepositoriesTable = ({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
-      <br />
-      <br />
-      <br />
+      </Table>    
     </TableContainer>
   );
 };

@@ -21,7 +21,7 @@ import CancelIcon from '@material-ui/icons/Cancel';
  */
 const NodesTable = ({
   chainConfig,
-  nodesConfig,
+  cosmosNodesConfig,
   currentChain,
   removeNodeDetails,
 }) => {
@@ -31,7 +31,7 @@ const NodesTable = ({
 
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="cosmos nodes table">
+      <Table className="table" aria-label="cosmos nodes table" style={{marginBottom: '150px'}}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -50,43 +50,43 @@ const NodesTable = ({
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].name}
+                {cosmosNodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].tendermint_rpc_url}
+                {cosmosNodesConfig.byId[id].tendermint_rpc_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].cosmos_rpc_url}
+                {cosmosNodesConfig.byId[id].cosmos_rpc_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].prometheus_url}
+                {cosmosNodesConfig.byId[id].prometheus_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].exporter_url}
+                {cosmosNodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_validator ? (
+                {cosmosNodesConfig.byId[id].is_validator ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitor_node ? (
+                {cosmosNodesConfig.byId[id].monitor_node ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_archive_node ? (
+                {cosmosNodesConfig.byId[id].is_archive_node ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].use_as_data_source ? (
+                {cosmosNodesConfig.byId[id].use_as_data_source ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
@@ -95,7 +95,7 @@ const NodesTable = ({
               <TableCell align="center">
                 <Button
                   onClick={() => {
-                    removeNodeDetails(nodesConfig.byId[id]);
+                    removeNodeDetails(cosmosNodesConfig.byId[id]);
                   }}
                 >
                   <CancelIcon />
@@ -105,9 +105,6 @@ const NodesTable = ({
           ))}
         </TableBody>
       </Table>
-      <br />
-      <br />
-      <br />
     </TableContainer>
   );
 };
@@ -119,7 +116,7 @@ NodesTable.propTypes = forbidExtraProps({
       nodes: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
-  nodesConfig: PropTypes.shape({
+  cosmosNodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,

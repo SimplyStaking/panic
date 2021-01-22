@@ -24,7 +24,7 @@ const SystemTable = ({ config, systemConfig, removeSystemDetails }) => {
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="systems table" style={{marginBottom: '150px'}}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -63,9 +63,6 @@ const SystemTable = ({ config, systemConfig, removeSystemDetails }) => {
           ))}
         </TableBody>
       </Table>
-      <br />
-      <br />
-      <br />
     </TableContainer>
   );
 };

@@ -62,8 +62,8 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   chainConfig: state.SubstrateChainsReducer,
-  nodesConfig: state.SubstrateNodesReducer,
-  nodesConfig2: state.CosmosNodesReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
   reposConfig: state.RepositoryReducer,
   systemConfig: state.SystemsReducer,
   data: SubstrateData,

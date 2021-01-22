@@ -21,7 +21,7 @@ import CancelIcon from '@material-ui/icons/Cancel';
  */
 const NodesTable = ({
   chainConfig,
-  nodesConfig,
+  substrateNodesConfig,
   currentChain,
   removeNodeDetails,
 }) => {
@@ -50,46 +50,46 @@ const NodesTable = ({
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].name}
+                {substrateNodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].node_ws_url}
+                {substrateNodesConfig.byId[id].node_ws_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].telemetry_url}
+                {substrateNodesConfig.byId[id].telemetry_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].prometheus_url}
+                {substrateNodesConfig.byId[id].prometheus_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].exporter_url}
+                {substrateNodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].stash_address}
+                {substrateNodesConfig.byId[id].stash_address}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_validator ? (
+                {substrateNodesConfig.byId[id].is_validator ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitor_node ? (
+                {substrateNodesConfig.byId[id].monitor_node ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].is_archive_node ? (
+                {substrateNodesConfig.byId[id].is_archive_node ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
                 )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].use_as_data_source ? (
+                {substrateNodesConfig.byId[id].use_as_data_source ? (
                   <CheckIcon />
                 ) : (
                   <ClearIcon />
@@ -98,7 +98,7 @@ const NodesTable = ({
               <TableCell align="center">
                 <Button
                   onClick={() => {
-                    removeNodeDetails(nodesConfig.byId[id]);
+                    removeNodeDetails(substrateNodesConfig.byId[id]);
                   }}
                 >
                   <CancelIcon />
@@ -119,7 +119,7 @@ NodesTable.propTypes = forbidExtraProps({
       nodes: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
-  nodesConfig: PropTypes.shape({
+  substrateNodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
