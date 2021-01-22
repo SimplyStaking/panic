@@ -17,7 +17,6 @@ from urllib3.exceptions import ProtocolError
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
-from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, SystemIsDownException, \
     DataReadingException, InvalidUrlException, MetricNotFoundException, \
@@ -29,7 +28,8 @@ class TestSystemMonitor(unittest.TestCase):
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = 'localhost'
+        # self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -755,6 +755,9 @@ class TestSystemMonitor(unittest.TestCase):
             )
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+            self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
                 routing_key='system')
 
@@ -834,6 +837,9 @@ class TestSystemMonitor(unittest.TestCase):
             )
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+            self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
                 routing_key='system')
 
@@ -864,34 +870,49 @@ class TestSystemMonitor(unittest.TestCase):
 
     @mock.patch.object(SystemMonitor, "_send_data")
     @mock.patch.object(SystemMonitor, "_get_data")
-    def test_monitor_does_not_send_hb_if_send_data_fails(
+    def test_monitor_does_not_send_hb_and_data_if_send_data_fails(
             self, mock_get_data, mock_send_data) -> None:
         mock_get_data.return_value = self.retrieved_metrics_example
-        mock_send_data.side_effect = Exception('test')
+        exception_types_dict = \
+        {
+            Exception('test'): Exception,
+            pika.exceptions.AMQPConnectionError('test'):
+                pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError('test'):
+                pika.exceptions.AMQPChannelError,
+            MessageWasNotDeliveredException('test'):
+                MessageWasNotDeliveredException
+        }
         try:
             self.test_monitor._initialise_rabbitmq()
+            for exception, exception_type in exception_types_dict.items():
+                mock_send_data.side_effect = exception
+                self.test_monitor.rabbitmq.queue_delete(
+                    self.test_queue_name)
 
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+                res = self.test_monitor.rabbitmq.queue_declare(
+                    queue=self.test_queue_name, durable=True, exclusive=False,
+                    auto_delete=False, passive=False
+                )
+                self.assertEqual(0, res.method.message_count)
+                self.test_monitor.rabbitmq.queue_bind(
+                    queue=self.test_queue_name,
+                    exchange=HEALTH_CHECK_EXCHANGE,
+                    routing_key='heartbeat.worker')
+                self.test_monitor.rabbitmq.queue_bind(
+                    queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+                    routing_key='system')
 
-            res = self.test_monitor.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_monitor.rabbitmq.queue_bind(
-                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                self.assertRaises(exception_type, self.test_monitor._monitor)
 
-            self.assertRaises(Exception, self.test_monitor._monitor)
-
-            # By re-declaring the queue again we can get the number of
-            # messages in the queue.
-            res = self.test_monitor.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            # There must be no messages in the queue.
-            self.assertEqual(0, res.method.message_count)
+                # By re-declaring the queue again we can get the number of
+                # messages in the queue.
+                res = self.test_monitor.rabbitmq.queue_declare(
+                    queue=self.test_queue_name, durable=True,
+                    exclusive=False, auto_delete=False, passive=True
+                )
+                # There must be no messages in the queue.
+                self.assertEqual(0, res.method.message_count)
 
             # Clean before test finishes
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
@@ -900,3 +921,9 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+# TODO: Remove tearDown() commented code
+# TODO: Remove SIGHUP comment
+# TODO: Fix rabbit host
+# TODO: Now since tests finished we need to run in docker environment.
+#     : Do not forget to do the three TODOs above before.

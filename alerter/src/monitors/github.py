@@ -18,7 +18,7 @@ from src.utils.constants import RAW_DATA_EXCHANGE
 from src.utils.data import get_json
 from src.utils.exceptions import (DataReadingException, PANICException,
                                   CannotAccessGitHubPageException,
-                                  GitHubAPICallException)
+                                  GitHubAPICallException, JSONDecodeException)
 
 
 class GitHubMonitor(Monitor):
@@ -113,22 +113,22 @@ class GitHubMonitor(Monitor):
                                   data_retrieval_exception.message,
                                   data_retrieval_exception.code)
         except (ReqConnectionError, ReadTimeout):
-            self._data_retrieval_failed = True
+            data_retrieval_failed = True
             data_retrieval_exception = CannotAccessGitHubPageException(
                 self.repo_config.releases_page)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            self._data_retrieval_failed = True
+            data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.repo_config.releases_page)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except json.JSONDecodeError as e:
-            self._data_retrieval_failed = True
-            data_retrieval_exception = e
+            data_retrieval_failed = True
+            data_retrieval_exception = JSONDecodeException(e)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
