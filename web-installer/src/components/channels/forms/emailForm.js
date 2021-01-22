@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -10,7 +10,7 @@ import {
   Grid,
   Tooltip,
 } from '@material-ui/core';
-import Button from 'components/material_ui/CustomButtons/Button.js';
+import Button from 'components/material_ui/CustomButtons/Button';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -20,11 +20,7 @@ import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/channels';
 
 const EmailForm = ({
-  errors,
-  values,
-  handleSubmit,
-  handleChange,
-  setFieldValue,
+  errors, values, handleSubmit, handleChange, setFieldValue,
 }) => {
   const updateToEmails = (event, emailsTo) => {
     setFieldValue('emails_to', emailsTo);
@@ -134,10 +130,7 @@ const EmailForm = ({
                       error={errors.emails_to}
                       type="text"
                       name="emails_to"
-                      placeholder={
-                        'Add a destination email '
-                        + '[Press Enter after each Email].'
-                      }
+                      placeholder={'Add a destination email [Press Enter after each Email].'}
                       variant="standard"
                       helperText={errors.emails_to ? errors.emails_to : ''}
                       autoComplete="off"
@@ -265,12 +258,7 @@ const EmailForm = ({
               </Grid>
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid
-                  container
-                  direction="row"
-                  justify="flex-end"
-                  alignItems="center"
-                >
+                <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestEmailButton
                       disabled={Object.keys(errors).length !== 0}

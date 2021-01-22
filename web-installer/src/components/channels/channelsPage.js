@@ -1,6 +1,5 @@
 import React from 'react';
 import { Grid } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import FormAccordion from 'components/global/formAccordion';
 import TelegramIcon from 'assets/icons/telegram.svg';
 import TwilioIcon from 'assets/icons/twilio.svg';
@@ -29,10 +28,8 @@ import {
 } from 'containers/channels/opsGenieContainer';
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
 import {
-  WELCOME_PAGE,
   CHAINS_PAGE,
   NEXT,
-  BACK,
   TELEGRAM,
   TWILIO,
   EMAIL,
@@ -40,16 +37,15 @@ import {
   OPSGENIE,
 } from 'constants/constants';
 import Data from 'data/channels';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-import Card from 'components/material_ui/Card/Card.js';
-import CardBody from 'components/material_ui/Card/CardBody.js';
-import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
-import Parallax from 'components/material_ui/Parallax/Parallax.js';
-import DescriptionSection from 'components/channels/descriptionSection.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import Card from 'components/material_ui/Card/Card';
+import CardBody from 'components/material_ui/Card/CardBody';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
+import Parallax from 'components/material_ui/Parallax/Parallax';
+import DescriptionSection from 'components/channels/descriptionSection';
 import Background from 'assets/img/backgrounds/background.png';
 
-const useStyles = makeStyles(styles);
 
 function ChannelsPage() {
   const classes = useStyles();

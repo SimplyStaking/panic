@@ -1,3 +1,5 @@
+import { makeStyles } from '@material-ui/core/styles';
+
 const imagesStyles = {
   imgFluid: {
     maxWidth: "100%",
@@ -41,4 +43,4 @@ const imagesStyles = {
   }
 };
 
-export default imagesStyles;
+export default makeStyles(imagesStyles);

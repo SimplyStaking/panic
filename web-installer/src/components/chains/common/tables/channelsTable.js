@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Grid,
   FormControlLabel,
@@ -17,13 +17,10 @@ import {
 import Paper from '@material-ui/core/Paper';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
-import { makeStyles } from '@material-ui/core/styles';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 import Divider from '@material-ui/core/Divider';
-
-const useStyles = makeStyles(styles);
 
 const ChannelsTable = ({
   data,

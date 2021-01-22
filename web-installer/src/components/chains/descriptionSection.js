@@ -1,16 +1,13 @@
 import React from 'react';
-// @material-ui/core components
-import { makeStyles } from '@material-ui/core/styles';
 import HelpIcon from '@material-ui/icons/Help';
 import SettingsIcon from '@material-ui/icons/Settings';
 import ComputerIcon from '@material-ui/icons/Computer';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-import InfoArea from 'components/material_ui/InfoArea/InfoArea.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import InfoArea from 'components/material_ui/InfoArea/InfoArea';
 import Data from 'data/chains';
-import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 
-const useStyles = makeStyles(styles);
 
 export default function DescriptionSection() {
   const classes = useStyles();

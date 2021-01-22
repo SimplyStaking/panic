@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import { Accordion, Grid } from '@material-ui/core';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
@@ -17,7 +17,7 @@ function FormAccordion({
         aria-controls="panel1a-content"
         id="panel1a-header"
       >
-        <img src={icon} className="icon" alt="TelegramIcon" />
+        <img src={icon} className="icon" alt="Icon" />
         <Typography
           style={{ textAlign: 'center' }}
           variant="h5"

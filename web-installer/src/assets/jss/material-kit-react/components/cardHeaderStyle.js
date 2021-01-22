@@ -5,6 +5,9 @@ import {
   infoCardHeader,
   primaryCardHeader
 } from "assets/jss/material-kit-react.js";
+
+import { makeStyles } from '@material-ui/core/styles';
+
 const cardHeaderStyle = {
   cardHeader: {
     borderRadius: "3px",
@@ -26,4 +29,4 @@ const cardHeaderStyle = {
   primaryCardHeader
 };
 
-export default cardHeaderStyle;
+export default makeStyles(cardHeaderStyle);

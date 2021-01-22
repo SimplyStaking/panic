@@ -7,6 +7,7 @@ import {
   dangerBoxShadow,
   container
 } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const snackbarContentStyle = {
   root: {
@@ -84,4 +85,4 @@ const snackbarContentStyle = {
   }
 };
 
-export default snackbarContentStyle;
+export default makeStyles(snackbarContentStyle);

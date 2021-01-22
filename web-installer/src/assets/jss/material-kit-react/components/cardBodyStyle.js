@@ -1,3 +1,5 @@
+import { makeStyles } from '@material-ui/core/styles';
+
 const cardBodyStyle = {
   cardBody: {
     padding: "0.9375rem 1.875rem",
@@ -5,4 +7,4 @@ const cardBodyStyle = {
   }
 };
 
-export default cardBodyStyle;
+export default makeStyles(cardBodyStyle);

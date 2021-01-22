@@ -1,5 +1,4 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { Box, Grid } from '@material-ui/core';
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
 import {
@@ -8,15 +7,14 @@ import {
 
 import PeriodicFormContainer from 'containers/general/periodicContainer';
 import Data from 'data/general';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import Parallax from 'components/material_ui/Parallax/Parallax.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
-import Card from 'components/material_ui/Card/Card.js';
-import CardBody from 'components/material_ui/Card/CardBody.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import Parallax from 'components/material_ui/Parallax/Parallax';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
+import Card from 'components/material_ui/Card/Card';
+import CardBody from 'components/material_ui/Card/CardBody';
 import Background from 'assets/img/backgrounds/background.png';
 
-const useStyles = makeStyles(styles);
 
 function GeneralsPage() {
   const classes = useStyles();

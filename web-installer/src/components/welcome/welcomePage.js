@@ -1,12 +1,9 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 import LoginContainer from 'containers/welcome/loginContainer';
-import styles from 'assets/jss/material-kit-react/views/components.js';
+import useStyles from 'assets/jss/material-kit-react/views/components';
 import Data from 'data/welcome';
-
-const useStyles = makeStyles(styles);
 
 function WelcomePage() {
   const classes = useStyles();

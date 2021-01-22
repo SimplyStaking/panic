@@ -1,3 +1,5 @@
+import { makeStyles } from '@material-ui/core/styles';
+
 const parallaxStyle = {
   parallax: {
     height: "45vh",
@@ -32,4 +34,4 @@ const parallaxStyle = {
   }
 };
 
-export default parallaxStyle;
+export default makeStyles(parallaxStyle);

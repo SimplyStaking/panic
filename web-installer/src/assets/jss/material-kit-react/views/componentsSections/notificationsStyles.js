@@ -1,4 +1,5 @@
 import { container, title } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const notificationsStyles = {
   section: {
@@ -17,4 +18,4 @@ const notificationsStyles = {
   container
 };
 
-export default notificationsStyles;
+export default makeStyles(notificationsStyles);

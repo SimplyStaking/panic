@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -11,7 +11,7 @@ import {
   Grid,
   Tooltip,
 } from '@material-ui/core';
-import Button from 'components/material_ui/CustomButtons/Button.js';
+import Button from 'components/material_ui/CustomButtons/Button';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';

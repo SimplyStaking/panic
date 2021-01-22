@@ -1,4 +1,5 @@
 import { container } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const loginStyle = {
   section: {
@@ -59,4 +60,4 @@ const loginStyle = {
   }
 };
 
-export default loginStyle;
+export default makeStyles(loginStyle);

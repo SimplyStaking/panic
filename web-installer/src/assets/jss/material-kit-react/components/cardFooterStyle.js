@@ -1,3 +1,5 @@
+import { makeStyles } from '@material-ui/core/styles';
+
 const cardFooterStyle = {
   cardFooter: {
     display: "flex",
@@ -7,4 +9,4 @@ const cardFooterStyle = {
   }
 };
 
-export default cardFooterStyle;
+export default makeStyles(cardFooterStyle);

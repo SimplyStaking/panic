@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Typography,
@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
-import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import {
   NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
 } from 'constants/constants';
@@ -21,18 +21,16 @@ import NavigationButton from 'components/global/navigationButton';
 import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/system';
-import Button from 'components/material_ui/CustomButtons/Button.js';
-import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
+import Button from 'components/material_ui/CustomButtons/Button';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 
 /*
  * Systems form contains all the information and structure needed to setup
  * a system configuration. Contains functionality to test if the provided system
  * is correct.
  */
-
-const useStyles = makeStyles(styles);
 
 const SystemForm = ({
   errors, values, handleSubmit, handleChange, setFieldValue, pageChanger,

@@ -7,6 +7,7 @@ import {
   roseColor,
   grayColor,
 } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const infoStyle = {
   infoArea: {
@@ -68,4 +69,4 @@ const infoStyle = {
   }
 };
 
-export default infoStyle;
+export default makeStyles(infoStyle);

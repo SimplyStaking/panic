@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -166,7 +166,7 @@ const CosmosChainsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="cosmos chains table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

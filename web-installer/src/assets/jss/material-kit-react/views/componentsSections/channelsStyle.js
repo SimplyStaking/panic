@@ -1,5 +1,6 @@
 import { container } from "assets/jss/material-kit-react.js";
 import Background from "assets/img/backgrounds/background.png"
+import { makeStyles } from '@material-ui/core/styles';
 
 const channelStyle = {
   backgroundImage:{
@@ -86,4 +87,4 @@ const channelStyle = {
   }
 };
 
-export default channelStyle;
+export default makeStyles(channelStyle);

@@ -1,5 +1,6 @@
 import { container } from "assets/jss/material-kit-react.js";
 import Background from "assets/img/backgrounds/background.png"
+import { makeStyles } from '@material-ui/core/styles';
 
 const componentsStyle = {
   container,
@@ -40,4 +41,4 @@ const componentsStyle = {
   }
 };
 
-export default componentsStyle;
+export default makeStyles(componentsStyle);

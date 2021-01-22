@@ -1,4 +1,5 @@
 import { title } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const productStyle = {
   section: {
@@ -28,4 +29,4 @@ const productStyle = {
   },
 };
 
-export default productStyle;
+export default makeStyles(productStyle);

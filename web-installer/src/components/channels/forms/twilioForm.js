@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Box, Typography, Grid, Tooltip,
 } from '@material-ui/core';
-import Button from 'components/material_ui/CustomButtons/Button.js';
+import Button from 'components/material_ui/CustomButtons/Button';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -156,8 +156,7 @@ const TwilioForm = ({
                       type="text"
                       name="twilio_phone_numbers_to_dial_valid"
                       placeholder={
-                        // eslint-disable-next-line no-useless-concat
-                        'Add Phone Numbers ' + '[Press Enter after each Number]'
+                        'Add Phone Numbers [Press Enter after each Number]'
                       }
                       variant="standard"
                       helperText={

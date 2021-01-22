@@ -1,4 +1,5 @@
 import { container, title } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const landingPageStyle = {
   container: {
@@ -33,4 +34,4 @@ const landingPageStyle = {
   }
 };
 
-export default landingPageStyle;
+export default makeStyles(landingPageStyle);

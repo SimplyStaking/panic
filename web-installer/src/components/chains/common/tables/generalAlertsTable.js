@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -25,13 +25,13 @@ import {
   CHAINS_STEP,
   CHAINS_PAGE,
 } from 'constants/constants';
-import { MuiThemeProvider, makeStyles } from '@material-ui/core/styles';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import { defaultTheme } from 'components/theme/default';
-import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 
 import InputAdornment from '@material-ui/core/InputAdornment';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 import Divider from '@material-ui/core/Divider';
 import Data from 'data/alert';
 
@@ -39,7 +39,6 @@ import Data from 'data/alert';
  * AlertsTable will show display the alert types needed for general
  * configuration together with the function to directly edit them.
  */
-const useStyles = makeStyles(styles);
 
 const AlertsTable = ({
   config,
@@ -88,7 +87,7 @@ const AlertsTable = ({
         </div>
         <Box py={4}>
           <TableContainer component={Paper}>
-            <Table aria-label="simple table">
+            <Table aria-label="general alerts table">
               <TableHead>
                 <TableRow>
                   <TableCell align="center">Alert</TableCell>
@@ -439,7 +438,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
       thresholdAlerts: PropTypes.shape({
         byId: PropTypes.shape({
@@ -454,7 +453,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
     }).isRequired,
   }).isRequired,

@@ -1,3 +1,5 @@
+import { makeStyles } from '@material-ui/core/styles';
+
 const cardStyle = {
   card: {
     border: "0",
@@ -26,4 +28,4 @@ const cardStyle = {
   }
 };
 
-export default cardStyle;
+export default makeStyles(cardStyle);

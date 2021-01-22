@@ -1,4 +1,5 @@
 import { container, primaryColor } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const footerStyle = {
   block: {
@@ -56,4 +57,4 @@ const footerStyle = {
     top: "3px"
   }
 };
-export default footerStyle;
+export default makeStyles(footerStyle);

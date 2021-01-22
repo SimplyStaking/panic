@@ -1,24 +1,22 @@
 import React from 'react';
-import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-import Card from 'components/material_ui/Card/Card.js';
-import CardHeader from 'components/material_ui/Card/CardHeader.js';
-import CardBody from 'components/material_ui/Card/CardBody.js';
-import CardFooter from 'components/material_ui/Card/CardFooter.js';
-import CustomInput from 'components/material_ui/CustomInput/CustomInput.js';
-import styles from 'assets/jss/material-kit-react/views/componentsSections/loginStyle.js';
+import { forbidExtraProps } from 'airbnb-prop-types';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import Card from 'components/material_ui/Card/Card';
+import CardHeader from 'components/material_ui/Card/CardHeader';
+import CardBody from 'components/material_ui/Card/CardBody';
+import CardFooter from 'components/material_ui/Card/CardFooter';
+import CustomInput from 'components/material_ui/CustomInput/CustomInput';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/loginStyle';
 
 import { Tooltip } from '@material-ui/core';
 import { theme } from 'components/theme/default';
 import InfoIcon from '@material-ui/icons/Info';
 import StartDialog from 'components/welcome/startDialog';
 import Data from 'data/welcome';
-
-const useStyles = makeStyles(styles);
 
 const LoginForm = ({
   errors,

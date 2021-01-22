@@ -8,7 +8,7 @@ import { CHANNELS_PAGE } from 'constants/constants';
 import { LoginButton, StartNewButton } from 'utils/buttons';
 import LoadConfig from 'containers/global/loadConfig';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import Data from 'data/welcome';
 
 const StartDialog = ({

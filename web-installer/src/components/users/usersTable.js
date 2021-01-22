@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ const UsersTable = ({ users, removeUserDetails }) => {
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="users table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Username</TableCell>

@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import{ forbidExtraProps }from "airbnb-prop-types";
+import { forbidExtraProps } from "airbnb-prop-types";
 import {
   Table,
   TableBody,
@@ -30,11 +30,10 @@ import {
 } from "constants/constants";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import { defaultTheme } from "components/theme/default";
-import styles from "assets/jss/material-kit-react/views/landingPageSections/productStyle.js";
-import { makeStyles } from "@material-ui/core/styles";
+import useStyles from "assets/jss/material-kit-react/views/landingPageSections/productStyle";
 import InputAdornment from "@material-ui/core/InputAdornment";
-import GridContainer from "components/material_ui/Grid/GridContainer.js";
-import GridItem from "components/material_ui/Grid/GridItem.js";
+import GridContainer from "components/material_ui/Grid/GridContainer";
+import GridItem from "components/material_ui/Grid/GridItem";
 import Divider from "@material-ui/core/Divider";
 import Data from "data/alert";
 
@@ -42,7 +41,6 @@ import Data from "data/alert";
  * AlertsTable will show display all the 4 alert types together with the
  * functions to directly edit them.
  */
-const useStyles = makeStyles(styles);
 
 const AlertsTable = ({
   config,
@@ -1110,7 +1108,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
       timeWindowAlerts: PropTypes.shape({
         byId: PropTypes.shape({
@@ -1132,7 +1130,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
       thresholdAlerts: PropTypes.shape({
         byId: PropTypes.shape({
@@ -1153,7 +1151,7 @@ AlertsTable.propTypes = forbidExtraProps({
           }),
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
       severityAlerts: PropTypes.shape({
         byId: PropTypes.shape({
@@ -1164,10 +1162,10 @@ AlertsTable.propTypes = forbidExtraProps({
           severity: PropTypes.string,
           enabled: PropTypes.bool,
         }),
-        allIds: PropTypes.array,
+        allIds: PropTypes.arrayOf(PropTypes.string),
       }),
     }).isRequired,
-    allIds: PropTypes.array,
+    allIds: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   currentChain: PropTypes.string.isRequired,
   clearChainId: PropTypes.func.isRequired,

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Grid } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
 import CosmosChainsTableContainer from 'containers/chains/cosmos/cosmosChainsTableContainer';
 import SubstrateChainsTableContainer from 'containers/chains/substrate/substrateChainsTableContainer';
@@ -21,18 +20,16 @@ import {
   CONFIGURE,
 } from 'constants/constants';
 import Data from 'data/chains';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import Parallax from 'components/material_ui/Parallax/Parallax.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-import styles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle.js';
-import Card from 'components/material_ui/Card/Card.js';
-import CardBody from 'components/material_ui/Card/CardBody.js';
-import DescriptionSection from 'components/chains/descriptionSection.js';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import Parallax from 'components/material_ui/Parallax/Parallax';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
+import Card from 'components/material_ui/Card/Card';
+import CardBody from 'components/material_ui/Card/CardBody';
+import DescriptionSection from 'components/chains/descriptionSection';
 import SystemIcon from 'assets/icons/system.svg';
 import Background from 'assets/img/backgrounds/background.png';
 import ChainAccordion from './chainAccordion';
-
-const useStyles = makeStyles(styles);
 
 /*
  * This page holds all the chain accordions, configured to load a chain setup

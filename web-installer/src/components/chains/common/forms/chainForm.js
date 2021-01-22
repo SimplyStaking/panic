@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
-import { makeStyles, MuiThemeProvider } from '@material-ui/core/styles';
+import { forbidExtraProps } from 'airbnb-prop-types';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import {
   TextField, Typography, Box, Grid, Tooltip, Divider,
 } from '@material-ui/core';
@@ -9,11 +9,9 @@ import InfoIcon from '@material-ui/icons/Info';
 import { NEXT, BACK } from 'constants/constants';
 import NavigationButton from 'components/global/navigationButton';
 import { defaultTheme, theme } from 'components/theme/default';
-import styles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle.js';
-import GridContainer from 'components/material_ui/Grid/GridContainer.js';
-import GridItem from 'components/material_ui/Grid/GridItem.js';
-
-const useStyles = makeStyles(styles);
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 
 /*
  * This form allows for the input of a chain name.

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import{ forbidExtraProps }from 'airbnb-prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ const OpsGenieTable = ({ opsGenies, removeOpsGenieDetails }) => {
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="simple table">
+      <Table className="greyBackground" aria-label="opsgenies table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

@@ -4,6 +4,7 @@ import {
   successColor,
   defaultFont
 } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const customInputStyle = {
   helperText: {
@@ -91,4 +92,4 @@ const customInputStyle = {
   }
 };
 
-export default customInputStyle;
+export default makeStyles(customInputStyle);

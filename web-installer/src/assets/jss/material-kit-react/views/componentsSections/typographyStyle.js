@@ -1,6 +1,7 @@
 import { container, title } from "assets/jss/material-kit-react.js";
 
 import imagesStyles from "assets/jss/material-kit-react/imagesStyles.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const typographyStyle = {
   section: {
@@ -42,4 +43,4 @@ const typographyStyle = {
   ...imagesStyles
 };
 
-export default typographyStyle;
+export default makeStyles(typographyStyle);

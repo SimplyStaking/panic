@@ -6,6 +6,7 @@ import {
   warningColor,
   dangerColor
 } from "assets/jss/material-kit-react.js";
+import { makeStyles } from '@material-ui/core/styles';
 
 const typographyStyle = {
   defaultFontStyle: {
@@ -58,4 +59,4 @@ const typographyStyle = {
   }
 };
 
-export default typographyStyle;
+export default makeStyles(typographyStyle);
