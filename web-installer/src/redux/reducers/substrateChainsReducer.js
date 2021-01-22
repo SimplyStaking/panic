@@ -138,7 +138,7 @@ const substrateThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 0,
+        threshold: 0,
         enabled: true,
       },
       critical: {

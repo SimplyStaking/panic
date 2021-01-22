@@ -104,7 +104,7 @@ const generalThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: 'GLOBAL',
       warning: {
-        repeat: 0,
+        threshold: 0,
         enabled: true,
       },
       critical: {
