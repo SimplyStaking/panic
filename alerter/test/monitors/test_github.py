@@ -574,9 +574,6 @@ class TestGitHubMonitor(unittest.TestCase):
                     queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
                     routing_key='heartbeat.worker')
 
-                if error == json_decode_error:
-                    print('here')
-
                 self.test_monitor._monitor()
 
                 # By re-declaring the queue again we can get the number of

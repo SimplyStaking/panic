@@ -48,6 +48,10 @@ class PublisherComponent(Component, ABC):
     def _send_data(self, data: Dict) -> None:
         pass
 
+    @abstractmethod
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        pass
+
 
 class QueuingPublisherComponent(Component, ABC):
     """
@@ -149,3 +153,7 @@ class QueuingPublisherComponent(Component, ABC):
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
                               "queue")
+
+    @abstractmethod
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        pass

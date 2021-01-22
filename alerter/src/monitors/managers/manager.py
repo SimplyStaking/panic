@@ -7,21 +7,17 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.subscriber import SubscriberComponent
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
 
-class MonitorsManager(SubscriberComponent, ABC):
-    def __init__(self, logger: logging.Logger, name: str):
+class MonitorsManager(PublisherSubscriberComponent, ABC):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
         self._config_process_dict = {}
         self._name = name
-
-        rabbit_ip = env.RABBIT_IP
-        rabbitmq = RabbitMQApi(logger=logger.getChild(RabbitMQApi.__name__),
-                               host=rabbit_ip)
 
         super().__init__(logger, rabbitmq)
 
@@ -46,6 +42,9 @@ class MonitorsManager(SubscriberComponent, ABC):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.info("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
+
+    def _send_data(self, data: Dict) -> None:
+        pass
 
     @abstractmethod
     def _process_configs(

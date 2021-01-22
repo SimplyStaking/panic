@@ -9,6 +9,7 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.repo import RepoConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
@@ -29,8 +30,9 @@ _GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
 
 class GitHubMonitorsManager(MonitorsManager):
 
-    def __init__(self, logger: logging.Logger, manager_name: str) -> None:
-        super().__init__(logger, manager_name)
+    def __init__(self, logger: logging.Logger, manager_name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, manager_name, rabbitmq)
 
         self._repos_configs = {}
 

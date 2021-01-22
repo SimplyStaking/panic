@@ -1,13 +1,15 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Dict
 
 from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
 
 
-class SubscriberComponent(Component, ABC):
+class PublisherSubscriberComponent(Component, ABC):
     """
-    Represents a blue print for a subscriber
+    Represents a blue print for a component being both a Subscriber and
+    Publisher
     """
 
     def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi):
@@ -41,4 +43,12 @@ class SubscriberComponent(Component, ABC):
 
     @abstractmethod
     def _listen_for_data(self) -> None:
+        pass
+
+    @abstractmethod
+    def _send_data(self, data: Dict) -> None:
+        pass
+
+    @abstractmethod
+    def _send_heartbeat(self, data_to_send: dict) -> None:
         pass

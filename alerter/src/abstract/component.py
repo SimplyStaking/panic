@@ -19,9 +19,5 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    def _send_heartbeat(self, data_to_send: dict) -> None:
-        pass
-
-    @abstractmethod
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         pass

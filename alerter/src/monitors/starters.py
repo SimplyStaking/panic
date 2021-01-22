@@ -10,7 +10,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
-from src.utils import env
+# from src.utils import env
 from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_MONITOR_NAME_TEMPLATE,
@@ -31,8 +31,8 @@ def _initialize_monitor_logger(monitor_display_name: str,
     while True:
         try:
             monitor_logger = create_logger(
-                env.MONITORS_LOG_FILE_TEMPLATE.format(monitor_display_name),
-                monitor_module_name, env.LOGGING_LEVEL, rotating=True)
+                'logs/monitors/{}.log'.format(monitor_display_name),
+                monitor_module_name, 'INFO', rotating=True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(monitor_display_name, e)
@@ -54,7 +54,7 @@ def _initialize_monitor(monitor_type: Type[T], monitor_display_name: str,
     # Try initializing the monitor until successful
     while True:
         try:
-            rabbit_ip = env.RABBIT_IP
+            rabbit_ip = 'localhost'
             rabbitmq = RabbitMQApi(
                 logger=monitor_logger.getChild(RabbitMQApi.__name__),
                 host=rabbit_ip)
@@ -76,7 +76,7 @@ def start_system_monitor(system_config: SystemConfig) -> None:
     # Monitor display name based on system
     monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
         system_config.system_name)
-    monitoring_period = int(env.SYSTEM_MONITOR_PERIOD_SECONDS)
+    monitoring_period = int(60)
     system_monitor = _initialize_monitor(SystemMonitor, monitor_display_name,
                                          monitoring_period, system_config)
     start_monitor(system_monitor)
@@ -87,7 +87,7 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
     # and the last space is removed.
     monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
-    monitoring_period = int(env.GITHUB_MONITOR_PERIOD_SECONDS)
+    monitoring_period = int(3600)
     github_monitor = _initialize_monitor(GitHubMonitor, monitor_display_name,
                                          monitoring_period, repo_config)
     start_monitor(github_monitor)

@@ -126,8 +126,12 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
     # Attempt to initialize the system monitors manager
     while True:
         try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=system_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
             system_monitors_manager = SystemMonitorsManager(
-                system_monitors_manager_logger, manager_display_name)
+                system_monitors_manager_logger, manager_display_name, rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
@@ -151,8 +155,12 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
     # Attempt to initialize the github monitors manager
     while True:
         try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=github_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
             github_monitors_manager = GitHubMonitorsManager(
-                github_monitors_manager_logger, manager_display_name)
+                github_monitors_manager_logger, manager_display_name, rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
