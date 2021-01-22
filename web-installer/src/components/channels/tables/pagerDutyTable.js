@@ -2,20 +2,26 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
+const PagerDutyTable = ({ pagerDuties, removePagerDutyDetails }) => {
   if (pagerDuties.allIds.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="simple table">
+      <Table className="greyBackground" aria-label="pagerduties table">
         <TableHead>
           <TableRow>
             <TableCell align="center">PagerDuty Name</TableCell>
@@ -32,24 +38,48 @@ const PagerDutyTable = ({pagerDuties, removePagerDutyDetails}) => {
           {Object.keys(pagerDuties.byId).map((pagerDuty) => (
             <TableRow key={pagerDuties.byId[pagerDuty].id}>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].configName}
-              </TableCell>
-              <TableCell align="center">{pagerDuties.byId[pagerDuty].apiToken}</TableCell>
-              <TableCell align="center">{pagerDuties.byId[pagerDuty].integrationKey}</TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].info ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].channel_name}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].warning ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].api_token}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].critical ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].integration_key}
               </TableCell>
               <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].error ? <CheckIcon /> : <ClearIcon />}
+                {pagerDuties.byId[pagerDuty].info ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removePagerDutyDetails(pagerDuties.byId[pagerDuty]); }}>
+                {pagerDuties.byId[pagerDuty].warning ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
+              </TableCell>
+              <TableCell align="center">
+                {pagerDuties.byId[pagerDuty].critical ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
+              </TableCell>
+              <TableCell align="center">
+                {pagerDuties.byId[pagerDuty].error ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
+              </TableCell>
+              <TableCell align="center">
+                <Button
+                  onClick={() => {
+                    removePagerDutyDetails(pagerDuties.byId[pagerDuty]);
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -65,9 +95,9 @@ PagerDutyTable.propTypes = forbidExtraProps({
   pagerDuties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      configName: PropTypes.string,
-      apiToken: PropTypes.string,
-      integrationKey: PropTypes.string,
+      channel_name: PropTypes.string,
+      api_token: PropTypes.string,
+      integration_key: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

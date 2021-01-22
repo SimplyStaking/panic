@@ -2,7 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
   Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -10,7 +16,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const TelegramTable = ({telegrams, removeTelegramDetails}) => {
+const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
   if (telegrams.allIds.length === 0) {
     return <div />;
   }
@@ -36,42 +42,61 @@ const TelegramTable = ({telegrams, removeTelegramDetails}) => {
             {Object.keys(telegrams.byId).map((telegram) => (
               <TableRow key={telegrams.byId[telegram].id}>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].botName}
+                  {telegrams.byId[telegram].channel_name}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].botToken}
+                  {telegrams.byId[telegram].bot_token}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].chatID}
+                  {telegrams.byId[telegram].chat_id}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].info
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].info ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].warning
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].warning ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].critical
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].critical ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].error
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].error ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].alerts
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].alerts ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  {telegrams.byId[telegram].commands
-                    ? <CheckIcon /> : <ClearIcon />}
+                  {telegrams.byId[telegram].commands ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  <Button onClick={() => {
-                      removeTelegramDetails(telegrams.byId[telegram]); 
-                      }}
+                  <Button
+                    onClick={() => {
+                      removeTelegramDetails(telegrams.byId[telegram]);
+                    }}
                   >
                     <CancelIcon />
                   </Button>
@@ -89,9 +114,9 @@ TelegramTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      botName: PropTypes.string,
-      botToken: PropTypes.string,
-      chatID: PropTypes.string,
+      channel_name: PropTypes.string,
+      bot_token: PropTypes.string,
+      chat_id: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

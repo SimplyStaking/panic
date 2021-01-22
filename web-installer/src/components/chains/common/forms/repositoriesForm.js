@@ -2,28 +2,47 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
+  Divider,
 } from '@material-ui/core';
-import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import { PingRepoButton } from '../../../../utils/buttons';
-import { defaultTheme, theme } from '../../../theme/default';
+import { NEXT, BACK } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import { PingRepoButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Button from 'components/material_ui/CustomButtons/Button';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 
 /*
  * Repositories form contains all the information and structure needed to setup
  * a repo configuration. Contains functionality to test if the provided repo
  * is correct.
  */
-const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
-  setFieldValue, data}) => {
+
+const RepositoriesForm = ({
+  errors, values, handleSubmit, handleChange, setFieldValue, data,
+}) => {
+  const classes = useStyles();
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>{data.repoForm.title}</h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.repoForm.description}</p>
@@ -34,17 +53,19 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Repository Name: </Typography>
+                <Typography> Repository Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.repoName}
-                  value={values.repoName}
+                  error={errors.repo_name}
+                  value={values.repo_name}
                   type="text"
-                  name="repoName"
+                  name="repo_name"
                   placeholder={data.repoForm.nameHolder}
-                  helperText={errors.repoName ? errors.repoName : ''}
+                  helperText={errors.repo_name ? errors.repo_name : ''}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -58,20 +79,21 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Monitor Repository: </Typography>
+                <Typography> Monitor Repository </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorRepo}
+                      checked={values.monitor_repo}
                       onClick={() => {
-                        setFieldValue('monitorRepo', !values.monitorRepo);
+                        setFieldValue('monitor_repo', !values.monitor_repo);
                       }}
-                      name="monitorRepo"
+                      name="monitor_repo"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -86,30 +108,27 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid
-                  container
-                  direction="row"
-                  justify="flex-end"
-                  alignItems="center"
-                >
+                <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <PingRepoButton
-                      disabled={(Object.keys(errors).length !== 0)}
-                      repo={values.repoName}
+                      disabled={Object.keys(errors).length !== 0}
+                      repo={values.repo_name}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      color="primary"
+                      size="md"
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add Repository
-                      </Box>
+                      Add Repo
                     </Button>
                   </Box>
                 </Grid>
               </Grid>
+              <Grid item xs={12} />
+              <br />
+              <br />
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -119,7 +138,6 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -129,6 +147,8 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>
@@ -139,17 +159,18 @@ const RepositoriesForm = ({errors, values, handleSubmit, handleChange,
 
 RepositoriesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    repoName: PropTypes.string,
+    repo_name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    repoName: PropTypes.string.isRequired,
-    monitorRepo: PropTypes.bool.isRequired,
+    repo_name: PropTypes.string.isRequired,
+    monitor_repo: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
     repoForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,

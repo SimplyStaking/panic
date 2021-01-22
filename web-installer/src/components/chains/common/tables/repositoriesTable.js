@@ -2,7 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -10,14 +15,18 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const RepositoriesTable = ({currentChain, config, reposConfig,
-  removeRepositoryDetails}) => {
+const RepositoriesTable = ({
+  currentChain,
+  config,
+  reposConfig,
+  removeRepositoryDetails,
+}) => {
   if (config.byId[currentChain].repositories.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="simple table" style={{marginBottom: '150px'}}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -29,16 +38,23 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
           {config.byId[currentChain].repositories.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {reposConfig.byId[id].repoName}
+                {reposConfig.byId[id].repo_name}
               </TableCell>
               <TableCell align="center">
-                {reposConfig.byId[id].monitorRepo
-                  ? <CheckIcon /> : <ClearIcon />}
+                {reposConfig.byId[id].monitor_repo ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
-                  removeRepositoryDetails(reposConfig.byId[id]);
-                }}
+                <Button
+                  onClick={() => {
+                    removeRepositoryDetails({
+                      id: reposConfig.byId[id].id,
+                      parent_id: currentChain,
+                    });
+                  }}
                 >
                   <CancelIcon />
                 </Button>
@@ -46,7 +62,7 @@ const RepositoriesTable = ({currentChain, config, reposConfig,
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+      </Table>    
     </TableContainer>
   );
 };
@@ -60,9 +76,9 @@ RepositoriesTable.propTypes = forbidExtraProps({
   reposConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
-      repoName: PropTypes.string,
-      monitorRepo: PropTypes.bool,
+      parent_id: PropTypes.string,
+      repo_name: PropTypes.string,
+      monitor_repo: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

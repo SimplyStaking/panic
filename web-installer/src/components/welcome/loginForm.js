@@ -1,102 +1,121 @@
 import React from 'react';
+import { MuiThemeProvider } from '@material-ui/core/styles';
+import InputAdornment from '@material-ui/core/InputAdornment';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import {
-  TextField, Box, Typography, Grid, Tooltip,
-} from '@material-ui/core';
-import { MuiThemeProvider } from '@material-ui/core/styles';
-import InfoIcon from '@material-ui/icons/Info';
-import { LoginButton } from '../../utils/buttons';
-import { CHANNELS_PAGE } from '../../constants/constants';
-import { defaultTheme, theme } from '../theme/default';
-import Data from '../../data/welcome';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import Card from 'components/material_ui/Card/Card';
+import CardHeader from 'components/material_ui/Card/CardHeader';
+import CardBody from 'components/material_ui/Card/CardBody';
+import CardFooter from 'components/material_ui/Card/CardFooter';
+import CustomInput from 'components/material_ui/CustomInput/CustomInput';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/loginStyle';
 
-const LoginForm = ({errors, values, handleSubmit, handleChange, pageChanger,
-  authenticate}) => {
-  // If authenetication is accepted by the backend, change the page
-  // to the channels setup and set authenticated.
-  function setAuthentication(authenticated) {
-    if (authenticated) {
-      pageChanger({ page: CHANNELS_PAGE });
-      authenticate(authenticated);
-    }
-  }
+import { Tooltip } from '@material-ui/core';
+import { theme } from 'components/theme/default';
+import InfoIcon from '@material-ui/icons/Info';
+import StartDialog from 'components/welcome/startDialog';
+import Data from 'data/welcome';
+
+const LoginForm = ({
+  errors,
+  values,
+  handleSubmit,
+  handleChange,
+  pageChanger,
+  authenticate,
+  checkForConfigs,
+  loadUsersFromMongo,
+  addUserRedux,
+}) => {
+  const classes = useStyles();
 
   return (
-    <MuiThemeProvider theme={defaultTheme}>
-      <div>
-        <form onSubmit={handleSubmit} className="root">
-          <Grid container spacing={3} justify="center" alignItems="center">
-            <Grid item xs={2}>
-              <Typography> Username: </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
-                error={errors.username}
-                value={values.username}
-                type="text"
-                name="username"
-                placeholder="panic_user_main"
-                helperText={errors.username ? errors.username : ''}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.welcome.username} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Password: </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
-                error={errors.password}
-                value={values.password}
-                type="password"
-                name="password"
-                placeholder="*****************"
-                helperText={errors.password ? errors.password : ''}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.welcome.password} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={12} />
-            <Grid item xs={8} />
-            <Grid item xs={4}>
-              <Grid container direction="row" justify="flex-end" alignItems="center">
-                <Box px={2}>
-                  <LoginButton
-                    username={values.username}
-                    password={values.password}
-                    disabled={(Object.keys(errors).length !== 0)}
-                    setAuthentication={setAuthentication}
+    <div>
+      <div className={classes.container}>
+        <GridContainer justify="center">
+          <GridItem xs={12} sm={12} md={4}>
+            <Card>
+              <form onSubmit={handleSubmit} className={classes.form}>
+                <CardHeader color="primary" className={classes.cardHeader}>
+                  <h2>Login</h2>
+                </CardHeader>
+                <CardBody>
+                  <CustomInput
+                    error={errors.username}
+                    value={values.username}
+                    helperText=""
+                    handleChange={handleChange}
+                    name="username"
+                    placeHolder="Username"
+                    id="username"
+                    type="text"
+                    formControlProps={{
+                      fullWidth: true,
+                    }}
+                    inputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={Data.username} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </Box>
-              </Grid>
-            </Grid>
-          </Grid>
-        </form>
+                  <CustomInput
+                    error={errors.password}
+                    value={values.password}
+                    helperText=""
+                    handleChange={handleChange}
+                    name="password"
+                    placeHolder="Password"
+                    id="password"
+                    type="password"
+                    formControlProps={{
+                      fullWidth: true,
+                    }}
+                    inputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={Data.password} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
+                        </InputAdornment>
+                      ),
+                      autoComplete: 'off',
+                    }}
+                  />
+                </CardBody>
+                <CardFooter className={classes.cardFooter}>
+                  <StartDialog
+                    values={values}
+                    errors={errors}
+                    pageChanger={pageChanger}
+                    authenticate={authenticate}
+                    checkForConfigs={checkForConfigs}
+                    loadUsersFromMongo={loadUsersFromMongo}
+                    addUserRedux={addUserRedux}
+                  />
+                </CardFooter>
+              </form>
+            </Card>
+          </GridItem>
+        </GridContainer>
       </div>
-    </MuiThemeProvider>
+    </div>
   );
 };
 
 LoginForm.propTypes = forbidExtraProps({
+  checkForConfigs: PropTypes.func.isRequired,
+  loadUsersFromMongo: PropTypes.func.isRequired,
+  addUserRedux: PropTypes.func.isRequired,
   errors: PropTypes.shape({
     username: PropTypes.string,
     password: PropTypes.string,

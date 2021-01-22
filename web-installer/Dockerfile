@@ -11,6 +11,8 @@ COPY ./web-installer ./
 # RUN npm install
 RUN npm ci --only=production
 
+RUN npm i gulp
+
 # Build installer
 RUN npm run-script build --only=production
 

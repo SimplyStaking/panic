@@ -1,45 +1,55 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import NodesForm from '../../../components/chains/substrate/forms/nodesForm';
-import NodesTable from '../../../components/chains/substrate/tables/nodesTable';
-import { addNodeSubstrate, removeNodeSubstrate } from
-  '../../../redux/actions/substrateActions';
-import NodeSchema from './schemas/nodeSchema';
-import SubstrateData from '../../../data/substrate';
+import NodesForm from 'components/chains/substrate/forms/nodesForm';
+import NodesTable from 'components/chains/substrate/tables/nodesTable';
+import {
+  addNodeSubstrate,
+  removeNodeSubstrate,
+} from 'redux/actions/substrateActions';
+import SubstrateData from 'data/substrate';
+import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs substrate node name validation, by checking if the node name
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    substrateNodeName: '',
+    name: '',
   }),
   mapPropsToValues: () => ({
-    substrateNodeName: '',
-    nodeWsUrl: '',
-    telemetryUrl: '',
-    prometheusUrl: '',
-    exporterUrl: '',
-    stashAddress: '',
-    isValidator: false,
-    monitorNode: true,
-    isArchiveNode: true,
-    useAsDataSource: true,
+    name: '',
+    node_ws_url: '',
+    monitor_ws: false,
+    telemetry_url: '',
+    monitor_telemetry: false,
+    prometheus_url: '',
+    monitor_prometheus: false,
+    exporter_url: '',
+    monitor_system: false,
+    stash_address: '',
+    is_validator: false,
+    monitor_node: true,
+    is_archive_node: true,
+    use_as_data_source: true,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
-      substrateNodeName: values.substrateNodeName,
-      nodeWsUrl: values.nodeWsUrl,
-      telemetryUrl: values.telemetryUrl,
-      prometheusUrl: values.prometheusUrl,
-      exporterUrl: values.exporterUrl,
-      stashAddress: values.stashAddress,
-      isValidator: values.isValidator,
-      monitorNode: values.monitorNode,
-      isArchiveNode: values.isArchiveNode,
-      useAsDataSource: values.useAsDataSource,
+      parent_id: currentChain,
+      name: values.name,
+      node_ws_url: values.node_ws_url,
+      monitor_ws: values.monitor_ws,
+      telemetry_url: values.telemetry_url,
+      monitor_telemetry: values.monitor_telemetry,
+      prometheus_url: values.prometheus_url,
+      monitor_prometheus: values.monitor_prometheus,
+      exporter_url: values.exporter_url,
+      monitor_system: values.monitor_system,
+      stash_address: values.stash_address,
+      is_validator: values.is_validator,
+      monitor_node: values.monitor_node,
+      is_archive_node: values.is_archive_node,
+      use_as_data_source: values.use_as_data_source,
     };
     saveNodeDetails(payload);
     resetForm();
@@ -52,7 +62,10 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   chainConfig: state.SubstrateChainsReducer,
-  nodesConfig: state.SubstrateNodesReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  reposConfig: state.RepositoryReducer,
+  systemConfig: state.SystemsReducer,
   data: SubstrateData,
 });
 
@@ -72,10 +85,7 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine substrate state and dispatch functions to the node form
-const NodesFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 // Combine substrate state and dispatch functions to the node table
 const NodesTableContainer = connect(
@@ -83,7 +93,4 @@ const NodesTableContainer = connect(
   mapDispatchToPropsRemove,
 )(NodesTable);
 
-export {
-  NodesFormContainer,
-  NodesTableContainer,
-};
+export { NodesFormContainer, NodesTableContainer };

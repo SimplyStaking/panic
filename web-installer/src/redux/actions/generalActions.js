@@ -1,9 +1,28 @@
 import {
-  UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY, REMOVE_SYSTEM,
-  ADD_KMS, REMOVE_KMS, UPDATE_THRESHOLD_ALERT, ADD_TELEGRAM_CHANNEL,
-  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
-  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_PAGERDUTY_CHANNEL,
-  REMOVE_PAGERDUTY_CHANNEL, ADD_OPSGENIE_CHANNEL, REMOVE_OPSGENIE_CHANNEL,
+  UPDATE_PERIODIC,
+  ADD_REPOSITORY,
+  ADD_SYSTEM,
+  REMOVE_REPOSITORY,
+  REMOVE_SYSTEM,
+  ADD_KMS,
+  REMOVE_KMS,
+  UPDATE_THRESHOLD_ALERT,
+  ADD_TELEGRAM_CHANNEL,
+  REMOVE_TELEGRAM_CHANNEL,
+  ADD_TWILIO_CHANNEL,
+  REMOVE_TWILIO_CHANNEL,
+  ADD_EMAIL_CHANNEL,
+  REMOVE_EMAIL_CHANNEL,
+  ADD_PAGERDUTY_CHANNEL,
+  REMOVE_PAGERDUTY_CHANNEL,
+  ADD_OPSGENIE_CHANNEL,
+  REMOVE_OPSGENIE_CHANNEL,
+  LOAD_REPOSITORY,
+  LOAD_REPOSITORY_GENERAL,
+  LOAD_KMS,
+  LOAD_THRESHOLD_ALERTS_GENERAL,
+  LOAD_SYSTEM_GENERAL,
+  LOAD_SYSTEM,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -20,10 +39,17 @@ export function addRepository(payload) {
     type: ADD_REPOSITORY,
     payload: {
       id: `repo_${uuidv4()}`,
-      parentId: payload.parentId,
-      repoName: payload.repoName,
-      monitorRepo: payload.monitorRepo,
+      parent_id: payload.parent_id,
+      repo_name: payload.repo_name,
+      monitor_repo: payload.monitor_repo,
     },
+  };
+}
+
+export function loadRepository(payload) {
+  return {
+    type: LOAD_REPOSITORY,
+    payload,
   };
 }
 
@@ -39,11 +65,25 @@ export function addSystem(payload) {
     type: ADD_SYSTEM,
     payload: {
       id: `system_${uuidv4()}`,
-      parentId: payload.parentId,
+      parent_id: payload.parent_id,
       name: payload.name,
-      exporterUrl: payload.exporterUrl,
-      monitorSystem: payload.monitorSystem,
+      exporter_url: payload.exporter_url,
+      monitor_system: payload.monitor_system,
     },
+  };
+}
+
+export function loadSystem(payload) {
+  return {
+    type: LOAD_SYSTEM,
+    payload,
+  };
+}
+
+export function loadSystemGeneral(payload) {
+  return {
+    type: LOAD_SYSTEM_GENERAL,
+    payload,
   };
 }
 
@@ -59,10 +99,10 @@ export function addKms(payload) {
     type: ADD_KMS,
     payload: {
       id: `kms_${uuidv4()}`,
-      parentId: payload.parentId,
-      kmsName: payload.kmsName,
-      exporterUrl: payload.exporterUrl,
-      monitorKms: payload.monitorKms,
+      parent_id: payload.parent_id,
+      kms_name: payload.kms_name,
+      exporter_url: payload.exporter_url,
+      monitor_kms: payload.monitor_kms,
     },
   };
 }
@@ -147,6 +187,27 @@ export function addOpsGenieChannel(payload) {
 export function removeOpsGenieChannel(payload) {
   return {
     type: REMOVE_OPSGENIE_CHANNEL,
+    payload,
+  };
+}
+
+export function loadReposGeneral(payload) {
+  return {
+    type: LOAD_REPOSITORY_GENERAL,
+    payload,
+  };
+}
+
+export function loadKMS(payload) {
+  return {
+    type: LOAD_KMS,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsGeneral(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_GENERAL,
     payload,
   };
 }

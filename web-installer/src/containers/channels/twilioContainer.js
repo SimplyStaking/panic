@@ -1,34 +1,34 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TwilioForm from '../../components/channels/forms/twilioForm';
-import TwilioTable from '../../components/channels/tables/twilioTable';
-import { addTwilio, removeTwilio } from '../../redux/actions/channelActions';
+import TwilioForm from 'components/channels/forms/twilioForm';
+import TwilioTable from 'components/channels/tables/twilioTable';
+import { addTwilio, removeTwilio } from 'redux/actions/channelActions';
 import TwilioSchema from './schemas/twilioSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
-    accountSid: '',
-    authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: '',
+    channel_name: '',
+    account_sid: '',
+    auth_token: '',
+    twilio_phone_no: '',
+    twilio_phone_numbers_to_dial_valid: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
-    accountSid: '',
-    authToken: '',
-    twilioPhoneNo: '',
-    twilioPhoneNumbersToDialValid: [],
+    channel_name: '',
+    account_sid: '',
+    auth_token: '',
+    twilio_phone_no: '',
+    twilio_phone_numbers_to_dial_valid: [],
   }),
   validationSchema: (props) => TwilioSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTwilioDetails } = props;
     const payload = {
-      configName: values.configName,
-      accountSid: values.accountSid,
-      authToken: values.authToken,
-      twilioPhoneNo: values.twilioPhoneNo,
-      twilioPhoneNumbersToDialValid: values.twilioPhoneNumbersToDialValid,
+      channel_name: values.channel_name,
+      account_sid: values.account_sid,
+      auth_token: values.auth_token,
+      twilio_phone_no: values.twilio_phone_no,
+      twilio_phone_numbers_to_dial_valid: values.twilio_phone_numbers_to_dial_valid,
     };
     saveTwilioDetails(payload);
     resetForm();
@@ -36,6 +36,10 @@ const Form = withFormik({
 })(TwilioForm);
 
 const mapStateToProps = (state) => ({
+  emails: state.EmailsReducer,
+  opsGenies: state.OpsGenieReducer,
+  pagerDuties: state.PagerDutyReducer,
+  telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
 });
 
@@ -51,17 +55,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const TwilioFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const TwilioFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const TwilioTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(TwilioTable);
 
-export {
-  TwilioFormContainer,
-  TwilioTableContainer,
-};
+export { TwilioFormContainer, TwilioTableContainer };

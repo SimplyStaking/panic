@@ -1,17 +1,21 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsSubstrateTableContainer } from '../common/alertsContainer';
-import { SubstrateChainFormContainer } from '../common/chainContainer';
-import { ChannelsSubstrateTableContainer } from '../common/channelsContainer';
-import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
+import { AlertsSubstrateTableContainer } from 'containers/chains/common/alertsContainer';
+import { SubstrateChainFormContainer } from 'containers/chains/common/chainContainer';
+import { ChannelsSubstrateTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  RepositoriesSubstrateFormContainer, RepositoriesSubstrateTableContainer,
-} from '../common/repositoriesContainer';
+  RepositoriesSubstrateFormContainer,
+  RepositoriesSubstrateTableContainer,
+} from 'containers/chains/common/repositoriesContainer';
 import {
-  ALERTS_STEP, CHAINS_STEP, CHANNELS_STEP, NODES_STEP,
+  ALERTS_STEP,
+  CHAINS_STEP,
+  CHANNELS_STEP,
+  NODES_STEP,
   REPOSITORIES_STEP,
-} from '../../../constants/constants';
+} from 'constants/constants';
+import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
@@ -48,11 +52,7 @@ function getStep(stepName) {
 // Step Selector changes according to the step set
 function StepManager(props) {
   const { step } = props;
-  return (
-    <div>
-      {getStep(step)}
-    </div>
-  );
+  return <div>{getStep(step)}</div>;
 }
 
 StepManager.propTypes = {

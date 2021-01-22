@@ -1,8 +1,8 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import UsersForm from '../../components/users/usersForm';
-import UsersTable from '../../components/users/usersTable';
-import { addUser, removeUser } from '../../redux/actions/usersActions';
+import UsersForm from 'components/users/usersForm';
+import UsersTable from 'components/users/usersTable';
+import { addUser, removeUser } from 'redux/actions/usersActions';
 import UserSchema from './userSchema';
 
 const Form = withFormik({
@@ -15,13 +15,7 @@ const Form = withFormik({
     password: '',
   }),
   validationSchema: (props) => UserSchema(props),
-  handleSubmit: (values, { resetForm, props }) => {
-    const { saveUserDetails } = props;
-    const payload = {
-      username: values.username,
-      password: values.password,
-    };
-    saveUserDetails(payload);
+  handleSubmit: ({ resetForm }) => {
     resetForm();
   },
 })(UsersForm);
@@ -42,17 +36,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const UsersFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const UsersFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const UsersTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(UsersTable);
 
-export {
-  UsersFormContainer,
-  UsersTableContainer,
-};
+export { UsersFormContainer, UsersTableContainer };
