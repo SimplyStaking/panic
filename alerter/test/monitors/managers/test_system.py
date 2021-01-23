@@ -1,17 +1,20 @@
 import json
 import logging
+import multiprocessing
 import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from time import sleep
 from unittest import mock
-import multiprocessing
+
 import pika
 
+from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.system import SystemMonitorsManager, \
     SYS_MON_MAN_INPUT_QUEUE, SYS_MON_MAN_INPUT_ROUTING_KEY, \
     SYS_MON_MAN_ROUTING_KEY_CHAINS, SYS_MON_MAN_ROUTING_KEY_GEN
+from src.monitors.starters import start_system_monitor
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
     CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
 
@@ -40,20 +43,21 @@ class TestSystemMonitor(unittest.TestCase):
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process2 = Process(target=infinite_fn, args=())
+        self.dummy_process3 = Process(target=infinite_fn, args=())
         self.config_process_dict_example = {
             'config_id1': {
-                'component_name': 'system_monitor_system_1',
+                'component_name': 'System monitor ({})'.format('system_1'),
                 'process': self.dummy_process1,
-                'chain': 'Polkadot'
+                'chain': 'Substrate Polkadot'
             },
             'config_id2': {
-                'component_name': 'system_monitor_system_2',
+                'component_name': 'System monitor ({})'.format('system_2'),
                 'process': self.dummy_process2,
                 'chain': 'GENERAL'
             },
         }
         self.systems_configs_example = {
-            'Polkadot': {
+            'Substrate Polkadot': {
                 'config_id1': {
                     'id': 'config_id1',
                     'parent_id': 'chain_1',
@@ -72,8 +76,67 @@ class TestSystemMonitor(unittest.TestCase):
                 }
             },
         }
+        self.system_id_new = 'config_id3'
+        self.parent_id_new = 'chain_1'
+        self.system_name_new = 'system_3'
+        self.monitor_system_new = True
+        self.node_exporter_url_new = 'dummy_url3'
+        self.chain_example_new = 'Substrate Polkadot'
+        self.system_config_example = SystemConfig(self.system_id_new,
+                                                  self.parent_id_new,
+                                                  self.system_name_new,
+                                                  self.monitor_system_new,
+                                                  self.node_exporter_url_new)
         self.test_manager = SystemMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
+        self.sent_configs_example_chain = {
+            'config_id4': {
+                'id': 'config_id4',
+                'parent_id': 'chain_1',
+                'name': 'system_main_4',
+                'exporter_url': 'example_url_4',
+                'monitor_system': True,
+            },
+            'config_id5': {
+                'id': 'config_id5',
+                'parent_id': 'chain_1',
+                'name': 'system_main_5',
+                'exporter_url': 'example_url_5',
+                'monitor_system': False,
+            }
+        }
+        self.sent_configs_example_general = {
+            'config_id6': {
+                'id': 'config_id6',
+                'parent_id': 'GENERAL',
+                'name': 'system_main_6',
+                'exporter_url': 'example_url_6',
+                'monitor_system': True,
+            },
+            'config_id7': {
+                'id': 'config_id7',
+                'parent_id': 'GENERAL',
+                'name': 'system_main_7',
+                'exporter_url': 'example_url_7',
+                'monitor_system': False,
+            }
+        }
+        self.sent_configs_example_same = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'system_1',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': True,
+            },
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'chain_1',
+                'name': 'system_2',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': True,
+            }
+        }
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -81,8 +144,11 @@ class TestSystemMonitor(unittest.TestCase):
         self.test_manager = None
         self.dummy_process1 = None
         self.dummy_process2 = None
+        self.dummy_process3 = None
         self.config_process_dict_example = None
         self.systems_configs_example = None
+        self.system_config_example = None
+        self.test_manager = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())
@@ -228,24 +294,78 @@ class TestSystemMonitor(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    # Todo: Before starting these tests first create the systems configs etc
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing, 'Process')
+    def test_create_and_start_monitor_process_stores_the_correct_process_info(
+            self, mock_init, mock_start) -> None:
+        mock_start.return_value = None
+        mock_init.return_value = self.dummy_process3
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        expected_output = {
+            'config_id1': {
+                'component_name': 'System monitor ({})'.format('system_1'),
+                'process': self.dummy_process1,
+                'chain': 'Polkadot'
+            },
+            'config_id2': {
+                'component_name': 'System monitor ({})'.format('system_2'),
+                'process': self.dummy_process2,
+                'chain': 'GENERAL'
+            },
+            self.system_id_new: {}
+        }
+        new_entry = expected_output[self.system_id_new]
+        new_entry['component_name'] = 'System monitor ({})'.format(
+            self.system_name_new)
+        new_entry['chain'] = self.chain_example_new
+        new_entry['process'] = self.dummy_process3
+
+        self.test_manager._create_and_start_monitor_process(
+            self.system_config_example, self.system_id_new,
+            self.chain_example_new)
+
+        self.assertEqual(expected_output, self.test_manager.config_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
-    def test_create_and_start_monitor_process_stores_the_correct_process_info(
-            self, mock_start) -> None:
-        # TODO: Mock start() so that here we only check the dict
-        mock_start.return_value = None
-
     def test_create_and_start_monitor_process_creates_the_correct_process(
-            self) -> None:
+            self, mock_start) -> None:
         # TODO: Mock start and use the dict to check that the correct confs
         #     : have been set
-        pass
+        mock_start.return_value = None
+
+        self.test_manager._create_and_start_monitor_process(
+            self.system_config_example, self.system_id_new,
+            self.chain_example_new)
+
+        new_entry = self.test_manager.config_process_dict[self.system_id_new]
+        new_entry_process = new_entry['process']
+        self.assertTrue(new_entry_process.daemon)
+        self.assertEqual(1, len(new_entry_process._args))
+        self.assertEqual(self.system_config_example, new_entry_process._args[0])
+        self.assertEqual(start_system_monitor, new_entry_process._target)
 
     def test_create_and_start_monitor_process_starts_the_process(self) -> None:
-        # TODO: Do not mock start. Terminate after checking that the process was
-        #     : created
-        pass
+        self.test_manager._create_and_start_monitor_process(
+            self.system_config_example, self.system_id_new,
+            self.chain_example_new)
+
+        new_entry = self.test_manager.config_process_dict[self.system_id_new]
+        new_entry_process = new_entry['process']
+        self.assertTrue(new_entry_process.is_alive())
+
+        new_entry_process.terminate()
+        new_entry_process.join()
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_default_key(
+            self, mock_ack) -> None:
+        mock_ack.return_value = None
+        # TODO: We need to add a default key to the example configs to be sent.
+        #     : Previously we must set the configs to be equal to the example
+        #     : one. Send the same config to not trigger any changes.
+
+
 
 # TODO: Remove tearDown() commented code
 # TODO: Remove SIGHUP comment
@@ -254,3 +374,5 @@ class TestSystemMonitor(unittest.TestCase):
 #     : starters
 # TODO: Now since tests finished we need to run in docker environment.
 #     : Do not forget to do the three TODOs above before.
+# TODO: Switch off printing to stdout
+# TODO: Monday continue from _process_configs

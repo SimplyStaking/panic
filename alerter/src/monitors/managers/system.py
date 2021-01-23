@@ -23,7 +23,7 @@ from src.utils.types import str_to_bool
 
 SYS_MON_MAN_INPUT_QUEUE = 'system_monitors_manager_ping_queue'
 SYS_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.systems_config'
+SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
 SYS_MON_MAN_ROUTING_KEY_GEN = 'general.systems_config'
 
 
