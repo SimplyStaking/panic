@@ -13,7 +13,6 @@ from pika.exceptions import AMQPConnectionError
 from src.abstract import QueuingPublisherComponent
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import env
 from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
                                  ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_ROUTER_CONFIGS_QUEUE_NAME)
@@ -42,8 +41,7 @@ class AlertRouter(QueuingPublisherComponent):
         self._config = {}
 
         super().__init__(logger, RabbitMQApi(
-            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip),
-                         env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE)
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip))
 
     def __str__(self) -> str:
         return self.name
