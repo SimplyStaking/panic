@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import multiprocessing
@@ -17,6 +18,7 @@ from src.monitors.managers.system import SystemMonitorsManager, \
 from src.monitors.starters import start_system_monitor
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
     CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+from src.utils.types import str_to_bool
 
 
 def infinite_fn() -> None:
@@ -63,7 +65,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'parent_id': 'chain_1',
                     'name': 'system_1',
                     'exporter_url': 'dummy_url1',
-                    'monitor_system': True,
+                    'monitor_system': "True",
                 }
             },
             'general': {
@@ -72,9 +74,27 @@ class TestSystemMonitor(unittest.TestCase):
                     'parent_id': 'GENERAL',
                     'name': 'system_2',
                     'exporter_url': 'dummy_url2',
-                    'monitor_system': True,
+                    'monitor_system': "True",
                 }
             },
+        }
+        self.sent_configs_example_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'system_1',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            }
+        }
+        self.sent_configs_example_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'system_2',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            }
         }
         self.system_id_new = 'config_id3'
         self.parent_id_new = 'chain_1'
@@ -89,54 +109,8 @@ class TestSystemMonitor(unittest.TestCase):
                                                   self.node_exporter_url_new)
         self.test_manager = SystemMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
-        self.sent_configs_example_chain = {
-            'config_id4': {
-                'id': 'config_id4',
-                'parent_id': 'chain_1',
-                'name': 'system_main_4',
-                'exporter_url': 'example_url_4',
-                'monitor_system': True,
-            },
-            'config_id5': {
-                'id': 'config_id5',
-                'parent_id': 'chain_1',
-                'name': 'system_main_5',
-                'exporter_url': 'example_url_5',
-                'monitor_system': False,
-            }
-        }
-        self.sent_configs_example_general = {
-            'config_id6': {
-                'id': 'config_id6',
-                'parent_id': 'GENERAL',
-                'name': 'system_main_6',
-                'exporter_url': 'example_url_6',
-                'monitor_system': True,
-            },
-            'config_id7': {
-                'id': 'config_id7',
-                'parent_id': 'GENERAL',
-                'name': 'system_main_7',
-                'exporter_url': 'example_url_7',
-                'monitor_system': False,
-            }
-        }
-        self.sent_configs_example_same = {
-            'config_id1': {
-                'id': 'config_id1',
-                'parent_id': 'chain_1',
-                'name': 'system_1',
-                'exporter_url': 'dummy_url1',
-                'monitor_system': True,
-            },
-            'config_id2': {
-                'id': 'config_id2',
-                'parent_id': 'chain_1',
-                'name': 'system_2',
-                'exporter_url': 'dummy_url2',
-                'monitor_system': True,
-            }
-        }
+        self.chains_routing_key = 'chains.Substrate.Polkadot.nodes_config'
+        self.general_routing_key = SYS_MON_MAN_ROUTING_KEY_GEN
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -306,7 +280,7 @@ class TestSystemMonitor(unittest.TestCase):
             'config_id1': {
                 'component_name': 'System monitor ({})'.format('system_1'),
                 'process': self.dummy_process1,
-                'chain': 'Polkadot'
+                'chain': 'Substrate Polkadot'
             },
             'config_id2': {
                 'component_name': 'System monitor ({})'.format('system_2'),
@@ -330,8 +304,6 @@ class TestSystemMonitor(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_monitor_process_creates_the_correct_process(
             self, mock_start) -> None:
-        # TODO: Mock start and use the dict to check that the correct confs
-        #     : have been set
         mock_start.return_value = None
 
         self.test_manager._create_and_start_monitor_process(
@@ -358,14 +330,613 @@ class TestSystemMonitor(unittest.TestCase):
         new_entry_process.join()
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_default_key(
-            self, mock_ack) -> None:
+    def test_process_configs_ignores_default_key(self, mock_ack) -> None:
+        # This test will pass if the stored systems config does not change.
+        # This would mean that the DEFAULT key was ignored, otherwise, it would
+        # have been included as a new config.
         mock_ack.return_value = None
-        # TODO: We need to add a default key to the example configs to be sent.
-        #     : Previously we must set the configs to be equal to the example
-        #     : one. Send the same config to not trigger any changes.
+        old_systems_configs = copy.deepcopy(self.systems_configs_example)
+        self.test_manager._systems_configs = self.systems_configs_example
 
+        # We will pass the acceptable schema as a value to make sure that the
+        # default key will never be added. By passing the schema we will also
+        # prevent processing errors from happening.
+        self.sent_configs_example_chain['DEFAULT'] = {
+            'id': 'default_id1',
+            'parent_id': 'chain_1',
+            'name': 'default_system_1',
+            'exporter_url': 'default_dummy_url1',
+            'monitor_system': "True",
+        }
+        self.sent_configs_example_general['DEFAULT'] = {
+            'id': 'default_id2',
+            'parent_id': 'GENERAL',
+            'name': 'default_system_2',
+            'exporter_url': 'default_dummy_url2',
+            'monitor_system': "True",
+        }
 
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain = json.dumps(self.sent_configs_example_chain)
+            body_general = json.dumps(self.sent_configs_example_general)
+            properties = pika.spec.BasicProperties()
+
+            # We will send the message twice with both general and chain
+            # routing keys to make sure that the DEFAULT key is ignored in both
+            # cases
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general)
+            self.assertEqual(old_systems_configs,
+                             self.test_manager.systems_configs)
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain)
+            self.assertEqual(old_systems_configs,
+                             self.test_manager.systems_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_process_configs_stores_new_configs_to_be_monitored_correctly(
+            self, startup_mock, mock_ack) -> None:
+        # We will check whether new configs are added to the state. Since some
+        # new configs have `monitor_system = False` we are also testing that
+        # new configs are ignored if they should not be monitored.
+
+        mock_ack.return_value = None
+        startup_mock.return_value = None
+        new_configs_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'system_1',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            },
+            'config_id3': {
+                'id': 'config_id3',
+                'parent_id': 'chain_1',
+                'name': 'system_3',
+                'exporter_url': 'dummy_url3',
+                'monitor_system': "True",
+            },
+            'config_id4': {
+                'id': 'config_id4',
+                'parent_id': 'chain_1',
+                'name': 'system_4',
+                'exporter_url': 'dummy_url4',
+                'monitor_system': "False",
+            }
+        }
+        new_configs_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'system_2',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            },
+            'config_id5': {
+                'id': 'config_id5',
+                'parent_id': 'GENERAL',
+                'name': 'system_5',
+                'exporter_url': 'dummy_url5',
+                'monitor_system': "True",
+            },
+            'config_id6': {
+                'id': 'config_id6',
+                'parent_id': 'GENERAL',
+                'name': 'system_6',
+                'exporter_url': 'dummy_url6',
+                'monitor_system': "False",
+            }
+        }
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(
+                self.sent_configs_example_chain)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
+            body_new_configs_chain = json.dumps(new_configs_chain)
+            body_new_configs_general = json.dumps(new_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+            expected_output = copy.deepcopy(self.systems_configs_example)
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_new_configs_chain)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_new_configs_general)
+            expected_output['Substrate Polkadot']['config_id3'] = \
+                new_configs_chain['config_id3']
+            expected_output['general']['config_id5'] = \
+                new_configs_general['config_id5']
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    def test_process_configs_stores_modified_configs_to_be_monitored_correctly(
+            self, join_mock, terminate_mock, startup_mock, mock_ack) -> None:
+        # In this test we will check that modified configurations with
+        # `monitor_system = True` are stored correctly in the state. Some
+        # configurations will have `monitor_system = False` to check whether the
+        # monitor associated with the previous configuration is terminated.
+
+        mock_ack.return_value = None
+        startup_mock.return_value = None
+        join_mock.return_value = None
+        terminate_mock.return_value = None
+        self.test_manager._systems_configs = self.systems_configs_example
+        self.test_manager._config_process_dict =\
+            self.config_process_dict_example
+
+        new_configs_chain_monitor_true = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'new_system_name',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            },
+        }
+        new_configs_chain_monitor_false = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'new_system_name_chain',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "False",
+            },
+        }
+        new_configs_general_monitor_true = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'new_system_name_general',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            },
+        }
+        new_configs_general_monitor_false = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'new_system_name_general',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "false",
+            },
+        }
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_mon_true = json.dumps(new_configs_chain_monitor_true)
+            body_general_mon_true = json.dumps(new_configs_general_monitor_true)
+            body_chain_mon_false = json.dumps(new_configs_chain_monitor_false)
+            body_general_mon_false = json.dumps(
+                new_configs_general_monitor_false)
+            properties = pika.spec.BasicProperties()
+            expected_output = copy.deepcopy(self.systems_configs_example)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_mon_true)
+            expected_output['Substrate Polkadot']['config_id1'] = \
+                new_configs_chain_monitor_true['config_id1']
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_general_mon_true)
+            expected_output['general']['config_id2'] = \
+                new_configs_general_monitor_true['config_id2']
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_chain_mon_false)
+            expected_output['Substrate Polkadot'] = {}
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+            self.assertTrue(
+                'config_id1' not in self.test_manager.config_process_dict)
+
+            self.test_manager._process_configs(
+                blocking_channel, method_general, properties,
+                body_general_mon_false)
+            expected_output['general'] = {}
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+            self.assertTrue(
+                'config_id2' not in self.test_manager.config_process_dict)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    def test_process_configs_removes_deleted_configs_from_state_correctly(
+            self, join_mock, terminate_mock, mock_ack) -> None:
+        # In this test we will check that removed configurations are actually
+        # removed from the state
+
+        mock_ack.return_value = None
+        join_mock.return_value = None
+        terminate_mock.return_value = None
+        self.test_manager._systems_configs = self.systems_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        new_configs_chain = {}
+        new_configs_general = {}
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain = json.dumps(new_configs_chain)
+            body_general = json.dumps(new_configs_general)
+            properties = pika.spec.BasicProperties()
+            expected_output = copy.deepcopy(self.systems_configs_example)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain)
+            expected_output['Substrate Polkadot'] = {}
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+            self.assertTrue(
+                'config_id1' not in self.test_manager.config_process_dict)
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general)
+            expected_output['general'] = {}
+            self.assertEqual(expected_output, self.test_manager.systems_configs)
+            self.assertTrue(
+                'config_id2' not in self.test_manager.config_process_dict)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_proc_configs_starts_new_monitors_for_new_configs_to_be_monitored(
+            self, startup_mock, mock_ack) -> None:
+        # We will check whether _create_and_start_monitor_process is called
+        # correctly on each newly added configuration if
+        # `monitor_system = True`. Implicitly we will be also testing that if
+        # `monitor_system = False` no new monitor is created.
+
+        mock_ack.return_value = None
+        startup_mock.return_value = None
+        new_configs_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'system_1',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            },
+            'config_id3': {
+                'id': 'config_id3',
+                'parent_id': 'chain_1',
+                'name': 'system_3',
+                'exporter_url': 'dummy_url3',
+                'monitor_system': "True",
+            },
+            'config_id4': {
+                'id': 'config_id4',
+                'parent_id': 'chain_1',
+                'name': 'system_4',
+                'exporter_url': 'dummy_url4',
+                'monitor_system': "False",
+            }
+        }
+        new_configs_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'system_2',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            },
+            'config_id5': {
+                'id': 'config_id5',
+                'parent_id': 'GENERAL',
+                'name': 'system_5',
+                'exporter_url': 'dummy_url5',
+                'monitor_system': "True",
+            },
+            'config_id6': {
+                'id': 'config_id6',
+                'parent_id': 'GENERAL',
+                'name': 'system_6',
+                'exporter_url': 'dummy_url6',
+                'monitor_system': "False",
+            }
+        }
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(
+                self.sent_configs_example_chain)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
+            body_new_configs_chain = json.dumps(new_configs_chain)
+            body_new_configs_general = json.dumps(new_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.assertEqual(1, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
+            self.assertEqual(
+                self.sent_configs_example_chain['config_id1']['id'],
+                args[0].system_id)
+            self.assertEqual(
+                self.sent_configs_example_chain['config_id1']['parent_id'],
+                args[0].parent_id)
+            self.assertEqual(
+                self.sent_configs_example_chain['config_id1']['name'],
+                args[0].system_name)
+            self.assertEqual(
+                str_to_bool(
+                    self.sent_configs_example_chain['config_id1']
+                    ['monitor_system']), args[0].monitor_system)
+            self.assertEqual(
+                self.sent_configs_example_chain['config_id1']['exporter_url'],
+                args[0].node_exporter_url)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_new_configs_chain)
+            self.assertEqual(2, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id3' and 'Substrate Polkadot' in args)
+            self.assertEqual(new_configs_chain['config_id3']['id'],
+                             args[0].system_id)
+            self.assertEqual(new_configs_chain['config_id3']['parent_id'],
+                             args[0].parent_id)
+            self.assertEqual(new_configs_chain['config_id3']['name'],
+                             args[0].system_name)
+            self.assertEqual(
+                str_to_bool(new_configs_chain['config_id3']['monitor_system']),
+                args[0].monitor_system)
+            self.assertEqual(new_configs_chain['config_id3']['exporter_url'],
+                             args[0].node_exporter_url)
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+            self.assertEqual(3, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id2' and 'general' in args)
+            self.assertEqual(
+                self.sent_configs_example_general['config_id2']['id'],
+                args[0].system_id)
+            self.assertEqual(
+                self.sent_configs_example_general['config_id2']['parent_id'],
+                args[0].parent_id)
+            self.assertEqual(
+                self.sent_configs_example_general['config_id2']['name'],
+                args[0].system_name)
+            self.assertEqual(
+                str_to_bool(
+                    self.sent_configs_example_general['config_id2']
+                    ['monitor_system']), args[0].monitor_system)
+            self.assertEqual(
+                self.sent_configs_example_general['config_id2']['exporter_url'],
+                args[0].node_exporter_url)
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_new_configs_general)
+            self.assertEqual(4, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id5' and 'general' in args)
+            self.assertEqual(new_configs_general['config_id5']['id'],
+                             args[0].system_id)
+            self.assertEqual(new_configs_general['config_id5']['parent_id'],
+                             args[0].parent_id)
+            self.assertEqual(new_configs_general['config_id5']['name'],
+                             args[0].system_name)
+            self.assertEqual(
+                str_to_bool(
+                    new_configs_general['config_id5']['monitor_system']),
+                args[0].monitor_system)
+            self.assertEqual(new_configs_general['config_id5']['exporter_url'],
+                             args[0].node_exporter_url)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_proc_confs_term_and_starts_monitors_for_modified_confs_to_be_mon(
+            self, mock_ack) -> None:
+        # In this test we will check that modified configurations with
+        # `monitor_system = True` will have new monitors started. Implicitly
+        # we will be checking that modified configs with
+        # `monitor_system = False` will only have their previous processes
+        # terminated.
+
+        mock_ack.return_value = None
+        new_configs_chain_monitor_true = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'new_system_name',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            },
+        }
+        new_configs_chain_monitor_false = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'new_system_name_chain',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "False",
+            },
+        }
+        new_configs_general_monitor_true = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'new_system_name_general',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            },
+        }
+        new_configs_general_monitor_false = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'new_system_name_general',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "false",
+            },
+        }
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_chain_mon_true = json.dumps(new_configs_chain_monitor_true)
+            body_general_mon_true = json.dumps(new_configs_general_monitor_true)
+            body_chain_mon_false = json.dumps(new_configs_chain_monitor_false)
+            body_general_mon_false = json.dumps(
+                new_configs_general_monitor_false)
+            properties = pika.spec.BasicProperties()
+            expected_output = copy.deepcopy(self.systems_configs_example)
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Assure that the processes have been started
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id1']['process'].is_alive())
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id2']['process'].is_alive())
+
+            # TODO: Cont from here we need to check that some configurations
+            #     : old monitors have been stopped, others no monitors started
+            #     : and others started new ones. No need to clean as in the end
+            #     : the dict would be empty
+
+            # self.test_manager._process_configs(blocking_channel, method_chains,
+            #                                    properties, body_chain_mon_true)
+            # expected_output['Substrate Polkadot']['config_id1'] = \
+            #     new_configs_chain_monitor_true['config_id1']
+            # self.assertEqual(expected_output, self.test_manager.systems_configs)
+            #
+            # self.test_manager._process_configs(blocking_channel, method_general,
+            #                                    properties,
+            #                                    body_general_mon_true)
+            # expected_output['general']['config_id2'] = \
+            #     new_configs_general_monitor_true['config_id2']
+            # self.assertEqual(expected_output, self.test_manager.systems_configs)
+            #
+            # self.test_manager._process_configs(blocking_channel, method_chains,
+            #                                    properties,
+            #                                    body_chain_mon_false)
+            # expected_output['Substrate Polkadot'] = {}
+            # self.assertEqual(expected_output, self.test_manager.systems_configs)
+            # self.assertTrue(
+            #     'config_id1' not in self.test_manager.config_process_dict)
+            #
+            # self.test_manager._process_configs(
+            #     blocking_channel, method_general, properties,
+            #     body_general_mon_false)
+            # expected_output['general'] = {}
+            # self.assertEqual(expected_output, self.test_manager.systems_configs)
+            # self.assertTrue(
+            #     'config_id2' not in self.test_manager.config_process_dict)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_process_configs_terminates_monitors_for_removed_configs(
+            self) -> None:
+        pass
+
+    def test_process_configs_ignores_new_configs_with_incorrect_schema(
+            self) -> None:
+        pass
+
+    def test_process_configs_ignores_modified_configs_with_incorrect_schema(
+            self) -> None:
+        pass
+
+    def test_process_configs_ignores_removed_configs_with_incorrect_schema(
+            self) -> None:
+        pass
 
 # TODO: Remove tearDown() commented code
 # TODO: Remove SIGHUP comment
@@ -375,4 +946,3 @@ class TestSystemMonitor(unittest.TestCase):
 # TODO: Now since tests finished we need to run in docker environment.
 #     : Do not forget to do the three TODOs above before.
 # TODO: Switch off printing to stdout
-# TODO: Monday continue from _process_configs
