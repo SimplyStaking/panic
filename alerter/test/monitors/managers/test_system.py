@@ -1310,9 +1310,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.dummy_process1.start()
             self.dummy_process2.start()
             self.dummy_process1.terminate()
-
-            # Wait a few seconds for the process to terminate
-            time.sleep(1)
+            self.dummy_process1.join()
 
             # Initialize
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1361,7 +1359,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.dummy_process2.terminate()
-            self.dummy_process1.join()
             self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
@@ -1390,9 +1387,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.dummy_process2.start()
             self.dummy_process1.terminate()
             self.dummy_process2.terminate()
-
-            # Wait a few seconds for the process to terminate
-            time.sleep(1)
+            self.dummy_process1.join()
+            self.dummy_process2.join()
 
             # Initialize
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1440,8 +1436,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.dummy_process1.join()
-            self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -1460,10 +1454,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.dummy_process2.start()
             self.dummy_process1.terminate()
             self.dummy_process2.terminate()
+            self.dummy_process1.join()
+            self.dummy_process2.join()
 
-            # Wait a few seconds for the process to terminate and check that
-            # it has terminated
-            time.sleep(1)
+            # Check that that the processes have terminated
             self.assertFalse(self.test_manager.config_process_dict[
                                  'config_id1']['process'].is_alive())
             self.assertFalse(self.test_manager.config_process_dict[
@@ -1482,8 +1476,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                                 'process'].is_alive())
 
             # Clean before test finishes
-            self.dummy_process1.join()
-            self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -1505,9 +1497,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.dummy_process1.start()
             self.dummy_process2.start()
             self.dummy_process1.terminate()
-
-            # Wait a few seconds for the process to terminate
-            time.sleep(1)
+            self.dummy_process1.join()
 
             # Initialize
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1536,7 +1526,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
             # Clean before test finishes
             self.dummy_process2.terminate()
-            self.dummy_process1.join()
             self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
