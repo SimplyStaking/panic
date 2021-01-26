@@ -29,7 +29,6 @@ def infinite_fn() -> None:
 class TestSystemMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
-        self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = 'localhost'
         # self.rabbit_ip = env.RABBIT_IP
@@ -869,7 +868,6 @@ class TestSystemMonitor(unittest.TestCase):
             body_general_mon_false = json.dumps(
                 new_configs_general_monitor_false)
             properties = pika.spec.BasicProperties()
-            expected_output = copy.deepcopy(self.systems_configs_example)
 
             # First send the new configs as the state is empty
             self.test_manager._process_configs(blocking_channel, method_chains,
@@ -883,60 +881,337 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertTrue(self.test_manager.config_process_dict[
                                 'config_id2']['process'].is_alive())
 
-            # TODO: Cont from here we need to check that some configurations
-            #     : old monitors have been stopped, others no monitors started
-            #     : and others started new ones. No need to clean as in the end
-            #     : the dict would be empty
+            # Send the updated configs with `monitor_system = True`
+            conf_id1_old_proc = self.test_manager.config_process_dict[
+                                'config_id1']['process']
+            conf_id2_old_proc = self.test_manager.config_process_dict[
+                'config_id2']['process']
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_mon_true)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_general_mon_true)
 
-            # self.test_manager._process_configs(blocking_channel, method_chains,
-            #                                    properties, body_chain_mon_true)
-            # expected_output['Substrate Polkadot']['config_id1'] = \
-            #     new_configs_chain_monitor_true['config_id1']
-            # self.assertEqual(expected_output, self.test_manager.systems_configs)
-            #
-            # self.test_manager._process_configs(blocking_channel, method_general,
-            #                                    properties,
-            #                                    body_general_mon_true)
-            # expected_output['general']['config_id2'] = \
-            #     new_configs_general_monitor_true['config_id2']
-            # self.assertEqual(expected_output, self.test_manager.systems_configs)
-            #
-            # self.test_manager._process_configs(blocking_channel, method_chains,
-            #                                    properties,
-            #                                    body_chain_mon_false)
-            # expected_output['Substrate Polkadot'] = {}
-            # self.assertEqual(expected_output, self.test_manager.systems_configs)
-            # self.assertTrue(
-            #     'config_id1' not in self.test_manager.config_process_dict)
-            #
-            # self.test_manager._process_configs(
-            #     blocking_channel, method_general, properties,
-            #     body_general_mon_false)
-            # expected_output['general'] = {}
-            # self.assertEqual(expected_output, self.test_manager.systems_configs)
-            # self.assertTrue(
-            #     'config_id2' not in self.test_manager.config_process_dict)
+            # Check that the old process has terminated and a new one has
+            # started.
+            self.assertFalse(conf_id1_old_proc.is_alive())
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id1']['process'].is_alive())
+            self.assertFalse(conf_id2_old_proc.is_alive())
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id2']['process'].is_alive())
+
+            # Send the updated configs with `monitor_system = False`
+            conf_id1_old_proc = self.test_manager.config_process_dict[
+                'config_id1']['process']
+            conf_id2_old_proc = self.test_manager.config_process_dict[
+                'config_id2']['process']
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_mon_false)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_general_mon_false)
+
+            # Check that the old process has terminated and that new ones have
+            # not been started. If _create_start_process is called then the
+            # config ids would be in config_process_dict
+            self.assertFalse(conf_id1_old_proc.is_alive())
+            self.assertFalse(
+                'config_id1' in self.test_manager.config_process_dict)
+            self.assertFalse(conf_id2_old_proc.is_alive())
+            self.assertFalse(
+                'config_id2' in self.test_manager.config_process_dict)
 
             # Clean before test finishes
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_process_confs_restarts_an_updated_monitor_with_the_correct_conf(
+            self, startup_mock, mock_ack) -> None:
+        # We will check whether _create_and_start_monitor_process is called
+        # correctly on an updated configuration.
+        mock_ack.return_value = None
+        startup_mock.return_value = None
+        updated_configs_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parent_id': 'chain_1',
+                'name': 'changed_system_name_chain',
+                'exporter_url': 'dummy_url1',
+                'monitor_system': "True",
+            },
+        }
+        updated_configs_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parent_id': 'GENERAL',
+                'name': 'changed_system_name_gen',
+                'exporter_url': 'dummy_url2',
+                'monitor_system': "True",
+            },
+        }
+        self.test_manager._systems_configs = self.systems_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        # Start the processes stored in config_process_dict to avoid errors
+        self.dummy_process1.start()
+        self.dummy_process2.start()
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_updated_configs_chain = json.dumps(updated_configs_chain)
+            body_updated_configs_general = json.dumps(updated_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_updated_configs_chain)
+            self.assertEqual(1, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
+            self.assertEqual(updated_configs_chain['config_id1']['id'],
+                             args[0].system_id)
+            self.assertEqual(updated_configs_chain['config_id1']['parent_id'],
+                             args[0].parent_id)
+            self.assertEqual(updated_configs_chain['config_id1']['name'],
+                             args[0].system_name)
+            self.assertEqual(
+                str_to_bool(
+                    updated_configs_chain['config_id1']['monitor_system']),
+                args[0].monitor_system)
+            self.assertEqual(
+                updated_configs_chain['config_id1']['exporter_url'],
+                args[0].node_exporter_url)
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_updated_configs_general)
+            self.assertEqual(2, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id2' and 'general' in args)
+            self.assertEqual(updated_configs_general['config_id2']['id'],
+                             args[0].system_id)
+            self.assertEqual(updated_configs_general['config_id2']['parent_id'],
+                             args[0].parent_id)
+            self.assertEqual(updated_configs_general['config_id2']['name'],
+                             args[0].system_name)
+            self.assertEqual(
+                str_to_bool(
+                    updated_configs_general['config_id2']['monitor_system']),
+                args[0].monitor_system)
+            self.assertEqual(
+                updated_configs_general['config_id2']['exporter_url'],
+                args[0].node_exporter_url)
+
+            # Clean before test finishes
+            self.dummy_process1.terminate()
+            self.dummy_process2.terminate()
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_terminates_monitors_for_removed_configs(
-            self) -> None:
-        pass
+            self, mock_ack) -> None:
+        # In this test we will check that when a config is removed, it's monitor
+        # is terminated by process_config.
+        mock_ack.return_value = None
 
-    def test_process_configs_ignores_new_configs_with_incorrect_schema(
-            self) -> None:
-        pass
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_chain_new = json.dumps({})
+            body_general_new = json.dumps({})
+            properties = pika.spec.BasicProperties()
 
-    def test_process_configs_ignores_modified_configs_with_incorrect_schema(
-            self) -> None:
-        pass
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
 
-    def test_process_configs_ignores_removed_configs_with_incorrect_schema(
-            self) -> None:
-        pass
+            # Assure that the processes have been started
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id1']['process'].is_alive())
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id2']['process'].is_alive())
+
+            # Send the updated configs
+            conf_id1_old_proc = self.test_manager.config_process_dict[
+                'config_id1']['process']
+            conf_id2_old_proc = self.test_manager.config_process_dict[
+                'config_id2']['process']
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_new)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_new)
+
+            # Check that the old process has terminated
+            self.assertFalse(conf_id1_old_proc.is_alive())
+            self.assertFalse(conf_id2_old_proc.is_alive())
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_new_configs_with_missing_Keys(
+            self, mock_ack) -> None:
+        # We will check whether the state is kept intact if new configurations
+        # with missing keys are sent. Exceptions should never be raised in this
+        # case, and basic_ack must be called to ignore the message.
+        mock_ack.return_value = None
+        new_configs_chain = {
+            'config_id3': {
+                'id': 'config_id3',
+                'parentfg_id': 'chain_1',
+                'namfge': 'system_3',
+                'exporfgter_url': 'dummy_url3',
+                'monitorfg_system': "True",
+            },
+        }
+        new_configs_general = {
+            'config_id5': {
+                'id': 'config_id5',
+                'parentdfg_id': 'GENERAL',
+                'namdfge': 'system_5',
+                'exporter_urdfgl': 'dummy_url5',
+                'monitor_systdfgem': "True",
+            },
+        }
+        self.test_manager._systems_configs = self.systems_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_new_configs_chain = json.dumps(new_configs_chain)
+            body_new_configs_general = json.dumps(new_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_new_configs_general)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.systems_configs_example,
+                             self.test_manager.systems_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_new_configs_chain)
+            self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.systems_configs_example,
+                             self.test_manager.systems_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_modified_configs_with_missing_Keys(
+            self, mock_ack) -> None:
+        # We will check whether the state is kept intact if modified
+        # configurations with missing keys are sent. Exceptions should never be
+        # raised in this case, and basic_ack must be called to ignore the
+        # message.
+        mock_ack.return_value = None
+        updated_configs_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parentfg_id': 'chain_1',
+                'namfge': 'system_1',
+                'exporfgter_url': 'dummy_url1',
+                'monitorfg_system': "True",
+            },
+        }
+        updated_configs_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parentdfg_id': 'GENERAL',
+                'namdfge': 'system_2',
+                'exporter_urdfgl': 'dummy_url2',
+                'monitor_systdfgem': "True",
+            },
+        }
+        self.test_manager._systems_configs = self.systems_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_updated_configs_chain = json.dumps(updated_configs_chain)
+            body_updated_configs_general = json.dumps(updated_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_updated_configs_general)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.systems_configs_example,
+                             self.test_manager.systems_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_updated_configs_chain)
+            self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.systems_configs_example,
+                             self.test_manager.systems_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
 # TODO: Remove tearDown() commented code
 # TODO: Remove SIGHUP comment
