@@ -22,7 +22,7 @@ class TimedTaskLimiter:
 
     def can_do_task(self, start_time: datetime = datetime.now()) -> bool:
         return (start_time - self._last_time_that_did_task) \
-               > self._time_interval
+               >= self._time_interval
 
     def did_task(self) -> None:
         self._last_time_that_did_task = datetime.now()

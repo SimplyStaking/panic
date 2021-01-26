@@ -308,7 +308,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(open_fd['enabled']):
             current = metrics['open_file_descriptors']['current']
             previous = metrics['open_file_descriptors']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -318,7 +318,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
             previous = metrics['system_storage_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
@@ -328,7 +328,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
             previous = metrics['system_cpu_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -338,7 +338,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
             previous = metrics['system_ram_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
@@ -362,7 +362,7 @@ class SystemAlerter(Alerter):
             meta_data['system_id']]
         critical_limiter = critical_limiters[critical_limiter_name]
 
-        if warning_enabled:
+        if warning_enabled and current != previous:
             if (warning_threshold <= current < critical_threshold) and not \
                     (warning_threshold <= previous):
                 alert = \
