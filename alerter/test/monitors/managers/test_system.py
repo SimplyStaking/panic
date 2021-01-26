@@ -5,7 +5,6 @@ import multiprocessing
 import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
-from time import sleep
 from unittest import mock
 
 import pika
@@ -22,11 +21,7 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
     CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-
-
-def infinite_fn() -> None:
-    while True:
-        sleep(10)
+from test.test_utils import infinite_fn
 
 
 class TestSystemMonitorsManager(unittest.TestCase):
@@ -185,14 +180,14 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 self.test_manager.rabbitmq.channel._delivery_confirmation)
 
             # Check whether the exchanges and queues have been creating by
-            # sending messages with the same routing keys as for the queue. We
+            # sending messages with the same routing keys as for the queues. We
             # will also check if the size of the queues is 0 to confirm that
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
-            # created, then either an exception or the queue size would be 1.
-            # Note when deleting the exchanges in the beginning we also
-            # released every binding, hence there are not other queues binded
-            # with the same routing key at this point.
+            # created, then either an exception will be thrown or the queue size
+            # would be 1. Note when deleting the exchanges in the beginning we
+            # also released every binding, hence there are no other queue binded
+            # with the same routing key to any exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=SYS_MON_MAN_INPUT_ROUTING_KEY,

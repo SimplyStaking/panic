@@ -12,7 +12,7 @@ from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
-from src.utils import env
+# from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -22,10 +22,10 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
-_GH_MON_MAN_INPUT_QUEUE = 'github_monitors_manager_ping_queue'
-_GH_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-_GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
-_GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
+GH_MON_MAN_INPUT_QUEUE = 'github_monitors_manager_ping_queue'
+GH_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
+GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
 
 
 class GitHubMonitorsManager(MonitorsManager):
@@ -47,17 +47,17 @@ class GitHubMonitorsManager(MonitorsManager):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _GH_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_GH_MON_MAN_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", GH_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(GH_MON_MAN_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _GH_MON_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE, _GH_MON_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_GH_MON_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                 _GH_MON_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", GH_MON_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE, GH_MON_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GH_MON_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                 GH_MON_MAN_INPUT_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          _GH_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_GH_MON_MAN_INPUT_QUEUE, self._process_ping,
+                          GH_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(GH_MON_MAN_INPUT_QUEUE, self._process_ping,
                                     True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -69,15 +69,15 @@ class GitHubMonitorsManager(MonitorsManager):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_CHAINS)
+                         CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _GH_MON_MAN_ROUTING_KEY_CHAINS)
+                                 GH_MON_MAN_ROUTING_KEY_CHAINS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_GEN)
+                         CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, _GH_MON_MAN_ROUTING_KEY_GEN)
+                                 CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_GEN)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -115,7 +115,7 @@ class GitHubMonitorsManager(MonitorsManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == _GH_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
             if 'general' in self.repos_configs:
                 current_configs = self.repos_configs['general']
             else:
@@ -147,7 +147,9 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
+                # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
+                releases_page = \
+                    'https://api.github.com/repos/{}releases'.format(repo_name)
 
                 # If we should not monitor the repo, move to the next config
                 if not monitor_repo:
@@ -172,7 +174,9 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
+                # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
+                releases_page = \
+                    'https://api.github.com/repos/{}releases'.format(repo_name)
                 repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                          monitor_repo, releases_page)
                 previous_process = self.config_process_dict[config_id][
@@ -216,7 +220,7 @@ class GitHubMonitorsManager(MonitorsManager):
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == _GH_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
             self._repos_configs['general'] = correct_repos_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -256,8 +260,11 @@ class GitHubMonitorsManager(MonitorsManager):
                         repo_name = repo_name + '/'
 
                     monitor_repo = str_to_bool(config['monitor_repo'])
-                    releases_page = env.GITHUB_RELEASES_TEMPLATE.format(
-                        repo_name)
+                    # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(
+                    #     repo_name)
+                    releases_page = \
+                        'https://api.github.com/repos/{}releases'.format(
+                            repo_name)
                     repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                              monitor_repo, releases_page)
                     self._create_and_start_monitor_process(repo_config,
