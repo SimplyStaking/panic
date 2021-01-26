@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 import multiprocessing
+import time
 import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
@@ -9,6 +10,7 @@ from time import sleep
 from unittest import mock
 
 import pika
+from freezegun import freeze_time
 
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -26,7 +28,7 @@ def infinite_fn() -> None:
         sleep(10)
 
 
-class TestSystemMonitor(unittest.TestCase):
+class TestSystemMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -54,7 +56,7 @@ class TestSystemMonitor(unittest.TestCase):
             'config_id2': {
                 'component_name': 'System monitor ({})'.format('system_2'),
                 'process': self.dummy_process2,
-                'chain': 'GENERAL'
+                'chain': 'general'
             },
         }
         self.systems_configs_example = {
@@ -223,7 +225,7 @@ class TestSystemMonitor(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_send_data_sends_a_heartbeat_correctly(self) -> None:
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # heartbeat is received
@@ -284,7 +286,7 @@ class TestSystemMonitor(unittest.TestCase):
             'config_id2': {
                 'component_name': 'System monitor ({})'.format('system_2'),
                 'process': self.dummy_process2,
-                'chain': 'GENERAL'
+                'chain': 'general'
             },
             self.system_id_new: {}
         }
@@ -504,7 +506,7 @@ class TestSystemMonitor(unittest.TestCase):
         join_mock.return_value = None
         terminate_mock.return_value = None
         self.test_manager._systems_configs = self.systems_configs_example
-        self.test_manager._config_process_dict =\
+        self.test_manager._config_process_dict = \
             self.config_process_dict_example
 
         new_configs_chain_monitor_true = {
@@ -883,7 +885,7 @@ class TestSystemMonitor(unittest.TestCase):
 
             # Send the updated configs with `monitor_system = True`
             conf_id1_old_proc = self.test_manager.config_process_dict[
-                                'config_id1']['process']
+                'config_id1']['process']
             conf_id2_old_proc = self.test_manager.config_process_dict[
                 'config_id2']['process']
             self.test_manager._process_configs(blocking_channel, method_chains,
@@ -1213,6 +1215,363 @@ class TestSystemMonitor(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @freeze_time("2012-01-01")
+    def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
+            self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Automate the case when having all processes running
+            self.test_manager._systems_configs = self.systems_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+            self.dummy_process1.start()
+            self.dummy_process2.start()
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes':
+                    [self.test_manager.config_process_dict['config_id1'][
+                         'component_name'],
+                     self.test_manager.config_process_dict['config_id2'][
+                         'component_name']],
+                'dead_processes': [],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.dummy_process1.terminate()
+            self.dummy_process2.terminate()
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_process_ping_sends_a_valid_hb_if_some_proc_alive_and_some_dead(
+            self, startup_mock) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        startup_mock.return_value = None
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Automate the case when having some processes running and some dead
+            self.test_manager._systems_configs = self.systems_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+            self.dummy_process1.start()
+            self.dummy_process2.start()
+            self.dummy_process1.terminate()
+
+            # Wait a few seconds for the process to terminate
+            time.sleep(1)
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes': [
+                    self.test_manager.config_process_dict['config_id2'][
+                        'component_name']],
+                'dead_processes': [
+                    self.test_manager.config_process_dict['config_id1'][
+                        'component_name']],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.dummy_process2.terminate()
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
+            self, startup_mock) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        startup_mock.return_value = None
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Automate the case when having all processes dead
+            self.test_manager._systems_configs = self.systems_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+            self.dummy_process1.start()
+            self.dummy_process2.start()
+            self.dummy_process1.terminate()
+            self.dummy_process2.terminate()
+
+            # Wait a few seconds for the process to terminate
+            time.sleep(1)
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes': [],
+                'dead_processes': [
+                    self.test_manager.config_process_dict['config_id1'][
+                        'component_name'],
+                    self.test_manager.config_process_dict['config_id2'][
+                        'component_name']],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
+    def test_process_ping_restarts_dead_processes(self, send_hb_mock) -> None:
+        send_hb_mock.return_value = None
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            # Automate the case when having all processes dead
+            self.test_manager._systems_configs = self.systems_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+            self.dummy_process1.start()
+            self.dummy_process2.start()
+            self.dummy_process1.terminate()
+            self.dummy_process2.terminate()
+
+            # Wait a few seconds for the process to terminate and check that
+            # it has terminated
+            time.sleep(1)
+            self.assertFalse(self.test_manager.config_process_dict[
+                                 'config_id1']['process'].is_alive())
+            self.assertFalse(self.test_manager.config_process_dict[
+                                 'config_id2']['process'].is_alive())
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+            self.assertTrue(self.test_manager.config_process_dict['config_id1'][
+                                'process'].is_alive())
+            self.assertTrue(self.test_manager.config_process_dict['config_id2'][
+                                'process'].is_alive())
+
+            # Clean before test finishes
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
+    @mock.patch.object(SystemMonitorsManager,
+                       "_create_and_start_monitor_process")
+    def test_process_ping_restarts_dead_processes_with_correct_info(
+            self, startup_mock, send_hb_mock) -> None:
+        send_hb_mock.return_value = None
+        startup_mock.return_value = None
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            # Automate the case when having some processes dead and some alive
+            self.test_manager._systems_configs = self.systems_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+            self.dummy_process1.start()
+            self.dummy_process2.start()
+            self.dummy_process1.terminate()
+
+            # Wait a few seconds for the process to terminate
+            time.sleep(1)
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            self.assertEqual(1, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
+            self.assertEqual(self.systems_configs_example['Substrate Polkadot'][
+                                 'config_id1']['id'], args[0].system_id)
+            self.assertEqual(self.systems_configs_example['Substrate Polkadot'][
+                                 'config_id1']['parent_id'], args[0].parent_id)
+            self.assertEqual(self.systems_configs_example['Substrate Polkadot'][
+                                 'config_id1']['name'], args[0].system_name)
+            self.assertEqual(
+                str_to_bool(self.systems_configs_example['Substrate Polkadot'][
+                                'config_id1']['monitor_system']),
+                args[0].monitor_system)
+            self.assertEqual(self.systems_configs_example['Substrate Polkadot'][
+                                 'config_id1']['exporter_url'],
+                             args[0].node_exporter_url)
+
+            # Clean before test finishes
+            self.dummy_process2.terminate()
+            self.dummy_process1.join()
+            self.dummy_process2.join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_process_ping_does_not_send_hb_if_processing_fails(self) -> None:
+        pass
+
+    def test_process_ping_raises_msg_not_delivered_exception_if_hb_not_routed(
+            self) -> None:
+        pass
+
+    def test_process_ping_does_not_send_hb_if_hb_not_routed(self) -> None:
+        pass
+
+    def test_process_ping_raises_amqp_conn_err_on_conn_err(self) -> None:
+        pass
+
+    def test_process_ping_does_not_send_hb_on_amqp_conn_err(self) -> None:
+        pass
+
+    def test_process_ping_raises_amqp_chan_err_on_chan_err(self) -> None:
+        pass
+
+    def test_process_ping_does_not_send_hb_on_amqp_chan_err(self) -> None:
+        pass
+
+    def test_process_ping_raises_exception_on_unexpected_exception(
+            self) -> None:
+        pass
+
+    def test_process_ping_does_not_send_hb_on_unexpected_exception(
+            self) -> None:
+        pass
+
 # TODO: Remove tearDown() commented code
 # TODO: Remove SIGHUP comment
 # TODO: Fix rabbit host
@@ -1220,4 +1579,3 @@ class TestSystemMonitor(unittest.TestCase):
 #     : starters
 # TODO: Now since tests finished we need to run in docker environment.
 #     : Do not forget to do the three TODOs above before.
-# TODO: Switch off printing to stdout
