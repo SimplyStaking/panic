@@ -14,20 +14,11 @@ class SystemAlertCode(Enum):
     SystemRAMUsageDecreasedBelowThresholdAlert = 'system_alert_6',
     SystemStorageUsageIncreasedAboveThresholdAlert = 'system_alert_7',
     SystemStorageUsageDecreasedBelowThresholdAlert = 'system_alert_8',
-    ReceivedUnexpectedDataAlert = 'system_alert_9',
-    InvalidUrlAlert = 'system_alert_10',
-    SystemWentDownAtAlert = 'system_alert_11',
-    SystemBackUpAgainAlert = 'system_alert_12',
-    SystemStillDownAlert = 'system_alert_13',
-    MetricNotFoundErrorAlert = 'system_alert_14'
-
-
-class ReceivedUnexpectedDataAlert(Alert):
-    def __init__(self, message: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            SystemAlertCode.ReceivedUnexpectedDataAlert,
-            message, severity, timestamp, parent_id, origin_id)
+    InvalidUrlAlert = 'system_alert_9',
+    SystemWentDownAtAlert = 'system_alert_10',
+    SystemBackUpAgainAlert = 'system_alert_11',
+    SystemStillDownAlert = 'system_alert_12',
+    MetricNotFoundErrorAlert = 'system_alert_13'
 
 
 class SystemWentDownAtAlert(Alert):
