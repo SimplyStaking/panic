@@ -1040,11 +1040,16 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 args[0].node_exporter_url)
 
             # Clean before test finishes
+            self.dummy_process1.terminate()
+            self.dummy_process2.terminate()
             self.dummy_process1.join()
             self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+    # TODO: Need to investigate why the above is failing in produciton, cannot
+    #     : join error. Even for github tests.
 
     # @mock.patch.object(RabbitMQApi, "basic_ack")
     # def test_process_configs_terminates_monitors_for_removed_configs(
