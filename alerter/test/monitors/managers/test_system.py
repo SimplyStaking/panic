@@ -387,8 +387,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-        self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
-
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemMonitorsManager,
                        "_create_and_start_monitor_process")
@@ -514,7 +512,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             'config_id1': {
                 'id': 'config_id1',
                 'parent_id': 'chain_1',
-                'name': 'new_system_name',
+                'name': 'new_system_name_chain',
                 'exporter_url': 'dummy_url1',
                 'monitor_system': "True",
             },
@@ -823,7 +821,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             'config_id1': {
                 'id': 'config_id1',
                 'parent_id': 'chain_1',
-                'name': 'new_system_name',
+                'name': 'new_system_name_chain',
                 'exporter_url': 'dummy_url1',
                 'monitor_system': "True",
             },
@@ -1033,7 +1031,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
     def test_process_configs_terminates_monitors_for_removed_configs(
             self, mock_ack) -> None:
         # In this test we will check that when a config is removed, it's monitor
-        # is terminated by process_config.
+        # is terminated by _process_configs.
         mock_ack.return_value = None
 
         try:
@@ -1584,7 +1582,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_process_ping_does_not_raise_msg_not_del_exception_if_hb_not_routed(
+    def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
             self) -> None:
         try:
             self.test_manager._initialise_rabbitmq()
@@ -1619,7 +1617,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    def test_process_ping_raises_amqp_connection_err_on_connection_err(
+    def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
             self, hb_mock) -> None:
         hb_mock.side_effect = pika.exceptions.AMQPConnectionError('test')
         try:
@@ -1656,7 +1654,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    def test_process_ping_raises_amqp_chan_err_on_chan_err(
+    def test_process_ping_send_hb_raises_amqp_chan_err_on_chan_err(
             self, hb_mock) -> None:
         hb_mock.side_effect = pika.exceptions.AMQPChannelError('test')
         try:
@@ -1693,7 +1691,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    def test_process_ping_raises_exception_on_unexpected_exception(
+    def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
             self, hb_mock) -> None:
         hb_mock.side_effect = self.test_exception
         try:
