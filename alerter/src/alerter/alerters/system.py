@@ -146,10 +146,8 @@ class SystemAlerter(Alerter):
 
                     self._process_results(data, meta_data, data_for_alerting)
                 elif 'error' in data_received:
-                    meta_data = data_received['error']['meta_data']
-                    system_id = meta_data['system_id']
-                    self._create_state_for_system(system_id)
-
+                    self._create_state_for_system(
+                        data_received['error']['meta_data']['system_id'])
                     self._process_errors(data_received['error'],
                                          data_for_alerting)
                 else:
@@ -203,16 +201,18 @@ class SystemAlerter(Alerter):
         data = error_data['data']
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
-                error_data['message'], 'ERROR', meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id']
+                meta_data['system_name'], error_data['message'],
+                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
             self.logger.debug('Successfully classified alert %s',
                               alert.alert_data)
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
-                error_data['message'], 'ERROR', meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id']
+                meta_data['system_name'], error_data['message'],
+                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
             self.logger.debug('Successfully classified alert %s',
@@ -228,7 +228,6 @@ class SystemAlerter(Alerter):
                 is_down_critical_limiter = critical_limiters[
                     _IS_DOWN_LIMITER_NAME]
                 downtime = monitoring_timestamp - current
-
                 critical_threshold = int(is_down['critical_threshold'])
                 critical_enabled = str_to_bool(is_down['critical_enabled'])
                 warning_threshold = int(is_down['warning_threshold'])

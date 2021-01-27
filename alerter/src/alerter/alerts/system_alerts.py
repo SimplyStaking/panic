@@ -62,10 +62,11 @@ class SystemStillDownAlert(Alert):
 
 
 class InvalidUrlAlert(Alert):
-    def __init__(self, message: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.InvalidUrlAlert, message, severity,
+            SystemAlertCode.InvalidUrlAlert,
+            "{}: {}".format(origin_name, message), severity,
             timestamp, parent_id, origin_id)
 
 
@@ -158,8 +159,9 @@ class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
 
 
 class MetricNotFoundErrorAlert(Alert):
-    def __init__(self, message: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
+    def __init__(self, origin_name:str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.MetricNotFoundErrorAlert, message, severity,
+            SystemAlertCode.MetricNotFoundErrorAlert,
+            "{}: {}".format(origin_name, message), severity,
             timestamp, parent_id, origin_id)
