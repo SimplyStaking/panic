@@ -30,6 +30,7 @@ from test.test_utils import infinite_fn
 class TestGitHubMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
+        self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(

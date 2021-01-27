@@ -27,6 +27,7 @@ from src.utils.exceptions import (PANICException, GitHubAPICallException,
 class TestGitHubMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
+        self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
