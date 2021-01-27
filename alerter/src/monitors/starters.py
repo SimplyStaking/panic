@@ -32,7 +32,7 @@ def _initialize_monitor_logger(monitor_display_name: str,
         try:
             monitor_logger = create_logger(
                 'logs/monitors/{}.log'.format(monitor_display_name),
-                monitor_module_name, 'INFO', rotating=True)
+                monitor_module_name, 'INFO', True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(monitor_display_name, e)
