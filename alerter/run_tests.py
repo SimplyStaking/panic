@@ -1,7 +1,7 @@
 import unittest
 
 loader = unittest.TestLoader()
-suite = loader.discover('.', pattern='*.py')
+suite = loader.discover('.')
 
 runner = unittest.TextTestRunner()
 runner.run(suite)
