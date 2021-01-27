@@ -16,18 +16,19 @@ from urllib3.exceptions import ProtocolError
 from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
+from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import PANICException, GitHubAPICallException, \
-    CannotAccessGitHubPageException, DataReadingException, JSONDecodeException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (PANICException, GitHubAPICallException,
+                                  CannotAccessGitHubPageException,
+                                  DataReadingException, JSONDecodeException,
+                                  MessageWasNotDeliveredException)
 
 
 class TestGitHubMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -890,9 +891,3 @@ class TestGitHubMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-# TODO: Remove tearDown() commented code
-# TODO: Remove SIGHUP comment
-# TODO: Fix rabbit host
-# TODO: Now since tests finished we need to run in docker environment.
-#     : Do not forget to do the three TODOs above before.

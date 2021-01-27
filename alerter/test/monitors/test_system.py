@@ -17,6 +17,7 @@ from urllib3.exceptions import ProtocolError
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
+from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, SystemIsDownException, \
     DataReadingException, InvalidUrlException, MetricNotFoundException, \
@@ -27,8 +28,7 @@ class TestSystemMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -873,15 +873,15 @@ class TestSystemMonitor(unittest.TestCase):
             self, mock_get_data, mock_send_data) -> None:
         mock_get_data.return_value = self.retrieved_metrics_example
         exception_types_dict = \
-        {
-            Exception('test'): Exception,
-            pika.exceptions.AMQPConnectionError('test'):
-                pika.exceptions.AMQPConnectionError,
-            pika.exceptions.AMQPChannelError('test'):
-                pika.exceptions.AMQPChannelError,
-            MessageWasNotDeliveredException('test'):
-                MessageWasNotDeliveredException
-        }
+            {
+                Exception('test'): Exception,
+                pika.exceptions.AMQPConnectionError('test'):
+                    pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError('test'):
+                    pika.exceptions.AMQPChannelError,
+                MessageWasNotDeliveredException('test'):
+                    MessageWasNotDeliveredException
+            }
         try:
             self.test_monitor._initialise_rabbitmq()
             for exception, exception_type in exception_types_dict.items():
@@ -920,9 +920,3 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-# TODO: Remove tearDown() commented code
-# TODO: Remove SIGHUP comment
-# TODO: Fix rabbit host
-# TODO: Now since tests finished we need to run in docker environment.
-#     : Do not forget to do the three TODOs above before.

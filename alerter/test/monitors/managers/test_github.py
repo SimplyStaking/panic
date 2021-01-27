@@ -19,8 +19,9 @@ from src.monitors.managers.github import (GitHubMonitorsManager,
                                           GH_MON_MAN_ROUTING_KEY_CHAINS,
                                           GH_MON_MAN_INPUT_ROUTING_KEY)
 from src.monitors.starters import start_github_monitor
+from src.utils import env
 from src.utils.constants import GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
-    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, GITHUB_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.test_utils import infinite_fn
@@ -30,8 +31,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -50,12 +50,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.dummy_process3.daemon = True
         self.config_process_dict_example = {
             'config_id1': {
-                'component_name': 'GitHub monitor ({})'.format('repo_1'),
+                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_1'),
                 'process': self.dummy_process1,
                 'chain': 'Substrate Polkadot'
             },
             'config_id2': {
-                'component_name': 'GitHub monitor ({})'.format('repo_2'),
+                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_2'),
                 'process': self.dummy_process2,
                 'chain': 'general'
             },
@@ -100,8 +100,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.monitor_repo_new = True
         self.chain_example_new = 'Substrate Polkadot'
         self.releases_page_new = \
-            'https://api.github.com/repos/{}/releases'.format(
-                self.repo_name_new)
+            env.GITHUB_RELEASES_TEMPLATE.format(self.repo_name_new)
         self.repo_config_example = RepoConfig(self.repo_id_new,
                                               self.parent_id_new,
                                               self.repo_name_new,
@@ -280,19 +279,19 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
         expected_output = {
             'config_id1': {
-                'component_name': 'GitHub monitor ({})'.format('repo_1'),
+                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_1'),
                 'process': self.dummy_process1,
                 'chain': 'Substrate Polkadot'
             },
             'config_id2': {
-                'component_name': 'GitHub monitor ({})'.format('repo_2'),
+                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_2'),
                 'process': self.dummy_process2,
                 'chain': 'general'
             },
             self.repo_id_new: {}
         }
         new_entry = expected_output[self.repo_id_new]
-        new_entry['component_name'] = 'GitHub monitor ({})'.format(
+        new_entry['component_name'] = GITHUB_MONITOR_NAME_TEMPLATE.format(
             self.repo_name_new.replace('/', ' ')[:-1])
         new_entry['chain'] = self.chain_example_new
         new_entry['process'] = self.dummy_process3
@@ -715,7 +714,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 str_to_bool(
                     self.sent_configs_example_chain['config_id1'][
                         'monitor_repo']), args[0].monitor_repo)
-            self.assertEqual('https://api.github.com/repos/{}releases'.format(
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 self.sent_configs_example_chain['config_id1']['repo_name']
                 + '/'), args[0].releases_page)
 
@@ -734,7 +733,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(
                 str_to_bool(new_configs_chain['config_id3']['monitor_repo']),
                 args[0].monitor_repo)
-            self.assertEqual('https://api.github.com/repos/{}releases'.format(
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 new_configs_chain['config_id3']['repo_name'] + '/'),
                 args[0].releases_page)
 
@@ -755,7 +754,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 str_to_bool(
                     self.sent_configs_example_general['config_id2'][
                         'monitor_repo']), args[0].monitor_repo)
-            self.assertEqual('https://api.github.com/repos/{}releases'.format(
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 self.sent_configs_example_general['config_id2']['repo_name']
                 + '/'), args[0].releases_page)
 
@@ -774,7 +773,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(
                 str_to_bool(new_configs_general['config_id5']['monitor_repo']),
                 args[0].monitor_repo)
-            self.assertEqual('https://api.github.com/repos/{}releases'.format(
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 new_configs_general['config_id5']['repo_name'] + '/'),
                 args[0].releases_page)
 
@@ -965,9 +964,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 str_to_bool(
                     updated_configs_chain['config_id1']['monitor_repo']),
                 args[0].monitor_repo)
-            self.assertEqual(
-                'https://api.github.com/repos/{}releases'.format(
-                    updated_configs_chain['config_id1']['repo_name'] + '/'),
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
+                updated_configs_chain['config_id1']['repo_name'] + '/'),
                 args[0].releases_page)
 
             self.test_manager._process_configs(blocking_channel, method_general,
@@ -987,9 +985,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 str_to_bool(
                     updated_configs_general['config_id2']['monitor_repo']),
                 args[0].monitor_repo)
-            self.assertEqual(
-                'https://api.github.com/repos/{}releases'.format(
-                    updated_configs_general['config_id2']['repo_name'] + '/'),
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
+                updated_configs_general['config_id2']['repo_name'] + '/'),
                 args[0].releases_page)
 
             # Clean before test finishes
@@ -1490,7 +1487,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 str_to_bool(self.repos_configs_example['Substrate Polkadot'][
                                 'config_id1']['monitor_repo']),
                 args[0].monitor_repo)
-            self.assertEqual('https://api.github.com/repos/{}releases'.format(
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 self.repos_configs_example['Substrate Polkadot']['config_id1'][
                     'repo_name'] + '/'), args[0].releases_page)
 
@@ -1696,11 +1693,3 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-# TODO: Remove tearDown() commented code
-# TODO: Remove SIGHUP comment
-# TODO: Fix rabbit host
-# TODO: Remove env commented code in system manager, github manager, monitor
-#     : starters, compare with develop to see what changed
-# TODO: Now since tests finished we need to run in docker environment.
-#     : Do not forget to do the three TODOs above before.

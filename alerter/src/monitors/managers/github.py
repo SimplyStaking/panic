@@ -12,7 +12,7 @@ from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
-# from src.utils import env
+from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -145,9 +145,7 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
-                releases_page = \
-                    'https://api.github.com/repos/{}releases'.format(repo_name)
+                releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
 
                 # If we should not monitor the repo, move to the next config
                 if not monitor_repo:
@@ -172,9 +170,7 @@ class GitHubMonitorsManager(MonitorsManager):
                     repo_name = repo_name + '/'
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
-                # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
-                releases_page = \
-                    'https://api.github.com/repos/{}releases'.format(repo_name)
+                releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
                 repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                          monitor_repo, releases_page)
                 previous_process = self.config_process_dict[config_id][
@@ -258,11 +254,8 @@ class GitHubMonitorsManager(MonitorsManager):
                         repo_name = repo_name + '/'
 
                     monitor_repo = str_to_bool(config['monitor_repo'])
-                    # releases_page = env.GITHUB_RELEASES_TEMPLATE.format(
-                    #     repo_name)
-                    releases_page = \
-                        'https://api.github.com/repos/{}releases'.format(
-                            repo_name)
+                    releases_page = env.GITHUB_RELEASES_TEMPLATE.format(
+                        repo_name)
                     repo_config = RepoConfig(repo_id, parent_id, repo_name,
                                              monitor_repo, releases_page)
                     self._create_and_start_monitor_process(repo_config,

@@ -17,8 +17,10 @@ from src.monitors.managers.system import SystemMonitorsManager, \
     SYS_MON_MAN_INPUT_QUEUE, SYS_MON_MAN_INPUT_ROUTING_KEY, \
     SYS_MON_MAN_ROUTING_KEY_CHAINS, SYS_MON_MAN_ROUTING_KEY_GEN
 from src.monitors.starters import start_system_monitor
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
-    CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+    CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
+    SYSTEM_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.test_utils import infinite_fn
@@ -28,8 +30,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -48,12 +49,14 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.dummy_process3.daemon = True
         self.config_process_dict_example = {
             'config_id1': {
-                'component_name': 'System monitor ({})'.format('system_1'),
+                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                    'system_1'),
                 'process': self.dummy_process1,
                 'chain': 'Substrate Polkadot'
             },
             'config_id2': {
-                'component_name': 'System monitor ({})'.format('system_2'),
+                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                    'system_2'),
                 'process': self.dummy_process2,
                 'chain': 'general'
             },
@@ -280,19 +283,21 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
         expected_output = {
             'config_id1': {
-                'component_name': 'System monitor ({})'.format('system_1'),
+                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                    'system_1'),
                 'process': self.dummy_process1,
                 'chain': 'Substrate Polkadot'
             },
             'config_id2': {
-                'component_name': 'System monitor ({})'.format('system_2'),
+                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                    'system_2'),
                 'process': self.dummy_process2,
                 'chain': 'general'
             },
             self.system_id_new: {}
         }
         new_entry = expected_output[self.system_id_new]
-        new_entry['component_name'] = 'System monitor ({})'.format(
+        new_entry['component_name'] = SYSTEM_MONITOR_NAME_TEMPLATE.format(
             self.system_name_new)
         new_entry['chain'] = self.chain_example_new
         new_entry['process'] = self.dummy_process3
@@ -1725,11 +1730,3 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-# TODO: Remove tearDown() commented code
-# TODO: Remove SIGHUP comment
-# TODO: Fix rabbit host
-# TODO: Remove env commented code in system manager, github manager, monitor
-#     : starters
-# TODO: Now since tests finished we need to run in docker environment.
-#     : Do not forget to do the three TODOs above before.

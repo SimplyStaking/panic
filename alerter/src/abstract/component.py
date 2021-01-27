@@ -12,7 +12,7 @@ class Component(ABC):
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self._on_terminate)
         signal.signal(signal.SIGINT, self._on_terminate)
-        # signal.signal(signal.SIGHUP, self._on_terminate)
+        signal.signal(signal.SIGHUP, self._on_terminate)
 
     @abstractmethod
     def start(self) -> None:
