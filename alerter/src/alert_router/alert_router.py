@@ -329,7 +329,7 @@ class AlertRouter(QueuingPublisherComponent):
         if "twilio" in config_filename:
             return {
                 'id': section.get('id'),
-                'parent_ids': section.get('parent_ids').split(","),
+                'parent_ids': section.get('parent_ids').strip().split(","),
                 'info': False,
                 'warning': False,
                 'error': False,
@@ -338,7 +338,8 @@ class AlertRouter(QueuingPublisherComponent):
 
         return {
             'id': section.get('id'),
-            'parent_ids': section.get('parent_ids').split(","),
+            'parent_ids': [x for x in section.get('parent_ids').split(",") if
+                           x.strip()],
             'info': section.getboolean('info'),
             'warning': section.getboolean('warning'),
             'error': section.getboolean('error'),
