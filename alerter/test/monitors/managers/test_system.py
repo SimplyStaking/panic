@@ -1049,7 +1049,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     # TODO: Need to investigate why the above is failing in produciton, cannot
-    #     : join error. Even for github tests.
+    #     : join error. Even for github tests. Check if we change an essertion
+    #     : whether the tests pass
 
     # @mock.patch.object(RabbitMQApi, "basic_ack")
     # def test_process_configs_terminates_monitors_for_removed_configs(
