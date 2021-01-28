@@ -4,6 +4,7 @@ import logging
 import time
 import unittest
 from datetime import timedelta
+from typing import Any
 from unittest import mock
 
 import configparser
@@ -19,6 +20,10 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, ALERT_EXCHANGE,
                                  STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_ROUTER_CONFIGS_QUEUE_NAME)
+
+
+def get_failure_message(error_message: Any):
+    return "Test failed: {}".format(error_message)
 
 
 class TestAlertRouter(unittest.TestCase):
@@ -43,7 +48,8 @@ class TestAlertRouter(unittest.TestCase):
         self._redis = RedisApi(self._redis_logger, self._redis_db,
                                self._redis_ip, self._redis_port)
 
-        self._test_channel_config_file = {
+        self.CONFIG_ROUTING_KEY = "channels.test"
+        self.TEST_CHANNEL_CONFIG_FILE = {
             'test_123': {
                 'id': "test_123",
                 'channel_name': "test_channel",
@@ -56,7 +62,7 @@ class TestAlertRouter(unittest.TestCase):
             }
         }
 
-        self._test_channel_config = {
+        self.TEST_CHANNEL_CONFIG = {
             'test_123': {
                 'id': "test_123",
                 'info': False,
@@ -146,7 +152,6 @@ class TestAlertRouter(unittest.TestCase):
                                         False, False)
 
         mock_ack.return_value = None
-        routing_key = "channels.test"
         try:
             # Must create a connection so that the blocking channel is passed
             self._test_alert_router._initialise_rabbit()
@@ -156,9 +161,9 @@ class TestAlertRouter(unittest.TestCase):
             # non-existing chain and general paths to make sure that all routes
             # work as expected.
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
+                routing_key=self.CONFIG_ROUTING_KEY)
             config_json = json.dumps(
-                self._test_channel_config_file)
+                self.TEST_CHANNEL_CONFIG_FILE)
             properties = pika.spec.BasicProperties()
 
             self._test_alert_router._process_configs(blocking_channel,
@@ -167,7 +172,7 @@ class TestAlertRouter(unittest.TestCase):
                                                      config_json)
 
             expected_output = {
-                routing_key: copy.deepcopy(self._test_channel_config)
+                self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG)
             }
 
             self.assertEqual(expected_output, self._test_alert_router._config)
@@ -175,7 +180,7 @@ class TestAlertRouter(unittest.TestCase):
             # Clean before test finishes
             self._test_alert_router.disconnect_from_rabbit()
         except Exception as e:
-            self.fail("Test failed: {}".format(e))
+            self.fail(get_failure_message(e))
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_correct_config_update_consumed_and_processed(self, mock_ack):
@@ -184,7 +189,6 @@ class TestAlertRouter(unittest.TestCase):
                                         False, False)
 
         mock_ack.return_value = None
-        routing_key = "channels.test"
         updated_config_file = {
             'test_123': {
                 'id': "test_123",
@@ -218,9 +222,9 @@ class TestAlertRouter(unittest.TestCase):
             # non-existing chain and general paths to make sure that all routes
             # work as expected.
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
+                routing_key=self.CONFIG_ROUTING_KEY)
             config_json = json.dumps(
-                self._test_channel_config_file)
+                self.TEST_CHANNEL_CONFIG_FILE)
             properties = pika.spec.BasicProperties()
 
             self._test_alert_router._process_configs(blocking_channel,
@@ -237,7 +241,7 @@ class TestAlertRouter(unittest.TestCase):
                                                      updated_config_json)
 
             expected_output = {
-                routing_key: copy.deepcopy(updated_config)
+                self.CONFIG_ROUTING_KEY: copy.deepcopy(updated_config)
             }
 
             self.assertEqual(expected_output, self._test_alert_router._config)
@@ -245,11 +249,64 @@ class TestAlertRouter(unittest.TestCase):
             # Clean before test finishes
             self._test_alert_router.disconnect_from_rabbit()
         except Exception as e:
-            self.fail("Test failed: {}".format(e))
+            self.fail(get_failure_message(e))
 
-    @unittest.skip
-    def test_incorrect_config_update_consumed_and_reverted(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_incorrect_config_update_consumed_and_reverted(self, mock_ack):
+        self._rabbitmq.connect_till_successful()
+        self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
+                                        False, False)
+
+        mock_ack.return_value = None
+        # Incorrect config file has missing fields
+        updated_incorrect_config_file = {
+            'test_123': {
+                'id': "test_123",
+                'channel_name': "test_channel",
+                'critical': "false",
+                'error': "true",
+                'parent_ids': "GENERAL,",
+                'parent_names': ""
+            }
+        }
+
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self._test_alert_router._initialise_rabbit()
+            blocking_channel = self._test_alert_router._rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.CONFIG_ROUTING_KEY)
+            config_json = json.dumps(
+                self.TEST_CHANNEL_CONFIG_FILE)
+            properties = pika.spec.BasicProperties()
+
+            self._test_alert_router._process_configs(blocking_channel,
+                                                     method_chains,
+                                                     properties,
+                                                     config_json)
+
+            updated_config_json = json.dumps(updated_incorrect_config_file)
+            properties = pika.spec.BasicProperties()
+
+            self._test_alert_router._process_configs(blocking_channel,
+                                                     method_chains,
+                                                     properties,
+                                                     updated_config_json)
+
+            expected_output = {
+                self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG)
+            }
+
+            self.assertEqual(expected_output, self._test_alert_router._config)
+
+            # Clean before test finishes
+            self._test_alert_router.disconnect_from_rabbit()
+        except Exception as e:
+            self.fail(get_failure_message(e))
 
     @unittest.skip
     def test_multiple_channel_config_correct(self):

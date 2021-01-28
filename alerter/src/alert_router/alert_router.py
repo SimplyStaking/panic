@@ -1,6 +1,7 @@
 import json
 import sys
-from configparser import ConfigParser, NoOptionError, NoSectionError
+from configparser import ConfigParser, NoOptionError, NoSectionError, \
+    SectionProxy
 from datetime import datetime
 from logging import Logger
 from types import FrameType
@@ -16,7 +17,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
                                  ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_ROUTER_CONFIGS_QUEUE_NAME)
-from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.exceptions import MessageWasNotDeliveredException, \
+    MissingKeyInConfigException
 from src.utils.logging import log_and_print
 
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
@@ -142,10 +144,11 @@ class AlertRouter(QueuingPublisherComponent):
             # Taking what we need, and checking types
             try:
                 for key in recv_config.sections():
-                    self._config[config_filename][key] = self._extract_config(
+                    self._config[config_filename][key] = self.extract_config(
                         recv_config[key], config_filename
                     )
-            except (NoOptionError, NoSectionError) as missing_error:
+            except (NoOptionError, NoSectionError,
+                    MissingKeyInConfigException) as missing_error:
                 self._logger.error(
                     "The configuration file %s is missing some configs",
                     config_filename)
@@ -325,7 +328,10 @@ class AlertRouter(QueuingPublisherComponent):
         sys.exit()
 
     @staticmethod
-    def _extract_config(section, config_filename: str) -> Dict[str, str]:
+    def extract_config(section: SectionProxy, config_filename: str) -> Dict[
+        str, str]:
+        AlertRouter.validate_config(section, config_filename)
+
         if "twilio" in config_filename:
             return {
                 'id': section.get('id'),
@@ -369,3 +375,12 @@ class AlertRouter(QueuingPublisherComponent):
         )
 
         return bool(severities_muted.get(severity, False))
+
+    @staticmethod
+    def validate_config(section: SectionProxy, config_filename: str) -> None:
+        keys_expected = {'id', 'parent_ids'}
+        if 'twilio' not in config_filename:
+            keys_expected |= {'info', 'warning', 'error', 'critical'}
+        for key in keys_expected:
+            if key not in section:
+                raise MissingKeyInConfigException(key, config_filename)
