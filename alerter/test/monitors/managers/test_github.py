@@ -2,8 +2,8 @@ import copy
 import json
 import logging
 import multiprocessing
-import unittest
 import time
+import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock
@@ -318,11 +318,15 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.assertEqual(self.repo_config_example, new_entry_process._args[0])
         self.assertEqual(start_github_monitor, new_entry_process._target)
 
-    def test_create_and_start_monitor_process_starts_the_process(self) -> None:
+    @mock.patch("src.monitors.starters.create_logger")
+    def test_create_and_start_monitor_process_starts_the_process(
+            self, mock_create_logger) -> None:
+        mock_create_logger.return_value = self.dummy_logger
         self.test_manager._create_and_start_monitor_process(
             self.repo_config_example, self.repo_id_new, self.chain_example_new)
 
-        # We need to sleep to give some time for the process to actually start
+        # We need to sleep to give some time for the monitor to be initialized,
+        # otherwise the process would not terminate
         time.sleep(1)
 
         new_entry = self.test_manager.config_process_dict[self.repo_id_new]
@@ -854,7 +858,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general_initial)
 
-            # Give some time till the process starts
+            # Give some time till the processes start
             time.sleep(1)
 
             # Assure that the processes have been started
@@ -874,10 +878,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_general_mon_true)
 
-            # Give some time till the process restarts
+            # Give some time till the processes restart
             time.sleep(1)
 
-            # Check that the old process has terminated and a new one has
+            # Check that the old proceses has terminated and a new one has
             # started.
             self.assertFalse(conf_id1_old_proc.is_alive())
             self.assertTrue(self.test_manager.config_process_dict[
@@ -897,7 +901,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_general_mon_false)
 
-            # Give some time till the process stops
+            # Give some time till the processes stops
             time.sleep(1)
 
             # Check that the old process has terminated and that new ones have
@@ -918,12 +922,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_monitor_with_the_correct_conf(
-            self, startup_mock, mock_ack) -> None:
+            self, mock_terminate, mock_join, startup_mock, mock_ack) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on an updated configuration.
         mock_ack.return_value = None
         startup_mock.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
         updated_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -943,10 +951,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_manager._repos_configs = self.repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
-
-        # Start the processes stored in config_process_dict
-        self.dummy_process1.start()
-        self.dummy_process2.start()
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -1006,706 +1010,754 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 args[0].releases_page)
 
             # Clean before test finishes
-            self.dummy_process1.terminate()
-            self.dummy_process2.terminate()
-            self.dummy_process1.join()
-            self.dummy_process2.join()
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_terminates_monitors_for_removed_configs(
-    #         self, mock_ack) -> None:
-    #     # In this test we will check that when a config is removed, it's monitor
-    #     # is terminated by _process_configs.
-    #     mock_ack.return_value = None
-    #
-    #     try:
-    #         # Must create a connection so that the blocking channel is passed
-    #         self.test_manager.rabbitmq.connect()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self.chains_routing_key)
-    #         method_general = pika.spec.Basic.Deliver(
-    #             routing_key=self.general_routing_key)
-    #         body_chain_initial = json.dumps(self.sent_configs_example_chain)
-    #         body_general_initial = json.dumps(self.sent_configs_example_general)
-    #         body_chain_new = json.dumps({})
-    #         body_general_new = json.dumps({})
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # First send the new configs as the state is empty
-    #         self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                            properties, body_chain_initial)
-    #         self.test_manager._process_configs(blocking_channel, method_general,
-    #                                            properties, body_general_initial)
-    #
-    #         # Assure that the processes have been started
-    #         self.assertTrue(self.test_manager.config_process_dict[
-    #                             'config_id1']['process'].is_alive())
-    #         self.assertTrue(self.test_manager.config_process_dict[
-    #                             'config_id2']['process'].is_alive())
-    #
-    #         # Send the updated configs
-    #         conf_id1_old_proc = self.test_manager.config_process_dict[
-    #             'config_id1']['process']
-    #         conf_id2_old_proc = self.test_manager.config_process_dict[
-    #             'config_id2']['process']
-    #         self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                            properties, body_chain_new)
-    #         self.test_manager._process_configs(blocking_channel, method_general,
-    #                                            properties, body_general_new)
-    #
-    #         # Check that the old process has terminated
-    #         self.assertFalse(conf_id1_old_proc.is_alive())
-    #         self.assertFalse(conf_id2_old_proc.is_alive())
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_ignores_new_configs_with_missing_Keys(
-    #         self, mock_ack) -> None:
-    #     # We will check whether the state is kept intact if new configurations
-    #     # with missing keys are sent. Exceptions should never be raised in this
-    #     # case, and basic_ack must be called to ignore the message.
-    #     mock_ack.return_value = None
-    #     new_configs_chain = {
-    #         'config_id3': {
-    #             'id': 'config_id3',
-    #             'parentfg_id': 'chain_1',
-    #             'repo_namfge': 'repo_3',
-    #             'monitorfg_repo': "True",
-    #         },
-    #     }
-    #     new_configs_general = {
-    #         'config_id5': {
-    #             'id': 'config_id5',
-    #             'parentdfg_id': 'GENERAL',
-    #             'repo_namdfge': 'repo_5',
-    #             'monitor_repostdfg': "True",
-    #         },
-    #     }
-    #     self.test_manager._repos_configs = self.repos_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     try:
-    #         # Must create a connection so that the blocking channel is passed
-    #         self.test_manager.rabbitmq.connect()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #         # We will send new configs through both the existing and
-    #         # non-existing chain and general paths to make sure that all routes
-    #         # work as expected.
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self.chains_routing_key)
-    #         method_general = pika.spec.Basic.Deliver(
-    #             routing_key=self.general_routing_key)
-    #         body_new_configs_chain = json.dumps(new_configs_chain)
-    #         body_new_configs_general = json.dumps(new_configs_general)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.test_manager._process_configs(blocking_channel, method_general,
-    #                                            properties,
-    #                                            body_new_configs_general)
-    #         self.assertEqual(1, mock_ack.call_count)
-    #         self.assertEqual(self.config_process_dict_example,
-    #                          self.test_manager.config_process_dict)
-    #         self.assertEqual(self.repos_configs_example,
-    #                          self.test_manager.repos_configs)
-    #
-    #         self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                            properties,
-    #                                            body_new_configs_chain)
-    #         self.assertEqual(2, mock_ack.call_count)
-    #         self.assertEqual(self.config_process_dict_example,
-    #                          self.test_manager.config_process_dict)
-    #         self.assertEqual(self.repos_configs_example,
-    #                          self.test_manager.repos_configs)
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_ignores_modified_configs_with_missing_Keys(
-    #         self, mock_ack) -> None:
-    #     # We will check whether the state is kept intact if modified
-    #     # configurations with missing keys are sent. Exceptions should never be
-    #     # raised in this case, and basic_ack must be called to ignore the
-    #     # message.
-    #     mock_ack.return_value = None
-    #     updated_configs_chain = {
-    #         'config_id1': {
-    #             'id': 'config_id1',
-    #             'parentfg_id': 'chain_1',
-    #             'repo_namfge': 'repo_1',
-    #             'monitorfg_repo': "True",
-    #         },
-    #     }
-    #     updated_configs_general = {
-    #         'config_id2': {
-    #             'id': 'config_id2',
-    #             'parentdfg_id': 'GENERAL',
-    #             'repo_namdfge': 'repo_2',
-    #             'monitor_repo': "True",
-    #         },
-    #     }
-    #     self.test_manager._repos_configs = self.repos_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     try:
-    #         # Must create a connection so that the blocking channel is passed
-    #         self.test_manager.rabbitmq.connect()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #         # We will send new configs through both the existing and
-    #         # non-existing chain and general paths to make sure that all routes
-    #         # work as expected.
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self.chains_routing_key)
-    #         method_general = pika.spec.Basic.Deliver(
-    #             routing_key=self.general_routing_key)
-    #         body_updated_configs_chain = json.dumps(updated_configs_chain)
-    #         body_updated_configs_general = json.dumps(updated_configs_general)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.test_manager._process_configs(blocking_channel, method_general,
-    #                                            properties,
-    #                                            body_updated_configs_general)
-    #         self.assertEqual(1, mock_ack.call_count)
-    #         self.assertEqual(self.config_process_dict_example,
-    #                          self.test_manager.config_process_dict)
-    #         self.assertEqual(self.repos_configs_example,
-    #                          self.test_manager.repos_configs)
-    #
-    #         self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                            properties,
-    #                                            body_updated_configs_chain)
-    #         self.assertEqual(2, mock_ack.call_count)
-    #         self.assertEqual(self.config_process_dict_example,
-    #                          self.test_manager.config_process_dict)
-    #         self.assertEqual(self.repos_configs_example,
-    #                          self.test_manager.repos_configs)
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @freeze_time("2012-01-01")
-    # def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
-    #         self) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_heartbeat, and checks that the
-    #     # received heartbeat is valid.
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         # Delete the queue before to avoid messages in the queue on error.
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #         # Automate the case when having all processes running
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_manager.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key='heartbeat.manager')
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         # By re-declaring the queue again we can get the number of messages
-    #         # in the queue.
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-    #
-    #         # Check that the message received is a valid HB
-    #         _, _, body = self.test_manager.rabbitmq.basic_get(
-    #             self.test_queue_name)
-    #         expected_output = {
-    #             'component_name': self.test_manager.name,
-    #             'running_processes':
-    #                 [self.test_manager.config_process_dict['config_id1'][
-    #                      'component_name'],
-    #                  self.test_manager.config_process_dict['config_id2'][
-    #                      'component_name']],
-    #             'dead_processes': [],
-    #             'timestamp': datetime(2012, 1, 1).timestamp(),
-    #         }
-    #         self.assertEqual(expected_output, json.loads(body))
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(GitHubMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_process_ping_sends_a_valid_hb_if_some_proc_alive_and_some_dead(
-    #         self, startup_mock) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_heartbeat, and checks that the
-    #     # received heartbeat is valid.
-    #     startup_mock.return_value = None
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         # Delete the queue before to avoid messages in the queue on error.
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #         # Automate the case when having some processes running and some dead
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process1.join()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_manager.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key='heartbeat.manager')
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         # By re-declaring the queue again we can get the number of messages
-    #         # in the queue.
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-    #
-    #         # Check that the message received is a valid HB
-    #         _, _, body = self.test_manager.rabbitmq.basic_get(
-    #             self.test_queue_name)
-    #         expected_output = {
-    #             'component_name': self.test_manager.name,
-    #             'running_processes': [
-    #                 self.test_manager.config_process_dict['config_id2'][
-    #                     'component_name']],
-    #             'dead_processes': [
-    #                 self.test_manager.config_process_dict['config_id1'][
-    #                     'component_name']],
-    #             'timestamp': datetime(2012, 1, 1).timestamp(),
-    #         }
-    #         self.assertEqual(expected_output, json.loads(body))
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(GitHubMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
-    #         self, startup_mock) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_heartbeat, and checks that the
-    #     # received heartbeat is valid.
-    #     startup_mock.return_value = None
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         # Delete the queue before to avoid messages in the queue on error.
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #         # Automate the case when having all processes dead
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_manager.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key='heartbeat.manager')
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         # By re-declaring the queue again we can get the number of messages
-    #         # in the queue.
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-    #
-    #         # Check that the message received is a valid HB
-    #         _, _, body = self.test_manager.rabbitmq.basic_get(
-    #             self.test_queue_name)
-    #         expected_output = {
-    #             'component_name': self.test_manager.name,
-    #             'running_processes': [],
-    #             'dead_processes': [
-    #                 self.test_manager.config_process_dict['config_id1'][
-    #                     'component_name'],
-    #                 self.test_manager.config_process_dict['config_id2'][
-    #                     'component_name']],
-    #             'timestamp': datetime(2012, 1, 1).timestamp(),
-    #         }
-    #         self.assertEqual(expected_output, json.loads(body))
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_restarts_dead_processes(self, send_hb_mock) -> None:
-    #     send_hb_mock.return_value = None
-    #     try:
-    #         self.test_manager.rabbitmq.connect()
-    #
-    #         # Automate the case when having all processes dead
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #
-    #         # Check that that the processes have terminated
-    #         self.assertFalse(self.test_manager.config_process_dict[
-    #                              'config_id1']['process'].is_alive())
-    #         self.assertFalse(self.test_manager.config_process_dict[
-    #                              'config_id2']['process'].is_alive())
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #         self.assertTrue(self.test_manager.config_process_dict['config_id1'][
-    #                             'process'].is_alive())
-    #         self.assertTrue(self.test_manager.config_process_dict['config_id2'][
-    #                             'process'].is_alive())
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
-    # @mock.patch.object(GitHubMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_process_ping_restarts_dead_processes_with_correct_info(
-    #         self, startup_mock, send_hb_mock) -> None:
-    #     send_hb_mock.return_value = None
-    #     startup_mock.return_value = None
-    #     try:
-    #         self.test_manager.rabbitmq.connect()
-    #
-    #         # Automate the case when having some processes dead and some alive
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process1.join()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         self.assertEqual(1, startup_mock.call_count)
-    #         args, _ = startup_mock.call_args
-    #         self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
-    #         self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-    #                              'config_id1']['id'], args[0].repo_id)
-    #         self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-    #                              'config_id1']['parent_id'], args[0].parent_id)
-    #         self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-    #                              'config_id1']['repo_name'] + '/',
-    #                          args[0].repo_name)
-    #         self.assertEqual(
-    #             str_to_bool(self.repos_configs_example['Substrate Polkadot'][
-    #                             'config_id1']['monitor_repo']),
-    #             args[0].monitor_repo)
-    #         self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
-    #             self.repos_configs_example['Substrate Polkadot']['config_id1'][
-    #                 'repo_name'] + '/'), args[0].releases_page)
-    #
-    #         # Clean before test finishes
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(multiprocessing.Process, "is_alive")
-    # def test_process_ping_does_not_send_hb_if_processing_fails(
-    #         self, is_alive_mock) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_heartbeat. In this test we will
-    #     # check that no heartbeat is sent when mocking a raised exception.
-    #     is_alive_mock.side_effect = self.test_exception
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         # Delete the queue before to avoid messages in the queue on error.
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_manager.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key='heartbeat.manager')
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         # By re-declaring the queue again we can get the number of messages
-    #         # in the queue.
-    #         res = self.test_manager.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #
-    #         # Clean before test finishes
-    #         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-    #         self) -> None:
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         # Clean before test finishes
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
-    #         self, hb_mock) -> None:
-    #     hb_mock.side_effect = pika.exceptions.AMQPConnectionError('test')
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_manager._process_ping, blocking_channel,
-    #                           method, properties, body)
-    #
-    #         # Clean before test finishes
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_amqp_chan_err_on_chan_err(
-    #         self, hb_mock) -> None:
-    #     hb_mock.side_effect = pika.exceptions.AMQPChannelError('test')
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_manager._process_ping, blocking_channel,
-    #                           method, properties, body)
-    #
-    #         # Clean before test finishes
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
-    #         self, hb_mock) -> None:
-    #     hb_mock.side_effect = self.test_exception
-    #     try:
-    #         self.test_manager._initialise_rabbitmq()
-    #
-    #         self.test_manager._repos_configs = self.repos_configs_example
-    #         self.test_manager._config_process_dict = \
-    #             self.config_process_dict_example
-    #         self.dummy_process1.start()
-    #         self.dummy_process2.start()
-    #
-    #         # Initialize
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-    #         properties = pika.spec.BasicProperties()
-    #         body = 'ping'
-    #
-    #         self.assertRaises(PANICException, self.test_manager._process_ping,
-    #                           blocking_channel, method, properties, body)
-    #
-    #         # Clean before test finishes
-    #         self.dummy_process1.terminate()
-    #         self.dummy_process2.terminate()
-    #         self.dummy_process1.join()
-    #         self.dummy_process2.join()
-    #         self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-    #         self.test_manager.rabbitmq.queue_delete(
-    #             GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-    #         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-    #         self.test_manager.rabbitmq.disconnect()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
+    @mock.patch("src.monitors.starters.create_logger")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_terminates_monitors_for_removed_configs(
+            self, mock_ack, mock_create_logger) -> None:
+        # In this test we will check that when a config is removed, it's monitor
+        # is terminated by _process_configs.
+        mock_ack.return_value = None
+        mock_create_logger.return_value = self.dummy_logger
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_chain_new = json.dumps({})
+            body_general_new = json.dumps({})
+            properties = pika.spec.BasicProperties()
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Give time for the monitors to start
+            time.sleep(1)
+
+            # Assure that the processes have been started
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id1']['process'].is_alive())
+            self.assertTrue(self.test_manager.config_process_dict[
+                                'config_id2']['process'].is_alive())
+
+            # Send the updated configs
+            conf_id1_old_proc = self.test_manager.config_process_dict[
+                'config_id1']['process']
+            conf_id2_old_proc = self.test_manager.config_process_dict[
+                'config_id2']['process']
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_new)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_new)
+
+            # Give time for the monitors to stop
+            time.sleep(1)
+
+            # Check that the old process has terminated
+            self.assertFalse(conf_id1_old_proc.is_alive())
+            self.assertFalse(conf_id2_old_proc.is_alive())
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_new_configs_with_missing_Keys(
+            self, mock_ack) -> None:
+        # We will check whether the state is kept intact if new configurations
+        # with missing keys are sent. Exceptions should never be raised in this
+        # case, and basic_ack must be called to ignore the message.
+        mock_ack.return_value = None
+        new_configs_chain = {
+            'config_id3': {
+                'id': 'config_id3',
+                'parentfg_id': 'chain_1',
+                'repo_namfge': 'repo_3',
+                'monitorfg_repo': "True",
+            },
+        }
+        new_configs_general = {
+            'config_id5': {
+                'id': 'config_id5',
+                'parentdfg_id': 'GENERAL',
+                'repo_namdfge': 'repo_5',
+                'monitor_repostdfg': "True",
+            },
+        }
+        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_new_configs_chain = json.dumps(new_configs_chain)
+            body_new_configs_general = json.dumps(new_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_new_configs_general)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.repos_configs_example,
+                             self.test_manager.repos_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_new_configs_chain)
+            self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.repos_configs_example,
+                             self.test_manager.repos_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_modified_configs_with_missing_Keys(
+            self, mock_ack) -> None:
+        # We will check whether the state is kept intact if modified
+        # configurations with missing keys are sent. Exceptions should never be
+        # raised in this case, and basic_ack must be called to ignore the
+        # message.
+        mock_ack.return_value = None
+        updated_configs_chain = {
+            'config_id1': {
+                'id': 'config_id1',
+                'parentfg_id': 'chain_1',
+                'repo_namfge': 'repo_1',
+                'monitorfg_repo': "True",
+            },
+        }
+        updated_configs_general = {
+            'config_id2': {
+                'id': 'config_id2',
+                'parentdfg_id': 'GENERAL',
+                'repo_namdfge': 'repo_2',
+                'monitor_repo': "True",
+            },
+        }
+        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_updated_configs_chain = json.dumps(updated_configs_chain)
+            body_updated_configs_general = json.dumps(updated_configs_general)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_updated_configs_general)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.repos_configs_example,
+                             self.test_manager.repos_configs)
+
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_updated_configs_chain)
+            self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(self.config_process_dict_example,
+                             self.test_manager.config_process_dict)
+            self.assertEqual(self.repos_configs_example,
+                             self.test_manager.repos_configs)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.monitors.starters.create_logger")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
+            self, mock_ack, mock_create_logger) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        mock_create_logger.return_value = self.dummy_logger
+        mock_ack.return_value = None
+        try:
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            properties = pika.spec.BasicProperties()
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Initialize
+            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method_hb,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes':
+                    [self.test_manager.config_process_dict['config_id1'][
+                         'component_name'],
+                     self.test_manager.config_process_dict['config_id2'][
+                         'component_name']],
+                'dead_processes': [],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].join()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.monitors.starters.create_logger")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
+            self, mock_ack, mock_create_logger) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        mock_create_logger.return_value = self.dummy_logger
+        mock_ack.return_value = None
+        try:
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            properties = pika.spec.BasicProperties()
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].join()
+
+            # Give time for the process to stop
+            time.sleep(1)
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Initialize
+            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method_hb,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes':
+                    [self.test_manager.config_process_dict['config_id2'][
+                         'component_name']],
+                'dead_processes':
+                    [self.test_manager.config_process_dict['config_id1'][
+                         'component_name']],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.monitors.starters.create_logger")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
+            self, mock_ack, mock_create_logger) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # received heartbeat is valid.
+        mock_create_logger.return_value = self.dummy_logger
+        mock_ack.return_value = None
+        try:
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            properties = pika.spec.BasicProperties()
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].join()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].join()
+
+            # Give time for the process to stop
+            time.sleep(1)
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # Initialize
+            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method_hb,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.test_manager.rabbitmq.basic_get(
+                self.test_queue_name)
+            expected_output = {
+                'component_name': self.test_manager.name,
+                'running_processes': [],
+                'dead_processes':
+                    [self.test_manager.config_process_dict['config_id1'][
+                         'component_name'],
+                     self.test_manager.config_process_dict['config_id2'][
+                         'component_name']],
+                'timestamp': datetime(2012, 1, 1).timestamp(),
+            }
+            self.assertEqual(expected_output, json.loads(body))
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch("src.monitors.starters.create_logger")
+    @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
+    def test_process_ping_restarts_dead_processes(
+            self, send_hb_mock, mock_create_logger, mock_ack) -> None:
+        send_hb_mock.return_value = None
+        mock_create_logger.return_value = self.dummy_logger
+        mock_ack.return_value = None
+        try:
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_chain_initial = json.dumps(self.sent_configs_example_chain)
+            body_general_initial = json.dumps(self.sent_configs_example_general)
+            properties = pika.spec.BasicProperties()
+
+            # First send the new configs as the state is empty
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties, body_chain_initial)
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties, body_general_initial)
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            # Automate the case when having all processes dead
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].join()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].join()
+
+            # Give time for the processes to terminate
+            time.sleep(1)
+
+            # Check that that the processes have terminated
+            self.assertFalse(self.test_manager.config_process_dict[
+                                 'config_id1']['process'].is_alive())
+            self.assertFalse(self.test_manager.config_process_dict[
+                                 'config_id2']['process'].is_alive())
+
+            # Initialize
+            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            body = 'ping'
+            self.test_manager._process_ping(blocking_channel, method_hb,
+                                            properties, body)
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            self.assertTrue(self.test_manager.config_process_dict['config_id1'][
+                                'process'].is_alive())
+            self.assertTrue(self.test_manager.config_process_dict['config_id2'][
+                                'process'].is_alive())
+
+            # Clean before test finishes
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id1'][
+                'process'].join()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].terminate()
+            self.test_manager.config_process_dict['config_id2'][
+                'process'].join()
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
+    @mock.patch.object(GitHubMonitorsManager,
+                       "_create_and_start_monitor_process")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    def test_process_ping_restarts_dead_processes_with_correct_info(
+            self, mock_alive, mock_join, startup_mock, send_hb_mock) -> None:
+        send_hb_mock.return_value = None
+        startup_mock.return_value = None
+        mock_alive.return_value = False
+        mock_join.return_value = None
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            del self.repos_configs_example['general']
+            del self.config_process_dict_example['config_id2']
+            self.test_manager._repos_configs = self.repos_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            self.assertEqual(1, startup_mock.call_count)
+            args, _ = startup_mock.call_args
+            self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
+            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
+                                 'config_id1']['id'], args[0].repo_id)
+            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
+                                 'config_id1']['parent_id'], args[0].parent_id)
+            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
+                                 'config_id1']['repo_name'] + '/',
+                             args[0].repo_name)
+            self.assertEqual(
+                str_to_bool(self.repos_configs_example['Substrate Polkadot'][
+                                'config_id1']['monitor_repo']),
+                args[0].monitor_repo)
+            self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
+                self.repos_configs_example['Substrate Polkadot']['config_id1'][
+                    'repo_name'] + '/'), args[0].releases_page)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    def test_process_ping_does_not_send_hb_if_processing_fails(
+            self, is_alive_mock) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat. In this test we will
+        # check that no heartbeat is sent when mocking a raised exception.
+        is_alive_mock.side_effect = self.test_exception
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            self.test_manager._repos_configs = self.repos_configs_example
+            self.test_manager._config_process_dict = \
+                self.config_process_dict_example
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.manager')
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(0, res.method.message_count)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
+            self) -> None:
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
+    def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
+            self, hb_mock) -> None:
+        hb_mock.side_effect = pika.exceptions.AMQPConnectionError('test')
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.assertRaises(pika.exceptions.AMQPConnectionError,
+                              self.test_manager._process_ping, blocking_channel,
+                              method, properties, body)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
+    def test_process_ping_send_hb_raises_amqp_chan_err_on_chan_err(
+            self, hb_mock) -> None:
+        hb_mock.side_effect = pika.exceptions.AMQPChannelError('test')
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.assertRaises(pika.exceptions.AMQPChannelError,
+                              self.test_manager._process_ping, blocking_channel,
+                              method, properties, body)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
+    def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
+            self, hb_mock) -> None:
+        hb_mock.side_effect = self.test_exception
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # Initialize
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.assertRaises(PANICException, self.test_manager._process_ping,
+                              blocking_channel, method, properties, body)
+
+            # Clean before test finishes
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
