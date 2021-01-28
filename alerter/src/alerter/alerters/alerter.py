@@ -59,7 +59,7 @@ class Alerter(ABC):
         pass
 
     @abstractmethod
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         pass
 
     @abstractmethod
@@ -101,7 +101,7 @@ class Alerter(ABC):
                              "queue.")
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -117,7 +117,7 @@ class Alerter(ABC):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel may be reset, therefore we need to re-initialize the
+                # channel may be reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

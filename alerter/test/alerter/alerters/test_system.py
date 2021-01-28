@@ -1,3 +1,4 @@
+import json
 import logging
 import unittest
 import copy
@@ -5,19 +6,26 @@ import datetime
 from queue import Queue
 from unittest import mock
 
+import pika
+
+from src.alerter.alerts.system_alerts import OpenFileDescriptorsIncreasedAboveThresholdAlert
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.system import SystemAlerter
-from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE
+from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
+from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 
 
 class TestSystemAlerter(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
+        self.rabbit_ip = RABBIT_IP
+        self.alert_input_exchange = ALERT_EXCHANGE
         self.connection_check_time_interval = datetime.timedelta(seconds=0)
         self.rabbitmq = RabbitMQApi(
-            self.dummy_logger,
+            self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
+
         self.alerter_name = 'test_alerter'
         self.system_id = 'test_system_id'
         self.parent_id = 'test_parent_id'
@@ -26,6 +34,16 @@ class TestSystemAlerter(unittest.TestCase):
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
         self.test_queue_name = 'test_alerter_queue'
         self.test_routing_key = 'test_alert_router.system'
+        self.queue_used = "system_alerter_queue_" + self.parent_id
+        self.target_queue_used = "alert_router_queue"
+        self.routing_key = "alerter.system." + self.parent_id
+        self.alert_router_routing_key = 'alert_router.system'
+        self.heartbeat_queue = 'heartbeat queue'
+
+        self.heartbeat_test = {
+            'component_name': self.alerter_name,
+            'timestamp': datetime.datetime(2021, 1, 28).timestamp()
+        }
 
         """
         ############# Alerts config base configuration ######################
@@ -371,11 +389,17 @@ class TestSystemAlerter(unittest.TestCase):
             'result']['data']['system_storage_usage']['previous'] = \
             self.percent_usage + 56
 
+        # Alert used for rabbitMQ testing
+        self.alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
+            self.system_name, self.percent_usage + 46, self.warning,
+            self.last_monitored, self.warning, self.parent_id,
+            self.system_id
+        )
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.rabbitmq = None
         self.publishing_queue = None
-        self.initial_datetime = 0
         self.test_system_alerter = None
         self.test_system_alerter_warnings_disabled = None
         self.test_system_alerter_critical_disabled = None
@@ -402,6 +426,98 @@ class TestSystemAlerter(unittest.TestCase):
     def test_returns_alerts_configs_from_alerter(self) -> None:
         self.assertEqual(self.system_alerts_config,
                          self.test_system_alerter.alerts_configs)
+
+    """
+    ###################### Tests using RabbitMQ #######################
+    """
+    def test_initialise_rabbit_initialises_queues(self) -> None:
+        self.test_system_alerter._initialise_rabbitmq()
+        try:
+            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.queue_declare(self.queue_used, passive=True)
+        except pika.exceptions.ConnectionClosedByBroker:
+            self.fail("Queue {} was not declared".format(self.queue_used))
+
+    def test_initialise_rabbit_initialises_exchanges(self) -> None:
+        self.test_system_alerter._initialise_rabbitmq()
+
+        try:
+            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
+        except pika.exceptions.ConnectionClosedByBroker:
+            self.fail("Exchange {} was not declared".format(ALERT_EXCHANGE))
+
+    def test_send_warning_alerts_correctly(
+            self) -> None:
+        try:
+            self.test_system_alerter._initialise_rabbitmq()
+            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_system_alerter.rabbitmq.queue_bind(
+                queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
+                routing_key=self.alert_router_routing_key)
+
+            self.test_system_alerter.rabbitmq.basic_publish_confirm(
+                exchange=ALERT_EXCHANGE, routing_key=self.alert_router_routing_key,
+                body=self.alert.alert_data, is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
+                self.target_queue_used)
+            # For some reason during the conversion [] are swapped to ()
+            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)), json.loads(body))
+
+            self.test_system_alerter.rabbitmq.queue_purge(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    # Same test that is in monitors tests
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+        try:
+            self.test_system_alerter._initialise_rabbitmq()
+            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.heartbeat_queue, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_system_alerter.rabbitmq.queue_bind(
+                queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+            self.test_system_alerter._send_heartbeat(self.heartbeat_test)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.heartbeat_queue, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
+                self.heartbeat_queue)
+            self.assertEqual(self.heartbeat_test, json.loads(body))
+
+            self.test_system_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
+            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
     """
     ###################### Tests without using RabbitMQ #######################

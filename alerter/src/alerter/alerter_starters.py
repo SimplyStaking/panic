@@ -10,17 +10,18 @@ from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import get_initialisation_error_message
+from src.utils.env import ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL
 
 
-def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
+def _initialise_alerter_logger(alerter_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             alerter_logger = create_logger(
-                os.environ['ALERTERS_LOG_FILE_TEMPLATE'].format(alerter_name),
-                alerter_name, os.environ['LOGGING_LEVEL'], rotating=True)
+                ALERTERS_LOG_FILE_TEMPLATE.format(alerter_name),
+                alerter_name, LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_name, e)
@@ -32,19 +33,19 @@ def _initialize_alerter_logger(alerter_name: str) -> logging.Logger:
     return alerter_logger
 
 
-def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
+def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
                                chain: str) -> SystemAlerter:
     # Alerter name based on system
     alerter_name = "System alerter ({})".format(chain)
 
-    system_alerter_logger = _initialize_alerter_logger(alerter_name)
+    system_alerter_logger = _initialise_alerter_logger(alerter_name)
 
     # Try initializing an alerter until successful
     while True:
         try:
             system_alerter = SystemAlerter(alerter_name, system_alerts_config,
                                            system_alerter_logger)
-            log_and_print("Successfully initialized {}".format(alerter_name),
+            log_and_print("Successfully initialised {}".format(alerter_name),
                           system_alerter_logger)
             break
         except Exception as e:
@@ -55,16 +56,16 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
     return system_alerter
 
 
-def _initialize_github_alerter() -> GithubAlerter:
+def _initialise_github_alerter() -> GithubAlerter:
     alerter_name = "GitHub Alerter"
 
-    github_alerter_logger = _initialize_alerter_logger(alerter_name)
+    github_alerter_logger = _initialise_alerter_logger(alerter_name)
 
     # Try initializing an alerter until successful
     while True:
         try:
             github_alerter = GithubAlerter(alerter_name, github_alerter_logger)
-            log_and_print("Successfully initialized {}".format(alerter_name),
+            log_and_print("Successfully initialised {}".format(alerter_name),
                           github_alerter_logger)
             break
         except Exception as e:
@@ -76,13 +77,13 @@ def _initialize_github_alerter() -> GithubAlerter:
 
 
 def start_github_alerter() -> None:
-    github_alerter = _initialize_github_alerter()
+    github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
 
 
 def start_system_alerter(system_alerts_config: SystemAlertsConfig,
                          chain: str) -> None:
-    system_alerter = _initialize_system_alerter(system_alerts_config, chain)
+    system_alerter = _initialise_system_alerter(system_alerts_config, chain)
     start_alerter(system_alerter)
 
 

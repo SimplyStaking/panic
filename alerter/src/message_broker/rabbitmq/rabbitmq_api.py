@@ -2,14 +2,14 @@ import json
 import logging
 import time
 from datetime import timedelta
-from typing import List, Optional, Union, Dict, Callable, Any
+from typing import List, Optional, Union, Dict, Callable, Any, Sequence
 
 import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.exceptions import ConnectionNotInitializedException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (ConnectionNotInitializedException,
+                                  MessageWasNotDeliveredException)
 from src.utils.timing import TimedTaskLimiter
 
 
@@ -217,6 +217,10 @@ class RabbitMQApi:
                 # stop the loop
                 self.perform_operation_till_successful(self.disconnect, [], -1)
                 break
+            except ConnectionNotInitializedException:
+                self._logger.info("No need to disconnect as no connection was "
+                                  "initialize with Rabbit.")
+                break
             except Exception as e:
                 self._logger.exception(e)
                 self._logger.info("Could not disconnect. Will attempt to "
@@ -281,6 +285,13 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.basic_consume, args, -1)
 
+    def basic_get(self, queue: str, auto_ack: bool = False) -> Optional[int]:
+        args = [queue, auto_ack]
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        if self._connection_initialized():
+            return self._safe(self.channel.basic_get, args, -1)
+
     def start_consuming(self) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
         # this function will throw a ConnectionNotInitialized exception
@@ -327,6 +338,14 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.queue_purge, args, -1)
 
+    def exchange_delete(self, exchange: str = None,
+                        if_unused: bool = False) -> Optional[int]:
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        args = [exchange, if_unused]
+        if self._connection_initialized():
+            return self._safe(self.channel.exchange_delete, args, -1)
+
     def queue_delete(self, queue: str, if_unused: bool = False,
                      if_empty: bool = False) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
@@ -354,8 +373,7 @@ class RabbitMQApi:
     # Perform an operation with sleeping period in between until successful.
     # This function only works if no exceptions are raised, i.e. till RabbitMQ
     # becomes usable again
-    @staticmethod
-    def perform_operation_till_successful(function, args: List[Any],
+    def perform_operation_till_successful(self, function, args: Sequence,
                                           default_return: Any) -> None:
         while function(*args) == default_return:
-            time.sleep(10)
+            time.sleep(self.connection_check_time_interval_seconds)

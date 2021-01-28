@@ -49,11 +49,11 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _create_state_for_system(self, system_id: str) -> None:
-        # Initialize initial downtime alert sent
+        # initialise initial downtime alert sent
         if system_id not in self._system_initial_downtime_alert_sent:
             self._system_initial_downtime_alert_sent[system_id] = False
 
-        # Initialize timed task limiters
+        # initialise timed task limiters
         if system_id not in self._system_critical_timed_task_limiters:
             open_fd = self.alerts_configs.open_file_descriptors
             cpu_use = self.alerts_configs.system_cpu_usage
@@ -82,9 +82,9 @@ class SystemAlerter(Alerter):
                 timedelta(seconds=int(is_down['critical_repeat']))
             )
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
-        # initialize both the consuming and producing configurations.
+        # initialise both the consuming and producing configurations.
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -130,6 +130,8 @@ class SystemAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
+        print("LOOK AT ME ")
+        print(data_received)
         self.logger.info("Received %s. Now processing this data.",
                          data_received)
 
