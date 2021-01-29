@@ -220,7 +220,6 @@ class SystemAlerter(Alerter):
                         data_for_alerting: List) -> None:
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
-        data = error_data['data']
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
                 error_data['message'], 'ERROR', meta_data['time'],
@@ -239,6 +238,7 @@ class SystemAlerter(Alerter):
                               alert.alert_data)
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
+                data = error_data['data']
                 current = float(data['went_down_at']['current'])
                 monitoring_timestamp = float(meta_data['time'])
                 monitoring_datetime = datetime.fromtimestamp(
