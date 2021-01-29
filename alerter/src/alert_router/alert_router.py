@@ -327,32 +327,6 @@ class AlertRouter(QueuingPublisherComponent):
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 
-    @staticmethod
-    def extract_config(section: SectionProxy, config_filename: str) -> Dict[
-        str, str]:
-        AlertRouter.validate_config(section, config_filename)
-
-        if "twilio" in config_filename:
-            return {
-                'id': section.get('id'),
-                'parent_ids': [x for x in section.get('parent_ids').split(",")
-                               if x.strip()],
-                'info': False,
-                'warning': False,
-                'error': False,
-                'critical': True,
-            }
-
-        return {
-            'id': section.get('id'),
-            'parent_ids': [x for x in section.get('parent_ids').split(",") if
-                           x.strip()],
-            'info': section.getboolean('info'),
-            'warning': section.getboolean('warning'),
-            'error': section.getboolean('error'),
-            'critical': section.getboolean('critical'),
-        }
-
     def is_all_muted(self, severity: str) -> bool:
         self._logger.debug("Getting mute_all key")
         alerter_mute_key = Keys.get_alerter_mute()
@@ -378,7 +352,34 @@ class AlertRouter(QueuingPublisherComponent):
         return bool(severities_muted.get(severity, False))
 
     @staticmethod
-    def validate_config(section: SectionProxy, config_filename: str) -> None:
+    def extract_config(section: SectionProxy, config_filename: str) -> Dict[
+        str, str]:
+        AlertRouter.validate_config_fields_existence(section, config_filename)
+
+        if "twilio" in config_filename:
+            return {
+                'id': section.get('id'),
+                'parent_ids': [x for x in section.get('parent_ids').split(",")
+                               if x.strip()],
+                'info': False,
+                'warning': False,
+                'error': False,
+                'critical': True,
+            }
+
+        return {
+            'id': section.get('id'),
+            'parent_ids': [x for x in section.get('parent_ids').split(",") if
+                           x.strip()],
+            'info': section.getboolean('info'),
+            'warning': section.getboolean('warning'),
+            'error': section.getboolean('error'),
+            'critical': section.getboolean('critical'),
+        }
+
+    @staticmethod
+    def validate_config_fields_existence(section: SectionProxy,
+                                         config_filename: str) -> None:
         keys_expected = {'id', 'parent_ids'}
         if 'twilio' not in config_filename:
             keys_expected |= {'info', 'warning', 'error', 'critical'}

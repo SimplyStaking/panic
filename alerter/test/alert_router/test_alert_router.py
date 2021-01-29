@@ -567,11 +567,12 @@ class TestAlertRouter(unittest.TestCase):
                  }
         )
     ])
-    @mock.patch.object(AlertRouter, "validate_config")
-    def test_extract_config_correct(self, config_file, config_filename,
-                                    expected_config,
-                                    mock_validate_config: MagicMock):
-        mock_validate_config.return_value = None
+    @mock.patch.object(AlertRouter, "validate_config_fields_existence")
+    def test_extract_config_correct(
+            self, config_file: Dict[str, str], config_filename: str,
+            expected_config: Dict[str, Any],
+            mock_validate_config_fields_existence: MagicMock):
+        mock_validate_config_fields_existence.return_value = None
         config_to_test = configparser.ConfigParser()
         config_to_test.read_dict({'conf': config_file})
         self.assertEqual(
@@ -581,16 +582,100 @@ class TestAlertRouter(unittest.TestCase):
             )
         )
 
-    @mock.patch.object(AlertRouter, "validate_config")
+    @mock.patch.object(AlertRouter, "validate_config_fields_existence")
     def test_extract_config_propagates_exception(
-            self, mock_validate_config: MagicMock
+            self, mock_validate_config_fields_existence: MagicMock
     ):
-        mock_validate_config.side_effect = MissingKeyInConfigException("x", "y")
+        mock_validate_config_fields_existence.side_effect = \
+            MissingKeyInConfigException("x", "y")
         config_to_test = configparser.ConfigParser()
         config_to_test.read_dict({})  # Config does not matter here
-        with self.assertRaises(MissingKeyInConfigException):
-            self._test_alert_router.extract_config(config_to_test['DEFAULT'],
-                                                   '')
+        self.assertRaises(MissingKeyInConfigException,
+                          self._test_alert_router.extract_config,
+                          config_to_test['DEFAULT'],
+                          '')
+
+    @parameterized.expand([
+        (
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "false", 'warning': "false", 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,",
+                 'parent_names': ""},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
+                 'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
+                "channel.test_123"
+        ), (
+                {'id': "twilio_123", 'channel_name': "test_channel",
+                 'parent_ids': "GENERAL,", 'parent_names': ""},
+                "channel.twilio_123"
+        ), (
+                {'id': "twilio_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
+                 'error': "no",
+                 'parent_ids': "GENERAL,", 'parent_names': ""},
+                "channel.twilio_123"
+        )
+    ])
+    def test_validate_config_fields_existence_valid(
+            self, config_dict: Dict[str, str], config_file_name: str
+    ):
+        config = configparser.ConfigParser()
+        config.read_dict({'conf': config_dict})
+
+        self.assertIsNone(
+            self._test_alert_router.validate_config_fields_existence(
+                config["conf"], config_file_name
+            )
+        )
+
+    @parameterized.expand([
+        (
+                {'info': "false", 'warning': "false", 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,"},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'warning': "false", 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,"},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'info': "false", 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,"},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'info': "false", 'warning': "false",
+                 'error': "false", 'parent_ids': "GENERAL,"},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'info': "false", 'warning': "false",
+                 'critical': "false", 'parent_ids': "GENERAL,"},
+                "channel.test_123"
+        ), (
+                {'id': "test_123", 'info': "false", 'warning': "false",
+                 'critical': "false", 'error': "false", },
+                "channel.test_123"
+        ), (
+                {'channel_name': "test_channel", 'parent_ids': "GENERAL,"},
+                "channel.twilio_123"
+        ), (
+                {'id': "twilio_123", 'channel_name': "test_channel"},
+                "channel.twilio_123"
+        )
+    ])
+    def test_validate_config_fields_existance_fail(
+            self, config_dict: Dict[str, str], config_file_name: str
+    ):
+        config = configparser.ConfigParser()
+        config.read_dict({'conf': config_dict})
+        print(config_dict)
+
+        self.assertRaises(
+            MissingKeyInConfigException,
+            self._test_alert_router.validate_config_fields_existence,
+            config['conf'], config_file_name
+        )
 
     @unittest.skip
     def test__process_alert(self):
@@ -610,10 +695,6 @@ class TestAlertRouter(unittest.TestCase):
 
     @unittest.skip
     def test_on_terminate(self):
-        self.fail()
-
-    @unittest.skip
-    def test__extract_config(self):
         self.fail()
 
     @unittest.skip
