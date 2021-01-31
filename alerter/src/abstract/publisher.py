@@ -45,7 +45,7 @@ class PublisherComponent(Component, ABC):
         self.rabbitmq.disconnect_till_successful()
 
     @abstractmethod
-    def _send_data(self, data: Dict) -> None:
+    def _send_data(self, *args) -> None:
         pass
 
     @abstractmethod
@@ -53,7 +53,7 @@ class PublisherComponent(Component, ABC):
         pass
 
 
-class QueuingPublisherComponent(Component, ABC):
+class QueuingPublisherComponent(PublisherComponent, ABC):
     """
     Abstract class
     Uses a queuing mechanism to publish messages to RabbitMQ
@@ -68,29 +68,8 @@ class QueuingPublisherComponent(Component, ABC):
         :param max_queue_size: The max queue size, defaults to 0 for infinite
         """
         self._publishing_queue = Queue(max_queue_size)
-        self._logger = logger
-        self._rabbitmq = rabbitmq
 
-        super().__init__()
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @abstractmethod
-    def _initialise_rabbitmq(self) -> None:
-        pass
-
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
+        super().__init__(logger, rabbitmq)
 
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
                        properties: BasicProperties = BasicProperties(

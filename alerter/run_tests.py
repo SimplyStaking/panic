@@ -1,7 +1,7 @@
 import unittest
 
 loader = unittest.TestLoader()
-suite = loader.discover('.')
+suite = loader.discover('./test')
 
 # TODO: For production set buffer=True in TextTestRunner to avoid the components
 #     : from printing output. Also, set verbosity=2 to get the result of each
