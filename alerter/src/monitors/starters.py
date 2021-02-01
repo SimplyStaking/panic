@@ -51,7 +51,7 @@ def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
     monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
-    # Try initializing the monitor until successful
+    # Try initialising the monitor until successful
     while True:
         try:
             rabbit_ip = env.RABBIT_IP
