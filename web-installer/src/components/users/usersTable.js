@@ -2,19 +2,24 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
-import { DeleteAccount } from '../../utils/buttons';
+import { DeleteAccount } from 'utils/buttons';
 
-const UsersTable = ({users, removeUserDetails}) => {
+const UsersTable = ({ users, removeUserDetails }) => {
   // Do not show users table if there are no users
   if (users.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="users table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Username</TableCell>
@@ -23,15 +28,13 @@ const UsersTable = ({users, removeUserDetails}) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.username}>
-              <TableCell align="center">
-                {user.username}
-              </TableCell>
+          {users.map((username) => (
+            <TableRow key={username}>
+              <TableCell align="center">{username}</TableCell>
               <TableCell align="center">*************</TableCell>
               <TableCell align="center">
                 <DeleteAccount
-                  username={user.username}
+                  username={username}
                   removeFromRedux={removeUserDetails}
                 />
               </TableCell>
@@ -44,10 +47,12 @@ const UsersTable = ({users, removeUserDetails}) => {
 };
 
 UsersTable.propTypes = forbidExtraProps({
-  users: PropTypes.arrayOf(PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    password: PropTypes.string.isRequired,
-  })).isRequired,
+  users: PropTypes.arrayOf(
+    PropTypes.shape({
+      username: PropTypes.string.isRequired,
+      password: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
   removeUserDetails: PropTypes.func.isRequired,
 });
 

@@ -2,7 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Button,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
@@ -14,14 +19,18 @@ import CancelIcon from '@material-ui/icons/Cancel';
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
-const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
-  }) => {
+const NodesTable = ({
+  chainConfig,
+  substrateNodesConfig,
+  currentChain,
+  removeNodeDetails,
+}) => {
   if (chainConfig.byId[currentChain].nodes.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="substrate nodes table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -41,43 +50,56 @@ const NodesTable = ({chainConfig, nodesConfig, currentChain, removeNodeDetails
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {nodesConfig.byId[id].substrateNodeName}
+                {substrateNodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].nodeWsUrl}
+                {substrateNodesConfig.byId[id].node_ws_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].telemetryUrl}
+                {substrateNodesConfig.byId[id].telemetry_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].prometheusUrl}
+                {substrateNodesConfig.byId[id].prometheus_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].exporterUrl}
+                {substrateNodesConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].stashAddress}
+                {substrateNodesConfig.byId[id].stash_address}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isValidator
-                  ? <CheckIcon /> : <ClearIcon />}
+                {substrateNodesConfig.byId[id].is_validator ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].monitorNode
-                  ? <CheckIcon /> : <ClearIcon />}
+                {substrateNodesConfig.byId[id].monitor_node ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].isArchiveNode
-                  ? <CheckIcon /> : <ClearIcon />}
+                {substrateNodesConfig.byId[id].is_archive_node ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                {nodesConfig.byId[id].useAsDataSource
-                  ? <CheckIcon /> : <ClearIcon />}
+                {substrateNodesConfig.byId[id].use_as_data_source ? (
+                  <CheckIcon />
+                ) : (
+                  <ClearIcon />
+                )}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => {
-                  removeNodeDetails(nodesConfig.byId[id]);
-                }}
+                <Button
+                  onClick={() => {
+                    removeNodeDetails(substrateNodesConfig.byId[id]);
+                  }}
                 >
                   <CancelIcon />
                 </Button>
@@ -97,20 +119,20 @@ NodesTable.propTypes = forbidExtraProps({
       nodes: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
-  nodesConfig: PropTypes.shape({
+  substrateNodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
-      substrateNodeName: PropTypes.string.isRequired,
-      nodeWsUrl: PropTypes.string,
-      telemetryUrl: PropTypes.string,
-      prometheusUrl: PropTypes.string,
-      exporterUrl: PropTypes.string,
-      stashAddress: PropTypes.string,
-      isValidator: PropTypes.bool,
-      monitorNode: PropTypes.bool,
-      isArchiveNode: PropTypes.bool,
-      useAsDataSource: PropTypes.bool,
+      parent_id: PropTypes.string,
+      name: PropTypes.string.isRequired,
+      node_ws_url: PropTypes.string,
+      telemetry_url: PropTypes.string,
+      prometheus_url: PropTypes.string,
+      exporter_url: PropTypes.string,
+      stash_address: PropTypes.string,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

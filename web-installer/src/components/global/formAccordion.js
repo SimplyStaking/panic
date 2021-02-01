@@ -7,41 +7,37 @@ import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
-function FormAccordion({icon, name, form, table}) {
+function FormAccordion({
+  icon, name, form, table,
+}) {
   return (
-    <div className="width_root">
-      <Accordion>
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1a-content"
-          id="panel1a-header"
+    <Accordion>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel1a-content"
+        id="panel1a-header"
+      >
+        <img src={icon} className="icon" alt="Icon" />
+        <Typography
+          style={{ textAlign: 'center' }}
+          variant="h5"
+          align="center"
+          gutterBottom
         >
-          <img
-            src={icon}
-            className="icon"
-            alt="TelegramIcon"
-          />
-          <Typography
-            style={{ textAlign: 'center' }}
-            variant="h5"
-            align="center"
-            gutterBottom
-          >
-            {name}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              {form}
-            </Grid>
-            <Grid item xs={12}>
-              {table}
-            </Grid>
+          {name}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            {form}
           </Grid>
-        </AccordionDetails>
-      </Accordion>
-    </div>
+          <Grid item xs={12}>
+            {table}
+          </Grid>
+        </Grid>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 

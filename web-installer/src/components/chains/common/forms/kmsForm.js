@@ -2,26 +2,46 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
+  Divider,
 } from '@material-ui/core';
-import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import { PingNodeExpoter } from '../../../../utils/buttons';
-import { defaultTheme, theme } from '../../../theme/default';
+import { NEXT, BACK } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import { PingNodeExporter } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Button from 'components/material_ui/CustomButtons/Button';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
 
 /*
  * Contains the details to setup a KMS configuration to be monitored, this also
  * has the functionality to test the Node Exporter IP address that will be given.
  */
-const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
-  data}) => {
+
+const KmsForm = ({
+  errors, values, handleSubmit, handleChange, setFieldValue, data,
+}) => {
+  const classes = useStyles();
+
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>{data.kmsForm.title}</h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.kmsForm.description}</p>
@@ -32,17 +52,19 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> KMS Name: </Typography>
+                <Typography> KMS Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.kmsName}
-                  value={values.kmsName}
+                  error={errors.kms_name}
+                  value={values.kms_name}
                   type="text"
-                  name="kmsName"
+                  name="kms_name"
                   placeholder={data.kmsForm.nameHolder}
-                  helperText={errors.kmsName ? errors.kmsName : ''}
+                  helperText={errors.kms_name ? errors.kms_name : ''}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -56,56 +78,53 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
+                <Typography> Node Exporter URL </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.exporterUrl}
-                  value={values.exporterUrl}
+                  error={errors.exporter_url}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={data.kmsForm.exporterUrlHolder}
-                  helperText={errors.exporterUrl ? errors.exporterUrl : ''}
+                  helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.exporterUrlTip}
-                      placement="left"
-                    >
+                    <Tooltip title={data.kmsForm.exporterUrlTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Monitor KMS: </Typography>
+                <Typography> Monitor KMS </Typography>
               </Grid>
               <Grid item xs={1}>
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorKms}
+                      checked={values.monitor_kms}
                       onClick={() => {
-                        setFieldValue('monitorKms', !values.monitorKms);
+                        setFieldValue('monitor_kms', !values.monitor_kms);
                       }}
-                      name="monitorKms"
+                      name="monitor_kms"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip
-                      title={data.kmsForm.monitorKmsTip}
-                      placement="left"
-                    >
+                    <Tooltip title={data.kmsForm.monitorKmsTip} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -114,30 +133,27 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
               <Grid item xs={8} />
               <Grid item xs={8} />
               <Grid item xs={4}>
-                <Grid
-                  container
-                  direction="row"
-                  justify="flex-end"
-                  alignItems="center"
-                >
+                <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
-                    <PingNodeExpoter
-                      disabled={(Object.keys(errors).length !== 0)}
-                      exporterUrl={values.exporterUrl}
+                    <PingNodeExporter
+                      disabled={Object.keys(errors).length !== 0}
+                      exporter_url={values.exporter_url}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      color="primary"
+                      size="md"
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add KMS
-                      </Box>
+                      Add KMS
                     </Button>
                   </Box>
                 </Grid>
               </Grid>
+              <Grid item xs={12} />
+              <br />
+              <br />
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -147,7 +163,6 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -157,6 +172,8 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>
@@ -167,19 +184,20 @@ const KmsForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 
 KmsForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    kmsName: PropTypes.string,
-    exporterUrl: PropTypes.string,
+    kms_name: PropTypes.string,
+    exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    kmsName: PropTypes.string.isRequired,
-    exporterUrl: PropTypes.string.isRequired,
-    monitorKms: PropTypes.bool.isRequired,
+    kms_name: PropTypes.string.isRequired,
+    exporter_url: PropTypes.string.isRequired,
+    monitor_kms: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
     kmsForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,

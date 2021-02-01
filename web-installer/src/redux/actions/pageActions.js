@@ -1,6 +1,4 @@
-import {
-  CHANGE_PAGE, CHANGE_STEP,
-} from './types';
+import { CHANGE_PAGE, CHANGE_STEP } from './types';
 
 export function changePage(payload) {
   return {

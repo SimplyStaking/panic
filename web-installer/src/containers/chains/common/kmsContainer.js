@@ -1,31 +1,31 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import KmsForm from '../../../components/chains/common/forms/kmsForm';
-import KmsTable from '../../../components/chains/common/tables/kmsTable';
-import { addKms, removeKms } from '../../../redux/actions/generalActions';
+import KmsForm from 'components/chains/common/forms/kmsForm';
+import KmsTable from 'components/chains/common/tables/kmsTable';
+import { addKms, removeKms } from 'redux/actions/generalActions';
+import CosmosData from 'data/cosmos';
 import KmsSchema from './schemas/kmsSchema';
-import CosmosData from '../../../data/cosmos';
 
 // This performs kms name validation, by checking if the kms name is already
-// setup, and if the exporterUrl is provided
+// setup, and if the exporter_url is provided
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    kmsName: '',
-    exporterUrl: '',
+    kms_name: '',
+    exporter_url: '',
   }),
   mapPropsToValues: () => ({
-    kmsName: '',
-    exporterUrl: '',
-    monitorKms: true,
+    kms_name: '',
+    exporter_url: '',
+    monitor_kms: true,
   }),
   validationSchema: (props) => KmsSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveKmsDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
-      kmsName: values.kmsName,
-      exporterUrl: values.exporterUrl,
-      monitorKms: values.monitorKms,
+      parent_id: currentChain,
+      kms_name: values.kms_name,
+      exporter_url: values.exporter_url,
+      monitor_kms: values.monitor_kms,
     };
     saveKmsDetails(payload);
     resetForm();
@@ -70,7 +70,4 @@ const KmsCosmosTableContainer = connect(
   mapDispatchToPropsRemove,
 )(KmsTable);
 
-export {
-  KmsCosmosFormContainer,
-  KmsCosmosTableContainer,
-};
+export { KmsCosmosFormContainer, KmsCosmosTableContainer };

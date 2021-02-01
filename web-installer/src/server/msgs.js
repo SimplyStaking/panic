@@ -55,6 +55,10 @@ function ConnectionError() {
   this.message = 'Connection Error.';
 }
 
+function DeleteDirectory() {
+  this.message = 'Deleted Directory.';
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -70,4 +74,5 @@ module.exports = {
   MessagePong,
   MessageNoConnection,
   ConnectionError,
+  DeleteDirectory,
 };

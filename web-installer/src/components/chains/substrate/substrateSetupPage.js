@@ -1,33 +1,40 @@
 import React from 'react';
-import { Grid, Box } from '@material-ui/core';
-import Title from '../../global/title';
-import MainText from '../../global/mainText';
-import StepManager from '../../../containers/chains/substrate/stepManager';
-import Data from '../../../data/substrate';
+import StepManager from 'containers/chains/substrate/stepManager';
+import Data from 'data/substrate';
+import Parallax from 'components/material_ui/Parallax/Parallax';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
+import Card from 'components/material_ui/Card/Card';
+import CardBody from 'components/material_ui/Card/CardBody';
+import Background from 'assets/img/backgrounds/background.png';
+
 
 function SubstrateSetupPage() {
+  const classes = useStyles();
+
   return (
     <div>
-      <Title
-        text={Data.substrate.title}
-      />
-      <MainText
-        text={Data.substrate.description}
-      />
-      <Box p={2} className="flex_root">
-        <Box
-          p={3}
-          border={1}
-          borderRadius="borderRadius"
-          borderColor="grey.300"
-        >
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+      <Parallax image={Background}>
+        <div className={classes.container}>
+          <GridContainer>
+            <GridItem>
+              <div className={classes.brand}>
+                <h1 className={classes.title}>{Data.substrate.title}</h1>
+              </div>
+            </GridItem>
+          </GridContainer>
+        </div>
+      </Parallax>
+      <div className={classes.mainRaised}>
+        <Card>
+          <CardBody>
+            <div className={classes.container}>
               <StepManager />
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }
