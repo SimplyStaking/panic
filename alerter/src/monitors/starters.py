@@ -23,7 +23,7 @@ from src.utils.starters import (get_initialisation_error_message,
 T = TypeVar('T', bound=Monitor)
 
 
-def _initialize_monitor_logger(monitor_display_name: str,
+def _initialise_monitor_logger(monitor_display_name: str,
                                monitor_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
@@ -45,10 +45,10 @@ def _initialize_monitor_logger(monitor_display_name: str,
     return monitor_logger
 
 
-def _initialize_monitor(monitor_type: Type[T], monitor_display_name: str,
+def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
                         monitoring_period: int,
                         config: Union[SystemConfig, RepoConfig]) -> T:
-    monitor_logger = _initialize_monitor_logger(monitor_display_name,
+    monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
     # Try initializing the monitor until successful
@@ -77,7 +77,7 @@ def start_system_monitor(system_config: SystemConfig) -> None:
     monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
         system_config.system_name)
     monitoring_period = env.SYSTEM_MONITOR_PERIOD_SECONDS
-    system_monitor = _initialize_monitor(SystemMonitor, monitor_display_name,
+    system_monitor = _initialise_monitor(SystemMonitor, monitor_display_name,
                                          monitoring_period, system_config)
     start_monitor(system_monitor)
 
@@ -88,7 +88,7 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
     monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
     monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
-    github_monitor = _initialize_monitor(GitHubMonitor, monitor_display_name,
+    github_monitor = _initialise_monitor(GitHubMonitor, monitor_display_name,
                                          monitoring_period, repo_config)
     start_monitor(github_monitor)
 
