@@ -9,14 +9,15 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
     Event handler based on the PatternMatchingEventHandler from watchdog
     """
 
-    def __init__(self,
-                 logger: logging.Logger,
-                 callback: Callable[[FileSystemEvent], None],
-                 patterns: List[str],
-                 ignore_patterns: Optional[List[str]] = None,
-                 ignore_directories: bool = True,
-                 case_sensitive: bool = False
-                 ):
+    def __init__(
+            self,
+            logger: logging.Logger,
+            callback: Callable[[FileSystemEvent], None],
+            patterns: List[str],
+            ignore_patterns: Optional[List[str]] = None,
+            ignore_directories: bool = True,
+            case_sensitive: bool = False
+    ):
         """
         :param callback: The function to call when a created, deleted or
             modified event is fired

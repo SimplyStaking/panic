@@ -24,14 +24,14 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitializedException)
 from src.utils.routing_key import get_routing_key
 from .config_update_event_handler import ConfigFileEventHandler
-from ..abstract import Component
+from ..abstract import PublisherComponent
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 
 
-class ConfigsManager(Component):
+class ConfigsManager(PublisherComponent):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -206,8 +206,8 @@ class ConfigsManager(Component):
         try:
             heartbeat = {
                 'component_name': self.name,
-                'is_alive': self._observer.is_alive(),
-                'timestamp': datetime.now().timestamp(),
+                'is_alive':       self._observer.is_alive(),
+                'timestamp':      datetime.now().timestamp(),
             }
 
             self._send_heartbeat(heartbeat)
@@ -217,8 +217,7 @@ class ConfigsManager(Component):
             self._logger.error("Error when sending heartbeat")
             self._logger.exception(e)
 
-    def _send_config_to_rabbit_mq(self, config: Dict[str, Any],
-                                  routing_key: str) -> None:
+    def _send_data(self, config: Dict[str, Any], routing_key: str) -> None:
         self._logger.debug("Sending %s to routing key %s", config, routing_key)
 
         while True:
@@ -299,7 +298,7 @@ class ConfigsManager(Component):
         routing_key = get_routing_key(event.src_path, config_folder)
         self._logger.debug("Sending config %s to RabbitMQ with routing key %s",
                            config_dict, routing_key)
-        self._send_config_to_rabbit_mq(config_dict, routing_key)
+        self._send_data(config_dict, routing_key)
 
     @property
     def config_directory(self) -> str:
