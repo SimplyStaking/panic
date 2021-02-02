@@ -1175,7 +1175,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_modified_configs_with_missing_Keys(
+    def test_process_configs_ignores_modified_configs_with_missing_keys(
             self, mock_ack) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
