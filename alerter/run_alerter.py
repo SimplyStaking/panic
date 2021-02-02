@@ -184,8 +184,12 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
     # Attempt to initialize the data transformers manager
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=data_transformers_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
             data_transformers_manager = DataTransformersManager(
-                data_transformers_manager_logger, manager_display_name)
+                data_transformers_manager_logger, manager_display_name,
+                rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(

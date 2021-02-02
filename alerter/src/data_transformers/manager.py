@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -10,10 +9,10 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_transformers.starters import (start_system_data_transformer,
                                             start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME)
@@ -24,27 +23,16 @@ _DT_MAN_INPUT_QUEUE = 'data_transformers_manager_queue'
 _DT_MAN_INPUT_ROUTING_KEY = 'ping'
 
 
-class DataTransformersManager:
-    def __init__(self, logger: logging.Logger, name: str):
-        self._logger = logger
+class DataTransformersManager(PublisherSubscriberComponent):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
         self._name = name
         self._transformer_process_dict = {}
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild(
-            RabbitMQApi.__name__), host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        super().__init__(logger, rabbitmq)
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     @property
     def name(self) -> str:
@@ -54,11 +42,7 @@ class DataTransformersManager:
     def transformer_process_dict(self) -> Dict:
         return self._transformer_process_dict
 
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
@@ -167,7 +151,7 @@ class DataTransformersManager:
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._start_transformers_processes()
@@ -182,15 +166,8 @@ class DataTransformersManager:
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
     # If termination signals are received, terminate all child process and exit
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and any running data transformers will be "
                       "stopped gracefully. Afterwards the {} process will "
@@ -205,3 +182,6 @@ class DataTransformersManager:
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        pass
