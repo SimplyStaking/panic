@@ -70,6 +70,17 @@ class TestGitHubMonitor(unittest.TestCase):
                                           self.monitoring_period, self.rabbitmq)
 
     def tearDown(self) -> None:
+        # Delete any queues and exchanges which are common across many tests
+        try:
+            self.test_monitor.rabbitmq.connect_till_successful()
+            self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_monitor.rabbitmq.disconnect()
+        except Exception as e:
+            print("Test failed: %s".format(e))
+
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_exception = None
@@ -124,10 +135,6 @@ class TestGitHubMonitor(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
-
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -192,12 +199,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -277,12 +278,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.processed_data_example, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -347,12 +342,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output_hb, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -390,12 +379,6 @@ class TestGitHubMonitor(unittest.TestCase):
             )
             # There must be 0 messages in the queue.
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -431,12 +414,6 @@ class TestGitHubMonitor(unittest.TestCase):
             )
             # There must be 0 messages in the queue.
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -508,12 +485,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output_hb, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -596,11 +567,6 @@ class TestGitHubMonitor(unittest.TestCase):
                 _, _, body = self.test_monitor.rabbitmq.basic_get(
                     self.test_queue_name)
                 self.assertEqual(expected_output_hb, json.loads(body))
-
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -613,11 +579,6 @@ class TestGitHubMonitor(unittest.TestCase):
 
             self.assertRaises(MessageWasNotDeliveredException,
                               self.test_monitor._monitor)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -668,12 +629,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output_data, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -688,11 +643,6 @@ class TestGitHubMonitor(unittest.TestCase):
 
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_monitor._monitor)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -749,12 +699,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output_data, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -769,11 +713,6 @@ class TestGitHubMonitor(unittest.TestCase):
 
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_monitor._monitor)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -830,12 +769,6 @@ class TestGitHubMonitor(unittest.TestCase):
             _, _, body = self.test_monitor.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output_data, json.loads(body))
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -884,11 +817,5 @@ class TestGitHubMonitor(unittest.TestCase):
                 )
                 # There must be no messages in the queue.
                 self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-            self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))

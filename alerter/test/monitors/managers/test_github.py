@@ -115,6 +115,23 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
+        # Delete any queues and exchanges which are common across many tests
+        try:
+            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_purge(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            print("Test failed: %s".format(e))
+
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
@@ -216,14 +233,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
                 False)
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -259,15 +268,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -382,9 +382,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties, body_chain)
             self.assertEqual(old_repos_configs, self.test_manager.repos_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -477,9 +474,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             expected_output['general']['config_id5'] = \
                 new_configs_general['config_id5']
             self.assertEqual(expected_output, self.test_manager.repos_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -579,9 +573,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, self.test_manager.repos_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -628,9 +619,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, self.test_manager.repos_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -785,9 +773,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 new_configs_general['config_id5']['repo_name'] + '/'),
                 args[0].releases_page)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -913,9 +898,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertFalse(conf_id2_old_proc.is_alive())
             self.assertFalse(
                 'config_id2' in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1008,9 +990,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 updated_configs_general['config_id2']['repo_name'] + '/'),
                 args[0].releases_page)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1067,9 +1046,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # Check that the old process has terminated
             self.assertFalse(conf_id1_old_proc.is_alive())
             self.assertFalse(conf_id2_old_proc.is_alive())
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1132,9 +1108,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                              self.test_manager.config_process_dict)
             self.assertEqual(self.repos_configs_example,
                              self.test_manager.repos_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1198,9 +1171,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                              self.test_manager.config_process_dict)
             self.assertEqual(self.repos_configs_example,
                              self.test_manager.repos_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1275,12 +1245,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.config_process_dict['config_id1'][
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
@@ -1289,7 +1253,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'process'].join()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1372,17 +1335,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.config_process_dict['config_id2'][
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1467,15 +1423,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1550,7 +1497,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1599,12 +1545,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 self.repos_configs_example['Substrate Polkadot']['config_id1'][
                     'repo_name'] + '/'), args[0].releases_page)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
 
     @mock.patch.object(multiprocessing.Process, "is_alive")
     def test_process_ping_does_not_send_hb_if_processing_fails(
@@ -1646,15 +1588,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1671,14 +1604,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1698,14 +1623,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1725,14 +1642,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1751,13 +1660,5 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             self.assertRaises(PANICException, self.test_manager._process_ping,
                               blocking_channel, method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
