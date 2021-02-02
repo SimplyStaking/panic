@@ -1074,7 +1074,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_new_configs_with_missing_Keys(
+    def test_process_configs_ignores_new_configs_with_missing_keys(
             self, mock_ack) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
