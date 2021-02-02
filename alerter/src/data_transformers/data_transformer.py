@@ -3,42 +3,31 @@ import sys
 from abc import abstractmethod
 from queue import Queue
 from types import FrameType
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.component import Component
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
-from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class DataTransformer(Component):
+class DataTransformer(QueuingPublisherSubscriberComponent):
     def __init__(self, transformer_name: str, logger: logging.Logger,
-                 redis: RedisApi) -> None:
+                 redis: RedisApi, rabbitmq: RabbitMQApi,
+                 max_queue_size: int = 0) -> None:
         self._transformer_name = transformer_name
-        self._logger = logger
         self._redis = redis
-        self._transformed_data = {}
-        self._data_for_saving = {}
-        self._data_for_alerting = {}
         self._state = {}
 
-        # Set a max queue size so that if the data transformer is not able to
-        # send data, old data can be pruned
-        max_queue_size = env.DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE
-        self._publishing_queue = Queue(max_queue_size)
-
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(
-            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-        super().__init__()
+        super().__init__(logger, rabbitmq, max_queue_size)
 
     def __str__(self) -> str:
         return self.transformer_name
@@ -48,40 +37,16 @@ class DataTransformer(Component):
         return self._transformer_name
 
     @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
     def redis(self) -> RedisApi:
         return self._redis
-
-    @property
-    def transformed_data(self) -> Dict:
-        return self._transformed_data
-
-    @property
-    def data_for_saving(self) -> Dict:
-        return self._data_for_saving
-
-    @property
-    def data_for_alerting(self) -> Dict:
-        return self._data_for_alerting
 
     @property
     def state(self) -> Dict[str, Union[System, GitHubRepo]]:
         return self._state
 
     @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @property
     def publishing_queue(self) -> Queue:
         return self._publishing_queue
-
-    @abstractmethod
-    def _initialize_rabbitmq(self) -> None:
-        pass
 
     @abstractmethod
     def load_state(self, monitorable: Union[System, GitHubRepo]) \
@@ -92,50 +57,28 @@ class DataTransformer(Component):
         self.rabbitmq.start_consuming()
 
     @abstractmethod
-    def _update_state(self) -> None:
+    def _update_state(self, transformed_data: Dict) -> None:
         pass
 
     @abstractmethod
-    def _process_transformed_data_for_saving(self) -> None:
+    def _process_transformed_data_for_saving(self,
+                                             transformed_data: Dict) -> Dict:
         pass
 
     @abstractmethod
-    def _process_transformed_data_for_alerting(self) -> None:
+    def _process_transformed_data_for_alerting(self,
+                                               transformed_data: Dict) -> Dict:
         pass
 
     @abstractmethod
-    def _transform_data(self, data: Dict) -> None:
+    def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         pass
 
     @abstractmethod
-    def _place_latest_data_on_queue(self) -> None:
+    def _place_latest_data_on_queue(self, transformed_data: Dict,
+                                    data_for_alerting: Dict,
+                                    data_for_saving: Dict) -> None:
         pass
-
-    def _send_data(self) -> None:
-        empty = True
-        if not self.publishing_queue.empty():
-            empty = False
-            self.logger.info("Attempting to send all data waiting in the "
-                             "publishing queue ...")
-
-        # Try sending the data in the publishing queue one by one. Important,
-        # remove an item from the queue only if the sending was successful, so
-        # that if an exception is raised, that message is not popped
-        while not self.publishing_queue.empty():
-            data = self.publishing_queue.queue[0]
-            self.rabbitmq.basic_publish_confirm(
-                exchange=data['exchange'], routing_key=data['routing_key'],
-                body=data['data'], is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.logger.debug("Sent %s to '%s' exchange", data['data'],
-                              data['exchange'])
-            self.publishing_queue.get()
-            self.publishing_queue.task_done()
-
-        if not empty:
-            self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
 
     @abstractmethod
     def _process_raw_data(self, ch: BlockingChannel,
@@ -153,7 +96,7 @@ class DataTransformer(Component):
                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -175,13 +118,6 @@ class DataTransformer(Component):
             except Exception as e:
                 self.logger.exception(e)
                 raise e
-
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
 
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "

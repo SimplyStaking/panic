@@ -132,7 +132,3 @@ class QueuingPublisherComponent(PublisherComponent, ABC):
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
                               "queue")
-
-    @abstractmethod
-    def _send_heartbeat(self, data_to_send: dict) -> None:
-        pass

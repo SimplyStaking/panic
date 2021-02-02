@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TypeVar, Type
 
 import pika.exceptions
 
@@ -7,6 +8,7 @@ from src.data_store.redis import RedisApi
 from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
@@ -16,10 +18,13 @@ from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
 
+# Restricts the generic to DataTransformer or subclasses
+T = TypeVar('T', bound=DataTransformer)
+
 
 def _initialize_transformer_logger(
-        transformer_display_name: str, transformer_module_name: str) \
-        -> logging.Logger:
+        transformer_display_name: str,
+        transformer_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -48,14 +53,10 @@ def _initialize_transformer_redis(
     # attempt to use it.
     while True:
         try:
-            redis_db = int(env.REDIS_DB)
-            redis_port = int(env.REDIS_PORT)
-            redis_host = env.REDIS_IP
-            unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
-
             redis = RedisApi(logger=transformer_logger.getChild(
-                RedisApi.__name__), db=redis_db, host=redis_host,
-                port=redis_port, namespace=unique_alerter_identifier)
+                RedisApi.__name__), db=int(env.REDIS_DB), host=env.REDIS_IP,
+                port=int(env.REDIS_PORT),
+                namespace=env.UNIQUE_ALERTER_IDENTIFIER)
             break
         except Exception as e:
             msg = get_initialisation_error_message(transformer_name, e)
@@ -66,63 +67,44 @@ def _initialize_transformer_redis(
     return redis
 
 
-def _initialize_system_data_transformer() -> SystemDataTransformer:
-    transformer_display_name = SYSTEM_DATA_TRANSFORMER_NAME
-
+def _initialise_data_transformer(data_transformer_type: Type[T],
+                                 data_transformer_display_name: str) -> T:
     transformer_logger = _initialize_transformer_logger(
-        transformer_display_name, SystemDataTransformer.__name__)
-    redis = _initialize_transformer_redis(transformer_display_name,
+        data_transformer_display_name, data_transformer_type.__name__)
+    redis = _initialize_transformer_redis(data_transformer_display_name,
                                           transformer_logger)
 
-    # Try initializing the system data transformer until successful
+    # Try initialising the transformer until successful
     while True:
         try:
-            system_data_transformer = SystemDataTransformer(
-                transformer_display_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
-                          .format(transformer_display_name), transformer_logger)
+            rabbitmq = RabbitMQApi(
+                logger=transformer_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            data_transformer = data_transformer_type(
+                data_transformer_display_name, transformer_logger, redis,
+                rabbitmq, env.DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE)
+            log_and_print("Successfully initialized {}".format(
+                data_transformer_display_name), transformer_logger)
             break
         except Exception as e:
-            msg = get_initialisation_error_message(transformer_display_name, e)
+            msg = get_initialisation_error_message(
+                data_transformer_display_name, e)
             log_and_print(msg, transformer_logger)
             # sleep before trying again
             time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
-    return system_data_transformer
-
-
-def _initialize_github_data_transformer() -> GitHubDataTransformer:
-    transformer_display_name = GITHUB_DATA_TRANSFORMER_NAME
-
-    transformer_logger = _initialize_transformer_logger(
-        transformer_display_name, GitHubDataTransformer.__name__)
-    redis = _initialize_transformer_redis(transformer_display_name,
-                                          transformer_logger)
-
-    # Try initializing the github data transformer until successful
-    while True:
-        try:
-            github_data_transformer = GitHubDataTransformer(
-                transformer_display_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
-                          .format(transformer_display_name), transformer_logger)
-            break
-        except Exception as e:
-            msg = get_initialisation_error_message(transformer_display_name, e)
-            log_and_print(msg, transformer_logger)
-            # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
-
-    return github_data_transformer
+    return data_transformer
 
 
 def start_system_data_transformer() -> None:
-    system_data_transformer = _initialize_system_data_transformer()
+    system_data_transformer = _initialise_data_transformer(
+        SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME)
     start_transformer(system_data_transformer)
 
 
 def start_github_data_transformer() -> None:
-    github_data_transformer = _initialize_github_data_transformer()
+    github_data_transformer = _initialise_data_transformer(
+        GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME)
     start_transformer(github_data_transformer)
 
 
