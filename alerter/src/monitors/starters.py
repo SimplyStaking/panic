@@ -54,10 +54,9 @@ def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
     # Try initialising the monitor until successful
     while True:
         try:
-            rabbit_ip = env.RABBIT_IP
             rabbitmq = RabbitMQApi(
                 logger=monitor_logger.getChild(RabbitMQApi.__name__),
-                host=rabbit_ip)
+                host=env.RABBIT_IP)
             monitor = monitor_type(monitor_display_name, config, monitor_logger,
                                    monitoring_period, rabbitmq)
             log_and_print("Successfully initialized {}".format(
@@ -76,9 +75,9 @@ def start_system_monitor(system_config: SystemConfig) -> None:
     # Monitor display name based on system
     monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
         system_config.system_name)
-    monitoring_period = env.SYSTEM_MONITOR_PERIOD_SECONDS
     system_monitor = _initialise_monitor(SystemMonitor, monitor_display_name,
-                                         monitoring_period, system_config)
+                                         env.SYSTEM_MONITOR_PERIOD_SECONDS,
+                                         system_config)
     start_monitor(system_monitor)
 
 
@@ -87,9 +86,9 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
     # and the last space is removed.
     monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
-    monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
     github_monitor = _initialise_monitor(GitHubMonitor, monitor_display_name,
-                                         monitoring_period, repo_config)
+                                         env.GITHUB_MONITOR_PERIOD_SECONDS,
+                                         repo_config)
     start_monitor(github_monitor)
 
 
