@@ -1,43 +1,50 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import NodesForm from '../../../components/chains/cosmos/forms/nodesForm';
-import NodesTable from '../../../components/chains/cosmos/tables/nodesTable';
-import { addNodeCosmos, removeNodeCosmos } from
-  '../../../redux/actions/cosmosActions';
-import NodeSchema from './schemas/nodeSchema';
-import CosmosData from '../../../data/cosmos';
+import NodesForm from 'components/chains/cosmos/forms/nodesForm';
+import NodesTable from 'components/chains/cosmos/tables/nodesTable';
+import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
+import CosmosData from 'data/cosmos';
+import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs cosmos node name validation, by checking if the node name
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    cosmosNodeName: '',
+    name: '',
   }),
   mapPropsToValues: () => ({
-    cosmosNodeName: '',
-    tendermintRpcUrl: '',
-    cosmosRpcUrl: '',
-    prometheusUrl: '',
-    exporterUrl: '',
-    isValidator: false,
-    monitorNode: true,
-    isArchiveNode: true,
-    useAsDataSource: true,
+    name: '',
+    tendermint_rpc_url: '',
+    monitor_tendermint: false,
+    cosmos_rpc_url: '',
+    monitor_rpc: false,
+    prometheus_url: '',
+    monitor_prometheus: false,
+    exporter_url: '',
+    monitor_system: false,
+    is_validator: false,
+    monitor_node: true,
+    is_archive_node: true,
+    use_as_data_source: true,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
-      cosmosNodeName: values.cosmosNodeName,
-      tendermintRpcUrl: values.tendermintRpcUrl,
-      cosmosRpcUrl: values.cosmosRpcUrl,
-      prometheusUrl: values.prometheusUrl,
-      exporterUrl: values.exporterUrl,
-      isValidator: values.isValidator,
-      monitorNode: values.monitorNode,
-      isArchiveNode: values.isArchiveNode,
-      useAsDataSource: values.useAsDataSource,
+      parent_id: currentChain,
+      name: values.name,
+      tendermint_rpc_url: values.tendermint_rpc_url,
+      monitor_tendermint: values.monitor_tendermint,
+      cosmos_rpc_url: values.cosmos_rpc_url,
+      monitor_rpc: values.monitor_rpc,
+      prometheus_url: values.prometheus_url,
+      monitor_prometheus: values.monitor_prometheus,
+      exporter_url: values.exporter_url,
+      monitor_system: values.monitor_system,
+      is_validator: values.is_validator,
+      monitor_node: values.monitor_node,
+      is_archive_node: values.is_archive_node,
+      use_as_data_source: values.use_as_data_source,
     };
     saveNodeDetails(payload);
     resetForm();
@@ -50,7 +57,10 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   chainConfig: state.CosmosChainsReducer,
-  nodesConfig: state.CosmosNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  reposConfig: state.RepositoryReducer,
+  systemConfig: state.SystemsReducer,
   data: CosmosData,
 });
 
@@ -70,10 +80,7 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine cosmos state and dispatch functions to the node form
-const NodesFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 // Combine cosmos state and dispatch functions to the node table
 const NodesTableContainer = connect(
@@ -81,7 +88,4 @@ const NodesTableContainer = connect(
   mapDispatchToPropsRemove,
 )(NodesTable);
 
-export {
-  NodesFormContainer,
-  NodesTableContainer,
-};
+export { NodesFormContainer, NodesTableContainer };

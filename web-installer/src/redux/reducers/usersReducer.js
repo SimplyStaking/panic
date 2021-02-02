@@ -1,4 +1,4 @@
-import { ADD_USER, REMOVE_USER } from '../actions/types';
+import { ADD_USER, REMOVE_USER } from 'redux/actions/types';
 
 const initialstate = {
   users: [],
@@ -14,7 +14,7 @@ function usersReducer(state = initialstate, action) {
     case REMOVE_USER:
       return {
         ...state,
-        users: state.users.filter((user) => user.username !== action.payload),
+        users: state.users.filter((username) => username !== action.payload),
       };
     default:
       return state;

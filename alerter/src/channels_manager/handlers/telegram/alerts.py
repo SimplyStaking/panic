@@ -219,7 +219,7 @@ class TelegramAlertsHandler(ChannelHandler):
                 self.logger.exception(e)
                 raise e
 
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will "
                       "exit.".format(self), self.logger)

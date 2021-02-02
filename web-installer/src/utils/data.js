@@ -23,14 +23,31 @@ function pingNodeExporter(exporterUrl) {
     { exporterUrl });
 }
 
+function deleteConfigs() {
+  return sendData('/server/config/delete', {}, {});
+}
+
 function pingRepo(url) {
   return fetchData(url);
+}
+
+function getConfigPaths() {
+  return fetchData('/server/paths', {}, {});
+}
+
+function getConfig(configType, fileName, chainName, baseChain) {
+  return fetchData('/server/config', {configType, fileName, chainName,
+    baseChain})
 }
 
 function sendConfig(configType, fileName, chainName, baseChain, config) {
   return sendData('/server/config', {
     configType, fileName, chainName, baseChain,
   }, { config });
+}
+
+function loadAccounts() {
+  return fetchData('/server/account/usernames', {}, {});
 }
 
 function saveAccount(username, password) {
@@ -78,5 +95,5 @@ export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
-  deleteAccount,
+  deleteAccount, getConfigPaths, getConfig, loadAccounts, deleteConfigs,
 };

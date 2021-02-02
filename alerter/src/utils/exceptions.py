@@ -1,3 +1,6 @@
+from json import JSONDecodeError
+
+
 class PANICException(Exception):
     def __init__(self, message, code):
         self.message = message
@@ -97,3 +100,10 @@ class MissingKeyInConfigException(PANICException):
         message = "Expected {} field in the {} config".format(key, config_file)
         code = 5011
         super().__init__(message, code)
+
+
+class JSONDecodeException(PANICException):
+
+    def __init__(self, exception: JSONDecodeError) -> None:
+        code = 5012
+        super().__init__(exception.msg, code)

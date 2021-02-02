@@ -1,6 +1,15 @@
 export default {
-  users: {
-    title: 'User Settings',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eget nisi sed dolor ornare fermentum. Fusce massa augue, pulvinar ut consectetur a, auctor non lacus. Donec dui libero, luctus ut libero a, sodales molestie sapien. Sed ac orci molestie, dignissim sem egestas, vehicula urna. Cras odio nunc, viverra et iaculis ut, cursus vitae arcu. Sed eros massa, pretium a diam at, semper placerat tellus. Donec vestibulum tortor non tellus placerat tincidunt. Nullam imperdiet augue nulla, non imperdiet eros sodales nec. In hac habitasse platea dictumst. Vivamus vel rhoncus turpis. Proin in velit magna. Nullam volutpat venenatis placerat. Etiam ex eros, rhoncus nec diam vel, sollicitudin commodo dui. Sed suscipit quis neque vel blandit. Vivamus dui nisl, pellentesque porttitor vehicula sed, tempus sit amet orci. Vestibulum congue laoreet dui sed viverra. ',
-  },
+  title: 'User Management',
+  description:
+    'This is the user management system, here you will be able to '
+    + 'create and delete users. This allows the PANIC UI to have '
+    + 'multiple accounts to have access to it by having multiple '
+    + 'users. Note that the passwords should be temporary and they '
+    + 'should be changed by each user on the PANIC Web UI when they '
+    + 'log in for the first time.',
+  dialog_title: 'Setup Completed!',
+  dialog_description:
+    'You are about to finish the installation process and '
+    + 'begin the PANIC monitoring and alerting process. Would '
+    + 'you like to continue?',
 };

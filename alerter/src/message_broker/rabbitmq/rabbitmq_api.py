@@ -285,6 +285,13 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.basic_consume, args, -1)
 
+    def basic_get(self, queue: str, auto_ack: bool = False) -> Optional[int]:
+        args = [queue, auto_ack]
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        if self._connection_initialized():
+            return self._safe(self.channel.basic_get, args, -1)
+
     def start_consuming(self) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
         # this function will throw a ConnectionNotInitialized exception
@@ -331,6 +338,14 @@ class RabbitMQApi:
         if self._connection_initialized():
             return self._safe(self.channel.queue_purge, args, -1)
 
+    def exchange_delete(self, exchange: str = None,
+                        if_unused: bool = False) -> Optional[int]:
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        args = [exchange, if_unused]
+        if self._connection_initialized():
+            return self._safe(self.channel.exchange_delete, args, -1)
+
     def queue_delete(self, queue: str, if_unused: bool = False,
                      if_empty: bool = False) -> Optional[int]:
         # Perform operation only if a connection has been initialized, if not,
@@ -358,8 +373,7 @@ class RabbitMQApi:
     # Perform an operation with sleeping period in between until successful.
     # This function only works if no exceptions are raised, i.e. till RabbitMQ
     # becomes usable again
-    @staticmethod
-    def perform_operation_till_successful(function, args: Sequence,
+    def perform_operation_till_successful(self, function, args: Sequence,
                                           default_return: Any) -> None:
         while function(*args) == default_return:
-            time.sleep(10)
+            time.sleep(self.connection_check_time_interval_seconds)

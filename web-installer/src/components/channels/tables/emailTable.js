@@ -2,21 +2,28 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
-  List, ListItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  List,
+  ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const EmailTable = ({emails, removeEmailDetails}) => {
+const EmailTable = ({ emails, removeEmailDetails }) => {
   if (emails.allIds.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="simple table">
+      <Table className="greyBackground" aria-label="emails table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Email Name</TableCell>
@@ -36,23 +43,27 @@ const EmailTable = ({emails, removeEmailDetails}) => {
           {Object.keys(emails.byId).map((email) => (
             <TableRow key={emails.byId[email].id}>
               <TableCell align="center">
-                {emails.byId[email].configName}
+                {emails.byId[email].channel_name}
               </TableCell>
               <TableCell align="center">{emails.byId[email].smtp}</TableCell>
-              <TableCell align="center">{emails.byId[email].emailFrom}</TableCell>
+              <TableCell align="center">
+                {emails.byId[email].email_from}
+              </TableCell>
               <TableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
-                    {emails.byId[email].emailsTo.map((to) => (
-                      <ListItem key={to}>
-                        { to }
-                      </ListItem>
+                    {emails.byId[email].emails_to.map((to) => (
+                      <ListItem key={to}>{to}</ListItem>
                     ))}
                   </List>
                 </div>
               </TableCell>
-              <TableCell align="center">{emails.byId[email].username}</TableCell>
-              <TableCell align="center">{emails.byId[email].password}</TableCell>
+              <TableCell align="center">
+                {emails.byId[email].username}
+              </TableCell>
+              <TableCell align="center">
+                {emails.byId[email].password}
+              </TableCell>
               <TableCell align="center">
                 {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
@@ -66,7 +77,11 @@ const EmailTable = ({emails, removeEmailDetails}) => {
                 {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                <Button onClick={() => { removeEmailDetails(emails.byId[email]); }}>
+                <Button
+                  onClick={() => {
+                    removeEmailDetails(emails.byId[email]);
+                  }}
+                >
                   <CancelIcon />
                 </Button>
               </TableCell>
@@ -81,10 +96,10 @@ const EmailTable = ({emails, removeEmailDetails}) => {
 EmailTable.propTypes = forbidExtraProps({
   emails: PropTypes.shape({
     byId: PropTypes.shape({
-      configName: PropTypes.string,
+      channel_name: PropTypes.string,
       smtp: PropTypes.string,
-      emailFrom: PropTypes.string,
-      emailsTo: PropTypes.arrayOf(PropTypes.string),
+      email_from: PropTypes.string,
+      emails_to: PropTypes.arrayOf(PropTypes.string),
       username: PropTypes.string,
       password: PropTypes.string,
       info: PropTypes.bool,

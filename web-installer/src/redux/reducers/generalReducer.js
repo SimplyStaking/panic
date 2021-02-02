@@ -1,73 +1,115 @@
 import _ from 'lodash';
 import { combineReducers } from 'redux';
 import {
-  UPDATE_PERIODIC, ADD_REPOSITORY, ADD_SYSTEM, REMOVE_REPOSITORY,
-  REMOVE_SYSTEM, ADD_KMS, REMOVE_KMS, ADD_TELEGRAM_CHANNEL,
-  REMOVE_TELEGRAM_CHANNEL, ADD_TWILIO_CHANNEL, REMOVE_TWILIO_CHANNEL,
-  ADD_EMAIL_CHANNEL, REMOVE_EMAIL_CHANNEL, ADD_OPSGENIE_CHANNEL,
-  REMOVE_OPSGENIE_CHANNEL, ADD_PAGERDUTY_CHANNEL, REMOVE_PAGERDUTY_CHANNEL,
+  UPDATE_PERIODIC,
+  ADD_REPOSITORY,
+  ADD_SYSTEM,
+  REMOVE_REPOSITORY,
+  REMOVE_SYSTEM,
+  ADD_KMS,
+  REMOVE_KMS,
   UPDATE_THRESHOLD_ALERT,
-} from '../actions/types';
-import { GLOBAL } from '../../constants/constants';
+  UPDATE_REPEAT_ALERT,
+  LOAD_REPOSITORY,
+  LOAD_SYSTEM,
+  LOAD_KMS,
+  LOAD_REPOSITORY_GENERAL,
+  LOAD_SYSTEM_GENERAL,
+  LOAD_THRESHOLD_ALERTS_GENERAL,
+} from 'redux/actions/types';
+import { GLOBAL } from 'constants/constants';
 
 const generalThresholdAlerts = {
   byId: {
     1: {
-      name: 'Open File Descriptors increased',
+      name: 'Open File Descriptors Increased',
+      identifier: 'open_file_descriptors',
+      description:
+        'Open File Descriptors alerted on based on percentage usage .',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     2: {
-      name: 'System CPU usage increased',
+      name: 'System CPU Usage Increased',
+      identifier: 'system_cpu_usage',
+      description: 'System CPU alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     3: {
       name: 'System storage usage increased',
+      identifier: 'system_storage_usage',
+      description: 'System Storage alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     4: {
       name: 'System RAM usage increased',
+      identifier: 'system_ram_usage',
+      description: 'System RAM alerted on based on percentage usage.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: 'GLOBAL',
       warning: {
         threshold: 85,
         enabled: true,
       },
       critical: {
         threshold: 95,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
     },
     5: {
-      name: 'System network usage increased',
+      name: 'System Is Down',
+      identifier: 'system_is_down',
+      description:
+        'The Node Exporter URL is unreachable therefore the '
+        + 'system is taken to be down.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: 'GLOBAL',
       warning: {
-        threshold: 85,
+        threshold: 0,
         enabled: true,
       },
       critical: {
-        threshold: 95,
+        threshold: 200,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
@@ -78,24 +120,19 @@ const generalThresholdAlerts = {
 
 // Initial periodic state
 const periodicState = {
-  periodic: {
-    time: 0,
-    enabled: false,
-  },
+  time: 0,
+  enabled: false,
 };
 
 // Initial general state
 const generalState = {
   byId: {
     GLOBAL: {
+      chain_name: GLOBAL,
+      id: GLOBAL,
       repositories: [],
       systems: [],
       periodic: periodicState,
-      telegrams: [],
-      twilios: [],
-      emails: [],
-      pagerduties: [],
-      opsgenies: [],
       thresholdAlerts: generalThresholdAlerts,
     },
   },
@@ -106,35 +143,54 @@ const generalState = {
 // systems
 function GeneralReducer(state = generalState, action) {
   switch (action.type) {
-    // case UPDATE_PERIODIC:
-    //   return {
-    //     ...state,
-    //     periodic: action.payload,
-    //   };
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-
+      if (
+        // eslint-disable-next-line no-prototype-builtins
+        !state.byId[action.payload.parent_id].hasOwnProperty('repositories')
+      ) {
+        // eslint-disable-next-line no-param-reassign
+        state.byId[action.payload.parent_id].repositories = [];
+      }
       return {
         ...state,
         byId: {
           ...state.byId,
           GLOBAL: {
             ...state.byId[GLOBAL],
-            repositories: state.byId[GLOBAL].repositories.concat(action.payload.id),
+            repositories: state.byId[GLOBAL].repositories.concat(
+              action.payload.id,
+            ),
           },
         },
       };
+    case LOAD_REPOSITORY_GENERAL:
+      if (!state.byId[GLOBAL].repositories.includes(action.payload.id)) {
+        return {
+          ...state,
+          byId: {
+            ...state.byId,
+            GLOBAL: {
+              ...state.byId[GLOBAL],
+              repositories: state.byId[GLOBAL].repositories.concat(
+                action.payload.id,
+              ),
+            },
+          },
+        };
+      }
+      return state;
+
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
-
       return {
         ...state,
         byId: {
@@ -150,7 +206,7 @@ function GeneralReducer(state = generalState, action) {
     case ADD_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -163,10 +219,29 @@ function GeneralReducer(state = generalState, action) {
           },
         },
       };
+    case LOAD_SYSTEM_GENERAL:
+      if (
+        !state.byId[action.payload.parent_id].systems.includes(
+          action.payload.id,
+        )
+      ) {
+        return {
+          ...state,
+          byId: {
+            ...state.byId,
+            GLOBAL: {
+              ...state.byId[GLOBAL],
+              systems: state.byId[GLOBAL].systems.concat(action.payload.id),
+            },
+          },
+        };
+      }
+      return state;
+
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
 
@@ -182,10 +257,10 @@ function GeneralReducer(state = generalState, action) {
           },
         },
       };
-    case ADD_TELEGRAM_CHANNEL:
+    case UPDATE_REPEAT_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -194,168 +269,20 @@ function GeneralReducer(state = generalState, action) {
           ...state.byId,
           GLOBAL: {
             ...state.byId[GLOBAL],
-            telegrams: state.byId[GLOBAL].telegrams.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_TELEGRAM_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            telegrams: state.byId[GLOBAL].telegrams.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            twilios: state.byId[GLOBAL].twilios.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_TWILIO_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            twilios: state.byId[GLOBAL].twilios.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            emails: state.byId[GLOBAL].emails.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_EMAIL_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            emails: state.byId[GLOBAL].emails.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            pagerduties: state.byId[GLOBAL].pagerduties.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_PAGERDUTY_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            pagerduties: state.byId[GLOBAL].pagerduties.filter(
-              (config) => config !== action.payload.id,
-            ),
-          },
-        },
-      };
-    case ADD_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            opsgenies: state.byId[GLOBAL].opsgenies.concat(action.payload.id),
-          },
-        },
-      };
-    case REMOVE_OPSGENIE_CHANNEL:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            opsgenies: state.byId[GLOBAL].opsgenies.filter(
-              (config) => config !== action.payload.id,
-            ),
+            repeatAlerts: {
+              ...state.byId[GLOBAL].repeatAlerts,
+              byId: {
+                ...state.byId[GLOBAL].repeatAlerts.byId,
+                [action.payload.id]: action.payload.alert,
+              },
+            },
           },
         },
       };
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parentId !== GLOBAL) {
+      if (action.payload.parent_id !== GLOBAL) {
         return state;
       }
       return {
@@ -371,6 +298,17 @@ function GeneralReducer(state = generalState, action) {
                 [action.payload.id]: action.payload.alert,
               },
             },
+          },
+        },
+      };
+    case LOAD_THRESHOLD_ALERTS_GENERAL:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          GLOBAL: {
+            ...state.byId[GLOBAL],
+            thresholdAlerts: action.payload.alerts,
           },
         },
       };
@@ -397,6 +335,11 @@ function repositoriesById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_REPOSITORY:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_REPOSITORY:
       return _.omit(state, action.payload.id);
     default:
@@ -409,6 +352,12 @@ function allRepositories(state = [], action) {
   switch (action.type) {
     case ADD_REPOSITORY:
       return state.concat(action.payload.id);
+    case LOAD_REPOSITORY:
+      if (!state.includes(action.payload.id)) {
+        return state.concat(action.payload.id);
+      }
+      return state;
+
     case REMOVE_REPOSITORY:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -429,6 +378,11 @@ function systemsById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_SYSTEM:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_SYSTEM:
       return _.omit(state, action.payload.id);
     default:
@@ -441,6 +395,12 @@ function allSystems(state = [], action) {
   switch (action.type) {
     case ADD_SYSTEM:
       return state.concat(action.payload.id);
+    case LOAD_SYSTEM:
+      if (!state.includes(action.payload.id)) {
+        return state.concat(action.payload.id);
+      }
+      return state;
+
     case REMOVE_SYSTEM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -461,6 +421,11 @@ function kmsesById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
+    case LOAD_KMS:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
     case REMOVE_KMS:
       return _.omit(state, action.payload.id);
     default:
@@ -473,6 +438,12 @@ function allKmses(state = [], action) {
   switch (action.type) {
     case ADD_KMS:
       return state.concat(action.payload.id);
+    case LOAD_KMS:
+      if (!state.includes(action.payload.id)) {
+        return state.concat(action.payload.id);
+      }
+      return state;
+
     case REMOVE_KMS:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -486,6 +457,10 @@ const KmsReducer = combineReducers({
 });
 
 export {
-  RepositoryReducer, SystemsReducer, KmsReducer, PeriodicReducer,
+  RepositoryReducer,
+  SystemsReducer,
+  KmsReducer,
+  PeriodicReducer,
   GeneralReducer,
+  generalThresholdAlerts,
 };

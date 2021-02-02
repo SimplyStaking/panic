@@ -1,34 +1,31 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import RepositoriesForm from
-  '../../../components/chains/common/forms/repositoriesForm';
-import RepositoriesTable from
-  '../../../components/chains/common/tables/repositoriesTable';
-import { addRepository, removeRepository } from
-  '../../../redux/actions/generalActions';
-import { GLOBAL } from '../../../constants/constants';
+import RepositoriesForm from 'components/chains/common/forms/repositoriesForm';
+import RepositoriesTable from 'components/chains/common/tables/repositoriesTable';
+import { addRepository, removeRepository } from 'redux/actions/generalActions';
+import { GLOBAL } from 'constants/constants';
+import GeneralData from 'data/general';
+import CosmosData from 'data/cosmos';
+import SubstrateData from 'data/substrate';
 import RepositorySchema from './schemas/repositorySchema';
-import GeneralData from '../../../data/general';
-import CosmosData from '../../../data/cosmos';
-import SubstrateData from '../../../data/substrate';
 
 // This performs repository validation, by checking if the repository is already
 // setup.
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    repoName: '',
+    repo_name: '',
   }),
   mapPropsToValues: () => ({
-    repoName: '',
-    monitorRepo: true,
+    repo_name: '',
+    monitor_repo: true,
   }),
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveRepositoryDetails, currentChain } = props;
     const payload = {
-      parentId: currentChain,
-      repoName: values.repoName,
-      monitorRepo: values.monitorRepo,
+      parent_id: currentChain,
+      repo_name: values.repo_name,
+      monitor_repo: values.monitor_repo,
     };
     saveRepositoryDetails(payload);
     resetForm();
@@ -41,8 +38,7 @@ const Form = withFormik({
 // details to the redux state.
 function mapDispatchToProps(dispatch) {
   return {
-    saveRepositoryDetails:
-      (details) => dispatch(addRepository(details)),
+    saveRepositoryDetails: (details) => dispatch(addRepository(details)),
   };
 }
 
@@ -50,8 +46,7 @@ function mapDispatchToProps(dispatch) {
 // details from the table and state.
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeRepositoryDetails:
-      (details) => dispatch(removeRepository(details)),
+    removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
   };
 }
 
@@ -62,6 +57,9 @@ function mapDispatchToPropsRemove(dispatch) {
 const mapGeneralStateToProps = (state) => ({
   currentChain: GLOBAL,
   config: state.GeneralReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
   data: GeneralData,
 });
@@ -85,6 +83,9 @@ const RepositoriesGeneralTableContainer = connect(
 const mapCosmosStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   config: state.CosmosChainsReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
   data: CosmosData,
 });
@@ -108,6 +109,9 @@ const RepositoriesCosmosTableContainer = connect(
 const mapSubstrateStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   config: state.SubstrateChainsReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
   data: SubstrateData,
 });

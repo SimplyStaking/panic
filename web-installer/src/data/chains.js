@@ -1,39 +1,70 @@
 export default {
   chains: {
-    title: 'Chains Settings',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eget nisi sed dolor ornare fermentum. Fusce massa augue, pulvinar ut consectetur a, auctor non lacus. Donec dui libero, luctus ut libero a, sodales molestie sapien. Sed ac orci molestie, dignissim sem egestas, vehicula urna. Cras odio nunc, viverra et iaculis ut, cursus vitae arcu. Sed eros massa, pretium a diam at, semper placerat tellus. Donec vestibulum tortor non tellus placerat tincidunt. Nullam imperdiet augue nulla, non imperdiet eros sodales nec. In hac habitasse platea dictumst. Vivamus vel rhoncus turpis. Proin in velit magna. Nullam volutpat venenatis placerat. Etiam ex eros, rhoncus nec diam vel, sollicitudin commodo dui. Sed suscipit quis neque vel blandit. Vivamus dui nisl, pellentesque porttitor vehicula sed, tempus sit amet orci. Vestibulum congue laoreet dui sed viverra. ',
+    title: "Chain's Setup",
+    subtitle_1: 'Everything you need to know about Chains.',
+    subtitle_2: 'Setup the chains now!',
+    what_title: 'What are Chains?',
+    supported_title: 'Supported Chains',
+    how_title: 'How are they setup?',
+    what_1:
+      'Chains are the type of blockchain nodes you have running that you '
+      + 'want to be monitored and alerted on.',
+    what_2:
+      'The chains you will choose from are the underlying technology '
+      + 'the blockchain is built with.',
+    chain_1:
+      'Cosmos-SDK: framework released by ICF for building '
+      + 'application-specific blockchains.',
+    chain_2:
+      'Substrate: framework released by Web3 for building '
+      + 'application-specific blockchains.',
+    chain_3:
+      'Other: Here you can monitor systems which do not belong to any '
+      + 'blockchain, these are monitored through Node Exporter.',
+    how_1:
+      'Chains can be setup in the section below, you can configure as '
+      + 'many chains as you want.',
+    how_2:
+      'First you will choose the type of blockchain you will be setting up'
+      + ' is it built using the Cosmos-SDK or Substrate?',
+    how_3:
+      'From then on you will setup the chain name, the nodes belonging to '
+      + 'the chain, the channels you want alerts for that chain to go to '
+      + 'and finally the specific alerts configured for that chain.',
   },
-  chainName: {
+  chain_name: {
     description: 'We will now go through the setup of cosmos based chains.',
-    name: 'This will be used to identify the current chain that you are setting up.',
+    name:
+      'This will be used to identify the current chain that you are '
+      + 'setting up.',
   },
   kms: {
     description: '',
-    name: 'This will be used to identify the curren KMS configuration.',
-    exporterUrl: '',
-    monitorKms: '',
+    name: 'This will be used to identify the current KMS configuration.',
+    exporter_url: '',
+    monitor_kms: '',
   },
   systems: {
     description: '',
-    name: 'This will be used to identify the curren System configuration.',
-    exporterUrl: '',
-    monitorSystem: '',
+    name: 'This will be used to identify the current System configuration.',
+    exporter_url: '',
+    monitor_system: '',
   },
   nodeDetails: {
     description: '',
     name: '',
     tendermintRPC: '',
     cosmosSDKRPC: '',
-    prometheusUrl: '',
+    prometheus_url: '',
     nodeExporterURL: '',
-    isValidator: '',
+    is_validator: '',
     isArchive: '',
-    monitorNode: '',
-    useAsDataSource: '',
+    monitor_node: '',
+    use_as_data_source: '',
   },
   repositoryDetails: {
     description: '',
     name: '',
-    monitorRepo: '',
+    monitor_repo: '',
   },
 };
