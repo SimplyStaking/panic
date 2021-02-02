@@ -1,6 +1,6 @@
 import copy
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Dict
 
@@ -10,7 +10,50 @@ from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
 
 
-class QueuingPublisherComponent(Component, ABC):
+class PublisherComponent(Component, ABC):
+    """
+    Represents a blue print for a publisher
+    """
+
+    def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi):
+        """
+        :param logger: The logger object to log with
+        :param rabbitmq: The rabbit MQ connection to use
+        """
+        self._logger = logger
+        self._rabbitmq = rabbitmq
+
+        super().__init__()
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
+
+    @property
+    def rabbitmq(self) -> RabbitMQApi:
+        return self._rabbitmq
+
+    @abstractmethod
+    def _initialise_rabbitmq(self) -> None:
+        pass
+
+    def disconnect_from_rabbit(self) -> None:
+        """
+        Disconnects the component from RabbitMQ
+        :return:
+        """
+        self.rabbitmq.disconnect_till_successful()
+
+    @abstractmethod
+    def _send_data(self, *args) -> None:
+        pass
+
+    @abstractmethod
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        pass
+
+
+class QueuingPublisherComponent(PublisherComponent, ABC):
     """
     Abstract class
     Uses a queuing mechanism to publish messages to RabbitMQ
@@ -19,17 +62,14 @@ class QueuingPublisherComponent(Component, ABC):
     def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0):
         """
-        Initializes the queue needed for publishing. It also sets the prefetch
-        count of the rabbitmq channel passed through.
+        Initializes the queue needed for publishing.
         :param logger: The logger object to log with
         :param rabbitmq: The rabbit MQ connection to use
         :param max_queue_size: The max queue size, defaults to 0 for infinite
         """
         self._publishing_queue = Queue(max_queue_size)
-        self._logger = logger
-        self._rabbitmq = rabbitmq
 
-        super().__init__()
+        super().__init__(logger, rabbitmq)
 
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
                        properties: BasicProperties = BasicProperties(
@@ -86,7 +126,13 @@ class QueuingPublisherComponent(Component, ABC):
                 self._logger.error("Enqueued datum %s was incomplete", data)
                 self._logger.exception(ke)
                 self._logger.warning("Discarding this datum")
+                self._publishing_queue.get()
+                self._publishing_queue.task_done()
 
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
                               "queue")
+
+    @abstractmethod
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        pass

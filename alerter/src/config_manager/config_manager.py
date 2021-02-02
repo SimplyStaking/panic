@@ -184,6 +184,19 @@ class ConfigsManager(Component):
         else:
             self._logger.info("Already disconnected from RabbitMQ")
 
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self._logger.debug("Sending heartbeat to the %s exchange",
+                           HEALTH_CHECK_EXCHANGE)
+        self._logger.debug("Sending %s", data_to_send)
+        self._heartbeat_rabbit.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=_HEARTBEAT_ROUTING_KEY,
+            body=data_to_send, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self._logger.info("Sent heartbeat to %s exchange",
+                          HEALTH_CHECK_EXCHANGE)
+
     def _process_ping(self, ch: BlockingChannel,
                       method: pika.spec.Basic.Deliver,
                       properties: pika.spec.BasicProperties,
@@ -197,17 +210,7 @@ class ConfigsManager(Component):
                 'timestamp': datetime.now().timestamp(),
             }
 
-            self._logger.debug("Sending heartbeat to the %s exchange",
-                               HEALTH_CHECK_EXCHANGE)
-            self._logger.debug("Sending %s", heartbeat)
-            self._heartbeat_rabbit.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=_HEARTBEAT_ROUTING_KEY,
-                body=heartbeat, is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self._logger.info("Sent heartbeat to %s exchange",
-                              HEALTH_CHECK_EXCHANGE)
+            self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as heartbeats must be
             # real-time
@@ -340,7 +343,7 @@ class ConfigsManager(Component):
         self._connect_to_rabbit()
         self._heartbeat_rabbit.start_consuming()
 
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         """
         This method is used to stop the observer and join the threads
         """

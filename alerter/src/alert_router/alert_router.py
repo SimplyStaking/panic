@@ -30,12 +30,9 @@ class AlertRouter(QueuingPublisherComponent):
                  redis_db: int, redis_port: int, unique_alerter_identifier: str,
                  enable_console_alerts: bool, enable_log_alerts: bool):
         self._name = name
-        self._rabbit = RabbitMQApi(logger.getChild(RabbitMQApi.__name__),
-                                   host=rabbit_ip)
         self._redis = RedisApi(logger.getChild(RedisApi.__name__),
                                host=redis_ip, db=redis_db, port=redis_port,
                                namespace=unique_alerter_identifier)
-
         self._enable_console_alerts = enable_console_alerts
         self._enable_log_alerts = enable_log_alerts
 
@@ -52,7 +49,7 @@ class AlertRouter(QueuingPublisherComponent):
     def name(self) -> str:
         return self._name
 
-    def _initialise_rabbit(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         """
         Initialises the rabbit connection and the exchanges needed
         :return: None
@@ -213,7 +210,7 @@ class AlertRouter(QueuingPublisherComponent):
             self._logger.exception(e)
             need_to_push_to_queue = False
 
-        self._rabbit.basic_ack(method.delivery_tag, False)
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
 
         if need_to_push_to_queue:
             for channel_id in send_to_ids:
@@ -223,10 +220,10 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.debug("Queuing %s to be sent to %s",
                                    send_alert, channel_id)
 
-            self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                "channel.{}".format(channel_id),
-                                mandatory=False)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                    "channel.{}".format(channel_id),
+                                    mandatory=False)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
             if self._enable_console_alerts:
@@ -237,19 +234,18 @@ class AlertRouter(QueuingPublisherComponent):
                     ALERT_EXCHANGE, "channel.console", mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-        if self._enable_log_alerts:
-            self._logger.debug("Queuing %s to be sent to the alerts log",
-                               recv_alert)
+            if self._enable_log_alerts:
+                self._logger.debug("Queuing %s to be sent to the alerts log",
+                                   recv_alert)
 
-            self._push_to_queue(
-                {**recv_alert, 'destination_id': "log"},
-                ALERT_EXCHANGE, "channel.log", mandatory=True)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(
+                    {**recv_alert, 'destination_id': "log"},
+                    ALERT_EXCHANGE, "channel.log", mandatory=True)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-        self._rabbitmq.basic_ack(method.delivery_tag, False)
-
-        # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert", mandatory=True)
+            # Enqueue once to the data store
+            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
+                                mandatory=True)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -258,6 +254,16 @@ class AlertRouter(QueuingPublisherComponent):
             # Log the message and do not raise it as message is residing in the
             # publisher queue.
             self._logger.exception(e)
+
+    def _send_heartbeat(self, data_to_send: dict) -> None:
+        self._rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker', body=data_to_send,
+            is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self._logger.info("Sent heartbeat to %s exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def _process_ping(self, ch: BlockingChannel,
                       method: pika.spec.Basic.Deliver,
@@ -272,14 +278,7 @@ class AlertRouter(QueuingPublisherComponent):
                 'timestamp': datetime.now().timestamp(),
             }
 
-            self._rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker', body=heartbeat,
-                is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self._logger.info("Sent heartbeat to %s exchange",
-                              HEALTH_CHECK_EXCHANGE)
+            self._send_heartbeat(heartbeat)
         except MessageWasNotDeliveredException as e:
             # Log the message and do not raise it as the heartbeats must be
             # real-time
@@ -288,7 +287,7 @@ class AlertRouter(QueuingPublisherComponent):
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self._logger)
-        self._initialise_rabbit()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -311,14 +310,7 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from rabbit
-        :return:
-        """
-        self._rabbitmq.disconnect_till_successful()
-
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)

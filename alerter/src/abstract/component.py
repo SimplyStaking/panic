@@ -10,14 +10,14 @@ class Component(ABC):
 
     def __init__(self):
         # Handle termination signals by stopping the monitor gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        signal.signal(signal.SIGTERM, self._on_terminate)
+        signal.signal(signal.SIGINT, self._on_terminate)
+        signal.signal(signal.SIGHUP, self._on_terminate)
 
     @abstractmethod
     def start(self) -> None:
         pass
 
     @abstractmethod
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         pass
