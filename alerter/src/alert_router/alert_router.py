@@ -5,7 +5,7 @@ from configparser import ConfigParser, NoOptionError, NoSectionError, \
 from datetime import datetime
 from logging import Logger
 from types import FrameType
-from typing import Dict
+from typing import Dict, List
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
@@ -30,9 +30,9 @@ class AlertRouter(QueuingPublisherComponent):
     def __init__(self, name: str, logger: Logger, rabbit_ip: str, redis_ip: str,
                  redis_db: int, redis_port: int, unique_alerter_identifier: str,
                  enable_console_alerts: bool, enable_log_alerts: bool):
+
+        # Change
         self._name = name
-        self._rabbit = RabbitMQApi(logger.getChild(RabbitMQApi.__name__),
-                                   host=rabbit_ip)
         self._redis = RedisApi(logger.getChild(RedisApi.__name__),
                                host=redis_ip, db=redis_db, port=redis_port,
                                namespace=unique_alerter_identifier)
@@ -52,7 +52,7 @@ class AlertRouter(QueuingPublisherComponent):
     def name(self) -> str:
         return self._name
 
-    def _initialise_rabbit(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         """
         Initialises the rabbit connection and the exchanges needed
         :return: None
@@ -173,8 +173,8 @@ class AlertRouter(QueuingPublisherComponent):
                        body: bytes) -> None:
         recv_alert: Dict = json.loads(body)
 
-        need_to_push_to_queue = True
-        send_to_ids = []
+        has_error: bool = False
+        send_to_ids: List[str] = []
         try:
             if recv_alert and 'severity' in recv_alert:
                 self._logger.info("Received an alert to route")
@@ -185,12 +185,12 @@ class AlertRouter(QueuingPublisherComponent):
                 is_all_muted = self.is_all_muted(recv_alert.get('severity'))
                 is_chain_severity_muted = self.is_chain_severity_muted(
                     recv_alert.get('parent_id'), recv_alert.get('severity'))
+
                 if is_all_muted or is_chain_severity_muted:
                     self._logger.info("This alert has been muted")
                     self._logger.debug(
                         "is_all_muted=%s, is_chain_severity_muted=%s",
                         is_all_muted, is_chain_severity_muted)
-                    need_to_push_to_queue = False
                 else:
                     self._logger.info("Obtaining list of channels to alert")
                     self._logger.debug([
@@ -203,8 +203,7 @@ class AlertRouter(QueuingPublisherComponent):
                         self._config.values()
                         for channel in channel_type.values()
                         if channel.get(recv_alert.get('severity').lower()) and
-                           recv_alert.get('parent_id') in channel.get(
-                            'parent_ids')
+                        recv_alert.get('parent_id') in channel.get('parent_ids')
                     ]
 
                     self._logger.debug("send_to_ids = %s", send_to_ids)
@@ -212,11 +211,12 @@ class AlertRouter(QueuingPublisherComponent):
         except Exception as e:
             self._logger.error("Error when processing alert: %s", recv_alert)
             self._logger.exception(e)
-            need_to_push_to_queue = False
+            has_error = True
 
-        self._rabbit.basic_ack(method.delivery_tag, False)
+        self._rabbitmq.basic_ack(method.delivery_tag, False)
 
-        if need_to_push_to_queue:
+        if not has_error:
+            # This will be empty if the alert was muted
             for channel_id in send_to_ids:
                 send_alert: Dict = {**recv_alert,
                                     'destination_id': channel_id}
@@ -224,10 +224,10 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.debug("Queuing %s to be sent to %s",
                                    send_alert, channel_id)
 
-            self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                "channel.{}".format(channel_id),
-                                mandatory=False)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(send_alert, ALERT_EXCHANGE,
+                                    "channel.{}".format(channel_id),
+                                    mandatory=False)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
             if self._enable_console_alerts:
@@ -238,19 +238,17 @@ class AlertRouter(QueuingPublisherComponent):
                     ALERT_EXCHANGE, "channel.console", mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-        if self._enable_log_alerts:
-            self._logger.debug("Queuing %s to be sent to the alerts log",
-                               recv_alert)
+            if self._enable_log_alerts:
+                self._logger.debug("Queuing %s to be sent to the alerts log",
+                                   recv_alert)
 
-            self._push_to_queue(
-                {**recv_alert, 'destination_id': "log"},
-                ALERT_EXCHANGE, "channel.log", mandatory=True)
-            self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
+                self._push_to_queue(
+                    {**recv_alert, 'destination_id': "log"},
+                    ALERT_EXCHANGE, "channel.log", mandatory=True)
+                self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
-        self._rabbitmq.basic_ack(method.delivery_tag, False)
-
-        # Enqueue once to the data store
-        self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert", mandatory=True)
+            # Enqueue once to the data store
+            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert", mandatory=True)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -269,8 +267,8 @@ class AlertRouter(QueuingPublisherComponent):
         try:
             heartbeat = {
                 'component_name': self.name,
-                'is_alive': True,
-                'timestamp': datetime.now().timestamp(),
+                'is_alive':       True,
+                'timestamp':      datetime.now().timestamp(),
             }
 
             self._rabbitmq.basic_publish_confirm(
@@ -289,7 +287,7 @@ class AlertRouter(QueuingPublisherComponent):
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self._logger)
-        self._initialise_rabbit()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -358,23 +356,23 @@ class AlertRouter(QueuingPublisherComponent):
 
         if "twilio" in config_filename:
             return {
-                'id': section.get('id'),
+                'id':         section.get('id'),
                 'parent_ids': [x for x in section.get('parent_ids').split(",")
                                if x.strip()],
-                'info': False,
-                'warning': False,
-                'error': False,
-                'critical': True,
+                'info':       False,
+                'warning':    False,
+                'error':      False,
+                'critical':   True,
             }
 
         return {
-            'id': section.get('id'),
+            'id':         section.get('id'),
             'parent_ids': [x for x in section.get('parent_ids').split(",") if
                            x.strip()],
-            'info': section.getboolean('info'),
-            'warning': section.getboolean('warning'),
-            'error': section.getboolean('error'),
-            'critical': section.getboolean('critical'),
+            'info':       section.getboolean('info'),
+            'warning':    section.getboolean('warning'),
+            'error':      section.getboolean('error'),
+            'critical':   section.getboolean('critical'),
         }
 
     @staticmethod

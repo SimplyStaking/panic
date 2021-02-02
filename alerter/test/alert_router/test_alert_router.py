@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 import unittest
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Dict, Callable, Any
 from unittest import mock
 from unittest.mock import MagicMock
@@ -13,12 +13,18 @@ from parameterized import parameterized
 
 from src.alert_router.alert_router import (AlertRouter,
                                            _ALERT_ROUTER_INPUT_QUEUE_NAME)
-from src.data_store.redis import RedisApi
+from src.alerter.alert_code import AlertCode
+from src.alerter.alerts.alert import Alert
+from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, ALERT_EXCHANGE,
                                  STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_ROUTER_CONFIGS_QUEUE_NAME)
 from src.utils.exceptions import MissingKeyInConfigException
+
+
+class DummyAlertCode(AlertCode):
+    TEST_ALERT_CODE = 'test_alert_code'
 
 
 class TestAlertRouter(unittest.TestCase):
@@ -44,26 +50,27 @@ class TestAlertRouter(unittest.TestCase):
                                self._redis_ip, self._redis_port)
 
         self.CONFIG_ROUTING_KEY = "channels.test"
+        self.ALERT_ROUTER_ROUTING_KEY = "alert_router.test"
         self.TEST_CHANNEL_CONFIG_FILE = {
             'test_123': {
-                'id': "test_123",
+                'id':           "test_123",
                 'channel_name': "test_channel",
-                'info': "false",
-                'warning': "false",
-                'critical': "false",
-                'error': "false",
-                'parent_ids': "GENERAL,",
+                'info':         "false",
+                'warning':      "false",
+                'critical':     "false",
+                'error':        "false",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
 
         self.TEST_CHANNEL_CONFIG = {
             'test_123': {
-                'id': "test_123",
-                'info': False,
-                'warning': False,
-                'critical': False,
-                'error': False,
+                'id':         "test_123",
+                'info':       False,
+                'warning':    False,
+                'critical':   False,
+                'error':      False,
                 'parent_ids': ["GENERAL"],
             }
         }
@@ -106,6 +113,9 @@ class TestAlertRouter(unittest.TestCase):
     def test_alert_router_initialised(self):
         self.assertIsNotNone(self._test_alert_router)
 
+    def test_str(self):
+        self.assertEqual("Alert Router", str(self._test_alert_router))
+
     def test_name(self):
         self.assertEqual("Alert Router", self._test_alert_router.name)
 
@@ -115,7 +125,7 @@ class TestAlertRouter(unittest.TestCase):
     ])
     def test__initialise_rabbit_initialises_queues(self, queue_to_check: str):
         # Testing this separately since this is a critical function
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
 
         try:
             self._rabbitmq.connect_till_successful()
@@ -132,7 +142,7 @@ class TestAlertRouter(unittest.TestCase):
     def test__initialise_rabbit_initialises_exchanges(self,
                                                       exchange_to_check: str):
         # Testing this separately since this is a critical function
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
 
         try:
             self._rabbitmq.connect_till_successful()
@@ -152,7 +162,7 @@ class TestAlertRouter(unittest.TestCase):
         mock_ack.return_value = None
         mock_extract_config.return_value = self.TEST_CHANNEL_CONFIG['test_123']
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -186,24 +196,24 @@ class TestAlertRouter(unittest.TestCase):
 
         updated_config_file = {
             'test_123': {
-                'id': "test_123",
+                'id':           "test_123",
                 'channel_name': "test_channel",
-                'info': "true",
-                'warning': "true",
-                'critical': "false",
-                'error': "true",
-                'parent_ids': "GENERAL,",
+                'info':         "true",
+                'warning':      "true",
+                'critical':     "false",
+                'error':        "true",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
 
         updated_config = {
             'test_123': {
-                'id': "test_123",
-                'info': True,
-                'warning': True,
-                'critical': False,
-                'error': True,
+                'id':         "test_123",
+                'info':       True,
+                'warning':    True,
+                'critical':   False,
+                'error':      True,
                 'parent_ids': ["GENERAL"],
             }
         }
@@ -214,7 +224,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -262,11 +272,11 @@ class TestAlertRouter(unittest.TestCase):
         # mocked
         updated_incorrect_config_file = {
             'test_123': {
-                'id': "test_123",
+                'id':           "test_123",
                 'channel_name': "test_channel",
-                'critical': "false",
-                'error': "true",
-                'parent_ids': "GENERAL,",
+                'critical':     "false",
+                'error':        "true",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -278,7 +288,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -326,11 +336,11 @@ class TestAlertRouter(unittest.TestCase):
         # mocked
         updated_incorrect_config_file = {
             'test_123': {
-                'id': "test_123",
+                'id':           "test_123",
                 'channel_name': "test_channel",
-                'critical': "false",
-                'error': "true",
-                'parent_ids': "GENERAL,",
+                'critical':     "false",
+                'error':        "true",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -342,7 +352,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -388,24 +398,24 @@ class TestAlertRouter(unittest.TestCase):
         # Incorrect config file has missing fields
         second_correct_config_file = {
             'test_234': {
-                'id': "test_234",
+                'id':           "test_234",
                 'channel_name': "test_channel",
-                'info': "true",
-                'warning': "false",
-                'critical': "true",
-                'error': "true",
-                'parent_ids': "GENERAL,",
+                'info':         "true",
+                'warning':      "false",
+                'critical':     "true",
+                'error':        "true",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
 
         second_correct_config = {
             'test_234': {
-                'id': "test_234",
-                'info': True,
-                'warning': False,
-                'critical': True,
-                'error': True,
+                'id':         "test_234",
+                'info':       True,
+                'warning':    False,
+                'critical':   True,
+                'error':      True,
                 'parent_ids': "GENERAL,",
             }
         }
@@ -419,7 +429,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -449,7 +459,7 @@ class TestAlertRouter(unittest.TestCase):
 
         expected_output = {
             self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG),
-            second_routing_key: copy.deepcopy(second_correct_config)
+            second_routing_key:      copy.deepcopy(second_correct_config)
         }
 
         self.assertEqual(expected_output, self._test_alert_router._config)
@@ -464,9 +474,7 @@ class TestAlertRouter(unittest.TestCase):
     ):
         def generate_extract_config_mocker(config: Dict[str, Dict[str, Any]]
                                            ) -> Callable[..., Dict[str, Any]]:
-            def extract_config_mocker(
-                    section, config_filename: str
-            ) -> Dict[str, str]:
+            def extract_config_mocker(section, _) -> Dict[str, str]:
                 return config[section['id']]
 
             return extract_config_mocker
@@ -479,13 +487,13 @@ class TestAlertRouter(unittest.TestCase):
         config_file = {
             **self.TEST_CHANNEL_CONFIG_FILE,
             'test_234': {
-                'id': "test_234",
+                'id':           "test_234",
                 'channel_name': "test_channel",
-                'info': "true",
-                'warning': "false",
-                'critical': "true",
-                'error': "true",
-                'parent_ids': "GENERAL,",
+                'info':         "true",
+                'warning':      "false",
+                'critical':     "true",
+                'error':        "true",
+                'parent_ids':   "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -493,11 +501,11 @@ class TestAlertRouter(unittest.TestCase):
         config = {
             **self.TEST_CHANNEL_CONFIG,
             'test_234': {
-                'id': "test_234",
-                'info': True,
-                'warning': False,
-                'critical': True,
-                'error': True,
+                'id':         "test_234",
+                'info':       True,
+                'warning':    False,
+                'critical':   True,
+                'error':      True,
                 'parent_ids': "GENERAL,",
             }
         }
@@ -505,7 +513,7 @@ class TestAlertRouter(unittest.TestCase):
         mock_ack.return_value = None
         mock_extract_config.side_effect = generate_extract_config_mocker(config)
         # Must create a connection so that the blocking channel is passed
-        self._test_alert_router._initialise_rabbit()
+        self._test_alert_router._initialise_rabbitmq()
         blocking_channel = self._test_alert_router._rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -533,36 +541,37 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'id': "test_123", 'channel_name': "test_channel",
-                 'info': "false", 'warning': "false", 'critical': "false",
-                 'error': "false", 'parent_ids': "GENERAL,",
+                {'id':           "test_123", 'channel_name': "test_channel",
+                 'info':         "false", 'warning': "false",
+                 'critical':     "false",
+                 'error':        "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
                 "channel.test_123",
-                {'id': "test_123", 'info': False, 'warning': False,
+                {'id':       "test_123", 'info': False, 'warning': False,
                  'critical': False, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id': "test_123", 'channel_name': "test_channel",
-                 'info': "on", 'warning': "off", 'critical': "yes",
+                {'id':    "test_123", 'channel_name': "test_channel",
+                 'info':  "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.test_123",
-                {'id': "test_123", 'info': True, 'warning': False,
+                {'id':       "test_123", 'info': True, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id': "twilio_123", 'channel_name': "test_channel",
+                {'id':         "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123",
-                {'id': "twilio_123", 'info': False, 'warning': False,
+                {'id':       "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id': "twilio_123", 'channel_name': "test_channel",
-                 'info': "on", 'warning': "off", 'critical': "yes",
-                 'error': "no",
+                {'id':         "twilio_123", 'channel_name': "test_channel",
+                 'info':       "on", 'warning': "off", 'critical': "yes",
+                 'error':      "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123",
-                {'id': "twilio_123", 'info': False, 'warning': False,
+                {'id':       "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         )
@@ -597,24 +606,25 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'id': "test_123", 'channel_name': "test_channel",
-                 'info': "false", 'warning': "false", 'critical': "false",
-                 'error': "false", 'parent_ids': "GENERAL,",
+                {'id':           "test_123", 'channel_name': "test_channel",
+                 'info':         "false", 'warning': "false",
+                 'critical':     "false",
+                 'error':        "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'channel_name': "test_channel",
-                 'info': "on", 'warning': "off", 'critical': "yes",
+                {'id':    "test_123", 'channel_name': "test_channel",
+                 'info':  "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.test_123"
         ), (
-                {'id': "twilio_123", 'channel_name': "test_channel",
+                {'id':         "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123"
         ), (
-                {'id': "twilio_123", 'channel_name': "test_channel",
-                 'info': "on", 'warning': "off", 'critical': "yes",
-                 'error': "no",
+                {'id':         "twilio_123", 'channel_name': "test_channel",
+                 'info':       "on", 'warning': "off", 'critical': "yes",
+                 'error':      "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123"
         )
@@ -633,27 +643,27 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'info': "false", 'warning': "false", 'critical': "false",
+                {'info':  "false", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'warning': "false", 'critical': "false",
+                {'id':    "test_123", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'info': "false", 'critical': "false",
+                {'id':    "test_123", 'info': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'info': "false", 'warning': "false",
+                {'id':    "test_123", 'info': "false", 'warning': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'info': "false", 'warning': "false",
+                {'id':       "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id': "test_123", 'info': "false", 'warning': "false",
+                {'id':       "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'error': "false", },
                 "channel.test_123"
         ), (
@@ -677,9 +687,452 @@ class TestAlertRouter(unittest.TestCase):
             config['conf'], config_file_name
         )
 
-    @unittest.skip
-    def test__process_alert(self):
-        self.fail()
+    def test_disconnect_from_rabbit_disconnects(self):
+        self._test_alert_router.disconnect_from_rabbit()
+
+        self.assertIsNone(self._test_alert_router._rabbitmq.channel)
+
+    def test_disconnect_from_rabbit_remains_disconnected(self):
+        self._test_alert_router.disconnect_from_rabbit()
+        self._test_alert_router.disconnect_from_rabbit()
+
+        self.assertIsNone(self._test_alert_router._rabbitmq.channel)
+
+    @parameterized.expand([
+        ("error",), ("ERroR",), ("warning",), ("WArNIng",), ("critical",),
+        ("CRitICAl",), ("info",), ("InFo",),
+    ])
+    @mock.patch.object(AlertRouter, "_send_data", autospec=True)
+    @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
+    @mock.patch.object(AlertRouter, "is_all_muted", autospec=True)
+    @mock.patch.object(AlertRouter, "is_chain_severity_muted", autospec=True)
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_alert_no_mute(self, severity: str,
+                                    mock_basic_ack: MagicMock,
+                                    mock_is_chain_severity_muted: MagicMock,
+                                    mock_is_all_muted: MagicMock,
+                                    mock_push_to_queue: MagicMock,
+                                    mock_send_data: MagicMock):
+
+        mock_basic_ack.return_value = None
+        mock_is_all_muted.return_value = False
+        mock_is_chain_severity_muted.return_value = False
+        mock_push_to_queue.return_value = None
+        mock_send_data.return_value = None
+
+        self._rabbitmq.connect_till_successful()
+
+        config = {
+            'test_234': {
+                'id':         "test_234",
+                'info':       True,
+                'warning':    True,
+                'critical':   True,
+                'error':      True,
+                'parent_ids': "GENERAL,",
+            }
+        }
+
+        self._test_alert_router._config = {'channel.test': config}
+
+        # Must create a connection so that the blocking channel is passed
+        self._test_alert_router._initialise_rabbitmq()
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+
+        # We will send new configs through both the existing and
+        # non-existing chain and general paths to make sure that all routes
+        # work as expected.
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=self.ALERT_ROUTER_ROUTING_KEY
+        )
+
+        properties = pika.spec.BasicProperties()
+        alert_timestamp = datetime(
+            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            microsecond=30
+        )
+        alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
+                      severity, alert_timestamp.timestamp(), "GENERAL",
+                      "origin_123")
+
+        alert_json = json.dumps(alert.alert_data)
+
+        expected_output_channel = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'test_234'
+        }
+
+        expected_output_console = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'console'
+        }
+
+        expected_output_log = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'log'
+        }
+
+        self._test_alert_router._process_alert(
+            blocking_channel, method_chains, properties, alert_json
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_channel, ALERT_EXCHANGE,
+            "channel.test_234", mandatory=False
+        )
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_console, ALERT_EXCHANGE,
+            "channel.console", mandatory=True
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
+            "channel.log", mandatory=True
+        )
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, copy.deepcopy(alert.alert_data),
+            STORE_EXCHANGE, "alert", mandatory=True
+        )
+
+        self.assertEqual(4, mock_push_to_queue.call_count)
+
+        mock_send_data.assert_called_once_with(self._test_alert_router)
+        self.assertEqual(1, mock_send_data.call_count)
+
+        self._test_alert_router.disconnect_from_rabbit()
+
+    @parameterized.expand([
+        ("error",), ("warning",), ("critical",), ("info",),
+    ])
+    @mock.patch.object(AlertRouter, "_send_data", autospec=True)
+    @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
+    @mock.patch.object(AlertRouter, "is_all_muted", autospec=True)
+    @mock.patch.object(AlertRouter, "is_chain_severity_muted", autospec=True)
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_alert_false_no_mute(
+            self, severity: str, mock_basic_ack: MagicMock,
+            mock_is_chain_severity_muted: MagicMock,
+            mock_is_all_muted: MagicMock, mock_push_to_queue: MagicMock,
+            mock_send_data: MagicMock
+    ):
+
+        mock_basic_ack.return_value = None
+        mock_is_all_muted.return_value = False
+        mock_is_chain_severity_muted.return_value = False
+        mock_push_to_queue.return_value = None
+        mock_send_data.return_value = None
+
+        self._rabbitmq.connect_till_successful()
+
+        config = {
+            'test_234': {
+                'id':         "test_234",
+                'info':       True,
+                'warning':    True,
+                'critical':   True,
+                'error':      True,
+                'parent_ids': "GENERAL,",
+            }
+        }
+
+        config['test_234'][severity] = False
+
+        self._test_alert_router._config = {'channel.test': config}
+
+        # Must create a connection so that the blocking channel is passed
+        self._test_alert_router._initialise_rabbitmq()
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+
+        # We will send new configs through both the existing and
+        # non-existing chain and general paths to make sure that all routes
+        # work as expected.
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=self.ALERT_ROUTER_ROUTING_KEY
+        )
+
+        properties = pika.spec.BasicProperties()
+        alert_timestamp = datetime(
+            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            microsecond=30
+        )
+        alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
+                      severity, alert_timestamp.timestamp(), "GENERAL",
+                      "origin_123")
+
+        alert_json = json.dumps(alert.alert_data)
+
+        expected_output_console = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'console'
+        }
+
+        expected_output_log = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'log'
+        }
+
+        self._test_alert_router._process_alert(
+            blocking_channel, method_chains, properties, alert_json
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_console, ALERT_EXCHANGE,
+            "channel.console", mandatory=True
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
+            "channel.log", mandatory=True
+        )
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, copy.deepcopy(alert.alert_data),
+            STORE_EXCHANGE, "alert", mandatory=True
+        )
+
+        self.assertEqual(3, mock_push_to_queue.call_count)
+
+        mock_send_data.assert_called_once_with(self._test_alert_router)
+        self.assertEqual(1, mock_send_data.call_count)
+
+        self._test_alert_router.disconnect_from_rabbit()
+
+    @mock.patch.object(AlertRouter, "_send_data", autospec=True)
+    @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
+    @mock.patch.object(AlertRouter, "is_all_muted", autospec=True)
+    @mock.patch.object(AlertRouter, "is_chain_severity_muted", autospec=True)
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_alert_mute_all(self, mock_basic_ack: MagicMock,
+                                     mock_is_chain_severity_muted: MagicMock,
+                                     mock_is_all_muted: MagicMock,
+                                     mock_push_to_queue: MagicMock,
+                                     mock_send_data: MagicMock):
+
+        mock_basic_ack.return_value = None
+        mock_is_all_muted.return_value = True
+        mock_is_chain_severity_muted.return_value = False
+        mock_push_to_queue.return_value = None
+        mock_send_data.return_value = None
+
+        self._rabbitmq.connect_till_successful()
+
+        config = {
+            'test_234': {
+                'id':         "test_234",
+                'info':       True,
+                'warning':    True,
+                'critical':   True,
+                'error':      True,
+                'parent_ids': "GENERAL,",
+            }
+        }
+
+        self._test_alert_router._config = {'channel.test': config}
+
+        # Must create a connection so that the blocking channel is passed
+        self._test_alert_router._initialise_rabbitmq()
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+
+        # We will send new configs through both the existing and
+        # non-existing chain and general paths to make sure that all routes
+        # work as expected.
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=self.ALERT_ROUTER_ROUTING_KEY
+        )
+
+        properties = pika.spec.BasicProperties()
+        alert_timestamp = datetime(
+            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            microsecond=30
+        )
+        alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
+                      'error', alert_timestamp.timestamp(), "GENERAL",
+                      "origin_123")
+
+        alert_json = json.dumps(alert.alert_data)
+
+        expected_output_console = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'console'
+        }
+
+        expected_output_log = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'log'
+        }
+
+        self._test_alert_router._process_alert(
+            blocking_channel, method_chains, properties, alert_json
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_console, ALERT_EXCHANGE,
+            "channel.console", mandatory=True
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
+            "channel.log", mandatory=True
+        )
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, copy.deepcopy(alert.alert_data),
+            STORE_EXCHANGE, "alert", mandatory=True
+        )
+
+        self.assertEqual(3, mock_push_to_queue.call_count)
+
+        mock_send_data.assert_called_once_with(self._test_alert_router)
+        self.assertEqual(1, mock_send_data.call_count)
+
+        self._test_alert_router.disconnect_from_rabbit()
+
+    @mock.patch.object(AlertRouter, "_send_data", autospec=True)
+    @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
+    @mock.patch.object(AlertRouter, "is_all_muted", autospec=True)
+    @mock.patch.object(AlertRouter, "is_chain_severity_muted", autospec=True)
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_alert_severity_muted(
+            self, mock_basic_ack: MagicMock,
+            mock_is_chain_severity_muted: MagicMock,
+            mock_is_all_muted: MagicMock, mock_push_to_queue: MagicMock,
+            mock_send_data: MagicMock
+    ):
+
+        mock_basic_ack.return_value = None
+        mock_is_all_muted.return_value = False
+        mock_is_chain_severity_muted.return_value = True
+        mock_push_to_queue.return_value = None
+        mock_send_data.return_value = None
+
+        self._rabbitmq.connect_till_successful()
+
+        config = {
+            'test_234': {
+                'id':         "test_234",
+                'info':       True,
+                'warning':    True,
+                'critical':   True,
+                'error':      True,
+                'parent_ids': "GENERAL,",
+            }
+        }
+
+        self._test_alert_router._config = {'channel.test': config}
+
+        # Must create a connection so that the blocking channel is passed
+        self._test_alert_router._initialise_rabbitmq()
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+
+        # We will send new configs through both the existing and
+        # non-existing chain and general paths to make sure that all routes
+        # work as expected.
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=self.ALERT_ROUTER_ROUTING_KEY
+        )
+
+        properties = pika.spec.BasicProperties()
+        alert_timestamp = datetime(
+            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            microsecond=30
+        )
+        alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
+                      'error', alert_timestamp.timestamp(), "GENERAL",
+                      "origin_123")
+
+        alert_json = json.dumps(alert.alert_data)
+
+        expected_output_console = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'console'
+        }
+
+        expected_output_log = {
+            **copy.deepcopy(alert.alert_data),
+            'destination_id': 'log'
+        }
+
+        self._test_alert_router._process_alert(
+            blocking_channel, method_chains, properties, alert_json
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_console, ALERT_EXCHANGE,
+            "channel.console", mandatory=True
+        )
+
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
+            "channel.log", mandatory=True
+        )
+        mock_push_to_queue.assert_any_call(
+            self._test_alert_router, copy.deepcopy(alert.alert_data),
+            STORE_EXCHANGE, "alert", mandatory=True
+        )
+
+        self.assertEqual(3, mock_push_to_queue.call_count)
+
+        mock_send_data.assert_called_once_with(self._test_alert_router)
+        self.assertEqual(1, mock_send_data.call_count)
+
+        self._test_alert_router.disconnect_from_rabbit()
+
+    @mock.patch.object(AlertRouter, "_send_data", autospec=True)
+    @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
+    @mock.patch.object(AlertRouter, "is_all_muted", autospec=True)
+    @mock.patch.object(AlertRouter, "is_chain_severity_muted", autospec=True)
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_alert_error_processing(
+            self, mock_basic_ack: MagicMock,
+            mock_is_chain_severity_muted: MagicMock,
+            mock_is_all_muted: MagicMock, mock_push_to_queue: MagicMock,
+            mock_send_data: MagicMock
+    ):
+
+        mock_basic_ack.return_value = None
+        # trigger an exception when processing - we don't care where from as
+        # long as it's in the processing try-except
+        mock_is_all_muted.side_effect = Exception("Test Exception")
+        mock_is_chain_severity_muted.return_value = False
+        mock_push_to_queue.return_value = None
+        mock_send_data.return_value = None
+
+        self._rabbitmq.connect_till_successful()
+
+        self._test_alert_router._config = {
+            'channel.test': self.TEST_CHANNEL_CONFIG
+        }
+
+        # Must create a connection so that the blocking channel is passed
+        self._test_alert_router._initialise_rabbitmq()
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+
+        # We will send new configs through both the existing and
+        # non-existing chain and general paths to make sure that all routes
+        # work as expected.
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=self.ALERT_ROUTER_ROUTING_KEY
+        )
+
+        properties = pika.spec.BasicProperties()
+        alert_timestamp = datetime(
+            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            microsecond=30
+        )
+        alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
+                      'error', alert_timestamp.timestamp(), "GENERAL",
+                      "origin_123")
+
+        alert_json = json.dumps(alert.alert_data)
+
+        self._test_alert_router._process_alert(
+            blocking_channel, method_chains, properties, alert_json
+        )
+
+        mock_push_to_queue.assert_not_called()
+
+        mock_send_data.assert_called_once_with(self._test_alert_router)
+        self.assertEqual(1, mock_send_data.call_count)
+
+        self._test_alert_router.disconnect_from_rabbit()
 
     @unittest.skip
     def test__process_ping(self):
@@ -689,18 +1142,57 @@ class TestAlertRouter(unittest.TestCase):
     def test_start(self):
         self.fail()
 
-    @unittest.skip
-    def test_disconnect_from_rabbit(self):
-        self.fail()
+    @parameterized.expand([
+        ("PARENT_1", "x", "{}", False),
+        ("PARENT_1", "x", '{"x": true}', True),
+        ("PARENT_1", "x", '{"x": false}', False),
+        ("PARENT_1", "x", '{"x": null}', False),
+        ("PARENT_1", "x", '{"x": "Anything"}', True)
+    ])
+    @mock.patch.object(Keys, "get_hash_parent", autospec=True)
+    @mock.patch.object(Keys, "get_chain_mute_alerts", autospec=True)
+    @mock.patch.object(RedisApi, "hget", autospec=True)
+    def test_is_chain_severity_muted(
+            self, parent_id_in: str, severity_in: str, redis_memory: str,
+            expected_output: bool, mock_redis_hget: MagicMock,
+            mock_alerter_mute: MagicMock, mock_get_hash_parent: MagicMock
+    ):
+        test_redis_key = "random_key"
+        test_redis_hash_key = "h_random_key"
+        mock_get_hash_parent.return_value = test_redis_hash_key
+        mock_alerter_mute.return_value = test_redis_key
+        mock_redis_hget.return_value = redis_memory
 
-    @unittest.skip
-    def test_on_terminate(self):
-        self.fail()
+        self.assertEqual(expected_output,
+                         self._test_alert_router.is_chain_severity_muted(
+                             parent_id_in, severity_in))
 
-    @unittest.skip
-    def test_is_all_muted(self):
-        self.fail()
+        mock_get_hash_parent.assert_called_once_with(parent_id_in)
+        mock_redis_hget.assert_called_once_with(
+            self._test_alert_router._redis, test_redis_hash_key, test_redis_key,
+            default=b"{}"
+        )
 
-    @unittest.skip
-    def test_is_chain_severity_muted(self):
-        self.fail()
+    @parameterized.expand([
+        ("x", "{}", False),
+        ("x", '{"x": true}', True),
+        ("x", '{"x": false}', False),
+        ("x", '{"x": null}', False),
+        ("x", '{"x": "Anything"}', True)
+    ])
+    @mock.patch.object(Keys, "get_alerter_mute", autospec=True)
+    @mock.patch.object(RedisApi, "get", autospec=True)
+    def test_is_all_muted_returns_correct(self, severity_in: str,
+                                          redis_memory: str,
+                                          expected_output: bool,
+                                          mock_redis_get: MagicMock,
+                                          mock_alerter_mute: MagicMock):
+
+        test_redis_key = "random_key"
+        mock_alerter_mute.return_value = test_redis_key
+        mock_redis_get.return_value = redis_memory
+
+        self.assertEqual(expected_output,
+                         self._test_alert_router.is_all_muted(severity_in))
+        mock_redis_get.assert_called_once_with(self._test_alert_router._redis,
+                                               test_redis_key, default=b"{}")
