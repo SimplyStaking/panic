@@ -1,3 +1,4 @@
+import configparser
 import copy
 import json
 import logging
@@ -7,8 +8,8 @@ from typing import Dict, Callable, Any
 from unittest import mock
 from unittest.mock import MagicMock
 
-import configparser
 import pika.exceptions
+from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alert_router.alert_router import (AlertRouter,
@@ -74,9 +75,9 @@ class TestAlertRouter(unittest.TestCase):
                 'parent_ids': ["GENERAL"],
             }
         }
-
+        self.ALERT_ROUTER_NAME = "Alert Router"
         self._test_alert_router = AlertRouter(
-            "Alert Router", self._alert_router_logger, self._rabbit_ip,
+            self.ALERT_ROUTER_NAME, self._alert_router_logger, self._rabbit_ip,
             self._redis_ip,
             self._redis_db, self._redis_port, "test_alerter", True, True
         )
@@ -114,10 +115,10 @@ class TestAlertRouter(unittest.TestCase):
         self.assertIsNotNone(self._test_alert_router)
 
     def test_str(self):
-        self.assertEqual("Alert Router", str(self._test_alert_router))
+        self.assertEqual(self.ALERT_ROUTER_NAME, str(self._test_alert_router))
 
     def test_name(self):
-        self.assertEqual("Alert Router", self._test_alert_router.name)
+        self.assertEqual(self.ALERT_ROUTER_NAME, self._test_alert_router.name)
 
     @parameterized.expand([
         (ALERT_ROUTER_CONFIGS_QUEUE_NAME,),
@@ -182,7 +183,7 @@ class TestAlertRouter(unittest.TestCase):
         expected_output = {
             self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG)
         }
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -253,7 +254,7 @@ class TestAlertRouter(unittest.TestCase):
             self.CONFIG_ROUTING_KEY: copy.deepcopy(updated_config)
         }
 
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -317,7 +318,7 @@ class TestAlertRouter(unittest.TestCase):
             self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG)
         }
 
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -381,7 +382,7 @@ class TestAlertRouter(unittest.TestCase):
             self.CONFIG_ROUTING_KEY: copy.deepcopy(self.TEST_CHANNEL_CONFIG)
         }
 
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -462,7 +463,7 @@ class TestAlertRouter(unittest.TestCase):
             second_routing_key:      copy.deepcopy(second_correct_config)
         }
 
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -534,7 +535,7 @@ class TestAlertRouter(unittest.TestCase):
             self.CONFIG_ROUTING_KEY: copy.deepcopy(config)
         }
 
-        self.assertEqual(expected_output, self._test_alert_router._config)
+        self.assertDictEqual(expected_output, self._test_alert_router._config)
 
         # Clean before test finishes
         self._test_alert_router.disconnect_from_rabbit()
@@ -584,7 +585,7 @@ class TestAlertRouter(unittest.TestCase):
         mock_validate_config_fields_existence.return_value = None
         config_to_test = configparser.ConfigParser()
         config_to_test.read_dict({'conf': config_file})
-        self.assertEqual(
+        self.assertDictEqual(
             expected_config,
             self._test_alert_router.extract_config(
                 config_to_test['conf'], config_filename
@@ -748,7 +749,7 @@ class TestAlertRouter(unittest.TestCase):
 
         properties = pika.spec.BasicProperties()
         alert_timestamp = datetime(
-            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            year=1997, month=8, day=15, hour=10, minute=21, second=33,
             microsecond=30
         )
         alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
@@ -852,7 +853,7 @@ class TestAlertRouter(unittest.TestCase):
 
         properties = pika.spec.BasicProperties()
         alert_timestamp = datetime(
-            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            year=1997, month=8, day=15, hour=10, minute=21, second=33,
             microsecond=30
         )
         alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
@@ -941,7 +942,7 @@ class TestAlertRouter(unittest.TestCase):
 
         properties = pika.spec.BasicProperties()
         alert_timestamp = datetime(
-            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            year=1997, month=8, day=15, hour=10, minute=21, second=33,
             microsecond=30
         )
         alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
@@ -1031,7 +1032,7 @@ class TestAlertRouter(unittest.TestCase):
 
         properties = pika.spec.BasicProperties()
         alert_timestamp = datetime(
-            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            year=1997, month=8, day=15, hour=10, minute=21, second=33,
             microsecond=30
         )
         alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
@@ -1114,7 +1115,7 @@ class TestAlertRouter(unittest.TestCase):
 
         properties = pika.spec.BasicProperties()
         alert_timestamp = datetime(
-            year=2021, month=2, day=1, hour=10, minute=21, second=33,
+            year=1997, month=8, day=15, hour=10, minute=21, second=33,
             microsecond=30
         )
         alert = Alert(DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
@@ -1134,9 +1135,52 @@ class TestAlertRouter(unittest.TestCase):
 
         self._test_alert_router.disconnect_from_rabbit()
 
-    @unittest.skip
-    def test__process_ping(self):
-        self.fail()
+    @freeze_time("1997-08-15T10:21:33.000030")
+    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
+    def test__process_ping_sends_valid_hb(self, mock_ack: MagicMock):
+        mock_ack.return_value = None
+
+        expected_output = {
+            'component_name': self.ALERT_ROUTER_NAME,
+            'is_alive':       True,
+            'timestamp':      datetime(
+                year=1997, month=8, day=15, hour=10, minute=21, second=33,
+                microsecond=30
+            )
+        }
+        HEARTBEAT_QUEUE = "hb_test"
+        self._rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic", False,
+                                        True, False, False)
+        queue_res = self._rabbitmq.queue_declare(
+            queue=HEARTBEAT_QUEUE, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self._rabbitmq.queue_bind(HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                  "heartbeat.*")
+
+        self._test_alert_router._initialise_rabbitmq()
+
+        blocking_channel = self._test_alert_router._rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key="ping"
+        )
+        properties = pika.spec.BasicProperties()
+
+        self.assertEqual(0, queue_res.method.message_count)
+        self._test_alert_router._process_ping(blocking_channel, method_chains,
+                                              properties, "ping")
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        queue_res = self._rabbitmq.queue_declare(
+            queue=HEARTBEAT_QUEUE, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, queue_res.method.message_count)
+
+        # Check that the message received is a valid HB
+        _, _, body = self._rabbitmq.basic_get(HEARTBEAT_QUEUE)
+        self.assertDictEqual(expected_output, json.loads(body))
 
     @unittest.skip
     def test_start(self):
