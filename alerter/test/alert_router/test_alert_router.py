@@ -158,15 +158,23 @@ class TestAlertRouter(unittest.TestCase):
         (ALERT_ROUTER_CONFIGS_QUEUE_NAME,),
         (_ALERT_ROUTER_INPUT_QUEUE_NAME,),
         (_HEARTBEAT_QUEUE_NAME,)
-
     ])
-    def test__initialise_rabbit_initialises_queues(self, queue_to_check: str):
+    @mock.patch.object(RabbitMQApi, "confirm_delivery")
+    @mock.patch.object(RabbitMQApi, "basic_consume")
+    def test__initialise_rabbit_initialises_queues(
+            self, queue_to_check: str, mock_basic_consume: MagicMock,
+            mock_confirm_delivery: MagicMock
+    ):
+        mock_basic_consume.return_value = None
+        mock_confirm_delivery.return_value = None
         try:
-
             self.connect_to_rabbit()
 
             # Testing this separately since this is a critical function
             self._test_alert_router._initialise_rabbitmq()
+
+            mock_basic_consume.assert_called_once()
+            mock_confirm_delivery.assert_called_once()
 
             self._rabbitmq.queue_declare(queue_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
@@ -180,13 +188,23 @@ class TestAlertRouter(unittest.TestCase):
         (HEALTH_CHECK_EXCHANGE,),
         (STORE_EXCHANGE,),
     ])
-    def test__initialise_rabbit_initialises_exchanges(self,
-                                                      exchange_to_check: str):
+    @mock.patch.object(RabbitMQApi, "confirm_delivery")
+    @mock.patch.object(RabbitMQApi, "basic_consume")
+    def test__initialise_rabbit_initialises_exchanges(
+            self, exchange_to_check: str, mock_basic_consume: MagicMock,
+            mock_confirm_delivery: MagicMock
+    ):
+        mock_basic_consume.return_value = None
+        mock_confirm_delivery.return_value = None
+
         try:
             self.connect_to_rabbit()
 
             # Testing this separately since this is a critical function
             self._test_alert_router._initialise_rabbitmq()
+
+            mock_basic_consume.assert_called_once()
+            mock_confirm_delivery.assert_called_once()
 
             self._rabbitmq.exchange_declare(exchange_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
