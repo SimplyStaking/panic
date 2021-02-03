@@ -12,18 +12,19 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.alert_router.alert_router import (AlertRouter,
-                                           _ALERT_ROUTER_INPUT_QUEUE_NAME,
-                                           _HEARTBEAT_QUEUE_NAME)
+from src.alert_router.alert_router import (
+    AlertRouter, _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME
+)
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (CONFIG_EXCHANGE, ALERT_EXCHANGE,
-                                 STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_ROUTER_CONFIGS_QUEUE_NAME)
-from src.utils.exceptions import MissingKeyInConfigException, \
-    MessageWasNotDeliveredException
+from src.utils import env
+from src.utils.constants import (
+    CONFIG_EXCHANGE, ALERT_EXCHANGE, STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME
+)
+from src.utils.exceptions import MissingKeyInConfigException
 
 
 class DummyAlertCode(AlertCode):
@@ -34,14 +35,14 @@ class TestAlertRouter(unittest.TestCase):
     def setUp(self) -> None:
         self._alert_router_logger = logging.getLogger('test_alert_router')
         self._rabbit_logger = logging.getLogger('test_rabbit')
-        self._redis_logger = logging.getLogger('test_reids')
+        self._redis_logger = logging.getLogger('test_redis')
         self._connection_check_time_interval = timedelta(seconds=0)
 
-        self._rabbit_ip = 'localhost'
+        self._rabbit_ip = env.RABBIT_IP
         self._config_exchange = CONFIG_EXCHANGE
         self._alert_input_exchange = ALERT_EXCHANGE
 
-        self._redis_ip = 'localhost'
+        self._redis_ip = env.REDIS_IP
         self._redis_db = 1
         self._redis_port = 6379
 
@@ -80,8 +81,8 @@ class TestAlertRouter(unittest.TestCase):
         self.ALERT_ROUTER_NAME = "Alert Router"
         self._test_alert_router = AlertRouter(
             self.ALERT_ROUTER_NAME, self._alert_router_logger, self._rabbit_ip,
-            self._redis_ip,
-            self._redis_db, self._redis_port, "test_alerter", True, True
+            self._redis_ip, self._redis_db, self._redis_port, "test_alerter",
+            True, True
         )
 
     def delete_queue_if_exists(self, queue_name: str):

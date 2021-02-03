@@ -3,6 +3,7 @@ import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError, \
     SectionProxy
 from datetime import datetime
+from json import JSONDecodeError
 from logging import Logger
 from types import FrameType
 from typing import Dict, List
@@ -14,6 +15,7 @@ from pika.exceptions import AMQPConnectionError
 from src.abstract import QueuingPublisherComponent
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
                                  ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_ROUTER_CONFIGS_QUEUE_NAME)
@@ -42,7 +44,8 @@ class AlertRouter(QueuingPublisherComponent):
         self._config = {}
 
         super().__init__(logger, RabbitMQApi(
-            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip))
+            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip),
+                         env.ALERT_ROUTER_PUBLISHING_QUEUE_SIZE)
 
     def __str__(self) -> str:
         return self.name
@@ -170,11 +173,13 @@ class AlertRouter(QueuingPublisherComponent):
                        method: pika.spec.Basic.Deliver,
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
-        recv_alert: Dict = json.loads(body)
-
+        recv_alert: Dict = {}
         has_error: bool = False
         send_to_ids: List[str] = []
         try:
+            # Placed in try-except in case of malformed JSON
+            recv_alert = json.loads(body)
+
             if recv_alert and 'severity' in recv_alert:
                 self._logger.info("Received an alert to route")
                 self._logger.info("recv_alert = %s", recv_alert)
@@ -206,7 +211,10 @@ class AlertRouter(QueuingPublisherComponent):
                     ]
 
                     self._logger.debug("send_to_ids = %s", send_to_ids)
-                    self._logger.info("Alert routed successfully")
+        except JSONDecodeError as json_e:
+            self._logger.error("Alert was not a valid JSON object")
+            self._logger.exception(json_e)
+            has_error = True
         except Exception as e:
             self._logger.error("Error when processing alert: %s", recv_alert)
             self._logger.exception(e)
@@ -249,6 +257,8 @@ class AlertRouter(QueuingPublisherComponent):
             # Enqueue once to the data store
             self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
                                 mandatory=True)
+
+            self._logger.info("Alert routed successfully")
 
         # Send any data waiting in the publisher queue, if any
         try:
