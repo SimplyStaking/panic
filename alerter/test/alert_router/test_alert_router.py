@@ -15,7 +15,6 @@ from parameterized import parameterized
 from src.alert_router.alert_router import (
     AlertRouter, _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME
 )
-from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -25,10 +24,7 @@ from src.utils.constants import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME
 )
 from src.utils.exceptions import MissingKeyInConfigException
-
-
-class DummyAlertCode(AlertCode):
-    TEST_ALERT_CODE = 'test_alert_code'
+from test.test_utils import DummyAlertCode
 
 
 class TestAlertRouter(unittest.TestCase):
