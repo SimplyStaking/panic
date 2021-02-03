@@ -22,6 +22,7 @@ from src.utils.exceptions import PANICException
 from test.utils.test_utils import infinite_fn
 
 
+# Tests adapted from Monitors managers
 class TestGithubAlertersManager(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
