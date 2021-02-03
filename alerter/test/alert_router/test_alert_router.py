@@ -175,8 +175,8 @@ class TestAlertRouter(unittest.TestCase):
             # Testing this separately since this is a critical function
             self._test_alert_router._initialise_rabbitmq()
 
-            mock_basic_consume.assert_called_once()
-            mock_confirm_delivery.assert_called_once()
+            mock_basic_consume.assert_called()
+            mock_confirm_delivery.assert_called()
 
             self._rabbitmq.queue_declare(queue_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
@@ -205,8 +205,8 @@ class TestAlertRouter(unittest.TestCase):
             # Testing this separately since this is a critical function
             self._test_alert_router._initialise_rabbitmq()
 
-            mock_basic_consume.assert_called_once()
-            mock_confirm_delivery.assert_called_once()
+            mock_basic_consume.assert_called()
+            mock_confirm_delivery.assert_called()
 
             self._rabbitmq.exchange_declare(exchange_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
