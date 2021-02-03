@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from enum import Enum
 
+from src.alerter.alert_code import SystemAlertCode
 from src.alerter.alerts.alert import Alert
 from src.utils.datetime import strfdelta
 
@@ -132,9 +132,9 @@ class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
                  timestamp: float, threshold: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
-            "{} system RAM usage INCREASED above {} Threshold. Current value: "
-            "{}%.".format(origin_name, threshold, new_value), severity,
+            SystemAlertCode.SystemStorageUsageIncreasedAboveThresholdAlert,
+            "{} system storage usage INCREASED above {} Threshold. Current "
+            "value: {}%.".format(origin_name, threshold, new_value), severity,
             timestamp, parent_id, origin_id)
 
 
@@ -150,7 +150,7 @@ class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
 
 
 class MetricNotFoundErrorAlert(Alert):
-    def __init__(self, origin_name:str, message: str, severity: str,
+    def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.MetricNotFoundErrorAlert,

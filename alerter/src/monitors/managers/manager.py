@@ -1,6 +1,4 @@
 import logging
-import os
-import signal
 import sys
 from abc import ABC, abstractmethod
 from types import FrameType
@@ -9,35 +7,22 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
 
-class MonitorsManager(ABC):
-    def __init__(self, logger: logging.Logger, name: str):
-        self._logger = logger
+class MonitorsManager(PublisherSubscriberComponent, ABC):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
         self._config_process_dict = {}
         self._name = name
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        super().__init__(logger, rabbitmq)
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
 
     @property
     def config_process_dict(self) -> Dict:
@@ -46,10 +31,6 @@ class MonitorsManager(ABC):
     @property
     def name(self) -> str:
         return self._name
-
-    @abstractmethod
-    def _initialise_rabbitmq(self) -> None:
-        pass
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
@@ -61,6 +42,9 @@ class MonitorsManager(ABC):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.info("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
+
+    def _send_data(self, data: Dict) -> None:
+        pass
 
     @abstractmethod
     def _process_configs(
@@ -74,7 +58,7 @@ class MonitorsManager(ABC):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:
@@ -90,16 +74,9 @@ class MonitorsManager(ABC):
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and any running monitors will be stopped "
                       "gracefully. Afterwards the {} process will exit."

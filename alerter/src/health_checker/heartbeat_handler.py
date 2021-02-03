@@ -1,7 +1,6 @@
+import copy
 import json
 import logging
-import os
-import copy
 import signal
 import sys
 from datetime import datetime
@@ -13,6 +12,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import ReceivedUnexpectedDataException
 from src.utils.logging import log_and_print
@@ -29,8 +29,9 @@ class HeartbeatHandler:
         self._logger = logger
         self._redis = redis
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # This dict stores the keys-values that should have been stored to redis
         # but where not saved due to an error in redis. This is done so that the
@@ -79,7 +80,7 @@ class HeartbeatHandler:
         # Pre-fetch count is set to 300
         prefetch_count = round(300)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(_HB_HANDLER_INPUT_QUEUE,
                                     self._process_heartbeat, False, False, None)
 
@@ -96,43 +97,43 @@ class HeartbeatHandler:
         # that saving was successful. Therefore remove the key from the dict if
         # it is present.
         if ret is None:
-            self.logger.error('Could not save %s=%s to Redis. Storing it in '
-                              'state so that it can be saved later.',
+            self.logger.error("Could not save %s=%s to Redis. Storing it in "
+                              "state so that it can be saved later.",
                               key, value)
             self._unsavable_redis_data[key] = value
         elif key in self._unsavable_redis_data:
-            self.logger.debug('Removing %s=%s from state', key, value)
+            self.logger.debug("Removing %s=%s from state", key, value)
             del self._unsavable_redis_data[key]
 
-        self.logger.debug('Successfully saved %s=%s to Redis', key, value)
+        self.logger.debug("Successfully saved %s=%s to Redis", key, value)
 
     def _dump_unsavable_redis_data(self) -> None:
         if len(self._unsavable_redis_data) == 0:
             return
 
-        self.logger.debug('Attempting to save data that was not able to be '
-                          'saved to redis.')
+        self.logger.debug("Attempting to save data that was not able to be "
+                          "saved to redis.")
 
         unsavable_redis_data_copy = copy.deepcopy(self._unsavable_redis_data)
         for key, value in unsavable_redis_data_copy.items():
             ret = self.redis.set(key, value)
             if ret is not None:
-                self.logger.debug('Successfully saved %s=%s. Removing from '
-                                  'state.', key, value)
+                self.logger.debug("Successfully saved %s=%s. Removing from "
+                                  "state.", key, value)
                 del self._unsavable_redis_data[key]
 
         if len(self._unsavable_redis_data) == 0:
-            self.logger.info('Successfully saved all redis data in waiting '
-                             'state.')
+            self.logger.info("Successfully saved all redis data in waiting "
+                             "state.")
         else:
-            self.logger.debug('Could not save all data to Redis.')
+            self.logger.debug("Could not save all data to Redis.")
 
     def _process_heartbeat(self, ch: BlockingChannel,
                            method: pika.spec.Basic.Deliver,
                            properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         heartbeat = json.loads(body)
-        self.logger.info("Received %s. Now processing this data.", heartbeat)
+        self.logger.debug("Received %s. Now processing this data.", heartbeat)
 
         try:
             if method.routing_key == 'heartbeat.worker' or \
@@ -156,14 +157,14 @@ class HeartbeatHandler:
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        self.logger.debug('Saving %s heartbeat to Redis', self)
+        self.logger.debug("Saving %s heartbeat to Redis", self)
         key_heartbeat = Keys.get_component_heartbeat(self.name)
         handler_heartbeat = {'component_name': self.name,
                              'timestamp': datetime.now().timestamp()}
         transformed_handler_heartbeat = json.dumps(handler_heartbeat)
         ret = self.redis.set(key_heartbeat, transformed_handler_heartbeat)
         if ret is None:
-            self.logger.error('Could not save %s=%s to Redis.', key_heartbeat,
+            self.logger.error("Could not save %s=%s to Redis.", key_heartbeat,
                               transformed_handler_heartbeat)
 
     def start(self) -> None:

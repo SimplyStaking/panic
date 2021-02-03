@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 import signal
 import sys
 from datetime import datetime
@@ -11,10 +10,13 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.data_transformers.starters import start_system_data_transformer, \
-    start_github_data_transformer
+from src.data_transformers.starters import (start_system_data_transformer,
+                                            start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils import env
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_DATA_TRANSFORMER_NAME,
+                                 GITHUB_DATA_TRANSFORMER_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -28,8 +30,9 @@ class DataTransformersManager:
         self._name = name
         self._transformer_process_dict = {}
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild(
+            RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the manager gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -66,13 +69,12 @@ class DataTransformersManager:
         self.rabbitmq.queue_declare(_DT_MAN_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'".format(_DT_MAN_INPUT_QUEUE,
-                                       HEALTH_CHECK_EXCHANGE,
-                                       _DT_MAN_INPUT_ROUTING_KEY))
+                         "'%s'", _DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                         _DT_MAN_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(_DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
                                  _DT_MAN_INPUT_ROUTING_KEY)
-        self.logger.info("Declaring consuming intentions on '%s'",
-                         _DT_MAN_INPUT_QUEUE)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          _DT_MAN_INPUT_QUEUE)
         self.rabbitmq.basic_consume(_DT_MAN_INPUT_QUEUE, self._process_ping,
                                     True, False, None)
 
@@ -95,7 +97,7 @@ class DataTransformersManager:
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received %s", data)
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -136,34 +138,34 @@ class DataTransformersManager:
         # Start the system data transformer in a separate process if it is not
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
-        if 'System Data Transformer' not in self.transformer_process_dict or \
-                not self.transformer_process_dict[
-                    'System Data Transformer'].is_alive():
-            log_and_print("Attempting to start the System Data Transformer.",
-                          self.logger)
+        if SYSTEM_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
+                or not self.transformer_process_dict[
+            SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
             system_data_transformer_process = multiprocessing.Process(
                 target=start_system_data_transformer, args=())
             system_data_transformer_process.daemon = True
             system_data_transformer_process.start()
-            self._transformer_process_dict['System Data Transformer'] = \
+            self._transformer_process_dict[SYSTEM_DATA_TRANSFORMER_NAME] = \
                 system_data_transformer_process
 
         # Start the github data transformer in a separate process if it is not
         # yet started or it is not alive. This must be done in case of a
         # restart of the manager.
-        if 'GitHub Data Transformer' not in self.transformer_process_dict or \
-                not self.transformer_process_dict[
-                    'System Data Transformer'].is_alive():
-            log_and_print("Attempting to start the GitHub Data Transformer.",
-                          self.logger)
+        if GITHUB_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
+                or not self.transformer_process_dict[
+            GITHUB_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_DATA_TRANSFORMER_NAME), self.logger)
             github_data_transformer_process = multiprocessing.Process(
                 target=start_github_data_transformer, args=())
             github_data_transformer_process.daemon = True
             github_data_transformer_process.start()
-            self._transformer_process_dict['GitHub Data Transformer'] = \
+            self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
                 github_data_transformer_process
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:

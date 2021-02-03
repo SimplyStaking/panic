@@ -115,4 +115,27 @@ module.exports = {
       }
     }
   },
+
+  // This function returns all records 
+  getRecords: async (mongoDBUrl, dbname, collection) => {
+    let client;
+    let db;
+    try {
+      // Connect
+      client = await mongoClient.connect(mongoDBUrl, options);
+      db = client.db(dbname);
+      const collectionInterface = db.collection(collection);
+      const doc = await collectionInterface.find().toArray();
+      return doc;
+    } catch (err) {
+      // If an error is raised throw a MongoError
+      throw new errors.MongoError(err.message);
+    } finally {
+      // Check if an error was thrown after a connection was established. If this
+      // is the case close the database connection to prevent leaks
+      if (client && client.isConnected()) {
+        await client.close();
+      }
+    }
+  },
 };

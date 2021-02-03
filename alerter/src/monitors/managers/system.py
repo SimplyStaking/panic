@@ -9,26 +9,30 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.system import SystemConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, \
-    SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
-_SYS_MON_MAN_INPUT_QUEUE = 'system_monitors_manager_ping_queue'
-_SYS_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-_SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.systems_config'
-_SYS_MON_MAN_ROUTING_KEY_GEN = 'general.systems_config'
+SYS_MON_MAN_INPUT_QUEUE = 'system_monitors_manager_ping_queue'
+SYS_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
+SYS_MON_MAN_ROUTING_KEY_GEN = 'general.systems_config'
 
 
 class SystemMonitorsManager(MonitorsManager):
 
-    def __init__(self, logger: logging.Logger, manager_name: str) -> None:
-        super().__init__(logger, manager_name)
+    def __init__(self, logger: logging.Logger, manager_name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, manager_name, rabbitmq)
+
         self._systems_configs = {}
 
     @property
@@ -42,18 +46,18 @@ class SystemMonitorsManager(MonitorsManager):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _SYS_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_SYS_MON_MAN_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", SYS_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(SYS_MON_MAN_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", _SYS_MON_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE, _SYS_MON_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_SYS_MON_MAN_INPUT_QUEUE,
+                         "key '%s'", SYS_MON_MAN_INPUT_QUEUE,
+                         HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _SYS_MON_MAN_INPUT_ROUTING_KEY)
-        self.logger.info("Declaring consuming intentions on '%s'",
-                         _SYS_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_SYS_MON_MAN_INPUT_QUEUE,
+                                 SYS_MON_MAN_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          SYS_MON_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(SYS_MON_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -65,17 +69,17 @@ class SystemMonitorsManager(MonitorsManager):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_CHAINS)
+                         CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _SYS_MON_MAN_ROUTING_KEY_CHAINS)
+                                 SYS_MON_MAN_ROUTING_KEY_CHAINS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
+                         CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, _SYS_MON_MAN_ROUTING_KEY_GEN)
-        self.logger.info("Declaring consuming intentions on '%s'",
-                         SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+                                 CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_GEN)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
@@ -94,7 +98,7 @@ class SystemMonitorsManager(MonitorsManager):
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
-            'System monitor ({})'.format(system_config.system_name)
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(system_config.system_name)
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain
 
@@ -108,7 +112,7 @@ class SystemMonitorsManager(MonitorsManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == _SYS_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_MON_MAN_ROUTING_KEY_GEN:
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']
             else:
@@ -201,7 +205,7 @@ class SystemMonitorsManager(MonitorsManager):
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == _SYS_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_MON_MAN_ROUTING_KEY_GEN:
             self._systems_configs['general'] = correct_systems_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -214,7 +218,7 @@ class SystemMonitorsManager(MonitorsManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received %s", data)
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:

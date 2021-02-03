@@ -1,16 +1,16 @@
 import json
 import logging
-import os
 import signal
 import sys
-from types import FrameType
 from datetime import datetime
+from types import FrameType
 
 import pika
 import pika.exceptions
 
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -24,8 +24,9 @@ class PingPublisher:
         self._logger = logger
         self._redis = redis
 
-        rabbit_ip = os.environ['RABBIT_IP']
-        self._rabbitmq = RabbitMQApi(logger=self.logger, host=rabbit_ip)
+        rabbit_ip = env.RABBIT_IP
+        self._rabbitmq = RabbitMQApi(
+            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
 
         # Handle termination signals by stopping the monitor gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
@@ -90,7 +91,7 @@ class PingPublisher:
                 self.logger.exception(e)
                 raise e
 
-            self.logger.info('Saving %s heartbeat to Redis', self)
+            self.logger.info("Saving %s heartbeat to Redis", self)
             key_heartbeat = Keys.get_component_heartbeat(self.name)
             ping_pub_heartbeat = {'component_name': self.name,
                                   'timestamp': datetime.now().timestamp()}
@@ -98,7 +99,7 @@ class PingPublisher:
             self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
             ret = self.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
             if ret is None:
-                self.logger.error('Could not save %s=%s to Redis.',
+                self.logger.error("Could not save %s=%s to Redis.",
                                   key_heartbeat, transformed_ping_pub_heartbeat)
 
             self.logger.debug("Sleeping for %s seconds.", self.interval)

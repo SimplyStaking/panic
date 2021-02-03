@@ -10,8 +10,10 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 /*
  * Accordion, drop down that contains the chain icon, name, table containing
  * all the setup chains which can be loaded.
-*/
-function ChainAccordion({icon, name, button, table}) {
+ */
+function ChainAccordion({
+  icon, name, button, table,
+}) {
   return (
     <div className="flex_root">
       <Accordion>
@@ -20,11 +22,7 @@ function ChainAccordion({icon, name, button, table}) {
           aria-controls="panel1a-content"
           id="panel1a-header"
         >
-          <img
-            src={icon}
-            className="icon"
-            alt="Chain Icon"
-          />
+          <img src={icon} className="icon" alt="Chain Icon" />
           <Typography
             style={{ textAlign: 'center' }}
             variant="h5"
@@ -36,13 +34,23 @@ function ChainAccordion({icon, name, button, table}) {
         </AccordionSummary>
         <AccordionDetails>
           <Grid container>
-            <Grid item xs={10} />
+            <Grid item xs={12} />
+            <br />
+            <br />
+            <Grid item xs={5} />
             <Grid item xs={2}>
               {button}
             </Grid>
+            <Grid item xs={5} />
+            <Grid item xs={12} />
+            <br />
+            <br />
             <Grid item xs={12}>
               {table}
             </Grid>
+            <br />
+            <br />
+            <Grid item xs={12} />
           </Grid>
         </AccordionDetails>
       </Accordion>

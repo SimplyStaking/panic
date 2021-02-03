@@ -8,8 +8,8 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.stores.store import Store
 from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  MessageWasNotDeliveredException)
 
 _ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
 _ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
@@ -48,8 +48,9 @@ class AlertStore(Store):
                                        True, False, False)
 
     def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger, db_name=self.mongo_db,
-                               host=self.mongo_ip, port=self.mongo_port)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue=_ALERT_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,

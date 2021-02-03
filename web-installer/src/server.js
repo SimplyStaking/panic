@@ -1,6 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
+const { resolve } = require('path');
+const { readdir } = require('fs').promises;
+const fsExtra = require('fs-extra');
 const path = require('path');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
@@ -77,7 +81,8 @@ async function loadAuthenticationToDB() {
     const collection = db.collection(instAuthCollection);
     const username = installerCredentials.INSTALLER_USERNAME;
     const hashedPass = bcrypt.hashSync(
-      installerCredentials.INSTALLER_PASSWORD, 10,
+      installerCredentials.INSTALLER_PASSWORD,
+      10,
     );
     const password = installerCredentials.INSTALLER_PASSWORD;
     const authDoc = { username, password: hashedPass, refreshToken: '' };
@@ -177,8 +182,10 @@ async function saveRefreshTokenToDB(username, refreshToken) {
 
 // Check if the inputted credentials are the one stored inside .env
 function credentialsCorrect(username, password) {
-  return username === installerCredentials.INSTALLER_USERNAME
-    && password === installerCredentials.INSTALLER_PASSWORD;
+  return (
+    username === installerCredentials.INSTALLER_USERNAME
+    && password === installerCredentials.INSTALLER_PASSWORD
+  );
 }
 
 function verify(req, res, next) {
@@ -238,13 +245,15 @@ app.post('/server/login', async (req, res) => {
     const msg = new msgs.AuthenticationSuccessful();
     try {
       await saveRefreshTokenToDB(username, refreshToken);
-      res.status(utils.SUCCESS_STATUS)
+      res
+        .status(utils.SUCCESS_STATUS)
         .cookie('authCookie', accessToken, {
           secure: true,
           httpOnly: true,
           sameSite: true,
           maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
-        }).send(utils.resultJson(msg.message));
+        })
+        .send(utils.resultJson(msg.message));
     } catch (err) {
       // Inform the user of any error that occurs
       res.status(err.code).send(utils.errorJson(err.message));
@@ -252,6 +261,7 @@ app.post('/server/login', async (req, res) => {
   } else {
     // If inputted credentials are incorrect inform the user
     const err = new errors.AuthenticationError('Incorrect Credentials');
+    console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }
 });
@@ -316,18 +326,23 @@ app.post('/server/refresh', async (req, res) => {
     // user that he has been authenticated again
     const msg = new msgs.AuthenticationSuccessful();
     const newPayload = { username: payload.username }; // Must be overwritten
-    const newAccessToken = jwt.sign(newPayload, process.env.ACCESS_TOKEN_SECRET,
+    const newAccessToken = jwt.sign(
+      newPayload,
+      process.env.ACCESS_TOKEN_SECRET,
       {
         algorithm: 'HS256',
         expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
-      });
-    res.status(utils.SUCCESS_STATUS)
+      },
+    );
+    res
+      .status(utils.SUCCESS_STATUS)
       .cookie('authCookie', newAccessToken, {
         secure: true,
         httpOnly: true,
         sameSite: true,
         maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
-      }).send(utils.resultJson(msg.message));
+      })
+      .send(utils.resultJson(msg.message));
   } catch (err) {
     // Inform the user of any error that occurs
     console.log(err);
@@ -355,9 +370,9 @@ app.post('/server/account/save', verify, async (req, res) => {
 
   try {
     // Save the record to the database and inform the user if successful
-    await mongo.saveToDatabase(
-      mongoDBUrl, dbname, record, accountsCollection, { username },
-    );
+    await mongo.saveToDatabase(mongoDBUrl, dbname, record, accountsCollection, {
+      username,
+    });
     const msg = new msgs.AccountSavedSuccessfully();
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (err) {
@@ -390,8 +405,9 @@ app.post('/server/account/delete', verify, async (req, res) => {
 
   try {
     // Remove an account from the collection
-    await mongo.removeFromCollection(mongoDBUrl, dbname,
-      accountsCollection, { username });
+    await mongo.removeFromCollection(mongoDBUrl, dbname, accountsCollection, {
+      username,
+    });
     const msg = new msgs.AccountRemovedSuccessfully();
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (err) {
@@ -425,7 +441,27 @@ app.post('/server/account/exists', verify, async (req, res) => {
   try {
     // Check if the username already exists and inform the user about the result
     const result = await mongo.recordExists(
-      mongoDBUrl, dbname, accountsCollection, { username },
+      mongoDBUrl,
+      dbname,
+      accountsCollection,
+      { username },
+    );
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
+  } catch (err) {
+    // Inform the user of any errors.
+    console.log(err);
+    res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// This endpoint returns all the usernames of the accounts saved
+app.get('/server/account/usernames', verify, async (req, res) => {
+  console.log('Received GET request for %s', req.url);
+  try {
+    const result = await mongo.getRecords(
+      mongoDBUrl,
+      dbname,
+      accountsCollection,
     );
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
@@ -464,6 +500,33 @@ app.post('/server/database/drop', verify, async (req, res) => {
 
 // ---------------------------------------- Configs
 
+// This endpoint is used to a list of paths inside the configuration
+// folder
+app.get('/server/paths', verify, async (req, res) => {
+  console.log('Received GET request for %s', req.url);
+  const configPath = path.join(__dirname, '../../', 'config');
+  try {
+    const foundFiles = files
+      .getFiles(configPath)
+      .then((returnedFiles) => {
+        const processedPaths = [];
+        for (let i = 0; i < returnedFiles.length; i += 1) {
+          const newPath = returnedFiles[i].replace(configPath, '');
+          processedPaths.push(newPath);
+        }
+        return processedPaths;
+      })
+      .catch((e) => console.error(e));
+    return res
+      .status(utils.SUCCESS_STATUS)
+      .send(utils.resultJson(await foundFiles));
+  } catch (err) {
+    console.log(err);
+    // Inform the user about the error.
+    return res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
 app.get('/server/config', verify, async (req, res) => {
@@ -493,11 +556,13 @@ app.get('/server/config', verify, async (req, res) => {
     // and send it to the client.
     if (configs.fileValid(configType, fileName)) {
       const configPath = configs.getConfigPath(
-        configType, fileName, chainName, baseChain,
+        configType,
+        fileName,
+        chainName,
+        baseChain,
       );
       const data = configs.readConfig(configPath);
-      return res.status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(data));
+      return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(data));
     }
     // If the file is not expected in the inferred location inform the client.
     const err = new errors.ConfigUnrecognized(fileName);
@@ -506,10 +571,35 @@ app.get('/server/config', verify, async (req, res) => {
     // If the config cannot be found in the inferred location inform the client
     if (err.code === 'ENOENT') {
       const errNotFound = new errors.ConfigNotFound(fileName);
-      return res.status(errNotFound.code)
+      console.log(err);
+      return res
+        .status(errNotFound.code)
         .send(utils.errorJson(errNotFound.message));
     }
+    console.log(err);
     // Otherwise inform the user about the error.
+    return res.status(err.code).send(utils.errorJson(err.message));
+  }
+});
+
+// Endpoint to delete all directories so they can be re-written
+app.post('/server/config/delete', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+
+  try {
+    const configPath = path.join(__dirname, '../../', 'config');
+    const gitKeep = path.join(configPath, '/', '.gitkeep')
+    fsExtra.emptyDirSync(configPath);
+    try {
+      await fs.openSync(gitKeep, 'w');
+    } catch (error) {
+      console.log(error);
+    }
+    const msg = new msgs.DeleteDirectory();
+    return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (err) {
+    console.log(err);
+    // If error inform the user
     return res.status(err.code).send(utils.errorJson(err.message));
   }
 });
@@ -522,11 +612,12 @@ app.post('/server/config', verify, async (req, res) => {
     configType, fileName, chainName, baseChain,
   } = req.query;
   const { config } = req.body;
-  console.log(config);
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
   const missingParamsList = utils.missingValues({
-    configType, fileName, config,
+    configType,
+    fileName,
+    config,
   });
 
   // If the config belongs to a chain, check if chainName and baseChain are
@@ -538,6 +629,7 @@ app.post('/server/config', verify, async (req, res) => {
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
+    console.log(err);
     return res.status(err.code).send(utils.errorJson(err.message));
   }
 
@@ -546,17 +638,22 @@ app.post('/server/config', verify, async (req, res) => {
     // and inform the user if successful.
     if (configs.fileValid(configType, fileName)) {
       const configPath = configs.getConfigPath(
-        configType, fileName, chainName, baseChain,
+        configType,
+        fileName,
+        chainName,
+        baseChain,
       );
       configs.writeConfig(configPath, config);
       const msg = new msgs.ConfigSubmitted(fileName, configPath);
-      return res.status(utils.SUCCESS_STATUS)
+      return res
+        .status(utils.SUCCESS_STATUS)
         .send(utils.resultJson(msg.message));
     }
     // If the file is not expected in the inferred location inform the client.
     const err = new errors.ConfigUnrecognized(fileName);
     return res.status(err.code).send(utils.errorJson(err.message));
   } catch (err) {
+    console.log(err);
     // If error inform the user
     return res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -568,13 +665,19 @@ app.post('/server/config', verify, async (req, res) => {
 app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    accountSid,
+    authToken,
+    twilioPhoneNumber,
+    phoneNumberToDial,
   } = req.body;
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
   const missingParamsList = utils.missingValues({
-    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
+    accountSid,
+    authToken,
+    twilioPhoneNumber,
+    phoneNumberToDial,
   });
 
   // If some required parameters are missing inform the user.
@@ -634,10 +737,13 @@ app.post('/server/email/test', verify, async (req, res) => {
   // Create mail transport (essentially an email client)
   const transport = nodemailer.createTransport({
     host: smtp,
-    auth: (user && pass) ? {
-      user,
-      pass,
-    } : undefined,
+    auth:
+      user && pass
+        ? {
+          user,
+          pass,
+        }
+        : undefined,
   });
 
   // If transporter valid, create and send test email
@@ -694,23 +800,26 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
   const testAlert = new msgs.TestAlert();
 
   // Send test alert event
-  pdClient.events.sendEvent({
-    routing_key: integrationKey,
-    event_action: 'trigger',
-    payload: {
-      summary: testAlert.message,
-      source: 'Test',
-      severity: 'info',
-    },
-  }).then((response) => {
-    console.log(response);
-    const msg = new msgs.TestAlertSubmitted();
-    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
-  }).catch((err) => {
-    console.error(err);
-    const error = new errors.PagerDutyError(err.message);
-    res.status(error.code).send(utils.errorJson(error.message));
-  });
+  pdClient.events
+    .sendEvent({
+      routing_key: integrationKey,
+      event_action: 'trigger',
+      payload: {
+        summary: testAlert.message,
+        source: 'Test',
+        severity: 'info',
+      },
+    })
+    .then((response) => {
+      console.log(response);
+      const msg = new msgs.TestAlertSubmitted();
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      const error = new errors.PagerDutyError(err.message);
+      res.status(error.code).send(utils.errorJson(error.message));
+    });
 });
 
 // ---------------------------------------- OpsGenie
@@ -732,7 +841,8 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   // If the eu=true set the host to the opsgenie EU url otherwise the sdk will
   // run into an authentication error.
   const euString = String(eu);
-  const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com'
+  const host = utils.toBool(euString)
+    ? 'https://api.eu.opsgenie.com'
     : 'https://api.opsgenie.com';
 
   // Create OpsGenie client and test alert message
@@ -778,23 +888,21 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
 
   const url = `${tendermintRpcUrl}/health?`;
 
-  axios.get(url, { params: {} })
+  axios
+    .get(url, { params: {} })
     .then((_) => {
       const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(msg.message));
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })
     .catch((err) => {
       console.error(err);
       if (err.code === 'ECONNREFUSED') {
         const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       } else {
         const msg = new msgs.ConnectionError();
         // Connection made but error occurred (typically means node is missing)
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       }
     });
 });
@@ -815,24 +923,22 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 
   const url = `${prometheusUrl}`;
 
-  axios.get(url, { params: {} })
+  axios
+    .get(url, { params: {} })
     .then((_) => {
       const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(msg.message));
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })
     .catch((err) => {
       console.error(err);
       if (err.code === 'ECONNREFUSED') {
         const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       } else {
         const msg = new msgs.ConnectionError();
         // Connection made but error occurred (typically means node is missing
         // or prometheus is not enabled)
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       }
     });
 });
@@ -855,23 +961,21 @@ app.post('/server/system/exporter', async (req, res) => {
 
   const url = `${exporterUrl}/metrics`;
 
-  axios.get(url, { params: {} })
+  axios
+    .get(url, { params: {} })
     .then((_) => {
       const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(msg.message));
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })
     .catch((err) => {
       console.error(err);
       if (err.code === 'ECONNREFUSED') {
         const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       } else {
         const msg = new msgs.ConnectionError();
         // Connection made but error occurred node exporter is not installed
-        res.status(utils.ERR_STATUS)
-          .send(utils.errorJson(msg.message));
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       }
     });
 });

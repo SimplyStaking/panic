@@ -1,21 +1,20 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import PagerDutyForm from '../../components/channels/forms/pagerDutyForm';
-import PagerDutyTable from '../../components/channels/tables/pagerDutyTable';
-import { addPagerDuty, removePagerDuty } from
-  '../../redux/actions/channelActions';
+import PagerDutyForm from 'components/channels/forms/pagerDutyForm';
+import PagerDutyTable from 'components/channels/tables/pagerDutyTable';
+import { addPagerDuty, removePagerDuty } from 'redux/actions/channelActions';
 import PagerDutySchema from './schemas/pagerDutySchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
-    apiToken: '',
-    integrationKey: '',
+    channel_name: '',
+    api_token: '',
+    integration_key: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
-    apiToken: '',
-    integrationKey: '',
+    channel_name: '',
+    api_token: '',
+    integration_key: '',
     info: false,
     warning: false,
     critical: false,
@@ -25,9 +24,9 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { savePagerDutyDetails } = props;
     const payload = {
-      configName: values.configName,
-      apiToken: values.apiToken,
-      integrationKey: values.integrationKey,
+      channel_name: values.channel_name,
+      api_token: values.api_token,
+      integration_key: values.integration_key,
       info: values.info,
       warning: values.warning,
       critical: values.critical,
@@ -39,7 +38,11 @@ const Form = withFormik({
 })(PagerDutyForm);
 
 const mapStateToProps = (state) => ({
+  emails: state.EmailsReducer,
+  opsGenies: state.OpsGenieReducer,
   pagerDuties: state.PagerDutyReducer,
+  telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
 });
 
 function mapDispatchToProps(dispatch) {
@@ -64,7 +67,4 @@ const PagerDutyTableContainer = connect(
   mapDispatchToPropsRemove,
 )(PagerDutyTable);
 
-export {
-  PagerDutyFormContainer,
-  PagerDutyTableContainer,
-};
+export { PagerDutyFormContainer, PagerDutyTableContainer };

@@ -1,101 +1,98 @@
 import logging
-import os
 import time
+from typing import TypeVar, Type, Union
 
 import pika.exceptions
 
 from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
+from src.utils import env
+from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RESTART_SLEEPING_PERIOD,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import get_initialisation_error_message
+from src.utils.starters import (get_initialisation_error_message,
+                                get_stopped_message)
+
+# Restricts the generic to Monitor or subclasses
+T = TypeVar('T', bound=Monitor)
 
 
-def _initialise_monitor_logger(monitor_name: str) -> logging.Logger:
+def _initialise_monitor_logger(monitor_display_name: str,
+                               monitor_module_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             monitor_logger = create_logger(
-                os.environ['MONITORS_LOG_FILE_TEMPLATE'].format(monitor_name),
-                monitor_name, os.environ['LOGGING_LEVEL'], rotating=True)
+                env.MONITORS_LOG_FILE_TEMPLATE.format(monitor_display_name),
+                monitor_module_name, env.LOGGING_LEVEL, True)
             break
         except Exception as e:
-            msg = get_initialisation_error_message(monitor_name, e)
+            msg = get_initialisation_error_message(monitor_display_name, e)
             # Use a dummy logger in this case because we cannot create the
             # monitor's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
-            time.sleep(10)  # sleep 10 seconds before trying again
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
     return monitor_logger
 
 
-def _initialise_system_monitor(system_config: SystemConfig) -> SystemMonitor:
-    # Monitor name based on system
-    monitor_name = 'System monitor ({})'.format(system_config.system_name)
+def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
+                        monitoring_period: int,
+                        config: Union[SystemConfig, RepoConfig]) -> T:
+    monitor_logger = _initialise_monitor_logger(monitor_display_name,
+                                                monitor_type.__name__)
 
-    system_monitor_logger = _initialise_monitor_logger(monitor_name)
-
-    # Try initializing a monitor until successful
+    # Try initialising the monitor until successful
     while True:
         try:
-            system_monitor = SystemMonitor(
-                monitor_name, system_config, system_monitor_logger,
-                int(os.environ['SYSTEM_MONITOR_PERIOD_SECONDS'])
-            )
-            log_and_print("Successfully initialised {}".format(monitor_name),
-                          system_monitor_logger)
+            rabbitmq = RabbitMQApi(
+                logger=monitor_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            monitor = monitor_type(monitor_display_name, config, monitor_logger,
+                                   monitoring_period, rabbitmq)
+            log_and_print("Successfully initialized {}".format(
+                monitor_display_name), monitor_logger)
             break
         except Exception as e:
-            msg = get_initialisation_error_message(monitor_name, e)
-            log_and_print(msg, system_monitor_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
+            msg = get_initialisation_error_message(monitor_display_name, e)
+            log_and_print(msg, monitor_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
 
-    return system_monitor
-
-
-def _initialise_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
-    # Monitor name based on repo name. The '/' are replaced with spaces, and the
-    # last space is removed.
-    monitor_name = 'GitHub monitor ({})'.format(
-        repo_config.repo_name.replace('/', ' ')[:-1])
-
-    github_monitor_logger = _initialise_monitor_logger(monitor_name)
-
-    # Try initializing a monitor until successful
-    while True:
-        try:
-            github_monitor = GitHubMonitor(
-                monitor_name, repo_config, github_monitor_logger,
-                int(os.environ['GITHUB_MONITOR_PERIOD_SECONDS'])
-            )
-            log_and_print("Successfully initialised {}".format(monitor_name),
-                          github_monitor_logger)
-            break
-        except Exception as e:
-            msg = get_initialisation_error_message(monitor_name, e)
-            log_and_print(msg, github_monitor_logger)
-            time.sleep(10)  # sleep 10 seconds before trying again
-
-    return github_monitor
+    return monitor
 
 
 def start_system_monitor(system_config: SystemConfig) -> None:
-    system_monitor = _initialise_system_monitor(system_config)
+    # Monitor display name based on system
+    monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
+        system_config.system_name)
+    system_monitor = _initialise_monitor(SystemMonitor, monitor_display_name,
+                                         env.SYSTEM_MONITOR_PERIOD_SECONDS,
+                                         system_config)
     start_monitor(system_monitor)
 
 
 def start_github_monitor(repo_config: RepoConfig) -> None:
-    github_monitor = _initialise_github_monitor(repo_config)
+    # Monitor display name based on repo name. The '/' are replaced with spaces,
+    # and the last space is removed.
+    monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
+        repo_config.repo_name.replace('/', ' ')[:-1])
+    github_monitor = _initialise_monitor(GitHubMonitor, monitor_display_name,
+                                         env.GITHUB_MONITOR_PERIOD_SECONDS,
+                                         repo_config)
     start_monitor(github_monitor)
 
 
 def start_monitor(monitor: Monitor) -> None:
-    sleep_period = 10
-
     while True:
         try:
             log_and_print("{} started.".format(monitor), monitor.logger)
@@ -103,12 +100,12 @@ def start_monitor(monitor: Monitor) -> None:
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            log_and_print("{} stopped.".format(monitor), monitor.logger)
+            log_and_print(get_stopped_message(monitor), monitor.logger)
         except Exception:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             monitor.disconnect_from_rabbit()
-            log_and_print("{} stopped.".format(monitor), monitor.logger)
+            log_and_print(get_stopped_message(monitor), monitor.logger)
             log_and_print("Restarting {} in {} seconds.".format(
-                monitor, sleep_period), monitor.logger)
-            time.sleep(sleep_period)
+                monitor, RESTART_SLEEPING_PERIOD), monitor.logger)
+            time.sleep(RESTART_SLEEPING_PERIOD)

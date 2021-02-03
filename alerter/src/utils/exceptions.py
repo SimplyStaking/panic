@@ -1,3 +1,6 @@
+from json import JSONDecodeError
+
+
 class PANICException(Exception):
     def __init__(self, message, code):
         self.message = message
@@ -91,3 +94,10 @@ class ParentIdsMissMatchInAlertsConfiguration(PANICException):
         message = "{} Error alerts do not have the same parent_ids".format(err)
         code = 5010
         super().__init__(message, code)
+
+
+class JSONDecodeException(PANICException):
+
+    def __init__(self, exception: JSONDecodeError) -> None:
+        code = 5011
+        super().__init__(exception.msg, code)

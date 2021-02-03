@@ -8,7 +8,7 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.exceptions import (ConnectionNotinitialisedException,
+from src.utils.exceptions import (ConnectionNotInitializedException,
                                   MessageWasNotDeliveredException)
 from src.utils.timing import TimedTaskLimiter
 
@@ -217,9 +217,9 @@ class RabbitMQApi:
                 # stop the loop
                 self.perform_operation_till_successful(self.disconnect, [], -1)
                 break
-            except ConnectionNotinitialisedException:
+            except ConnectionNotInitializedException:
                 self._logger.info("No need to disconnect as no connection was "
-                                  "initialise with Rabbit.")
+                                  "initialize with Rabbit.")
                 break
             except Exception as e:
                 self._logger.exception(e)
@@ -287,9 +287,9 @@ class RabbitMQApi:
 
     def basic_get(self, queue: str, auto_ack: bool = False) -> Optional[int]:
         args = [queue, auto_ack]
-        # Perform operation only if a connection has been initialised, if not,
-        # this function will throw a ConnectionNotinitialised exception
-        if self._connection_initialised():
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
+        if self._connection_initialized():
             return self._safe(self.channel.basic_get, args, -1)
 
     def start_consuming(self) -> Optional[int]:
@@ -340,10 +340,10 @@ class RabbitMQApi:
 
     def exchange_delete(self, exchange: str = None,
                         if_unused: bool = False) -> Optional[int]:
-        # Perform operation only if a connection has been initialised, if not,
-        # this function will throw a ConnectionNotinitialised exception
+        # Perform operation only if a connection has been initialized, if not,
+        # this function will throw a ConnectionNotInitialized exception
         args = [exchange, if_unused]
-        if self._connection_initialised():
+        if self._connection_initialized():
             return self._safe(self.channel.exchange_delete, args, -1)
 
     def queue_delete(self, queue: str, if_unused: bool = False,

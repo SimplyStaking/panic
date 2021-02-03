@@ -12,12 +12,12 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
-from src.utils.constants import RAW_DATA_EXCHANGE, STORE_EXCHANGE, \
-    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    MessageWasNotDeliveredException
-from src.utils.types import convert_to_float_if_not_none, \
-    convert_to_int_if_not_none
+from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
+                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  MessageWasNotDeliveredException)
+from src.utils.types import (convert_to_float_if_not_none,
+                             convert_to_int_if_not_none)
 
 _GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
 _GITHUB_DT_INPUT_ROUTING_KEY = 'github'
@@ -50,7 +50,7 @@ class GitHubDataTransformer(DataTransformer):
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info('Declaring consuming intentions')
+        self.logger.debug('Declaring consuming intentions')
         self.rabbitmq.basic_consume(_GITHUB_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 

@@ -1,21 +1,20 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TelegramForm from '../../components/channels/forms/telegramForm';
-import TelegramTable from '../../components/channels/tables/telegramTable';
-import { addTelegram, removeTelegram } from
-  '../../redux/actions/channelActions';
+import TelegramForm from 'components/channels/forms/telegramForm';
+import TelegramTable from 'components/channels/tables/telegramTable';
+import { addTelegram, removeTelegram } from 'redux/actions/channelActions';
 import TelegramSchema from './schemas/telegramSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    botName: '',
-    botToken: '',
-    chatID: '',
+    channel_name: '',
+    bot_token: '',
+    chat_id: '',
   }),
   mapPropsToValues: () => ({
-    botName: '',
-    botToken: '',
-    chatID: '',
+    channel_name: '',
+    bot_token: '',
+    chat_id: '',
     info: false,
     warning: false,
     critical: false,
@@ -27,9 +26,9 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTelegramDetails } = props;
     const payload = {
-      botName: values.botName,
-      botToken: values.botToken,
-      chatID: values.chatID,
+      channel_name: values.channel_name,
+      bot_token: values.bot_token,
+      chat_id: values.chat_id,
       info: values.info,
       warning: values.warning,
       critical: values.critical,
@@ -43,7 +42,11 @@ const Form = withFormik({
 })(TelegramForm);
 
 const mapStateToProps = (state) => ({
+  emails: state.EmailsReducer,
+  opsGenies: state.OpsGenieReducer,
+  pagerDuties: state.PagerDutyReducer,
   telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
 });
 
 function mapDispatchToProps(dispatch) {
@@ -68,7 +71,4 @@ const TelegramTableContainer = connect(
   mapDispatchToPropsRemove,
 )(TelegramTable);
 
-export {
-  TelegramFormContainer,
-  TelegramTableContainer,
-};
+export { TelegramFormContainer, TelegramTableContainer };

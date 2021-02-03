@@ -1,10 +1,10 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import SystemForm from '../../../components/chains/common/forms/systemForm';
-import SystemTable from '../../../components/chains/common/tables/systemTable';
-import { addSystem, removeSystem } from '../../../redux/actions/generalActions';
-import { changeStep, changePage } from '../../../redux/actions/pageActions';
-import { GLOBAL } from '../../../constants/constants';
+import SystemForm from 'components/chains/common/forms/systemForm';
+import SystemTable from 'components/chains/common/tables/systemTable';
+import { addSystem, removeSystem } from 'redux/actions/generalActions';
+import { changeStep, changePage } from 'redux/actions/pageActions';
+import { GLOBAL } from 'constants/constants';
 import SystemSchema from './schemas/systemSchema';
 
 // Form validation, check if the system name is unique and if the exporter
@@ -12,21 +12,21 @@ import SystemSchema from './schemas/systemSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporterUrl: '',
+    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',
-    exporterUrl: '',
-    monitorSystem: true,
+    exporter_url: '',
+    monitor_system: true,
   }),
   validationSchema: (props) => SystemSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveSystemDetails } = props;
     const payload = {
-      parentId: GLOBAL,
+      parent_id: GLOBAL,
       name: values.name,
-      exporterUrl: values.exporterUrl,
-      monitorSystem: values.monitorSystem,
+      exporter_url: values.exporter_url,
+      monitor_system: values.monitor_system,
     };
     saveSystemDetails(payload);
     resetForm();
@@ -36,6 +36,9 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: GLOBAL,
   config: state.GeneralReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  reposConfig: state.RepositoryReducer,
   systemConfig: state.SystemsReducer,
 });
 
@@ -52,17 +55,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const SystemFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const SystemFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const SystemTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(SystemTable);
 
-export {
-  SystemFormContainer,
-  SystemTableContainer,
-};
+export { SystemFormContainer, SystemTableContainer };

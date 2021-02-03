@@ -12,10 +12,11 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
-from src.utils.constants import ALERT_EXCHANGE, STORE_EXCHANGE, \
-    RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import ReceivedUnexpectedDataException, \
-    SystemIsDownException, MessageWasNotDeliveredException
+from src.utils.constants import (ALERT_EXCHANGE, STORE_EXCHANGE,
+                                 RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  SystemIsDownException,
+                                  MessageWasNotDeliveredException)
 from src.utils.types import convert_to_float_if_not_none
 
 _SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
@@ -41,16 +42,15 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.queue_declare(_SYSTEM_DT_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'".format(_SYSTEM_DT_INPUT_QUEUE,
-                                           RAW_DATA_EXCHANGE,
-                                           _SYSTEM_DT_INPUT_ROUTING_KEY))
+                         "key '%s'", _SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         _SYSTEM_DT_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(_SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
                                  _SYSTEM_DT_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(_SYSTEM_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 

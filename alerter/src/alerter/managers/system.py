@@ -13,10 +13,11 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, \
-    SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME
-from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration, \
-    MessageWasNotDeliveredException
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
+                                  MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
 
 SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
@@ -101,7 +102,8 @@ class SystemAlertersManager(AlertersManager):
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
                 self._parent_id_process_dict[parent_id]['process'].join()
-                # Delete key from process and configs as they aren't needed anymore
+                # Delete key from process and configs as they aren't needed
+                # anymore
                 del self._parent_id_process_dict[parent_id]
                 del self._systems_alerts_configs[parent_id]
                 log_and_print("Terminating process alerter process for chain "
@@ -118,7 +120,7 @@ class SystemAlertersManager(AlertersManager):
         process.start()
         self._parent_id_process_dict[parent_id] = {}
         self._parent_id_process_dict[parent_id]['component_name'] = \
-            "System alerter ({})".format(chain)
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
         self._parent_id_process_dict[parent_id]['process'] = process
         self._parent_id_process_dict[parent_id]['chain'] = chain
 
@@ -167,8 +169,9 @@ class SystemAlertersManager(AlertersManager):
                     previous_process.terminate()
                     previous_process.join()
 
-                    log_and_print("Restarting the system alerter of {} with latest "
-                                  "configuration".format(chain), self.logger)
+                    log_and_print("Restarting the system alerter of {} with "
+                                  "latest configuration".format(chain),
+                                  self.logger)
 
                 self._create_and_start_alerter_process(
                     system_alerts_config, parent_id, chain)
@@ -183,7 +186,7 @@ class SystemAlertersManager(AlertersManager):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received %s", data)
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -204,8 +207,8 @@ class SystemAlertersManager(AlertersManager):
                     chain = process_details['chain']
                     system_alerts_config = self.systems_alerts_configs[
                         parent_id]
-                    self._create_and_start_alerter_process(system_alerts_config,
-                                                           parent_id, chain)
+                    self._create_and_start_alerter_process(
+                        system_alerts_config, parent_id, chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and
@@ -225,7 +228,7 @@ class SystemAlertersManager(AlertersManager):
             # For any other exception raise it.
             raise e
 
-    def manage(self) -> None:
+    def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:

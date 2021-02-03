@@ -1,5 +1,5 @@
+import { CHAINS_STEP } from 'constants/constants';
 import { CHANGE_STEP } from '../actions/types';
-import { CHAINS_STEP } from '../../constants/constants';
 
 const initialstate = {
   step: CHAINS_STEP,

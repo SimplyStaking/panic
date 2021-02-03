@@ -1,10 +1,11 @@
 from typing import Dict
-from enum import Enum
+
+from src.alerter.alert_code import AlertCode
 
 
 class Alert:
 
-    def __init__(self, alert_code: Enum, message: str, severity: str,
+    def __init__(self, alert_code: AlertCode, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         self._alert_code = alert_code
         self._message = message
@@ -17,8 +18,28 @@ class Alert:
         return self.message
 
     @property
+    def alert_code(self) -> AlertCode:
+        return self._alert_code
+
+    @property
     def message(self) -> str:
         return self._message
+
+    @property
+    def severity(self) -> str:
+        return self._severity
+
+    @property
+    def parent_id(self) -> str:
+        return self._parent_id
+
+    @property
+    def origin_id(self) -> str:
+        return self._origin_id
+
+    @property
+    def timestamp(self) -> float:
+        return self._timestamp
 
     @property
     def alert_data(self) -> Dict:

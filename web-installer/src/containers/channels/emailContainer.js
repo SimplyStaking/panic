@@ -1,22 +1,22 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import EmailForm from '../../components/channels/forms/emailForm';
-import EmailTable from '../../components/channels/tables/emailTable';
-import { addEmail, removeEmail } from '../../redux/actions/channelActions';
+import EmailForm from 'components/channels/forms/emailForm';
+import EmailTable from 'components/channels/tables/emailTable';
+import { addEmail, removeEmail } from 'redux/actions/channelActions';
 import EmailSchema from './schemas/emailSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
-    configName: '',
+    channel_name: '',
     smtp: '',
-    emailFrom: '',
+    email_from: '',
     emailTo: '',
   }),
   mapPropsToValues: () => ({
-    configName: '',
+    channel_name: '',
     smtp: '',
-    emailFrom: '',
-    emailsTo: [],
+    email_from: '',
+    emails_to: [],
     username: '',
     password: '',
     info: false,
@@ -28,10 +28,10 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveEmailDetails } = props;
     const payload = {
-      configName: values.configName,
+      channel_name: values.channel_name,
       smtp: values.smtp,
-      emailFrom: values.emailFrom,
-      emailsTo: values.emailsTo,
+      email_from: values.email_from,
+      emails_to: values.emails_to,
       username: values.username,
       password: values.password,
       info: values.info,
@@ -46,6 +46,10 @@ const Form = withFormik({
 
 const mapStateToProps = (state) => ({
   emails: state.EmailsReducer,
+  opsGenies: state.OpsGenieReducer,
+  pagerDuties: state.PagerDutyReducer,
+  telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
 });
 
 function mapDispatchToProps(dispatch) {
@@ -60,17 +64,11 @@ function mapDispatchToPropsRemove(dispatch) {
   };
 }
 
-const EmailFormContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Form);
+const EmailFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 const EmailTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(EmailTable);
 
-export {
-  EmailFormContainer,
-  EmailTableContainer,
-};
+export { EmailFormContainer, EmailTableContainer };

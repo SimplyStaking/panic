@@ -49,7 +49,7 @@ class GithubAlerter(Alerter):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.info("Declaring consuming intentions")
+        self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
@@ -101,8 +101,6 @@ class GithubAlerter(Alerter):
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))
-
-            self.logger.info("Data processed successfully.")
         except Exception as e:
             self.logger.error("Error when processing %s", data_received)
             self.logger.exception(e)

@@ -2,21 +2,47 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Typography, Box, Grid, Switch, FormControlLabel, Button, Tooltip,
+  TextField,
+  Typography,
+  Box,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { NEXT, BACK } from '../../../../constants/constants';
-import StepButtonContainer from
-  '../../../../containers/chains/common/stepButtonContainer';
-import { defaultTheme, theme } from '../../../theme/default';
+import { NEXT, BACK } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import { defaultTheme, theme } from 'components/theme/default';
+import Button from 'components/material_ui/CustomButtons/Button';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 
-const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
-  data}) => {
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+
+
+const NodesForm = ({
+  errors,
+  values,
+  handleSubmit,
+  handleChange,
+  setFieldValue,
+  data,
+}) => {
+  const classes = useStyles();
+
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
+        <div className={classes.subsection}>
+          <GridContainer justify="center">
+            <GridItem xs={12} sm={12} md={8}>
+              <h1 className={classes.title}>{data.nodeForm.title}</h1>
+            </GridItem>
+          </GridContainer>
+        </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
             <p>{data.nodeForm.description}</p>
@@ -27,21 +53,25 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
           <form onSubmit={handleSubmit} className="root">
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Node Name: </Typography>
+                <Typography> Node Name </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  error={errors.substrateNodeName}
-                  value={values.substrateNodeName}
+                  error={errors.name}
+                  value={values.name}
                   type="text"
-                  name="substrateNodeName"
+                  name="name"
                   placeholder={data.nodeForm.nameHolder}
-                  helperText={errors.substrateNodeName
-                    ? errors.substrateNodeName : ''}
+                  helperText={
+                    errors.name ? errors.name : ''
+                  }
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
@@ -52,16 +82,36 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node WS URL: </Typography>
+                <Typography> Node WS URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  value={values.nodeWsUrl}
+                  value={values.node_ws_url}
                   type="text"
-                  name="nodeWsUrl"
+                  name="node_ws_url"
                   placeholder={data.nodeForm.websocketHolder}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_ws}
+                      onClick={() => {
+                        setFieldValue('monitor_ws', !values.monitor_ws);
+                      }}
+                      name="monitor_ws"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -77,16 +127,36 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Telemetry URL: </Typography>
+                <Typography> Telemetry URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  value={values.telemetryUrl}
+                  value={values.telemetry_url}
                   type="text"
-                  name="telemetryUrl"
+                  name="telemetry_url"
                   placeholder={data.nodeForm.telemetryHolder}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_telemetry}
+                      onClick={() => {
+                        setFieldValue('monitor_telemetry', !values.monitor_telemetry);
+                      }}
+                      name="monitor_telemetry"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -102,16 +172,36 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Prometheus Endpoint URL: </Typography>
+                <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  value={values.prometheusUrl}
+                  value={values.prometheus_url}
                   type="text"
-                  name="prometheusUrl"
-                  placeholder={data.nodeForm.prometheusHodler}
+                  name="prometheus_url"
+                  placeholder={data.nodeForm.prometheusHolder}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_prometheus}
+                      onClick={() => {
+                        setFieldValue('monitor_prometheus', !values.monitor_prometheus);
+                      }}
+                      name="monitor_prometheus"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -127,16 +217,36 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node Exporter URL: </Typography>
+                <Typography> Node Exporter URL </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  value={values.exporterUrl}
+                  value={values.exporter_url}
                   type="text"
-                  name="exporterUrl"
+                  name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Typography> Monitor </Typography>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={values.monitor_system}
+                      onClick={() => {
+                        setFieldValue('monitor_system', !values.monitor_system);
+                      }}
+                      name="monitor_system"
+                      color="primary"
+                    />
+                  )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={1}>
@@ -152,18 +262,21 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Stash Address: </Typography>
+                <Typography> Stash Address </Typography>
               </Grid>
-              <Grid item xs={9}>
+              <Grid item xs={7}>
                 <TextField
-                  value={values.stashAddress}
+                  value={values.stash_address}
                   type="text"
-                  name="stashAddress"
+                  name="stash_address"
                   placeholder={data.nodeForm.stashAddressHolder}
                   onChange={handleChange}
+                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
@@ -177,7 +290,7 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Node is Validator: </Typography>
+                <Typography> Node is Validator </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -195,14 +308,15 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.isValidator}
+                      checked={values.is_validator}
                       onClick={() => {
-                        setFieldValue('isValidator', !values.isValidator);
+                        setFieldValue('is_validator', !values.is_validator);
                       }}
-                      name="isValidator"
+                      name="is_validator"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={2}>
@@ -224,19 +338,23 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.isArchiveNode}
+                      checked={values.is_archive_node}
                       onClick={() => {
-                        setFieldValue('isArchiveNode', !values.isArchiveNode);
+                        setFieldValue(
+                          'is_archive_node',
+                          !values.is_archive_node,
+                        );
                       }}
-                      name="isArchiveNode"
+                      name="is_archive_node"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={4} />
               <Grid item xs={2}>
-                <Typography> Monitor Node: </Typography>
+                <Typography> Monitor Node </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -254,18 +372,19 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.monitorNode}
+                      checked={values.monitor_node}
                       onClick={() => {
-                        setFieldValue('monitorNode', !values.monitorNode);
+                        setFieldValue('monitor_node', !values.monitor_node);
                       }}
-                      name="monitorNode"
+                      name="monitor_node"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={2}>
-                <Typography> Use as Data Source: </Typography>
+                <Typography> Use as Data Source </Typography>
               </Grid>
               <Grid item xs={1}>
                 <Grid container justify="center">
@@ -283,15 +402,18 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={values.useAsDataSource}
+                      checked={values.use_as_data_source}
                       onClick={() => {
-                        setFieldValue('useAsDataSource',
-                          !values.useAsDataSource);
+                        setFieldValue(
+                          'use_as_data_source',
+                          !values.use_as_data_source,
+                        );
                       }}
-                      name="useAsDataSource"
+                      name="use_as_data_source"
                       color="primary"
                     />
                   )}
+                  label=""
                 />
               </Grid>
               <Grid item xs={4} />
@@ -303,29 +425,18 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   justify="flex-end"
                   alignItems="center"
                 >
-                  <Box px={2}>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
-                    >
-                      <Box px={2}>
-                        Test Node
-                      </Box>
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
-                      type="submit"
-                    >
-                      <Box px={2}>
-                        Add Node
-                      </Box>
-                    </Button>
-                  </Box>
+                  <Button
+                    color="primary"
+                    size="md"
+                    disabled={Object.keys(errors).length !== 0}
+                    type="submit"
+                  >
+                    Add Node
+                  </Button>
                 </Grid>
               </Grid>
+              <Grid item xs={12} style={{marginBottom: '150px'}}/>
+              <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -335,7 +446,6 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
-              <Grid item xs={8} />
               <Grid item xs={2}>
                 <Box px={2}>
                   <StepButtonContainer
@@ -345,6 +455,8 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
                   />
                 </Box>
               </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={12} />
             </Grid>
           </form>
         </Box>
@@ -355,25 +467,30 @@ const NodesForm = ({errors, values, handleSubmit, handleChange, setFieldValue,
 
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    substrateNodeName: PropTypes.string,
+    name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    substrateNodeName: PropTypes.string.isRequired,
-    nodeWsUrl: PropTypes.string,
-    telemetryUrl: PropTypes.string,
-    prometheusUrl: PropTypes.string,
-    exporterUrl: PropTypes.string,
-    stashAddress: PropTypes.string,
-    isValidator: PropTypes.bool.isRequired,
-    monitorNode: PropTypes.bool.isRequired,
-    isArchiveNode: PropTypes.bool.isRequired,
-    useAsDataSource: PropTypes.bool.isRequired,
+    name: PropTypes.string.isRequired,
+    node_ws_url: PropTypes.string,
+    monitor_ws: PropTypes.bool.isRequired,
+    telemetry_url: PropTypes.string,
+    monitor_telemetry: PropTypes.bool.isRequired,
+    prometheus_url: PropTypes.string,
+    monitor_prometheus: PropTypes.bool.isRequired,
+    exporter_url: PropTypes.string,
+    monitor_system: PropTypes.bool.isRequired,
+    stash_address: PropTypes.string,
+    is_validator: PropTypes.bool.isRequired,
+    monitor_node: PropTypes.bool.isRequired,
+    is_archive_node: PropTypes.bool.isRequired,
+    use_as_data_source: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
     nodeForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
@@ -381,7 +498,7 @@ NodesForm.propTypes = forbidExtraProps({
       websocketTip: PropTypes.string.isRequired,
       telemetryHolder: PropTypes.string.isRequired,
       telemetryTip: PropTypes.string.isRequired,
-      prometheusHodler: PropTypes.string.isRequired,
+      prometheusHolder: PropTypes.string.isRequired,
       prometheusTip: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       exporterUrlTip: PropTypes.string.isRequired,
