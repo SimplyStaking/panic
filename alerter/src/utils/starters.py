@@ -1,6 +1,6 @@
 from typing import Any
 
-REATTEMPTING_MESSAGE = "Re-attempting the initialization procedure"
+REATTEMPTING_MESSAGE = "Re-attempting the initialisation procedure"
 
 
 def get_initialisation_error_message(name: str, exception: Exception) -> str:
@@ -8,7 +8,7 @@ def get_initialisation_error_message(name: str, exception: Exception) -> str:
 
 
 def get_reattempting_message(reattempting_what: str) -> str:
-    return "Re-attempting initialization procedure of {}".format(
+    return "Re-attempting initialisation procedure of {}".format(
         reattempting_what)
 
 

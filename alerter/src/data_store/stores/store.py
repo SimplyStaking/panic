@@ -106,7 +106,7 @@ class Store(ABC):
                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialize_store()
+        self._initialise_store()
         while True:
             try:
                 self._start_listening()

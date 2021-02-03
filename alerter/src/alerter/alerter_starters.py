@@ -8,7 +8,7 @@ from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.env import ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
                                  GITHUB_ALERTER_NAME)
@@ -17,9 +17,9 @@ from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
 
 
-def _initialize_alerter_logger(alerter_display_name: str,
+def _initialise_alerter_logger(alerter_display_name: str,
                                alerter_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -34,7 +34,7 @@ def _initialize_alerter_logger(alerter_display_name: str,
             # alerter's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return alerter_logger
 
@@ -44,46 +44,46 @@ def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
     # Alerter display name based on system
     alerter_display_name = SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
 
-    system_alerter_logger = _initialize_alerter_logger(alerter_display_name,
+    system_alerter_logger = _initialise_alerter_logger(alerter_display_name,
                                                        SystemAlerter.__name__)
 
-    # Try initializing an alerter until successful
+    # Try initialising an alerter until successful
     while True:
         try:
             system_alerter = SystemAlerter(alerter_display_name,
                                            system_alerts_config,
                                            system_alerter_logger)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 alerter_display_name), system_alerter_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, system_alerter_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return system_alerter
 
 
-def _initialize_github_alerter() -> GithubAlerter:
+def _initialise_github_alerter() -> GithubAlerter:
     alerter_display_name = GITHUB_ALERTER_NAME
 
-    github_alerter_logger = _initialize_alerter_logger(alerter_display_name,
+    github_alerter_logger = _initialise_alerter_logger(alerter_display_name,
                                                        GithubAlerter.__name__)
 
-    # Try initializing an alerter until successful
+    # Try initialising an alerter until successful
     while True:
         try:
             github_alerter = GithubAlerter(alerter_display_name,
                                            github_alerter_logger)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 alerter_display_name), github_alerter_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, github_alerter_logger)
             # sleep 10 seconds before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter
 

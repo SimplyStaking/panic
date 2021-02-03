@@ -37,7 +37,8 @@ _IS_DOWN_LIMITER_NAME = 'system_is_down'
 class SystemAlerter(Alerter):
     def __init__(self, alerter_name: str,
                  system_alerts_config: SystemAlertsConfig,
-                 logger: logging.Logger) -> None:
+                 logger: logging.Logger,
+                 ) -> None:
         super().__init__(alerter_name, logger)
 
         self._system_alerts_config = system_alerts_config
@@ -152,8 +153,6 @@ class SystemAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
-        print("LOOK AT ME ")
-        print(data_received)
         self.logger.info("Received %s. Now processing this data.",
                          data_received)
 

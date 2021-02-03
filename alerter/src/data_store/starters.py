@@ -9,7 +9,7 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.logging import create_logger, log_and_print
@@ -19,9 +19,9 @@ from src.utils.starters import (get_initialisation_error_message,
 T = TypeVar('T', bound=Store)  # Restricts the generic to Store or subclasses
 
 
-def _initialize_store_logger(
+def _initialise_store_logger(
         store_display_name: str, store_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -36,43 +36,43 @@ def _initialize_store_logger(
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return store_logger
 
 
-def _initialize_store(store_type: Type[T], store_display_name: str) -> T:
-    store_logger = _initialize_store_logger(store_display_name,
+def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
+    store_logger = _initialise_store_logger(store_display_name,
                                             store_type.__name__)
 
-    # Try initializing the store until successful
+    # Try initialising the store until successful
     while True:
         try:
             store = store_type(store_display_name, store_logger)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 store_display_name), store_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(store_display_name, e)
             log_and_print(msg, store_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return store
 
 
 def start_system_store() -> None:
-    system_store = _initialize_store(SystemStore, SYSTEM_STORE_NAME)
+    system_store = _initialise_store(SystemStore, SYSTEM_STORE_NAME)
     start_store(system_store)
 
 
 def start_github_store() -> None:
-    github_store = _initialize_store(GithubStore, GITHUB_STORE_NAME)
+    github_store = _initialise_store(GithubStore, GITHUB_STORE_NAME)
     start_store(github_store)
 
 
 def start_alert_store() -> None:
-    alert_store = _initialize_store(AlertStore, ALERT_STORE_NAME)
+    alert_store = _initialise_store(AlertStore, ALERT_STORE_NAME)
     start_store(alert_store)
 
 

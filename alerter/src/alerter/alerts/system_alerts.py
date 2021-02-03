@@ -5,22 +5,6 @@ from src.alerter.alerts.alert import Alert
 from src.utils.datetime import strfdelta
 
 
-class SystemAlertCode(Enum):
-    OpenFileDescriptorsIncreasedAboveThresholdAlert = 'system_alert_1',
-    OpenFileDescriptorsDecreasedBelowThresholdAlert = 'system_alert_2',
-    SystemCPUUsageIncreasedAboveThresholdAlert = 'system_alert_3',
-    SystemCPUUsageDecreasedBelowThresholdAlert = 'system_alert_4',
-    SystemRAMUsageIncreasedAboveThresholdAlert = 'system_alert_5',
-    SystemRAMUsageDecreasedBelowThresholdAlert = 'system_alert_6',
-    SystemStorageUsageIncreasedAboveThresholdAlert = 'system_alert_7',
-    SystemStorageUsageDecreasedBelowThresholdAlert = 'system_alert_8',
-    InvalidUrlAlert = 'system_alert_9',
-    SystemWentDownAtAlert = 'system_alert_10',
-    SystemBackUpAgainAlert = 'system_alert_11',
-    SystemStillDownAlert = 'system_alert_12',
-    MetricNotFoundErrorAlert = 'system_alert_13'
-
-
 class SystemWentDownAtAlert(Alert):
     def __init__(self, origin_name: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:

@@ -100,7 +100,7 @@ class TestGitHubMonitor(unittest.TestCase):
     def test_repo_config_returns_repo_config(self) -> None:
         self.assertEqual(self.repo_config, self.test_monitor.repo_config)
 
-    def test_initialise_rabbitmq_initializes_everything_as_expected(
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
             self) -> None:
         try:
             # To make sure that there is no connection/channel already

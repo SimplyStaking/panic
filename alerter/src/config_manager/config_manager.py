@@ -151,7 +151,7 @@ class ConfigsManager(Component):
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. As a result we don't need to
                 # anything here, just re-try.
-                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
@@ -245,7 +245,7 @@ class ConfigsManager(Component):
                 self._connected_to_rabbit = False
 
                 # Wait some time before reconnecting and then retrying
-                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
                 self._connect_to_rabbit()
 
                 self._logger.info("Connection restored, will attempt sending "

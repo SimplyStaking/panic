@@ -3644,6 +3644,7 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert", autospec=True)
     def test_system_back_up_alert(self, mock_system_back_up) -> None:
         data_for_alerting = []
+        self.test_system_alerter._system_initial_downtime_alert_sent[self.system_id] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
@@ -3662,6 +3663,8 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.reset", autospec=True)
     def test_system_back_up_timed_task_limiter_reset(self, mock_reset) -> None:
         data_for_alerting = []
+        # Set that the initial downtime alert was sent already
+        self.test_system_alerter._system_initial_downtime_alert_sent[self.system_id] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
@@ -3887,7 +3890,6 @@ class TestSystemAlerter(unittest.TestCase):
     """
     Testing error alerts of MetricNotFound and InvalidURL
     """
-
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert", autospec=True)
     def test_metric_not_found_alert(self, mock_alert) -> None:
         data_for_alerting = []
