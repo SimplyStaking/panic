@@ -19,3 +19,5 @@ SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
 GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
 GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'
 
+# Name templates
+SYSTEM_ALERTER_NAME_TEMPLATE = "System alerter ({})"

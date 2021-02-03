@@ -19,7 +19,7 @@ from watchdog.observers.polling import PollingObserver
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException, \
-    ConnectionNotInitializedException
+    ConnectionNotinitialisedException
 from src.utils.routing_key import get_routing_key
 from .config_update_event_handler import ConfigFileEventHandler
 from ..abstract import Component
@@ -134,7 +134,7 @@ class ConfigManager(Component):
                                                      self._process_ping,
                                                      True, False, None)
                 break
-            except (ConnectionNotInitializedException,
+            except (ConnectionNotinitialisedException,
                     AMQPConnectionError) as connection_error:
                 # Should be impossible, but since exchange_declare can throw
                 # it we shall ensure to log that the error passed through here
@@ -228,7 +228,7 @@ class ConfigManager(Component):
                 self._logger.info("Will attempt sending the config again to "
                                   "routing key %s", routing_key)
             except (
-                    ConnectionNotInitializedException, AMQPConnectionError
+                    ConnectionNotinitialisedException, AMQPConnectionError
             ) as connection_error:
                 # If the connection is not initialised or there is a connection
                 # error, we need to restart the connection and try it again
@@ -246,7 +246,7 @@ class ConfigManager(Component):
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. Since a new channel is created
-                # we need to re-initialize RabbitMQ
+                # we need to re-initialise RabbitMQ
                 self._initialise_rabbitmq()
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:

@@ -12,7 +12,7 @@ from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import get_initialisation_error_message
 
 
-def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
+def _initialise_transformer_logger(transformer_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -33,7 +33,7 @@ def _initialize_transformer_logger(transformer_name: str) -> logging.Logger:
     return transformer_logger
 
 
-def _initialize_transformer_redis(
+def _initialise_transformer_redis(
         transformer_name: str, transformer_logger: logging.Logger) -> RedisApi:
     # Try initializing the Redis API until successful. This had to be done
     # separately to avoid instances when Redis creation failed and we
@@ -57,18 +57,18 @@ def _initialize_transformer_redis(
     return redis
 
 
-def _initialize_system_data_transformer() -> SystemDataTransformer:
+def _initialise_system_data_transformer() -> SystemDataTransformer:
     transformer_name = 'System Data Transformer'
 
-    transformer_logger = _initialize_transformer_logger(transformer_name)
-    redis = _initialize_transformer_redis(transformer_name, transformer_logger)
+    transformer_logger = _initialise_transformer_logger(transformer_name)
+    redis = _initialise_transformer_redis(transformer_name, transformer_logger)
 
     # Try initializing the system data transformer until successful
     while True:
         try:
             system_data_transformer = SystemDataTransformer(
                 transformer_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
+            log_and_print("Successfully initialised {}"
                           .format(transformer_name), transformer_logger)
             break
         except Exception as e:
@@ -79,18 +79,18 @@ def _initialize_system_data_transformer() -> SystemDataTransformer:
     return system_data_transformer
 
 
-def _initialize_github_data_transformer() -> GitHubDataTransformer:
+def _initialise_github_data_transformer() -> GitHubDataTransformer:
     transformer_name = 'GitHub Data Transformer'
 
-    transformer_logger = _initialize_transformer_logger(transformer_name)
-    redis = _initialize_transformer_redis(transformer_name, transformer_logger)
+    transformer_logger = _initialise_transformer_logger(transformer_name)
+    redis = _initialise_transformer_redis(transformer_name, transformer_logger)
 
     # Try initializing the github data transformer until successful
     while True:
         try:
             github_data_transformer = GitHubDataTransformer(
                 transformer_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
+            log_and_print("Successfully initialised {}"
                           .format(transformer_name), transformer_logger)
             break
         except Exception as e:
@@ -102,12 +102,12 @@ def _initialize_github_data_transformer() -> GitHubDataTransformer:
 
 
 def start_system_data_transformer() -> None:
-    system_data_transformer = _initialize_system_data_transformer()
+    system_data_transformer = _initialise_system_data_transformer()
     start_transformer(system_data_transformer)
 
 
 def start_github_data_transformer() -> None:
-    github_data_transformer = _initialize_github_data_transformer()
+    github_data_transformer = _initialise_github_data_transformer()
     start_transformer(github_data_transformer)
 
 

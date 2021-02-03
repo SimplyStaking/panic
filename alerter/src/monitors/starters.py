@@ -13,7 +13,7 @@ from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import get_initialisation_error_message
 
 
-def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
+def _initialise_monitor_logger(monitor_name: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -33,11 +33,11 @@ def _initialize_monitor_logger(monitor_name: str) -> logging.Logger:
     return monitor_logger
 
 
-def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
+def _initialise_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     # Monitor name based on system
     monitor_name = 'System monitor ({})'.format(system_config.system_name)
 
-    system_monitor_logger = _initialize_monitor_logger(monitor_name)
+    system_monitor_logger = _initialise_monitor_logger(monitor_name)
 
     # Try initializing a monitor until successful
     while True:
@@ -46,7 +46,7 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
                 monitor_name, system_config, system_monitor_logger,
                 int(os.environ['SYSTEM_MONITOR_PERIOD_SECONDS'])
             )
-            log_and_print("Successfully initialized {}".format(monitor_name),
+            log_and_print("Successfully initialised {}".format(monitor_name),
                           system_monitor_logger)
             break
         except Exception as e:
@@ -57,13 +57,13 @@ def _initialize_system_monitor(system_config: SystemConfig) -> SystemMonitor:
     return system_monitor
 
 
-def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
+def _initialise_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
     # Monitor name based on repo name. The '/' are replaced with spaces, and the
     # last space is removed.
     monitor_name = 'GitHub monitor ({})'.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
 
-    github_monitor_logger = _initialize_monitor_logger(monitor_name)
+    github_monitor_logger = _initialise_monitor_logger(monitor_name)
 
     # Try initializing a monitor until successful
     while True:
@@ -72,7 +72,7 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
                 monitor_name, repo_config, github_monitor_logger,
                 int(os.environ['GITHUB_MONITOR_PERIOD_SECONDS'])
             )
-            log_and_print("Successfully initialized {}".format(monitor_name),
+            log_and_print("Successfully initialised {}".format(monitor_name),
                           github_monitor_logger)
             break
         except Exception as e:
@@ -84,12 +84,12 @@ def _initialize_github_monitor(repo_config: RepoConfig) -> GitHubMonitor:
 
 
 def start_system_monitor(system_config: SystemConfig) -> None:
-    system_monitor = _initialize_system_monitor(system_config)
+    system_monitor = _initialise_system_monitor(system_config)
     start_monitor(system_monitor)
 
 
 def start_github_monitor(repo_config: RepoConfig) -> None:
-    github_monitor = _initialize_github_monitor(repo_config)
+    github_monitor = _initialise_github_monitor(repo_config)
     start_monitor(github_monitor)
 
 

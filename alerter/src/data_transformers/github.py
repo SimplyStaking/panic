@@ -28,9 +28,9 @@ class GitHubDataTransformer(DataTransformer):
                  redis: RedisApi) -> None:
         super().__init__(transformer_name, logger, redis)
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         # A data transformer is both a consumer and producer, therefore we need
-        # to initialize both the consuming and producing configurations.
+        # to initialise both the consuming and producing configurations.
 
         self.rabbitmq.connect_till_successful()
 

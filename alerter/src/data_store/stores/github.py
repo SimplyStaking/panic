@@ -20,9 +20,9 @@ class GithubStore(Store):
     def __init__(self, store_name: str, logger: logging.Logger) -> None:
         super().__init__(store_name, logger)
 
-    def _initialize_store(self) -> None:
+    def _initialise_store(self) -> None:
         """
-        Initialize the necessary data for rabbitmq to be able to reach the data
+        initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
         Creates a store exchange of type `direct`

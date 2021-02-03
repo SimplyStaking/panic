@@ -8,7 +8,7 @@ from typing import Dict
 from pika import BasicProperties
 from src.abstract import Component
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.exceptions import ConnectionNotInitializedException
+from src.utils.exceptions import ConnectionNotinitialisedException
 
 
 class QueuingPublisherComponent(Component, ABC):
@@ -20,7 +20,7 @@ class QueuingPublisherComponent(Component, ABC):
     def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0):
         """
-        Initializes the queue needed for publishing. It also sets the prefetch
+        initialises the queue needed for publishing. It also sets the prefetch
         count of the rabbitmq channel passed through.
         :param logger: The logger object to log with
         :param rabbitmq: The rabbit MQ connection to use
@@ -34,7 +34,7 @@ class QueuingPublisherComponent(Component, ABC):
         self._rabbitmq.connect_till_successful()
         try:
             self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        except ConnectionNotInitializedException as cnie:
+        except ConnectionNotinitialisedException as cnie:
             self._logger.error("A connection was not initialised. Retrying in "
                                "10 seconds")
             self._logger.exception(cnie)

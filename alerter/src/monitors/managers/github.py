@@ -36,7 +36,7 @@ class GitHubMonitorsManager(MonitorsManager):
     def repos_configs(self) -> Dict:
         return self._repos_configs
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions

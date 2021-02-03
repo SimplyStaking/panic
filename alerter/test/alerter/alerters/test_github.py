@@ -19,11 +19,10 @@ class TestGithubAlerter(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.connection_check_time_interval = datetime.timedelta(seconds=0)
-        self.rabbit_ip = RABBIT_IP
         self.alert_input_exchange = ALERT_EXCHANGE
 
         self.rabbitmq = RabbitMQApi(
-            self.dummy_logger, self.rabbit_ip,
+            self.dummy_logger, RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
         self.alerter_name = 'test_github_alerter'

@@ -11,7 +11,7 @@ from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import get_initialisation_error_message
 
 
-def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
+def _initialise_logger(log_name: str, log_file_template: str) -> logging.Logger:
     # Try initializing the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
@@ -33,13 +33,13 @@ def _initialize_logger(log_name: str, log_file_template: str) -> logging.Logger:
     return new_logger
 
 
-def _initialize_health_checker_manager() -> HealthCheckerManager:
+def _initialise_health_checker_manager() -> HealthCheckerManager:
     manager_name = 'Health Checker Manager'
 
-    health_checker_manager_logger = _initialize_logger(
+    health_checker_manager_logger = _initialise_logger(
         manager_name, env.MANAGERS_LOG_FILE_TEMPLATE)
 
-    # Attempt to initialize the health checker manager
+    # Attempt to initialise the health checker manager
     while True:
         try:
             health_checker_manager = HealthCheckerManager(
@@ -57,7 +57,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
 
 def run_health_checker_manager() -> None:
     sleep_period = 10
-    health_checker_manager = _initialize_health_checker_manager()
+    health_checker_manager = _initialise_health_checker_manager()
 
     while True:
         try:

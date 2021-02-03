@@ -41,7 +41,7 @@ class AlertersManager(ABC):
         return self._name
 
     @abstractmethod
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         pass
 
     def _listen_for_data(self) -> None:
