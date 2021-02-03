@@ -134,7 +134,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: %s".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None

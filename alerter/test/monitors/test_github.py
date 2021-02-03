@@ -79,7 +79,7 @@ class TestGitHubMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: %s".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
