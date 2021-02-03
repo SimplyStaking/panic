@@ -437,7 +437,7 @@ class TestAlertRouter(unittest.TestCase):
                 'warning':    False,
                 'critical':   True,
                 'error':      True,
-                'parent_ids': "GENERAL,",
+                'parent_ids': ["GENERAL"],
             }
         }
 
