@@ -95,7 +95,7 @@ class SystemAlertersManager(AlertersManager):
 
     def _terminate_and_join_chain_alerter_processes(
             self, chain) -> None:
-        # Go through all the processes and find the chain who's
+        # Go through all the processes and find the chain whose
         # process should be terminated
         for _, parent_id in enumerate(self._parent_id_process_dict):
             if self._parent_id_process_dict[parent_id]['chain'] == chain:

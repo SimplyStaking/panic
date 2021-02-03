@@ -37,8 +37,7 @@ _IS_DOWN_LIMITER_NAME = 'system_is_down'
 class SystemAlerter(Alerter):
     def __init__(self, alerter_name: str,
                  system_alerts_config: SystemAlertsConfig,
-                 logger: logging.Logger,
-                 ) -> None:
+                 logger: logging.Logger) -> None:
         super().__init__(alerter_name, logger)
 
         self._system_alerts_config = system_alerts_config
