@@ -29,6 +29,7 @@ from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
+CONFIG_PING_QUEUE = "config_ping_queue"
 
 
 class ConfigsManager(PublisherComponent):
@@ -96,8 +97,6 @@ class ConfigsManager(PublisherComponent):
         return self._name
 
     def _initialise_rabbitmq(self) -> None:
-        config_ping_queue = "config_ping_queue"
-
         while True:
             try:
                 self._connect_to_rabbit()
@@ -124,24 +123,24 @@ class ConfigsManager(PublisherComponent):
 
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
-                    "routing key '%s", config_ping_queue, HEALTH_CHECK_EXCHANGE,
+                    "routing key '%s", CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE,
                     _HEARTBEAT_ROUTING_KEY)
 
-                self._heartbeat_rabbit.queue_declare(config_ping_queue, False,
+                self._heartbeat_rabbit.queue_declare(CONFIG_PING_QUEUE, False,
                                                      True, False, False)
-                self._logger.debug("Declared '%s' queue", config_ping_queue)
+                self._logger.debug("Declared '%s' queue", CONFIG_PING_QUEUE)
 
-                self._heartbeat_rabbit.queue_bind(config_ping_queue,
+                self._heartbeat_rabbit.queue_bind(CONFIG_PING_QUEUE,
                                                   HEALTH_CHECK_EXCHANGE,
                                                   'ping')
                 self._logger.debug("Bound queue '%s' to exchange '%s'",
-                                   config_ping_queue, HEALTH_CHECK_EXCHANGE)
+                                   CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE)
 
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
                 self._logger.debug("Declaring consuming intentions")
-                self._heartbeat_rabbit.basic_consume(config_ping_queue,
+                self._heartbeat_rabbit.basic_consume(CONFIG_PING_QUEUE,
                                                      self._process_ping,
                                                      True, False, None)
                 break
