@@ -81,7 +81,35 @@ class TestAlertRouter(unittest.TestCase):
             True, True
         )
 
-    def delete_queue_if_exists(self, queue_name: str):
+    def connect_to_rabbit(self, attempts: int = 3) -> None:
+        tries = 0
+
+        while tries < attempts:
+            try:
+                self._rabbitmq.connect()
+            except Exception as e:
+                tries += 1
+                print("Could not connect to rabbit. Attempts so far: {}".format(
+                    tries))
+                print(e)
+                if tries >= attempts:
+                    raise e
+
+    def disconnect_from_rabbit(self, attempts: int = 3) -> None:
+        tries = 0
+
+        while tries < attempts:
+            try:
+                self._rabbitmq.disconnect()
+            except Exception as e:
+                tries += 1
+                print("Could not connect to rabbit. Attempts so far: {}".format(
+                    tries))
+                print(e)
+                if tries >= attempts:
+                    raise e
+
+    def delete_queue_if_exists(self, queue_name: str) -> None:
         try:
             self._rabbitmq.queue_declare(queue_name, passive=True)
             self._rabbitmq.queue_purge(queue_name)
@@ -91,7 +119,7 @@ class TestAlertRouter(unittest.TestCase):
                 queue_name
             ))
 
-    def delete_exchange_if_exists(self, exchange_name: str):
+    def delete_exchange_if_exists(self, exchange_name: str) -> None:
         try:
             self._rabbitmq.exchange_declare(exchange_name, passive=True)
             self._rabbitmq.exchange_delete(exchange_name)
@@ -104,7 +132,7 @@ class TestAlertRouter(unittest.TestCase):
         queues = [ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                   _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME]
         for queue in queues:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self.delete_queue_if_exists(queue)
 
         exchanges = [
@@ -115,7 +143,7 @@ class TestAlertRouter(unittest.TestCase):
         for exchange in exchanges:
             self.delete_exchange_if_exists(exchange)
 
-        self._rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
 
     def test_alert_router_initialised(self):
         self.assertIsNotNone(self._test_alert_router)
@@ -133,16 +161,18 @@ class TestAlertRouter(unittest.TestCase):
 
     ])
     def test__initialise_rabbit_initialises_queues(self, queue_to_check: str):
-        # Testing this separately since this is a critical function
-        self._test_alert_router._initialise_rabbitmq()
-
         try:
-            self._rabbitmq.connect_till_successful()
+
+            self.connect_to_rabbit()
+
+            # Testing this separately since this is a critical function
+            self._test_alert_router._initialise_rabbitmq()
+
             self._rabbitmq.queue_declare(queue_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(queue_to_check))
         finally:
-            self._rabbitmq.disconnect_till_successful()
+            self.disconnect_from_rabbit()
 
     @parameterized.expand([
         (CONFIG_EXCHANGE,),
@@ -152,16 +182,17 @@ class TestAlertRouter(unittest.TestCase):
     ])
     def test__initialise_rabbit_initialises_exchanges(self,
                                                       exchange_to_check: str):
-        # Testing this separately since this is a critical function
-        self._test_alert_router._initialise_rabbitmq()
-
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
+
+            # Testing this separately since this is a critical function
+            self._test_alert_router._initialise_rabbitmq()
+
             self._rabbitmq.exchange_declare(exchange_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(exchange_to_check))
         finally:
-            self._rabbitmq.disconnect_till_successful()
+            self.disconnect_from_rabbit()
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -169,7 +200,7 @@ class TestAlertRouter(unittest.TestCase):
             self, mock_ack: MagicMock, mock_extract_config: MagicMock
     ):
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
 
@@ -237,7 +268,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
             # Must create a connection so that the blocking channel is passed
@@ -303,7 +334,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
 
@@ -370,7 +401,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
 
@@ -416,7 +447,6 @@ class TestAlertRouter(unittest.TestCase):
     def test_process_config_multiple_channel_configs_correct(
             self, mock_ack: MagicMock, mock_extract_config: MagicMock
     ):
-        # Incorrect config file has missing fields
         second_correct_config_file = {
             'test_234': {
                 'id':           "test_234",
@@ -450,7 +480,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
             # Must create a connection so that the blocking channel is passed
@@ -541,7 +571,7 @@ class TestAlertRouter(unittest.TestCase):
         mock_extract_config.side_effect = generate_extract_config_mocker(config)
         try:
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
                                             True, False, False)
 
@@ -769,7 +799,7 @@ class TestAlertRouter(unittest.TestCase):
         try:
 
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
@@ -874,7 +904,7 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
 
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
@@ -965,7 +995,7 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
@@ -1056,7 +1086,7 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
@@ -1133,7 +1163,7 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             # Must create a connection so that the blocking channel is passed
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
@@ -1179,7 +1209,7 @@ class TestAlertRouter(unittest.TestCase):
         }
         HEARTBEAT_QUEUE = "hb_test"
         try:
-            self._rabbitmq.connect_till_successful()
+            self.connect_to_rabbit()
             self._rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic",
                                             False,
                                             True, False, False)
@@ -1219,7 +1249,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             self.delete_queue_if_exists(HEARTBEAT_QUEUE)
             self.delete_exchange_if_exists(HEALTH_CHECK_EXCHANGE)
-            self._rabbitmq.disconnect_till_successful()
+            self.disconnect_from_rabbit()
 
     @parameterized.expand([
         ("PARENT_1", "x", "{}", False),
