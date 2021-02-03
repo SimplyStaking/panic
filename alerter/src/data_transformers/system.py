@@ -70,6 +70,64 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
+    def save_to_redis(self, system: Union[System, GitHubRepo]) -> None:
+        # Save it in redis just in case the process restarts
+        redis_hash = Keys.get_hash_parent(system.parent_id)
+        system_id = system.system_id
+        self.redis.hset_multiple(redis_hash, {
+            Keys.get_system_process_cpu_seconds_total(system_id):
+                system.process_cpu_seconds_total,
+            Keys.get_system_process_memory_usage(system_id):
+                system.process_memory_usage,
+            Keys.get_system_virtual_memory_usage(system_id):
+                system.virtual_memory_usage,
+            Keys.get_system_open_file_descriptors(system_id):
+                system.open_file_descriptors,
+            Keys.get_system_system_cpu_usage(system_id):
+                system.system_cpu_usage,
+            Keys.get_system_system_ram_usage(system_id):
+                system.system_ram_usage,
+            Keys.get_system_system_storage_usage(system_id):
+                system.system_storage_usage,
+            Keys.get_system_network_transmit_bytes_per_second(system_id):
+                system.network_transmit_bytes_per_second,
+            Keys.get_system_network_receive_bytes_per_second(system_id):
+                system.network_receive_bytes_per_second,
+            Keys.get_system_network_transmit_bytes_total(system_id):
+                system.network_transmit_bytes_total,
+            Keys.get_system_network_receive_bytes_total(system_id):
+                system.network_receive_bytes_total,
+            Keys.get_system_disk_io_time_seconds_in_interval(system_id):
+                system.disk_io_time_seconds_in_interval,
+            Keys.get_system_disk_io_time_seconds_total(system_id):
+                system.disk_io_time_seconds_total,
+            Keys.get_system_last_monitored(system_id): system.last_monitored,
+            Keys.get_system_went_down_at(system_id): system.went_down_at,
+        })
+
+        self.logger.debug(
+            "Saving %s state: _process_cpu_seconds_total=%s, "
+            "_process_memory_usage=%s, _virtual_memory_usage=%s, "
+            "_open_file_descriptors=%s, _system_cpu_usage=%s, "
+            "_system_ram_usage=%s, _system_storage_usage=%s, "
+            "_network_transmit_bytes_per_second=%s, "
+            "_network_receive_bytes_per_second=%s, "
+            "_network_transmit_bytes_total=%s, "
+            "_network_receive_bytes_total=%s, "
+            "_disk_io_time_seconds_in_interval=%s, "
+            "_disk_io_time_seconds_total=%s, _last_monitored=%s, "
+            "_went_down_at=%s", system, system.process_cpu_seconds_total,
+            system.process_memory_usage, system.virtual_memory_usage,
+            system.open_file_descriptors, system.system_cpu_usage,
+            system.system_ram_usage, system.system_storage_usage,
+            system.network_transmit_bytes_per_second,
+            system.network_receive_bytes_per_second,
+            system.network_transmit_bytes_total,
+            system.network_receive_bytes_total,
+            system.disk_io_time_seconds_in_interval,
+            system.disk_io_time_seconds_total, system.last_monitored,
+            system.went_down_at)
+
     def load_state(self, system: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
         # If Redis is down, the data passed as default will be stored as
@@ -267,7 +325,7 @@ class SystemDataTransformer(DataTransformer):
             system.set_parent_id(parent_id)
             system.set_system_name(system_name)
 
-            # Save the new metrics
+            # Save the new metrics in process memory
             system.set_last_monitored(meta_data['last_monitored'])
             system.set_process_cpu_seconds_total(
                 metrics['process_cpu_seconds_total'])
@@ -531,6 +589,7 @@ class SystemDataTransformer(DataTransformer):
         transformed_data = {}
         data_for_alerting = {}
         data_for_saving = {}
+        system_id = ''
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
@@ -566,6 +625,7 @@ class SystemDataTransformer(DataTransformer):
         if not processing_error:
             try:
                 self._update_state(transformed_data)
+                self.save_to_redis(self.state[system_id])
                 self.logger.info("Successfully processed %s", raw_data)
             except Exception as e:
                 self.logger.error("Error when processing %s", raw_data)

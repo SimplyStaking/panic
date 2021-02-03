@@ -57,6 +57,10 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         self.rabbitmq.start_consuming()
 
     @abstractmethod
+    def save_to_redis(self, monitorable: Union[System, GitHubRepo]) -> None:
+        pass
+
+    @abstractmethod
     def _update_state(self, transformed_data: Dict) -> None:
         pass
 

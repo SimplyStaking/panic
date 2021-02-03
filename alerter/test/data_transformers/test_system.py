@@ -1,17 +1,21 @@
+import json
 import logging
 import unittest
 from datetime import timedelta
 from queue import Queue
 from unittest import mock
+from datetime import datetime
+import pika
 
-from src.data_store.redis import RedisApi
+from src.data_store.redis import RedisApi, Keys
 from src.data_transformers.system import SystemDataTransformer, \
-    _SYSTEM_DT_INPUT_QUEUE
+    _SYSTEM_DT_INPUT_QUEUE, _SYSTEM_DT_INPUT_ROUTING_KEY
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.system import System
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, \
     STORE_EXCHANGE, ALERT_EXCHANGE
+from src.utils.types import convert_to_float_if_not_none
 
 
 class TestSystemDataTransformer(unittest.TestCase):
@@ -39,9 +43,58 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_parent_id = 'test_system_parent_id34978gt63gtg'
         self.test_system = System(self.test_system_name, self.test_system_id,
                                   self.test_system_parent_id)
+        self.test_data_str = 'test_data'
         self.test_state = {self.test_system_id: self.test_system}
         self.test_publishing_queue = Queue(self.max_queue_size)
         self.test_rabbit_queue_name = 'Test Queue'
+        self.test_heartbeat = {
+            'component_name': 'Test Component',
+            'timestamp': datetime(2012, 1, 1).timestamp(),
+        }
+        self.test_went_down_at = None
+        self.test_process_cpu_seconds_total = 100
+        self.test_process_memory_usage = 95
+        self.test_virtual_memory_usage = 678998
+        self.test_open_file_descriptors = 4
+        self.test_system_cpu_usage = 50
+        self.test_system_ram_usage = None
+        self.test_system_storage_usage = 49
+        self.test_network_transmit_bytes_per_second = 456546
+        self.test_network_transmit_bytes_total = 4536363563573
+        self.test_network_receive_bytes_per_second = 345
+        self.test_network_receive_bytes_total = 4564567
+        self.test_disk_io_time_seconds_in_interval = 45
+        self.test_disk_io_time_seconds_total = 6347
+        self.test_last_monitored = datetime(2012, 1, 1).timestamp()
+
+        # Set system values
+        self.test_system.set_went_down_at(self.test_went_down_at)
+        self.test_system.set_process_cpu_seconds_total(
+            self.test_process_cpu_seconds_total)
+        self.test_system.set_process_memory_usage(
+            self.test_process_memory_usage)
+        self.test_system.set_virtual_memory_usage(
+            self.test_virtual_memory_usage)
+        self.test_system.set_open_file_descriptors(
+            self.test_open_file_descriptors)
+        self.test_system.set_system_cpu_usage(self.test_system_cpu_usage)
+        self.test_system.set_system_ram_usage(self.test_system_ram_usage)
+        self.test_system.set_system_storage_usage(
+            self.test_system_storage_usage)
+        self.test_system.set_network_transmit_bytes_per_second(
+            self.test_network_transmit_bytes_per_second)
+        self.test_system.set_network_transmit_bytes_total(
+            self.test_network_transmit_bytes_per_second)
+        self.test_system.set_network_receive_bytes_per_second(
+            self.test_network_receive_bytes_per_second)
+        self.test_system.set_network_receive_bytes_total(
+            self.test_network_receive_bytes_total)
+        self.test_system.set_disk_io_time_seconds_in_interval(
+            self.test_disk_io_time_seconds_in_interval)
+        self.test_system.set_disk_io_time_seconds_total(
+            self.test_disk_io_time_seconds_total)
+        self.test_system.set_last_monitored(self.test_last_monitored)
+
         self.test_data_transformer = SystemDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.max_queue_size)
@@ -53,7 +106,10 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             # Declare them before just in case there are tests which do not
             # use these queues and exchanges
-            # TODO: Add test queue
+            self.test_data_transformer.rabbitmq.queue_declare(
+                queue=self.test_rabbit_queue_name, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
             self.test_data_transformer.rabbitmq.queue_declare(
                 _SYSTEM_DT_INPUT_QUEUE, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
@@ -66,7 +122,11 @@ class TestSystemDataTransformer(unittest.TestCase):
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
 
             self.test_data_transformer.rabbitmq.queue_purge(
+                self.test_rabbit_queue_name)
+            self.test_data_transformer.rabbitmq.queue_purge(
                 _SYSTEM_DT_INPUT_QUEUE)
+            self.test_data_transformer.rabbitmq.queue_delete(
+                self.test_rabbit_queue_name)
             self.test_data_transformer.rabbitmq.queue_delete(
                 _SYSTEM_DT_INPUT_QUEUE)
             self.test_data_transformer.rabbitmq.exchange_delete(
@@ -120,7 +180,9 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_data_transformer._listen_for_data()
         mock_start_consuming.assert_called_once()
 
-    def test_initialise_rabbit_initializes_everything_as_expected(self) -> None:
+    @mock.patch.object(RabbitMQApi, "basic_qos")
+    def test_initialise_rabbit_initializes_everything_as_expected(
+            self, mock_basic_qos) -> None:
         try:
             # To make sure that there is no connection/channel already
             # established
@@ -144,24 +206,199 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             self.test_data_transformer._initialise_rabbitmq()
 
-            # Perform checks that the connection has been opened, marked as open
-            # and that the delivery confirmation variable is set.
+            # Perform checks that the connection has been opened and marked as
+            # open, that the delivery confirmation variable is set and basic_qos
+            # called successfully.
             self.assertTrue(self.test_data_transformer.rabbitmq.is_connected)
             self.assertTrue(
                 self.test_data_transformer.rabbitmq.connection.is_open)
             self.assertTrue(
                 self.test_data_transformer.rabbitmq
                     .channel._delivery_confirmation)
+            mock_basic_qos.assert_called_once_with(prefetch_count=round(
+                self.max_queue_size / 5))
 
-            # TODO: Continue test
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_data_transformer.rabbitmq.exchange_declare(
+                STORE_EXCHANGE, passive=True)
+            self.test_data_transformer.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, passive=True)
+            self.test_data_transformer.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
 
-            # Check whether the queues and exchanges were created by
-            # re-declaring them with passive=True. If they are not created yet
-            # this would raise an exception, hence the tests would fail.
+            # Check whether the consuming exchanges and queues have been
+            # creating by sending messages with the same routing keys as for the
+            # bindings. We will also check if the size of the queues is 0 to
+            # confirm that basic_consume was called (it will store the msg in
+            # the component memory immediately). If one of the exchanges or
+            # queues is not created or basic_consume is not called, then either
+            # an exception will be thrown or the queue size would be 1
+            # respectively. Note when deleting the exchanges in the beginning we
+            # also released every binding, hence there are no other queue binded
+            # with the same routing key to any exchange at this point.
+            self.test_data_transformer.rabbitmq.basic_publish_confirm(
+                exchange=RAW_DATA_EXCHANGE,
+                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY,
+                body=self.test_data_str, is_body_dict=False,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+
+            # Re-declare queue to get the number of messages
+            res = self.test_data_transformer.rabbitmq.queue_declare(
+                _SYSTEM_DT_INPUT_QUEUE, False, True, False, False)
+            self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    # TODO: First test initialise rabbit and then send_heartbeat in data
-    #     : transformer
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones set by send_heartbeat, and checks that the
+        # heartbeat is received
+        try:
+            self.test_data_transformer._initialise_rabbitmq()
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_data_transformer.rabbitmq.queue_delete(
+                self.test_rabbit_queue_name)
+
+            res = self.test_data_transformer.rabbitmq.queue_declare(
+                queue=self.test_rabbit_queue_name, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_data_transformer.rabbitmq.queue_bind(
+                queue=self.test_rabbit_queue_name,
+                exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker')
+
+            self.test_data_transformer._send_heartbeat(self.test_heartbeat)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_data_transformer.rabbitmq.queue_declare(
+                queue=self.test_rabbit_queue_name, durable=True,
+                exclusive=False, auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            # Check that the message received is actually the HB
+            _, _, body = self.test_data_transformer.rabbitmq.basic_get(
+                self.test_rabbit_queue_name)
+            self.assertEqual(self.test_heartbeat, json.loads(body))
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_save_to_redis_saves_system_to_redis_correctly(self) -> None:
+        # todo: tomorrow start from this test to see why it fails and then run
+        #     : it in production to see that it passes
+
+        # Clean test db
+        self.redis.delete_all()
+
+        self.test_data_transformer.save_to_redis(self.test_system)
+
+        redis_hash = Keys.get_hash_parent(self.test_system.parent_id)
+        system_id = self.test_system.system_id
+        actual_went_down_at = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_went_down_at(system_id), None))
+        actual_process_cpu_seconds_total = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_process_cpu_seconds_total(system_id), None))
+        actual_process_memory_usage = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_process_memory_usage(system_id), None))
+        actual_virtual_memory_usage = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_virtual_memory_usage(system_id), None))
+        actual_open_file_descriptors = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_open_file_descriptors(system_id), None))
+        actual_system_cpu_usage = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_system_cpu_usage(system_id), None))
+        actual_system_ram_usage = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_system_ram_usage(system_id), None))
+        actual_system_storage_usage = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_system_storage_usage(system_id), None))
+        actual_network_transmit_bytes_per_second = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_network_transmit_bytes_per_second(system_id),
+                None))
+        actual_network_transmit_bytes_total = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_network_transmit_bytes_total(system_id), None))
+        actual_network_receive_bytes_per_second = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_network_receive_bytes_per_second(system_id),
+                None))
+        actual_network_receive_bytes_total = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_network_receive_bytes_total(system_id), None))
+        actual_disk_io_time_seconds_in_interval = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_disk_io_time_seconds_in_interval(system_id),
+                None))
+        actual_disk_io_time_seconds_total = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_disk_io_time_seconds_total(system_id), None))
+        actual_last_monitored = self.redis.hget(
+            redis_hash, convert_to_float_if_not_none(
+                Keys.get_system_last_monitored(system_id), None))
+
+        self.assertEqual(actual_went_down_at, self.test_system.went_down_at)
+        self.assertEqual(actual_process_cpu_seconds_total,
+                         self.test_system.process_cpu_seconds_total)
+        self.assertEqual(actual_process_memory_usage,
+                         self.test_system.process_memory_usage)
+        self.assertEqual(actual_virtual_memory_usage,
+                         self.test_system.virtual_memory_usage)
+        self.assertEqual(actual_open_file_descriptors,
+                         self.test_system.open_file_descriptors)
+        self.assertEqual(actual_system_cpu_usage,
+                         self.test_system.system_cpu_usage)
+        self.assertEqual(actual_system_ram_usage,
+                         self.test_system.system_ram_usage)
+        self.assertEqual(actual_system_storage_usage,
+                         self.test_system.system_storage_usage)
+        self.assertEqual(actual_network_transmit_bytes_per_second,
+                         self.test_system.network_transmit_bytes_per_second)
+        self.assertEqual(actual_network_transmit_bytes_total,
+                         self.test_system.network_trasnmit_bytes_total)
+        self.assertEqual(actual_network_receive_bytes_per_second,
+                         self.test_system.network_receive_bytes_per_second)
+        self.assertEqual(actual_network_receive_bytes_total,
+                         self.test_system.network_receive_bytes_total)
+        self.assertEqual(actual_disk_io_time_seconds_in_interval,
+                         self.test_system.disk_io_time_seconds_in_interval)
+        self.assertEqual(actual_disk_io_time_seconds_total,
+                         self.test_system.disk_io_time_seconds_total)
+        self.assertEqual(actual_last_monitored, self.test_system.last_monitored)
+
+    def test_load_state_successful_if_state_exists_in_redis_and_redis_online(
+            self) -> None:
+        pass
+
+    def test_load_state_keeps_same_state_if_state_in_redis_and_redis_offline(
+            self) -> None:
+        pass
+
+    def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_online(
+            self) -> None:
+        pass
+
+    def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_off(
+            self) -> None:
+        pass
+
+    def test_load_state_loads_state_successfully_from_redis_if_redis_online(
+            self) -> None:
+        pass
 
 # todo: change comment in component and env.variables commented here
+# todo: noticed that i am not saving to redis when processing raw data. This
+#     : should be done.
+# TODO: Must save github state in redis as well
