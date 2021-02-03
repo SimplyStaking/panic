@@ -7,6 +7,7 @@ from queue import Queue
 from unittest import mock
 
 import pika
+from freezegun import freeze_time
 
 from src.alerter.alerts.system_alerts import OpenFileDescriptorsIncreasedAboveThresholdAlert
 from src.configs.system_alerts import SystemAlertsConfig
@@ -37,12 +38,13 @@ class TestSystemAlerter(unittest.TestCase):
         self.queue_used = "system_alerter_queue_" + self.parent_id
         self.target_queue_used = "alert_router_queue"
         self.routing_key = "alerter.system." + self.parent_id
+        self.bad_routing_key = "alerter.system.not_real"
         self.alert_router_routing_key = 'alert_router.system'
         self.heartbeat_queue = 'heartbeat queue'
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
-            'timestamp': datetime.datetime(2021, 1, 28).timestamp()
+            'timestamp': datetime.datetime(2012, 1, 1, 1).timestamp()
         }
 
         """
@@ -397,6 +399,21 @@ class TestSystemAlerter(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
+        # Delete any queues and exchanges which are common across many tests
+        try:
+            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_purge(self.queue_used)
+            self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(self.queue_used)
+            self.test_manager.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            print("Test failed: %s".format(e))
+
         self.dummy_logger = None
         self.rabbitmq = None
         self.publishing_queue = None
@@ -428,100 +445,9 @@ class TestSystemAlerter(unittest.TestCase):
                          self.test_system_alerter.alerts_configs)
 
     """
-    ###################### Tests using RabbitMQ #######################
-    """
-    def test_initialise_rabbit_initialises_queues(self) -> None:
-        self.test_system_alerter._initialise_rabbitmq()
-        try:
-            self.rabbitmq.connect_till_successful()
-            self.rabbitmq.queue_declare(self.queue_used, passive=True)
-        except pika.exceptions.ConnectionClosedByBroker:
-            self.fail("Queue {} was not declared".format(self.queue_used))
-
-    def test_initialise_rabbit_initialises_exchanges(self) -> None:
-        self.test_system_alerter._initialise_rabbitmq()
-
-        try:
-            self.rabbitmq.connect_till_successful()
-            self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
-        except pika.exceptions.ConnectionClosedByBroker:
-            self.fail("Exchange {} was not declared".format(ALERT_EXCHANGE))
-
-    def test_send_warning_alerts_correctly(
-            self) -> None:
-        try:
-            self.test_system_alerter._initialise_rabbitmq()
-            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
-
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.target_queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_system_alerter.rabbitmq.queue_bind(
-                queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
-                routing_key=self.alert_router_routing_key)
-
-            self.test_system_alerter.rabbitmq.basic_publish_confirm(
-                exchange=ALERT_EXCHANGE, routing_key=self.alert_router_routing_key,
-                body=self.alert.alert_data, is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.target_queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
-
-            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
-                self.target_queue_used)
-            # For some reason during the conversion [] are swapped to ()
-            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)), json.loads(body))
-
-            self.test_system_alerter.rabbitmq.queue_purge(self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
-            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_system_alerter.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    # Same test that is in monitors tests
-    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
-        try:
-            self.test_system_alerter._initialise_rabbitmq()
-            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
-
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.heartbeat_queue, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_system_alerter.rabbitmq.queue_bind(
-                queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
-            self.test_system_alerter._send_heartbeat(self.heartbeat_test)
-
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.heartbeat_queue, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
-
-            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
-                self.heartbeat_queue)
-            self.assertEqual(self.heartbeat_test, json.loads(body))
-
-            self.test_system_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
-            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
-            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_system_alerter.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    """
     ###################### Tests without using RabbitMQ #######################
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_initial_run_no_alerts_count_classify_alert(
             self, mock_classify_alert) -> None:
@@ -539,6 +465,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ############## 1st run no increase/decrease alerts
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts(
             self, mock_percentage_usage) -> None:
@@ -662,6 +589,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ########### 1st run increase/decrease alerts, 2nd run no increase/decrease alerts
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_no_increase_alerts(
             self, mock_percentage_usage) -> None:
@@ -906,6 +834,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ####### 1st run no alerts on increase/decrease, 2nd run warning alert on increase
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_warning_alert(
             self, mock_percentage_usage) -> None:
@@ -1193,6 +1122,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run no increase/decrease alerts, 2nd run critical increase alerts
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
@@ -1479,6 +1409,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run warning alerts on increase
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_initial_run_warning_alerts_count_classify_alert(
             self, mock_classify_alert) -> None:
@@ -1690,6 +1621,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ########## 1st run warning alert on increase, 2nd run info alerts on decrease 
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_warning_alert_then_no_alert(
             self, mock_percentage_usage) -> None:
@@ -2033,6 +1965,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     #### 1st run warning alerts on increase, 2nd run critical alerts on increase
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_warning_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
@@ -2350,6 +2283,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ####### 1st run warning alert on increase, 2nd run no alert on increase in warning
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_initial_run_warning_alerts_then_increase_in_warning_no_alert(
             self, mock_percentage_usage) -> None:
@@ -2600,6 +2534,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ###### 1st run critical alerts on increase
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_initial_run_critical_alerts_count_classify_alert(
             self, mock_classify_alert) -> None:
@@ -2811,6 +2746,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     ######### 1st run above critical, second run between warning and critical
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     def test_open_file_descriptors_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, mock_percentage_usage) -> None:
@@ -3154,6 +3090,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run above critical, 2nd run above critical but repeat timer hasn't elapsed so no alerts
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
     def test_open_file_descriptors_critical_alerts_then_no_alerts_on_increase_before_repeat_timer_elapsed(
@@ -3309,6 +3246,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run above critical, 2nd run above critical and repeat timer has elapsed so a critical alert is sent
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
     def test_open_file_descriptors_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
@@ -3469,6 +3407,7 @@ class TestSystemAlerter(unittest.TestCase):
     1st run above critical, 2nd run above critical but below previous and
     repeat timer has elapsed so a critical alert is sent
     """
+
     @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
     def test_open_file_descriptors_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
@@ -3628,6 +3567,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     Testing System back up alerts 
     """
+
     @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert", autospec=True)
     def test_system_back_up_no_alert(self, mock_system_back_up) -> None:
         data_for_alerting = []
@@ -3679,6 +3619,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     Testing System went down at alerts
     """
+
     @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
     def test_system_went_down_at_no_alert_below_warning_threshold(self, mock_system_is_down) -> None:
         data_for_alerting = []
@@ -3695,6 +3636,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     These tests assume that critical_threshold_seconds > warning_threshold_seconds
     """
+
     @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
     def test_system_went_down_at_alert_above_warning_threshold(
             self, mock_system_is_down) -> None:
@@ -3890,6 +3832,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     Testing error alerts of MetricNotFound and InvalidURL
     """
+
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert", autospec=True)
     def test_metric_not_found_alert(self, mock_alert) -> None:
         data_for_alerting = []
@@ -3929,6 +3872,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run above warning threshold no alerts as warning alerts are disabled
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_warning_alerts_disabled_metric_above_warning_threshold(
             self, mock_classify_alert) -> None:
@@ -4011,6 +3955,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st run above critical threshold no alerts as critical alerts are disabled
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_critical_alerts_disabled_metric_above_critical_threshold(
             self, mock_classify_alert) -> None:
@@ -4097,6 +4042,7 @@ class TestSystemAlerter(unittest.TestCase):
     """
     1st above critical all alerts disabled
     """
+
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_all_alerts_disabled_metric_above_critical_threshold_and_warning_threshold(
             self, mock_classify_alert) -> None:
@@ -4110,4 +4056,527 @@ class TestSystemAlerter(unittest.TestCase):
             self.assertEqual(0, mock_classify_alert.call_count)
             self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    """
+    ###################### Tests using RabbitMQ #######################
+    """
+
+    def test_initialise_rabbit_initialises_queues(self) -> None:
+        self.test_system_alerter._initialise_rabbitmq()
+        try:
+            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.queue_declare(self.queue_used, passive=True)
+        except pika.exceptions.ConnectionClosedByBroker:
+            self.fail("Queue {} was not declared".format(self.queue_used))
+
+    def test_initialise_rabbit_initialises_exchanges(self) -> None:
+        self.test_system_alerter._initialise_rabbitmq()
+
+        try:
+            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
+        except pika.exceptions.ConnectionClosedByBroker:
+            self.fail("Exchange {} was not declared".format(ALERT_EXCHANGE))
+
+    def test_send_warning_alerts_correctly(
+            self) -> None:
+        try:
+            self.test_system_alerter._initialise_rabbitmq()
+            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_system_alerter.rabbitmq.queue_bind(
+                queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
+                routing_key=self.alert_router_routing_key)
+
+            self.test_system_alerter.rabbitmq.basic_publish_confirm(
+                exchange=ALERT_EXCHANGE, routing_key=self.alert_router_routing_key,
+                body=self.alert.alert_data, is_body_dict=True,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
+                self.target_queue_used)
+            # For some reason during the conversion [] are swapped to ()
+            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)), json.loads(body))
+
+            self.test_system_alerter.rabbitmq.queue_purge(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    # Same test that is in monitors tests
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+        try:
+            self.test_system_alerter._initialise_rabbitmq()
+            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.heartbeat_queue, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_system_alerter.rabbitmq.queue_bind(
+                queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key='heartbeat.worker')
+            self.test_system_alerter._send_heartbeat(self.heartbeat_test)
+
+            res = self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.heartbeat_queue, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
+                self.heartbeat_queue)
+            self.assertEqual(self.heartbeat_test, json.loads(body))
+
+            self.test_system_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
+            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    """
+    Testing _process_data using RabbitMQ
+    """
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_no_alerts(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results) -> None:
+
+        mock_ack.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_called_with(
+                self.system_id
+            )
+            mock_process_results.assert_called_with(
+                self.data_received_initially_no_alert['result']['data'],
+                self.data_received_initially_no_alert['result']['meta_data'],
+                []
+            )
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_no_alerts(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors) -> None:
+
+        mock_ack.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_called_with(
+                self.system_id
+            )
+            mock_process_errors.assert_called_with(
+                self.data_received_error_data['error'],
+                []
+            )
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_send_hb_no_proc_error(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results, mock_send_heartbeat) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_results.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_send_hb_no_proc_error(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors, mock_send_heartbeat) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_errors.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_do_not_send_hb_on_proc_error_bad_routing_key(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results, mock_send_heartbeat) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_results.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_heartbeat.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_do_not_send_hb_on_proc_error_bad_routing_key(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors, mock_send_heartbeat) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_errors.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_heartbeat.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_send_data_called(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results, mock_send_data) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_results.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_data.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_send_data_called(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors, mock_send_data) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_errors.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_send_data.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_not_processed_bad_routing_key(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results) -> None:
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_not_called()
+            mock_process_results.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_not_processed_bad_routing_key(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors) -> None:
+
+        mock_ack.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_not_called()
+            mock_process_errors.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_not_processed_bad_data_received(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results) -> None:
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            del self.data_received_initially_no_alert['result']['data']
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_not_called()
+            mock_process_results.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_not_processed_bad_data_received(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors) -> None:
+
+        mock_ack.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            del self.data_received_error_data['error']['meta_data']
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_create_state_for_system.assert_not_called()
+            mock_process_errors.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_result_data_send_data_called(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_results, mock_place_latest_data_on_queue) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_results.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_send_data_called(
+            self, mock_ack, mock_create_state_for_system,
+            mock_process_errors, mock_place_latest_data_on_queue) -> None:
+
+        mock_ack.return_value = None
+        mock_create_state_for_system.return_value = None
+        mock_process_errors.return_value = None
+
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_place_latest_data_on_queue_not_called_bad_routing_key(
+            self, mock_ack, mock_place_latest_data_on_queue) -> None:
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+    
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_not_processed_bad_routing_key(
+            self, mock_ack, mock_place_latest_data_on_queue) -> None:
+
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_place_latest_data_on_queue_not_called_bad_data_received(
+            self, mock_ack, mock_place_latest_data_on_queue) -> None:
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            del self.data_received_initially_no_alert['result']['data']
+            body = json.dumps(self.data_received_initially_no_alert).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_error_data_not_processed_bad_data_received(
+            self, mock_ack, mock_place_latest_data_on_queue) -> None:
+        mock_ack.return_value = None
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            blocking_channel = self.test_system_alerter.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=self.bad_routing_key)
+            del self.data_received_error_data['error']['meta_data']
+            body = json.dumps(self.data_received_error_data).encode()
+            properties = pika.spec.BasicProperties()
+            self.test_system_alerter._process_data(blocking_channel, method,
+                                                   properties, body)
+            mock_place_latest_data_on_queue.assert_not_called()
+        except Exception as e:
             self.fail("Test failed: {}".format(e))
