@@ -12,15 +12,19 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
-from src.abstract import QueuingPublisherComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent
+)
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_ROUTER_CONFIGS_QUEUE_NAME)
-from src.utils.exceptions import MessageWasNotDeliveredException, \
-    MissingKeyInConfigException
+from src.utils.constants import (
+    CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME
+)
+from src.utils.exceptions import (
+    MessageWasNotDeliveredException, MissingKeyInConfigException
+)
 from src.utils.logging import log_and_print
 
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
@@ -28,12 +32,11 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 _ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
-class AlertRouter(QueuingPublisherComponent):
+class AlertRouter(QueuingPublisherSubscriberComponent):
     def __init__(self, name: str, logger: Logger, rabbit_ip: str, redis_ip: str,
                  redis_db: int, redis_port: int, unique_alerter_identifier: str,
                  enable_console_alerts: bool, enable_log_alerts: bool):
 
-        # Change
         self._name = name
         self._redis = RedisApi(logger.getChild(RedisApi.__name__),
                                host=redis_ip, db=redis_db, port=redis_port,
@@ -207,7 +210,8 @@ class AlertRouter(QueuingPublisherComponent):
                         self._config.values()
                         for channel in channel_type.values()
                         if channel.get(recv_alert.get('severity').lower()) and
-                        recv_alert.get('parent_id') in channel.get('parent_ids')
+                           recv_alert.get('parent_id') in channel.get(
+                            'parent_ids')
                     ]
 
                     self._logger.debug("send_to_ids = %s", send_to_ids)
@@ -311,8 +315,7 @@ class AlertRouter(QueuingPublisherComponent):
                 except MessageWasNotDeliveredException as e:
                     self._logger.exception(e)
 
-                self._logger.info("Starting the alert router listeners")
-                self._rabbitmq.start_consuming()
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -322,6 +325,10 @@ class AlertRouter(QueuingPublisherComponent):
             except Exception as e:
                 self._logger.exception(e)
                 raise e
+
+    def _listen_for_data(self) -> None:
+        self._logger.info("Starting the alert router listeners")
+        self._rabbitmq.start_consuming()
 
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
