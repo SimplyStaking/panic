@@ -73,13 +73,25 @@ class TestGitHubMonitor(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_monitor.rabbitmq.connect_till_successful()
+
+            # Declare them before just in case there are tests which do not
+            # use these queues and exchanges
+            self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_monitor.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_monitor.rabbitmq.exchange_declare(
+                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
             self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
             self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_monitor.rabbitmq.disconnect()
+            self.test_monitor.rabbitmq.disconnect_till_successful()
         except Exception as e:
-            print("Deletion of queues and exchanges failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None

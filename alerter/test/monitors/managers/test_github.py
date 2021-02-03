@@ -118,6 +118,23 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_manager.rabbitmq.connect_till_successful()
+
+            # Declare them before just in case there are tests which do not
+            # use these queues and exchanges
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                GH_MON_MAN_INPUT_QUEUE, False, True, False, False)
+            self.test_manager.rabbitmq.queue_declare(
+                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            self.test_manager.rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, 'topic', False, True, False, False)
+            self.test_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(GH_MON_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
@@ -128,9 +145,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
+            self.test_manager.rabbitmq.disconnect_till_successful()
         except Exception as e:
-            print("Deletion of queues and exchanges failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -168,10 +185,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         self.assertEqual(1, mock_start_consuming.call_count)
 
-    @mock.patch.object(GitHubMonitorsManager, "_process_ping")
     def test_initialise_rabbitmq_initializes_everything_as_expected(
-            self, mock_process_ping) -> None:
-        mock_process_ping.return_value = None
+            self) -> None:
         try:
             # To make sure that there is no connection/channel already
             # established
