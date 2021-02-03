@@ -1,7 +1,8 @@
 import logging
 from typing import List, Optional, Callable
 
-from watchdog.events import PatternMatchingEventHandler, FileSystemEvent
+from watchdog.events import PatternMatchingEventHandler, FileSystemEvent, \
+    FileSystemMovedEvent
 
 
 class ConfigFileEventHandler(PatternMatchingEventHandler):
@@ -54,6 +55,15 @@ class ConfigFileEventHandler(PatternMatchingEventHandler):
 
         what = 'directory' if event.is_directory else 'file'
         self._logger.debug("Event triggered: Modified %s: %s", what,
+                           event.src_path)
+
+        self._callback(event)
+
+    def on_deleted(self, event):
+        super().on_deleted(event)
+
+        what = 'directory' if event.is_directory else 'file'
+        self._logger.debug("Event triggered: Deleted %s: %s", what,
                            event.src_path)
 
         self._callback(event)

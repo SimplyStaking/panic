@@ -54,21 +54,22 @@ class ConfigsManager(PublisherComponent):
         :param case_sensitive: Whether the patterns in `file_patterns` and
             `ignore_file_patterns` are case sensitive. Defaults to False
         """
-        super().__init__()
+        super().__init__(logger, )
         if not file_patterns:
             file_patterns = ['*.ini']
 
         self._name = name
-        self._logger = logger
         self._config_directory = config_directory
         self._file_patterns = file_patterns
         self._watching = False
         self._connected_to_rabbit = False
 
         self._logger.debug("Creating config RabbitMQ connection")
-        self._config_rabbit = RabbitMQApi(
+        rabbitmq = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
+
+        super().__init__(logger, rabbitmq)
 
         self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
@@ -101,11 +102,11 @@ class ConfigsManager(PublisherComponent):
             try:
                 self._connect_to_rabbit()
                 self._logger.info("Connected to Rabbit")
-                self._config_rabbit.confirm_delivery()
+                self.rabbitmq.confirm_delivery()
                 self._logger.info("Enabled delivery confirmation on configs"
                                   "RabbitMQ channel")
 
-                self._config_rabbit.exchange_declare(
+                self.rabbitmq.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
@@ -162,7 +163,7 @@ class ConfigsManager(PublisherComponent):
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
             self._logger.info("Connecting to the config RabbitMQ")
-            self._config_rabbit.connect_till_successful()
+            self.rabbitmq.connect_till_successful()
             self._logger.info("Connected to config RabbitMQ")
             self._logger.info("Connecting to the heartbeat RabbitMQ")
             self._heartbeat_rabbit.connect_till_successful()
@@ -175,7 +176,7 @@ class ConfigsManager(PublisherComponent):
     def disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from the config RabbitMQ")
-            self._config_rabbit.disconnect_till_successful()
+            self.rabbitmq.disconnect_till_successful()
             self._logger.info("Disconnected from the config RabbitMQ")
             self._logger.info("Disconnecting from the heartbeat RabbitMQ")
             self._heartbeat_rabbit.disconnect_till_successful()
@@ -226,7 +227,7 @@ class ConfigsManager(PublisherComponent):
                     "Attempting to send config to routing key %s", routing_key
                 )
                 # We need to definitely send this
-                self._config_rabbit.basic_publish_confirm(
+                self.rabbitmq.basic_publish_confirm(
                     CONFIG_EXCHANGE, routing_key, config, mandatory=True,
                     is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
@@ -274,22 +275,27 @@ class ConfigsManager(PublisherComponent):
         self._logger.info("Detected a config %s in %s", event.event_type,
                           event.src_path)
 
-        config = ConfigParser()
+        if event.event_type == "deleted":
+            self._logger.debug("Creating empty dict")
+            config_dict = {}
+        else:
+            config = ConfigParser()
 
-        self._logger.debug("Reading configuration")
-        try:
-            config.read(event.src_path)
-        except (
-                DuplicateSectionError, DuplicateOptionError, InterpolationError,
-                ParsingError
-        ) as e:
-            self._logger.error(e.message)
-            # When the config is invalid, we do nothing and discard this event.
-            return None
+            self._logger.debug("Reading configuration")
+            try:
+                config.read(event.src_path)
+            except (
+                    DuplicateSectionError, DuplicateOptionError,
+                    InterpolationError, ParsingError
+            ) as e:
+                self._logger.error(e.message)
+                # When the config is invalid, we do nothing and discard this
+                # event.
+                return None
 
-        self._logger.debug("Config read successfully")
+            self._logger.debug("Config read successfully")
 
-        config_dict = {key: dict(config[key]) for key in config}
+            config_dict = {key: dict(config[key]) for key in config}
         self._logger.debug("Config converted to dict: %s", config_dict)
         # Since the watcher is configured to watch files in
         # self._config_directory we only need check that (for get_routing_key)
