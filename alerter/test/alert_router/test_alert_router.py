@@ -87,6 +87,7 @@ class TestAlertRouter(unittest.TestCase):
         while tries < attempts:
             try:
                 self._rabbitmq.connect()
+                return
             except Exception as e:
                 tries += 1
                 print("Could not connect to rabbit. Attempts so far: {}".format(
@@ -101,6 +102,7 @@ class TestAlertRouter(unittest.TestCase):
         while tries < attempts:
             try:
                 self._rabbitmq.disconnect()
+                return
             except Exception as e:
                 tries += 1
                 print("Could not connect to rabbit. Attempts so far: {}".format(
