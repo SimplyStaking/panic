@@ -803,7 +803,31 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertTrue(
             self.test_data_transformer._state[self.test_system_id].is_down)
 
-# todo: change comment in component and env.variables commented here
+    def test_process_transformed_data_for_saving_returns_trans_data_if_result(
+            self) -> None:
+        processed_data = \
+            self.test_data_transformer._process_transformed_data_for_saving(
+                self.transformed_data_example_result)
+        self.assertDictEqual(self.transformed_data_example_result,
+                             processed_data)
+
+    def test_process_transformed_data_for_saving_returns_trans_data_if_error(
+            self) -> None:
+        processed_data = \
+            self.test_data_transformer._process_transformed_data_for_saving(
+                self.transformed_data_example_general_error)
+        self.assertDictEqual(self.transformed_data_example_general_error,
+                             processed_data)
+
+    def test_proc_trans_data_for_saving_raises_unrec_data_except_on_unrec_data(
+            self) -> None:
+        invalid_transformed_data = {'bad_key': 'bad_value'}
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_saving,
+            invalid_transformed_data)
+
+# todo: change comment in env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
 #     : should be done.
 # TODO: Must save github state in redis as well
