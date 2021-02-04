@@ -1,13 +1,17 @@
 import json
 import logging
 import unittest
+from configparser import ConfigParser
 from datetime import timedelta, datetime
+from typing import Dict
 from unittest import mock
 from unittest.mock import MagicMock
 
 import pika
 from freezegun import freeze_time
 from parameterized import parameterized
+from watchdog.events import FileCreatedEvent, FileModifiedEvent, \
+    FileSystemEvent, FileDeletedEvent
 from watchdog.observers.polling import PollingObserver
 
 from src.config_manager import ConfigsManager
@@ -182,8 +186,8 @@ class TestConfigsManager(unittest.TestCase):
 
         expected_output = {
             'component_name': self.CONFIG_MANAGER_NAME,
-            'is_alive':       True,
-            'timestamp':      datetime(
+            'is_alive': True,
+            'timestamp': datetime(
                 year=1997, month=8, day=15, hour=10, minute=21, second=33,
                 microsecond=30
             ).timestamp()
@@ -233,12 +237,80 @@ class TestConfigsManager(unittest.TestCase):
             self.delete_exchange_if_exists(HEALTH_CHECK_EXCHANGE)
             self.disconnect_from_rabbit()
 
-    @unittest.skip
-    def test__send_data(self):
-        self.fail()
+    @parameterized.expand([
+        (FileCreatedEvent("test_config"),
+         """ [test_section_1]
+             test_field_1=Hello
+             test_field_2=
+             test_field_3=10
+             test_field_4=true
+         """,
+         {"DEFAULT": {},
+          "test_section_1": {
+              "test_field_1": "Hello",
+              "test_field_2": "",
+              "test_field_3": "10",
+              "test_field_4": "true"
+          }}),
+        (FileModifiedEvent("test_config"),
+         """ [test_section_1]
+             test_field_1=Hello
+             test_field_2=
+             test_field_3=10
+             test_field_4=true
+             
+            [test_section_2]
+            test_field_1=OK
+            test_field_2=Bye
+            test_field_3=4
+            test_field_4=off
+         """,
+         {
+             "DEFAULT": {},
+             "test_section_1": {
+                 "test_field_1": "Hello",
+                 "test_field_2": "",
+                 "test_field_3": "10",
+                 "test_field_4": "true"
+             },
+             "test_section_2": {
+                 "test_field_1": "OK",
+                 "test_field_2": "Bye",
+                 "test_field_3": "4",
+                 "test_field_4": "off"
+             }
+         }),
+        (FileDeletedEvent("test_config"), "", {}),
+    ])
+    @mock.patch.object(ConfigParser, "read", autospec=True)
+    @mock.patch.object(ConfigsManager, "_send_data", autospec=True)
+    @mock.patch("src.utils.routing_key.get_routing_key", autospec=True)
+    def test__on_event_thrown(
+            self, event_to_trigger: FileSystemEvent, config_file_input: str,
+            expected_dict: Dict, mock_get_routing_key: MagicMock,
+            mock_send_data: MagicMock, mock_config_parser: MagicMock
+    ):
+        TEST_ROUTING_KEY = "test_config"
+
+        def read_config_side_effect(cp: ConfigParser, *args, **kwargs) -> None:
+            """
+            cp would be "self" in the context of this function being injected.
+            """
+            cp.read_string(config_file_input)
+
+        mock_get_routing_key.return_value = TEST_ROUTING_KEY
+        mock_send_data.return_value = None
+        mock_config_parser.side_effect = read_config_side_effect
+
+        self.test_config_manager._on_event_thrown(event_to_trigger)
+
+        mock_get_routing_key.assert_called_once()
+        mock_send_data.assert_called_once_with(
+            self.test_config_manager, expected_dict, TEST_ROUTING_KEY
+        )
 
     @unittest.skip
-    def test__on_event_thrown(self):
+    def test__send_data(self):
         self.fail()
 
     @unittest.skip

@@ -22,7 +22,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  RE_INITIALIZE_SLEEPING_PERIOD)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitializedException)
-from src.utils.routing_key import get_routing_key
+from src.utils import routing_key
 from .config_update_event_handler import ConfigFileEventHandler
 from ..abstract import PublisherComponent
 from ..utils.logging import log_and_print
@@ -205,8 +205,8 @@ class ConfigsManager(PublisherComponent):
         try:
             heartbeat = {
                 'component_name': self.name,
-                'is_alive':       self._observer.is_alive(),
-                'timestamp':      datetime.now().timestamp(),
+                'is_alive': self._observer.is_alive(),
+                'timestamp': datetime.now().timestamp(),
             }
 
             self._send_heartbeat(heartbeat)
@@ -299,10 +299,10 @@ class ConfigsManager(PublisherComponent):
         # self._config_directory we only need check that (for get_routing_key)
         config_folder = os.path.normpath(self._config_directory)
 
-        routing_key = get_routing_key(event.src_path, config_folder)
+        key = routing_key.get_routing_key(event.src_path, config_folder)
         self._logger.debug("Sending config %s to RabbitMQ with routing key %s",
-                           config_dict, routing_key)
-        self._send_data(config_dict, routing_key)
+                           config_dict, key)
+        self._send_data(config_dict, key)
 
     @property
     def config_directory(self) -> str:
