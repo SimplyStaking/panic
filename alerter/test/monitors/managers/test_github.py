@@ -117,7 +117,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.connect()
 
             # Declare them before just in case there are tests which do not
             # use these queues and exchanges
@@ -145,7 +145,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect_till_successful()
+            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             print("Deletion of queues and exchanges failed: {}".format(e))
 

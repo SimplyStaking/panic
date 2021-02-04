@@ -102,7 +102,7 @@ class TestSystemDataTransformer(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_data_transformer.rabbitmq.connect_till_successful()
+            self.test_data_transformer.rabbitmq.connect()
 
             # Declare them before just in case there are tests which do not
             # use these queues and exchanges
@@ -137,7 +137,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                 STORE_EXCHANGE)
             self.test_data_transformer.rabbitmq.exchange_delete(
                 ALERT_EXCHANGE)
-            self.test_data_transformer.rabbitmq.disconnect_till_successful()
+            self.test_data_transformer.rabbitmq.disconnect()
         except Exception as e:
             print("Deletion of queues and exchanges failed: {}".format(e))
 
