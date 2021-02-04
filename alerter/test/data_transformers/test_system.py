@@ -819,13 +819,191 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertDictEqual(self.transformed_data_example_general_error,
                              processed_data)
 
-    def test_proc_trans_data_for_saving_raises_unrec_data_except_on_unrec_data(
+    def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
             self) -> None:
         invalid_transformed_data = {'bad_key': 'bad_value'}
         self.assertRaises(
             ReceivedUnexpectedDataException,
             self.test_data_transformer._process_transformed_data_for_saving,
             invalid_transformed_data)
+
+    def test_process_trans_data_for_alerting_returns_expected_data_if_result(
+            self) -> None:
+        self.test_data_transformer._state = self.test_state
+        expected_meta_data = self.transformed_data_example_result['result'][
+            'meta_data']
+        expected_data = {
+            'result': {
+                'meta_data': expected_meta_data,
+                'data': {
+                    'process_cpu_seconds_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .process_cpu_seconds_total,
+                        'previous': self.test_system.process_cpu_seconds_total,
+                    },
+                    'process_memory_usage': {
+                        'current':
+                            self.test_system_new_metrics.process_memory_usage,
+                        'previous': self.test_system.process_memory_usage,
+                    },
+                    'virtual_memory_usage': {
+                        'current':
+                            self.test_system_new_metrics.virtual_memory_usage,
+                        'previous': self.test_system.virtual_memory_usage,
+                    },
+                    'open_file_descriptors': {
+                        'current':
+                            self.test_system_new_metrics.open_file_descriptors,
+                        'previous': self.test_system.open_file_descriptors,
+                    },
+                    'system_cpu_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_cpu_usage,
+                        'previous': self.test_system.system_cpu_usage,
+                    },
+                    'system_ram_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_ram_usage,
+                        'previous': self.test_system.system_ram_usage,
+                    },
+                    'system_storage_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_storage_usage,
+                        'previous': self.test_system.system_storage_usage,
+                    },
+                    'network_receive_bytes_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_receive_bytes_total,
+                        'previous': self.test_system
+                            .network_receive_bytes_total,
+                    },
+                    'network_transmit_bytes_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_transmit_bytes_total,
+                        'previous': self.test_system
+                            .network_transmit_bytes_total,
+                    },
+                    'disk_io_time_seconds_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .disk_io_time_seconds_total,
+                        'previous': self.test_system.disk_io_time_seconds_total,
+                    },
+                    'network_transmit_bytes_per_second': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_transmit_bytes_per_second,
+                        'previous': self.test_system
+                            .network_transmit_bytes_per_second,
+                    },
+                    'network_receive_bytes_per_second': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_receive_bytes_per_second,
+                        'previous': self.test_system
+                            .network_receive_bytes_per_second,
+                    },
+                    'disk_io_time_seconds_in_interval': {
+                        'current':
+                            self.test_system_new_metrics
+                                .disk_io_time_seconds_in_interval,
+                        'previous': self.test_system
+                            .disk_io_time_seconds_in_interval,
+                    },
+                    'went_down_at': {
+                        'current': self.test_system_new_metrics.went_down_at,
+                        'previous': self.test_system.went_down_at,
+                    }
+                }
+            }
+        }
+        actual_data = \
+            self.test_data_transformer._process_transformed_data_for_alerting(
+                self.transformed_data_example_result)
+        self.assertDictEqual(expected_data, actual_data)
+
+    def test_process_trans_data_for_alerting_returns_trans_data_if_non_down_err(
+            self) -> None:
+        self.test_data_transformer._state = self.test_state
+        actual_data = \
+            self.test_data_transformer._process_transformed_data_for_alerting(
+                self.transformed_data_example_general_error)
+        self.assertDictEqual(self.transformed_data_example_general_error,
+                             actual_data)
+
+    def test_process_trans_data_for_alerting_returns_expected_data_if_down_err(
+            self) -> None:
+        self.test_data_transformer._state = self.test_state
+        expected_meta_data = self.transformed_data_example_downtime_error[
+            'error']['meta_data']
+        expected_error_msg = self.test_system_is_down_exception.message
+        expected_error_code = self.test_system_is_down_exception.code
+        new_went_down_at = self.transformed_data_example_downtime_error[
+            'error']['data']['went_down_at']
+        expected_data = {
+            'error': {
+                'meta_data': expected_meta_data,
+                'code': expected_error_code,
+                'message': expected_error_msg,
+                'data': {
+                    'went_down_at': {
+                        'current': new_went_down_at,
+                        'previous': self.test_system.went_down_at,
+                    }
+                }
+            }
+        }
+        actual_data = \
+            self.test_data_transformer._process_transformed_data_for_alerting(
+                self.transformed_data_example_downtime_error)
+        self.assertDictEqual(expected_data, actual_data)
+
+    def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
+            self) -> None:
+        invalid_transformed_data = {'bad_key', 'bad_val'}
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            invalid_transformed_data)
+
+    def test_proc_trans_data_for_alerting_raise_key_err_if_key_not_exist_result(
+            self) -> None:
+        self.test_data_transformer._state = self.test_state
+        transformed_data = copy.deepcopy(self.transformed_data_example_result)
+        del transformed_data['result']['data']['process_cpu_seconds_total']
+        self.assertRaises(
+            KeyError,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            transformed_data)
+
+    def test_proc_trans_data_for_alert_raise_key_err_if_keys_not_exist_error(
+            self) -> None:
+        # Test when the error is not related to downtime
+        self.test_data_transformer._state = self.test_state
+        transformed_data = copy.deepcopy(
+            self.transformed_data_example_general_error)
+        del transformed_data['error']['meta_data']
+        self.assertRaises(
+            KeyError,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            transformed_data)
+
+        # Test when the error is related to downtime
+        transformed_data = copy.deepcopy(
+            self.transformed_data_example_downtime_error)
+        del transformed_data['error']['data']['went_down_at']
+        self.assertRaises(
+            KeyError,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            transformed_data)
+
+    # TODO: Tomorrow start testing from _transform_data function.
+
+    # TODO: Imp these tests for key_error do them because they are important
+    #     : to show that exceptions are raised to the outside.
 
 # todo: change comment in env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
