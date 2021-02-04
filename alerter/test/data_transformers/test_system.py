@@ -2,22 +2,24 @@ import copy
 import json
 import logging
 import unittest
+from datetime import datetime
 from datetime import timedelta
 from queue import Queue
 from unittest import mock
-from datetime import datetime
+
 import pika
 
 from src.data_store.redis import RedisApi, Keys
-from src.data_transformers.system import SystemDataTransformer, \
-    _SYSTEM_DT_INPUT_QUEUE, _SYSTEM_DT_INPUT_ROUTING_KEY
+from src.data_transformers.system import (SystemDataTransformer,
+                                          _SYSTEM_DT_INPUT_QUEUE,
+                                          _SYSTEM_DT_INPUT_ROUTING_KEY)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.system import System
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, \
-    STORE_EXCHANGE, ALERT_EXCHANGE
-from src.utils.exceptions import PANICException, SystemIsDownException, \
-    ReceivedUnexpectedDataException
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
+                                 STORE_EXCHANGE, ALERT_EXCHANGE)
+from src.utils.exceptions import (PANICException, SystemIsDownException,
+                                  ReceivedUnexpectedDataException)
 from src.utils.types import convert_to_float_if_not_none
 
 
