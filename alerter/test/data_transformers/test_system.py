@@ -15,6 +15,7 @@ from src.monitorables.system import System
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, \
     STORE_EXCHANGE, ALERT_EXCHANGE
+from src.utils.exceptions import PANICException, SystemIsDownException
 from src.utils.types import convert_to_float_if_not_none
 
 
@@ -23,13 +24,14 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
-        # self.rabbit_ip = env.RABBIT_IP
         self.rabbit_ip = 'localhost'
+        # self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_TEST_DB
-        self.redis_host = env.REDIS_IP
+        self.redis_host = 'localhost'
+        # self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -51,6 +53,9 @@ class TestSystemDataTransformer(unittest.TestCase):
             'component_name': 'Test Component',
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
+        self.test_system_is_down_exception = SystemIsDownException(
+            self.test_system.system_name)
+        self.test_exception = PANICException('test_exception', 1)
         self.test_went_down_at = None
         self.test_process_cpu_seconds_total = 100
         self.test_process_memory_usage = 95
@@ -84,7 +89,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system.set_network_transmit_bytes_per_second(
             self.test_network_transmit_bytes_per_second)
         self.test_system.set_network_transmit_bytes_total(
-            self.test_network_transmit_bytes_per_second)
+            self.test_network_transmit_bytes_total)
         self.test_system.set_network_receive_bytes_per_second(
             self.test_network_receive_bytes_per_second)
         self.test_system.set_network_receive_bytes_total(
@@ -94,6 +99,65 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system.set_disk_io_time_seconds_total(
             self.test_disk_io_time_seconds_total)
         self.test_system.set_last_monitored(self.test_last_monitored)
+
+        self.raw_data_example_result = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': 'test_monitor',
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': {
+                    'process_cpu_seconds_total': 2786.82,
+                    'process_memory_usage': 56,
+                    'virtual_memory_usage': 118513664.0,
+                    'open_file_descriptors': 0.78125,
+                    'system_cpu_usage': 7.85,
+                    'system_ram_usage': 34.09,
+                    'system_storage_usage': 44.37,
+                    'network_transmit_bytes_total': 1011572205557.0,
+                    'network_receive_bytes_total': 722359147027.0,
+                    'disk_io_time_seconds_total': 76647.0,
+                },
+            }
+        }
+        self.raw_data_example_general_error = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': 'test_monitor',
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
+            }
+        }
+        self.raw_data_example_downtime_error = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': 'test_monitor',
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'message': self.test_system_is_down_exception.message,
+                'code': self.test_system_is_down_exception.code,
+            }
+        }
+        self.transformed_data_example_result = {
+
+        }
+        self.transformed_data_example_general_error = {
+
+        }
+        self.transformed_data_example_downtime_error = {
+
+        }
 
         self.test_data_transformer = SystemDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
@@ -143,6 +207,8 @@ class TestSystemDataTransformer(unittest.TestCase):
 
         self.dummy_logger = None
         self.rabbitmq = None
+        self.test_system_is_down_exception = None
+        self.test_exception = None
         self.redis = None
         self.test_system = None
         self.test_state = None
@@ -290,9 +356,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     def test_save_to_redis_saves_system_to_redis_correctly(self) -> None:
-        # todo: tomorrow start from this test to see why it fails and then run
-        #     : it in production to see that it passes
-
         # Clean test db
         self.redis.delete_all()
 
@@ -300,54 +363,59 @@ class TestSystemDataTransformer(unittest.TestCase):
 
         redis_hash = Keys.get_hash_parent(self.test_system.parent_id)
         system_id = self.test_system.system_id
-        actual_went_down_at = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_went_down_at(system_id), None))
-        actual_process_cpu_seconds_total = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_process_cpu_seconds_total(system_id), None))
-        actual_process_memory_usage = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_process_memory_usage(system_id), None))
-        actual_virtual_memory_usage = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_virtual_memory_usage(system_id), None))
-        actual_open_file_descriptors = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_open_file_descriptors(system_id), None))
-        actual_system_cpu_usage = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_system_cpu_usage(system_id), None))
-        actual_system_ram_usage = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_system_ram_usage(system_id), None))
-        actual_system_storage_usage = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_system_storage_usage(system_id), None))
-        actual_network_transmit_bytes_per_second = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_network_transmit_bytes_per_second(system_id),
-                None))
-        actual_network_transmit_bytes_total = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_network_transmit_bytes_total(system_id), None))
-        actual_network_receive_bytes_per_second = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_network_receive_bytes_per_second(system_id),
-                None))
-        actual_network_receive_bytes_total = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_network_receive_bytes_total(system_id), None))
-        actual_disk_io_time_seconds_in_interval = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_disk_io_time_seconds_in_interval(system_id),
-                None))
-        actual_disk_io_time_seconds_total = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_disk_io_time_seconds_total(system_id), None))
-        actual_last_monitored = self.redis.hget(
-            redis_hash, convert_to_float_if_not_none(
-                Keys.get_system_last_monitored(system_id), None))
+        actual_went_down_at = convert_to_float_if_not_none(self.redis.hget(
+            redis_hash, Keys.get_system_went_down_at(system_id)), None)
+        actual_process_cpu_seconds_total = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash,
+                Keys.get_system_process_cpu_seconds_total(system_id)), None)
+        actual_process_memory_usage = convert_to_float_if_not_none(
+            self.redis.hget(redis_hash,
+                            Keys.get_system_process_memory_usage(system_id)),
+            None)
+        actual_virtual_memory_usage = convert_to_float_if_not_none(
+            self.redis.hget(redis_hash,
+                            Keys.get_system_virtual_memory_usage(system_id)),
+            None)
+        actual_open_file_descriptors = convert_to_float_if_not_none(
+            self.redis.hget(redis_hash,
+                            Keys.get_system_open_file_descriptors(system_id)),
+            None)
+        actual_system_cpu_usage = convert_to_float_if_not_none(self.redis.hget(
+            redis_hash, Keys.get_system_system_cpu_usage(system_id)), None)
+        actual_system_ram_usage = convert_to_float_if_not_none(self.redis.hget(
+            redis_hash, Keys.get_system_system_ram_usage(system_id)), None)
+        actual_system_storage_usage = convert_to_float_if_not_none(
+            self.redis.hget(redis_hash,
+                            Keys.get_system_system_storage_usage(system_id)),
+            None)
+        actual_network_transmit_bytes_per_second = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash, Keys.get_system_network_transmit_bytes_per_second(
+                    system_id)), None)
+        actual_network_transmit_bytes_total = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash,
+                Keys.get_system_network_transmit_bytes_total(system_id)), None)
+        actual_network_receive_bytes_per_second = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash, Keys.get_system_network_receive_bytes_per_second(
+                    system_id)), None)
+        actual_network_receive_bytes_total = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash,
+                Keys.get_system_network_receive_bytes_total(system_id)), None)
+        actual_disk_io_time_seconds_in_interval = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash,
+                Keys.get_system_disk_io_time_seconds_in_interval(system_id)),
+            None)
+        actual_disk_io_time_seconds_total = convert_to_float_if_not_none(
+            self.redis.hget(
+                redis_hash,
+                Keys.get_system_disk_io_time_seconds_total(system_id)), None)
+        actual_last_monitored = convert_to_float_if_not_none(self.redis.hget(
+            redis_hash, Keys.get_system_last_monitored(system_id)), None)
 
         self.assertEqual(actual_went_down_at, self.test_system.went_down_at)
         self.assertEqual(actual_process_cpu_seconds_total,
@@ -367,7 +435,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(actual_network_transmit_bytes_per_second,
                          self.test_system.network_transmit_bytes_per_second)
         self.assertEqual(actual_network_transmit_bytes_total,
-                         self.test_system.network_trasnmit_bytes_total)
+                         self.test_system.network_transmit_bytes_total)
         self.assertEqual(actual_network_receive_bytes_per_second,
                          self.test_system.network_receive_bytes_per_second)
         self.assertEqual(actual_network_receive_bytes_total,
@@ -380,23 +448,154 @@ class TestSystemDataTransformer(unittest.TestCase):
 
     def test_load_state_successful_if_state_exists_in_redis_and_redis_online(
             self) -> None:
-        pass
+        # Save state to Redis first
+        self.test_data_transformer.save_to_redis(self.test_system)
+
+        # Reset system to default values
+        self.test_system.reset()
+
+        # Load state
+        loaded_system = self.test_data_transformer.load_state(self.test_system)
+
+        self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
+        self.assertEqual(self.test_process_cpu_seconds_total,
+                         loaded_system.process_cpu_seconds_total)
+        self.assertEqual(self.test_process_memory_usage,
+                         loaded_system.process_memory_usage)
+        self.assertEqual(self.test_virtual_memory_usage,
+                         loaded_system.virtual_memory_usage)
+        self.assertEqual(self.test_open_file_descriptors,
+                         loaded_system.open_file_descriptors)
+        self.assertEqual(self.test_system_cpu_usage,
+                         loaded_system.system_cpu_usage)
+        self.assertEqual(self.test_system_ram_usage,
+                         loaded_system.system_ram_usage)
+        self.assertEqual(self.test_system_storage_usage,
+                         loaded_system.system_storage_usage)
+        self.assertEqual(self.test_network_transmit_bytes_per_second,
+                         loaded_system.network_transmit_bytes_per_second)
+        self.assertEqual(self.test_network_transmit_bytes_total,
+                         loaded_system.network_transmit_bytes_total)
+        self.assertEqual(self.test_network_receive_bytes_per_second,
+                         loaded_system.network_receive_bytes_per_second)
+        self.assertEqual(self.test_network_receive_bytes_total,
+                         loaded_system.network_receive_bytes_total)
+        self.assertEqual(self.test_disk_io_time_seconds_in_interval,
+                         loaded_system.disk_io_time_seconds_in_interval)
+        self.assertEqual(self.test_disk_io_time_seconds_total,
+                         loaded_system.disk_io_time_seconds_total)
+        self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
     def test_load_state_keeps_same_state_if_state_in_redis_and_redis_offline(
             self) -> None:
-        pass
+        # Save state to Redis first
+        self.test_data_transformer.save_to_redis(self.test_system)
+
+        # Reset system to default values
+        self.test_system.reset()
+
+        # Set the _do_not_use_if_recently_went_down function to return True
+        # as if the system is down
+        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
+            lambda: True
+
+        # Load state
+        loaded_system = self.test_data_transformer.load_state(self.test_system)
+
+        self.assertEqual(None, loaded_system.went_down_at)
+        self.assertEqual(None, loaded_system.process_cpu_seconds_total)
+        self.assertEqual(None, loaded_system.process_memory_usage)
+        self.assertEqual(None, loaded_system.virtual_memory_usage)
+        self.assertEqual(None, loaded_system.open_file_descriptors)
+        self.assertEqual(None, loaded_system.system_cpu_usage)
+        self.assertEqual(None, loaded_system.system_ram_usage)
+        self.assertEqual(None, loaded_system.system_storage_usage)
+        self.assertEqual(None, loaded_system.network_transmit_bytes_per_second)
+        self.assertEqual(None, loaded_system.network_transmit_bytes_total)
+        self.assertEqual(None, loaded_system.network_receive_bytes_per_second)
+        self.assertEqual(None, loaded_system.network_receive_bytes_total)
+        self.assertEqual(None, loaded_system.disk_io_time_seconds_in_interval)
+        self.assertEqual(None, loaded_system.disk_io_time_seconds_total)
+        self.assertEqual(None, loaded_system.last_monitored)
 
     def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_online(
             self) -> None:
-        pass
+        # Clean test db
+        self.redis.delete_all()
+
+        # Set the _do_not_use_if_recently_went_down function to return True
+        # as if the system is down
+        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
+            lambda: True
+
+        # Load state
+        loaded_system = self.test_data_transformer.load_state(self.test_system)
+
+        self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
+        self.assertEqual(self.test_process_cpu_seconds_total,
+                         loaded_system.process_cpu_seconds_total)
+        self.assertEqual(self.test_process_memory_usage,
+                         loaded_system.process_memory_usage)
+        self.assertEqual(self.test_virtual_memory_usage,
+                         loaded_system.virtual_memory_usage)
+        self.assertEqual(self.test_open_file_descriptors,
+                         loaded_system.open_file_descriptors)
+        self.assertEqual(self.test_system_cpu_usage,
+                         loaded_system.system_cpu_usage)
+        self.assertEqual(self.test_system_ram_usage,
+                         loaded_system.system_ram_usage)
+        self.assertEqual(self.test_system_storage_usage,
+                         loaded_system.system_storage_usage)
+        self.assertEqual(self.test_network_transmit_bytes_per_second,
+                         loaded_system.network_transmit_bytes_per_second)
+        self.assertEqual(self.test_network_transmit_bytes_total,
+                         loaded_system.network_transmit_bytes_total)
+        self.assertEqual(self.test_network_receive_bytes_per_second,
+                         loaded_system.network_receive_bytes_per_second)
+        self.assertEqual(self.test_network_receive_bytes_total,
+                         loaded_system.network_receive_bytes_total)
+        self.assertEqual(self.test_disk_io_time_seconds_in_interval,
+                         loaded_system.disk_io_time_seconds_in_interval)
+        self.assertEqual(self.test_disk_io_time_seconds_total,
+                         loaded_system.disk_io_time_seconds_total)
+        self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
     def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_off(
             self) -> None:
-        pass
+        # Clean test db
+        self.redis.delete_all()
 
-    def test_load_state_loads_state_successfully_from_redis_if_redis_online(
-            self) -> None:
-        pass
+        # Load state
+        loaded_system = self.test_data_transformer.load_state(self.test_system)
+
+        self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
+        self.assertEqual(self.test_process_cpu_seconds_total,
+                         loaded_system.process_cpu_seconds_total)
+        self.assertEqual(self.test_process_memory_usage,
+                         loaded_system.process_memory_usage)
+        self.assertEqual(self.test_virtual_memory_usage,
+                         loaded_system.virtual_memory_usage)
+        self.assertEqual(self.test_open_file_descriptors,
+                         loaded_system.open_file_descriptors)
+        self.assertEqual(self.test_system_cpu_usage,
+                         loaded_system.system_cpu_usage)
+        self.assertEqual(self.test_system_ram_usage,
+                         loaded_system.system_ram_usage)
+        self.assertEqual(self.test_system_storage_usage,
+                         loaded_system.system_storage_usage)
+        self.assertEqual(self.test_network_transmit_bytes_per_second,
+                         loaded_system.network_transmit_bytes_per_second)
+        self.assertEqual(self.test_network_transmit_bytes_total,
+                         loaded_system.network_transmit_bytes_total)
+        self.assertEqual(self.test_network_receive_bytes_per_second,
+                         loaded_system.network_receive_bytes_per_second)
+        self.assertEqual(self.test_network_receive_bytes_total,
+                         loaded_system.network_receive_bytes_total)
+        self.assertEqual(self.test_disk_io_time_seconds_in_interval,
+                         loaded_system.disk_io_time_seconds_in_interval)
+        self.assertEqual(self.test_disk_io_time_seconds_total,
+                         loaded_system.disk_io_time_seconds_total)
+        self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
 # todo: change comment in component and env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
