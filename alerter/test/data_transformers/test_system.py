@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import unittest
@@ -15,7 +16,8 @@ from src.monitorables.system import System
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, \
     STORE_EXCHANGE, ALERT_EXCHANGE
-from src.utils.exceptions import PANICException, SystemIsDownException
+from src.utils.exceptions import PANICException, SystemIsDownException, \
+    ReceivedUnexpectedDataException
 from src.utils.types import convert_to_float_if_not_none
 
 
@@ -65,7 +67,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_ram_usage = None
         self.test_system_storage_usage = 49
         self.test_network_transmit_bytes_per_second = 456546
-        self.test_network_transmit_bytes_total = 4536363563573
+        self.test_network_transmit_bytes_total = 45363635635
         self.test_network_receive_bytes_per_second = 345
         self.test_network_receive_bytes_total = 4564567
         self.test_disk_io_time_seconds_in_interval = 45
@@ -150,13 +152,55 @@ class TestSystemDataTransformer(unittest.TestCase):
             }
         }
         self.transformed_data_example_result = {
-
+            'result': {
+                'meta_data': {
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'last_monitored': datetime(2012, 1, 1).timestamp() + 60
+                },
+                'data': {
+                    'process_cpu_seconds_total': 2786.82,
+                    'process_memory_usage': 56,
+                    'virtual_memory_usage': 118513664.0,
+                    'open_file_descriptors': 0.78125,
+                    'system_cpu_usage': 7.85,
+                    'system_ram_usage': 34.09,
+                    'system_storage_usage': 44.37,
+                    'network_transmit_bytes_total': 1011572205557.0,
+                    'network_receive_bytes_total': 722359147027.0,
+                    'disk_io_time_seconds_total': 76647.0,
+                    'went_down_at': None,
+                    'network_transmit_bytes_per_second': 16103476165.36667,
+                    'network_receive_bytes_per_second': 12039243041.0,
+                    'disk_io_time_seconds_in_interval': 70300,
+                },
+            }
         }
         self.transformed_data_example_general_error = {
-
+            'error': {
+                'meta_data': {
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp() + 60
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
+            }
         }
         self.transformed_data_example_downtime_error = {
-
+            'error': {
+                'meta_data': {
+                    'system_name': self.test_system.system_name,
+                    'system_id': self.test_system.system_id,
+                    'system_parent_id': self.test_system.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp() + 60
+                },
+                'message': self.test_system_is_down_exception.message,
+                'code': self.test_system_is_down_exception.code,
+                'data': {'went_down_at': datetime(2012, 1, 1).timestamp() + 60}
+            }
         }
 
         self.test_data_transformer = SystemDataTransformer(
@@ -596,6 +640,69 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_disk_io_time_seconds_total,
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
+
+    def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
+            self) -> None:
+        invalid_transformed_data = {'bad_key': 'bad_value'}
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._update_state,
+                          invalid_transformed_data)
+
+    def test_update_state_leaves_same_state_if_no_result_or_err_in_trans_data(
+            self) -> None:
+        invalid_transformed_data = {'bad_key': 'bad_value'}
+        self.test_data_transformer._state = self.test_state
+        expected_state = copy.deepcopy(self.test_state)
+
+        # First confirm that an exception is still raised
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._update_state,
+                          invalid_transformed_data)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(expected_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the stored system state has the same variable values. This
+        # must be done separately as otherwise the object's low level address
+        # will be compared
+        for system_id in expected_state.keys():
+            self.assertEqual(
+                expected_state[system_id].__dict__,
+                self.test_data_transformer.state[system_id].__dict__)
+
+    def test_update_state_raise_key_error_exception_if_keys_do_not_exist_result(
+            self) -> None:
+        invalid_transformed_data = copy.deepcopy(
+            self.transformed_data_example_result)
+        del invalid_transformed_data['result']['data']
+        self.test_data_transformer._state = self.test_state
+
+        # First confirm that an exception is still raised
+        self.assertRaises(KeyError, self.test_data_transformer._update_state,
+                          invalid_transformed_data)
+
+    def test_update_state_raises_key_error_exception_if_keys_do_not_exist_error(
+            self) -> None:
+        invalid_transformed_data = copy.deepcopy(
+            self.transformed_data_example_downtime_error)
+        del invalid_transformed_data['error']['data']
+        self.test_data_transformer._state = self.test_state
+
+        # First confirm that an exception is still raised
+        self.assertRaises(KeyError, self.test_data_transformer._update_state,
+                          invalid_transformed_data)
+
+    def test_update_state_updates_state_correctly_on_result_data(self) -> None:
+        pass
+
+    def test_update_state_updates_state_correctly_on_error_data_general_except(
+            self) -> None:
+        pass
+
+    def test_update_state_updates_state_correctly_on_error_data_downtime_except(
+            self) -> None:
+        pass
 
 # todo: change comment in component and env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
