@@ -29,13 +29,13 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_TEST_DB
         self.redis_host = 'localhost'
-        # self.redis_host = env.REDIS_IP
+        self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -204,6 +204,29 @@ class TestSystemDataTransformer(unittest.TestCase):
                 'data': {'went_down_at': datetime(2012, 1, 1).timestamp() + 60}
             }
         }
+        self.test_system_new_metrics = System(self.test_system_name,
+                                              self.test_system_id,
+                                              self.test_system_parent_id)
+        self.test_system_new_metrics.set_went_down_at(None)
+        self.test_system_new_metrics.set_process_cpu_seconds_total(2786.82)
+        self.test_system_new_metrics.set_process_memory_usage(56)
+        self.test_system_new_metrics.set_virtual_memory_usage(118513664.0)
+        self.test_system_new_metrics.set_open_file_descriptors(0.78125)
+        self.test_system_new_metrics.set_system_cpu_usage(7.85)
+        self.test_system_new_metrics.set_system_ram_usage(34.09)
+        self.test_system_new_metrics.set_system_storage_usage(44.37)
+        self.test_system_new_metrics.set_network_transmit_bytes_per_second(
+            16103476165.36667)
+        self.test_system_new_metrics.set_network_transmit_bytes_total(
+            1011572205557.0)
+        self.test_system_new_metrics.set_network_receive_bytes_per_second(
+            12039243041.0)
+        self.test_system_new_metrics.set_network_receive_bytes_total(
+            722359147027.0)
+        self.test_system_new_metrics.set_disk_io_time_seconds_in_interval(70300)
+        self.test_system_new_metrics.set_disk_io_time_seconds_total(76647.0)
+        self.test_system_new_metrics.set_last_monitored(
+            datetime(2012, 1, 1).timestamp() + 60)
 
         self.test_data_transformer = SystemDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
@@ -257,6 +280,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_exception = None
         self.redis = None
         self.test_system = None
+        self.test_system_new_metrics = None
         self.test_state = None
         self.test_publishing_queue = None
         self.test_data_transformer = None
@@ -669,7 +693,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         # must be done separately as otherwise the object's low level address
         # will be compared
         for system_id in expected_state.keys():
-            self.assertEqual(
+            self.assertDictEqual(
                 expected_state[system_id].__dict__,
                 self.test_data_transformer.state[system_id].__dict__)
 
@@ -696,15 +720,88 @@ class TestSystemDataTransformer(unittest.TestCase):
                           invalid_transformed_data)
 
     def test_update_state_updates_state_correctly_on_result_data(self) -> None:
-        pass
+        self.test_data_transformer._state = self.test_state
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+        old_state = copy.deepcopy(self.test_data_transformer._state)
+
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_result)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(old_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the systems not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        # Check that the system's state values have been modified to the new
+        # metrics
+        self.assertDictEqual(
+            self.test_system_new_metrics.__dict__,
+            self.test_data_transformer._state[self.test_system_id].__dict__)
+
+        # Check that the system is marked as up
+        self.assertFalse(
+            self.test_data_transformer._state[self.test_system_id].is_down)
 
     def test_update_state_updates_state_correctly_on_error_data_general_except(
             self) -> None:
-        pass
+        self.test_data_transformer._state = self.test_state
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+        old_state = copy.deepcopy(self.test_data_transformer._state)
+
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_general_error)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(old_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the systems not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        # Check that the system's state values have not been changed. When there
+        # are general exceptions, the state doesn't need to change
+        self.assertDictEqual(
+            old_state[self.test_system_id].__dict__,
+            self.test_data_transformer._state[self.test_system_id].__dict__)
+
+        # Check that the system is still up
+        self.assertFalse(
+            self.test_data_transformer._state[self.test_system_id].is_down)
 
     def test_update_state_updates_state_correctly_on_error_data_downtime_except(
             self) -> None:
-        pass
+        self.test_data_transformer._state = self.test_state
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+        expected_state = copy.deepcopy(self.test_data_transformer._state)
+        expected_state[self.test_system_id].set_went_down_at(
+            self.transformed_data_example_downtime_error['error']['data'][
+                'went_down_at']
+        )
+
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_downtime_error)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(expected_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the systems not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        # Check that the system's state values have been changed to the latest
+        # metrics
+        self.assertDictEqual(
+            expected_state[self.test_system_id].__dict__,
+            self.test_data_transformer._state[self.test_system_id].__dict__)
+
+        # Check that the system is marked as down
+        self.assertTrue(
+            self.test_data_transformer._state[self.test_system_id].is_down)
 
 # todo: change comment in component and env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
