@@ -131,10 +131,10 @@ class TestAlertRouter(unittest.TestCase):
 
     def tearDown(self) -> None:
         # flush and consume all from rabbit queues and exchanges
+        self.connect_to_rabbit()
         queues = [ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                   _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME]
         for queue in queues:
-            self.connect_to_rabbit()
             self.delete_queue_if_exists(queue)
 
         exchanges = [
