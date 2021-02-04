@@ -77,9 +77,10 @@ class TestConfigsManager(unittest.TestCase):
 
     def tearDown(self) -> None:
         # flush and consume all from rabbit queues and exchanges
+        self.connect_to_rabbit()
+
         queues = [CONFIG_PING_QUEUE]
         for queue in queues:
-            self.connect_to_rabbit()
             self.delete_queue_if_exists(queue)
 
         exchanges = [CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE]
