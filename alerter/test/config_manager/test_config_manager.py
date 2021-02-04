@@ -35,6 +35,7 @@ class TestConfigsManager(unittest.TestCase):
         while tries < attempts:
             try:
                 self.rabbitmq.connect()
+                return
             except Exception as e:
                 tries += 1
                 print("Could not connect to rabbit. Attempts so far: {}".format(
@@ -49,6 +50,7 @@ class TestConfigsManager(unittest.TestCase):
         while tries < attempts:
             try:
                 self.rabbitmq.disconnect()
+                return
             except Exception as e:
                 tries += 1
                 print("Could not connect to rabbit. Attempts so far: {}".format(

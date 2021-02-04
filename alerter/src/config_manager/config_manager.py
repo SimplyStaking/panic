@@ -55,7 +55,6 @@ class ConfigsManager(PublisherComponent):
         :param case_sensitive: Whether the patterns in `file_patterns` and
             `ignore_file_patterns` are case sensitive. Defaults to False
         """
-        super().__init__(logger, )
         if not file_patterns:
             file_patterns = ['*.ini']
 
@@ -65,7 +64,7 @@ class ConfigsManager(PublisherComponent):
         self._watching = False
         self._connected_to_rabbit = False
 
-        self._logger.debug("Creating config RabbitMQ connection")
+        logger.debug("Creating config RabbitMQ connection")
         rabbitmq = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
