@@ -291,8 +291,8 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         try:
             heartbeat = {
                 'component_name': self.name,
-                'is_alive':       True,
-                'timestamp':      datetime.now().timestamp(),
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp(),
             }
 
             self._send_heartbeat(heartbeat)
@@ -369,23 +369,23 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
 
         if "twilio" in config_filename:
             return {
-                'id':         section.get('id'),
+                'id': section.get('id'),
                 'parent_ids': [x for x in section.get('parent_ids').split(",")
                                if x.strip()],
-                'info':       False,
-                'warning':    False,
-                'error':      False,
-                'critical':   True,
+                'info': False,
+                'warning': False,
+                'error': False,
+                'critical': True,
             }
 
         return {
-            'id':         section.get('id'),
+            'id': section.get('id'),
             'parent_ids': [x for x in section.get('parent_ids').split(",") if
                            x.strip()],
-            'info':       section.getboolean('info'),
-            'warning':    section.getboolean('warning'),
-            'error':      section.getboolean('error'),
-            'critical':   section.getboolean('critical'),
+            'info': section.getboolean('info'),
+            'warning': section.getboolean('warning'),
+            'error': section.getboolean('error'),
+            'critical': section.getboolean('critical'),
         }
 
     @staticmethod
