@@ -227,7 +227,7 @@ class TestAlertRouter(unittest.TestCase):
             self._test_alert_router._initialise_rabbitmq()
 
             mock_basic_consume.assert_called()
-            mock_confirm_delivery.assert_called()
+            mock_confirm_delivery.assert_called_once()
 
             self.assertEqual(3, mock_basic_consume.call_count)
             self.rabbitmq.exchange_declare(exchange_to_check, passive=True)
