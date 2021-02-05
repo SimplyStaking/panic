@@ -70,7 +70,7 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def save_to_redis(self, system: Union[System, GitHubRepo]) -> None:
+    def _save_to_redis(self, system: Union[System, GitHubRepo]) -> None:
         # Save it in redis just in case the process restarts
         redis_hash = Keys.get_hash_parent(system.parent_id)
         system_id = system.system_id
@@ -625,7 +625,7 @@ class SystemDataTransformer(DataTransformer):
         if not processing_error:
             try:
                 self._update_state(transformed_data)
-                self.save_to_redis(self.state[system_id])
+                self._save_to_redis(self.state[system_id])
                 self.logger.info("Successfully processed %s", raw_data)
             except Exception as e:
                 self.logger.error("Error when processing %s", raw_data)
