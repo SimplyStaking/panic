@@ -20,12 +20,12 @@ DB_IP = os.environ['DB_IP']
 DB_PORT = int(os.environ['DB_PORT'])
 
 # Redis configuration
-REDIS_IP = os.environ['REDIS_IP']
+REDIS_IP = 'localhost'
 REDIS_PORT = int(os.environ['REDIS_PORT'])
 REDIS_DB = int(os.environ['REDIS_DB'])
 
 # RabbitMQ configuration
-RABBIT_IP = os.environ['RABBIT_IP']
+RABBIT_IP = 'localhost'
 RABBIT_PORT = int(os.environ['RABBIT_PORT'])
 
 # Logs configuration

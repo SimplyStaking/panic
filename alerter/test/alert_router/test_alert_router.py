@@ -42,9 +42,26 @@ class TestAlertRouter(unittest.TestCase):
         self._redis_db = 1
         self._redis_port = 6379
 
-        self._rabbitmq = RabbitMQApi(
+        self.rabbitmq = RabbitMQApi(
             self._rabbit_logger, self._rabbit_ip,
             connection_check_time_interval=self._connection_check_time_interval)
+
+        self.connect_to_rabbit()
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
+                                       False, False)
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic", False,
+                                       True,
+                                       False, False)
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
+                                       False, False)
+        self.rabbitmq.queue_declare(ALERT_ROUTER_CONFIGS_QUEUE_NAME, False,
+                                    True, False, False)
+        self.rabbitmq.queue_declare(_ALERT_ROUTER_INPUT_QUEUE_NAME, False, True,
+                                    False, False)
+        self.rabbitmq.queue_declare(_HEARTBEAT_QUEUE_NAME, False, True, False,
+                                    False)
 
         self._redis = RedisApi(self._redis_logger, self._redis_db,
                                self._redis_ip, self._redis_port)
@@ -53,24 +70,24 @@ class TestAlertRouter(unittest.TestCase):
         self.ALERT_ROUTER_ROUTING_KEY = "alert_router.test"
         self.TEST_CHANNEL_CONFIG_FILE = {
             'test_123': {
-                'id':           "test_123",
+                'id': "test_123",
                 'channel_name': "test_channel",
-                'info':         "false",
-                'warning':      "false",
-                'critical':     "false",
-                'error':        "false",
-                'parent_ids':   "GENERAL,",
+                'info': "false",
+                'warning': "false",
+                'critical': "false",
+                'error': "false",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
 
         self.TEST_CHANNEL_CONFIG = {
             'test_123': {
-                'id':         "test_123",
-                'info':       False,
-                'warning':    False,
-                'critical':   False,
-                'error':      False,
+                'id': "test_123",
+                'info': False,
+                'warning': False,
+                'critical': False,
+                'error': False,
                 'parent_ids': ["GENERAL"],
             }
         }
@@ -86,7 +103,7 @@ class TestAlertRouter(unittest.TestCase):
 
         while tries < attempts:
             try:
-                self._rabbitmq.connect()
+                self.rabbitmq.connect()
                 return
             except Exception as e:
                 tries += 1
@@ -101,7 +118,7 @@ class TestAlertRouter(unittest.TestCase):
 
         while tries < attempts:
             try:
-                self._rabbitmq.disconnect()
+                self.rabbitmq.disconnect()
                 return
             except Exception as e:
                 tries += 1
@@ -111,31 +128,34 @@ class TestAlertRouter(unittest.TestCase):
                 if tries >= attempts:
                     raise e
 
-    def delete_queue_if_exists(self, queue_name: str) -> None:
+    def delete_queue_if_exists(self, queue_name: str, attempt: int = 0) -> None:
         try:
-            self._rabbitmq.queue_declare(queue_name, passive=True)
-            self._rabbitmq.queue_purge(queue_name)
-            self._rabbitmq.queue_delete(queue_name)
+            self.rabbitmq.queue_declare(queue_name, passive=True)
+            self.rabbitmq.queue_purge(queue_name)
+            self.rabbitmq.queue_delete(queue_name)
         except pika.exceptions.ChannelClosedByBroker:
             print("Queue {} does not exist - don't need to close".format(
                 queue_name
             ))
 
-    def delete_exchange_if_exists(self, exchange_name: str) -> None:
+    def delete_exchange_if_exists(
+            self, exchange_name: str, attempt: int = 0
+    ) -> None:
         try:
-            self._rabbitmq.exchange_declare(exchange_name, passive=True)
-            self._rabbitmq.exchange_delete(exchange_name)
+            self.rabbitmq.exchange_declare(exchange_name, passive=True)
+            self.rabbitmq.exchange_delete(exchange_name)
         except pika.exceptions.ChannelClosedByBroker:
             print("Exchange {} does not exist - don't need to close".format(
                 exchange_name))
 
     def tearDown(self) -> None:
         # flush and consume all from rabbit queues and exchanges
-        self.connect_to_rabbit()
+        self.rabbitmq.connect_till_successful()
         queues = [ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                   _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME]
         for queue in queues:
-            self.delete_queue_if_exists(queue)
+            self.rabbitmq.queue_purge(queue)
+            self.rabbitmq.queue_delete(queue)
 
         exchanges = [
             ALERT_EXCHANGE, CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -143,7 +163,7 @@ class TestAlertRouter(unittest.TestCase):
         ]
 
         for exchange in exchanges:
-            self.delete_exchange_if_exists(exchange)
+            self.rabbitmq.exchange_delete(exchange)
 
         self.disconnect_from_rabbit()
 
@@ -176,9 +196,10 @@ class TestAlertRouter(unittest.TestCase):
             self._test_alert_router._initialise_rabbitmq()
 
             mock_basic_consume.assert_called()
-            mock_confirm_delivery.assert_called()
+            mock_confirm_delivery.assert_called_once()
 
-            self._rabbitmq.queue_declare(queue_to_check, passive=True)
+            self.assertEqual(3, mock_basic_consume.call_count)
+            self.rabbitmq.queue_declare(queue_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(queue_to_check))
         finally:
@@ -208,7 +229,8 @@ class TestAlertRouter(unittest.TestCase):
             mock_basic_consume.assert_called()
             mock_confirm_delivery.assert_called()
 
-            self._rabbitmq.exchange_declare(exchange_to_check, passive=True)
+            self.assertEqual(3, mock_basic_consume.call_count)
+            self.rabbitmq.exchange_declare(exchange_to_check, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(exchange_to_check))
         finally:
@@ -221,8 +243,8 @@ class TestAlertRouter(unittest.TestCase):
     ):
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
 
             mock_ack.return_value = None
             mock_extract_config.return_value = self.TEST_CHANNEL_CONFIG[
@@ -260,24 +282,24 @@ class TestAlertRouter(unittest.TestCase):
     def test_process_config_correct_update(self, mock_ack, mock_extract_config):
         updated_config_file = {
             'test_123': {
-                'id':           "test_123",
+                'id': "test_123",
                 'channel_name': "test_channel",
-                'info':         "true",
-                'warning':      "true",
-                'critical':     "false",
-                'error':        "true",
-                'parent_ids':   "GENERAL,",
+                'info': "true",
+                'warning': "true",
+                'critical': "false",
+                'error': "true",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
 
         updated_config = {
             'test_123': {
-                'id':         "test_123",
-                'info':       True,
-                'warning':    True,
-                'critical':   False,
-                'error':      True,
+                'id': "test_123",
+                'info': True,
+                'warning': True,
+                'critical': False,
+                'error': True,
                 'parent_ids': ["GENERAL"],
             }
         }
@@ -289,8 +311,8 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
             # Must create a connection so that the blocking channel is passed
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
@@ -338,11 +360,11 @@ class TestAlertRouter(unittest.TestCase):
         # mocked
         updated_incorrect_config_file = {
             'test_123': {
-                'id':           "test_123",
+                'id': "test_123",
                 'channel_name': "test_channel",
-                'critical':     "false",
-                'error':        "true",
-                'parent_ids':   "GENERAL,",
+                'critical': "false",
+                'error': "true",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -355,8 +377,8 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
 
             # Must create a connection so that the blocking channel is passed
             self._test_alert_router._initialise_rabbitmq()
@@ -405,11 +427,11 @@ class TestAlertRouter(unittest.TestCase):
         # mocked
         updated_incorrect_config_file = {
             'test_123': {
-                'id':           "test_123",
+                'id': "test_123",
                 'channel_name': "test_channel",
-                'critical':     "false",
-                'error':        "true",
-                'parent_ids':   "GENERAL,",
+                'critical': "false",
+                'error': "true",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -422,8 +444,8 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
 
             # Must create a connection so that the blocking channel is passed
             self._test_alert_router._initialise_rabbitmq()
@@ -469,24 +491,24 @@ class TestAlertRouter(unittest.TestCase):
     ):
         second_correct_config_file = {
             'test_234': {
-                'id':           "test_234",
+                'id': "test_234",
                 'channel_name': "test_channel",
-                'info':         "true",
-                'warning':      "false",
-                'critical':     "true",
-                'error':        "true",
-                'parent_ids':   "GENERAL,",
+                'info': "true",
+                'warning': "false",
+                'critical': "true",
+                'error': "true",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
 
         second_correct_config = {
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    False,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': False,
+                'critical': True,
+                'error': True,
                 'parent_ids': ["GENERAL"],
             }
         }
@@ -501,8 +523,8 @@ class TestAlertRouter(unittest.TestCase):
 
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
             # Must create a connection so that the blocking channel is passed
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
@@ -534,7 +556,7 @@ class TestAlertRouter(unittest.TestCase):
             )
 
             expected_output = {
-                second_routing_key:      copy.deepcopy(second_correct_config),
+                second_routing_key: copy.deepcopy(second_correct_config),
                 self.CONFIG_ROUTING_KEY: copy.deepcopy(
                     self.TEST_CHANNEL_CONFIG
                 ),
@@ -564,13 +586,13 @@ class TestAlertRouter(unittest.TestCase):
         config_file = {
             **self.TEST_CHANNEL_CONFIG_FILE,
             'test_234': {
-                'id':           "test_234",
+                'id': "test_234",
                 'channel_name': "test_channel",
-                'info':         "true",
-                'warning':      "false",
-                'critical':     "true",
-                'error':        "true",
-                'parent_ids':   "GENERAL,",
+                'info': "true",
+                'warning': "false",
+                'critical': "true",
+                'error': "true",
+                'parent_ids': "GENERAL,",
                 'parent_names': ""
             }
         }
@@ -578,11 +600,11 @@ class TestAlertRouter(unittest.TestCase):
         config = {
             **self.TEST_CHANNEL_CONFIG,
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    False,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': False,
+                'critical': True,
+                'error': True,
                 'parent_ids': "GENERAL,",
             }
         }
@@ -592,8 +614,8 @@ class TestAlertRouter(unittest.TestCase):
         try:
             # Must create a connection so that the blocking channel is passed
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False,
+                                           True, False, False)
 
             self._test_alert_router._initialise_rabbitmq()
             blocking_channel = self._test_alert_router._rabbitmq.channel
@@ -625,37 +647,37 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'id':           "test_123", 'channel_name': "test_channel",
-                 'info':         "false", 'warning': "false",
-                 'critical':     "false",
-                 'error':        "false", 'parent_ids': "GENERAL,",
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "false", 'warning': "false",
+                 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
                 "channel.test_123",
-                {'id':       "test_123", 'info': False, 'warning': False,
+                {'id': "test_123", 'info': False, 'warning': False,
                  'critical': False, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id':    "test_123", 'channel_name': "test_channel",
-                 'info':  "on", 'warning': "off", 'critical': "yes",
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.test_123",
-                {'id':       "test_123", 'info': True, 'warning': False,
+                {'id': "test_123", 'info': True, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id':         "twilio_123", 'channel_name': "test_channel",
+                {'id': "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123",
-                {'id':       "twilio_123", 'info': False, 'warning': False,
+                {'id': "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
-                {'id':         "twilio_123", 'channel_name': "test_channel",
-                 'info':       "on", 'warning': "off", 'critical': "yes",
-                 'error':      "no",
+                {'id': "twilio_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
+                 'error': "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123",
-                {'id':       "twilio_123", 'info': False, 'warning': False,
+                {'id': "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         )
@@ -690,25 +712,25 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'id':           "test_123", 'channel_name': "test_channel",
-                 'info':         "false", 'warning': "false",
-                 'critical':     "false",
-                 'error':        "false", 'parent_ids': "GENERAL,",
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "false", 'warning': "false",
+                 'critical': "false",
+                 'error': "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
                 "channel.test_123"
         ), (
-                {'id':    "test_123", 'channel_name': "test_channel",
-                 'info':  "on", 'warning': "off", 'critical': "yes",
+                {'id': "test_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.test_123"
         ), (
-                {'id':         "twilio_123", 'channel_name': "test_channel",
+                {'id': "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123"
         ), (
-                {'id':         "twilio_123", 'channel_name': "test_channel",
-                 'info':       "on", 'warning': "off", 'critical': "yes",
-                 'error':      "no",
+                {'id': "twilio_123", 'channel_name': "test_channel",
+                 'info': "on", 'warning': "off", 'critical': "yes",
+                 'error': "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
                 "channel.twilio_123"
         )
@@ -727,27 +749,27 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (
-                {'info':  "false", 'warning': "false", 'critical': "false",
+                {'info': "false", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id':    "test_123", 'warning': "false", 'critical': "false",
+                {'id': "test_123", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id':    "test_123", 'info': "false", 'critical': "false",
+                {'id': "test_123", 'info': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id':    "test_123", 'info': "false", 'warning': "false",
+                {'id': "test_123", 'info': "false", 'warning': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id':       "test_123", 'info': "false", 'warning': "false",
+                {'id': "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'parent_ids': "GENERAL,"},
                 "channel.test_123"
         ), (
-                {'id':       "test_123", 'info': "false", 'warning': "false",
+                {'id': "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'error': "false", },
                 "channel.test_123"
         ), (
@@ -806,16 +828,16 @@ class TestAlertRouter(unittest.TestCase):
 
         config = {
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    True,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': True,
+                'critical': True,
+                'error': True,
                 'parent_ids': "GENERAL,",
             }
         }
 
-        self._test_alert_router._config = {'channel.test': config}
+        self._test_alert_router._config = {self.CONFIG_ROUTING_KEY: config}
         try:
 
             # Must create a connection so that the blocking channel is passed
@@ -909,18 +931,18 @@ class TestAlertRouter(unittest.TestCase):
 
         config = {
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    True,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': True,
+                'critical': True,
+                'error': True,
                 'parent_ids': "GENERAL,",
             }
         }
 
         config['test_234'][severity] = False
 
-        self._test_alert_router._config = {'channel.test': config}
+        self._test_alert_router._config = {self.CONFIG_ROUTING_KEY: config}
 
         try:
             # Must create a connection so that the blocking channel is passed
@@ -1002,16 +1024,16 @@ class TestAlertRouter(unittest.TestCase):
 
         config = {
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    True,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': True,
+                'critical': True,
+                'error': True,
                 'parent_ids': "GENERAL,",
             }
         }
 
-        self._test_alert_router._config = {'channel.test': config}
+        self._test_alert_router._config = {self.CONFIG_ROUTING_KEY: config}
 
         try:
             # Must create a connection so that the blocking channel is passed
@@ -1093,16 +1115,16 @@ class TestAlertRouter(unittest.TestCase):
 
         config = {
             'test_234': {
-                'id':         "test_234",
-                'info':       True,
-                'warning':    True,
-                'critical':   True,
-                'error':      True,
+                'id': "test_234",
+                'info': True,
+                'warning': True,
+                'critical': True,
+                'error': True,
                 'parent_ids': "GENERAL,",
             }
         }
 
-        self._test_alert_router._config = {'channel.test': config}
+        self._test_alert_router._config = {self.CONFIG_ROUTING_KEY: config}
 
         try:
             # Must create a connection so that the blocking channel is passed
@@ -1221,8 +1243,8 @@ class TestAlertRouter(unittest.TestCase):
 
         expected_output = {
             'component_name': self.ALERT_ROUTER_NAME,
-            'is_alive':       True,
-            'timestamp':      datetime(
+            'is_alive': True,
+            'timestamp': datetime(
                 year=1997, month=8, day=15, hour=10, minute=21, second=33,
                 microsecond=30
             ).timestamp()
@@ -1230,18 +1252,17 @@ class TestAlertRouter(unittest.TestCase):
         HEARTBEAT_QUEUE = "hb_test"
         try:
             self.connect_to_rabbit()
-            self._rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic",
-                                            False,
-                                            True, False, False)
+            self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic",
+                                           False, True, False, False)
 
-            queue_res = self._rabbitmq.queue_declare(
+            queue_res = self.rabbitmq.queue_declare(
                 queue=HEARTBEAT_QUEUE, durable=True, exclusive=False,
                 auto_delete=False, passive=False
             )
             self.assertEqual(0, queue_res.method.message_count)
 
-            self._rabbitmq.queue_bind(HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                      "heartbeat.*")
+            self.rabbitmq.queue_bind(HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                     "heartbeat.*")
 
             self._test_alert_router._initialise_rabbitmq()
 
@@ -1257,14 +1278,14 @@ class TestAlertRouter(unittest.TestCase):
 
             # By re-declaring the queue again we can get the number of messages
             # in the queue.
-            queue_res = self._rabbitmq.queue_declare(
+            queue_res = self.rabbitmq.queue_declare(
                 queue=HEARTBEAT_QUEUE, durable=True, exclusive=False,
                 auto_delete=False, passive=True
             )
             self.assertEqual(1, queue_res.method.message_count)
 
             # Check that the message received is a valid HB
-            _, _, body = self._rabbitmq.basic_get(HEARTBEAT_QUEUE)
+            _, _, body = self.rabbitmq.basic_get(HEARTBEAT_QUEUE)
             self.assertDictEqual(expected_output, json.loads(body))
         finally:
             self.delete_queue_if_exists(HEARTBEAT_QUEUE)
