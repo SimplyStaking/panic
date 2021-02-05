@@ -1207,6 +1207,150 @@ class TestSystemDataTransformer(unittest.TestCase):
             KeyError, self.test_data_transformer._place_latest_data_on_queue,
             transformed_data, {}, {})
 
+    def test_process_raw_data_loads_system_in_state_if_system_new(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_updates_state_if_no_processing_errors(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_saves_system_to_redis_if_no_processing_errors(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_update_state_if_res_or_err_not_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_save_to_redis_if_res_or_err_not_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_update_state_if_missing_keys_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_save_to_redis_if_missing_keys_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_update_state_if_transform_data_exception(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_save_to_redis_if_trans_data_exception(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_places_data_on_queue_if_no_processing_errors(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_place_data_on_queue_if_res_or_err_not_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_place_data_on_queue_if_missing_keys_in_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_data_on_queue_if_transform_data_exception(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_data_on_queue_if_save_to_redis_exception(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_data_on_queue_if_update_state_exception(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_sends_data_waiting_on_queue_if_no_process_errors(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_sends_data_waiting_on_queue_if_process_errors(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_sends_hb_if_no_proc_errors_and_send_data_success(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_send_hb_if_processing_errors_trans_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_send_hb_if_proc_errors_update_state(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_does_not_send_hb_if_send_data_fails(self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_hb(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_raises_amqp_chan_err_if_conn_err_in_send_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_raises_amqp_chan_err_if_chan_err_in_send_hb(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_hb(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
+    def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_hb(
+            self) -> None:
+        # TODO: In all process tests check that the data has been acknowledged
+        pass
+
 # todo: change comment in env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
 #     : should be done.
