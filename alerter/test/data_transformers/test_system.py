@@ -228,6 +228,115 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_new_metrics.set_last_monitored(
             datetime(2012, 1, 1).timestamp() + 60)
 
+        meta_data_for_alerting_result = \
+            self.transformed_data_example_result['result']['meta_data']
+        self.test_data_for_alerting_result = {
+            'result': {
+                'meta_data': meta_data_for_alerting_result,
+                'data': {
+                    'process_cpu_seconds_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .process_cpu_seconds_total,
+                        'previous': self.test_system.process_cpu_seconds_total,
+                    },
+                    'process_memory_usage': {
+                        'current':
+                            self.test_system_new_metrics.process_memory_usage,
+                        'previous': self.test_system.process_memory_usage,
+                    },
+                    'virtual_memory_usage': {
+                        'current':
+                            self.test_system_new_metrics.virtual_memory_usage,
+                        'previous': self.test_system.virtual_memory_usage,
+                    },
+                    'open_file_descriptors': {
+                        'current':
+                            self.test_system_new_metrics.open_file_descriptors,
+                        'previous': self.test_system.open_file_descriptors,
+                    },
+                    'system_cpu_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_cpu_usage,
+                        'previous': self.test_system.system_cpu_usage,
+                    },
+                    'system_ram_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_ram_usage,
+                        'previous': self.test_system.system_ram_usage,
+                    },
+                    'system_storage_usage': {
+                        'current':
+                            self.test_system_new_metrics.system_storage_usage,
+                        'previous': self.test_system.system_storage_usage,
+                    },
+                    'network_receive_bytes_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_receive_bytes_total,
+                        'previous': self.test_system
+                            .network_receive_bytes_total,
+                    },
+                    'network_transmit_bytes_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_transmit_bytes_total,
+                        'previous': self.test_system
+                            .network_transmit_bytes_total,
+                    },
+                    'disk_io_time_seconds_total': {
+                        'current':
+                            self.test_system_new_metrics
+                                .disk_io_time_seconds_total,
+                        'previous': self.test_system.disk_io_time_seconds_total,
+                    },
+                    'network_transmit_bytes_per_second': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_transmit_bytes_per_second,
+                        'previous': self.test_system
+                            .network_transmit_bytes_per_second,
+                    },
+                    'network_receive_bytes_per_second': {
+                        'current':
+                            self.test_system_new_metrics
+                                .network_receive_bytes_per_second,
+                        'previous': self.test_system
+                            .network_receive_bytes_per_second,
+                    },
+                    'disk_io_time_seconds_in_interval': {
+                        'current':
+                            self.test_system_new_metrics
+                                .disk_io_time_seconds_in_interval,
+                        'previous': self.test_system
+                            .disk_io_time_seconds_in_interval,
+                    },
+                    'went_down_at': {
+                        'current': self.test_system_new_metrics.went_down_at,
+                        'previous': self.test_system.went_down_at,
+                    }
+                }
+            }
+        }
+        meta_data_for_alerting_down_err = \
+            self.transformed_data_example_downtime_error['error']['meta_data']
+        down_error_msg = self.test_system_is_down_exception.message
+        down_error_code = self.test_system_is_down_exception.code
+        new_went_down_at = self.transformed_data_example_downtime_error[
+            'error']['data']['went_down_at']
+        self.test_data_for_alerting_down_error = {
+            'error': {
+                'meta_data': meta_data_for_alerting_down_err,
+                'code': down_error_code,
+                'message': down_error_msg,
+                'data': {
+                    'went_down_at': {
+                        'current': new_went_down_at,
+                        'previous': self.test_system.went_down_at,
+                    }
+                }
+            }
+        }
         self.test_data_transformer = SystemDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.max_queue_size)
@@ -830,100 +939,10 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_process_trans_data_for_alerting_returns_expected_data_if_result(
             self) -> None:
         self.test_data_transformer._state = self.test_state
-        expected_meta_data = self.transformed_data_example_result['result'][
-            'meta_data']
-        expected_data = {
-            'result': {
-                'meta_data': expected_meta_data,
-                'data': {
-                    'process_cpu_seconds_total': {
-                        'current':
-                            self.test_system_new_metrics
-                                .process_cpu_seconds_total,
-                        'previous': self.test_system.process_cpu_seconds_total,
-                    },
-                    'process_memory_usage': {
-                        'current':
-                            self.test_system_new_metrics.process_memory_usage,
-                        'previous': self.test_system.process_memory_usage,
-                    },
-                    'virtual_memory_usage': {
-                        'current':
-                            self.test_system_new_metrics.virtual_memory_usage,
-                        'previous': self.test_system.virtual_memory_usage,
-                    },
-                    'open_file_descriptors': {
-                        'current':
-                            self.test_system_new_metrics.open_file_descriptors,
-                        'previous': self.test_system.open_file_descriptors,
-                    },
-                    'system_cpu_usage': {
-                        'current':
-                            self.test_system_new_metrics.system_cpu_usage,
-                        'previous': self.test_system.system_cpu_usage,
-                    },
-                    'system_ram_usage': {
-                        'current':
-                            self.test_system_new_metrics.system_ram_usage,
-                        'previous': self.test_system.system_ram_usage,
-                    },
-                    'system_storage_usage': {
-                        'current':
-                            self.test_system_new_metrics.system_storage_usage,
-                        'previous': self.test_system.system_storage_usage,
-                    },
-                    'network_receive_bytes_total': {
-                        'current':
-                            self.test_system_new_metrics
-                                .network_receive_bytes_total,
-                        'previous': self.test_system
-                            .network_receive_bytes_total,
-                    },
-                    'network_transmit_bytes_total': {
-                        'current':
-                            self.test_system_new_metrics
-                                .network_transmit_bytes_total,
-                        'previous': self.test_system
-                            .network_transmit_bytes_total,
-                    },
-                    'disk_io_time_seconds_total': {
-                        'current':
-                            self.test_system_new_metrics
-                                .disk_io_time_seconds_total,
-                        'previous': self.test_system.disk_io_time_seconds_total,
-                    },
-                    'network_transmit_bytes_per_second': {
-                        'current':
-                            self.test_system_new_metrics
-                                .network_transmit_bytes_per_second,
-                        'previous': self.test_system
-                            .network_transmit_bytes_per_second,
-                    },
-                    'network_receive_bytes_per_second': {
-                        'current':
-                            self.test_system_new_metrics
-                                .network_receive_bytes_per_second,
-                        'previous': self.test_system
-                            .network_receive_bytes_per_second,
-                    },
-                    'disk_io_time_seconds_in_interval': {
-                        'current':
-                            self.test_system_new_metrics
-                                .disk_io_time_seconds_in_interval,
-                        'previous': self.test_system
-                            .disk_io_time_seconds_in_interval,
-                    },
-                    'went_down_at': {
-                        'current': self.test_system_new_metrics.went_down_at,
-                        'previous': self.test_system.went_down_at,
-                    }
-                }
-            }
-        }
         actual_data = \
             self.test_data_transformer._process_transformed_data_for_alerting(
                 self.transformed_data_example_result)
-        self.assertDictEqual(expected_data, actual_data)
+        self.assertDictEqual(self.test_data_for_alerting_result, actual_data)
 
     def test_process_trans_data_for_alerting_returns_trans_data_if_non_down_err(
             self) -> None:
@@ -937,29 +956,11 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_process_trans_data_for_alerting_returns_expected_data_if_down_err(
             self) -> None:
         self.test_data_transformer._state = self.test_state
-        expected_meta_data = self.transformed_data_example_downtime_error[
-            'error']['meta_data']
-        expected_error_msg = self.test_system_is_down_exception.message
-        expected_error_code = self.test_system_is_down_exception.code
-        new_went_down_at = self.transformed_data_example_downtime_error[
-            'error']['data']['went_down_at']
-        expected_data = {
-            'error': {
-                'meta_data': expected_meta_data,
-                'code': expected_error_code,
-                'message': expected_error_msg,
-                'data': {
-                    'went_down_at': {
-                        'current': new_went_down_at,
-                        'previous': self.test_system.went_down_at,
-                    }
-                }
-            }
-        }
         actual_data = \
             self.test_data_transformer._process_transformed_data_for_alerting(
                 self.transformed_data_example_downtime_error)
-        self.assertDictEqual(expected_data, actual_data)
+        self.assertDictEqual(self.test_data_for_alerting_down_error,
+                             actual_data)
 
     def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
             self) -> None:
@@ -1124,6 +1125,87 @@ class TestSystemDataTransformer(unittest.TestCase):
         del raw_data['error']['meta_data']
         self.assertRaises(KeyError, self.test_data_transformer._transform_data,
                           raw_data)
+
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_result(
+            self) -> None:
+        data_for_saving = copy.deepcopy(self.transformed_data_example_result)
+        self.test_data_transformer._place_latest_data_on_queue(
+            self.transformed_data_example_result,
+            self.test_data_for_alerting_result,
+            data_for_saving
+        )
+        expected_data_for_alerting = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': 'alerter.system.{}'.format(
+                self.test_system_parent_id),
+            'data': self.test_data_for_alerting_result,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_for_saving = {
+            'exchange': STORE_EXCHANGE,
+            'routing_key': 'system',
+            'data': data_for_saving,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+
+        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertDictEqual(
+            expected_data_for_alerting,
+            self.test_data_transformer.publishing_queue.queue[0])
+        self.assertDictEqual(
+            expected_data_for_saving,
+            self.test_data_transformer.publishing_queue.queue[1])
+
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_error(
+            self) -> None:
+        data_for_alerting = data_for_saving = copy.deepcopy(
+            self.transformed_data_example_general_error)
+        self.test_data_transformer._place_latest_data_on_queue(
+            self.transformed_data_example_general_error, data_for_alerting,
+            data_for_saving
+        )
+        expected_data_for_alerting = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': 'alerter.system.{}'.format(
+                self.test_system_parent_id),
+            'data': data_for_alerting,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_for_saving = {
+            'exchange': STORE_EXCHANGE,
+            'routing_key': 'system',
+            'data': data_for_saving,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+
+        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertDictEqual(
+            expected_data_for_alerting,
+            self.test_data_transformer.publishing_queue.queue[0])
+        self.assertDictEqual(
+            expected_data_for_saving,
+            self.test_data_transformer.publishing_queue.queue[1])
+
+    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_result(
+            self) -> None:
+        transformed_data = copy.deepcopy(self.transformed_data_example_result)
+        del transformed_data['result']['meta_data']
+        self.assertRaises(
+            KeyError, self.test_data_transformer._place_latest_data_on_queue,
+            transformed_data, {}, {})
+
+    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_error(
+            self) -> None:
+        transformed_data = copy.deepcopy(
+            self.transformed_data_example_general_error)
+        del transformed_data['error']['meta_data']
+        self.assertRaises(
+            KeyError, self.test_data_transformer._place_latest_data_on_queue,
+            transformed_data, {}, {})
 
 # todo: change comment in env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
