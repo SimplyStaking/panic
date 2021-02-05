@@ -29,13 +29,13 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = 'localhost'
-        self.rabbit_ip = env.RABBIT_IP
+        # self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_TEST_DB
         self.redis_host = 'localhost'
-        self.redis_host = env.REDIS_IP
+        # self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -69,7 +69,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_ram_usage = None
         self.test_system_storage_usage = 49
         self.test_network_transmit_bytes_per_second = 456546
-        self.test_network_transmit_bytes_total = 45363635635
+        self.test_network_transmit_bytes_total = 45363635633
         self.test_network_receive_bytes_per_second = 345
         self.test_network_receive_bytes_total = 4564567
         self.test_disk_io_time_seconds_in_interval = 45
@@ -111,7 +111,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': datetime(2012, 1, 1).timestamp() + 60
                 },
                 'data': {
                     'process_cpu_seconds_total': 2786.82,
@@ -134,7 +134,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': datetime(2012, 1, 1).timestamp() + 60
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -147,7 +147,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': datetime(2012, 1, 1).timestamp() + 60
                 },
                 'message': self.test_system_is_down_exception.message,
                 'code': self.test_system_is_down_exception.code,
@@ -173,7 +173,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'network_receive_bytes_total': 722359147027.0,
                     'disk_io_time_seconds_total': 76647.0,
                     'went_down_at': None,
-                    'network_transmit_bytes_per_second': 16103476165.36667,
+                    'network_transmit_bytes_per_second': 16103476165.4,
                     'network_receive_bytes_per_second': 12039243041.0,
                     'disk_io_time_seconds_in_interval': 70300,
                 },
@@ -216,7 +216,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_new_metrics.set_system_ram_usage(34.09)
         self.test_system_new_metrics.set_system_storage_usage(44.37)
         self.test_system_new_metrics.set_network_transmit_bytes_per_second(
-            16103476165.36667)
+            16103476165.4)
         self.test_system_new_metrics.set_network_transmit_bytes_total(
             1011572205557.0)
         self.test_system_new_metrics.set_network_receive_bytes_per_second(
@@ -1000,10 +1000,130 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_transformed_data_for_alerting,
             transformed_data)
 
-    # TODO: Tomorrow start testing from _transform_data function.
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_returns_expected_data_if_result_and_first_mon_round(
+            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+        self.test_data_transformer._state = self.test_state
+        self.test_system.reset()
+        mock_process_for_saving.return_value = {'key_1': 'val1'}
+        mock_process_for_alerting.return_value = {'key_2': 'val2'}
 
-    # TODO: Imp these tests for key_error do them because they are important
-    #     : to show that exceptions are raised to the outside.
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(
+                self.raw_data_example_result)
+
+        # Set metrics which need more than 1 monitoring round to be computed
+        # to None.
+        expected_trans_data = copy.deepcopy(
+            self.transformed_data_example_result)
+        expected_trans_data['result']['data'][
+            'network_transmit_bytes_per_second'] = None
+        expected_trans_data['result']['data'][
+            'network_receive_bytes_per_second'] = None
+        expected_trans_data['result']['data'][
+            'disk_io_time_seconds_in_interval'] = None
+
+        self.assertDictEqual(expected_trans_data, trans_data)
+        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
+        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
+
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_ret_expected_data_if_result_and_second_mon_round(
+            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+        self.test_data_transformer._state = self.test_state
+        mock_process_for_saving.return_value = {'key_1': 'val1'}
+        mock_process_for_alerting.return_value = {'key_2': 'val2'}
+
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(
+                self.raw_data_example_result)
+
+        self.assertDictEqual(self.transformed_data_example_result, trans_data)
+        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
+        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
+
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_returns_expected_data_if_non_down_error(
+            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+        self.test_data_transformer._state = self.test_state
+        mock_process_for_saving.return_value = {'key_1': 'val1'}
+        mock_process_for_alerting.return_value = {'key_2': 'val2'}
+
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(
+                self.raw_data_example_general_error)
+
+        self.assertDictEqual(self.transformed_data_example_general_error,
+                             trans_data)
+        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
+        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
+
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(SystemDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_returns_expected_data_if_down_error(
+            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+        self.test_data_transformer._state = self.test_state
+        mock_process_for_saving.return_value = {'key_1': 'val1'}
+        mock_process_for_alerting.return_value = {'key_2': 'val2'}
+
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(
+                self.raw_data_example_downtime_error)
+
+        self.assertDictEqual(self.transformed_data_example_downtime_error,
+                             trans_data)
+        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
+        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
+
+    def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
+            self) -> None:
+        invalid_transformed_data = {'bad_key': 'bad_value'}
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._transform_data,
+                          invalid_transformed_data)
+
+    def test_transform_data_raises_key_error_if_key_does_not_exist_result(
+            self) -> None:
+        # Test for non first monitoring round data
+        self.test_data_transformer._state = self.test_state
+        raw_data = copy.deepcopy(self.raw_data_example_result)
+        del raw_data['result']['meta_data']['time']
+        self.assertRaises(KeyError, self.test_data_transformer._transform_data,
+                          raw_data)
+
+        # Test for first monitoring round data
+        self.test_data_transformer._state = self.test_state
+        self.test_system.reset()
+        raw_data = copy.deepcopy(self.raw_data_example_result)
+        del raw_data['result']['meta_data']['time']
+        self.assertRaises(KeyError, self.test_data_transformer._transform_data,
+                          raw_data)
+
+    def test_transform_data_raises_key_error_if_key_does_not_exist_error(
+            self) -> None:
+        # Test when the error is not related to downtime
+        self.test_data_transformer._state = self.test_state
+        raw_data = copy.deepcopy(self.raw_data_example_general_error)
+        del raw_data['error']['meta_data']
+        self.assertRaises(KeyError, self.test_data_transformer._transform_data,
+                          raw_data)
+
+        # Test when the error is related to downtime
+        raw_data = copy.deepcopy(self.raw_data_example_downtime_error)
+        del raw_data['error']['meta_data']
+        self.assertRaises(KeyError, self.test_data_transformer._transform_data,
+                          raw_data)
 
 # todo: change comment in env.variables commented here
 # todo: noticed that i am not saving to redis when processing raw data. This
