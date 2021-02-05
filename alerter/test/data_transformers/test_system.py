@@ -29,13 +29,13 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_TEST_DB
         self.redis_host = 'localhost'
-        # self.redis_host = env.REDIS_IP
+        self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -1207,13 +1207,156 @@ class TestSystemDataTransformer(unittest.TestCase):
             KeyError, self.test_data_transformer._place_latest_data_on_queue,
             transformed_data, {}, {})
 
-    def test_process_raw_data_loads_system_in_state_if_system_new(
+    @mock.patch.object(SystemDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_transforms_data_if_data_valid_and_new_system(
+            self, mock_ack, mock_trans_data) -> None:
+        # We will check that the data is transformed by checking that
+        # `_transform_data` is called correctly. The actual transformations are
+        # already tested. Note we will test for both result and error.
+        mock_ack.return_value = None
+        mock_trans_data.return_value = (None, None, None)
+        try:
+            # We must initialise rabbit to the environment and parameters needed
+            # by `_process_raw_data`
+            self.test_data_transformer._initialise_rabbitmq()
+            blocking_channel = self.test_data_transformer.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
+            body_result = json.dumps(self.raw_data_example_result)
+            body_error = json.dumps(self.raw_data_example_general_error)
+            properties = pika.spec.BasicProperties()
+
+            # Send raw data
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_result)
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_error)
+
+            self.assertEqual(2, mock_trans_data.call_count)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
+    @mock.patch.object(SystemDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_transforms_data_if_data_valid_and_system_in_state(
+            self, mock_ack, mock_trans_data) -> None:
+        # We will check that the data is transformed by checking that
+        # `_transform_data` is called correctly. The actual transformations are
+        # already tested. Note we will test for both result and error.
+        mock_ack.return_value = None
+        mock_trans_data.return_value = (None, None, None)
+        try:
+            # We must initialise rabbit to the environment and parameters needed
+            # by `_process_raw_data`
+            self.test_data_transformer._initialise_rabbitmq()
+            blocking_channel = self.test_data_transformer.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
+            body_result = json.dumps(self.raw_data_example_result)
+            body_error = json.dumps(self.raw_data_example_general_error)
+            properties = pika.spec.BasicProperties()
+
+            self.test_data_transformer._state = self.test_state
+
+            # Send raw data
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_result)
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_error)
+
+            self.assertEqual(2, mock_trans_data.call_count)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
+    @mock.patch.object(SystemDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_call_trans_data_if_err_res_not_in_data(
+            self, mock_ack, mock_trans_data) -> None:
+        mock_ack.return_value = None
+        try:
+            # We must initialise rabbit to the environment and parameters needed
+            # by `_process_raw_data`
+            self.test_data_transformer._initialise_rabbitmq()
+            blocking_channel = self.test_data_transformer.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
+            body = json.dumps({'bad_key': 'bad_val'})
+            properties = pika.spec.BasicProperties()
+
+            # Send raw data
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body)
+
+            mock_trans_data.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(SystemDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_call_trans_data_if_missing_keys_in_data(
+            self, mock_ack, mock_trans_data) -> None:
+        mock_ack.return_value = None
+        try:
+            # We must initialise rabbit to the environment and parameters needed
+            # by `_process_raw_data`. Here we must cater for both the error
+            # and result cases.
+            self.test_data_transformer._initialise_rabbitmq()
+            blocking_channel = self.test_data_transformer.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
+            body_result = json.dumps({'result': {'bad_key': 'val'}})
+            body_error = json.dumps({'error': {'bad_key': 'val'}})
+            properties = pika.spec.BasicProperties()
+
+            # Send raw data
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_result)
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body_error)
+
+            mock_trans_data.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
+    def test_process_raw_data_updates_state_if_no_processing_errors_new_system(
             self) -> None:
+        # Check the calls only
+        # Add dummy data to state, to check that not all state changes
         # TODO: In all process tests check that the data has been acknowledged
         pass
 
-    def test_process_raw_data_updates_state_if_no_processing_errors(
+    def test_process_raw_data_updates_state_if_no_process_errors_sys_in_state(
             self) -> None:
+        # Check the calls only
+        # Add dummy data to state, to check that not all state changes
         # TODO: In all process tests check that the data has been acknowledged
         pass
 
