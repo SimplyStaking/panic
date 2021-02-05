@@ -163,17 +163,18 @@ class TestConfigsManager(unittest.TestCase):
         finally:
             self.disconnect_from_rabbit()
 
-    @unittest.skip
-    def test__connect_to_rabbit(self):
-        self.fail()
+    @mock.patch.object(RabbitMQApi, "connect_till_successful", autospec=True)
+    def test__connect_to_rabbit(self, mock_connect: MagicMock):
+        mock_connect.return_value = None
+        self.test_config_manager._connect_to_rabbit()
+        self.assertTrue(self.test_config_manager.connected_to_rabbit)
 
-    @unittest.skip
-    def test_disconnect_from_rabbit(self):
-        self.fail()
-
-    @unittest.skip
-    def test__send_heartbeat(self):
-        self.fail()
+    @mock.patch.object(RabbitMQApi, "disconnect_till_successful", autospec=True)
+    def test_disconnect_from_rabbit(self, mock_disconnect: MagicMock):
+        mock_disconnect.return_value = None
+        self.test_config_manager._connected_to_rabbit = True
+        self.test_config_manager.disconnect_from_rabbit()
+        self.assertFalse(self.test_config_manager.connected_to_rabbit)
 
     @freeze_time("1997-08-15T10:21:33.000030")
     @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
@@ -314,18 +315,6 @@ class TestConfigsManager(unittest.TestCase):
         self.fail()
 
     @unittest.skip
-    def test_config_directory(self):
-        self.fail()
-
-    @unittest.skip
-    def test_watching(self):
-        self.fail()
-
-    @unittest.skip
-    def test_connected_to_rabbit(self):
-        self.fail()
-
-    @unittest.skip
     def test_start(self):
         self.fail()
 
@@ -333,6 +322,22 @@ class TestConfigsManager(unittest.TestCase):
     def test__on_terminate(self):
         self.fail()
 
-    @unittest.skip
-    def test_foreach_config_file(self):
-        self.fail()
+    @mock.patch("os.path.join", autospec=True)
+    @mock.patch("os.walk", autospec=True)
+    def test_foreach_config_file(
+            self, mock_os_walk: MagicMock, mock_os_path_join: MagicMock
+    ):
+        def os_walk_fn(directory: str):
+            file_system = [
+                ('/foo', ('bar',), ('baz.ini',)),
+                ('/foo/bar', (), ('spam.ini', 'eggs.txt')),
+            ]
+            for root, dirs, files in file_system:
+                yield root, dirs, files
+
+        def test_callback(input: str) -> None:
+            self.assertIn(input, ['/foo/baz.ini', '/foo/bar/spam.ini'])
+
+        mock_os_walk.side_effect = os_walk_fn
+        mock_os_path_join.side_effect = lambda x, y: x + "/" + y
+        self.test_config_manager.foreach_config_file(test_callback)

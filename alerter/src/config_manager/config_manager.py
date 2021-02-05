@@ -216,17 +216,17 @@ class ConfigsManager(PublisherComponent):
             self._logger.error("Error when sending heartbeat")
             self._logger.exception(e)
 
-    def _send_data(self, config: Dict[str, Any], routing_key: str) -> None:
-        self._logger.debug("Sending %s to routing key %s", config, routing_key)
+    def _send_data(self, config: Dict[str, Any], route_key: str) -> None:
+        self._logger.debug("Sending %s to routing key %s", config, route_key)
 
         while True:
             try:
                 self._logger.debug(
-                    "Attempting to send config to routing key %s", routing_key
+                    "Attempting to send config to routing key %s", route_key
                 )
                 # We need to definitely send this
                 self.rabbitmq.basic_publish_confirm(
-                    CONFIG_EXCHANGE, routing_key, config, mandatory=True,
+                    CONFIG_EXCHANGE, route_key, config, mandatory=True,
                     is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
                 )
@@ -234,10 +234,10 @@ class ConfigsManager(PublisherComponent):
                 break
             except MessageWasNotDeliveredException as mwnde:
                 self._logger.error("Config was not successfully sent to "
-                                   "routing key %s", routing_key)
+                                   "routing key %s", route_key)
                 self._logger.exception(mwnde)
                 self._logger.info("Will attempt sending the config again to "
-                                  "routing key %s", routing_key)
+                                  "routing key %s", route_key)
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
@@ -253,7 +253,7 @@ class ConfigsManager(PublisherComponent):
                 self._connect_to_rabbit()
 
                 self._logger.info("Connection restored, will attempt sending "
-                                  "the config to routing key %s", routing_key)
+                                  "the config to routing key %s", route_key)
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. Since a new channel is created
