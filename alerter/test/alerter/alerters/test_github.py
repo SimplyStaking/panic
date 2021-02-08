@@ -93,7 +93,7 @@ class TestGithubAlerter(unittest.TestCase):
                 }
             }
         }
-        self.github_json = json.dumps(self.github_data_received).encode('utf-8')
+        self.github_json = json.dumps(self.github_data_received).encode()
 
         self.github_data_error = {
             "error": {
@@ -254,7 +254,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_received).encode('utf-8')
+                json.dumps(self.github_data_received).encode()
             )
 
             mock_new_github_release.assert_not_called()
@@ -287,7 +287,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_received).encode('utf-8')
+                json.dumps(self.github_data_received).encode()
             )
 
             self.assertEqual(5, mock_new_github_release.call_count)
@@ -320,7 +320,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_received).encode('utf-8')
+                json.dumps(self.github_data_received).encode()
             )
 
             self.assertEqual(0, mock_new_github_release.call_count)
@@ -351,7 +351,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_error).encode('utf-8')
+                json.dumps(self.github_data_error).encode()
             )
 
             mock_cannot_access_github_page_alert.assert_called_once_with(
@@ -387,7 +387,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_error).encode('utf-8')
+                json.dumps(self.github_data_error).encode()
             )
 
             mock_received_unexpected_data_alert.assert_called_once()
