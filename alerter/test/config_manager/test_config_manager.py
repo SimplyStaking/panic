@@ -1,9 +1,10 @@
+import copy
 import json
 import logging
 import unittest
 from configparser import ConfigParser
 from datetime import timedelta, datetime
-from typing import Dict
+from typing import Dict, Any
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -17,6 +18,7 @@ from watchdog.observers.polling import PollingObserver
 from src.config_manager import ConfigsManager
 from src.config_manager.config_manager import CONFIG_PING_QUEUE
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
 
 
@@ -27,7 +29,7 @@ class TestConfigsManager(unittest.TestCase):
         self.rabbit_logger = logging.getLogger("test_rabbit")
         self.config_directory = "config"
         file_patterns = ["*.ini"]
-        rabbit_ip = "localhost"
+        rabbit_ip = env.RABBIT_IP
 
         self.test_config_manager = ConfigsManager(
             self.CONFIG_MANAGER_NAME, self.config_manager_logger,
@@ -310,17 +312,145 @@ class TestConfigsManager(unittest.TestCase):
             self.test_config_manager, expected_dict, TEST_ROUTING_KEY
         )
 
-    @unittest.skip
-    def test__send_data(self):
-        self.fail()
+    @parameterized.expand([
+        ({},),
+        ({"DEFAULT": {},
+          "test_section_1": {
+              "test_field_1": "Hello",
+              "test_field_2": "",
+              "test_field_3": "10",
+              "test_field_4": "true"
+          }},),
+        ({
+            "DEFAULT": {},
+            "test_section_1": {
+                "test_field_1": "Hello",
+                "test_field_2": "",
+                "test_field_3": "10",
+                "test_field_4": "true"
+            },
+            "test_section_2": {
+                "test_field_1": "OK",
+                "test_field_2": "Bye",
+                "test_field_3": "4",
+                "test_field_4": "off"
+            }
+        },),
+    ])
+    def test_send_data(self, config: Dict[str, Any]):
+        route_key = "test.route"
+        CONFIG_QUEUE = "hb_test"
+        try:
+            self.connect_to_rabbit()
+            self.rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, "topic", False, True, False, False
+            )
 
-    @unittest.skip
-    def test_start(self):
-        self.fail()
+            queue_res = self.rabbitmq.queue_declare(
+                queue=CONFIG_QUEUE, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, queue_res.method.message_count)
 
-    @unittest.skip
-    def test__on_terminate(self):
-        self.fail()
+            self.rabbitmq.queue_bind(
+                CONFIG_QUEUE, CONFIG_EXCHANGE, route_key
+            )
+
+            self.test_config_manager._initialise_rabbitmq()
+
+            self.test_config_manager._send_data(copy.deepcopy(config),
+                                                route_key)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            queue_res = self.rabbitmq.queue_declare(
+                queue=CONFIG_QUEUE, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, queue_res.method.message_count)
+
+            # Check that the message received is a valid HB
+            _, _, body = self.rabbitmq.basic_get(CONFIG_QUEUE)
+            self.assertDictEqual(config, json.loads(body))
+        finally:
+            self.delete_queue_if_exists(CONFIG_QUEUE)
+            self.delete_exchange_if_exists(HEALTH_CHECK_EXCHANGE)
+            self.disconnect_from_rabbit()
+
+    @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
+    @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
+    @mock.patch.object(PollingObserver, "start", autospec=True)
+    def test_start_not_watching(
+            self, mock_observer_start: MagicMock, mock_foreach: MagicMock,
+            mock_initialise_rabbit: MagicMock
+    ):
+        self.test_config_manager._watching = False
+        mock_foreach.return_value = None
+        mock_initialise_rabbit.return_value = None
+        mock_observer_start.return_value = None
+        self.test_config_manager.start()
+
+        mock_initialise_rabbit.assert_called_once()
+        mock_foreach.assert_called_once()
+        mock_observer_start.assert_called_once()
+
+    @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
+    @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
+    @mock.patch.object(PollingObserver, "start", autospec=True)
+    def test_start_after_watching(
+            self, mock_observer_start: MagicMock, mock_foreach: MagicMock,
+            mock_initialise_rabbit: MagicMock
+    ):
+        self.test_config_manager._watching = True
+        mock_foreach.return_value = None
+        mock_initialise_rabbit.return_value = None
+        mock_observer_start.return_value = None
+        self.test_config_manager.start()
+
+        mock_initialise_rabbit.assert_called_once()
+        mock_foreach.assert_called_once()
+        mock_observer_start.assert_not_called()
+
+    @mock.patch('sys.exit', autospec=True)
+    @mock.patch.object(ConfigsManager, "disconnect_from_rabbit", autospec=True)
+    def test__on_terminate_when_not_observing(
+            self, mock_disconnect: MagicMock, mock_sys_exit: MagicMock
+    ):
+        mock_disconnect.return_value = None
+        mock_sys_exit.return_value = None
+        # We mock the stack frame since we don't need it.
+        mock_signal = MagicMock()
+        mock_stack_frame = MagicMock()
+
+        self.test_config_manager._on_terminate(mock_signal, mock_stack_frame)
+        self.assertFalse(self.test_config_manager._watching)
+        mock_disconnect.assert_called_once()
+        mock_sys_exit.assert_called_once()
+
+    @mock.patch('sys.exit', autospec=True)
+    @mock.patch.object(ConfigsManager, "disconnect_from_rabbit", autospec=True)
+    @mock.patch.object(PollingObserver, "stop", autospec=True)
+    @mock.patch.object(PollingObserver, "join", autospec=True)
+    def test__on_terminate_when_observing(
+            self, mock_join: MagicMock, mock_stop: MagicMock,
+            mock_disconnect: MagicMock, mock_sys_exit: MagicMock
+    ):
+        mock_join.return_value = None
+        mock_stop.return_value = None
+        mock_disconnect.return_value = None
+        mock_sys_exit.return_value = None
+
+        self.test_config_manager._watching = True
+        # We mock the signal and stack frame since we don't need them.
+        mock_signal = MagicMock()
+        mock_stack_frame = MagicMock()
+
+        self.test_config_manager._on_terminate(mock_signal, mock_stack_frame)
+        self.assertFalse(self.test_config_manager._watching)
+        mock_disconnect.assert_called_once()
+        mock_stop.assert_called_once()
+        mock_join.assert_called_once()
+        mock_sys_exit.assert_called_once()
 
     @mock.patch("os.path.join", autospec=True)
     @mock.patch("os.walk", autospec=True)
