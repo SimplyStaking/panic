@@ -9,6 +9,7 @@ from unittest import mock
 
 import pika
 import pika.exceptions
+from freezegun import freeze_time
 
 from src.data_store.redis import RedisApi, Keys
 from src.data_transformers.system import (SystemDataTransformer,
@@ -625,7 +626,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                          self.test_system.disk_io_time_seconds_total)
         self.assertEqual(actual_last_monitored, self.test_system.last_monitored)
 
-    def test_load_state_successful_if_state_exists_in_redis_and_redis_online(
+    def test_load_state_successful_if_system_exists_in_redis_and_redis_online(
             self) -> None:
         # Save state to Redis first
         self.test_data_transformer._save_to_redis(self.test_system)
@@ -665,7 +666,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
-    def test_load_state_keeps_same_state_if_state_in_redis_and_redis_offline(
+    def test_load_state_keeps_same_state_if_system_in_redis_and_redis_offline(
             self) -> None:
         # Save state to Redis first
         self.test_data_transformer._save_to_redis(self.test_system)
@@ -674,7 +675,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system.reset()
 
         # Set the _do_not_use_if_recently_went_down function to return True
-        # as if the system is down
+        # as if redis is down
         self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
             lambda: True
 
@@ -697,15 +698,10 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(None, loaded_system.disk_io_time_seconds_total)
         self.assertEqual(None, loaded_system.last_monitored)
 
-    def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_online(
+    def test_load_state_keeps_same_state_if_sys_not_in_redis_and_redis_online(
             self) -> None:
         # Clean test db
         self.redis.delete_all()
-
-        # Set the _do_not_use_if_recently_went_down function to return True
-        # as if the system is down
-        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
-            lambda: True
 
         # Load state
         loaded_system = self.test_data_transformer.load_state(self.test_system)
@@ -739,10 +735,15 @@ class TestSystemDataTransformer(unittest.TestCase):
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
-    def test_load_state_keeps_same_state_if_state_not_in_redis_and_redis_off(
+    def test_load_state_keeps_same_state_if_system_not_in_redis_and_redis_off(
             self) -> None:
         # Clean test db
         self.redis.delete_all()
+
+        # Set the _do_not_use_if_recently_went_down function to return True
+        # as if redis is down
+        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
+            lambda: True
 
         # Load state
         loaded_system = self.test_data_transformer.load_state(self.test_system)
@@ -970,45 +971,14 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_transformed_data_for_alerting,
             invalid_transformed_data)
 
-    def test_proc_trans_data_for_alerting_raise_key_err_if_key_not_exist_result(
-            self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        transformed_data = copy.deepcopy(self.transformed_data_example_result)
-        del transformed_data['result']['data']['process_cpu_seconds_total']
-        self.assertRaises(
-            KeyError,
-            self.test_data_transformer._process_transformed_data_for_alerting,
-            transformed_data)
-
-    def test_proc_trans_data_for_alert_raise_key_err_if_keys_not_exist_error(
-            self) -> None:
-        # Test when the error is not related to downtime
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        transformed_data = copy.deepcopy(
-            self.transformed_data_example_general_error)
-        del transformed_data['error']['meta_data']
-        self.assertRaises(
-            KeyError,
-            self.test_data_transformer._process_transformed_data_for_alerting,
-            transformed_data)
-
-        # Test when the error is related to downtime
-        transformed_data = copy.deepcopy(
-            self.transformed_data_example_downtime_error)
-        del transformed_data['error']['data']['went_down_at']
-        self.assertRaises(
-            KeyError,
-            self.test_data_transformer._process_transformed_data_for_alerting,
-            transformed_data)
-
     @mock.patch.object(SystemDataTransformer,
                        "_process_transformed_data_for_alerting")
     @mock.patch.object(SystemDataTransformer,
                        "_process_transformed_data_for_saving")
     def test_transform_data_returns_expected_data_if_result_and_first_mon_round(
             self, mock_process_for_saving, mock_process_for_alerting) -> None:
-        self.test_data_transformer._state = self.test_state
-        self.test_system.reset()
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        self.test_data_transformer._state[self.test_system_id].reset()
         mock_process_for_saving.return_value = {'key_1': 'val1'}
         mock_process_for_alerting.return_value = {'key_2': 'val2'}
 
@@ -1231,6 +1201,8 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
                                                          body_result)
+            mock_trans_data.assert_called_once_with(
+                self.raw_data_example_result)
 
             # To reset the state as if the system was not already added
             self.test_data_transformer._state = {}
@@ -1240,6 +1212,9 @@ class TestSystemDataTransformer(unittest.TestCase):
                                                          body_error)
 
             self.assertEqual(2, mock_trans_data.call_count)
+            args, _ = mock_trans_data.call_args
+            self.assertEqual(self.raw_data_example_general_error, args[0])
+            self.assertEqual(1, len(args))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1274,11 +1249,17 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
                                                          body_result)
+            mock_trans_data.assert_called_once_with(
+                self.raw_data_example_result)
+
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
                                                          body_error)
 
             self.assertEqual(2, mock_trans_data.call_count)
+            args, _ = mock_trans_data.call_args
+            self.assertEqual(self.raw_data_example_general_error, args[0])
+            self.assertEqual(1, len(args))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1354,9 +1335,9 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_process_raw_data_updates_state_if_no_processing_errors_new_system(
             self, mock_ack) -> None:
         # To make sure there is no state in redis as the state must be compared.
+        # We will check that the state has been updated correctly.
         self.redis.delete_all()
 
-        # We will check that the state has been updated correctly.
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1488,7 +1469,7 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_process_raw_data_saves_sys_to_redis_if_no_proc_errors_new_system(
             self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
         # We will perform this test by checking that `_save_to_redis` is called
-        # correctly, as the logic of `save_to_redis` is already tested.
+        # correctly as the logic of `save_to_redis` is already tested.
         mock_ack.return_value = None
         mock_trans_data.side_effect = [
             (
@@ -1652,9 +1633,6 @@ class TestSystemDataTransformer(unittest.TestCase):
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_save_to_redis_if_res_or_err_not_in_data(
             self, mock_ack, mock_save_to_redis) -> None:
-        # Empty Redis as it's value must be compared
-        self.redis.delete_all()
-
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1665,9 +1643,6 @@ class TestSystemDataTransformer(unittest.TestCase):
                 routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
             body = json.dumps({'bad_key': 'bad_val'})
             properties = pika.spec.BasicProperties()
-
-            # Make the state non-empty
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1734,9 +1709,6 @@ class TestSystemDataTransformer(unittest.TestCase):
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_save_to_redis_if_missing_keys_in_data(
             self, mock_ack, mock_save_to_redis) -> None:
-        # Empty Redis as it's value must be compared
-        self.redis.delete_all()
-
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1748,9 +1720,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             body_result = json.dumps({'result': {'bad_key': 'bad_val'}})
             body_error = json.dumps({'error': {'bad_key': 'bad_val'}})
             properties = pika.spec.BasicProperties()
-
-            # Make the state non-empty
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1819,9 +1788,6 @@ class TestSystemDataTransformer(unittest.TestCase):
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_save_to_redis_if_trans_data_exception(
             self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
-        # Empty Redis as it's value must be compared
-        self.redis.delete_all()
-
         mock_ack.return_value = None
         mock_trans_data.side_effect = self.test_exception
         try:
@@ -1831,12 +1797,9 @@ class TestSystemDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps({'result': {'bad_key': 'bad_val'}})
-            body_error = json.dumps({'error': {'bad_key': 'bad_val'}})
+            body_result = json.dumps(self.raw_data_example_result)
+            body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
-
-            # Make the state non-empty
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -2173,6 +2136,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
+    @freeze_time("2012-01-01")
     @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
     @mock.patch.object(SystemDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -2181,6 +2145,10 @@ class TestSystemDataTransformer(unittest.TestCase):
         mock_ack.return_value = None
         mock_send_data.return_value = None
         mock_send_hb.return_value = None
+        test_hb = {
+            'component_name': self.transformer_name,
+            'timestamp': datetime.now().timestamp()
+        }
 
         # Load the state to avoid having the system already in redis, hence
         # avoiding errors.
@@ -2200,11 +2168,16 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
                                                          body_result)
+            mock_send_hb.assert_called_once_with(test_hb)
+
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
                                                          body_error)
             # Check that send_heartbeat was called
             self.assertEqual(2, mock_send_hb.call_count)
+            args, _ = mock_send_hb.call_args
+            self.assertDictEqual(test_hb, args[0])
+            self.assertEqual(1, len(args))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

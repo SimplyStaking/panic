@@ -50,7 +50,7 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.queue_bind(_GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
                                  _GITHUB_DT_INPUT_ROUTING_KEY)
 
-        # Pre-fetch count is 10 times less the maximum queue size
+        # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug('Declaring consuming intentions')
