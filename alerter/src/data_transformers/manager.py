@@ -77,6 +77,39 @@ class DataTransformersManager(PublisherSubscriberComponent):
         self.logger.info("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
 
+    def _start_transformers_processes(self) -> None:
+        # Start the system data transformer in a separate process if it is not
+        # yet started or it is not alive. This must be done in case of a
+        # restart of the manager.
+        if SYSTEM_DATA_TRANSFORMER_NAME not in \
+                self.transformer_process_dict or not \
+                self.transformer_process_dict[
+                    SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
+            system_data_transformer_process = multiprocessing.Process(
+                target=start_system_data_transformer, args=())
+            system_data_transformer_process.daemon = True
+            system_data_transformer_process.start()
+            self._transformer_process_dict[SYSTEM_DATA_TRANSFORMER_NAME] = \
+                system_data_transformer_process
+
+        # Start the github data transformer in a separate process if it is not
+        # yet started or it is not alive. This must be done in case of a
+        # restart of the manager.
+        if GITHUB_DATA_TRANSFORMER_NAME not in \
+                self.transformer_process_dict or not \
+                self.transformer_process_dict[
+                    GITHUB_DATA_TRANSFORMER_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                GITHUB_DATA_TRANSFORMER_NAME), self.logger)
+            github_data_transformer_process = multiprocessing.Process(
+                target=start_github_data_transformer, args=())
+            github_data_transformer_process.daemon = True
+            github_data_transformer_process.start()
+            self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
+                github_data_transformer_process
+
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -117,37 +150,6 @@ class DataTransformersManager(PublisherSubscriberComponent):
         except Exception as e:
             # For any other exception raise it.
             raise e
-
-    def _start_transformers_processes(self) -> None:
-        # Start the system data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
-        if SYSTEM_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
-                or not self.transformer_process_dict[
-            SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
-            system_data_transformer_process = multiprocessing.Process(
-                target=start_system_data_transformer, args=())
-            system_data_transformer_process.daemon = True
-            system_data_transformer_process.start()
-            self._transformer_process_dict[SYSTEM_DATA_TRANSFORMER_NAME] = \
-                system_data_transformer_process
-
-        # Start the github data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
-        if GITHUB_DATA_TRANSFORMER_NAME not in self.transformer_process_dict \
-                or not self.transformer_process_dict[
-            GITHUB_DATA_TRANSFORMER_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                GITHUB_DATA_TRANSFORMER_NAME), self.logger)
-            github_data_transformer_process = multiprocessing.Process(
-                target=start_github_data_transformer, args=())
-            github_data_transformer_process.daemon = True
-            github_data_transformer_process.start()
-            self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
-                github_data_transformer_process
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)

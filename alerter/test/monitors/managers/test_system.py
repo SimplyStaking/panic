@@ -155,7 +155,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         self.dummy_logger = None
         self.rabbitmq = None
-        self.test_manager = None
         self.dummy_process1 = None
         self.dummy_process2 = None
         self.dummy_process3 = None
