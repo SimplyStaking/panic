@@ -2670,6 +2670,3 @@ class TestSystemDataTransformer(unittest.TestCase):
             )
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-# todo: change comment in env.variables commented here
-# TODO: Must save github state in redis as well
