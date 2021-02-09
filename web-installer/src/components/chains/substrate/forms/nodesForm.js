@@ -15,6 +15,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
@@ -55,7 +56,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Name </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   error={errors.name}
                   value={values.name}
@@ -81,10 +82,11 @@ const NodesForm = ({
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={2}>
                 <Typography> Node WS URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.node_ws_url}
                   type="text"
@@ -127,9 +129,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={true}
+                  exporterUrl={""}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Telemetry URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.telemetry_url}
                   type="text"
@@ -172,9 +180,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={true}
+                  exporterUrl={""}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.prometheus_url}
                   type="text"
@@ -217,9 +231,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={true}
+                  exporterUrl={""}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Node Exporter URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.exporter_url}
                   type="text"
@@ -262,9 +282,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={false}
+                  exporterUrl={values.exporter_url}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Stash Address </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.stash_address}
                   type="text"
@@ -289,6 +315,7 @@ const NodesForm = ({
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={2}>
                 <Typography> Node is Validator </Typography>
               </Grid>

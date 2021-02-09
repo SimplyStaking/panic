@@ -88,6 +88,7 @@ export function addEmail(payload) {
     payload: {
       id: `email_${uuidv4()}`,
       channel_name: payload.channel_name,
+      port: payload.port,
       smtp: payload.smtp,
       email_from: payload.email_from,
       emails_to: payload.emails_to,

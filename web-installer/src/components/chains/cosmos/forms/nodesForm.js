@@ -15,7 +15,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
-import { PingCosmosButton } from 'utils/buttons';
+import { PingPrometheus, PingTendermint, PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
@@ -56,7 +56,7 @@ const NodesForm = ({
               <Grid item xs={2}>
                 <Typography> Node Name </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   error={errors.name}
                   value={values.name}
@@ -82,10 +82,11 @@ const NodesForm = ({
                   </MuiThemeProvider>
                 </Grid>
               </Grid>
+              <Grid item xs={2} />
               <Grid item xs={2}>
                 <Typography> Tendermint RPC URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.tendermint_rpc_url}
                   type="text"
@@ -128,9 +129,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingTendermint
+                  disabled={false}
+                  tendermintRpcUrl={values.tendermint_rpc_url}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Cosmos Rest Server </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.cosmos_rpc_url}
                   type="text"
@@ -170,9 +177,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={true}
+                  exporterUrl={""}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Prometheus Endpoint URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.prometheus_url}
                   type="text"
@@ -215,9 +228,15 @@ const NodesForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <PingPrometheus
+                  disabled={false}
+                  prometheusUrl={values.prometheus_url}
+                />
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Node Exporter URL </Typography>
               </Grid>
-              <Grid item xs={7}>
+              <Grid item xs={5}>
                 <TextField
                   value={values.exporter_url}
                   type="text"
@@ -258,6 +277,12 @@ const NodesForm = ({
                     </Tooltip>
                   </MuiThemeProvider>
                 </Grid>
+              </Grid>
+              <Grid item xs={2}>
+                <PingNodeExporter
+                  disabled={false}
+                  exporterUrl={values.exporter_url}
+                />
               </Grid>
               <Grid item xs={2}>
                 <Typography> Node is Validator </Typography>
@@ -395,12 +420,6 @@ const NodesForm = ({
                   justify="flex-end"
                   alignItems="center"
                 >
-                  <PingCosmosButton
-                    disabled={false}
-                    tendermint_rpc_url={values.tendermint_rpc_url}
-                    prometheus_url={values.prometheus_url}
-                    exporter_url={values.exporter_url}
-                  />
                   <Button
                     color="primary"
                     size="md"
