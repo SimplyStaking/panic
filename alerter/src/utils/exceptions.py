@@ -26,7 +26,6 @@ class MessageWasNotDeliveredException(PANICException):
 class NoMetricsGivenException(PANICException):
 
     def __init__(self, message: str) -> None:
-        message = message
         code = 5002
         super().__init__(message, code)
 
@@ -96,8 +95,15 @@ class ParentIdsMissMatchInAlertsConfiguration(PANICException):
         super().__init__(message, code)
 
 
+class MissingKeyInConfigException(PANICException):
+    def __init__(self, key: str, config_file: str):
+        message = "Expected {} field in the {} config".format(key, config_file)
+        code = 5011
+        super().__init__(message, code)
+
+
 class JSONDecodeException(PANICException):
 
     def __init__(self, exception: JSONDecodeError) -> None:
-        code = 5011
+        code = 5012
         super().__init__(exception.msg, code)
