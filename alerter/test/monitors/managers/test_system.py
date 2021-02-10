@@ -2,8 +2,8 @@ import copy
 import json
 import logging
 import multiprocessing
-import unittest
 import time
+import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock

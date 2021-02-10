@@ -258,7 +258,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
     while True:
         try:
-            alert_router = AlertRouter(display_name,  alert_router_logger,
+            alert_router = AlertRouter(display_name, alert_router_logger,
                                        rabbit_ip, redis_ip, redis_db,
                                        redis_port, unique_alerter_identifier,
                                        env.ENABLE_CONSOLE_ALERTS,
