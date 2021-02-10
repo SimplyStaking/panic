@@ -11,7 +11,7 @@ from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_MONITOR_NAME_TEMPLATE,
                                  GITHUB_MONITOR_NAME_TEMPLATE)
@@ -40,7 +40,7 @@ def _initialise_monitor_logger(monitor_display_name: str,
             # monitor's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return monitor_logger
 
@@ -66,7 +66,7 @@ def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
             msg = get_initialisation_error_message(monitor_display_name, e)
             log_and_print(msg, monitor_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return monitor
 

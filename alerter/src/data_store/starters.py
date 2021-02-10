@@ -9,7 +9,7 @@ from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME)
 from src.utils.logging import create_logger, log_and_print
@@ -36,7 +36,7 @@ def _initialize_store_logger(
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return store_logger
 
@@ -56,7 +56,7 @@ def _initialize_store(store_type: Type[T], store_display_name: str) -> T:
             msg = get_initialisation_error_message(store_display_name, e)
             log_and_print(msg, store_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return store
 

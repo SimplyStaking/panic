@@ -7,7 +7,7 @@ from types import FrameType
 
 from src.health_checker.manager import HealthCheckerManager
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  HEALTH_CHECKER_MANAGER_NAME)
 from src.utils.logging import create_logger, log_and_print
@@ -34,7 +34,7 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
             log_and_print(get_reattempting_message(component_display_name),
                           dummy_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return new_logger
 
@@ -58,7 +58,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           health_checker_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return health_checker_manager
 

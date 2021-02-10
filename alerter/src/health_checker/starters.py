@@ -8,7 +8,7 @@ from src.data_store.redis import RedisApi
 from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME)
 from src.utils.logging import create_logger, log_and_print
@@ -37,7 +37,7 @@ def _initialize_health_checker_logger(
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return component_logger
 
@@ -63,7 +63,7 @@ def _initialize_component_redis(component_display_name: str,
             msg = get_initialisation_error_message(component_display_name, e)
             log_and_print(msg, component_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return redis
 
@@ -87,7 +87,7 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
             msg = get_initialisation_error_message(component_display_name, e)
             log_and_print(msg, logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return heartbeat_handler
 
@@ -111,7 +111,7 @@ def _initialize_ping_publisher() -> PingPublisher:
             msg = get_initialisation_error_message(component_display_name, e)
             log_and_print(msg, logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return ping_publisher
 

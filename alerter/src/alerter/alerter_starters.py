@@ -8,7 +8,7 @@ from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
                                  GITHUB_ALERTER_NAME)
@@ -34,7 +34,7 @@ def _initialize_alerter_logger(alerter_display_name: str,
             # alerter's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return alerter_logger
 
@@ -60,7 +60,7 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
             msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, system_alerter_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return system_alerter
 
@@ -83,7 +83,7 @@ def _initialize_github_alerter() -> GithubAlerter:
             msg = get_initialisation_error_message(alerter_display_name, e)
             log_and_print(msg, github_alerter_logger)
             # sleep 10 seconds before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter
 

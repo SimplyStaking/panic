@@ -27,7 +27,7 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 RE_INITIALIZE_SLEEPING_PERIOD,
+                                 RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTERS_MANAGER_NAME,
                                  GITHUB_ALERTER_MANAGER_NAME,
@@ -61,7 +61,7 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
             log_and_print(get_reattempting_message(component_display_name),
                           dummy_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return new_logger
 
@@ -86,7 +86,7 @@ def _initialize_system_alerters_manager() -> SystemAlertersManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           system_alerters_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
     return system_alerters_manager
 
 
@@ -110,7 +110,7 @@ def _initialize_github_alerter_manager() -> GithubAlerterManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           github_alerter_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter_manager
 
@@ -139,7 +139,7 @@ def _initialize_system_monitors_manager() -> SystemMonitorsManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           system_monitors_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return system_monitors_manager
 
@@ -168,7 +168,7 @@ def _initialize_github_monitors_manager() -> GitHubMonitorsManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           github_monitors_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_monitors_manager
 
@@ -197,7 +197,7 @@ def _initialize_data_transformers_manager() -> DataTransformersManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           data_transformers_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return data_transformers_manager
 
@@ -222,7 +222,7 @@ def _initialize_channels_manager() -> ChannelsManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           channels_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return channels_manager
 
@@ -248,7 +248,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
                 display_name, e), dummy_logger)
             log_and_print(get_reattempting_message(display_name), dummy_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     rabbit_ip = env.RABBIT_IP
     redis_ip = env.REDIS_IP
@@ -270,7 +270,7 @@ def _initialize_alert_router() -> Tuple[AlertRouter, logging.Logger]:
             log_and_print(get_reattempting_message(display_name),
                           alert_router_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
 
 def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
@@ -294,7 +294,7 @@ def _initialize_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
             log_and_print(get_reattempting_message(display_name),
                           config_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
 
 def _initialize_data_store_manager() -> StoreManager:
@@ -317,7 +317,7 @@ def _initialize_data_store_manager() -> StoreManager:
             log_and_print(get_reattempting_message(manager_display_name),
                           data_store_manager_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return data_store_manager
 
@@ -551,9 +551,9 @@ def _initialise_and_declare_config_queues() -> None:
             if ret == -1:
                 log_and_print(
                     "RabbitMQ is temporarily unavailable. Re-trying in {} "
-                    "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD),
+                    "seconds.".format(RE_INITIALISE_SLEEPING_PERIOD),
                     dummy_logger)
-                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
                 continue
 
             # Config exchange declaration
@@ -652,9 +652,9 @@ def _initialise_and_declare_config_queues() -> None:
             if ret == -1:
                 log_and_print(
                     "RabbitMQ is temporarily unavailable. Re-trying in {} "
-                    "seconds.".format(RE_INITIALIZE_SLEEPING_PERIOD),
+                    "seconds.".format(RE_INITIALISE_SLEEPING_PERIOD),
                     dummy_logger)
-                time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
                 continue
 
             log_and_print("Configuration queues initialisation procedure has "
@@ -665,23 +665,23 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print("Channel error while initializing the configuration "
                           "queues: {}. Re-trying in {} "
                           "seconds.".format(repr(e),
-                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
                           dummy_logger)
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
         except pika.exceptions.AMQPConnectionError as e:
             log_and_print("RabbitMQ connection error while initializing the "
                           "configuration queues: {}. Re-trying in {} "
                           "seconds.".format(repr(e),
-                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
                           dummy_logger)
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
         except Exception as e:
             log_and_print("Unexpected exception while initializing the "
                           "configuration queues: {}. Re-trying in {} "
                           "seconds.".format(repr(e),
-                                            RE_INITIALIZE_SLEEPING_PERIOD),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
                           dummy_logger)
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@ from src.channels_manager.handlers.telegram.commands import \
     TelegramCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                  TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
@@ -61,7 +61,7 @@ def _initialize_channel_handler_logger(
             # handlers's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return handler_logger
 
@@ -81,7 +81,7 @@ def _initialize_alerts_logger() -> logging.Logger:
             # logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return alerts_logger
 
@@ -116,7 +116,7 @@ def _initialize_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return telegram_alerts_handler
 
@@ -158,7 +158,7 @@ def _initialize_telegram_commands_handler(
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return telegram_commands_handler
 
@@ -200,7 +200,7 @@ def _initialize_twilio_alerts_handler(
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return twilio_alerts_handler
 
@@ -242,7 +242,7 @@ def _initialize_pagerduty_alerts_handler(integration_key: str, channel_id: str,
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return pagerduty_alerts_handler
 
@@ -282,7 +282,7 @@ def _initialize_email_alerts_handler(
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return email_alerts_handler
 
@@ -325,7 +325,7 @@ def _initialize_opsgenie_alerts_handler(api_key: str, eu_host: bool,
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return opsgenie_alerts_handler
 
@@ -362,7 +362,7 @@ def _initialize_console_alerts_handler(channel_id: str, channel_name: str) \
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return console_alerts_handler
 
@@ -398,7 +398,7 @@ def _initialize_log_alerts_handler(channel_id: str, channel_name: str) \
             msg = get_initialisation_error_message(handler_display_name, e)
             log_and_print(msg, handler_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return log_alerts_handler
 
