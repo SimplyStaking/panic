@@ -36,7 +36,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
-        self.redis_db = env.REDIS_TEST_DB
+        self.redis_db = env.REDIS_DB
         self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
