@@ -1,8 +1,7 @@
 import logging
 from typing import List, Optional, Callable
 
-from watchdog.events import PatternMatchingEventHandler, FileSystemEvent, \
-    FileSystemMovedEvent
+from watchdog.events import PatternMatchingEventHandler, FileSystemEvent
 
 
 class ConfigFileEventHandler(PatternMatchingEventHandler):

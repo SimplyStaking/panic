@@ -11,8 +11,9 @@ from unittest.mock import MagicMock
 import pika
 from freezegun import freeze_time
 from parameterized import parameterized
-from watchdog.events import FileCreatedEvent, FileModifiedEvent, \
-    FileSystemEvent, FileDeletedEvent
+from watchdog.events import (
+    FileCreatedEvent, FileModifiedEvent, FileSystemEvent, FileDeletedEvent
+)
 from watchdog.observers.polling import PollingObserver
 
 from src.config_manager import ConfigsManager
@@ -65,8 +66,9 @@ class TestConfigsManager(unittest.TestCase):
                 return
             except Exception as e:
                 tries += 1
-                print("Could not connect to rabbit. Attempts so far: {}".format(
-                    tries))
+                print(
+                    "Could not disconnect to rabbit. Attempts so far: {}".format(
+                        tries))
                 print(e)
                 if tries >= attempts:
                     raise e
@@ -106,7 +108,7 @@ class TestConfigsManager(unittest.TestCase):
     def test_instance_created(self):
         self.assertIsNotNone(self.test_config_manager)
 
-    def test_name(self):
+    def test_name_returns_component_name(self):
         self.assertEqual(
             self.CONFIG_MANAGER_NAME, self.test_config_manager.name
         )
@@ -116,9 +118,10 @@ class TestConfigsManager(unittest.TestCase):
     ])
     @mock.patch.object(RabbitMQApi, "confirm_delivery")
     @mock.patch.object(RabbitMQApi, "basic_consume")
+    @mock.patch.object(RabbitMQApi, "basic_qos")
     def test__initialise_rabbit_initialises_queues(
-            self, queue_to_check: str, mock_basic_consume: MagicMock,
-            mock_confirm_delivery: MagicMock
+            self, queue_to_check: str, mock_basic_qos: MagicMock,
+            mock_basic_consume: MagicMock, mock_confirm_delivery: MagicMock
     ):
         mock_basic_consume.return_value = None
         mock_confirm_delivery.return_value = None
@@ -128,7 +131,8 @@ class TestConfigsManager(unittest.TestCase):
             # Testing this separately since this is a critical function
             self.test_config_manager._initialise_rabbitmq()
 
-            mock_basic_consume.assert_called()
+            mock_basic_qos.assert_called_once()
+            mock_basic_consume.assert_called_once()
             mock_confirm_delivery.assert_called()
 
             self.rabbitmq.queue_declare(queue_to_check, passive=True)
@@ -143,9 +147,10 @@ class TestConfigsManager(unittest.TestCase):
     ])
     @mock.patch.object(RabbitMQApi, "confirm_delivery")
     @mock.patch.object(RabbitMQApi, "basic_consume")
+    @mock.patch.object(RabbitMQApi, "basic_qos")
     def test__initialise_rabbit_initialises_exchanges(
-            self, exchange_to_check: str, mock_basic_consume: MagicMock,
-            mock_confirm_delivery: MagicMock
+            self, exchange_to_check: str, mock_basic_qos: MagicMock,
+            mock_basic_consume: MagicMock, mock_confirm_delivery: MagicMock
     ):
         mock_basic_consume.return_value = None
         mock_confirm_delivery.return_value = None
@@ -156,6 +161,7 @@ class TestConfigsManager(unittest.TestCase):
             # Testing this separately since this is a critical function
             self.test_config_manager._initialise_rabbitmq()
 
+            mock_basic_qos.assert_called_once()
             mock_basic_consume.assert_called()
             mock_confirm_delivery.assert_called()
 
@@ -169,6 +175,9 @@ class TestConfigsManager(unittest.TestCase):
     def test__connect_to_rabbit(self, mock_connect: MagicMock):
         mock_connect.return_value = None
         self.test_config_manager._connect_to_rabbit()
+
+        mock_connect.assert_called()
+        self.assertEqual(2, mock_connect.call_count)
         self.assertTrue(self.test_config_manager.connected_to_rabbit)
 
     @mock.patch.object(RabbitMQApi, "disconnect_till_successful", autospec=True)
@@ -176,15 +185,13 @@ class TestConfigsManager(unittest.TestCase):
         mock_disconnect.return_value = None
         self.test_config_manager._connected_to_rabbit = True
         self.test_config_manager.disconnect_from_rabbit()
+        mock_disconnect.assert_called()
+        self.assertEqual(2, mock_disconnect.call_count)
         self.assertFalse(self.test_config_manager.connected_to_rabbit)
 
     @freeze_time("1997-08-15T10:21:33.000030")
-    @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
     @mock.patch.object(PollingObserver, "is_alive", autospec=True)
-    def test__process_ping_sends_valid_hb(
-            self, mock_is_alive: MagicMock, mock_ack: MagicMock
-    ):
-        mock_ack.return_value = None
+    def test__process_ping_sends_valid_hb(self, mock_is_alive: MagicMock):
         mock_is_alive.return_value = True
 
         expected_output = {
@@ -322,20 +329,20 @@ class TestConfigsManager(unittest.TestCase):
               "test_field_4": "true"
           }},),
         ({
-            "DEFAULT": {},
-            "test_section_1": {
-                "test_field_1": "Hello",
-                "test_field_2": "",
-                "test_field_3": "10",
-                "test_field_4": "true"
-            },
-            "test_section_2": {
-                "test_field_1": "OK",
-                "test_field_2": "Bye",
-                "test_field_3": "4",
-                "test_field_4": "off"
-            }
-        },),
+             "DEFAULT": {},
+             "test_section_1": {
+                 "test_field_1": "Hello",
+                 "test_field_2": "",
+                 "test_field_3": "10",
+                 "test_field_4": "true"
+             },
+             "test_section_2": {
+                 "test_field_1": "OK",
+                 "test_field_2": "Bye",
+                 "test_field_3": "4",
+                 "test_field_4": "off"
+             }
+         },),
     ])
     def test_send_data(self, config: Dict[str, Any]):
         route_key = "test.route"
@@ -369,7 +376,7 @@ class TestConfigsManager(unittest.TestCase):
             )
             self.assertEqual(1, queue_res.method.message_count)
 
-            # Check that the message received is a valid HB
+            # Check that the message received is what's expected
             _, _, body = self.rabbitmq.basic_get(CONFIG_QUEUE)
             self.assertDictEqual(config, json.loads(body))
         finally:
@@ -380,19 +387,23 @@ class TestConfigsManager(unittest.TestCase):
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
     @mock.patch.object(PollingObserver, "start", autospec=True)
+    @mock.patch.object(RabbitMQApi, "start_consuming", autospec=True)
     def test_start_not_watching(
-            self, mock_observer_start: MagicMock, mock_foreach: MagicMock,
+            self, mock_start_consuming: MagicMock,
+            mock_observer_start: MagicMock, mock_foreach: MagicMock,
             mock_initialise_rabbit: MagicMock
     ):
         self.test_config_manager._watching = False
         mock_foreach.return_value = None
         mock_initialise_rabbit.return_value = None
         mock_observer_start.return_value = None
+        mock_start_consuming.return_value = None
         self.test_config_manager.start()
 
         mock_initialise_rabbit.assert_called_once()
         mock_foreach.assert_called_once()
         mock_observer_start.assert_called_once()
+        mock_start_consuming.assert_called_once()
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
