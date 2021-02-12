@@ -54,9 +54,8 @@ def _initialise_transformer_redis(
     while True:
         try:
             redis = RedisApi(logger=transformer_logger.getChild(
-                RedisApi.__name__), db=int(env.REDIS_DB), host=env.REDIS_IP,
-                port=int(env.REDIS_PORT),
-                namespace=env.UNIQUE_ALERTER_IDENTIFIER)
+                RedisApi.__name__), db=env.REDIS_DB, host=env.REDIS_IP,
+                port=env.REDIS_PORT, namespace=env.UNIQUE_ALERTER_IDENTIFIER)
             break
         except Exception as e:
             msg = get_initialisation_error_message(transformer_name, e)

@@ -21,7 +21,7 @@ class Store(ABC):
         rabbit_ip = env.RABBIT_IP
         self._mongo_ip = env.DB_IP
         self._mongo_db = env.DB_NAME
-        self._mongo_port = int(env.DB_PORT)
+        self._mongo_port = env.DB_PORT
         redis_ip = env.REDIS_IP
         redis_db = env.REDIS_DB
         redis_port = env.REDIS_PORT
