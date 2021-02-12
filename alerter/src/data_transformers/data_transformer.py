@@ -1,7 +1,6 @@
 import logging
 import sys
 from abc import abstractmethod
-from queue import Queue
 from types import FrameType
 from typing import Dict, Union, Tuple
 
@@ -43,10 +42,6 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
     @property
     def state(self) -> Dict[str, Union[System, GitHubRepo]]:
         return self._state
-
-    @property
-    def publishing_queue(self) -> Queue:
-        return self._publishing_queue
 
     @abstractmethod
     def load_state(self, monitorable: Union[System, GitHubRepo]) \
