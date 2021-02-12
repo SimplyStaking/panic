@@ -57,10 +57,6 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         self.rabbitmq.start_consuming()
 
     @abstractmethod
-    def _save_to_redis(self, monitorable: Union[System, GitHubRepo]) -> None:
-        pass
-
-    @abstractmethod
     def _update_state(self, transformed_data: Dict) -> None:
         pass
 
@@ -96,8 +92,8 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
+        self.logger.debug("Sent heartbeat to '%s' exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
         self._initialise_rabbitmq()

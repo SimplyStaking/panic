@@ -11,7 +11,7 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
-from src.data_store.redis import RedisApi, Keys
+from src.data_store.redis import RedisApi
 from src.data_transformers.system import (SystemDataTransformer,
                                           _SYSTEM_DT_INPUT_QUEUE,
                                           _SYSTEM_DT_INPUT_ROUTING_KEY)
@@ -23,7 +23,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import convert_to_float_if_not_none
+from test.test_utils import save_system_to_redis
 
 
 class TestSystemDataTransformer(unittest.TestCase):
@@ -535,101 +535,10 @@ class TestSystemDataTransformer(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_save_to_redis_saves_system_to_redis_correctly(self) -> None:
-        # Clean test db
-        self.redis.delete_all()
-
-        self.test_data_transformer._save_to_redis(self.test_system)
-
-        redis_hash = Keys.get_hash_parent(self.test_system.parent_id)
-        system_id = self.test_system.system_id
-        actual_went_down_at = convert_to_float_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_system_went_down_at(system_id)), None)
-        actual_process_cpu_seconds_total = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash,
-                Keys.get_system_process_cpu_seconds_total(system_id)), None)
-        actual_process_memory_usage = convert_to_float_if_not_none(
-            self.redis.hget(redis_hash,
-                            Keys.get_system_process_memory_usage(system_id)),
-            None)
-        actual_virtual_memory_usage = convert_to_float_if_not_none(
-            self.redis.hget(redis_hash,
-                            Keys.get_system_virtual_memory_usage(system_id)),
-            None)
-        actual_open_file_descriptors = convert_to_float_if_not_none(
-            self.redis.hget(redis_hash,
-                            Keys.get_system_open_file_descriptors(system_id)),
-            None)
-        actual_system_cpu_usage = convert_to_float_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_system_system_cpu_usage(system_id)), None)
-        actual_system_ram_usage = convert_to_float_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_system_system_ram_usage(system_id)), None)
-        actual_system_storage_usage = convert_to_float_if_not_none(
-            self.redis.hget(redis_hash,
-                            Keys.get_system_system_storage_usage(system_id)),
-            None)
-        actual_network_transmit_bytes_per_second = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash, Keys.get_system_network_transmit_bytes_per_second(
-                    system_id)), None)
-        actual_network_transmit_bytes_total = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash,
-                Keys.get_system_network_transmit_bytes_total(system_id)), None)
-        actual_network_receive_bytes_per_second = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash, Keys.get_system_network_receive_bytes_per_second(
-                    system_id)), None)
-        actual_network_receive_bytes_total = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash,
-                Keys.get_system_network_receive_bytes_total(system_id)), None)
-        actual_disk_io_time_seconds_in_interval = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash,
-                Keys.get_system_disk_io_time_seconds_in_interval(system_id)),
-            None)
-        actual_disk_io_time_seconds_total = convert_to_float_if_not_none(
-            self.redis.hget(
-                redis_hash,
-                Keys.get_system_disk_io_time_seconds_total(system_id)), None)
-        actual_last_monitored = convert_to_float_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_system_last_monitored(system_id)), None)
-
-        self.assertEqual(actual_went_down_at, self.test_system.went_down_at)
-        self.assertEqual(actual_process_cpu_seconds_total,
-                         self.test_system.process_cpu_seconds_total)
-        self.assertEqual(actual_process_memory_usage,
-                         self.test_system.process_memory_usage)
-        self.assertEqual(actual_virtual_memory_usage,
-                         self.test_system.virtual_memory_usage)
-        self.assertEqual(actual_open_file_descriptors,
-                         self.test_system.open_file_descriptors)
-        self.assertEqual(actual_system_cpu_usage,
-                         self.test_system.system_cpu_usage)
-        self.assertEqual(actual_system_ram_usage,
-                         self.test_system.system_ram_usage)
-        self.assertEqual(actual_system_storage_usage,
-                         self.test_system.system_storage_usage)
-        self.assertEqual(actual_network_transmit_bytes_per_second,
-                         self.test_system.network_transmit_bytes_per_second)
-        self.assertEqual(actual_network_transmit_bytes_total,
-                         self.test_system.network_transmit_bytes_total)
-        self.assertEqual(actual_network_receive_bytes_per_second,
-                         self.test_system.network_receive_bytes_per_second)
-        self.assertEqual(actual_network_receive_bytes_total,
-                         self.test_system.network_receive_bytes_total)
-        self.assertEqual(actual_disk_io_time_seconds_in_interval,
-                         self.test_system.disk_io_time_seconds_in_interval)
-        self.assertEqual(actual_disk_io_time_seconds_total,
-                         self.test_system.disk_io_time_seconds_total)
-        self.assertEqual(actual_last_monitored, self.test_system.last_monitored)
-
     def test_load_state_successful_if_system_exists_in_redis_and_redis_online(
             self) -> None:
         # Save state to Redis first
-        self.test_data_transformer._save_to_redis(self.test_system)
+        save_system_to_redis(self.redis, self.test_system)
 
         # Reset system to default values
         self.test_system.reset()
@@ -669,7 +578,7 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_load_state_keeps_same_state_if_system_in_redis_and_redis_offline(
             self) -> None:
         # Save state to Redis first
-        self.test_data_transformer._save_to_redis(self.test_system)
+        save_system_to_redis(self.redis, self.test_system)
 
         # Reset system to default values
         self.test_system.reset()
@@ -1419,7 +1328,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             # Define a state. Make sure the state in question is stored in
             # redis.
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_system)
+            save_system_to_redis(self.redis, self.test_system)
             self.test_data_transformer._state['system2'] = self.test_data_str
 
             # Send raw data
@@ -1439,7 +1348,7 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             # Reset state for error path
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_system)
+            save_system_to_redis(self.redis, self.test_system)
             self.test_data_transformer._state['system2'] = self.test_data_str
 
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1455,134 +1364,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.assertEqual(
                 self.test_system.__dict__,
                 self.test_data_transformer._state[self.test_system_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_transform_data")
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_saves_sys_to_redis_if_no_proc_errors_new_system(
-            self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
-        # We will perform this test by checking that `_save_to_redis` is called
-        # correctly as the logic of `save_to_redis` is already tested.
-        mock_ack.return_value = None
-        mock_trans_data.side_effect = [
-            (
-                self.transformed_data_example_result,
-                self.test_data_for_alerting_result,
-                self.transformed_data_example_result
-            ),
-            (
-                self.transformed_data_example_downtime_error,
-                self.test_data_for_alerting_down_error,
-                self.transformed_data_example_downtime_error
-            ),
-        ]
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_general_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_system_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            # To reset the state as if the system was not already added
-            del self.test_data_transformer._state[self.test_system_id]
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_system_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            self.assertEqual(2, mock_save_to_redis.call_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_transform_data")
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_saves_sys_to_redis_if_no_proc_errors_sys_in_state(
-            self, mock_ack, mock_save_to_redis, mock_transform_data) -> None:
-        # We will perform this test by checking that `_save_to_redis` is called
-        # correctly, as the logic of `save_to_redis` is already tested.
-        mock_ack.return_value = None
-        mock_transform_data.side_effect = [
-            (
-                self.transformed_data_example_result,
-                self.test_data_for_alerting_result,
-                self.transformed_data_example_result
-            ),
-            (
-                self.transformed_data_example_downtime_error,
-                self.test_data_for_alerting_down_error,
-                self.transformed_data_example_downtime_error
-            ),
-        ]
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_general_error)
-            properties = pika.spec.BasicProperties()
-
-            # Add the system to the state
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_system_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            # Reset state for second test
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_system_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            self.assertEqual(2, mock_save_to_redis.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1607,7 +1388,7 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_system)
+            save_system_to_redis(self.redis, self.test_system)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1621,36 +1402,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_system_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        mock_ack.assert_called_once()
-
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_res_or_err_not_in_data(
-            self, mock_ack, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body = json.dumps({'bad_key': 'bad_val'})
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1680,7 +1431,7 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_system)
+            save_system_to_redis(self.redis, self.test_system)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1697,40 +1448,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_system_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_missing_keys_in_data(
-            self, mock_ack, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps({'result': {'bad_key': 'bad_val'}})
-            body_error = json.dumps({'error': {'bad_key': 'bad_val'}})
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1758,7 +1475,7 @@ class TestSystemDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_system)
+            save_system_to_redis(self.redis, self.test_system)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1775,42 +1492,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_system_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_transform_data")
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_trans_data_exception(
-            self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
-        mock_ack.return_value = None
-        mock_trans_data.side_effect = self.test_exception
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_general_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1952,45 +1633,6 @@ class TestSystemDataTransformer(unittest.TestCase):
             self, mock_ack, mock_place_on_queue, mock_transform_data) -> None:
         mock_ack.return_value = None
         mock_transform_data.side_effect = self.test_exception
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_general_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            # Check that place_on_queue was not called
-            mock_place_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_no_data_on_queue_if_save_to_redis_exception(
-            self, mock_ack, mock_place_on_queue, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        mock_save_to_redis.side_effect = self.test_exception
-
-        # Load the state to avoid errors when having the system already in
-        # redis due to other tests.
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
         try:
             # We must initialise rabbit to the environment and parameters needed
             # by `_process_raw_data`
@@ -2230,46 +1872,6 @@ class TestSystemDataTransformer(unittest.TestCase):
         mock_ack.return_value = None
         mock_send_hb.return_value = None
         mock_update_state.side_effect = self.test_exception
-
-        # Load the state to avoid having the system already in redis, hence
-        # avoiding errors.
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_downtime_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            # Check that send_heartbeat was not called
-            mock_send_hb.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(SystemDataTransformer, "_save_to_redis")
-    @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_send_hb_if_proc_errors_save_to_redis(
-            self, mock_ack, mock_send_hb, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        mock_send_hb.return_value = None
-        mock_save_to_redis.side_effect = self.test_exception
 
         # Load the state to avoid having the system already in redis, hence
         # avoiding errors.
@@ -2575,6 +2177,11 @@ class TestSystemDataTransformer(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
     @mock.patch.object(SystemDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
@@ -2643,3 +2250,8 @@ class TestSystemDataTransformer(unittest.TestCase):
             )
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)

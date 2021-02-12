@@ -70,19 +70,6 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _save_to_redis(self, github_repo: Union[System, GitHubRepo]) -> None:
-        # Save it in redis just in case the process restarts
-        redis_hash = Keys.get_hash_parent(github_repo.parent_id)
-        repo_id = github_repo.repo_id
-        self.redis.hset_multiple(redis_hash, {
-            Keys.get_github_no_of_releases(repo_id): github_repo.no_of_releases,
-            Keys.get_github_last_monitored(repo_id): github_repo.last_monitored,
-        })
-
-        self.logger.debug(
-            "Saving %s state: _no_of_releases=%s, _last_monitored=%s",
-            github_repo, github_repo.no_of_releases, github_repo.last_monitored)
-
     def load_state(self, repo: Union[System, GitHubRepo]) \
             -> Union[System, GitHubRepo]:
         # If Redis is down, the data passed as default will be stored as
@@ -289,7 +276,6 @@ class GitHubDataTransformer(DataTransformer):
         transformed_data = {}
         data_for_alerting = {}
         data_for_saving = {}
-        repo_id = ''
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
@@ -324,7 +310,6 @@ class GitHubDataTransformer(DataTransformer):
         if not processing_error:
             try:
                 self._update_state(transformed_data)
-                self._save_to_redis(self.state[repo_id])
                 self.logger.info("Successfully processed %s", raw_data)
             except Exception as e:
                 self.logger.error("Error when processing %s", raw_data)

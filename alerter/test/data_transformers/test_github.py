@@ -11,7 +11,7 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
-from src.data_store.redis import RedisApi, Keys
+from src.data_store.redis import RedisApi
 from src.data_transformers.github import (GitHubDataTransformer,
                                           _GITHUB_DT_INPUT_QUEUE,
                                           _GITHUB_DT_INPUT_ROUTING_KEY)
@@ -23,8 +23,7 @@ from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import convert_to_int_if_not_none, \
-    convert_to_float_if_not_none
+from test.test_utils import save_github_repo_to_redis
 
 
 class TestGitHubDataTransformer(unittest.TestCase):
@@ -395,26 +394,10 @@ class TestGitHubDataTransformer(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_save_to_redis_saves_repo_to_redis_correctly(self) -> None:
-        # Clean test db
-        self.redis.delete_all()
-
-        self.test_data_transformer._save_to_redis(self.test_repo)
-
-        redis_hash = Keys.get_hash_parent(self.test_repo.parent_id)
-        repo_id = self.test_repo.repo_id
-        actual_no_of_releases = convert_to_int_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_github_no_of_releases(repo_id)), None)
-        actual_last_monitored = convert_to_float_if_not_none(self.redis.hget(
-            redis_hash, Keys.get_github_last_monitored(repo_id)), None)
-
-        self.assertEqual(actual_no_of_releases, self.test_repo.no_of_releases)
-        self.assertEqual(actual_last_monitored, self.test_repo.last_monitored)
-
     def test_load_state_successful_if_repo_exists_in_redis_and_redis_online(
             self) -> None:
         # Save state to Redis first
-        self.test_data_transformer._save_to_redis(self.test_repo)
+        save_github_repo_to_redis(self.redis, self.test_repo)
 
         # Reset repo to default values
         self.test_repo.reset()
@@ -428,7 +411,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
     def test_load_state_keeps_same_state_if_repo_in_redis_and_redis_offline(
             self) -> None:
         # Save state to Redis first
-        self.test_data_transformer._save_to_redis(self.test_repo)
+        save_github_repo_to_redis(self.redis, self.test_repo)
 
         # Reset repo to default values
         self.test_repo.reset()
@@ -974,7 +957,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             # Define a state. Make sure the state in question is stored in
             # redis.
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_repo)
+            save_github_repo_to_redis(self.redis, self.test_repo)
             self.test_data_transformer._state['repo2'] = self.test_data_str
 
             # Send raw data
@@ -994,7 +977,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
             # Reset state for error path
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_repo)
+            save_github_repo_to_redis(self.redis, self.test_repo)
             self.test_data_transformer._state['repo2'] = self.test_data_str
 
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1010,134 +993,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.assertEqual(
                 self.test_repo.__dict__,
                 self.test_data_transformer._state[self.test_repo_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_transform_data")
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_saves_repo_to_redis_if_no_proc_errors_new_repo(
-            self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
-        # We will perform this test by checking that `_save_to_redis` is called
-        # correctly as the logic of `save_to_redis` is already tested.
-        mock_ack.return_value = None
-        mock_trans_data.side_effect = [
-            (
-                self.transformed_data_example_result,
-                self.test_data_for_alerting_result,
-                self.test_data_for_saving_result
-            ),
-            (
-                self.transformed_data_example_error,
-                self.transformed_data_example_error,
-                self.transformed_data_example_error
-            ),
-        ]
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_repo_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            # To reset the state as if the repo was not already added
-            del self.test_data_transformer._state[self.test_repo_id]
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_repo_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            self.assertEqual(2, mock_save_to_redis.call_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_transform_data")
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_saves_repo_to_red_if_no_proc_errors_repo_in_state(
-            self, mock_ack, mock_save_to_redis, mock_transform_data) -> None:
-        # We will perform this test by checking that `_save_to_redis` is called
-        # correctly, as the logic of `save_to_redis` is already tested.
-        mock_ack.return_value = None
-        mock_transform_data.side_effect = [
-            (
-                self.transformed_data_example_result,
-                self.test_data_for_alerting_result,
-                self.test_data_for_saving_result
-            ),
-            (
-                self.transformed_data_example_error,
-                self.transformed_data_example_error,
-                self.transformed_data_example_error
-            ),
-        ]
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            # Add the repo to the state
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_repo_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            # Reset state for second test
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            args, _ = mock_save_to_redis.call_args
-            self.assertDictEqual(
-                self.test_data_transformer._state[self.test_repo_id].__dict__,
-                args[0].__dict__)
-            self.assertEqual(1, len(args))
-
-            self.assertEqual(2, mock_save_to_redis.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1162,7 +1017,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_repo)
+            save_github_repo_to_redis(self.redis, self.test_repo)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1176,36 +1031,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_repo_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        mock_ack.assert_called_once()
-
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_res_or_err_not_in_data(
-            self, mock_ack, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps({'bad_key': 'bad_val'})
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1235,7 +1060,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_repo)
+            save_github_repo_to_redis(self.redis, self.test_repo)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1252,40 +1077,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_repo_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_missing_keys_in_data(
-            self, mock_ack, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps({'result': {'bad_key': 'bad_val'}})
-            body_error = json.dumps({'error': {'bad_key': 'bad_val'}})
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1313,7 +1104,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
             # Make the state non-empty and save it to redis
             self.test_data_transformer._state = copy.deepcopy(self.test_state)
-            self.test_data_transformer._save_to_redis(self.test_repo)
+            save_github_repo_to_redis(self.redis, self.test_repo)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1330,42 +1121,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.assertEqual(
                 expected_data.__dict__,
                 self.test_data_transformer._state[self.test_repo_id].__dict__)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_transform_data")
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_save_to_redis_if_trans_data_exception(
-            self, mock_ack, mock_save_to_redis, mock_trans_data) -> None:
-        mock_ack.return_value = None
-        mock_trans_data.side_effect = self.test_exception
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            # Check that save to redis was not called
-            mock_save_to_redis.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1504,41 +1259,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self, mock_ack, mock_place_on_queue, mock_transform_data) -> None:
         mock_ack.return_value = None
         mock_transform_data.side_effect = self.test_exception
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            # Check that place_on_queue was not called
-            mock_place_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(GitHubDataTransformer, "_place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_no_data_on_queue_if_save_to_redis_exception(
-            self, mock_ack, mock_place_on_queue, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        mock_save_to_redis.side_effect = self.test_exception
         try:
             # We must initialise rabbit to the environment and parameters needed
             # by `_process_raw_data`
@@ -1766,42 +1486,6 @@ class TestGitHubDataTransformer(unittest.TestCase):
         mock_ack.return_value = None
         mock_send_hb.return_value = None
         mock_update_state.side_effect = self.test_exception
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=_GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-            # Check that send_heartbeat was not called
-            mock_send_hb.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
-    @mock.patch.object(GitHubDataTransformer, "_save_to_redis")
-    @mock.patch.object(GitHubDataTransformer, "_send_heartbeat")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_does_not_send_hb_if_proc_errors_save_to_redis(
-            self, mock_ack, mock_send_hb, mock_save_to_redis) -> None:
-        mock_ack.return_value = None
-        mock_send_hb.return_value = None
-        mock_save_to_redis.side_effect = self.test_exception
         try:
             # We must initialise rabbit to the environment and parameters needed
             # by `_process_raw_data`
@@ -2075,6 +1759,11 @@ class TestGitHubDataTransformer(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
     @mock.patch.object(GitHubDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
@@ -2135,3 +1824,8 @@ class TestGitHubDataTransformer(unittest.TestCase):
             )
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
