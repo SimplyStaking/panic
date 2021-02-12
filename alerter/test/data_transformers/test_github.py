@@ -201,6 +201,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.test_data_transformer = GitHubDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.max_queue_size)
+        self.invalid_transformed_data = {'bad_key': 'bad_value'}
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -456,21 +457,19 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
     def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
             self) -> None:
-        invalid_transformed_data = {'bad_key': 'bad_value'}
         self.assertRaises(ReceivedUnexpectedDataException,
                           self.test_data_transformer._update_state,
-                          invalid_transformed_data)
+                          self.invalid_transformed_data)
 
     def test_update_state_leaves_same_state_if_no_result_or_err_in_trans_data(
             self) -> None:
-        invalid_transformed_data = {'bad_key': 'bad_value'}
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         expected_state = copy.deepcopy(self.test_state)
 
         # First confirm that an exception is still raised
         self.assertRaises(ReceivedUnexpectedDataException,
                           self.test_data_transformer._update_state,
-                          invalid_transformed_data)
+                          self.invalid_transformed_data)
 
         # Check that there are the same keys in the state
         self.assertEqual(expected_state.keys(),
@@ -568,11 +567,10 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
     def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
             self) -> None:
-        invalid_transformed_data = {'bad_key': 'bad_value'}
         self.assertRaises(
             ReceivedUnexpectedDataException,
             self.test_data_transformer._process_transformed_data_for_saving,
-            invalid_transformed_data)
+            self.invalid_transformed_data)
 
     def test_process_trans_data_for_alerting_returns_expected_data_if_result(
             self) -> None:
@@ -591,11 +589,10 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
     def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
             self) -> None:
-        invalid_transformed_data = {'bad_key', 'bad_val'}
         self.assertRaises(
             ReceivedUnexpectedDataException,
             self.test_data_transformer._process_transformed_data_for_alerting,
-            invalid_transformed_data)
+            self.invalid_transformed_data)
 
     @mock.patch.object(GitHubDataTransformer,
                        "_process_transformed_data_for_alerting")
@@ -636,10 +633,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
     def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
             self) -> None:
-        invalid_transformed_data = {'bad_key': 'bad_value'}
         self.assertRaises(ReceivedUnexpectedDataException,
                           self.test_data_transformer._transform_data,
-                          invalid_transformed_data)
+                          self.invalid_transformed_data)
 
     def test_transform_data_raises_key_error_if_key_does_not_exist_result(
             self) -> None:
@@ -821,7 +817,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps({'bad_key': 'bad_val'})
+            body = json.dumps(self.invalid_transformed_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data
@@ -851,8 +847,8 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps({'result': {'bad_key': 'val'}})
-            body_error = json.dumps({'error': {'bad_key': 'val'}})
+            body_result = json.dumps({'result': self.invalid_transformed_data})
+            body_error = json.dumps({'error': self.invalid_transformed_data})
             properties = pika.spec.BasicProperties()
 
             # Send raw data
@@ -1012,7 +1008,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps({'bad_key': 'bad_val'})
+            body = json.dumps(self.invalid_transformed_data)
             properties = pika.spec.BasicProperties()
 
             # Make the state non-empty and save it to redis
@@ -1198,7 +1194,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps({'bad_key': 'bad_val'})
+            body = json.dumps(self.invalid_transformed_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data
