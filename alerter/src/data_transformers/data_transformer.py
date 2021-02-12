@@ -7,8 +7,8 @@ from typing import Dict, Union, Tuple
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent)
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo

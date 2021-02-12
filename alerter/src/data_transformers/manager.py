@@ -186,4 +186,9 @@ class DataTransformersManager(PublisherSubscriberComponent):
         sys.exit()
 
     def _send_data(self, *args) -> None:
+        """
+        This function was not implemented because the manager does not need
+        to send any data other than heartbeats. The component is still a
+        publisher because we are publishing heartbeats.
+        """
         pass
