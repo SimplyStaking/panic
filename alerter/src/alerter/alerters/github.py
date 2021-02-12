@@ -6,6 +6,7 @@ from typing import List
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert)
@@ -17,8 +18,9 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
 
 
 class GithubAlerter(Alerter):
-    def __init__(self, alerter_name: str, logger: logging.Logger) -> None:
-        super().__init__(alerter_name, logger)
+    def __init__(self, alerter_name: str, logger: logging.Logger,
+                 rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
+        super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -107,6 +109,7 @@ class GithubAlerter(Alerter):
             processing_error = True
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
         # Place the data on the publishing queue if there were no processing
         # errors. This is done after acknowledging the data, so that if
         # acknowledgement fails, the data is processed again and we do not have
@@ -142,6 +145,8 @@ class GithubAlerter(Alerter):
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.github',
-                'data': copy.deepcopy(alert)})
+                'data': copy.deepcopy(alert),
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True})
             self.logger.debug("%s added to the publishing queue successfully.",
                               alert)

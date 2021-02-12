@@ -7,7 +7,8 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils.env import ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL
+from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
+                           RABBIT_IP, ALERTER_PUBLISHING_QUEUE_SIZE)
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
@@ -15,7 +16,7 @@ from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
-
+from src.message_broker.rabbitmq import RabbitMQApi
 
 def _initialise_alerter_logger(alerter_display_name: str,
                                alerter_module_name: str) -> logging.Logger:
@@ -50,9 +51,15 @@ def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
     # Try initialising an alerter until successful
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=system_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
             system_alerter = SystemAlerter(alerter_display_name,
                                            system_alerts_config,
-                                           system_alerter_logger)
+                                           system_alerter_logger,
+                                           rabbitmq,
+                                           ALERTER_PUBLISHING_QUEUE_SIZE
+                                           )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), system_alerter_logger)
             break
@@ -74,8 +81,14 @@ def _initialise_github_alerter() -> GithubAlerter:
     # Try initialising an alerter until successful
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=github_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
             github_alerter = GithubAlerter(alerter_display_name,
-                                           github_alerter_logger)
+                                           github_alerter_logger,
+                                           rabbitmq,
+                                           ALERTER_PUBLISHING_QUEUE_SIZE
+                                           )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), github_alerter_logger)
             break

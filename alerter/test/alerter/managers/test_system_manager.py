@@ -14,16 +14,17 @@ import pika.exceptions
 from freezegun import freeze_time
 
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.managers.system import (
-    SystemAlertersManager, SYS_ALERTERS_MAN_INPUT_QUEUE,
-    SYS_ALERTERS_MAN_INPUT_ROUTING_KEY, SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-    SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+from src.alerter.managers.system import SystemAlertersManager
 from src.alerter.alerter_starters import start_system_alerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
-    CONFIG_EXCHANGE, SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, \
-    SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_ALERTER_NAME_TEMPLATE,
+                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
+                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
 from src.utils.exceptions import PANICException
 from test.utils.test_utils import infinite_fn
 
@@ -221,7 +222,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         )
 
         self.test_manager = SystemAlertersManager(
-            self.dummy_logger, self.manager_name)
+            self.dummy_logger, self.manager_name, self.rabbitmq)
 
         self.empty_message = {
             "DEFAULT": {}
@@ -235,7 +236,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.connect()
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
@@ -284,7 +285,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
     @mock.patch.object(SystemAlertersManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
@@ -299,11 +300,6 @@ class TestSystemAlertersManager(unittest.TestCase):
             # To make sure that the exchanges and queues have not already been
             # declared
             self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(SYS_ALERTERS_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
 
             self.test_manager._initialise_rabbitmq()
 

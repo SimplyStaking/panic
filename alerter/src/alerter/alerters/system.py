@@ -6,6 +6,7 @@ from typing import Dict, Type, List
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.system_alerts import (
     InvalidUrlAlert, OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -37,8 +38,9 @@ _IS_DOWN_LIMITER_NAME = 'system_is_down'
 class SystemAlerter(Alerter):
     def __init__(self, alerter_name: str,
                  system_alerts_config: SystemAlertsConfig,
-                 logger: logging.Logger) -> None:
-        super().__init__(alerter_name, logger)
+                 logger: logging.Logger, rabbitmq: RabbitMQApi,
+                 max_queue_size: int = 0) -> None:
+        super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
@@ -453,6 +455,8 @@ class SystemAlerter(Alerter):
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.system',
-                'data': copy.deepcopy(alert)})
+                'data': copy.deepcopy(alert),
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True})
             self.logger.debug("%s added to the publishing queue successfully.",
                               alert)

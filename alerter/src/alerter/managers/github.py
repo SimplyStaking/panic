@@ -9,23 +9,21 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.managers.manager import AlertersManager
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
+                                 GITHUB_MANAGER_INPUT_QUEUE,
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
-GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
-
 
 class GithubAlerterManager(AlertersManager):
-    def __init__(self, logger: logging.Logger, name: str):
-        super().__init__(logger, name)
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, name, rabbitmq)
         self._alerter_process_dict = {}
-
-    def __str__(self) -> str:
-        return self.name
 
     @property
     def alerter_process_dict(self) -> Dict:
@@ -130,7 +128,7 @@ class GithubAlerterManager(AlertersManager):
                 raise e
 
     # If termination signals are received, terminate all child process and exit
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and any running github alerters will be "
                       "stopped gracefully. Afterwards the {} process will "
@@ -150,4 +148,7 @@ class GithubAlerterManager(AlertersManager):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
+        pass
+
+    def _send_data(self, *args) -> None:
         pass

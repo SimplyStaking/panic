@@ -20,6 +20,7 @@ from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 class TestSystemAlerter(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
+        self.dummy_logger.disabled = True
         self.rabbit_ip = RABBIT_IP
         self.alert_input_exchange = ALERT_EXCHANGE
         self.connection_check_time_interval = datetime.timedelta(seconds=0)
@@ -100,7 +101,9 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter = SystemAlerter(
             self.alerter_name,
             self.system_alerts_config,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq,
+            ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         """
@@ -138,7 +141,9 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter_warnings_disabled = SystemAlerter(
             self.alerter_name,
             self.system_alerts_config_warnings_disabled,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq,
+            ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         """
@@ -177,7 +182,9 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter_critical_disabled = SystemAlerter(
             self.alerter_name,
             self.system_alerts_config_critical_disabled,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq,
+            ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         """
@@ -217,7 +224,9 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter_all_disabled = SystemAlerter(
             self.alerter_name,
             self.system_alerts_config_all_disabled,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq,
+            ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         """
@@ -401,7 +410,7 @@ class TestSystemAlerter(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.connect()
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(self.queue_used)
             self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
@@ -4065,7 +4074,7 @@ class TestSystemAlerter(unittest.TestCase):
     def test_initialise_rabbit_initialises_queues(self) -> None:
         self.test_system_alerter._initialise_rabbitmq()
         try:
-            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.connect()
             self.rabbitmq.queue_declare(self.queue_used, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(self.queue_used))
@@ -4074,7 +4083,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._initialise_rabbitmq()
 
         try:
-            self.rabbitmq.connect_till_successful()
+            self.rabbitmq.connect()
             self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(ALERT_EXCHANGE))

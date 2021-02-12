@@ -11,13 +11,18 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
+from parameterized import parameterized
+
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.managers.github import (GithubAlerterManager,
                                          GITHUB_MANAGER_INPUT_QUEUE,
                                          GITHUB_MANAGER_INPUT_ROUTING_KEY)
 from src.alerter.alerter_starters import start_github_alerter
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_MANAGER_INPUT_QUEUE,
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
+                                 GITHUB_ALERTER_NAME)
 from src.utils.exceptions import PANICException
 from test.utils.test_utils import infinite_fn
 
@@ -37,10 +42,10 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.timestamp_used = datetime(2012, 1, 1, 1).timestamp()
         self.test_heartbeat = {
-            'component_name': 'Test Component',
+            'component_name': self.manager_name,
             'timestamp': self.timestamp_used,
         }
-        self.github_alerter_name = 'GitHub Alerter'
+        self.github_alerter_name = GITHUB_ALERTER_NAME
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True
         self.dummy_process2 = Process(target=infinite_fn, args=())
@@ -48,11 +53,32 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.dummy_process3 = Process(target=infinite_fn, args=())
         self.dummy_process3.daemon = True
 
+        self.test_rabbit_manager = RabbitMQApi(
+            self.dummy_logger, env.RABBIT_IP,
+            connection_check_time_interval=self.connection_check_time_interval)
+
         self.test_manager = GithubAlerterManager(
-            self.dummy_logger, self.manager_name)
+            self.dummy_logger, self.manager_name, self.rabbitmq)
         self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
+        # Delete any queues and exchanges which are common across many tests
+        try:
+            self.test_rabbit_manager.connect()
+            self.test_manager.rabbitmq.connect()
+            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_purge(GITHUB_MANAGER_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(self.heartbeat_queue)
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(self.heartbeat_queue)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+            self.rabbitmq.disconnect()
+            self.test_rabbit_manager.disconnect()
+        except Exception as e:
+            print("Test failed: %s".format(e))
+
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
@@ -61,6 +87,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.dummy_process3 = None
         self.test_manager = None
         self.test_exception = None
+        self.test_rabbit_manager = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())
@@ -80,6 +107,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self, mock_process_ping) -> None:
         mock_process_ping.return_value = None
         try:
+            self.test_rabbit_manager.connect()
             # To make sure that there is no connection/channel already
             # established
             self.assertIsNone(self.rabbitmq.connection)
@@ -109,7 +137,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             # would be 1. Note when deleting the exchanges in the beginning we
             # also released every binding, hence there are no other queue binded
             # with the same routing key to any exchange at this point.
-            self.test_manager.rabbitmq.basic_publish_confirm(
+            self.test_rabbit_manager.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=GITHUB_MANAGER_INPUT_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
@@ -117,14 +145,9 @@ class TestGithubAlertersManager(unittest.TestCase):
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
-            res = self.test_manager.rabbitmq.queue_declare(
+            res = self.test_rabbit_manager.queue_declare(
                 GITHUB_MANAGER_INPUT_QUEUE, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -134,11 +157,9 @@ class TestGithubAlertersManager(unittest.TestCase):
         # heartbeat is received
         try:
             self.test_manager._initialise_rabbitmq()
+            self.test_rabbit_manager.connect()
 
-            # Delete the queue before to avoid messages in the queue on error.
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-
-            res = self.test_manager.rabbitmq.queue_declare(
+            res = self.test_rabbit_manager.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
             )
@@ -150,22 +171,16 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             # By re-declaring the queue again we can get the number of messages
             # in the queue.
-            res = self.test_manager.rabbitmq.queue_declare(
+            res = self.test_rabbit_manager.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=True
             )
             self.assertEqual(1, res.method.message_count)
 
             # Check that the message received is actually the HB
-            _, _, body = self.test_manager.rabbitmq.basic_get(
+            _, _, body = self.test_rabbit_manager.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -176,7 +191,7 @@ class TestGithubAlertersManager(unittest.TestCase):
 
         self.test_manager._start_alerters_processes()
 
-        new_entry_process = self.test_manager.alerter_process_dict['GitHub Alerter']
+        new_entry_process = self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME]
 
         self.assertTrue(new_entry_process.daemon)
         self.assertEqual(0, len(new_entry_process._args))
@@ -192,7 +207,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         # otherwise the process would not terminate
         time.sleep(1)
 
-        new_entry_process = self.test_manager.alerter_process_dict['GitHub Alerter']
+        new_entry_process = self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME]
         self.assertTrue(new_entry_process.is_alive())
 
         new_entry_process.terminate()
@@ -242,9 +257,9 @@ class TestGithubAlertersManager(unittest.TestCase):
             )
             self.assertEqual(1, res.method.message_count)
             expected_output = {
-                "component_name": "test_github_alerters_manager",
+                "component_name": self.manager_name,
                 "dead_processes": [],
-                "running_processes": ['GitHub Alerter'],
+                "running_processes": [GITHUB_ALERTER_NAME],
                 "timestamp": self.timestamp_used
             }
             # Check that the message received is a valid HB
@@ -253,12 +268,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.alerter_process_dict['GitHub Alerter'].terminate()
-            self.test_manager.alerter_process_dict['GitHub Alerter'].join()
-            self.test_manager.rabbitmq.disconnect()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -279,8 +290,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
-            self.test_manager.alerter_process_dict['GitHub Alerter'].terminate()
-            self.test_manager.alerter_process_dict['GitHub Alerter'].join()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
 
             # Time for processes to terminate
             time.sleep(1)
@@ -312,8 +323,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             )
             self.assertEqual(1, res.method.message_count)
             expected_output = {
-                "component_name": "test_github_alerters_manager",
-                "dead_processes": ['GitHub Alerter'],
+                "component_name": self.manager_name,
+                "dead_processes": [GITHUB_ALERTER_NAME],
                 "running_processes": [],
                 "timestamp": self.timestamp_used
             }
@@ -323,12 +334,9 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.alerter_process_dict['GitHub Alerter'].terminate()
-            self.test_manager.alerter_process_dict['GitHub Alerter'].join()
-            self.test_manager.rabbitmq.disconnect()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
+            self.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -349,15 +357,15 @@ class TestGithubAlertersManager(unittest.TestCase):
             time.sleep(1)
 
             # Automate the case when having all processes dead
-            self.test_manager.alerter_process_dict['GitHub Alerter'].terminate()
-            self.test_manager.alerter_process_dict['GitHub Alerter'].join()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
 
             # Give time for the processes to terminate
             time.sleep(1)
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_manager.alerter_process_dict[
-                                 'GitHub Alerter'].is_alive())
+                                 GITHUB_ALERTER_NAME].is_alive())
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -370,15 +378,11 @@ class TestGithubAlertersManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
-            self.assertTrue(self.test_manager.alerter_process_dict['GitHub Alerter'].is_alive())
+            self.assertTrue(self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive())
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.alerter_process_dict['GitHub Alerter'].terminate()
-            self.test_manager.alerter_process_dict['GitHub Alerter'].join()
-            self.test_manager.rabbitmq.disconnect()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -419,12 +423,6 @@ class TestGithubAlertersManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -442,18 +440,17 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @parameterized.expand([
+      ("pika.exceptions.AMQPChannelError('test')", "pika.exceptions.AMQPChannelError"),
+      ("self.test_exception", "PANICException"),
+      ])
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
-    def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
-            self, hb_mock) -> None:
-        hb_mock.side_effect = pika.exceptions.AMQPConnectionError('test')
+    def test_process_ping_send_hb_raises_exceptions(
+            self, param_input, param_expected, hb_mock) -> None:
+        hb_mock.side_effect = eval(param_input)
         try:
             self.test_manager._initialise_rabbitmq()
 
@@ -463,60 +460,9 @@ class TestGithubAlertersManager(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
-            self.assertRaises(pika.exceptions.AMQPConnectionError,
-                              self.test_manager._process_ping, blocking_channel,
+            self.assertRaises(eval(param_expected),
+                              self.test_manager._process_ping,
+                              blocking_channel,
                               method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
-    def test_process_ping_send_hb_raises_amqp_chan_err_on_chan_err(
-            self, hb_mock) -> None:
-        hb_mock.side_effect = pika.exceptions.AMQPChannelError('test')
-        try:
-            self.test_manager._initialise_rabbitmq()
-
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-            properties = pika.spec.BasicProperties()
-            body = 'ping'
-
-            self.assertRaises(pika.exceptions.AMQPChannelError,
-                              self.test_manager._process_ping, blocking_channel,
-                              method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
-    def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
-            self, hb_mock) -> None:
-        hb_mock.side_effect = self.test_exception
-        try:
-            self.test_manager._initialise_rabbitmq()
-
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
-            properties = pika.spec.BasicProperties()
-            body = 'ping'
-
-            self.assertRaises(PANICException, self.test_manager._process_ping,
-                              blocking_channel, method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))

@@ -86,6 +86,9 @@ def start_store(store: Store) -> None:
             # Error would have already been logged by RabbitMQ logger.
             log_and_print(get_stopped_message(store), store.logger)
         except Exception as e:
+            # Close the connection with RabbitMQ if we have an unexpected
+            # exception, and start again
+            store.disconnect_from_rabbit()
             log_and_print("Restarting {} in {} seconds.".format(
                 store, RESTART_SLEEPING_PERIOD), store.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

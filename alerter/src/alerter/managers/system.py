@@ -10,26 +10,28 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+                                 SYSTEM_ALERTER_NAME_TEMPLATE,
+                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
+                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN
+                                 )
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
 
-SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
-SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
-SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
-SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
-
 
 class SystemAlertersManager(AlertersManager):
 
-    def __init__(self, logger: logging.Logger, manager_name: str) -> None:
-        super().__init__(logger, manager_name)
+    def __init__(self, logger: logging.Logger, manager_name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, manager_name, rabbitmq)
         self._systems_alerts_configs = {}
         self._parent_id_process_dict = {}
 
@@ -94,10 +96,10 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.confirm_delivery()
 
     def _terminate_and_join_chain_alerter_processes(
-            self, chain) -> None:
+            self, chain: str) -> None:
         # Go through all the processes and find the chain whose
         # process should be terminated
-        for _, parent_id in enumerate(self._parent_id_process_dict):
+        for parent_id, parent_info in self._parent_id_process_dict.items():
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
@@ -106,7 +108,7 @@ class SystemAlertersManager(AlertersManager):
                 # anymore
                 del self._parent_id_process_dict[parent_id]
                 del self._systems_alerts_configs[parent_id]
-                log_and_print("Terminating process alerter process for chain "
+                log_and_print("Terminating alerter process for chain "
                               "{}".format(chain), self.logger)
 
     def _create_and_start_alerter_process(
@@ -147,14 +149,14 @@ class SystemAlertersManager(AlertersManager):
                 # Check if all the parent_ids in the received configuration
                 # are the same
                 parent_id = sent_configs['1']['parent_id']
-                for i in sent_configs:
-                    if parent_id != sent_configs[i]['parent_id']:
+                for _, config in sent_configs.items():
+                    if parent_id != config['parent_id']:
                         raise ParentIdsMissMatchInAlertsConfiguration(
                             "{}: _process_data".format(self))
                 filtered = {}
-                for i in sent_configs:
-                    filtered[sent_configs[i]['name']] = copy.deepcopy(
-                        sent_configs[i])
+                for _, config in sent_configs.items():
+                    filtered[config['name']] = copy.deepcopy(config)
+
                 system_alerts_config = SystemAlertsConfig(
                     parent_id=parent_id,
                     open_file_descriptors=filtered['open_file_descriptors'],
@@ -246,7 +248,7 @@ class SystemAlertersManager(AlertersManager):
 
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running system alerters will be stopped gracefully. "
@@ -263,3 +265,6 @@ class SystemAlertersManager(AlertersManager):
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        pass

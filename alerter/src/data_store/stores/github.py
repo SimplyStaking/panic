@@ -22,7 +22,7 @@ class GithubStore(Store):
 
     def _initialise_store(self) -> None:
         """
-        initialise the necessary data for rabbitmq to be able to reach the data
+        Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
         Creates a store exchange of type `direct`

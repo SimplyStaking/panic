@@ -21,7 +21,13 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from .config_update_event_handler import ConfigFileEventHandler
 from ..abstract import Component
 from ..utils.logging import log_and_print
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 RE_INITIALIZE_SLEEPING_PERIOD)
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ConnectionNotInitializedException)
+from src.utils.routing_key import get_routing_key
 
+_FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 
 
@@ -138,7 +144,7 @@ class ConfigsManager(Component):
                                                      self._process_ping,
                                                      True, False, None)
                 break
-            except (ConnectionNotinitialisedException,
+            except (ConnectionNotInitialisedException,
                     AMQPConnectionError) as connection_error:
                 # Should be impossible, but since exchange_declare can throw
                 # it we shall ensure to log that the error passed through here
@@ -235,7 +241,7 @@ class ConfigsManager(Component):
                 self._logger.info("Will attempt sending the config again to "
                                   "routing key %s", routing_key)
             except (
-                    ConnectionNotinitialisedException, AMQPConnectionError
+                    ConnectionNotInitialisedException, AMQPConnectionError
             ) as connection_error:
                 # If the connection is not initialised or there is a connection
                 # error, we need to restart the connection and try it again

@@ -77,8 +77,12 @@ def _initialise_system_alerters_manager() -> SystemAlertersManager:
     # Attempt to initialise the system alerters manager
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=system_alerters_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
             system_alerters_manager = SystemAlertersManager(
-                system_alerters_manager_logger, manager_display_name)
+                system_alerters_manager_logger, manager_display_name,
+                rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
@@ -101,8 +105,12 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
     # Attempt to initialise the system alerters manager
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=github_alerter_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
             github_alerter_manager = GithubAlerterManager(
-                github_alerter_manager_logger, manager_display_name)
+                github_alerter_manager_logger, manager_display_name,
+                rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
