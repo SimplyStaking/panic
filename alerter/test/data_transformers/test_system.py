@@ -54,9 +54,10 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_state = {self.test_system_id: self.test_system}
         self.test_publishing_queue = Queue(self.max_queue_size)
         self.test_rabbit_queue_name = 'Test Queue'
+        self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_last_monitored,
         }
         self.test_system_is_down_exception = SystemIsDownException(
             self.test_system.system_name)
@@ -75,7 +76,6 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_network_receive_bytes_total = 4564567
         self.test_disk_io_time_seconds_in_interval = 45
         self.test_disk_io_time_seconds_total = 6347
-        self.test_last_monitored = datetime(2012, 1, 1).timestamp()
 
         # Set system values
         self.test_system.set_went_down_at(self.test_went_down_at)
@@ -112,7 +112,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'data': {
                     'process_cpu_seconds_total': 2786.82,
@@ -135,7 +135,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -148,7 +148,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_system_is_down_exception.message,
                 'code': self.test_system_is_down_exception.code,
@@ -160,7 +160,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'last_monitored': datetime(2012, 1, 1).timestamp() + 60
+                    'last_monitored': self.test_last_monitored + 60
                 },
                 'data': {
                     'process_cpu_seconds_total': 2786.82,
@@ -186,7 +186,7 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -198,11 +198,11 @@ class TestSystemDataTransformer(unittest.TestCase):
                     'system_name': self.test_system.system_name,
                     'system_id': self.test_system.system_id,
                     'system_parent_id': self.test_system.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_system_is_down_exception.message,
                 'code': self.test_system_is_down_exception.code,
-                'data': {'went_down_at': datetime(2012, 1, 1).timestamp() + 60}
+                'data': {'went_down_at': self.test_last_monitored + 60}
             }
         }
         self.test_system_new_metrics = System(self.test_system_name,
@@ -227,7 +227,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_system_new_metrics.set_disk_io_time_seconds_in_interval(70300)
         self.test_system_new_metrics.set_disk_io_time_seconds_total(76647.0)
         self.test_system_new_metrics.set_last_monitored(
-            datetime(2012, 1, 1).timestamp() + 60)
+            self.test_last_monitored + 60)
 
         meta_data_for_alerting_result = \
             self.transformed_data_example_result['result']['meta_data']

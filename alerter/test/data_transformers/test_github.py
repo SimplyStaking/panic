@@ -54,13 +54,13 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.test_state = {self.test_repo_id: self.test_repo}
         self.test_publishing_queue = Queue(self.max_queue_size)
         self.test_rabbit_queue_name = 'Test Queue'
+        self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_last_monitored,
         }
         self.test_exception = PANICException('test_exception', 1)
         self.test_no_of_releases = 5
-        self.test_last_monitored = datetime(2012, 1, 1).timestamp()
 
         # Set repository values
         self.test_repo.set_no_of_releases(self.test_no_of_releases)
@@ -73,7 +73,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
                     'repo_name': self.test_repo.repo_name,
                     'repo_id': self.test_repo.repo_id,
                     'repo_parent_id': self.test_repo.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'data': {
                     '0': {
@@ -110,7 +110,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
                     'repo_name': self.test_repo.repo_name,
                     'repo_id': self.test_repo.repo_id,
                     'repo_parent_id': self.test_repo.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -122,7 +122,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
                     'repo_name': self.test_repo.repo_name,
                     'repo_id': self.test_repo.repo_id,
                     'repo_parent_id': self.test_repo.parent_id,
-                    'last_monitored': datetime(2012, 1, 1).timestamp() + 60
+                    'last_monitored': self.test_last_monitored + 60
                 },
                 'data': {
                     'no_of_releases': 6,
@@ -161,7 +161,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
                     'repo_name': self.test_repo.repo_name,
                     'repo_id': self.test_repo.repo_id,
                     'repo_parent_id': self.test_repo.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp() + 60
+                    'time': self.test_last_monitored + 60
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -172,7 +172,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
                                                 self.test_repo_parent_id)
         self.test_repo_new_metrics.set_no_of_releases(6)
         self.test_repo_new_metrics.set_last_monitored(
-            datetime(2012, 1, 1).timestamp() + 60)
+            self.test_last_monitored + 60)
 
         td_meta_data_result = \
             self.transformed_data_example_result['result']['meta_data']

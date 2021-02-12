@@ -46,9 +46,10 @@ class TestGitHubMonitor(unittest.TestCase):
             'test_key_1': 'test_val_1',
             'test_key_2': 'test_val_2',
         }
+        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_timestamp,
         }
         self.test_queue_name = 'Test Queue'
         # In the real retrieved data there are more fields, but these are the
@@ -230,7 +231,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -248,7 +249,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -304,14 +305,14 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
-            'timestamp': datetime(2012, 1, 1).timestamp()
+            'timestamp': self.test_timestamp
         }
 
         try:
@@ -448,7 +449,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'message': data_ret_exception.message,
                 'code': data_ret_exception.code,
@@ -456,7 +457,7 @@ class TestGitHubMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
-            'timestamp': datetime(2012, 1, 1).timestamp()
+            'timestamp': self.test_timestamp
         }
         try:
             self.test_monitor._initialise_rabbitmq()
@@ -532,7 +533,7 @@ class TestGitHubMonitor(unittest.TestCase):
                             'repo_id': self.test_monitor.repo_config.repo_id,
                             'repo_parent_id':
                                 self.test_monitor.repo_config.parent_id,
-                            'time': datetime(2012, 1, 1).timestamp()
+                            'time': self.test_timestamp
                         },
                         'message': data_ret_exception.message,
                         'code': data_ret_exception.code,
@@ -540,7 +541,7 @@ class TestGitHubMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
-                    'timestamp': datetime(2012, 1, 1).timestamp()
+                    'timestamp': self.test_timestamp
                 }
                 # Delete the queue before to avoid messages in the queue on
                 # error.
@@ -606,7 +607,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -673,7 +674,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -743,7 +744,7 @@ class TestGitHubMonitor(unittest.TestCase):
                     'repo_name': self.test_monitor.repo_config.repo_name,
                     'repo_id': self.test_monitor.repo_config.repo_id,
                     'repo_parent_id': self.test_monitor.repo_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
