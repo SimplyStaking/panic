@@ -19,8 +19,8 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_DT_MAN_INPUT_QUEUE = 'data_transformers_manager_queue'
-_DT_MAN_INPUT_ROUTING_KEY = 'ping'
+DT_MAN_INPUT_QUEUE = 'data_transformers_manager_queue'
+DT_MAN_INPUT_ROUTING_KEY = 'ping'
 
 
 class DataTransformersManager(PublisherSubscriberComponent):
@@ -49,17 +49,17 @@ class DataTransformersManager(PublisherSubscriberComponent):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _DT_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_DT_MAN_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", DT_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(DT_MAN_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                         _DT_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                 _DT_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                         DT_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                                 DT_MAN_INPUT_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          _DT_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_DT_MAN_INPUT_QUEUE, self._process_ping,
+                          DT_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(DT_MAN_INPUT_QUEUE, self._process_ping,
                                     True, False, None)
 
         # Declare publishing intentions

@@ -20,8 +20,8 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
 from src.utils.types import (convert_to_float_if_not_none,
                              convert_to_int_if_not_none)
 
-_GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
-_GITHUB_DT_INPUT_ROUTING_KEY = 'github'
+GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
+GITHUB_DT_INPUT_ROUTING_KEY = 'github'
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -41,20 +41,20 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", _GITHUB_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_GITHUB_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         _GITHUB_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 _GITHUB_DT_INPUT_ROUTING_KEY)
+                         "'%s'", GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         GITHUB_DT_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                                 GITHUB_DT_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug('Declaring consuming intentions')
-        self.rabbitmq.basic_consume(_GITHUB_DT_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration

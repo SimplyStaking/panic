@@ -20,8 +20,8 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import convert_to_float_if_not_none
 
-_SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
-_SYSTEM_DT_INPUT_ROUTING_KEY = 'system'
+SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
+SYSTEM_DT_INPUT_ROUTING_KEY = 'system'
 
 
 class SystemDataTransformer(DataTransformer):
@@ -41,20 +41,20 @@ class SystemDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", _SYSTEM_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_SYSTEM_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", _SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         _SYSTEM_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 _SYSTEM_DT_INPUT_ROUTING_KEY)
+                         "key '%s'", SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         SYSTEM_DT_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                                 SYSTEM_DT_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(_SYSTEM_DT_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(SYSTEM_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
