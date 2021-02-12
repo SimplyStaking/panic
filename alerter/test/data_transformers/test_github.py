@@ -10,6 +10,7 @@ from unittest import mock
 import pika
 import pika.exceptions
 from freezegun import freeze_time
+from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.github import (GitHubDataTransformer,
@@ -483,22 +484,15 @@ class TestGitHubDataTransformer(unittest.TestCase):
                 expected_state[repo_id].__dict__,
                 self.test_data_transformer.state[repo_id].__dict__)
 
-    def test_update_state_raise_key_error_exception_if_keys_do_not_exist_result(
-            self) -> None:
-        invalid_transformed_data = copy.deepcopy(
-            self.transformed_data_example_result)
-        del invalid_transformed_data['result']['data']
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+    @parameterized.expand([('result',), ('error',), ])
+    def test_update_state_raises_key_error_exception_if_keys_do_not_exist(
+            self, transformed_data_index: str) -> None:
+        transformed_data = self.transformed_data_example_result if \
+            transformed_data_index == 'result' else \
+            self.transformed_data_example_error
+        invalid_transformed_data = copy.deepcopy(transformed_data)
 
-        # First confirm that an exception is still raised
-        self.assertRaises(KeyError, self.test_data_transformer._update_state,
-                          invalid_transformed_data)
-
-    def test_update_state_raises_key_error_exception_if_keys_do_not_exist_error(
-            self) -> None:
-        invalid_transformed_data = copy.deepcopy(
-            self.transformed_data_example_error)
-        del invalid_transformed_data['error']['meta_data']
+        del invalid_transformed_data[transformed_data_index]['meta_data']
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
 
         # First confirm that an exception is still raised
