@@ -287,7 +287,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         mock_start_consuming.assert_called_once()
 
     @mock.patch.object(RabbitMQApi, "basic_qos")
-    def test_initialise_rabbit_initializes_everything_as_expected(
+    def test_initialise_rabbit_initialises_everything_as_expected(
             self, mock_basic_qos) -> None:
         try:
             # To make sure that there is no connection/channel already
