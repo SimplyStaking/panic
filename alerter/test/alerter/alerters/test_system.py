@@ -8,8 +8,10 @@ from unittest import mock
 
 import pika
 from freezegun import freeze_time
+from parameterized import parameterized
 
-from src.alerter.alerts.system_alerts import OpenFileDescriptorsIncreasedAboveThresholdAlert
+from src.alerter.alerts.system_alerts import (
+    OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.system import SystemAlerter
@@ -24,8 +26,13 @@ class TestSystemAlerter(unittest.TestCase):
         self.rabbit_ip = RABBIT_IP
         self.alert_input_exchange = ALERT_EXCHANGE
         self.connection_check_time_interval = datetime.timedelta(seconds=0)
+
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
+            connection_check_time_interval=self.connection_check_time_interval)
+
+        self.test_rabbit_manager = RabbitMQApi(
+            self.dummy_logger, RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
         self.alerter_name = 'test_alerter'
@@ -411,6 +418,7 @@ class TestSystemAlerter(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_manager.rabbitmq.connect()
+            self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(self.queue_used)
             self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
@@ -420,6 +428,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
+            self.test_rabbit_manager.disconnect()
         except Exception as e:
             print("Test failed: %s".format(e))
 
@@ -434,6 +443,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_alerts_config_warnings_disabled = None
         self.system_alerts_config_critical_disabled = None
         self.system_alerts_config_all_disabled = None
+        self.test_rabbit_manager = None
 
     def test_returns_alerter_name_as_str(self) -> None:
         self.assertEqual(self.alerter_name, self.test_system_alerter.__str__())
