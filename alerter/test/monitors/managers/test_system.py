@@ -187,7 +187,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
     def test_initialise_rabbitmq_initializes_everything_as_expected(
             self) -> None:
