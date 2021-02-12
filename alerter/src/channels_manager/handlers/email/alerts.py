@@ -12,14 +12,19 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.email import EmailChannel
-from src.channels_manager.handlers import ChannelHandler
+from src.channels_manager.handlers.handler import \
+    QueuingPublisherSubscriberChannelHandler
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
+# TODO: Cont from here , see changes in the console one. Need also to do the
+#     : starters and managers refactoring at the end. Note _send_data must be
+#     : wrt rabbit, so change to _send_alert or something similar.
 
-class EmailAlertsHandler(ChannelHandler):
+
+class EmailAlertsHandler(QueuingPublisherSubscriberChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
                  rabbit_ip: str, queue_size: int, email_channel: EmailChannel,
                  max_attempts: int = 6, alert_validity_threshold: int = 600):

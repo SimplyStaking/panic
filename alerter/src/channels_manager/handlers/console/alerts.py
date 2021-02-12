@@ -10,19 +10,22 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.console import ConsoleChannel
-from src.channels_manager.handlers.handler import ChannelHandler
+from src.channels_manager.handlers.handler import \
+    PublisherSubscriberChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
+CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
 
 
-class ConsoleAlertsHandler(ChannelHandler):
+class ConsoleAlertsHandler(PublisherSubscriberChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, console_channel: ConsoleChannel) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+                 rabbitmq: RabbitMQApi,
+                 console_channel: ConsoleChannel) -> None:
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._console_channel = console_channel
         self._console_alerts_handler_queue = \
@@ -46,10 +49,10 @@ class ConsoleAlertsHandler(ChannelHandler):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._console_alerts_handler_queue,
-                         ALERT_EXCHANGE, _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+                         ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._console_alerts_handler_queue,
                                  ALERT_EXCHANGE,
-                                 _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
@@ -143,3 +146,6 @@ class ConsoleAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        pass

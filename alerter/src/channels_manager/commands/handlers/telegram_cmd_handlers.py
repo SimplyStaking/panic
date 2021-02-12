@@ -31,20 +31,14 @@ from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
 class TelegramCommandHandlers(CommandHandler):
 
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, redis_ip: str, redis_db: int, redis_port: int,
-                 unique_alerter_identifier: str, mongo_ip: str, mongo_db: str,
-                 mongo_port: int, associated_chains: Dict,
-                 telegram_channel: TelegramChannel) -> None:
+                 associated_chains: Dict, telegram_channel: TelegramChannel,
+                 rabbitmq: RabbitMQApi, redis: RedisApi,
+                 mongo: MongoApi) -> None:
         super().__init__(handler_name, logger)
 
-        self._rabbitmq = RabbitMQApi(
-            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-        self._redis = RedisApi(logger=self.logger.getChild(RedisApi.__name__),
-                               host=redis_ip, db=redis_db, port=redis_port,
-                               namespace=unique_alerter_identifier)
-        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               host=mongo_ip, db_name=mongo_db, port=mongo_port)
-
+        self._rabbitmq = rabbitmq
+        self._redis = redis
+        self._mongo = mongo
         self._associated_chains = associated_chains
         self._telegram_channel = telegram_channel
 

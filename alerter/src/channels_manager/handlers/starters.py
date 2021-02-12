@@ -16,6 +16,8 @@ from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.twilio import TwilioChannel
+from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
+    TelegramCommandHandlers
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
@@ -27,6 +29,9 @@ from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
 from src.channels_manager.handlers.telegram.commands import \
     TelegramCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
+from src.data_store.mongo import MongoApi
+from src.data_store.redis import RedisApi
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
@@ -37,7 +42,8 @@ from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
                                  OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE)
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 TELEGRAM_COMMAND_HANDLERS_NAME)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
@@ -146,11 +152,26 @@ def _initialize_telegram_commands_handler(
                 channel_name, channel_id, handler_logger.getChild(
                     TelegramChannel.__name__), telegram_bot)
 
+            cmd_handlers_logger = handler_logger.getChild(
+                TelegramCommandHandlers.__name__)
+            rabbitmq = RabbitMQApi(
+                logger=cmd_handlers_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            redis = RedisApi(
+                logger=cmd_handlers_logger.getChild(RedisApi.__name__),
+                host=env.REDIS_IP, db=env.REDIS_DB, port=env.REDIS_PORT,
+                namespace=env.UNIQUE_ALERTER_IDENTIFIER)
+            mongo = MongoApi(
+                logger=cmd_handlers_logger.getChild(MongoApi.__name__),
+                host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+
+            cmd_handlers = TelegramCommandHandlers(
+                TELEGRAM_COMMAND_HANDLERS_NAME, cmd_handlers_logger,
+                associated_chains, telegram_channel, rabbitmq, redis, mongo)
+
             telegram_commands_handler = TelegramCommandsHandler(
                 handler_display_name, handler_logger, env.RABBIT_IP,
-                env.REDIS_IP, env.REDIS_DB, env.REDIS_PORT,
-                env.UNIQUE_ALERTER_IDENTIFIER, env.DB_IP, env.DB_NAME,
-                env.DB_PORT, associated_chains, telegram_channel)
+                telegram_channel, cmd_handlers)
             log_and_print("Successfully initialized {}".format(
                 handler_display_name), handler_logger)
             break
