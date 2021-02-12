@@ -166,7 +166,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_exception = None
 
     def test_str_returns_manager_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_config_process_dict_returns_config_process_dict(self) -> None:
         self.test_manager._config_process_dict = \

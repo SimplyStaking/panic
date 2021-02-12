@@ -92,7 +92,7 @@ class TestDataTransformersManager(unittest.TestCase):
         self.transformer_process_dict_example = None
 
     def test_str_returns_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_name_returns_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.name)
