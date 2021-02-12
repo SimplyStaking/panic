@@ -156,7 +156,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
