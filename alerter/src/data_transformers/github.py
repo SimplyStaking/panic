@@ -310,7 +310,7 @@ class GitHubDataTransformer(DataTransformer):
         if not processing_error:
             try:
                 self._update_state(transformed_data)
-                self.logger.info("Successfully processed %s", raw_data)
+                self.logger.debug("Successfully processed %s", raw_data)
             except Exception as e:
                 self.logger.error("Error when processing %s", raw_data)
                 self.logger.exception(e)
