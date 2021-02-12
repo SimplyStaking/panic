@@ -34,7 +34,8 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
+from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes, \
+    convert_to_int_if_not_none_and_not_empty_str
 
 _CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 _CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
@@ -226,11 +227,11 @@ class ChannelsManager:
     def _create_and_start_email_alerts_handler(
             self, smtp: str, email_from: str, emails_to: List[str],
             channel_id: str, channel_name: str, username: Optional[str],
-            password: Optional[str]) -> None:
+            password: Optional[str], port: int = 0) -> None:
         process = multiprocessing.Process(
             target=start_email_alerts_handler,
             args=(smtp, email_from, emails_to, channel_id, channel_name,
-                  username, password))
+                  username, password, port))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
                       "e-mail channel {}".format(channel_name), self.logger)
@@ -253,6 +254,7 @@ class ChannelsManager:
         process_details['username'] = username
         process_details['password'] = password
         process_details['channel_type'] = ChannelTypes.EMAIL.value
+        process_details['port'] = port
 
     def _create_and_start_pagerduty_alerts_handler(
             self, integration_key: str, channel_id: str, channel_name: str) \
@@ -633,10 +635,12 @@ class ChannelsManager:
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
+                port = convert_to_int_if_not_none_and_not_empty_str(
+                    config['port'], 0)
 
                 self._create_and_start_email_alerts_handler(
                     smtp, email_from, emails_to, channel_id, channel_name,
-                    username, password)
+                    username, password, port)
                 correct_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -651,6 +655,8 @@ class ChannelsManager:
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
+                port = convert_to_int_if_not_none_and_not_empty_str(
+                    config['port'], 0)
 
                 alerts_handler_type = ChannelHandlerTypes.ALERTS.value
                 if alerts_handler_type in self.channel_process_dict[channel_id]:
@@ -664,7 +670,7 @@ class ChannelsManager:
                               self.logger)
                 self._create_and_start_email_alerts_handler(
                     smtp, email_from, emails_to, channel_id, channel_name,
-                    username, password)
+                    username, password, port)
                 correct_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
@@ -924,7 +930,8 @@ class ChannelsManager:
                                 process_details['channel_id'],
                                 process_details['channel_name'],
                                 process_details['username'],
-                                process_details['password']
+                                process_details['password'],
+                                process_details['port']
                             )
                         elif channel_type == ChannelTypes.PAGERDUTY.value:
                             self._create_and_start_pagerduty_alerts_handler(

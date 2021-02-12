@@ -257,7 +257,7 @@ def start_pagerduty_alerts_handler(integration_key: str, channel_id: str,
 def _initialize_email_alerts_handler(
         smtp: str, email_from: str, emails_to: List[str],
         channel_id: str, channel_name: str, username: Optional[str],
-        password: Optional[str]) -> EmailAlertsHandler:
+        password: Optional[str], port: int = 0) -> EmailAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -267,7 +267,7 @@ def _initialize_email_alerts_handler(
     # Try initializing handler until successful
     while True:
         try:
-            email_api = EmailApi(smtp, email_from, username, password)
+            email_api = EmailApi(smtp, email_from, username, password, port)
             email_channel = EmailChannel(
                 channel_name, channel_id, handler_logger.getChild(
                     EmailChannel.__name__), emails_to, email_api)
@@ -289,11 +289,11 @@ def _initialize_email_alerts_handler(
 
 def start_email_alerts_handler(
         smtp: str, email_from: str, emails_to: List[str], channel_id: str,
-        channel_name: str, username: Optional[str],
-        password: Optional[str]) -> None:
+        channel_name: str, username: Optional[str], password: Optional[str],
+        port: int = 0) -> None:
     email_alerts_handler = _initialize_email_alerts_handler(
         smtp, email_from, emails_to, channel_id, channel_name, username,
-        password)
+        password, port)
     start_handler(email_alerts_handler)
 
 

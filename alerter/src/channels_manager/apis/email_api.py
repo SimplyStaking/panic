@@ -9,7 +9,7 @@ from typing import Optional
 class EmailApi:
 
     def __init__(self, smtp: str, sender: str, username: Optional[str],
-                 password: Optional[str]) -> None:
+                 password: Optional[str], port: int = 0) -> None:
         super().__init__()
 
         # If blank/None username or None password, EmailSender assumes
@@ -19,6 +19,7 @@ class EmailApi:
         self._sender = sender
         self._username = username
         self._password = password
+        self._port = port
 
     def send_email(self, subject: str, message: str, to: str) -> None:
         msg = EmailMessage()
@@ -68,7 +69,7 @@ class EmailApi:
 
     def _send_smtp(self, msg: Message) -> None:
         # Send the message via the specified SMTP server.
-        s = smtplib.SMTP(self._smtp)
+        s = smtplib.SMTP(self._smtp, self._port)
         if None not in [self._username, self._password] \
                 and len(self._username) != 0:
             s.starttls()
