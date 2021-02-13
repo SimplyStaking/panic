@@ -377,7 +377,6 @@ class TestConfigsManager(unittest.TestCase):
             self.assertDictEqual(config, json.loads(body))
         finally:
             self.delete_queue_if_exists(CONFIG_QUEUE)
-            self.delete_exchange_if_exists(HEALTH_CHECK_EXCHANGE)
             self.disconnect_from_rabbit()
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
