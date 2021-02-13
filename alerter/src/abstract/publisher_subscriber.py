@@ -50,7 +50,7 @@ class PublisherSubscriberComponent(Component, ABC):
         pass
 
     @abstractmethod
-    def _send_data(self, data: Dict) -> None:
+    def _send_data(self, *args) -> None:
         pass
 
     @abstractmethod

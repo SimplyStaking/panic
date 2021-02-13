@@ -1,23 +1,30 @@
 import json
 import sys
-from configparser import ConfigParser, NoOptionError, NoSectionError
+from configparser import ConfigParser, NoOptionError, NoSectionError, \
+    SectionProxy
 from datetime import datetime
+from json import JSONDecodeError
 from logging import Logger
 from types import FrameType
-from typing import Dict
+from typing import Dict, List
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
-from src.abstract import QueuingPublisherComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent
+)
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (CONFIG_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_ROUTER_CONFIGS_QUEUE_NAME)
-from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.constants import (
+    CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME
+)
+from src.utils.exceptions import (
+    MessageWasNotDeliveredException, MissingKeyInConfigException
+)
 from src.utils.logging import log_and_print
 
 _ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
@@ -25,10 +32,11 @@ _HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 _ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
-class AlertRouter(QueuingPublisherComponent):
+class AlertRouter(QueuingPublisherSubscriberComponent):
     def __init__(self, name: str, logger: Logger, rabbit_ip: str, redis_ip: str,
                  redis_db: int, redis_port: int, unique_alerter_identifier: str,
                  enable_console_alerts: bool, enable_log_alerts: bool):
+
         self._name = name
         self._redis = RedisApi(logger.getChild(RedisApi.__name__),
                                host=redis_ip, db=redis_db, port=redis_port,
@@ -141,10 +149,11 @@ class AlertRouter(QueuingPublisherComponent):
             # Taking what we need, and checking types
             try:
                 for key in recv_config.sections():
-                    self._config[config_filename][key] = self._extract_config(
+                    self._config[config_filename][key] = self.extract_config(
                         recv_config[key], config_filename
                     )
-            except (NoOptionError, NoSectionError) as missing_error:
+            except (NoOptionError, NoSectionError,
+                    MissingKeyInConfigException) as missing_error:
                 self._logger.error(
                     "The configuration file %s is missing some configs",
                     config_filename)
@@ -167,11 +176,13 @@ class AlertRouter(QueuingPublisherComponent):
                        method: pika.spec.Basic.Deliver,
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
-        recv_alert: Dict = json.loads(body)
-
-        need_to_push_to_queue = True
-        send_to_ids = []
+        recv_alert: Dict = {}
+        has_error: bool = False
+        send_to_ids: List[str] = []
         try:
+            # Placed in try-except in case of malformed JSON
+            recv_alert = json.loads(body)
+
             if recv_alert and 'severity' in recv_alert:
                 self._logger.info("Received an alert to route")
                 self._logger.info("recv_alert = %s", recv_alert)
@@ -181,12 +192,12 @@ class AlertRouter(QueuingPublisherComponent):
                 is_all_muted = self.is_all_muted(recv_alert.get('severity'))
                 is_chain_severity_muted = self.is_chain_severity_muted(
                     recv_alert.get('parent_id'), recv_alert.get('severity'))
+
                 if is_all_muted or is_chain_severity_muted:
                     self._logger.info("This alert has been muted")
                     self._logger.debug(
                         "is_all_muted=%s, is_chain_severity_muted=%s",
                         is_all_muted, is_chain_severity_muted)
-                    need_to_push_to_queue = False
                 else:
                     self._logger.info("Obtaining list of channels to alert")
                     self._logger.debug([
@@ -204,15 +215,19 @@ class AlertRouter(QueuingPublisherComponent):
                     ]
 
                     self._logger.debug("send_to_ids = %s", send_to_ids)
-                    self._logger.info("Alert routed successfully")
+        except JSONDecodeError as json_e:
+            self._logger.error("Alert was not a valid JSON object")
+            self._logger.exception(json_e)
+            has_error = True
         except Exception as e:
             self._logger.error("Error when processing alert: %s", recv_alert)
             self._logger.exception(e)
-            need_to_push_to_queue = False
+            has_error = True
 
         self._rabbitmq.basic_ack(method.delivery_tag, False)
 
-        if need_to_push_to_queue:
+        if not has_error:
+            # This will be empty if the alert was muted
             for channel_id in send_to_ids:
                 send_alert: Dict = {**recv_alert,
                                     'destination_id': channel_id}
@@ -246,6 +261,8 @@ class AlertRouter(QueuingPublisherComponent):
             # Enqueue once to the data store
             self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
                                 mandatory=True)
+
+            self._logger.info("Alert routed successfully")
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -298,8 +315,7 @@ class AlertRouter(QueuingPublisherComponent):
                 except MessageWasNotDeliveredException as e:
                     self._logger.exception(e)
 
-                self._logger.info("Starting the alert router listeners")
-                self._rabbitmq.start_consuming()
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -310,6 +326,10 @@ class AlertRouter(QueuingPublisherComponent):
                 self._logger.exception(e)
                 raise e
 
+    def _listen_for_data(self) -> None:
+        self._logger.info("Starting the alert router listeners")
+        self._rabbitmq.start_consuming()
+
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
@@ -317,27 +337,6 @@ class AlertRouter(QueuingPublisherComponent):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
-
-    @staticmethod
-    def _extract_config(section, config_filename: str) -> Dict[str, str]:
-        if "twilio" in config_filename:
-            return {
-                'id': section.get('id'),
-                'parent_ids': section.get('parent_ids').split(","),
-                'info': False,
-                'warning': False,
-                'error': False,
-                'critical': True,
-            }
-
-        return {
-            'id': section.get('id'),
-            'parent_ids': section.get('parent_ids').split(","),
-            'info': section.getboolean('info'),
-            'warning': section.getboolean('warning'),
-            'error': section.getboolean('error'),
-            'critical': section.getboolean('critical'),
-        }
 
     def is_all_muted(self, severity: str) -> bool:
         self._logger.debug("Getting mute_all key")
@@ -362,3 +361,39 @@ class AlertRouter(QueuingPublisherComponent):
         )
 
         return bool(severities_muted.get(severity, False))
+
+    @staticmethod
+    def extract_config(section: SectionProxy, config_filename: str) -> Dict[
+        str, str]:
+        AlertRouter.validate_config_fields_existence(section, config_filename)
+
+        if "twilio" in config_filename:
+            return {
+                'id': section.get('id'),
+                'parent_ids': [x for x in section.get('parent_ids').split(",")
+                               if x.strip()],
+                'info': False,
+                'warning': False,
+                'error': False,
+                'critical': True,
+            }
+
+        return {
+            'id': section.get('id'),
+            'parent_ids': [x for x in section.get('parent_ids').split(",") if
+                           x.strip()],
+            'info': section.getboolean('info'),
+            'warning': section.getboolean('warning'),
+            'error': section.getboolean('error'),
+            'critical': section.getboolean('critical'),
+        }
+
+    @staticmethod
+    def validate_config_fields_existence(section: SectionProxy,
+                                         config_filename: str) -> None:
+        keys_expected = {'id', 'parent_ids'}
+        if 'twilio' not in config_filename:
+            keys_expected |= {'info', 'warning', 'error', 'critical'}
+        for key in keys_expected:
+            if key not in section:
+                raise MissingKeyInConfigException(key, config_filename)
