@@ -348,12 +348,26 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
     def test_remove_unsafe_does_nothing_if_key_does_not_exists(self):
         self.redis.remove_unsafe(self.key1)
 
+    def test_hremove_unsafe_does_nothing_if_key_does_not_exists(self):
+        hash_name = "dummy_hash"
+        self.redis.hremove_unsafe(hash_name, self.key1)
+
     def test_remove_unsafe_removes_key_if_key_exists(self):
         self.redis.set_unsafe(self.key1, self.val1)
         self.assertTrue(self.redis.exists_unsafe(self.key1))
 
         self.redis.remove_unsafe(self.key1)
         self.assertFalse(self.redis.exists_unsafe(self.key1))
+
+    def test_hremove_unsafe_removes_key_if_key_exists(self):
+        hash_name = "dummy_hash"
+        self.redis.hset_multiple(hash_name, {
+            self.key1: self.val1})
+        self.assertEqual(self.redis.hget(hash_name, self.key1), self.val1_bytes)
+        self.assertTrue(self.redis.hexists_unsafe(hash_name, self.key1))
+
+        self.redis.hremove_unsafe(self.key1)
+        self.assertFalse(self.redis.hexists_unsafe(hash_name, self.key1))
 
     def test_delete_all_unsafe_does_nothing_if_no_keys_exist(self):
         self.redis.delete_all_unsafe()
@@ -691,6 +705,25 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
         self.assertIsNone(self.redis.remove(self.key1))
         self.assertTrue(self.redis.exists_unsafe(self.key1))
+
+    def test_hremove_does_nothing_if_key_does_not_exists(self):
+        self.redis.hremove(self.key1)
+
+    def test_hremove_removes_key_if_key_exists(self):
+        hash_name = "dummy_hash"
+        self.redis.hset(hash_name, self.key1, self.val1)
+        self.assertTrue(self.redis.hexists(hash_name, self.key1))
+        self.redis.hremove(hash_name, self.key1)
+        self.assertFalse(self.redis.hexists(hash_name, self.key1))
+
+    @patch(REDIS_RECENTLY_DOWN_FUNCTION, return_value=True)
+    def test_hremove_returns_none_if_redis_down(self, _):
+        hash_name = "dummy_hash"
+        self.redis.hset_unsafe(hash_name, self.key1, self.val1)
+        self.assertTrue(self.redis.hexists_unsafe(hash_name, self.key1))
+
+        self.assertIsNone(self.redis.hremove(hash_name, self.key1))
+        self.assertTrue(self.redis.hexists_unsafe(hash_name, self.key1))
 
     def test_delete_all_does_nothing_if_no_keys_exist(self):
         self.redis.delete_all()
