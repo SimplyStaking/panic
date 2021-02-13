@@ -348,11 +348,9 @@ class TestConfigsManager(unittest.TestCase):
         route_key = "test.route"
         CONFIG_QUEUE = "hb_test"
         try:
-            self.connect_to_rabbit()
-            self.rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, "topic", False, True, False, False
-            )
+            self.test_config_manager._initialise_rabbitmq()
 
+            self.connect_to_rabbit()
             queue_res = self.rabbitmq.queue_declare(
                 queue=CONFIG_QUEUE, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -362,8 +360,6 @@ class TestConfigsManager(unittest.TestCase):
             self.rabbitmq.queue_bind(
                 CONFIG_QUEUE, CONFIG_EXCHANGE, route_key
             )
-
-            self.test_config_manager._initialise_rabbitmq()
 
             self.test_config_manager._send_data(copy.deepcopy(config),
                                                 route_key)

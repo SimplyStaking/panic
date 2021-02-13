@@ -238,6 +238,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                 self._logger.exception(mwnde)
                 self._logger.info("Will attempt sending the config again with "
                                   "routing key %s", route_key)
+                self._config_rabbit.connection.sleep(10)
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
