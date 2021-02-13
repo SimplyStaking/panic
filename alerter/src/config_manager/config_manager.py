@@ -24,7 +24,7 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitializedException)
 from src.utils import routing_key
 from .config_update_event_handler import ConfigFileEventHandler
-from ..abstract import PublisherComponent
+from ..abstract.publisher_subscriber import PublisherSubscriberComponent
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
@@ -32,7 +32,7 @@ _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
 CONFIG_PING_QUEUE = "config_ping_queue"
 
 
-class ConfigsManager(PublisherComponent):
+class ConfigsManager(PublisherSubscriberComponent):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -344,6 +344,10 @@ class ConfigsManager(PublisherComponent):
 
         self._logger.debug("Config file observer started")
         self._connect_to_rabbit()
+        self._listen_for_data()
+
+    def _listen_for_data(self) -> None:
+        self._logger.info("Starting the config ping listener")
         self._heartbeat_rabbit.start_consuming()
 
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
