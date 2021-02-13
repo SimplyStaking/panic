@@ -62,7 +62,7 @@ class QueuingPublisherComponent(PublisherComponent, ABC):
     def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0):
         """
-        Initializes the queue needed for publishing.
+        Initialises the queue needed for publishing.
         :param logger: The logger object to log with
         :param rabbitmq: The rabbit MQ connection to use
         :param max_queue_size: The max queue size, defaults to 0 for infinite

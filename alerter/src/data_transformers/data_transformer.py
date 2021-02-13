@@ -80,7 +80,7 @@ class DataTransformer(Component):
         return self._publishing_queue
 
     @abstractmethod
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         pass
 
     @abstractmethod
@@ -153,7 +153,7 @@ class DataTransformer(Component):
                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 # Before listening for new data send the data waiting to be sent
@@ -169,7 +169,7 @@ class DataTransformer(Component):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

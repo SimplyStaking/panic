@@ -16,9 +16,23 @@ GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_monitors_manager_configs_queue'
 
+# Routing keys and queue names
+GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
+GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'
+
+GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
+GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
+
+SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
+SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
+SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
+
+# Name templates
+SYSTEM_ALERTER_NAME_TEMPLATE = "System alerter ({})"
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10
-RE_INITIALIZE_SLEEPING_PERIOD = 10
+RE_INITIALISE_SLEEPING_PERIOD = 10
 
 # Templates
 EMAIL_HTML_TEMPLATE = """<style type="text/css">

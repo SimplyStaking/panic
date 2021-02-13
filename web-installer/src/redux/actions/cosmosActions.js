@@ -19,7 +19,7 @@ const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
 // a new identifier, from then on you re-used the old one.
-// When creating a new chain, we must add empty lists as we need to initialize
+// When creating a new chain, we must add empty lists as we need to initialise
 // the key/value pairs beforehand.
 export function addChainCosmos(payload) {
   return {
