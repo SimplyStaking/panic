@@ -7,7 +7,8 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
-from src.utils import env
+from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
+                           RABBIT_IP, ALERTER_PUBLISHING_QUEUE_SIZE)
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
@@ -15,18 +16,19 @@ from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
+from src.message_broker.rabbitmq import RabbitMQApi
 
 
-def _initialize_alerter_logger(alerter_display_name: str,
+def _initialise_alerter_logger(alerter_display_name: str,
                                alerter_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
         try:
             alerter_logger = create_logger(
-                env.ALERTERS_LOG_FILE_TEMPLATE.format(alerter_display_name),
-                alerter_module_name, env.LOGGING_LEVEL, rotating=True)
+                ALERTERS_LOG_FILE_TEMPLATE.format(alerter_display_name),
+                alerter_module_name, LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)
@@ -39,21 +41,27 @@ def _initialize_alerter_logger(alerter_display_name: str,
     return alerter_logger
 
 
-def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
+def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
                                chain: str) -> SystemAlerter:
     # Alerter display name based on system
     alerter_display_name = SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
 
-    system_alerter_logger = _initialize_alerter_logger(alerter_display_name,
+    system_alerter_logger = _initialise_alerter_logger(alerter_display_name,
                                                        SystemAlerter.__name__)
 
-    # Try initializing an alerter until successful
+    # Try initialising an alerter until successful
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=system_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
             system_alerter = SystemAlerter(alerter_display_name,
                                            system_alerts_config,
-                                           system_alerter_logger)
-            log_and_print("Successfully initialized {}".format(
+                                           system_alerter_logger,
+                                           rabbitmq,
+                                           ALERTER_PUBLISHING_QUEUE_SIZE
+                                           )
+            log_and_print("Successfully initialised {}".format(
                 alerter_display_name), system_alerter_logger)
             break
         except Exception as e:
@@ -65,18 +73,24 @@ def _initialize_system_alerter(system_alerts_config: SystemAlertsConfig,
     return system_alerter
 
 
-def _initialize_github_alerter() -> GithubAlerter:
+def _initialise_github_alerter() -> GithubAlerter:
     alerter_display_name = GITHUB_ALERTER_NAME
 
-    github_alerter_logger = _initialize_alerter_logger(alerter_display_name,
+    github_alerter_logger = _initialise_alerter_logger(alerter_display_name,
                                                        GithubAlerter.__name__)
 
-    # Try initializing an alerter until successful
+    # Try initialising an alerter until successful
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=github_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
             github_alerter = GithubAlerter(alerter_display_name,
-                                           github_alerter_logger)
-            log_and_print("Successfully initialized {}".format(
+                                           github_alerter_logger,
+                                           rabbitmq,
+                                           ALERTER_PUBLISHING_QUEUE_SIZE
+                                           )
+            log_and_print("Successfully initialised {}".format(
                 alerter_display_name), github_alerter_logger)
             break
         except Exception as e:
@@ -89,13 +103,13 @@ def _initialize_github_alerter() -> GithubAlerter:
 
 
 def start_github_alerter() -> None:
-    github_alerter = _initialize_github_alerter()
+    github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
 
 
 def start_system_alerter(system_alerts_config: SystemAlertsConfig,
                          chain: str) -> None:
-    system_alerter = _initialize_system_alerter(system_alerts_config, chain)
+    system_alerter = _initialise_system_alerter(system_alerts_config, chain)
     start_alerter(system_alerter)
 
 

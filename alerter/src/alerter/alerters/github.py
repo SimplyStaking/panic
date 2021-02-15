@@ -6,24 +6,25 @@ from typing import List
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert)
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_ALERTER_INPUT_QUEUE,
+                                 GITHUB_ALERTER_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 
-_GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
-_GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'
-
 
 class GithubAlerter(Alerter):
-    def __init__(self, alerter_name: str, logger: logging.Logger) -> None:
-        super().__init__(alerter_name, logger)
+    def __init__(self, alerter_name: str, logger: logging.Logger,
+                 rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
+        super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
-        # initialize both the consuming and producing configurations.
+        # initialise both the consuming and producing configurations.
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -32,16 +33,16 @@ class GithubAlerter(Alerter):
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.logger.info("Creating queue '%s'", _GITHUB_ALERTER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_GITHUB_ALERTER_INPUT_QUEUE, passive=False,
+        self.logger.info("Creating queue '%s'", GITHUB_ALERTER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _GITHUB_ALERTER_INPUT_QUEUE, ALERT_EXCHANGE,
-                         _GITHUB_ALERTER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(queue=_GITHUB_ALERTER_INPUT_QUEUE,
+                         "'%s'", GITHUB_ALERTER_INPUT_QUEUE, ALERT_EXCHANGE,
+                         GITHUB_ALERTER_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(queue=GITHUB_ALERTER_INPUT_QUEUE,
                                  exchange=ALERT_EXCHANGE,
-                                 routing_key=_GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                                 routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -51,7 +52,7 @@ class GithubAlerter(Alerter):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(queue=_GITHUB_ALERTER_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False,
@@ -144,6 +145,8 @@ class GithubAlerter(Alerter):
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.github',
-                'data': copy.deepcopy(alert)})
+                'data': copy.deepcopy(alert),
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True})
             self.logger.debug("%s added to the publishing queue successfully.",
                               alert)

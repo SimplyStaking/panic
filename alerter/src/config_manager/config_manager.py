@@ -18,14 +18,14 @@ from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
 from src.message_broker.rabbitmq import RabbitMQApi
+from .config_update_event_handler import ConfigFileEventHandler
+from ..abstract import Component
+from ..utils.logging import log_and_print
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  RE_INITIALISE_SLEEPING_PERIOD)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitializedException)
 from src.utils.routing_key import get_routing_key
-from .config_update_event_handler import ConfigFileEventHandler
-from ..abstract import Component
-from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
 _HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
@@ -144,7 +144,7 @@ class ConfigsManager(Component):
                                                      self._process_ping,
                                                      True, False, None)
                 break
-            except (ConnectionNotInitializedException,
+            except (ConnectionNotInitialisedException,
                     AMQPConnectionError) as connection_error:
                 # Should be impossible, but since exchange_declare can throw
                 # it we shall ensure to log that the error passed through here
@@ -241,7 +241,7 @@ class ConfigsManager(Component):
                 self._logger.info("Will attempt sending the config again to "
                                   "routing key %s", routing_key)
             except (
-                    ConnectionNotInitializedException, AMQPConnectionError
+                    ConnectionNotInitialisedException, AMQPConnectionError
             ) as connection_error:
                 # If the connection is not initialised or there is a connection
                 # error, we need to restart the connection and try it again
@@ -259,7 +259,7 @@ class ConfigsManager(Component):
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. Since a new channel is created
-                # we need to re-initialize RabbitMQ
+                # we need to re-initialise RabbitMQ
                 self._initialise_rabbitmq()
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:

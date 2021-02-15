@@ -186,7 +186,7 @@ class TestSystemMonitor(unittest.TestCase):
         self.assertEqual(self.metrics_to_monitor,
                          self.test_monitor.metrics_to_monitor)
 
-    def test_initialise_rabbitmq_initializes_everything_as_expected(
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
             self) -> None:
         try:
             # To make sure that there is no connection/channel already

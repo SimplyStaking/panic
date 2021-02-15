@@ -41,8 +41,8 @@ class Monitor(PublisherComponent, ABC):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
-                                       False, False)
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False,
+                                       True, False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
@@ -91,7 +91,7 @@ class Monitor(PublisherComponent, ABC):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

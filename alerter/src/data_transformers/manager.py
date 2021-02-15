@@ -161,7 +161,7 @@ class DataTransformersManager(PublisherSubscriberComponent):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

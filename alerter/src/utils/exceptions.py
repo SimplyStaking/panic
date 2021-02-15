@@ -8,9 +8,9 @@ class PANICException(Exception):
         super().__init__(self.message, self.code)
 
 
-class ConnectionNotInitializedException(PANICException):
+class ConnectionNotInitialisedException(PANICException):
     def __init__(self, component):
-        message = "Did not initialize a connection with {}" \
+        message = "Did not initialise a connection with {}" \
             .format(component)
         code = 5000
         super().__init__(message, code)

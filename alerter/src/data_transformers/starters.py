@@ -25,7 +25,7 @@ T = TypeVar('T', bound=DataTransformer)
 def _initialise_transformer_logger(
         transformer_display_name: str,
         transformer_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -48,7 +48,7 @@ def _initialise_transformer_logger(
 
 def _initialise_transformer_redis(
         transformer_name: str, transformer_logger: logging.Logger) -> RedisApi:
-    # Try initializing the Redis API until successful. This had to be done
+    # Try initialising the Redis API until successful. This had to be done
     # separately to avoid instances when Redis creation failed and we
     # attempt to use it.
     while True:

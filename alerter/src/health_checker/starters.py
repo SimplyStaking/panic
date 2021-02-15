@@ -18,10 +18,10 @@ from src.utils.starters import (get_initialisation_error_message,
 HealthCheckerComponentType = Union[HeartbeatHandler, PingPublisher]
 
 
-def _initialize_health_checker_logger(
+def _initialise_health_checker_logger(
         component_display_name: str, component_module_name: str) \
         -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -42,9 +42,9 @@ def _initialize_health_checker_logger(
     return component_logger
 
 
-def _initialize_component_redis(component_display_name: str,
+def _initialise_component_redis(component_display_name: str,
                                 component_logger: logging.Logger) -> RedisApi:
-    # Try initializing the Redis API until successful. This had to be done
+    # Try initialising the Redis API until successful. This had to be done
     # separately to avoid instances when Redis creation failed and we
     # attempt to use it.
     while True:
@@ -68,19 +68,19 @@ def _initialize_component_redis(component_display_name: str,
     return redis
 
 
-def _initialize_heartbeat_handler() -> HeartbeatHandler:
+def _initialise_heartbeat_handler() -> HeartbeatHandler:
     component_display_name = HEARTBEAT_HANDLER_NAME
 
-    logger = _initialize_health_checker_logger(component_display_name,
+    logger = _initialise_health_checker_logger(component_display_name,
                                                HeartbeatHandler.__name__)
-    redis = _initialize_component_redis(component_display_name, logger)
+    redis = _initialise_component_redis(component_display_name, logger)
 
-    # Try initializing the heartbeat handler until successful
+    # Try initialising the heartbeat handler until successful
     while True:
         try:
             heartbeat_handler = HeartbeatHandler(logger, redis,
                                                  component_display_name)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 component_display_name), logger)
             break
         except Exception as e:
@@ -92,19 +92,19 @@ def _initialize_heartbeat_handler() -> HeartbeatHandler:
     return heartbeat_handler
 
 
-def _initialize_ping_publisher() -> PingPublisher:
+def _initialise_ping_publisher() -> PingPublisher:
     component_display_name = PING_PUBLISHER_NAME
 
-    logger = _initialize_health_checker_logger(component_display_name,
+    logger = _initialise_health_checker_logger(component_display_name,
                                                PingPublisher.__name__)
-    redis = _initialize_component_redis(component_display_name, logger)
+    redis = _initialise_component_redis(component_display_name, logger)
 
-    # Try initializing the ping publisher until successful
+    # Try initialising the ping publisher until successful
     while True:
         try:
             ping_publisher = PingPublisher(30, logger, redis,
                                            component_display_name)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 component_display_name), logger)
             break
         except Exception as e:
@@ -117,12 +117,12 @@ def _initialize_ping_publisher() -> PingPublisher:
 
 
 def start_heartbeat_handler() -> None:
-    heartbeat_handler = _initialize_heartbeat_handler()
+    heartbeat_handler = _initialise_heartbeat_handler()
     start_health_checker_component(heartbeat_handler)
 
 
 def start_ping_publisher() -> None:
-    ping_publisher = _initialize_ping_publisher()
+    ping_publisher = _initialise_ping_publisher()
     start_health_checker_component(ping_publisher)
 
 
