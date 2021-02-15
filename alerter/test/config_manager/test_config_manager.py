@@ -21,6 +21,10 @@ from src.config_manager.config_manager import CONFIG_PING_QUEUE
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from test.test_utils import (
+    delete_exchange_if_exists, delete_queue_if_exists,
+    disconnect_from_rabbit, connect_to_rabbit
+)
 
 
 class TestConfigsManager(unittest.TestCase):
@@ -42,68 +46,19 @@ class TestConfigsManager(unittest.TestCase):
             connection_check_time_interval=timedelta(seconds=0)
         )
 
-    def connect_to_rabbit(self, attempts: int = 3) -> None:
-        tries = 0
-
-        while tries < attempts:
-            try:
-                self.rabbitmq.connect()
-                return
-            except Exception as e:
-                tries += 1
-                print("Could not connect to rabbit. Attempts so far: {}".format(
-                    tries))
-                print(e)
-                if tries >= attempts:
-                    raise e
-
-    def disconnect_from_rabbit(self, attempts: int = 3) -> None:
-        tries = 0
-
-        while tries < attempts:
-            try:
-                self.rabbitmq.disconnect()
-                return
-            except Exception as e:
-                tries += 1
-                print(
-                    "Could not disconnect to rabbit. Attempts so far: {}".format(
-                        tries))
-                print(e)
-                if tries >= attempts:
-                    raise e
-
-    def delete_queue_if_exists(self, queue_name: str) -> None:
-        try:
-            self.rabbitmq.queue_declare(queue_name, passive=True)
-            self.rabbitmq.queue_purge(queue_name)
-            self.rabbitmq.queue_delete(queue_name)
-        except pika.exceptions.ChannelClosedByBroker:
-            print("Queue {} does not exist - don't need to close".format(
-                queue_name
-            ))
-
-    def delete_exchange_if_exists(self, exchange_name: str) -> None:
-        try:
-            self.rabbitmq.exchange_declare(exchange_name, passive=True)
-            self.rabbitmq.exchange_delete(exchange_name)
-        except pika.exceptions.ChannelClosedByBroker:
-            print("Exchange {} does not exist - don't need to close".format(
-                exchange_name))
-
     def tearDown(self) -> None:
         # flush and consume all from rabbit queues and exchanges
-        self.connect_to_rabbit()
+        connect_to_rabbit(self.rabbitmq)
 
         queues = [CONFIG_PING_QUEUE]
         for queue in queues:
-            self.delete_queue_if_exists(queue)
+            delete_queue_if_exists(self.rabbitmq, queue)
 
         exchanges = [CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE]
         for exchange in exchanges:
-            self.delete_exchange_if_exists(exchange)
+            delete_exchange_if_exists(self.rabbitmq, exchange)
 
-        self.disconnect_from_rabbit()
+        disconnect_from_rabbit(self.rabbitmq)
 
     def test_instance_created(self):
         self.assertIsNotNone(self.test_config_manager)
@@ -126,7 +81,7 @@ class TestConfigsManager(unittest.TestCase):
         mock_basic_consume.return_value = None
         mock_confirm_delivery.return_value = None
         try:
-            self.connect_to_rabbit()
+            connect_to_rabbit(self.rabbitmq)
 
             # Testing this separately since this is a critical function
             self.test_config_manager._initialise_rabbitmq()
@@ -139,7 +94,7 @@ class TestConfigsManager(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(queue_to_check))
         finally:
-            self.disconnect_from_rabbit()
+            disconnect_from_rabbit(self.rabbitmq)
 
     @parameterized.expand([
         (CONFIG_EXCHANGE,),
@@ -156,7 +111,7 @@ class TestConfigsManager(unittest.TestCase):
         mock_confirm_delivery.return_value = None
 
         try:
-            self.connect_to_rabbit()
+            connect_to_rabbit(self.rabbitmq)
 
             # Testing this separately since this is a critical function
             self.test_config_manager._initialise_rabbitmq()
@@ -169,7 +124,7 @@ class TestConfigsManager(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(exchange_to_check))
         finally:
-            self.disconnect_from_rabbit()
+            disconnect_from_rabbit(self.rabbitmq)
 
     @mock.patch.object(RabbitMQApi, "connect_till_successful", autospec=True)
     def test__connect_to_rabbit(self, mock_connect: MagicMock):
@@ -204,7 +159,7 @@ class TestConfigsManager(unittest.TestCase):
         }
         HEARTBEAT_QUEUE = "hb_test"
         try:
-            self.connect_to_rabbit()
+            connect_to_rabbit(self.rabbitmq)
             self.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, "topic", False, True, False, False
             )
@@ -243,9 +198,9 @@ class TestConfigsManager(unittest.TestCase):
             _, _, body = self.rabbitmq.basic_get(HEARTBEAT_QUEUE)
             self.assertDictEqual(expected_output, json.loads(body))
         finally:
-            self.delete_queue_if_exists(HEARTBEAT_QUEUE)
-            self.delete_exchange_if_exists(HEALTH_CHECK_EXCHANGE)
-            self.disconnect_from_rabbit()
+            delete_queue_if_exists(self.rabbitmq, HEARTBEAT_QUEUE)
+            delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
+            disconnect_from_rabbit(self.rabbitmq)
 
     @parameterized.expand([
         (FileCreatedEvent("test_config"),
@@ -350,7 +305,7 @@ class TestConfigsManager(unittest.TestCase):
         try:
             self.test_config_manager._initialise_rabbitmq()
 
-            self.connect_to_rabbit()
+            connect_to_rabbit(self.rabbitmq)
             queue_res = self.rabbitmq.queue_declare(
                 queue=CONFIG_QUEUE, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -376,8 +331,8 @@ class TestConfigsManager(unittest.TestCase):
             _, _, body = self.rabbitmq.basic_get(CONFIG_QUEUE)
             self.assertDictEqual(config, json.loads(body))
         finally:
-            self.delete_queue_if_exists(CONFIG_QUEUE)
-            self.disconnect_from_rabbit()
+            delete_queue_if_exists(self.rabbitmq, CONFIG_QUEUE)
+            disconnect_from_rabbit(self.rabbitmq)
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
