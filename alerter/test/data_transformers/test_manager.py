@@ -21,7 +21,7 @@ from src.utils import env
 from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  HEALTH_CHECK_EXCHANGE)
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.test_utils import infinite_fn
 
 
@@ -733,10 +733,12 @@ class TestDataTransformersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(DataTransformersManager, "_send_heartbeat")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-            self) -> None:
+            self, mock_send_hb) -> None:
         # This test would fail if a msg not del excep is raised, as it is not
         # caught in the test.
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
         try:
             # Some of the variables below are needed as parameters for the
             # process_ping function

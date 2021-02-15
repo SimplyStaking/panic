@@ -5,6 +5,7 @@ import unittest
 from datetime import datetime
 from datetime import timedelta
 from queue import Queue
+from typing import Union, Dict
 from unittest import mock
 
 import pika
@@ -32,12 +33,12 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_DB
-        self.redis_host = 'localhost'
+        self.redis_host = env.REDIS_IP
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -530,7 +531,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         ('self.transformed_data_example_error',
          'self.transformed_data_example_error'),
     ])
-    def test_process_trans_data_for_saving_returns_expected_data(
+    def test_process_transformed_data_for_saving_returns_expected_data(
             self, transformed_data: str, expected_processed_data: str) -> None:
         processed_data = \
             self.test_data_transformer._process_transformed_data_for_saving(
@@ -544,20 +545,19 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_transformed_data_for_saving,
             self.invalid_transformed_data)
 
-    def test_process_trans_data_for_alerting_returns_expected_data_if_result(
-            self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.test_data_for_alerting_result'),
+        ('self.transformed_data_example_error',
+         'self.transformed_data_example_error'),
+    ])
+    def test_process_transformed_data_for_alerting_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         actual_data = \
             self.test_data_transformer._process_transformed_data_for_alerting(
-                self.transformed_data_example_result)
-        self.assertDictEqual(self.test_data_for_alerting_result, actual_data)
-
-    def test_process_trans_data_for_alerting_returns_trans_data_if_error(
-            self) -> None:
-        actual_data = \
-            self.test_data_transformer._process_transformed_data_for_alerting(
-                self.transformed_data_example_error)
-        self.assertDictEqual(self.transformed_data_example_error, actual_data)
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), actual_data)
 
     def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
             self) -> None:
@@ -566,40 +566,27 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_transformed_data_for_alerting,
             self.invalid_transformed_data)
 
+    @parameterized.expand([
+        ('self.raw_data_example_result',
+         'self.transformed_data_example_result'),
+        ('self.raw_data_example_error',
+         'self.transformed_data_example_error'),
+    ])
     @mock.patch.object(GitHubDataTransformer,
                        "_process_transformed_data_for_alerting")
     @mock.patch.object(GitHubDataTransformer,
                        "_process_transformed_data_for_saving")
-    def test_transform_data_returns_expected_data_if_result(
-            self, mock_process_for_saving, mock_process_for_alerting) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        self.test_repo.reset()
-        mock_process_for_saving.return_value = {'key_1': 'val1'}
-        mock_process_for_alerting.return_value = {'key_2': 'val2'}
-
-        trans_data, data_for_alerting, data_for_saving = \
-            self.test_data_transformer._transform_data(
-                self.raw_data_example_result)
-
-        self.assertDictEqual(self.transformed_data_example_result, trans_data)
-        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-
-    @mock.patch.object(GitHubDataTransformer,
-                       "_process_transformed_data_for_alerting")
-    @mock.patch.object(GitHubDataTransformer,
-                       "_process_transformed_data_for_saving")
-    def test_transform_data_returns_expected_data_if_error(
-            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+    def test_transform_data_returns_expected_data(
+            self, raw_data: str, expected_transformed_data: str,
+            mock_process_for_saving, mock_process_for_alerting) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         mock_process_for_saving.return_value = {'key_1': 'val1'}
         mock_process_for_alerting.return_value = {'key_2': 'val2'}
 
         trans_data, data_for_alerting, data_for_saving = \
-            self.test_data_transformer._transform_data(
-                self.raw_data_example_error)
+            self.test_data_transformer._transform_data(eval(raw_data))
 
-        self.assertDictEqual(self.transformed_data_example_error, trans_data)
+        self.assertDictEqual(eval(expected_transformed_data), trans_data)
         self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
         self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
 
@@ -625,24 +612,32 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertRaises(KeyError, self.test_data_transformer._transform_data,
                           raw_data)
 
-    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_result(
-            self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.test_data_for_alerting_result',
+         'self.test_data_for_saving_result'),
+        ('self.transformed_data_example_error',
+         'self.transformed_data_example_error',
+         'self.transformed_data_example_error'),
+    ])
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
+            self, transformed_data: str, data_for_alerting: str,
+            data_for_saving: str) -> None:
         self.test_data_transformer._place_latest_data_on_queue(
-            self.transformed_data_example_result,
-            self.test_data_for_alerting_result,
-            self.test_data_for_saving_result
+            eval(transformed_data), eval(data_for_alerting),
+            eval(data_for_saving)
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
             'routing_key': 'alerter.github',
-            'data': self.test_data_for_alerting_result,
+            'data': eval(data_for_alerting),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
             'routing_key': 'github',
-            'data': self.test_data_for_saving_result,
+            'data': eval(data_for_saving),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
@@ -655,44 +650,16 @@ class TestGitHubDataTransformer(unittest.TestCase):
             expected_data_for_saving,
             self.test_data_transformer.publishing_queue.queue[1])
 
-    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_error(
-            self) -> None:
-        data_for_alerting = data_for_saving = copy.deepcopy(
-            self.transformed_data_example_error)
-        self.test_data_transformer._place_latest_data_on_queue(
-            self.transformed_data_example_error, data_for_alerting,
-            data_for_saving
-        )
-        expected_data_for_alerting = {
-            'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alerter.github',
-            'data': data_for_alerting,
-            'properties': pika.BasicProperties(delivery_mode=2),
-            'mandatory': True
-        }
-        expected_data_for_saving = {
-            'exchange': STORE_EXCHANGE,
-            'routing_key': 'github',
-            'data': data_for_saving,
-            'properties': pika.BasicProperties(delivery_mode=2),
-            'mandatory': True
-        }
-
-        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
-        self.assertDictEqual(
-            expected_data_for_alerting,
-            self.test_data_transformer.publishing_queue.queue[0])
-        self.assertDictEqual(
-            expected_data_for_saving,
-            self.test_data_transformer.publishing_queue.queue[1])
-
+    @parameterized.expand([({}, False,), ('self.test_state', True), ])
     @mock.patch.object(GitHubDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_transforms_data_if_data_valid_and_new_repo(
-            self, mock_ack, mock_trans_data) -> None:
+    def test_process_raw_data_transforms_data_if_data_valid(
+            self, state: Union[bool, str], state_is_str: bool, mock_ack,
+            mock_trans_data) -> None:
         # We will check that the data is transformed by checking that
         # `_transform_data` is called correctly. The actual transformations are
-        # already tested. Note we will test for both result and error.
+        # already tested. Note we will test for both result and error, and when
+        # the repo is both in the state and not in the state.
         mock_ack.return_value = None
         mock_trans_data.return_value = (None, None, None)
         try:
@@ -705,6 +672,11 @@ class TestGitHubDataTransformer(unittest.TestCase):
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
+
+            if state_is_str:
+                self.test_data_transformer._state = copy.deepcopy(eval(state))
+            else:
+                self.test_data_transformer._state = copy.deepcopy(state)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -714,7 +686,10 @@ class TestGitHubDataTransformer(unittest.TestCase):
                 self.raw_data_example_result)
 
             # To reset the state as if the repo was not already added
-            self.test_data_transformer._state = {}
+            if state_is_str:
+                self.test_data_transformer._state = copy.deepcopy(eval(state))
+            else:
+                self.test_data_transformer._state = copy.deepcopy(state)
 
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
@@ -732,55 +707,13 @@ class TestGitHubDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
-    @mock.patch.object(GitHubDataTransformer, "_transform_data")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_transforms_data_if_data_valid_and_repo_in_state(
-            self, mock_ack, mock_trans_data) -> None:
-        # We will check that the data is transformed by checking that
-        # `_transform_data` is called correctly. The actual transformations are
-        # already tested. Note we will test for both result and error.
-        mock_ack.return_value = None
-        mock_trans_data.return_value = (None, None, None)
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_error)
-            properties = pika.spec.BasicProperties()
-
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            mock_trans_data.assert_called_once_with(
-                self.raw_data_example_result)
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            self.assertEqual(2, mock_trans_data.call_count)
-            args, _ = mock_trans_data.call_args
-            self.assertEqual(self.raw_data_example_error, args[0])
-            self.assertEqual(1, len(args))
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
+    @parameterized.expand([
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(GitHubDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_call_trans_data_if_err_res_not_in_data(
-            self, mock_ack, mock_trans_data) -> None:
+            self, invalid_data: Dict, mock_ack, mock_trans_data) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -789,7 +722,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data
@@ -969,9 +902,12 @@ class TestGitHubDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
+    @parameterized.expand([
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_update_state_if_res_or_err_not_in_data(
-            self, mock_ack) -> None:
+            self, invalid_data: Dict, mock_ack) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -980,7 +916,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Make the state non-empty and save it to redis
@@ -1154,10 +1090,13 @@ class TestGitHubDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
+    @parameterized.expand([
+        ({},), (None, ), ("test", ), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(GitHubDataTransformer, "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_data_on_queue_if_result_or_error_not_in_data(
-            self, mock_ack, mock_place_on_queue) -> None:
+            self, invalid_data: Dict, mock_ack, mock_place_on_queue) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1166,7 +1105,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data

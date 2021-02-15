@@ -24,7 +24,7 @@ from ..utils.logging import log_and_print
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  RE_INITIALISE_SLEEPING_PERIOD)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ConnectionNotInitializedException)
+                                  ConnectionNotInitialisedException)
 from src.utils.routing_key import get_routing_key
 
 _FIRST_RUN_EVENT = 'first run'
