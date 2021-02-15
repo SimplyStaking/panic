@@ -32,12 +32,12 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = 'localhost'
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_DB
-        self.redis_host = env.REDIS_IP
+        self.redis_host = 'localhost'
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db,
@@ -484,13 +484,13 @@ class TestGitHubDataTransformer(unittest.TestCase):
                 expected_state[repo_id].__dict__,
                 self.test_data_transformer.state[repo_id].__dict__)
 
-    @parameterized.expand([('result',), ('error',), ])
+    @parameterized.expand([
+        ('result', 'self.transformed_data_example_result'),
+        ('error', 'self.transformed_data_example_error'),
+    ])
     def test_update_state_raises_key_error_exception_if_keys_do_not_exist(
-            self, transformed_data_index: str) -> None:
-        transformed_data = self.transformed_data_example_result if \
-            transformed_data_index == 'result' else \
-            self.transformed_data_example_error
-        invalid_transformed_data = copy.deepcopy(transformed_data)
+            self, transformed_data_index: str, transformed_data: str) -> None:
+        invalid_transformed_data = copy.deepcopy(eval(transformed_data))
 
         del invalid_transformed_data[transformed_data_index]['meta_data']
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
@@ -499,35 +499,17 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertRaises(KeyError, self.test_data_transformer._update_state,
                           invalid_transformed_data)
 
-    def test_update_state_updates_state_correctly_on_result_data(self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result', 'self.test_repo_new_metrics'),
+        ('self.transformed_data_example_error', 'self.test_repo'),
+    ])
+    def test_update_state_updates_state_correctly(
+            self, transformed_data: str, expected_state: str) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         self.test_data_transformer._state['dummy_id'] = self.test_data_str
         old_state = copy.deepcopy(self.test_data_transformer._state)
 
-        self.test_data_transformer._update_state(
-            self.transformed_data_example_result)
-
-        # Check that there are the same keys in the state
-        self.assertEqual(old_state.keys(),
-                         self.test_data_transformer.state.keys())
-
-        # Check that the repo not in question are not modified
-        self.assertEqual(self.test_data_str,
-                         self.test_data_transformer._state['dummy_id'])
-
-        # Check that the repo's state values have been modified to the new
-        # metrics
-        self.assertDictEqual(
-            self.test_repo_new_metrics.__dict__,
-            self.test_data_transformer._state[self.test_repo_id].__dict__)
-
-    def test_update_state_updates_state_correctly_on_error(self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        self.test_data_transformer._state['dummy_id'] = self.test_data_str
-        old_state = copy.deepcopy(self.test_data_transformer._state)
-
-        self.test_data_transformer._update_state(
-            self.transformed_data_example_error)
+        self.test_data_transformer._update_state(eval(transformed_data))
 
         # Check that there are the same keys in the state
         self.assertEqual(old_state.keys(),
@@ -537,27 +519,23 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_data_str,
                          self.test_data_transformer._state['dummy_id'])
 
-        # Check that the repo's state values have not been changed. When there
-        # are exceptions, the state doesn't need to change
+        # Check that the repo's state values have been modified correctly
         self.assertDictEqual(
-            old_state[self.test_repo_id].__dict__,
+            eval(expected_state).__dict__,
             self.test_data_transformer._state[self.test_repo_id].__dict__)
 
-    def test_process_trans_data_for_saving_returns_expected_data_if_result(
-            self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.test_data_for_saving_result'),
+        ('self.transformed_data_example_error',
+         'self.transformed_data_example_error'),
+    ])
+    def test_process_trans_data_for_saving_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
         processed_data = \
             self.test_data_transformer._process_transformed_data_for_saving(
-                self.transformed_data_example_result)
-        self.assertDictEqual(self.test_data_for_saving_result,
-                             processed_data)
-
-    def test_process_transformed_data_for_saving_returns_trans_data_if_error(
-            self) -> None:
-        processed_data = \
-            self.test_data_transformer._process_transformed_data_for_saving(
-                self.transformed_data_example_error)
-        self.assertDictEqual(self.transformed_data_example_error,
-                             processed_data)
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), processed_data)
 
     def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
             self) -> None:
