@@ -4253,7 +4253,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -4278,7 +4282,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }                             
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

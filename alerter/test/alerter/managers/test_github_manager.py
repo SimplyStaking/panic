@@ -258,7 +258,7 @@ class TestGithubAlertersManager(unittest.TestCase):
                 "component_name": self.manager_name,
                 "dead_processes": [],
                 "running_processes": [GITHUB_ALERTER_NAME],
-                "timestamp": self.timestamp_used
+                "timestamp": datetime(2012, 1, 1).timestamp()
             }
             # Check that the message received is a valid HB
             _, _, body = self.test_manager.rabbitmq.basic_get(
@@ -324,7 +324,7 @@ class TestGithubAlertersManager(unittest.TestCase):
                 "component_name": self.manager_name,
                 "dead_processes": [GITHUB_ALERTER_NAME],
                 "running_processes": [],
-                "timestamp": self.timestamp_used
+                "timestamp": datetime(2012, 1, 1).timestamp()
             }
             # Check that the message received is a valid HB
             _, _, body = self.test_manager.rabbitmq.basic_get(
