@@ -33,7 +33,7 @@ services:
       - 'DB_NAME=${DB_NAME}'
       - 'DB_IP=${DB_IP_TEST}'
       - 'DB_PORT=${DB_PORT}'
-      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_DB=${REDIS_TEST_DB}'
       - 'REDIS_IP=${REDIS_IP_TEST}'
       - 'REDIS_PORT=${REDIS_PORT}'
       - 'RABBIT_IP=${RABBIT_IP_TEST}'

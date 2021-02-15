@@ -52,7 +52,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
-            'timestamp': datetime.datetime(2012, 1, 1, 1).timestamp()
+            'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
 
         """
@@ -4269,7 +4269,6 @@ class TestSystemAlerter(unittest.TestCase):
         mock_ack.return_value = None
         mock_create_state_for_system.return_value = None
         mock_process_errors.return_value = None
-
         try:
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel

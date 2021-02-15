@@ -40,7 +40,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.manager_name = 'test_github_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
-        self.timestamp_used = datetime(2012, 1, 1, 1).timestamp()
+        self.timestamp_used = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
             'timestamp': self.timestamp_used,

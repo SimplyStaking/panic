@@ -104,7 +104,7 @@ class TestGithubAlerter(unittest.TestCase):
             }
         }
         self.github_json = json.dumps(self.github_data_received).encode()
-        self.frozen_timestamp = datetime.datetime(2012, 1, 1, 1).timestamp()
+        self.frozen_timestamp = datetime.datetime(2012, 1, 1).timestamp()
         self.github_data_error = {
             "error": {
                 "meta_data": {
@@ -194,7 +194,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
-
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -263,6 +264,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
 
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -304,11 +307,14 @@ class TestGithubAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
     @mock.patch("src.alerter.alerters.github.CannotAccessGitHubPageAlert", autospec=True)
     def test_cannot_access_github_page_alert(
-            self, mock_cannot_access_github_page_alert, mock_ack, mock_basic_publish_confirm):
+            self, mock_cannot_access_github_page_alert, mock_ack,
+            mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
 
+        type(mock_cannot_access_github_page_alert.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -329,6 +335,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.repo_name, self.error, self.last_monitored,
                 self.parent_id, self.repo_id
             )
+
             self.assertEqual(2, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
