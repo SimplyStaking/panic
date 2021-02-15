@@ -41,7 +41,6 @@ class TestGithubAlerter(unittest.TestCase):
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
         self.target_queue_used = "alert_router_queue"
-        self.test_queue_name = 'test_alerter_queue'
         self.test_routing_key = 'test_alert_router.github'
         self.alert_router_routing_key = 'alert_router.system'
         self.test_github_alerter = GithubAlerter(
@@ -130,11 +129,9 @@ class TestGithubAlerter(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
             self.test_manager.rabbitmq.queue_purge(self.heartbeat_queue)
             self.test_manager.rabbitmq.queue_purge(GITHUB_ALERTER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
             self.test_manager.rabbitmq.queue_delete(self.target_queue_used)
             self.test_manager.rabbitmq.queue_delete(self.heartbeat_queue)
             self.test_manager.rabbitmq.queue_delete(GITHUB_ALERTER_INPUT_QUEUE)

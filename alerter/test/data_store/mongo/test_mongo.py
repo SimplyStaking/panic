@@ -1,6 +1,6 @@
 import logging
 import unittest
-from datetime import timedelta
+from datetime import timedelta, datetime
 from time import sleep
 
 from pymongo.errors import PyMongoError, OperationFailure, \
@@ -16,8 +16,8 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
     def setUpClass(cls) -> None:
         # Same as in setUp(), to avoid running all tests if Mongo is offline
 
-        dummy_dummy_logger = logging.getdummy_logger('dummy')
-        dummy_dummy_logger.disabled = True
+        dummy_logger = logging.getLogger('dummy')
+        dummy_logger.disabled = True
         db = env.DB_NAME
         host = env.DB_IP
         port = env.DB_PORT
@@ -34,8 +34,8 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
             raise Exception('Mongo is not online.')
 
     def setUp(self) -> None:
-        self.dummy_logger = logging.getdummy_logger('dummy')
-        self.dummy_dummy_logger.disabled = True
+        self.dummy_logger = logging.getLogger('dummy')
+        self.dummy_logger.disabled = True
         self.db = env.DB_NAME
         self.host = env.DB_IP
         self.port = env.DB_PORT
@@ -46,7 +46,7 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
                               port=self.port,
                               username=self.user, password=self.password)
 
-        # Ping Mongo
+        # Ping Mongo pip install pytest-timeout
         try:
             self.mongo.ping_unsafe()
         except PyMongoError:
@@ -63,6 +63,40 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.val3 = {'i': 'j'}
         self.val4 = {'k': 'l', 'm': {'n': ['o', 'p', True, False, 1, 2.1]}}
 
+        self.id_1 = '1'
+        self.id_2 = '2'
+
+        self.key_m_1 = 'key_m_1'
+        self.key_m_2 = 'key_m_2'
+
+        self.val_m_1 = 'm1'
+        self.val_m_2 = 'm2'
+
+        self.test_1 = 'test_1'
+        self.test_2 = 'test_2'
+
+        self.time_used = datetime(2021, 1, 28).timestamp()
+        self.query1 = {'doc_type': self.test_1, 'd': self.time_used}
+        self.query2 = {'doc_type': self.test_2, 'd': self.time_used}
+
+        self.doc_1 = {
+            '$push': {
+                self.id_1: {
+                    self.key_m_1: self.val_m_1
+                }
+            },
+            '$inc': {'n_entries': 1}
+        }
+
+        self.doc_2 = {
+            '$push': {
+                self.id_2: {
+                    self.key_m_2: self.val_m_2
+                }
+            },
+            '$inc': {'n_entries': 1}
+        }
+
         self.time = timedelta(seconds=3)
         self.time_with_error_margin = timedelta(seconds=4)
 
@@ -72,6 +106,7 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.mongo.drop_db()
+        self.mongo = None
 
     def test_insert_one_inserts_value_into_the_specified_collection(self):
         # Check that col1 is empty
@@ -113,6 +148,58 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.assertEqual(dict(get_result[0]), self.val1)
         self.assertEqual(dict(get_result[1]), self.val2)
         self.assertEqual(dict(get_result[2]), self.val3)
+
+    def test_update_one_inserts_value_into_the_specified_collection(self):
+        # Check that col1 is empty
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 0)
+
+        self.mongo.update_one(self.col1, self.query1, self.doc_1)
+
+        # Check that value was added to col1
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 1)
+        self.assertEqual(get_result[0]['1'][0][self.key_m_1], self.val_m_1)
+        self.assertEqual(get_result[0]['n_entries'], 1)
+        self.assertEqual(get_result[0]['doc_type'], self.test_1)
+        self.assertEqual(get_result[0]['d'], self.time_used)
+
+    def test_update_one_multiple_times_inserts_values_into_the_specified_collection(self):
+        # Check that col1 is empty
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 0)
+
+        self.mongo.update_one(self.col1, self.query1, self.doc_1)
+        self.mongo.update_one(self.col1, self.query1, self.doc_1)
+
+        # Check that value was added to col1
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 1)
+        self.assertEqual(get_result[0]['1'][0][self.key_m_1], self.val_m_1)
+        self.assertEqual(get_result[0]['n_entries'], 2)
+        self.assertEqual(get_result[0]['doc_type'], self.test_1)
+        self.assertEqual(get_result[0]['d'], self.time_used)
+
+    def test_update_one_multiple_documents_inserts_values_into_the_specified_collection(self):
+        # Check that col1 is empty
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 0)
+
+        self.mongo.update_one(self.col1, self.query1, self.doc_1)
+        self.mongo.update_one(self.col1, self.query2, self.doc_2)
+
+        # Check that value was added to col1
+        get_result = list(self.mongo._db[self.col1].find({}))
+        self.assertEqual(len(get_result), 2)
+        self.assertEqual(get_result[0]['1'][0][self.key_m_1], self.val_m_1)
+        self.assertEqual(get_result[0]['n_entries'], 1)
+        self.assertEqual(get_result[0]['doc_type'], self.test_1)
+        self.assertEqual(get_result[0]['d'], self.time_used)
+
+        self.assertEqual(get_result[1]['2'][0][self.key_m_2], self.val_m_2)
+        self.assertEqual(get_result[1]['n_entries'], 1)
+        self.assertEqual(get_result[1]['doc_type'], self.test_2)
+        self.assertEqual(get_result[1]['d'], self.time_used)
 
     def test_get_all_returns_inserted_values_in_order_of_insert(self):
         # Check that col1 is empty
@@ -202,55 +289,64 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
 class TestMongoApiWithMongoOffline(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dummy_logger = logging.getdummy_logger('dummy')
-        self.db = TestUserConf.mongo_db_name
+        self.dummy_logger = logging.getLogger('dummy')
+        self.dummy_logger.disabled = True
+        self.db = env.DB_NAME
         self.host = 'dummyhost'
-        self.port = TestUserConf.mongo_port
-        self.user = TestUserConf.mongo_user
-        self.password = TestUserConf.mongo_pass
-        self.mongo = MongoApi(self.dummy_logger, self.db, self.host, self.port,
-                              timeout_ms=1)
-        # timeout_ms is set to 1ms to speed up tests. It cannot be 0 :p
+        self.port = env.DB_PORT
+        self.user = ''
+        self.password = ''
+        self.mongo = MongoApi(self.dummy_logger, self.db, self.host,
+                              self.port, timeout_ms=1)
+        # timeout_ms is set to 1ms to speed up tests. It cannot be 0
 
         self.col1 = 'collection1'
         self.val1 = {'a': 'b', 'c': 'd'}
         self.val2 = {'e': 'f', 'g': 'h'}
         self.val3 = {'i': 'j'}
 
-    def test_insert_one_throws_exception_first_time_round(self):
-        try:
-            self.mongo.insert_one(self.col1, self.val1)
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.id_1 = '1'
+        self.key_m_1 = 'key_m_1'
+        self.val_m_1 = 'm1'
+        self.test_1 = 'test_1'
+        self.time_used = datetime(2021, 1, 28).timestamp()
+        self.query1 = {'doc_type': self.test_1, 'd': self.time_used}
 
-    def test_insert_many_throws_exception_first_time_round(self):
-        try:
-            self.mongo.insert_many(self.col1, [self.val1, self.val2, self.val3])
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.doc_1 = {
+            '$push': {
+                self.id_1: {
+                    self.key_m_1: self.val_m_1
+                }
+            },
+            '$inc': {'n_entries': 1}
+        }
 
-    def test_get_all_throws_exception_first_time_round(self):
-        try:
-            self.mongo.get_all(self.col1)
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+    def test_insert_one_returns_none_first_time_round(self):
+        default_return = self.mongo.insert_one(self.col1, self.val1)
+        self.assertIsNone(default_return)
+
+    def test_insert_many_returns_none_first_time_round(self):
+        default_return = self.mongo.insert_many(self.col1,
+                                                [self.val1, self.val2,
+                                                 self.val3])
+        self.assertIsNone(default_return)
+
+    def test_update_one_returns_none_first_time_round(self):
+        default_return = self.mongo.update_one(self.col1, self.query1,
+                                               self.doc_1)
+        self.assertIsNone(default_return)
+
+    def test_get_all_returns_none_first_time_round(self):
+        default_return = self.mongo.get_all(self.col1)
+        self.assertIsNone(default_return)
 
     def test_drop_collection_throws_exception_first_time_round(self):
-        try:
-            self.mongo.drop_collection(self.col1)
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        default_return = self.mongo.drop_collection(self.col1)
+        self.assertIsNone(default_return)
 
     def test_drop_db_throws_exception_first_time_round(self):
-        try:
-            self.mongo.drop_db()
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        default_return = self.mongo.drop_db()
+        self.assertIsNone(default_return)
 
     def test_ping_unsafe_throws_exception_first_time_round(self):
         try:
@@ -269,6 +365,11 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
     def test_insert_one_returns_none_if_mongo_already_down(self):
         self.mongo._set_as_down()
         self.assertIsNone(self.mongo.insert_one(self.col1, self.val1))
+
+    def test_update_one_returns_none_if_mongo_already_down(self):
+        self.mongo._set_as_down()
+        self.assertIsNone(self.mongo.update_one(self.col1, self.query1,
+                                                self.doc_1))
 
     def test_insert_many_returns_none_if_mongo_already_down(self):
         self.mongo._set_as_down()
@@ -307,10 +408,11 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
 class TestMongoApiLiveAndDownFeaturesWithMongoOffline(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dummy_logger = logging.getdummy_logger('dummy')
-        self.db = TestUserConf.mongo_db_name
-        self.host = TestUserConf.mongo_host
-        self.port = TestUserConf.mongo_port
+        self.dummy_logger = logging.getLogger('dummy')
+        self.dummy_logger.disabled = True
+        self.db = env.DB_NAME
+        self.host = env.DB_IP
+        self.port = env.DB_PORT
         self.live_check_time_interval = timedelta(seconds=3)
         self.live_check_time_interval_with_error_margin = timedelta(seconds=3.5)
         self.mongo = MongoApi(self.dummy_logger, self.db, self.host, self.port,

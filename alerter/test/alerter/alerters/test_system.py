@@ -417,17 +417,17 @@ class TestSystemAlerter(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect()
+            self.test_system_alerter.rabbitmq.connect()
             self.test_rabbit_manager.connect()
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(self.queue_used)
-            self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(self.queue_used)
-            self.test_manager.rabbitmq.queue_delete(self.target_queue_used)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
+            self.test_system_alerter.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_system_alerter.rabbitmq.queue_purge(self.queue_used)
+            self.test_system_alerter.rabbitmq.queue_purge(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_system_alerter.rabbitmq.queue_delete(self.queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
             print("Test failed: %s".format(e))
@@ -443,7 +443,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_alerts_config_warnings_disabled = None
         self.system_alerts_config_critical_disabled = None
         self.system_alerts_config_all_disabled = None
-        self.test_rabbit_manager = None
+        self.test_system_alerter = None
 
     def test_returns_alerter_name_as_str(self) -> None:
         self.assertEqual(self.alerter_name, self.test_system_alerter.__str__())
