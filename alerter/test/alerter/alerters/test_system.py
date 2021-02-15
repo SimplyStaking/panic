@@ -1,22 +1,21 @@
+import copy
+import datetime
 import json
 import logging
 import unittest
-import copy
-import datetime
 from queue import Queue
 from unittest import mock
 
 import pika
 from freezegun import freeze_time
-from parameterized import parameterized
 
+from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.alerters.system import SystemAlerter
-from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
 class TestSystemAlerter(unittest.TestCase):
@@ -117,7 +116,8 @@ class TestSystemAlerter(unittest.TestCase):
         ############# Alerts config warning alerts disabled ######################
         """
 
-        self.base_config['warning_enabled'] = str(not bool(self.warning_enabled))
+        self.base_config['warning_enabled'] = str(
+            not bool(self.warning_enabled))
         self.open_file_descriptors = copy.deepcopy(self.base_config)
         self.open_file_descriptors['name'] = "open_file_descriptors"
 
@@ -157,7 +157,8 @@ class TestSystemAlerter(unittest.TestCase):
         ############# Alerts config critical alerts disabled ######################
         """
         self.base_config['warning_enabled'] = self.warning_enabled
-        self.base_config['critical_enabled'] = str(not bool(self.critical_enabled))
+        self.base_config['critical_enabled'] = str(
+            not bool(self.critical_enabled))
         self.open_file_descriptors = copy.deepcopy(self.base_config)
         self.open_file_descriptors['name'] = "open_file_descriptors"
 
@@ -417,20 +418,23 @@ class TestSystemAlerter(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect()
+            self.test_system_alerter.rabbitmq.connect()
             self.test_rabbit_manager.connect()
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(self.queue_used)
-            self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(self.queue_used)
-            self.test_manager.rabbitmq.queue_delete(self.target_queue_used)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
+            self.test_system_alerter.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_system_alerter.rabbitmq.queue_purge(self.queue_used)
+            self.test_system_alerter.rabbitmq.queue_purge(
+                self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_system_alerter.rabbitmq.queue_delete(self.queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(
+                self.target_queue_used)
+            self.test_system_alerter.rabbitmq.exchange_delete(
+                HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_system_alerter.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Test failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -485,7 +489,9 @@ class TestSystemAlerter(unittest.TestCase):
     ############## 1st run no increase/decrease alerts
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -500,7 +506,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -515,7 +523,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -530,7 +540,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -545,7 +557,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -560,7 +574,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -575,7 +591,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -590,7 +608,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -609,7 +629,9 @@ class TestSystemAlerter(unittest.TestCase):
     ########### 1st run increase/decrease alerts, 2nd run no increase/decrease alerts
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -633,7 +655,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_then_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -657,7 +681,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_increase_alerts_then_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -681,7 +707,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_then_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -705,7 +733,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_increase_alerts_then_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -729,7 +759,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -753,7 +785,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_increase_alerts_then_no_increase_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -777,7 +811,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -801,14 +837,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_all_alerts_classification_no_alerts_then_no_alerts(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -854,7 +906,9 @@ class TestSystemAlerter(unittest.TestCase):
     ####### 1st run no alerts on increase/decrease, 2nd run warning alert on increase
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -883,7 +937,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -908,7 +964,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_increase_alerts_then_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -937,7 +995,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_then_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -962,7 +1022,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_increase_alerts_then_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -991,7 +1053,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1016,7 +1080,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_increase_alerts_then_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1045,7 +1111,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1070,14 +1138,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_alerts_classification_run_no_alerts_then_warning_alerts(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -1105,7 +1189,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1142,7 +1227,9 @@ class TestSystemAlerter(unittest.TestCase):
     1st run no increase/decrease alerts, 2nd run critical increase alerts
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_increase_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1171,7 +1258,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1196,7 +1285,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_increase_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1225,7 +1316,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1250,7 +1343,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_increase_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1279,7 +1374,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1304,7 +1401,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_increase_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1333,7 +1432,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1358,14 +1459,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_alerts_classification_run_no_alerts_then_critical_alerts(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -1392,7 +1509,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1434,7 +1552,8 @@ class TestSystemAlerter(unittest.TestCase):
             self, mock_classify_alert) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1444,7 +1563,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1464,7 +1585,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1480,7 +1603,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1500,7 +1625,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1516,7 +1643,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1536,7 +1665,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1552,7 +1683,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1572,7 +1705,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_on_warning_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1588,14 +1723,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_alerts_initial_run_warning_alerts_count_alerts(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -1604,7 +1755,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_open_file_usage_increase) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1641,7 +1793,9 @@ class TestSystemAlerter(unittest.TestCase):
     ########## 1st run warning alert on increase, 2nd run info alerts on decrease 
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_warning_alert_then_no_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1676,7 +1830,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_warning_alert_then_info_alert_on_decrease(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1707,7 +1863,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_warning_alert_then_no_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1742,7 +1900,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_warning_alert_then_info_alert_on_decrease(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1773,7 +1933,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_warning_alert_then_no_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1808,7 +1970,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_warning_alert_then_info_alerts_on_decrease(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1839,7 +2003,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_warning_alert_then_no_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1874,7 +2040,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_warning_alert_then_info_alert_on_decrease(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -1905,14 +2073,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_all_alerts_above_warning_threshold_then_below_warning(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -1921,7 +2105,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_open_file_usage_increase) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1952,7 +2137,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data_for_alerting = []
         data = self.data_received_below_warning_threshold['result']['data']
-        meta_data = self.data_received_below_warning_threshold['result']['meta_data']
+        meta_data = self.data_received_below_warning_threshold['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1985,7 +2171,9 @@ class TestSystemAlerter(unittest.TestCase):
     #### 1st run warning alerts on increase, 2nd run critical alerts on increase
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_warning_alerts_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2020,7 +2208,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_on_warning_alert_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2046,7 +2236,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_warning_alert_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2081,7 +2273,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_on_warning_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2107,7 +2301,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_warning_alert_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2142,7 +2338,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2168,7 +2366,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_warning_alert_then_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2203,7 +2403,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2229,17 +2431,26 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_all_alerts_above_warning_threshold_then_above_critical(
             self, mock_system_storage_usage_increase,
             mock_system_ram_usage_increase, mock_cpu_usage_increase,
             mock_open_file_usage_increase) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -2270,7 +2481,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data_for_alerting = []
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -2303,7 +2515,9 @@ class TestSystemAlerter(unittest.TestCase):
     ####### 1st run warning alert on increase, 2nd run no alert on increase in warning
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_warning_alerts_then_increase_in_warning_no_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2338,7 +2552,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_on_warning_alert_then_no_decrease_alerts_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2365,7 +2581,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_warning_alert_then_no_alert_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2400,7 +2618,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_on_warning_then_no_decrease_alerts_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2427,7 +2647,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_warning_alert_then_no_alert_in_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2462,7 +2684,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2488,7 +2712,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_warning_alert_then_no_alert_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2523,7 +2749,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_on_warning_then_no_decrease_alerts_on_warning_increase(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2559,7 +2787,8 @@ class TestSystemAlerter(unittest.TestCase):
             self, mock_classify_alert) -> None:
         data_for_alerting = []
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -2569,7 +2798,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2589,7 +2820,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_initial_run_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2605,7 +2838,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2625,7 +2860,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_initial_run_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2641,7 +2878,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2661,7 +2900,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_initial_run_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2677,7 +2918,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2697,7 +2940,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_initial_run_no_decrease_alerts_on_critical_alert(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2713,14 +2958,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_alerts_initial_run_critical_alerts_count_alerts(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -2729,7 +2990,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_open_file_usage_increase) -> None:
         data_for_alerting = []
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -2766,7 +3028,9 @@ class TestSystemAlerter(unittest.TestCase):
     ######### 1st run above critical, second run between warning and critical
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2801,7 +3065,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_then_info_alerts_on_decrease_between_critical_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2832,7 +3098,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2867,7 +3135,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_then_info_alerts_on_decrease_between_critical_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2898,7 +3168,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2933,7 +3205,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_then_info_alerts_on_decrease_between_critical_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2964,7 +3238,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -2999,7 +3275,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_then_info_alerts_on_decrease_between_critical_warning(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -3030,14 +3308,30 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        autospec=True)
     def test_alerts_above_critical_threshold_then_between_critical_and_warning(
             self, mock_system_storage_usage_decrease,
             mock_system_ram_usage_decrease, mock_cpu_usage_decrease,
@@ -3046,7 +3340,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_open_file_usage_increase) -> None:
         data_for_alerting = []
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3077,7 +3372,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data_for_alerting = []
         data = self.data_received_below_critical_above_warning['result']['data']
-        meta_data = self.data_received_below_critical_above_warning['result']['meta_data']
+        meta_data = self.data_received_below_critical_above_warning['result'][
+            'meta_data']
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3110,8 +3406,12 @@ class TestSystemAlerter(unittest.TestCase):
     1st run above critical, 2nd run above critical but repeat timer hasn't elapsed so no alerts
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_then_no_alerts_on_increase_before_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
         mock_last_time_that_did_task.return_value = self.last_monitored
@@ -3134,7 +3434,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['open_file_descriptors']['current'] = self.percent_usage + 58
         data['open_file_descriptors']['previous'] = self.percent_usage + 56
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3148,8 +3449,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_then_no_alerts_on_increase_before_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
         mock_last_time_that_did_task.return_value = self.last_monitored
@@ -3172,7 +3477,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['system_cpu_usage']['current'] = self.percent_usage + 58
         data['system_cpu_usage']['previous'] = self.percent_usage + 56
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3186,8 +3492,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_then_no_alerts_on_increase_before_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
         mock_last_time_that_did_task.return_value = self.last_monitored
@@ -3210,7 +3520,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['system_ram_usage']['current'] = self.percent_usage + 58
         data['system_ram_usage']['previous'] = self.percent_usage + 56
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3224,8 +3535,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_then_no_alerts_on_increase_before_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
         mock_last_time_that_did_task.return_value = self.last_monitored
@@ -3248,7 +3563,8 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['system_storage_usage']['current'] = self.percent_usage + 58
         data['system_storage_usage']['previous'] = self.percent_usage + 56
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -3266,8 +3582,12 @@ class TestSystemAlerter(unittest.TestCase):
     1st run above critical, 2nd run above critical and repeat timer has elapsed so a critical alert is sent
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3289,7 +3609,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['open_file_descriptors']['current'] = self.percent_usage + 56
         data['open_file_descriptors']['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3305,8 +3626,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3328,7 +3653,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_cpu_usage']['current'] = self.percent_usage + 56
         data['system_cpu_usage']['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3344,8 +3670,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3367,7 +3697,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_ram_usage']['current'] = self.percent_usage + 56
         data['system_ram_usage']['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3383,8 +3714,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3406,7 +3741,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_storage_usage']['current'] = self.percent_usage + 56
         data['system_storage_usage']['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3427,8 +3763,12 @@ class TestSystemAlerter(unittest.TestCase):
     repeat timer has elapsed so a critical alert is sent
     """
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3450,7 +3790,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['open_file_descriptors']['current'] = self.percent_usage + 56
         data['open_file_descriptors']['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3466,8 +3807,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3489,7 +3834,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_cpu_usage']['current'] = self.percent_usage + 56
         data['system_cpu_usage']['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3505,8 +3851,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3528,7 +3878,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_ram_usage']['current'] = self.percent_usage + 56
         data['system_ram_usage']['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3544,8 +3895,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
             self, mock_last_time_that_did_task, mock_percentage_usage) -> None:
 
@@ -3567,7 +3922,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        meta_data['last_monitored'] = self.last_monitored + self.critical_repeat_seconds
+        meta_data[
+            'last_monitored'] = self.last_monitored + self.critical_repeat_seconds
         data['system_storage_usage']['current'] = self.percent_usage + 56
         data['system_storage_usage']['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3587,7 +3943,8 @@ class TestSystemAlerter(unittest.TestCase):
     Testing System back up alerts 
     """
 
-    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert",
+                autospec=True)
     def test_system_back_up_no_alert(self, mock_system_back_up) -> None:
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
@@ -3600,10 +3957,12 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert",
+                autospec=True)
     def test_system_back_up_alert(self, mock_system_back_up) -> None:
         data_for_alerting = []
-        self.test_system_alerter._system_initial_downtime_alert_sent[self.system_id] = True
+        self.test_system_alerter._system_initial_downtime_alert_sent[
+            self.system_id] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
@@ -3619,11 +3978,13 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.reset", autospec=True)
+    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.reset",
+                autospec=True)
     def test_system_back_up_timed_task_limiter_reset(self, mock_reset) -> None:
         data_for_alerting = []
         # Set that the initial downtime alert was sent already
-        self.test_system_alerter._system_initial_downtime_alert_sent[self.system_id] = True
+        self.test_system_alerter._system_initial_downtime_alert_sent[
+            self.system_id] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
@@ -3639,8 +4000,10 @@ class TestSystemAlerter(unittest.TestCase):
     Testing System went down at alerts
     """
 
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
-    def test_system_went_down_at_no_alert_below_warning_threshold(self, mock_system_is_down) -> None:
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
+    def test_system_went_down_at_no_alert_below_warning_threshold(self,
+                                                                  mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -3656,12 +4019,14 @@ class TestSystemAlerter(unittest.TestCase):
     These tests assume that critical_threshold_seconds > warning_threshold_seconds
     """
 
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
     def test_system_went_down_at_alert_above_warning_threshold(
             self, mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
-        data['meta_data']['time'] = self.last_monitored + self.warning_threshold_seconds
+        data['meta_data'][
+            'time'] = self.last_monitored + self.warning_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
@@ -3674,12 +4039,14 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
     def test_system_went_down_at_alert_above_critical_threshold(
             self, mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
-        data['meta_data']['time'] = self.last_monitored + self.critical_threshold_seconds
+        data['meta_data'][
+            'time'] = self.last_monitored + self.critical_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
@@ -3692,9 +4059,13 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_went_down_at_alert_above_warning_threshold_then_no_critical_repeat(
             self, mock_last_time_did_task, mock_system_is_down,
             mock_system_still_down) -> None:
@@ -3715,7 +4086,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        data['meta_data']['time'] = past_warning_time + self.critical_repeat_seconds - 1
+        data['meta_data'][
+            'time'] = past_warning_time + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
@@ -3729,11 +4101,16 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_went_down_at_alert_above_warning_threshold_then_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down, mock_system_still_down) -> None:
+            self, mock_last_time_did_task, mock_system_is_down,
+            mock_system_still_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         past_warning_time = self.last_monitored + self.warning_threshold_seconds
@@ -3751,7 +4128,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        data['meta_data']['time'] = past_warning_time + self.critical_repeat_seconds
+        data['meta_data'][
+            'time'] = past_warning_time + self.critical_repeat_seconds
         downtime = int(data['meta_data']['time'] - self.last_monitored)
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
@@ -3770,9 +4148,13 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_went_down_at_alert_above_critical_threshold_then_no_critical_repeat(
             self, mock_last_time_did_task, mock_system_is_down,
             mock_system_still_down) -> None:
@@ -3793,7 +4175,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        data['meta_data']['time'] = past_critical_time + self.critical_repeat_seconds - 1
+        data['meta_data'][
+            'time'] = past_critical_time + self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
@@ -3807,11 +4190,16 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task", autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
+        autospec=True)
     def test_system_went_down_at_alert_above_warning_threshold_then_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down, mock_system_still_down) -> None:
+            self, mock_last_time_did_task, mock_system_is_down,
+            mock_system_still_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         past_critical_time = self.last_monitored + self.critical_threshold_seconds
@@ -3829,7 +4217,8 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        data['meta_data']['time'] = past_critical_time + self.critical_repeat_seconds
+        data['meta_data'][
+            'time'] = past_critical_time + self.critical_repeat_seconds
         downtime = int(data['meta_data']['time'] - self.last_monitored)
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
@@ -3852,7 +4241,8 @@ class TestSystemAlerter(unittest.TestCase):
     Testing error alerts of MetricNotFound and InvalidURL
     """
 
-    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
+                autospec=True)
     def test_metric_not_found_alert(self, mock_alert) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
@@ -3897,8 +4287,10 @@ class TestSystemAlerter(unittest.TestCase):
             self, mock_classify_alert) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(self.system_id)
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
+        self.test_system_alerter_warnings_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3907,14 +4299,17 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_warning_alerts_disabled_increase_above_warning_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         data['open_file_descriptors']['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_warnings_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3923,14 +4318,17 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_warning_alerts_disabled_increase_above_warning_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         data['system_cpu_usage']['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_warnings_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3939,14 +4337,17 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_warning_alerts_disabled_increase_above_warning_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         data['system_ram_usage']['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_warnings_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3955,14 +4356,17 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_warning_alerts_disabled_increase_above_warning_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         data['system_storage_usage']['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_warnings_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3980,8 +4384,10 @@ class TestSystemAlerter(unittest.TestCase):
             self, mock_classify_alert) -> None:
         data_for_alerting = []
         data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(self.system_id)
+        meta_data = self.data_received_initially_warning_alert['result'][
+            'meta_data']
+        self.test_system_alerter_critical_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -3990,7 +4396,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_open_file_descriptors_critical_alerts_disabled_increase_above_critical_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -3998,7 +4406,8 @@ class TestSystemAlerter(unittest.TestCase):
         data['open_file_descriptors']['current'] = self.percent_usage + 56
         data['open_file_descriptors']['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_critical_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -4007,7 +4416,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_cpu_usage_critical_alerts_disabled_increase_above_critical_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -4015,7 +4426,8 @@ class TestSystemAlerter(unittest.TestCase):
         data['system_cpu_usage']['current'] = self.percent_usage + 56
         data['system_cpu_usage']['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_critical_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -4024,7 +4436,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_ram_usage_critical_alerts_disabled_increase_above_critical_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -4032,7 +4446,8 @@ class TestSystemAlerter(unittest.TestCase):
         data['system_ram_usage']['current'] = self.percent_usage + 56
         data['system_ram_usage']['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_critical_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -4041,7 +4456,9 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        autospec=True)
     def test_system_storage_usage_critical_alerts_disabled_increase_above_critical_threshold(
             self, mock_percentage_usage) -> None:
         data_for_alerting = []
@@ -4049,7 +4466,8 @@ class TestSystemAlerter(unittest.TestCase):
         data['system_storage_usage']['current'] = self.percent_usage + 56
         data['system_storage_usage']['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(self.system_id)
+        self.test_system_alerter_critical_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -4067,8 +4485,10 @@ class TestSystemAlerter(unittest.TestCase):
             self, mock_classify_alert) -> None:
         data_for_alerting = []
         data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result']['meta_data']
-        self.test_system_alerter_all_disabled._create_state_for_system(self.system_id)
+        meta_data = self.data_received_initially_critical_alert['result'][
+            'meta_data']
+        self.test_system_alerter_all_disabled._create_state_for_system(
+            self.system_id)
         self.test_system_alerter_all_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -4102,7 +4522,8 @@ class TestSystemAlerter(unittest.TestCase):
             self) -> None:
         try:
             self.test_system_alerter._initialise_rabbitmq()
-            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(
+                self.target_queue_used)
 
             res = self.test_system_alerter.rabbitmq.queue_declare(
                 queue=self.target_queue_used, durable=True, exclusive=False,
@@ -4114,7 +4535,8 @@ class TestSystemAlerter(unittest.TestCase):
                 routing_key=self.alert_router_routing_key)
 
             self.test_system_alerter.rabbitmq.basic_publish_confirm(
-                exchange=ALERT_EXCHANGE, routing_key=self.alert_router_routing_key,
+                exchange=ALERT_EXCHANGE,
+                routing_key=self.alert_router_routing_key,
                 body=self.alert.alert_data, is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
@@ -4128,10 +4550,13 @@ class TestSystemAlerter(unittest.TestCase):
             _, _, body = self.test_system_alerter.rabbitmq.basic_get(
                 self.target_queue_used)
             # For some reason during the conversion [] are swapped to ()
-            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)), json.loads(body))
+            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)),
+                             json.loads(body))
 
-            self.test_system_alerter.rabbitmq.queue_purge(self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_purge(
+                self.target_queue_used)
+            self.test_system_alerter.rabbitmq.queue_delete(
+                self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
             self.test_system_alerter.rabbitmq.disconnect()
         except Exception as e:
@@ -4165,7 +4590,8 @@ class TestSystemAlerter(unittest.TestCase):
 
             self.test_system_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
             self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
-            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(
+                HEALTH_CHECK_EXCHANGE)
             self.test_system_alerter.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -4175,7 +4601,8 @@ class TestSystemAlerter(unittest.TestCase):
     """
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_no_alerts(
             self, mock_ack, mock_create_state_for_system,
@@ -4204,7 +4631,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_no_alerts(
             self, mock_ack, mock_create_state_for_system,
@@ -4234,7 +4662,8 @@ class TestSystemAlerter(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_send_hb_no_proc_error(
             self, mock_ack, mock_create_state_for_system,
@@ -4260,7 +4689,8 @@ class TestSystemAlerter(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_send_hb_no_proc_error(
             self, mock_ack, mock_create_state_for_system,
@@ -4286,7 +4716,8 @@ class TestSystemAlerter(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_do_not_send_hb_on_proc_error_bad_routing_key(
             self, mock_ack, mock_create_state_for_system,
@@ -4312,7 +4743,8 @@ class TestSystemAlerter(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_do_not_send_hb_on_proc_error_bad_routing_key(
             self, mock_ack, mock_create_state_for_system,
@@ -4337,7 +4769,8 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_send_data_called(
             self, mock_ack, mock_create_state_for_system,
@@ -4362,7 +4795,8 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_send_data_called(
             self, mock_ack, mock_create_state_for_system,
@@ -4386,7 +4820,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_not_processed_bad_routing_key(
             self, mock_ack, mock_create_state_for_system,
@@ -4407,7 +4842,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_not_processed_bad_routing_key(
             self, mock_ack, mock_create_state_for_system,
@@ -4430,7 +4866,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_not_processed_bad_data_received(
             self, mock_ack, mock_create_state_for_system,
@@ -4452,7 +4889,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_not_processed_bad_data_received(
             self, mock_ack, mock_create_state_for_system,
@@ -4475,9 +4913,11 @@ class TestSystemAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_result_data_send_data_called(
             self, mock_ack, mock_create_state_for_system,
@@ -4500,9 +4940,11 @@ class TestSystemAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_send_data_called(
             self, mock_ack, mock_create_state_for_system,
@@ -4525,7 +4967,8 @@ class TestSystemAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_place_latest_data_on_queue_not_called_bad_routing_key(
             self, mock_ack, mock_place_latest_data_on_queue) -> None:
@@ -4542,8 +4985,9 @@ class TestSystemAlerter(unittest.TestCase):
             mock_place_latest_data_on_queue.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-    
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_not_processed_bad_routing_key(
             self, mock_ack, mock_place_latest_data_on_queue) -> None:
@@ -4562,7 +5006,8 @@ class TestSystemAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_place_latest_data_on_queue_not_called_bad_data_received(
             self, mock_ack, mock_place_latest_data_on_queue) -> None:
@@ -4581,7 +5026,8 @@ class TestSystemAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_error_data_not_processed_bad_data_received(
             self, mock_ack, mock_place_latest_data_on_queue) -> None:
