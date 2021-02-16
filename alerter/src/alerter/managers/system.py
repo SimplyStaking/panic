@@ -10,26 +10,28 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE)
+                                 SYSTEM_ALERTER_NAME_TEMPLATE,
+                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
+                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN
+                                 )
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
 
-_SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
-_SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
-_SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
-_SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
-
 
 class SystemAlertersManager(AlertersManager):
 
-    def __init__(self, logger: logging.Logger, manager_name: str) -> None:
-        super().__init__(logger, manager_name)
+    def __init__(self, logger: logging.Logger, manager_name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, manager_name, rabbitmq)
         self._systems_alerts_configs = {}
         self._parent_id_process_dict = {}
 
@@ -41,26 +43,26 @@ class SystemAlertersManager(AlertersManager):
     def parent_id_process_dict(self) -> Dict:
         return self._parent_id_process_dict
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_SYS_ALERTERS_MAN_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE,
+                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE,
                          HEALTH_CHECK_EXCHANGE,
-                         _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_SYS_ALERTERS_MAN_INPUT_QUEUE,
+                         SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
-        self.logger.debug("Declaring consuming intentions on "
-                          "'%s'", _SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_SYS_ALERTERS_MAN_INPUT_QUEUE,
+                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+        self.logger.info("Declaring consuming intentions on "
+                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -73,25 +75,41 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
+                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
-        self.logger.debug("Declaring consuming intentions on %s",
-                          SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+        self.logger.info("Declaring consuming intentions on %s",
+                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
+
+    def _terminate_and_join_chain_alerter_processes(
+            self, chain: str) -> None:
+        # Go through all the processes and find the chain whose
+        # process should be terminated
+        for parent_id, parent_info in self._parent_id_process_dict.items():
+            if self._parent_id_process_dict[parent_id]['chain'] == chain:
+                # Terminate the process and join it
+                self._parent_id_process_dict[parent_id]['process'].terminate()
+                self._parent_id_process_dict[parent_id]['process'].join()
+                # Delete key from process and configs as they aren't needed
+                # anymore
+                del self._parent_id_process_dict[parent_id]
+                del self._systems_alerts_configs[parent_id]
+                log_and_print("Terminating alerter process for chain "
+                              "{}".format(chain), self.logger)
 
     def _create_and_start_alerter_process(
             self, system_alerts_config: SystemAlertsConfig, parent_id: str,
@@ -106,7 +124,6 @@ class SystemAlertersManager(AlertersManager):
         self._parent_id_process_dict[parent_id]['component_name'] = \
             SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
         self._parent_id_process_dict[parent_id]['process'] = process
-        self._parent_id_process_dict[parent_id]['parent_id'] = parent_id
         self._parent_id_process_dict[parent_id]['chain'] = chain
 
     def _process_configs(
@@ -119,47 +136,48 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == _SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
-            # Check if all the parent_ids in the received configuration
-            # are the same
-            parent_id = sent_configs['1']['parent_id']
-            for i in sent_configs:
-                if parent_id != sent_configs[i]['parent_id']:
-                    raise ParentIdsMissMatchInAlertsConfiguration(
-                        "{}: _process_data".format(self))
+            if not bool(sent_configs):
+                self._terminate_and_join_chain_alerter_processes(chain)
+            else:
+                # Check if all the parent_ids in the received configuration
+                # are the same
+                parent_id = sent_configs['1']['parent_id']
+                for _, config in sent_configs.items():
+                    if parent_id != config['parent_id']:
+                        raise ParentIdsMissMatchInAlertsConfiguration(
+                            "{}: _process_data".format(self))
+                filtered = {}
+                for _, config in sent_configs.items():
+                    filtered[config['name']] = copy.deepcopy(config)
 
-            filtered = {}
-            for i in sent_configs:
-                filtered[sent_configs[i]['name']] = copy.deepcopy(
-                    sent_configs[i])
+                system_alerts_config = SystemAlertsConfig(
+                    parent_id=parent_id,
+                    open_file_descriptors=filtered['open_file_descriptors'],
+                    system_cpu_usage=filtered['system_cpu_usage'],
+                    system_storage_usage=filtered['system_storage_usage'],
+                    system_ram_usage=filtered['system_ram_usage'],
+                    system_is_down=filtered['system_is_down'],
+                )
+                if parent_id in self.systems_alerts_configs:
+                    previous_process = \
+                        self.parent_id_process_dict[parent_id]['process']
+                    previous_process.terminate()
+                    previous_process.join()
 
-            system_alerts_config = SystemAlertsConfig(
-                parent_id=parent_id,
-                open_file_descriptors=filtered['open_file_descriptors'],
-                system_cpu_usage=filtered['system_cpu_usage'],
-                system_storage_usage=filtered['system_storage_usage'],
-                system_ram_usage=filtered['system_ram_usage'],
-                system_is_down=filtered['system_is_down'],
-            )
+                    log_and_print("Restarting the system alerter of {} with "
+                                  "latest configuration".format(chain),
+                                  self.logger)
 
-            if parent_id in self.systems_alerts_configs:
-                previous_process = \
-                    self.parent_id_process_dict[parent_id]['process']
-                previous_process.terminate()
-                previous_process.join()
-
-                log_and_print("Restarting the system alerter of {} with latest "
-                              "configuration".format(chain), self.logger)
-
-            self._create_and_start_alerter_process(
-                system_alerts_config, parent_id, chain)
-            self._systems_alerts_configs[parent_id] = system_alerts_config
+                self._create_and_start_alerter_process(
+                    system_alerts_config, parent_id, chain)
+                self._systems_alerts_configs[parent_id] = system_alerts_config
         except Exception as e:
             self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
@@ -188,12 +206,11 @@ class SystemAlertersManager(AlertersManager):
                     process.join()  # Just in case, to release resources
 
                     # Restart dead process
-                    parent_id = process_details['parent_id']
                     chain = process_details['chain']
                     system_alerts_config = self.systems_alerts_configs[
                         parent_id]
-                    self._create_and_start_alerter_process(system_alerts_config,
-                                                           parent_id, chain)
+                    self._create_and_start_alerter_process(
+                        system_alerts_config, parent_id, chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and
@@ -215,14 +232,14 @@ class SystemAlertersManager(AlertersManager):
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:
@@ -231,7 +248,7 @@ class SystemAlertersManager(AlertersManager):
 
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running system alerters will be stopped gracefully. "
@@ -248,3 +265,6 @@ class SystemAlertersManager(AlertersManager):
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        pass

@@ -76,7 +76,7 @@ class Store(ABC):
         return self._mongo
 
     @abstractmethod
-    def _initialize_store(self) -> None:
+    def _initialise_store(self) -> None:
         pass
 
     def _process_redis_store(self, *args) -> None:
@@ -106,14 +106,14 @@ class Store(ABC):
                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialize_store()
+        self._initialise_store()
         while True:
             try:
                 self._start_listening()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:
