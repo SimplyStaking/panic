@@ -65,11 +65,11 @@ class ConfigsManager(PublisherSubscriberComponent):
         self._connected_to_rabbit = False
 
         logger.debug("Creating config RabbitMQ connection")
-        self._config_rabbit = RabbitMQApi(
+        rabbitmq = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
 
-        super().__init__(logger, self._config_rabbit)
+        super().__init__(logger, rabbitmq)
 
         self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
@@ -100,11 +100,11 @@ class ConfigsManager(PublisherSubscriberComponent):
             try:
                 self._connect_to_rabbit()
                 self._logger.info("Connected to Rabbit")
-                self._config_rabbit.confirm_delivery()
+                self.rabbitmq.confirm_delivery()
                 self._logger.info("Enabled delivery confirmation on configs"
                                   "RabbitMQ channel")
 
-                self._config_rabbit.exchange_declare(
+                self.rabbitmq.exchange_declare(
                     CONFIG_EXCHANGE, 'topic', False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
@@ -161,7 +161,7 @@ class ConfigsManager(PublisherSubscriberComponent):
     def _connect_to_rabbit(self) -> None:
         if not self._connected_to_rabbit:
             self._logger.info("Connecting to the config RabbitMQ")
-            self._config_rabbit.connect_till_successful()
+            self.rabbitmq.connect_till_successful()
             self._logger.info("Connected to config RabbitMQ")
             self._logger.info("Connecting to the heartbeat RabbitMQ")
             self._heartbeat_rabbit.connect_till_successful()
@@ -174,7 +174,7 @@ class ConfigsManager(PublisherSubscriberComponent):
     def disconnect_from_rabbit(self) -> None:
         if self._connected_to_rabbit:
             self._logger.info("Disconnecting from the config RabbitMQ")
-            self._config_rabbit.disconnect_till_successful()
+            self.rabbitmq.disconnect_till_successful()
             self._logger.info("Disconnected from the config RabbitMQ")
             self._logger.info("Disconnecting from the heartbeat RabbitMQ")
             self._heartbeat_rabbit.disconnect_till_successful()
@@ -225,7 +225,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                     "Attempting to send config with routing key %s", route_key
                 )
                 # We need to definitely send this
-                self._config_rabbit.basic_publish_confirm(
+                self.rabbitmq.basic_publish_confirm(
                     CONFIG_EXCHANGE, route_key, config, mandatory=True,
                     is_body_dict=True,
                     properties=BasicProperties(delivery_mode=2)
@@ -238,7 +238,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                 self._logger.exception(mwnde)
                 self._logger.info("Will attempt sending the config again with "
                                   "routing key %s", route_key)
-                self._config_rabbit.connection.sleep(10)
+                self.rabbitmq.connection.sleep(10)
             except (
                     ConnectionNotInitializedException, AMQPConnectionError
             ) as connection_error:
