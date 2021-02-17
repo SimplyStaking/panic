@@ -1,20 +1,17 @@
 import logging
-import signal
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from types import FrameType
 from typing import Dict
 
 import pika.exceptions
 
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
 
 
 class Alerter(QueuingPublisherSubscriberComponent):
