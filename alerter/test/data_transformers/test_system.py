@@ -967,22 +967,17 @@ class TestSystemDataTransformer(unittest.TestCase):
             expected_data_for_saving,
             self.test_data_transformer.publishing_queue.queue[1])
 
-    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_result(
-            self) -> None:
-        transformed_data = copy.deepcopy(self.transformed_data_example_result)
-        del transformed_data['result']['meta_data']
+    @parameterized.expand([
+        ('result', 'self.transformed_data_example_result',),
+        ('error', 'self.transformed_data_example_general_error',),
+    ])
+    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing(
+            self, response_index_key, transformed_data) -> None:
+        invalid_transformed_data = copy.deepcopy(eval(transformed_data))
+        del invalid_transformed_data[eval(response_index_key)]['meta_data']
         self.assertRaises(
             KeyError, self.test_data_transformer._place_latest_data_on_queue,
-            transformed_data, {}, {})
-
-    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_error(
-            self) -> None:
-        transformed_data = copy.deepcopy(
-            self.transformed_data_example_general_error)
-        del transformed_data['error']['meta_data']
-        self.assertRaises(
-            KeyError, self.test_data_transformer._place_latest_data_on_queue,
-            transformed_data, {}, {})
+            invalid_transformed_data, {}, {})
 
     @parameterized.expand([({}, False,), ('self.test_state', True), ])
     @mock.patch.object(SystemDataTransformer, "_transform_data")
