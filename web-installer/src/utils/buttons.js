@@ -271,7 +271,7 @@ function AddAccount({
 function PingTendermint({ disabled, tendermintRpcUrl }) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRpcUrl}`, 5000);
+      ToastsStore.info(`Connecting with Tendermint RPC URL ${tendermintRpcUrl}`, 5000);
       await pingTendermint(tendermintRpcUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
@@ -279,13 +279,13 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.response.data.message}`,
+          `Could not connect with the Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.response.data.message}`,
           5000,
         );
       } else {
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(
-          `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.message}`,
+          `Could not connect with Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.message}`,
           5000,
         );
       }
@@ -301,7 +301,7 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
 function PingPrometheus({disabled, prometheusUrl}) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Connecting with Prometheus Url ${prometheusUrl}`, 5000);
+      ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
       await pingCosmosPrometheus(prometheusUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
@@ -309,13 +309,13 @@ function PingPrometheus({disabled, prometheusUrl}) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.response.data.message}`,
+          `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.response.data.message}`,
           5000,
         );
       } else {
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(
-          `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.message}`,
+          `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
           5000,
         );
       }
@@ -331,7 +331,7 @@ function PingPrometheus({disabled, prometheusUrl}) {
 function PingNodeExporter({ disabled, exporterUrl }) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Connecting with Node exporter Url ${exporterUrl}`, 5000);
+      ToastsStore.info(`Connecting with Node Exporter URL ${exporterUrl}`, 5000);
       await pingNodeExporter(exporterUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
@@ -339,13 +339,13 @@ function PingNodeExporter({ disabled, exporterUrl }) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Could not connect with node exporter url ${exporterUrl}. Error: ${e.response.data.message}`,
+          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.response.data.message}`,
           5000,
         );
       } else {
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(
-          `Could not connect with node exporter url ${exporterUrl}. Error: ${e.message}`,
+          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.message}`,
           5000,
         );
       }
