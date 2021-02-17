@@ -49,8 +49,8 @@ def _initialise_component_redis(component_display_name: str,
     # attempt to use it.
     while True:
         try:
-            redis_db = int(env.REDIS_DB)
-            redis_port = int(env.REDIS_PORT)
+            redis_db = env.REDIS_DB
+            redis_port = env.REDIS_PORT
             redis_host = env.REDIS_IP
             unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 

@@ -10,14 +10,11 @@ from unittest import mock
 import pika
 import pika.exceptions
 from freezegun import freeze_time
-
 from parameterized import parameterized
 
-from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.managers.github import (GithubAlerterManager,
-                                         GITHUB_MANAGER_INPUT_QUEUE,
-                                         GITHUB_MANAGER_INPUT_ROUTING_KEY)
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.managers.github import (GithubAlerterManager)
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_MANAGER_INPUT_QUEUE,
@@ -75,7 +72,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Test failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -189,7 +186,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
         self.test_manager._start_alerters_processes()
 
-        new_entry_process = self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME]
+        new_entry_process = self.test_manager.alerter_process_dict[
+            GITHUB_ALERTER_NAME]
 
         self.assertTrue(new_entry_process.daemon)
         self.assertEqual(0, len(new_entry_process._args))
@@ -205,7 +203,8 @@ class TestGithubAlertersManager(unittest.TestCase):
         # otherwise the process would not terminate
         time.sleep(1)
 
-        new_entry_process = self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME]
+        new_entry_process = self.test_manager.alerter_process_dict[
+            GITHUB_ALERTER_NAME]
         self.assertTrue(new_entry_process.is_alive())
 
         new_entry_process.terminate()
@@ -266,7 +265,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -288,7 +288,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
 
             # Time for processes to terminate
@@ -332,7 +333,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
             self.rabbitmq.disconnect()
         except Exception as e:
@@ -355,7 +357,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             time.sleep(1)
 
             # Automate the case when having all processes dead
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
 
             # Give time for the processes to terminate
@@ -376,10 +379,12 @@ class TestGithubAlertersManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
-            self.assertTrue(self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive())
+            self.assertTrue(self.test_manager.alerter_process_dict[
+                                GITHUB_ALERTER_NAME].is_alive())
 
             # Clean before test finishes
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -442,9 +447,10 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-      ("pika.exceptions.AMQPChannelError('test')", "pika.exceptions.AMQPChannelError"),
-      ("self.test_exception", "PANICException"),
-      ])
+        ("pika.exceptions.AMQPChannelError('test')",
+         "pika.exceptions.AMQPChannelError"),
+        ("self.test_exception", "PANICException"),
+    ])
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
             self, param_input, param_expected, hb_mock) -> None:

@@ -46,9 +46,10 @@ class TestSystemMonitor(unittest.TestCase):
             'test_key_1': 'test_val_1',
             'test_key_2': 'test_val_2',
         }
+        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_timestamp,
         }
         self.test_queue_name = 'Test Queue'
         self.metrics_to_monitor = [
@@ -141,14 +142,26 @@ class TestSystemMonitor(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_monitor.rabbitmq.connect_till_successful()
+            self.test_monitor.rabbitmq.connect()
+
+            # Declare them before just in case there are tests which do not
+            # use these queues and exchanges
+            self.test_monitor.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_monitor.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_monitor.rabbitmq.exchange_declare(
+                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
             self.test_monitor.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
             self.test_monitor.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_monitor.rabbitmq.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -157,7 +170,7 @@ class TestSystemMonitor(unittest.TestCase):
         self.test_monitor = None
 
     def test_str_returns_monitor_name(self) -> None:
-        self.assertEqual(self.monitor_name, self.test_monitor.__str__())
+        self.assertEqual(self.monitor_name, str(self.test_monitor))
 
     def test_get_monitor_period_returns_monitor_period(self) -> None:
         self.assertEqual(self.monitoring_period,
@@ -309,7 +322,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -328,7 +341,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -386,14 +399,14 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
-            'timestamp': datetime(2012, 1, 1).timestamp()
+            'timestamp': self.test_timestamp
         }
 
         try:
@@ -552,7 +565,7 @@ class TestSystemMonitor(unittest.TestCase):
                                 self.test_monitor.system_config.system_id,
                             'system_parent_id':
                                 self.test_monitor.system_config.parent_id,
-                            'time': datetime(2012, 1, 1).timestamp()
+                            'time': self.test_timestamp
                         },
                         'message': data_ret_exception.message,
                         'code': data_ret_exception.code,
@@ -560,7 +573,7 @@ class TestSystemMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
-                    'timestamp': datetime(2012, 1, 1).timestamp()
+                    'timestamp': self.test_timestamp
                 }
                 # Delete the queue before to avoid messages in the queue on
                 # error.
@@ -627,7 +640,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -695,7 +708,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }
@@ -766,7 +779,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': datetime(2012, 1, 1).timestamp()
+                    'time': self.test_timestamp
                 },
                 'data': self.processed_data_example,
             }

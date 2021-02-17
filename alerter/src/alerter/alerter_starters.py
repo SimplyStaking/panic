@@ -18,6 +18,7 @@ from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
 from src.message_broker.rabbitmq import RabbitMQApi
 
+
 def _initialise_alerter_logger(alerter_display_name: str,
                                alerter_module_name: str) -> logging.Logger:
     # Try initialising the logger until successful. This had to be done
@@ -27,7 +28,7 @@ def _initialise_alerter_logger(alerter_display_name: str,
         try:
             alerter_logger = create_logger(
                 ALERTERS_LOG_FILE_TEMPLATE.format(alerter_display_name),
-                alerter_display_name, LOGGING_LEVEL, rotating=True)
+                alerter_module_name, LOGGING_LEVEL, rotating=True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)

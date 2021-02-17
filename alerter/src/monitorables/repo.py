@@ -50,3 +50,7 @@ class GitHubRepo:
 
     def set_last_monitored(self, last_monitored: Optional[float]) -> None:
         self._last_monitored = last_monitored
+
+    def reset(self) -> None:
+        self.set_no_of_releases(None)
+        self.set_last_monitored(None)
