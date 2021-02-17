@@ -974,7 +974,7 @@ class TestSystemDataTransformer(unittest.TestCase):
     def test_place_latest_data_on_queue_raises_key_error_if_keys_missing(
             self, response_index_key, transformed_data) -> None:
         invalid_transformed_data = copy.deepcopy(eval(transformed_data))
-        del invalid_transformed_data[eval(response_index_key)]['meta_data']
+        del invalid_transformed_data[response_index_key]['meta_data']
         self.assertRaises(
             KeyError, self.test_data_transformer._place_latest_data_on_queue,
             invalid_transformed_data, {}, {})
