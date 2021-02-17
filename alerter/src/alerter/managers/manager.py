@@ -7,43 +7,24 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 
 
-class AlertersManager(ABC):
-    def __init__(self, logger: logging.Logger, name: str):
-        self._logger = logger
+class AlertersManager(PublisherSubscriberComponent):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, rabbitmq)
         self._name = name
-
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(
-            logger=logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.name
 
     @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @property
     def name(self) -> str:
         return self._name
-
-    @abstractmethod
-    def _initialize_rabbitmq(self) -> None:
-        pass
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
@@ -53,15 +34,8 @@ class AlertersManager(ABC):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
-
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
+        self.logger.debug("Sent heartbeat to '%s' exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     @abstractmethod
     def _process_configs(
@@ -80,5 +54,5 @@ class AlertersManager(ABC):
         pass
 
     @abstractmethod
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         pass

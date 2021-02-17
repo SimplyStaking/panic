@@ -45,7 +45,7 @@ class PublisherComponent(Component, ABC):
         self.rabbitmq.disconnect_till_successful()
 
     @abstractmethod
-    def _send_data(self, data: Dict) -> None:
+    def _send_data(self, *args) -> None:
         pass
 
     @abstractmethod
@@ -53,7 +53,7 @@ class PublisherComponent(Component, ABC):
         pass
 
 
-class QueuingPublisherComponent(Component, ABC):
+class QueuingPublisherComponent(PublisherComponent, ABC):
     """
     Abstract class
     Uses a queuing mechanism to publish messages to RabbitMQ
@@ -62,35 +62,18 @@ class QueuingPublisherComponent(Component, ABC):
     def __init__(self, logger: logging.Logger, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0):
         """
-        Initializes the queue needed for publishing.
+        Initialises the queue needed for publishing.
         :param logger: The logger object to log with
         :param rabbitmq: The rabbit MQ connection to use
         :param max_queue_size: The max queue size, defaults to 0 for infinite
         """
         self._publishing_queue = Queue(max_queue_size)
-        self._logger = logger
-        self._rabbitmq = rabbitmq
 
-        super().__init__()
+        super().__init__(logger, rabbitmq)
 
     @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @abstractmethod
-    def _initialise_rabbitmq(self) -> None:
-        pass
-
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
+    def publishing_queue(self) -> Queue:
+        return self._publishing_queue
 
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
                        properties: BasicProperties = BasicProperties(
@@ -153,7 +136,3 @@ class QueuingPublisherComponent(Component, ABC):
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
                               "queue")
-
-    @abstractmethod
-    def _send_heartbeat(self, data_to_send: dict) -> None:
-        pass

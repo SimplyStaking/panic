@@ -11,7 +11,7 @@ from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_MONITOR_NAME_TEMPLATE,
                                  GITHUB_MONITOR_NAME_TEMPLATE)
@@ -23,9 +23,9 @@ from src.utils.starters import (get_initialisation_error_message,
 T = TypeVar('T', bound=Monitor)
 
 
-def _initialize_monitor_logger(monitor_display_name: str,
+def _initialise_monitor_logger(monitor_display_name: str,
                                monitor_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -40,34 +40,33 @@ def _initialize_monitor_logger(monitor_display_name: str,
             # monitor's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return monitor_logger
 
 
-def _initialize_monitor(monitor_type: Type[T], monitor_display_name: str,
+def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
                         monitoring_period: int,
                         config: Union[SystemConfig, RepoConfig]) -> T:
-    monitor_logger = _initialize_monitor_logger(monitor_display_name,
+    monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
-    # Try initializing the monitor until successful
+    # Try initialising the monitor until successful
     while True:
         try:
-            rabbit_ip = env.RABBIT_IP
             rabbitmq = RabbitMQApi(
                 logger=monitor_logger.getChild(RabbitMQApi.__name__),
-                host=rabbit_ip)
+                host=env.RABBIT_IP)
             monitor = monitor_type(monitor_display_name, config, monitor_logger,
                                    monitoring_period, rabbitmq)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(monitor_display_name, e)
             log_and_print(msg, monitor_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return monitor
 
@@ -76,9 +75,9 @@ def start_system_monitor(system_config: SystemConfig) -> None:
     # Monitor display name based on system
     monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
         system_config.system_name)
-    monitoring_period = env.SYSTEM_MONITOR_PERIOD_SECONDS
-    system_monitor = _initialize_monitor(SystemMonitor, monitor_display_name,
-                                         monitoring_period, system_config)
+    system_monitor = _initialise_monitor(SystemMonitor, monitor_display_name,
+                                         env.SYSTEM_MONITOR_PERIOD_SECONDS,
+                                         system_config)
     start_monitor(system_monitor)
 
 
@@ -87,9 +86,9 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
     # and the last space is removed.
     monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
         repo_config.repo_name.replace('/', ' ')[:-1])
-    monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
-    github_monitor = _initialize_monitor(GitHubMonitor, monitor_display_name,
-                                         monitoring_period, repo_config)
+    github_monitor = _initialise_monitor(GitHubMonitor, monitor_display_name,
+                                         env.GITHUB_MONITOR_PERIOD_SECONDS,
+                                         repo_config)
     start_monitor(github_monitor)
 
 

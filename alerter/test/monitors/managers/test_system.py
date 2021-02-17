@@ -2,8 +2,8 @@ import copy
 import json
 import logging
 import multiprocessing
-import unittest
 import time
+import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock
@@ -39,9 +39,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.manager_name = 'test_system_monitors_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
+        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_timestamp,
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True
@@ -119,9 +120,42 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
+        # Delete any queues and exchanges which are common across many tests
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            # Declare them before just in case there are tests which do not
+            # use these queues and exchanges
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                SYS_MON_MAN_INPUT_QUEUE, False, True, False, False)
+            self.test_manager.rabbitmq.queue_declare(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            self.test_manager.rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, 'topic', False, True, False, False)
+            self.test_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+
+            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_purge(SYS_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+            self.test_manager.rabbitmq.disconnect()
+        except Exception as e:
+            print("Deletion of queues and exchanges failed: {}".format(e))
+
         self.dummy_logger = None
         self.rabbitmq = None
-        self.test_manager = None
         self.dummy_process1 = None
         self.dummy_process2 = None
         self.dummy_process3 = None
@@ -132,7 +166,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_exception = None
 
     def test_str_returns_manager_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_config_process_dict_returns_config_process_dict(self) -> None:
         self.test_manager._config_process_dict = \
@@ -153,12 +187,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
-    @mock.patch.object(SystemMonitorsManager, "_process_ping")
-    def test_initialise_rabbitmq_initializes_everything_as_expected(
-            self, mock_process_ping) -> None:
-        mock_process_ping.return_value = None
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
+            self) -> None:
         try:
             # To make sure that there is no connection/channel already
             # established
@@ -220,14 +252,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
                 False)
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -263,15 +287,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -334,7 +349,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.system_config_example, self.system_id_new,
             self.chain_example_new)
 
-        # We need to sleep to give some time for the monitor to be initialized,
+        # We need to sleep to give some time for the monitor to be initialised,
         # otherwise the process would not terminate
         time.sleep(1)
 
@@ -395,9 +410,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                                                properties, body_chain)
             self.assertEqual(old_systems_configs,
                              self.test_manager.systems_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -496,9 +508,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             expected_output['general']['config_id5'] = \
                 new_configs_general['config_id5']
             self.assertEqual(expected_output, self.test_manager.systems_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -602,9 +611,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, self.test_manager.systems_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -651,9 +657,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertEqual(expected_output, self.test_manager.systems_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -815,9 +818,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 args[0].monitor_system)
             self.assertEqual(new_configs_general['config_id5']['exporter_url'],
                              args[0].node_exporter_url)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -947,9 +947,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertFalse(conf_id2_old_proc.is_alive())
             self.assertFalse(
                 'config_id2' in self.test_manager.config_process_dict)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1042,9 +1039,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertEqual(
                 updated_configs_general['config_id2']['exporter_url'],
                 args[0].node_exporter_url)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1101,14 +1095,11 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Check that the old process has terminated
             self.assertFalse(conf_id1_old_proc.is_alive())
             self.assertFalse(conf_id2_old_proc.is_alive())
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_new_configs_with_missing_Keys(
+    def test_process_configs_ignores_new_configs_with_missing_keys(
             self, mock_ack) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
@@ -1168,14 +1159,11 @@ class TestSystemMonitorsManager(unittest.TestCase):
                              self.test_manager.config_process_dict)
             self.assertEqual(self.systems_configs_example,
                              self.test_manager.systems_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_modified_configs_with_missing_Keys(
+    def test_process_configs_ignores_modified_configs_with_missing_keys(
             self, mock_ack) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
@@ -1236,9 +1224,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                              self.test_manager.config_process_dict)
             self.assertEqual(self.systems_configs_example,
                              self.test_manager.systems_configs)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1275,7 +1260,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1308,17 +1293,11 @@ class TestSystemMonitorsManager(unittest.TestCase):
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
                 'dead_processes': [],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.config_process_dict['config_id1'][
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
@@ -1327,7 +1306,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 'process'].join()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1372,7 +1350,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1405,22 +1383,15 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 'dead_processes':
                     [self.test_manager.config_process_dict['config_id1'][
                          'component_name']],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
 
             # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.config_process_dict['config_id2'][
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1469,7 +1440,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1502,18 +1473,9 @@ class TestSystemMonitorsManager(unittest.TestCase):
                          'component_name'],
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1565,7 +1527,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertFalse(self.test_manager.config_process_dict[
                                  'config_id2']['process'].is_alive())
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
@@ -1588,7 +1550,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 'process'].terminate()
             self.test_manager.config_process_dict['config_id2'][
                 'process'].join()
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1612,7 +1573,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1636,9 +1597,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertEqual(self.systems_configs_example['Substrate Polkadot'][
                                  'config_id1']['exporter_url'],
                              args[0].node_exporter_url)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1659,7 +1617,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1682,15 +1640,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1699,7 +1648,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1707,14 +1656,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1725,7 +1666,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1734,14 +1675,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1752,7 +1685,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1761,14 +1694,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1779,7 +1704,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1787,13 +1712,5 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
             self.assertRaises(PANICException, self.test_manager._process_ping,
                               blocking_channel, method, properties, body)
-
-            # Clean before test finishes
-            self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))

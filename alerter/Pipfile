@@ -5,6 +5,8 @@ verify_ssl = true
 
 [dev-packages]
 coverage = "*"
+parameterized = "*"
+freezegun = "*"
 
 [packages]
 configparser = "*"
@@ -19,4 +21,3 @@ requests = "*"
 twilio = "*"
 opsgenie-sdk = "*"
 watchdog = "*"
-freezegun = "*"

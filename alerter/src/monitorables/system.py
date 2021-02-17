@@ -185,3 +185,20 @@ class System:
 
     def set_last_monitored(self, last_monitored: Optional[float]) -> None:
         self._last_monitored = last_monitored
+
+    def reset(self) -> None:
+        self.set_went_down_at(None)
+        self.set_process_cpu_seconds_total(None)
+        self.set_process_memory_usage(None)
+        self.set_virtual_memory_usage(None)
+        self.set_open_file_descriptors(None)
+        self.set_system_cpu_usage(None)
+        self.set_system_ram_usage(None)
+        self.set_system_storage_usage(None)
+        self.set_network_transmit_bytes_per_second(None)
+        self.set_network_transmit_bytes_total(None)
+        self.set_network_receive_bytes_per_second(None)
+        self.set_network_receive_bytes_total(None)
+        self.set_disk_io_time_seconds_in_interval(None)
+        self.set_disk_io_time_seconds_total(None)
+        self.set_last_monitored(None)
