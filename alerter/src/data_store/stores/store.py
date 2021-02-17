@@ -21,7 +21,7 @@ class Store(ABC):
         rabbit_ip = env.RABBIT_IP
         self._mongo_ip = env.DB_IP
         self._mongo_db = env.DB_NAME
-        self._mongo_port = int(env.DB_PORT)
+        self._mongo_port = env.DB_PORT
         redis_ip = env.REDIS_IP
         redis_db = env.REDIS_DB
         redis_port = env.REDIS_PORT
@@ -102,8 +102,8 @@ class Store(ABC):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
+        self.logger.debug("Sent heartbeat to '%s' exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
         self._initialise_store()

@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -10,6 +10,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants import (ALERT_EXCHANGE, STORE_EXCHANGE,
@@ -19,14 +20,16 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import convert_to_float_if_not_none
 
-_SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
-_SYSTEM_DT_INPUT_ROUTING_KEY = 'system'
+SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
+SYSTEM_DT_INPUT_ROUTING_KEY = 'system'
 
 
 class SystemDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
-                 redis: RedisApi) -> None:
-        super().__init__(transformer_name, logger, redis)
+                 redis: RedisApi, rabbitmq: RabbitMQApi,
+                 max_queue_size: int = 0) -> None:
+        super().__init__(transformer_name, logger, redis, rabbitmq,
+                         max_queue_size)
 
     def _initialise_rabbitmq(self) -> None:
         # A data transformer is both a consumer and producer, therefore we need
@@ -38,20 +41,20 @@ class SystemDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", _SYSTEM_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_SYSTEM_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE, False, True, False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", _SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         _SYSTEM_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 _SYSTEM_DT_INPUT_ROUTING_KEY)
+                         "key '%s'", SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                         SYSTEM_DT_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
+                                 SYSTEM_DT_INPUT_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(_SYSTEM_DT_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(SYSTEM_DT_INPUT_QUEUE,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
@@ -249,12 +252,12 @@ class SystemDataTransformer(DataTransformer):
 
         return system
 
-    def _update_state(self) -> None:
+    def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
 
-        if 'result' in self.transformed_data:
-            meta_data = self.transformed_data['result']['meta_data']
-            metrics = self.transformed_data['result']['data']
+        if 'result' in transformed_data:
+            meta_data = transformed_data['result']['meta_data']
+            metrics = transformed_data['result']['data']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             system_name = meta_data['system_name']
@@ -264,7 +267,7 @@ class SystemDataTransformer(DataTransformer):
             system.set_parent_id(parent_id)
             system.set_system_name(system_name)
 
-            # Save the new metrics
+            # Save the new metrics in process memory
             system.set_last_monitored(meta_data['last_monitored'])
             system.set_process_cpu_seconds_total(
                 metrics['process_cpu_seconds_total'])
@@ -287,9 +290,9 @@ class SystemDataTransformer(DataTransformer):
             system.set_disk_io_time_seconds_in_interval(
                 metrics['disk_io_time_seconds_in_interval'])
             system.set_as_up()
-        elif 'error' in self.transformed_data:
-            meta_data = self.transformed_data['error']['meta_data']
-            error_code = self.transformed_data['error']['code']
+        elif 'error' in transformed_data:
+            meta_data = transformed_data['error']['meta_data']
+            error_code = transformed_data['error']['code']
             system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
@@ -301,8 +304,7 @@ class SystemDataTransformer(DataTransformer):
             system.set_system_name(system_name)
 
             if error_code == downtime_exception.code:
-                went_down_at = self.transformed_data['error']['data'][
-                    'went_down_at']
+                went_down_at = transformed_data['error']['data']['went_down_at']
                 system.set_as_down(went_down_at)
         else:
             raise ReceivedUnexpectedDataException(
@@ -310,28 +312,29 @@ class SystemDataTransformer(DataTransformer):
 
         self.logger.debug("State updated successfully")
 
-    def _process_transformed_data_for_saving(self) -> None:
+    def _process_transformed_data_for_saving(self,
+                                             transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
-        if 'result' in self.transformed_data \
-                or 'error' in self.transformed_data:
-            processed_data = copy.deepcopy(self.transformed_data)
+        if 'result' in transformed_data or 'error' in transformed_data:
+            processed_data = copy.deepcopy(transformed_data)
         else:
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_saving".format(self))
 
-        self._data_for_saving = processed_data
-
         self.logger.debug("Processing successful")
 
-    def _process_transformed_data_for_alerting(self) -> None:
+        return processed_data
+
+    def _process_transformed_data_for_alerting(self,
+                                               transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for alerting ...")
 
-        if 'result' in self.transformed_data:
-            td_meta_data = self.transformed_data['result']['meta_data']
+        if 'result' in transformed_data:
+            td_meta_data = transformed_data['result']['meta_data']
             td_system_id = td_meta_data['system_id']
             system = self.state[td_system_id]
-            td_metrics = self.transformed_data['result']['data']
+            td_metrics = transformed_data['result']['data']
 
             processed_data = {
                 'result': {
@@ -375,18 +378,18 @@ class SystemDataTransformer(DataTransformer):
                 'previous'] = system.disk_io_time_seconds_in_interval
             processed_data_metrics['went_down_at'][
                 'previous'] = system.went_down_at
-        elif 'error' in self.transformed_data:
-            td_meta_data = self.transformed_data['error']['meta_data']
-            td_error_code = self.transformed_data['error']['code']
+        elif 'error' in transformed_data:
+            td_meta_data = transformed_data['error']['meta_data']
+            td_error_code = transformed_data['error']['code']
             td_system_id = td_meta_data['system_id']
             td_system_name = td_meta_data['system_name']
             system = self.state[td_system_id]
             downtime_exception = SystemIsDownException(td_system_name)
 
-            processed_data = copy.deepcopy(self.transformed_data)
+            processed_data = copy.deepcopy(transformed_data)
 
             if td_error_code == downtime_exception.code:
-                td_metrics = self.transformed_data['error']['data']
+                td_metrics = transformed_data['error']['data']
                 processed_data_metrics = processed_data['error']['data']
 
                 for metric, value in td_metrics.items():
@@ -399,11 +402,11 @@ class SystemDataTransformer(DataTransformer):
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_alerting".format(self))
 
-        self._data_for_alerting = processed_data
-
         self.logger.debug("Processing successful.")
 
-    def _transform_data(self, data: Dict) -> None:
+        return processed_data
+
+    def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         self.logger.debug("Performing data transformation on %s ...", data)
 
         if 'result' in data:
@@ -489,38 +492,32 @@ class SystemDataTransformer(DataTransformer):
             raise ReceivedUnexpectedDataException(
                 "{}: _transform_data".format(self))
 
-        self._transformed_data = transformed_data
-        self._process_transformed_data_for_alerting()
-        self._process_transformed_data_for_saving()
+        data_for_alerting = self._process_transformed_data_for_alerting(
+            transformed_data)
+        data_for_saving = self._process_transformed_data_for_saving(
+            transformed_data)
+
         self.logger.debug("Data transformation successful")
 
-    def _place_latest_data_on_queue(self) -> None:
-        self.logger.debug("Adding transformed data to the publishing queue ...")
+        return transformed_data, data_for_alerting, data_for_saving
 
-        # Place the latest transformed data on the publishing queue. If the
-        # queue is full, remove old data.
-        if self.publishing_queue.full():
-            self.publishing_queue.get()
-            self.publishing_queue.get()
-        self.publishing_queue.put({
-            'exchange': STORE_EXCHANGE, 'routing_key': 'system',
-            'data': copy.deepcopy(self.data_for_saving)})
-
+    def _place_latest_data_on_queue(self, transformed_data: Dict,
+                                    data_for_alerting: Dict,
+                                    data_for_saving: Dict) -> None:
         # Compute the routing key for alerting. The routing key will be in
         # the format `alerter.system.parent_id
-        response_index_key = 'result' if 'result' in self.transformed_data \
+        response_index_key = 'result' if 'result' in transformed_data \
             else 'error'
-        meta_data = self.data_for_alerting[response_index_key]['meta_data']
+        meta_data = transformed_data[response_index_key]['meta_data']
         system_parent_id = meta_data['system_parent_id']
         alerting_routing_key = 'alerter.system' + '.{}'.format(system_parent_id)
 
-        self.publishing_queue.put({
-            'exchange': ALERT_EXCHANGE,
-            'routing_key': alerting_routing_key,
-            'data': copy.deepcopy(self.data_for_alerting)})
+        self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
+                            alerting_routing_key,
+                            pika.BasicProperties(delivery_mode=2), True)
 
-        self.logger.debug("Transformed data added to the publishing queue "
-                          "successfully.")
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE, 'system',
+                            pika.BasicProperties(delivery_mode=2), True)
 
     def _process_raw_data(self, ch: BlockingChannel,
                           method: pika.spec.Basic.Deliver,
@@ -531,6 +528,9 @@ class SystemDataTransformer(DataTransformer):
                          raw_data)
 
         processing_error = False
+        transformed_data = {}
+        data_for_alerting = {}
+        data_for_saving = {}
         try:
             if 'result' in raw_data or 'error' in raw_data:
                 response_index_key = 'result' if 'result' in raw_data \
@@ -546,9 +546,8 @@ class SystemDataTransformer(DataTransformer):
                     loaded_system = self.load_state(new_system)
                     self._state[system_id] = loaded_system
 
-                self._transform_data(raw_data)
-                self._update_state()
-                self.logger.info("Successfully processed %s", raw_data)
+                transformed_data, data_for_alerting, data_for_saving = \
+                    self._transform_data(raw_data)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_raw_data".format(self))
@@ -560,12 +559,26 @@ class SystemDataTransformer(DataTransformer):
         # If the data is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
+        # We want to update the state after the data is acknowledged, otherwise
+        # if acknowledgement fails the state would be erroneous when processing
+        # the data again. Note, only update the state if there were no
+        # processing errors.
+        if not processing_error:
+            try:
+                self._update_state(transformed_data)
+                self.logger.debug("Successfully processed %s", raw_data)
+            except Exception as e:
+                self.logger.error("Error when processing %s", raw_data)
+                self.logger.exception(e)
+                processing_error = True
+
         # Place the data on the publishing queue if there were no processing
         # errors. This is done after acknowledging the data, so that if
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue()
+            self._place_latest_data_on_queue(
+                transformed_data, data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

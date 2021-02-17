@@ -17,17 +17,14 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from .config_update_event_handler import ConfigFileEventHandler
-from ..abstract import Component
-from ..utils.logging import log_and_print
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 RE_INITIALIZE_SLEEPING_PERIOD)
-from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ConnectionNotInitializedException)
 from src.utils import routing_key
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 RE_INITIALISE_SLEEPING_PERIOD)
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  ConnectionNotInitialisedException)
 from .config_update_event_handler import ConfigFileEventHandler
-from ..abstract.publisher_subscriber import PublisherSubscriberComponent
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
@@ -47,7 +44,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                  ignore_directories: bool = True, case_sensitive: bool = False):
         """
         Constructs the ConfigsManager instance
-        :param config_directory: The ro99 ot config directory to watch.
+        :param config_directory: The root config directory to watch.
             This is searched recursively.
         :param file_patterns: The file patterns in the directory to watch.
             Defaults to all ini files
@@ -196,8 +193,8 @@ class ConfigsManager(PublisherSubscriberComponent):
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
-        self._logger.info("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+        self._logger.debug("Sent heartbeat to %s exchange",
+                           HEALTH_CHECK_EXCHANGE)
 
     def _process_ping(self, ch: BlockingChannel,
                       method: pika.spec.Basic.Deliver,

@@ -71,6 +71,10 @@ class QueuingPublisherComponent(PublisherComponent, ABC):
 
         super().__init__(logger, rabbitmq)
 
+    @property
+    def publishing_queue(self) -> Queue:
+        return self._publishing_queue
+
     def _push_to_queue(self, data: Dict, exchange: str, routing_key: str,
                        properties: BasicProperties = BasicProperties(
                            delivery_mode=2), mandatory: bool = True) -> None:
@@ -132,7 +136,3 @@ class QueuingPublisherComponent(PublisherComponent, ABC):
         if not empty:
             self._logger.info("Successfully sent all data from the publishing "
                               "queue")
-
-    @abstractmethod
-    def _send_heartbeat(self, data_to_send: dict) -> None:
-        pass

@@ -2,8 +2,8 @@ import copy
 import json
 import logging
 import multiprocessing
-import unittest
 import time
+import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock
@@ -39,9 +39,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.manager_name = 'test_system_monitors_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
+        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': datetime(2012, 1, 1).timestamp(),
+            'timestamp': self.test_timestamp,
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True
@@ -121,7 +122,24 @@ class TestSystemMonitorsManager(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
-            self.test_manager.rabbitmq.connect_till_successful()
+            self.test_manager.rabbitmq.connect()
+
+            # Declare them before just in case there are tests which do not
+            # use these queues and exchanges
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                SYS_MON_MAN_INPUT_QUEUE, False, True, False, False)
+            self.test_manager.rabbitmq.queue_declare(
+                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            self.test_manager.rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, 'topic', False, True, False, False)
+            self.test_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(SYS_MON_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
@@ -134,11 +152,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Deletion of queues and exchanges failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
-        self.test_manager = None
         self.dummy_process1 = None
         self.dummy_process2 = None
         self.dummy_process3 = None
@@ -149,7 +166,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_exception = None
 
     def test_str_returns_manager_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_config_process_dict_returns_config_process_dict(self) -> None:
         self.test_manager._config_process_dict = \
@@ -170,12 +187,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
-    @mock.patch.object(SystemMonitorsManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self, mock_process_ping) -> None:
-        mock_process_ping.return_value = None
+            self) -> None:
         try:
             # To make sure that there is no connection/channel already
             # established
@@ -1278,7 +1293,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
                 'dead_processes': [],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
 
@@ -1368,7 +1383,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 'dead_processes':
                     [self.test_manager.config_process_dict['config_id1'][
                          'component_name']],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
 
@@ -1458,7 +1473,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
                          'component_name'],
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
-                'timestamp': datetime(2012, 1, 1).timestamp(),
+                'timestamp': self.test_timestamp,
             }
             self.assertEqual(expected_output, json.loads(body))
         except Exception as e:
