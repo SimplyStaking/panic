@@ -9,48 +9,46 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.managers.manager import AlertersManager
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
+                                 GITHUB_MANAGER_INPUT_QUEUE,
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
-_GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
-
 
 class GithubAlerterManager(AlertersManager):
-    def __init__(self, logger: logging.Logger, name: str):
-        super().__init__(logger, name)
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, name, rabbitmq)
         self._alerter_process_dict = {}
-
-    def __str__(self) -> str:
-        return self.name
 
     @property
     def alerter_process_dict(self) -> Dict:
         return self._alerter_process_dict
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_GITHUB_MANAGER_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", GITHUB_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(GITHUB_MANAGER_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", _GITHUB_MANAGER_INPUT_QUEUE,
+                         "key '%s'", GITHUB_MANAGER_INPUT_QUEUE,
                          HEALTH_CHECK_EXCHANGE,
-                         _GITHUB_MANAGER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_GITHUB_MANAGER_INPUT_QUEUE,
+                         GITHUB_MANAGER_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GITHUB_MANAGER_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _GITHUB_MANAGER_INPUT_ROUTING_KEY)
-        self.logger.debug("Declaring consuming intentions on '%s'",
-                          _GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_GITHUB_MANAGER_INPUT_QUEUE,
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+        self.logger.info("Declaring consuming intentions on '%s'",
+                         GITHUB_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(GITHUB_MANAGER_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -114,7 +112,7 @@ class GithubAlerterManager(AlertersManager):
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._start_alerters_processes()
@@ -122,7 +120,7 @@ class GithubAlerterManager(AlertersManager):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:
@@ -130,7 +128,7 @@ class GithubAlerterManager(AlertersManager):
                 raise e
 
     # If termination signals are received, terminate all child process and exit
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and any running github alerters will be "
                       "stopped gracefully. Afterwards the {} process will "
@@ -150,4 +148,7 @@ class GithubAlerterManager(AlertersManager):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
+        pass
+
+    def _send_data(self, *args) -> None:
         pass

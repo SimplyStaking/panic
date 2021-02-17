@@ -8,7 +8,7 @@ mandatory or not, and if not what the default value is. We can also use this
 to typecast values.
 
 This also ensures all mandatory values are present before running by
-initializing the class 
+initialising the class 
 """
 
 # Alerter configuration
@@ -23,6 +23,7 @@ DB_PORT = int(os.environ['DB_PORT'])
 REDIS_IP = os.environ['REDIS_IP']
 REDIS_PORT = int(os.environ['REDIS_PORT'])
 REDIS_DB = int(os.environ['REDIS_DB'])
+REDIS_TEST_DB = int(os.environ['REDIS_TEST_DB'])
 
 # RabbitMQ configuration
 RABBIT_IP = os.environ['RABBIT_IP']
@@ -55,8 +56,8 @@ GITHUB_MONITOR_PERIOD_SECONDS = int(os.environ['GITHUB_MONITOR_PERIOD_SECONDS'])
 DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE = int(
     os.environ['DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE'])
 ALERTER_PUBLISHING_QUEUE_SIZE = int(os.environ['ALERTER_PUBLISHING_QUEUE_SIZE'])
-CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE = \
-    int(os.environ['CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
+CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE = int(
+    os.environ['CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE'])
 ALERT_ROUTER_PUBLISHING_QUEUE_SIZE = int(
     os.environ['ALERT_ROUTER_PUBLISHING_QUEUE_SIZE'])
 

@@ -1,4 +1,7 @@
 FROM python:3.7.5-slim-stretch
+ARG PANIC_ENV
+
+ENV PANIC_ENV=${PANIC_ENV}
 
 # Create app directory
 WORKDIR /opt/panic
@@ -10,7 +13,7 @@ WORKDIR ./alerter
 
 # Install app dependencies
 RUN pip3 install pipenv
-RUN pipenv sync
+RUN pipenv install --deploy --ignore-pipfile
 
 # Tool which waits for dependent containers
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait

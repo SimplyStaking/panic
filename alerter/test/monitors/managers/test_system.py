@@ -173,7 +173,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.assertEqual(1, mock_start_consuming.call_count)
 
     @mock.patch.object(SystemMonitorsManager, "_process_ping")
-    def test_initialise_rabbitmq_initializes_everything_as_expected(
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
             self, mock_process_ping) -> None:
         mock_process_ping.return_value = None
         try:
@@ -334,7 +334,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.system_config_example, self.system_id_new,
             self.chain_example_new)
 
-        # We need to sleep to give some time for the monitor to be initialized,
+        # We need to sleep to give some time for the monitor to be initialised,
         # otherwise the process would not terminate
         time.sleep(1)
 
@@ -1245,7 +1245,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1335,7 +1335,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1425,7 +1425,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1512,7 +1512,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.assertFalse(self.test_manager.config_process_dict[
                                  'config_id2']['process'].is_alive())
 
-            # Initialize
+            # Initialise
             method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
@@ -1558,7 +1558,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1602,7 +1602,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1633,7 +1633,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1651,7 +1651,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1670,7 +1670,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()
@@ -1689,7 +1689,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
 
-            # Initialize
+            # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
             properties = pika.spec.BasicProperties()

@@ -8,7 +8,7 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.utils import env
-from src.utils.constants import (RE_INITIALIZE_SLEEPING_PERIOD,
+from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME)
@@ -17,10 +17,10 @@ from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
 
 
-def _initialize_transformer_logger(
+def _initialise_transformer_logger(
         transformer_display_name: str, transformer_module_name: str) \
         -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -36,14 +36,14 @@ def _initialize_transformer_logger(
             # transformer's logger.
             log_and_print(msg, logging.getLogger('DUMMY_LOGGER'))
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return transformer_logger
 
 
-def _initialize_transformer_redis(
+def _initialise_transformer_redis(
         transformer_name: str, transformer_logger: logging.Logger) -> RedisApi:
-    # Try initializing the Redis API until successful. This had to be done
+    # Try initialising the Redis API until successful. This had to be done
     # separately to avoid instances when Redis creation failed and we
     # attempt to use it.
     while True:
@@ -61,68 +61,68 @@ def _initialize_transformer_redis(
             msg = get_initialisation_error_message(transformer_name, e)
             log_and_print(msg, transformer_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return redis
 
 
-def _initialize_system_data_transformer() -> SystemDataTransformer:
+def _initialise_system_data_transformer() -> SystemDataTransformer:
     transformer_display_name = SYSTEM_DATA_TRANSFORMER_NAME
 
-    transformer_logger = _initialize_transformer_logger(
+    transformer_logger = _initialise_transformer_logger(
         transformer_display_name, SystemDataTransformer.__name__)
-    redis = _initialize_transformer_redis(transformer_display_name,
+    redis = _initialise_transformer_redis(transformer_display_name,
                                           transformer_logger)
 
-    # Try initializing the system data transformer until successful
+    # Try initialising the system data transformer until successful
     while True:
         try:
             system_data_transformer = SystemDataTransformer(
                 transformer_display_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
+            log_and_print("Successfully initialised {}"
                           .format(transformer_display_name), transformer_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(transformer_display_name, e)
             log_and_print(msg, transformer_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return system_data_transformer
 
 
-def _initialize_github_data_transformer() -> GitHubDataTransformer:
+def _initialise_github_data_transformer() -> GitHubDataTransformer:
     transformer_display_name = GITHUB_DATA_TRANSFORMER_NAME
 
-    transformer_logger = _initialize_transformer_logger(
+    transformer_logger = _initialise_transformer_logger(
         transformer_display_name, GitHubDataTransformer.__name__)
-    redis = _initialize_transformer_redis(transformer_display_name,
+    redis = _initialise_transformer_redis(transformer_display_name,
                                           transformer_logger)
 
-    # Try initializing the github data transformer until successful
+    # Try initialising the github data transformer until successful
     while True:
         try:
             github_data_transformer = GitHubDataTransformer(
                 transformer_display_name, transformer_logger, redis)
-            log_and_print("Successfully initialized {}"
+            log_and_print("Successfully initialised {}"
                           .format(transformer_display_name), transformer_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(transformer_display_name, e)
             log_and_print(msg, transformer_logger)
             # sleep before trying again
-            time.sleep(RE_INITIALIZE_SLEEPING_PERIOD)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_data_transformer
 
 
 def start_system_data_transformer() -> None:
-    system_data_transformer = _initialize_system_data_transformer()
+    system_data_transformer = _initialise_system_data_transformer()
     start_transformer(system_data_transformer)
 
 
 def start_github_data_transformer() -> None:
-    github_data_transformer = _initialize_github_data_transformer()
+    github_data_transformer = _initialise_github_data_transformer()
     start_transformer(github_data_transformer)
 
 
