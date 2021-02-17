@@ -123,7 +123,7 @@ class HeartbeatHandler:
                 del self._unsavable_redis_data[key]
 
         if len(self._unsavable_redis_data) == 0:
-            self.logger.info("Successfully saved all redis data in waiting "
+            self.logger.debug("Successfully saved all redis data in waiting "
                              "state.")
         else:
             self.logger.debug("Could not save all data to Redis.")
@@ -147,7 +147,7 @@ class HeartbeatHandler:
 
                 self._dump_unsavable_redis_data()
 
-                self.logger.info("Successfully processed %s", heartbeat)
+                self.logger.debug("Successfully processed %s", heartbeat)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_heartbeat".format(self))

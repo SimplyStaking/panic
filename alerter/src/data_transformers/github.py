@@ -269,8 +269,8 @@ class GitHubDataTransformer(DataTransformer):
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info("Received %s from monitors. Now processing this data.",
-                         raw_data)
+        self.logger.debug("Received %s from monitors. Now processing this "
+                          "data.", raw_data)
 
         processing_error = False
         try:
@@ -289,7 +289,7 @@ class GitHubDataTransformer(DataTransformer):
 
                 self._transform_data(raw_data)
                 self._update_state()
-                self.logger.info("Successfully processed %s", raw_data)
+                self.logger.debug("Successfully processed %s", raw_data)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_raw_data".format(self))

@@ -90,8 +90,8 @@ class DataTransformersManager:
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
+        self.logger.debug("Sent heartbeat to '%s' exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,

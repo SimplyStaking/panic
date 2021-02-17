@@ -115,8 +115,8 @@ class DataTransformer(Component):
         empty = True
         if not self.publishing_queue.empty():
             empty = False
-            self.logger.info("Attempting to send all data waiting in the "
-                             "publishing queue ...")
+            self.logger.debug("Attempting to send all data waiting in the "
+                              "publishing queue ...")
 
         # Try sending the data in the publishing queue one by one. Important,
         # remove an item from the queue only if the sending was successful, so
@@ -134,8 +134,8 @@ class DataTransformer(Component):
             self.publishing_queue.task_done()
 
         if not empty:
-            self.logger.info("Successfully sent all data from the publishing "
-                             "queue")
+            self.logger.debug("Successfully sent all data from the publishing "
+                              "queue")
 
     @abstractmethod
     def _process_raw_data(self, ch: BlockingChannel,
@@ -149,8 +149,8 @@ class DataTransformer(Component):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
+        self.logger.debug("Sent heartbeat to '%s' exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
         self._initialise_rabbitmq()

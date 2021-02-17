@@ -78,7 +78,7 @@ class TwilioAlertsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
+        self.logger.debug("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
 
     def _process_alert(self, ch: BlockingChannel,
@@ -86,7 +86,7 @@ class TwilioAlertsHandler(ChannelHandler):
                        properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
-        self.logger.info("Received %s. Now processing this alert.", alert_json)
+        self.logger.debug("Received %s. Now processing this alert.", alert_json)
 
         processing_error = False
         alert = None
@@ -97,7 +97,7 @@ class TwilioAlertsHandler(ChannelHandler):
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'])
 
-            self.logger.info("Successfully processed %s", alert_json)
+            self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
             self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)
@@ -152,7 +152,7 @@ class TwilioAlertsHandler(ChannelHandler):
                                             twiml_is_url=self._twiml_is_url)
             while ret != RequestStatus.SUCCESS and \
                     attempts < self._max_attempts:
-                self.logger.info("Will re-trying calling in 5 seconds. "
+                self.logger.debug("Will re-trying calling in 5 seconds. "
                                  "Attempts left: %s",
                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(5)
@@ -166,7 +166,7 @@ class TwilioAlertsHandler(ChannelHandler):
                 calling_status = RequestStatus.FAILED
 
         if calling_status == RequestStatus.SUCCESS:
-            self.logger.info("Successfully sent all calling requests to Twilio")
+            self.logger.debug("Successfully sent all calling requests to Twilio")
         else:
             self.logger.error("Could not succesfully send all calling requests "
                               "to Twilio")

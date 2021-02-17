@@ -49,7 +49,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '%s' exchange",
+        self.logger.debug("Sent heartbeat to '%s' exchange",
                          HEALTH_CHECK_EXCHANGE)
 
     def _process_alert(self, ch: BlockingChannel,
@@ -57,7 +57,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
                        properties: pika.spec.BasicProperties,
                        body: bytes) -> None:
         alert_json = json.loads(body)
-        self.logger.info("Received and processing alert: %s", alert_json)
+        self.logger.debug("Received and processing alert: %s", alert_json)
 
         processing_error = False
         alert = None
@@ -68,7 +68,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'])
-            self.logger.info("Successfully processed %s", alert_json)
+            self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
             self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)
@@ -120,7 +120,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
         empty = True
         if not self._alerts_queue.empty():
             empty = False
-            self.logger.info("Attempting to send all alerts waiting in the "
+            self.logger.debug("Attempting to send all alerts waiting in the "
                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
@@ -145,7 +145,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
             status = self._opsgenie_channel.alert(alert)
             while status != RequestStatus.SUCCESS \
                     and attempts < self._max_attempts:
-                self.logger.info("Will re-trying sending in 10 seconds. "
+                self.logger.debug("Will re-trying sending in 10 seconds. "
                                  "Attempts left: %s",
                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(10)
@@ -156,11 +156,11 @@ class OpsgenieAlertsHandler(ChannelHandler):
                 self._alerts_queue.get()
                 self._alerts_queue.task_done()
             else:
-                self.logger.info("Stopped sending alerts.")
+                self.logger.debug("Stopped sending alerts.")
                 return
 
         if not empty:
-            self.logger.info("Successfully sent all data from the publishing "
+            self.logger.debug("Successfully sent all data from the publishing "
                              "queue")
 
     def _initialise_rabbitmq(self) -> None:
