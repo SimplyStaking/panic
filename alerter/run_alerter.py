@@ -192,8 +192,12 @@ def _initialise_data_transformers_manager() -> DataTransformersManager:
     # Attempt to initialise the data transformers manager
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=data_transformers_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
             data_transformers_manager = DataTransformersManager(
-                data_transformers_manager_logger, manager_display_name)
+                data_transformers_manager_logger, manager_display_name,
+                rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
@@ -262,7 +266,7 @@ def _initialise_alert_router() -> Tuple[AlertRouter, logging.Logger]:
 
     while True:
         try:
-            alert_router = AlertRouter(display_name,  alert_router_logger,
+            alert_router = AlertRouter(display_name, alert_router_logger,
                                        rabbit_ip, redis_ip, redis_db,
                                        redis_port, unique_alerter_identifier,
                                        env.ENABLE_CONSOLE_ALERTS,

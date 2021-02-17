@@ -42,7 +42,7 @@ class TestAlertRouter(unittest.TestCase):
         self._alert_input_exchange = ALERT_EXCHANGE
 
         self._redis_ip = env.REDIS_IP
-        self._redis_db = env.REDIS_TEST_DB
+        self._redis_db = env.REDIS_DB
         self._redis_port = 6379
 
         self.rabbitmq = RabbitMQApi(
