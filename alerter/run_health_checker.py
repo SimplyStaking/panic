@@ -15,9 +15,9 @@ from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
 
 
-def _initialize_logger(component_display_name: str, component_module_name: str,
+def _initialise_logger(component_display_name: str, component_module_name: str,
                        log_file_template: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -39,14 +39,14 @@ def _initialize_logger(component_display_name: str, component_module_name: str,
     return new_logger
 
 
-def _initialize_health_checker_manager() -> HealthCheckerManager:
+def _initialise_health_checker_manager() -> HealthCheckerManager:
     manager_display_name = HEALTH_CHECKER_MANAGER_NAME
 
-    health_checker_manager_logger = _initialize_logger(
+    health_checker_manager_logger = _initialise_logger(
         manager_display_name, HealthCheckerManager.__name__,
         env.MANAGERS_LOG_FILE_TEMPLATE)
 
-    # Attempt to initialize the health checker manager
+    # Attempt to initialise the health checker manager
     while True:
         try:
             health_checker_manager = HealthCheckerManager(
@@ -64,7 +64,7 @@ def _initialize_health_checker_manager() -> HealthCheckerManager:
 
 
 def run_health_checker_manager() -> None:
-    health_checker_manager = _initialize_health_checker_manager()
+    health_checker_manager = _initialise_health_checker_manager()
 
     while True:
         try:

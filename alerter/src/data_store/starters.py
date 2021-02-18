@@ -19,9 +19,9 @@ from src.utils.starters import (get_initialisation_error_message,
 T = TypeVar('T', bound=Store)  # Restricts the generic to Store or subclasses
 
 
-def _initialize_store_logger(
+def _initialise_store_logger(
         store_display_name: str, store_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -41,15 +41,15 @@ def _initialize_store_logger(
     return store_logger
 
 
-def _initialize_store(store_type: Type[T], store_display_name: str) -> T:
-    store_logger = _initialize_store_logger(store_display_name,
+def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
+    store_logger = _initialise_store_logger(store_display_name,
                                             store_type.__name__)
 
-    # Try initializing the store until successful
+    # Try initialising the store until successful
     while True:
         try:
             store = store_type(store_display_name, store_logger)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 store_display_name), store_logger)
             break
         except Exception as e:
@@ -62,17 +62,17 @@ def _initialize_store(store_type: Type[T], store_display_name: str) -> T:
 
 
 def start_system_store() -> None:
-    system_store = _initialize_store(SystemStore, SYSTEM_STORE_NAME)
+    system_store = _initialise_store(SystemStore, SYSTEM_STORE_NAME)
     start_store(system_store)
 
 
 def start_github_store() -> None:
-    github_store = _initialize_store(GithubStore, GITHUB_STORE_NAME)
+    github_store = _initialise_store(GithubStore, GITHUB_STORE_NAME)
     start_store(github_store)
 
 
 def start_alert_store() -> None:
-    alert_store = _initialize_store(AlertStore, ALERT_STORE_NAME)
+    alert_store = _initialise_store(AlertStore, ALERT_STORE_NAME)
     start_store(alert_store)
 
 
@@ -84,13 +84,11 @@ def start_store(store: Store) -> None:
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
-            # Since we have to re-initialize just break the loop.
             log_and_print(get_stopped_message(store), store.logger)
         except Exception as e:
             # Close the connection with RabbitMQ if we have an unexpected
             # exception, and start again
             store.disconnect_from_rabbit()
-            log_and_print(get_stopped_message(store), store.logger)
             log_and_print("Restarting {} in {} seconds.".format(
                 store, RESTART_SLEEPING_PERIOD), store.logger)
             time.sleep(RESTART_SLEEPING_PERIOD)

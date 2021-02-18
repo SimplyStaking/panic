@@ -8,7 +8,7 @@ mandatory or not, and if not what the default value is. We can also use this
 to typecast values.
 
 This also ensures all mandatory values are present before running by
-initializing the class 
+initialising the class 
 """
 
 # Alerter configuration

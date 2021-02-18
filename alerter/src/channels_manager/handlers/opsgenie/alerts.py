@@ -207,7 +207,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
                 self._listen_for_data()
             except (AMQPConnectionError, AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

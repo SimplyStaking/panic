@@ -21,7 +21,7 @@ from src.utils import env
 from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  HEALTH_CHECK_EXCHANGE)
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.test_utils import infinite_fn
 
 
@@ -92,7 +92,7 @@ class TestDataTransformersManager(unittest.TestCase):
         self.transformer_process_dict_example = None
 
     def test_str_returns_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_name_returns_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.name)
@@ -156,7 +156,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self, mock_start_consuming) -> None:
         mock_start_consuming.return_value = None
         self.test_manager._listen_for_data()
-        self.assertEqual(1, mock_start_consuming.call_count)
+        mock_start_consuming.assert_called_once()
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -733,10 +733,12 @@ class TestDataTransformersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(DataTransformersManager, "_send_heartbeat")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-            self) -> None:
+            self, mock_send_hb) -> None:
         # This test would fail if a msg not del excep is raised, as it is not
         # caught in the test.
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
         try:
             # Some of the variables below are needed as parameters for the
             # process_ping function

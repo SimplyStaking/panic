@@ -5,11 +5,13 @@ import unittest
 from datetime import datetime
 from datetime import timedelta
 from queue import Queue
+from typing import Union, Dict
 from unittest import mock
 
 import pika
 import pika.exceptions
 from freezegun import freeze_time
+from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.system import (SystemDataTransformer,
@@ -205,6 +207,10 @@ class TestSystemDataTransformer(unittest.TestCase):
                 'data': {'went_down_at': self.test_last_monitored + 60}
             }
         }
+        self.test_system_down = copy.deepcopy(self.test_system)
+        self.test_system_down.set_went_down_at(
+            self.transformed_data_example_downtime_error['error']['data'][
+                'went_down_at'])
         self.test_system_new_metrics = System(self.test_system_name,
                                               self.test_system_id,
                                               self.test_system_parent_id)
@@ -395,6 +401,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_state = None
         self.test_publishing_queue = None
         self.test_data_transformer = None
+        self.test_system_down = None
 
     def test_str_returns_transformer_name(self) -> None:
         self.assertEqual(self.transformer_name, str(self.test_data_transformer))
@@ -715,35 +722,37 @@ class TestSystemDataTransformer(unittest.TestCase):
                 expected_state[system_id].__dict__,
                 self.test_data_transformer.state[system_id].__dict__)
 
-    def test_update_state_raise_key_error_exception_if_keys_do_not_exist_result(
-            self) -> None:
-        invalid_transformed_data = copy.deepcopy(
-            self.transformed_data_example_result)
-        del invalid_transformed_data['result']['data']
+    @parameterized.expand([
+        ('result', 'self.transformed_data_example_result'),
+        ('error', 'self.transformed_data_example_downtime_error'),
+    ])
+    def test_update_state_raises_key_error_exception_if_keys_do_not_exist(
+            self, transformed_data_index: str, transformed_data: str) -> None:
+        invalid_transformed_data = copy.deepcopy(eval(transformed_data))
+
+        del invalid_transformed_data[transformed_data_index]['data']
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
 
         # First confirm that an exception is still raised
         self.assertRaises(KeyError, self.test_data_transformer._update_state,
                           invalid_transformed_data)
 
-    def test_update_state_raises_key_error_exception_if_keys_do_not_exist_error(
-            self) -> None:
-        invalid_transformed_data = copy.deepcopy(
-            self.transformed_data_example_downtime_error)
-        del invalid_transformed_data['error']['data']
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-        # First confirm that an exception is still raised
-        self.assertRaises(KeyError, self.test_data_transformer._update_state,
-                          invalid_transformed_data)
-
-    def test_update_state_updates_state_correctly_on_result_data(self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result', 'self.test_system_new_metrics',
+         True),
+        ('self.transformed_data_example_general_error', 'self.test_system',
+         True),
+        ('self.transformed_data_example_downtime_error',
+         'self.test_system_down', False),
+    ])
+    def test_update_state_updates_state_correctly_on_result_data(
+            self, transformed_data: str, expected_state: str,
+            system_expected_up: bool) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         self.test_data_transformer._state['dummy_id'] = self.test_data_str
         old_state = copy.deepcopy(self.test_data_transformer._state)
 
-        self.test_data_transformer._update_state(
-            self.transformed_data_example_result)
+        self.test_data_transformer._update_state(eval(transformed_data))
 
         # Check that there are the same keys in the state
         self.assertEqual(old_state.keys(),
@@ -753,89 +762,31 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_data_str,
                          self.test_data_transformer._state['dummy_id'])
 
-        # Check that the system's state values have been modified to the new
-        # metrics
+        # Check that the system's state values have been modified correctly
         self.assertDictEqual(
-            self.test_system_new_metrics.__dict__,
+            eval(expected_state).__dict__,
             self.test_data_transformer._state[self.test_system_id].__dict__)
 
-        # Check that the system is marked as up
-        self.assertFalse(
-            self.test_data_transformer._state[self.test_system_id].is_down)
+        # Check that the system is marked as up/down accordingly
+        if system_expected_up:
+            self.assertFalse(
+                self.test_data_transformer._state[self.test_system_id].is_down)
+        else:
+            self.assertTrue(
+                self.test_data_transformer._state[self.test_system_id].is_down)
 
-    def test_update_state_updates_state_correctly_on_error_data_general_except(
-            self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        self.test_data_transformer._state['dummy_id'] = self.test_data_str
-        old_state = copy.deepcopy(self.test_data_transformer._state)
-
-        self.test_data_transformer._update_state(
-            self.transformed_data_example_general_error)
-
-        # Check that there are the same keys in the state
-        self.assertEqual(old_state.keys(),
-                         self.test_data_transformer.state.keys())
-
-        # Check that the systems not in question are not modified
-        self.assertEqual(self.test_data_str,
-                         self.test_data_transformer._state['dummy_id'])
-
-        # Check that the system's state values have not been changed. When there
-        # are general exceptions, the state doesn't need to change
-        self.assertDictEqual(
-            old_state[self.test_system_id].__dict__,
-            self.test_data_transformer._state[self.test_system_id].__dict__)
-
-        # Check that the system is still up
-        self.assertFalse(
-            self.test_data_transformer._state[self.test_system_id].is_down)
-
-    def test_update_state_updates_state_correctly_on_error_data_downtime_except(
-            self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        self.test_data_transformer._state['dummy_id'] = self.test_data_str
-        expected_state = copy.deepcopy(self.test_data_transformer._state)
-        expected_state[self.test_system_id].set_went_down_at(
-            self.transformed_data_example_downtime_error['error']['data'][
-                'went_down_at']
-        )
-
-        self.test_data_transformer._update_state(
-            self.transformed_data_example_downtime_error)
-
-        # Check that there are the same keys in the state
-        self.assertEqual(expected_state.keys(),
-                         self.test_data_transformer.state.keys())
-
-        # Check that the systems not in question are not modified
-        self.assertEqual(self.test_data_str,
-                         self.test_data_transformer._state['dummy_id'])
-
-        # Check that the system's state values have been changed to the latest
-        # metrics
-        self.assertDictEqual(
-            expected_state[self.test_system_id].__dict__,
-            self.test_data_transformer._state[self.test_system_id].__dict__)
-
-        # Check that the system is marked as down
-        self.assertTrue(
-            self.test_data_transformer._state[self.test_system_id].is_down)
-
-    def test_process_transformed_data_for_saving_returns_trans_data_if_result(
-            self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.transformed_data_example_result'),
+        ('self.transformed_data_example_general_error',
+         'self.transformed_data_example_general_error'),
+    ])
+    def test_process_transformed_data_for_saving_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
         processed_data = \
             self.test_data_transformer._process_transformed_data_for_saving(
-                self.transformed_data_example_result)
-        self.assertDictEqual(self.transformed_data_example_result,
-                             processed_data)
-
-    def test_process_transformed_data_for_saving_returns_trans_data_if_error(
-            self) -> None:
-        processed_data = \
-            self.test_data_transformer._process_transformed_data_for_saving(
-                self.transformed_data_example_general_error)
-        self.assertDictEqual(self.transformed_data_example_general_error,
-                             processed_data)
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), processed_data)
 
     def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
             self) -> None:
@@ -844,31 +795,21 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._process_transformed_data_for_saving,
             self.invalid_transformed_data)
 
-    def test_process_trans_data_for_alerting_returns_expected_data_if_result(
-            self) -> None:
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.test_data_for_alerting_result'),
+        ('self.transformed_data_example_general_error',
+         'self.transformed_data_example_general_error'),
+        ('self.transformed_data_example_downtime_error',
+         'self.test_data_for_alerting_down_error'),
+    ])
+    def test_process_transformed_data_for_alerting_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         actual_data = \
             self.test_data_transformer._process_transformed_data_for_alerting(
-                self.transformed_data_example_result)
-        self.assertDictEqual(self.test_data_for_alerting_result, actual_data)
-
-    def test_process_trans_data_for_alerting_returns_trans_data_if_non_down_err(
-            self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        actual_data = \
-            self.test_data_transformer._process_transformed_data_for_alerting(
-                self.transformed_data_example_general_error)
-        self.assertDictEqual(self.transformed_data_example_general_error,
-                             actual_data)
-
-    def test_process_trans_data_for_alerting_returns_expected_data_if_down_err(
-            self) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        actual_data = \
-            self.test_data_transformer._process_transformed_data_for_alerting(
-                self.transformed_data_example_downtime_error)
-        self.assertDictEqual(self.test_data_for_alerting_down_error,
-                             actual_data)
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), actual_data)
 
     def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
             self) -> None:
@@ -925,41 +866,27 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
         self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
 
+    @parameterized.expand([
+        ('self.raw_data_example_general_error',
+         'self.transformed_data_example_general_error'),
+        ('self.raw_data_example_downtime_error',
+         'self.transformed_data_example_downtime_error'),
+    ])
     @mock.patch.object(SystemDataTransformer,
                        "_process_transformed_data_for_alerting")
     @mock.patch.object(SystemDataTransformer,
                        "_process_transformed_data_for_saving")
-    def test_transform_data_returns_expected_data_if_non_down_error(
-            self, mock_process_for_saving, mock_process_for_alerting) -> None:
+    def test_transform_data_returns_expected_data_if_error(
+            self, raw_data: str, expected_processed_data: str,
+            mock_process_for_saving, mock_process_for_alerting) -> None:
         self.test_data_transformer._state = copy.deepcopy(self.test_state)
         mock_process_for_saving.return_value = {'key_1': 'val1'}
         mock_process_for_alerting.return_value = {'key_2': 'val2'}
 
         trans_data, data_for_alerting, data_for_saving = \
-            self.test_data_transformer._transform_data(
-                self.raw_data_example_general_error)
+            self.test_data_transformer._transform_data(eval(raw_data))
 
-        self.assertDictEqual(self.transformed_data_example_general_error,
-                             trans_data)
-        self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-        self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-
-    @mock.patch.object(SystemDataTransformer,
-                       "_process_transformed_data_for_alerting")
-    @mock.patch.object(SystemDataTransformer,
-                       "_process_transformed_data_for_saving")
-    def test_transform_data_returns_expected_data_if_down_error(
-            self, mock_process_for_saving, mock_process_for_alerting) -> None:
-        self.test_data_transformer._state = copy.deepcopy(self.test_state)
-        mock_process_for_saving.return_value = {'key_1': 'val1'}
-        mock_process_for_alerting.return_value = {'key_2': 'val2'}
-
-        trans_data, data_for_alerting, data_for_saving = \
-            self.test_data_transformer._transform_data(
-                self.raw_data_example_downtime_error)
-
-        self.assertDictEqual(self.transformed_data_example_downtime_error,
-                             trans_data)
+        self.assertDictEqual(eval(expected_processed_data), trans_data)
         self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
         self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
 
@@ -1001,26 +928,33 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertRaises(KeyError, self.test_data_transformer._transform_data,
                           raw_data)
 
-    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_result(
-            self) -> None:
-        data_for_saving = copy.deepcopy(self.transformed_data_example_result)
+    @parameterized.expand([
+        ('self.transformed_data_example_result',
+         'self.test_data_for_alerting_result',
+         'self.transformed_data_example_result'),
+        ('self.transformed_data_example_general_error',
+         'self.transformed_data_example_general_error',
+         'self.transformed_data_example_general_error'),
+    ])
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
+            self, transformed_data: str, data_for_alerting: str,
+            data_for_saving: str) -> None:
         self.test_data_transformer._place_latest_data_on_queue(
-            self.transformed_data_example_result,
-            self.test_data_for_alerting_result,
-            data_for_saving
+            eval(transformed_data), eval(data_for_alerting),
+            eval(data_for_saving)
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
             'routing_key': 'alerter.system.{}'.format(
                 self.test_system_parent_id),
-            'data': self.test_data_for_alerting_result,
+            'data': eval(data_for_alerting),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
             'routing_key': 'system',
-            'data': data_for_saving,
+            'data': eval(data_for_saving),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
@@ -1033,62 +967,28 @@ class TestSystemDataTransformer(unittest.TestCase):
             expected_data_for_saving,
             self.test_data_transformer.publishing_queue.queue[1])
 
-    def test_place_latest_data_on_queue_places_the_correct_data_on_queue_error(
-            self) -> None:
-        data_for_alerting = data_for_saving = copy.deepcopy(
-            self.transformed_data_example_general_error)
-        self.test_data_transformer._place_latest_data_on_queue(
-            self.transformed_data_example_general_error, data_for_alerting,
-            data_for_saving
-        )
-        expected_data_for_alerting = {
-            'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alerter.system.{}'.format(
-                self.test_system_parent_id),
-            'data': data_for_alerting,
-            'properties': pika.BasicProperties(delivery_mode=2),
-            'mandatory': True
-        }
-        expected_data_for_saving = {
-            'exchange': STORE_EXCHANGE,
-            'routing_key': 'system',
-            'data': data_for_saving,
-            'properties': pika.BasicProperties(delivery_mode=2),
-            'mandatory': True
-        }
-
-        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
-        self.assertDictEqual(
-            expected_data_for_alerting,
-            self.test_data_transformer.publishing_queue.queue[0])
-        self.assertDictEqual(
-            expected_data_for_saving,
-            self.test_data_transformer.publishing_queue.queue[1])
-
-    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_result(
-            self) -> None:
-        transformed_data = copy.deepcopy(self.transformed_data_example_result)
-        del transformed_data['result']['meta_data']
+    @parameterized.expand([
+        ('result', 'self.transformed_data_example_result',),
+        ('error', 'self.transformed_data_example_general_error',),
+    ])
+    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing(
+            self, response_index_key, transformed_data) -> None:
+        invalid_transformed_data = copy.deepcopy(eval(transformed_data))
+        del invalid_transformed_data[response_index_key]['meta_data']
         self.assertRaises(
             KeyError, self.test_data_transformer._place_latest_data_on_queue,
-            transformed_data, {}, {})
+            invalid_transformed_data, {}, {})
 
-    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing_error(
-            self) -> None:
-        transformed_data = copy.deepcopy(
-            self.transformed_data_example_general_error)
-        del transformed_data['error']['meta_data']
-        self.assertRaises(
-            KeyError, self.test_data_transformer._place_latest_data_on_queue,
-            transformed_data, {}, {})
-
+    @parameterized.expand([({}, False,), ('self.test_state', True), ])
     @mock.patch.object(SystemDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_transforms_data_if_data_valid_and_new_system(
-            self, mock_ack, mock_trans_data) -> None:
+    def test_process_raw_data_transforms_data_if_data_valid(
+            self, state: Union[bool, str], state_is_str: bool, mock_ack,
+            mock_trans_data) -> None:
         # We will check that the data is transformed by checking that
         # `_transform_data` is called correctly. The actual transformations are
-        # already tested. Note we will test for both result and error.
+        # already tested. Note we will test for both result and error, and when
+        # the system is both in the state and not in the state.
         mock_ack.return_value = None
         mock_trans_data.return_value = (None, None, None)
         try:
@@ -1101,6 +1001,11 @@ class TestSystemDataTransformer(unittest.TestCase):
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
+
+            if state_is_str:
+                self.test_data_transformer._state = copy.deepcopy(eval(state))
+            else:
+                self.test_data_transformer._state = copy.deepcopy(state)
 
             # Send raw data
             self.test_data_transformer._process_raw_data(blocking_channel,
@@ -1110,7 +1015,10 @@ class TestSystemDataTransformer(unittest.TestCase):
                 self.raw_data_example_result)
 
             # To reset the state as if the system was not already added
-            self.test_data_transformer._state = {}
+            if state_is_str:
+                self.test_data_transformer._state = copy.deepcopy(eval(state))
+            else:
+                self.test_data_transformer._state = copy.deepcopy(state)
 
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
@@ -1128,55 +1036,13 @@ class TestSystemDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
-    @mock.patch.object(SystemDataTransformer, "_transform_data")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_raw_data_transforms_data_if_data_valid_and_system_in_state(
-            self, mock_ack, mock_trans_data) -> None:
-        # We will check that the data is transformed by checking that
-        # `_transform_data` is called correctly. The actual transformations are
-        # already tested. Note we will test for both result and error.
-        mock_ack.return_value = None
-        mock_trans_data.return_value = (None, None, None)
-        try:
-            # We must initialise rabbit to the environment and parameters needed
-            # by `_process_raw_data`
-            self.test_data_transformer._initialise_rabbitmq()
-            blocking_channel = self.test_data_transformer.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
-            body_result = json.dumps(self.raw_data_example_result)
-            body_error = json.dumps(self.raw_data_example_general_error)
-            properties = pika.spec.BasicProperties()
-
-            self.test_data_transformer._state = copy.deepcopy(self.test_state)
-
-            # Send raw data
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_result)
-            mock_trans_data.assert_called_once_with(
-                self.raw_data_example_result)
-
-            self.test_data_transformer._process_raw_data(blocking_channel,
-                                                         method, properties,
-                                                         body_error)
-
-            self.assertEqual(2, mock_trans_data.call_count)
-            args, _ = mock_trans_data.call_args
-            self.assertEqual(self.raw_data_example_general_error, args[0])
-            self.assertEqual(1, len(args))
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        # Make sure that the message has been acknowledged. This must be done
-        # in all test cases to cover every possible case, and avoid doing a
-        # very large amount of tests around this.
-        self.assertEqual(2, mock_ack.call_count)
-
+    @parameterized.expand([
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(SystemDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_call_trans_data_if_err_res_not_in_data(
-            self, mock_ack, mock_trans_data) -> None:
+            self, invalid_data: Dict, mock_ack, mock_trans_data) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1185,7 +1051,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data
@@ -1368,9 +1234,12 @@ class TestSystemDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
+    @parameterized.expand([
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_update_state_if_res_or_err_not_in_data(
-            self, mock_ack) -> None:
+            self, invalid_data: Dict, mock_ack) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1379,7 +1248,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Make the state non-empty and save it to redis
@@ -1556,10 +1425,13 @@ class TestSystemDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(2, mock_ack.call_count)
 
+    @parameterized.expand([
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
+    ])
     @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_data_on_queue_if_result_or_error_not_in_data(
-            self, mock_ack, mock_place_on_queue) -> None:
+            self, invalid_data: Dict, mock_ack, mock_place_on_queue) -> None:
         mock_ack.return_value = None
         try:
             # We must initialise rabbit to the environment and parameters needed
@@ -1568,7 +1440,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
-            body = json.dumps(self.invalid_transformed_data)
+            body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
             # Send raw data

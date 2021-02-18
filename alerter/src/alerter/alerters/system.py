@@ -6,6 +6,7 @@ from typing import Dict, Type, List
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.system_alerts import (
     InvalidUrlAlert, OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -37,8 +38,9 @@ _IS_DOWN_LIMITER_NAME = 'system_is_down'
 class SystemAlerter(Alerter):
     def __init__(self, alerter_name: str,
                  system_alerts_config: SystemAlertsConfig,
-                 logger: logging.Logger) -> None:
-        super().__init__(alerter_name, logger)
+                 logger: logging.Logger, rabbitmq: RabbitMQApi,
+                 max_queue_size: int = 0) -> None:
+        super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
@@ -50,11 +52,11 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _create_state_for_system(self, system_id: str) -> None:
-        # Initialize initial downtime alert sent
+        # initialise initial downtime alert sent
         if system_id not in self._system_initial_downtime_alert_sent:
             self._system_initial_downtime_alert_sent[system_id] = False
 
-        # Initialize timed task limiters
+        # initialise timed task limiters
         if system_id not in self._system_critical_timed_task_limiters:
             open_fd = self.alerts_configs.open_file_descriptors
             cpu_use = self.alerts_configs.system_cpu_usage
@@ -104,9 +106,9 @@ class SystemAlerter(Alerter):
                 timedelta(seconds=float(is_down_critical_repeat))
             )
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
-        # initialize both the consuming and producing configurations.
+        # initialise both the consuming and producing configurations.
         self.rabbitmq.connect_till_successful()
 
         # Set consuming configuration
@@ -168,10 +170,8 @@ class SystemAlerter(Alerter):
 
                     self._process_results(data, meta_data, data_for_alerting)
                 elif 'error' in data_received:
-                    meta_data = data_received['error']['meta_data']
-                    system_id = meta_data['system_id']
-                    self._create_state_for_system(system_id)
-
+                    self._create_state_for_system(
+                        data_received['error']['meta_data']['system_id'])
                     self._process_errors(data_received['error'],
                                          data_for_alerting)
                 else:
@@ -223,16 +223,18 @@ class SystemAlerter(Alerter):
         data = error_data['data']
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
-                error_data['message'], 'ERROR', meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id']
+                meta_data['system_name'], error_data['message'],
+                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
-                error_data['message'], 'ERROR', meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id']
+                meta_data['system_name'], error_data['message'],
+                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
@@ -248,7 +250,6 @@ class SystemAlerter(Alerter):
                 is_down_critical_limiter = critical_limiters[
                     _IS_DOWN_LIMITER_NAME]
                 downtime = monitoring_timestamp - current
-
                 critical_threshold = \
                     convert_to_float_if_not_none_and_not_empty_str(
                         is_down['critical_threshold'], None)
@@ -333,7 +334,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(open_fd['enabled']):
             current = metrics['open_file_descriptors']['current']
             previous = metrics['open_file_descriptors']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -343,7 +344,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
             previous = metrics['system_storage_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
@@ -353,7 +354,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
             previous = metrics['system_cpu_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -363,7 +364,7 @@ class SystemAlerter(Alerter):
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
             previous = metrics['system_ram_usage']['previous']
-            if current not in [previous, None]:
+            if current is not None:
                 self._classify_alert(
                     current, floaty(previous), cpu_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
@@ -389,7 +390,7 @@ class SystemAlerter(Alerter):
             meta_data['system_id']]
         critical_limiter = critical_limiters[critical_limiter_name]
 
-        if warning_enabled:
+        if warning_enabled and current != previous:
             if (warning_threshold <= current < critical_threshold) and not \
                     (warning_threshold <= previous):
                 alert = \
@@ -454,6 +455,8 @@ class SystemAlerter(Alerter):
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
                 'routing_key': 'alert_router.system',
-                'data': copy.deepcopy(alert)})
+                'data': copy.deepcopy(alert),
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True})
             self.logger.debug("%s added to the publishing queue successfully.",
                               alert)

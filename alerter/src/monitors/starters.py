@@ -25,7 +25,7 @@ T = TypeVar('T', bound=Monitor)
 
 def _initialise_monitor_logger(monitor_display_name: str,
                                monitor_module_name: str) -> logging.Logger:
-    # Try initializing the logger until successful. This had to be done
+    # Try initialising the logger until successful. This had to be done
     # separately to avoid instances when the logger creation failed and we
     # attempt to use it.
     while True:
@@ -59,7 +59,7 @@ def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
                 host=env.RABBIT_IP)
             monitor = monitor_type(monitor_display_name, config, monitor_logger,
                                    monitoring_period, rabbitmq)
-            log_and_print("Successfully initialized {}".format(
+            log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
         except Exception as e:

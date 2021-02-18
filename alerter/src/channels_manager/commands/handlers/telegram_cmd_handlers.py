@@ -86,7 +86,7 @@ class TelegramCommandHandlers(CommandHandler):
         except (RedisError, ConnectionResetError):
             pass
         except Exception as e:
-            self.logger.error("Unrecognized error when accessing Redis: %s", e)
+            self.logger.error("Unrecognized error when accessing Redis: %r", e)
             raise e
         return False
 
@@ -95,9 +95,9 @@ class TelegramCommandHandlers(CommandHandler):
             self.mongo.ping_unsafe()
             return True
         except PyMongoError as e:
-            self.logger.error("Mongo error when accessing Mongo: %s", e)
+            self.logger.error("Mongo error when accessing Mongo: %r", e)
         except Exception as e:
-            self.logger.error("Unrecognized error when accessing Mongo: %s", e)
+            self.logger.error("Unrecognized error when accessing Mongo: %r", e)
             raise e
         return False
 
@@ -110,9 +110,9 @@ class TelegramCommandHandlers(CommandHandler):
             self.rabbitmq.disconnect_unsafe()
             return True
         except pika.exceptions.AMQPConnectionError as e:
-            self.logger.error("Error when accessing RabbitMQ: %s", e)
+            self.logger.error("Error when accessing RabbitMQ: %r", e)
         except Exception as e:
-            self.logger.error("Unrecognized error when accessing RabbitMQ: %s",
+            self.logger.error("Unrecognized error when accessing RabbitMQ: %r",
                               e)
             raise e
         return False

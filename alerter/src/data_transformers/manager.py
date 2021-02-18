@@ -161,7 +161,7 @@ class DataTransformersManager(PublisherSubscriberComponent):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:
@@ -186,4 +186,9 @@ class DataTransformersManager(PublisherSubscriberComponent):
         sys.exit()
 
     def _send_data(self, *args) -> None:
+        """
+        This function was not implemented because the manager does not need
+        to send any data other than heartbeats. The component is still a
+        publisher because we are publishing heartbeats.
+        """
         pass

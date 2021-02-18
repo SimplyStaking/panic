@@ -7,8 +7,8 @@ from typing import Dict, Union, Tuple
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent)
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
@@ -107,7 +107,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:

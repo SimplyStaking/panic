@@ -56,7 +56,7 @@ class PingPublisher:
     def rabbitmq(self) -> RabbitMQApi:
         return self._rabbitmq
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
@@ -73,7 +73,7 @@ class PingPublisher:
         self.logger.info("Sent data to '%s' exchange", HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self.ping()
@@ -84,7 +84,7 @@ class PingPublisher:
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
+                # channel is reset, therefore we need to re-initialise the
                 # connection or channel settings
                 raise e
             except Exception as e:
