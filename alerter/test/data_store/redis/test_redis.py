@@ -6,10 +6,12 @@ from time import sleep
 from unittest.mock import patch
 
 from redis import ConnectionError as RedisConnectionError, DataError, \
-    AuthenticationError, ResponseError
+                                      AuthenticationError, ResponseError
 from src.data_store.redis.redis_api import RedisApi
 from src.utils import env
 
+# Data can still be retrieved from redis as this will only being used to mock
+# that redis is down but it won't actually be down.
 REDIS_RECENTLY_DOWN_FUNCTION = \
     'src.data_store.redis.redis_api.RedisApi._do_not_use_if_recently_went_down'
 
@@ -22,7 +24,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
         dummy_logger = logging.getLogger('dummy')
         dummy_logger.disabled = True
-        db = env.REDIS_TEST_DB
+        db = env.REDIS_DB
         host = env.REDIS_IP
         port = env.REDIS_PORT
         password = ''
@@ -39,7 +41,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
         self.hash_name = "dummy_hash"
-        self.db = env.REDIS_TEST_DB
+        self.db = env.REDIS_DB
         self.host = env.REDIS_IP
         self.port = env.REDIS_PORT
         self.namespace = 'testnamespace'
@@ -79,7 +81,9 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
         self.default_bool = False
 
     def tearDown(self) -> None:
+        self.dummy_logger = None
         self.redis.delete_all_unsafe()
+        self.redis = None
 
     def test_set_unsafe_throws_exception_if_incorrect_password(self):
         redis_bad_pass = RedisApi(self.dummy_logger, self.db, self.host, self.port,
@@ -333,9 +337,11 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     def test_remove_unsafe_does_nothing_if_key_does_not_exists(self):
         self.redis.remove_unsafe(self.key1)
+        self.assertFalse(self.redis.exists_unsafe(self.key1))
 
     def test_hremove_unsafe_does_nothing_if_key_does_not_exists(self):
         self.redis.hremove_unsafe(self.hash_name, self.key1)
+        self.assertFalse(self.redis.hexists_unsafe(self.hash_name, self.key1))
 
     def test_remove_unsafe_removes_key_if_key_exists(self):
         self.redis.set_unsafe(self.key1, self.val1)
@@ -356,6 +362,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     def test_delete_all_unsafe_does_nothing_if_no_keys_exist(self):
         self.redis.delete_all_unsafe()
+        self.assertEqual(0, len(self.redis.get_keys_unsafe()))
 
     def test_delete_all_unsafe_removes_keys_if_they_exist(self):
         self.redis.set_unsafe(self.key1, self.val1)
@@ -447,6 +454,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     @patch(REDIS_RECENTLY_DOWN_FUNCTION, return_value=True)
     def test_time_to_live_returns_none_if_redis_down(self, _):
+        self.redis.set_for_unsafe(self.key1, self.val1, self.time)
         self.assertIsNone(self.redis.time_to_live(self.key1))
 
     def test_get_returns_default_for_unset_key(self):
@@ -659,6 +667,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     def test_remove_does_nothing_if_key_does_not_exists(self):
         self.redis.remove(self.key1)
+        self.assertFalse(self.redis.exists(self.key1))
 
     def test_remove_removes_key_if_key_exists(self):
         self.redis.set(self.key1, self.val1)
@@ -677,6 +686,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     def test_hremove_does_nothing_if_key_does_not_exists(self):
         self.redis.hremove(self.key1)
+        self.assertFalse(self.redis.hexists(self.hash_name, self.key1))
 
     def test_hremove_removes_key_if_key_exists(self):
         self.redis.hset(self.hash_name, self.key1, self.val1)
@@ -694,6 +704,7 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
 
     def test_delete_all_does_nothing_if_no_keys_exist(self):
         self.redis.delete_all()
+        self.assertEqual(0, len(self.redis.get_keys()))
 
     def test_delete_all_removes_keys_if_they_exist(self):
         self.redis.set(self.key1, self.val1)
@@ -725,7 +736,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
-        self.db = env.REDIS_TEST_DB
+        self.db = env.REDIS_DB
         self.host = 'dummyhost'
         self.port = env.REDIS_PORT
         self.namespace = 'testnamespace'
@@ -737,6 +748,10 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         self.hash_name = "dummy hash"
         self.some_key = 'some key'
         self.time = timedelta.max
+
+    def tearDown(self) -> None:
+        self.dummy_logger = None
+        self.redis = None
 
     def test_add_namespace_adds_namespace(self):
         key_with_namespace = self.namespace + ':' + self.some_key
@@ -997,19 +1012,6 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         except RedisConnectionError:
             pass
 
-    def test_second_safe_command_faster_to_throw_than_first_when_offline(self):
-
-        start_1 = time.perf_counter()
-        self.redis.set(self.key, self.val)
-        elapsed_1 = time.perf_counter() - start_1
-
-        start_2 = time.perf_counter()
-        self.redis.set(self.key, self.val)
-        elapsed_2 = time.perf_counter() - start_2
-
-        # first executon is more than 10 times slower than second execution
-        self.assertGreater(elapsed_1, elapsed_2 * 10)
-
 
 class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
 
@@ -1019,7 +1021,7 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
 
         dummy_logger = logging.getLogger('dummy')
         dummy_logger.disabled = True
-        db = env.REDIS_TEST_DB
+        db = env.REDIS_DB
         host = env.REDIS_IP
         port = env.REDIS_PORT
         password = ''
@@ -1035,7 +1037,7 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
-        self.db = env.REDIS_TEST_DB
+        self.db = env.REDIS_DB
         self.host = env.REDIS_IP
         self.port = env.REDIS_PORT
         self.namespace1 = 'testnamespace1'
@@ -1051,11 +1053,12 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
                                        password=self.password,
                                        namespace=self.namespace1)
 
-        self.different_namespace = RedisApi(logger=self.dummy_logger,
-                                            db=self.db,
-                                            host=self.host, port=self.port,
-                                            password=self.password,
-                                            namespace=self.namespace2)
+        self.redis_different_namespace = RedisApi(logger=self.dummy_logger,
+                                                  db=self.db,
+                                                  host=self.host,
+                                                  port=self.port,
+                                                  password=self.password,
+                                                  namespace=self.namespace2)
 
         # Ping Redis (all of above instances use same host, port, pass)
         try:
@@ -1065,6 +1068,7 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
 
         # Clear test database (all of above instances use same database)
         self.redis.delete_all_unsafe()
+        self.redis_different_namespace.delete_all_unsafe()
 
         self.key1 = 'key1'
         self.key2 = 'key2'
@@ -1076,8 +1080,10 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
         self.hash_name = 'dummy_hash'
 
     def tearDown(self) -> None:
+        self.dummy_logger = None
         self.redis.delete_all_unsafe()
-        self.different_namespace.delete_all_unsafe()
+        self.redis_different_namespace.delete_all_unsafe()
+        self.redis = None
 
     def test_set_uses_namespace_internally(self):
         self.redis.set_unsafe(self.key1, self.val1)
@@ -1118,11 +1124,11 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
         self.assertEqual(
             self.same_namespace.get_unsafe(self.key1), self.val1_bytes)
 
-    def test_redis_api_with_different_namespace_has_separate_store(self):
+    def test_redis_api_with_redis_different_namespace_has_separate_store(self):
         self.redis.set_unsafe(self.key1, self.val1)
 
         self.assertNotEqual(
-            self.different_namespace.get_unsafe(self.key1), self.val1_bytes)
+            self.redis_different_namespace.get_unsafe(self.key1), self.val1_bytes)
 
 
 class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
@@ -1130,7 +1136,7 @@ class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
-        self.db = env.REDIS_TEST_DB
+        self.db = env.REDIS_DB
         self.host = 'dummyhost'
         self.port = 6379
         self.live_check_time_interval = timedelta(seconds=3)
@@ -1142,6 +1148,10 @@ class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
         self.key = 'key'
         self.val = 'val'
         self.time = timedelta.max
+
+    def tearDown(self) -> None:
+        self.dummy_logger = None
+        self.redis = None
 
     def test_is_live_by_default(self):
         self.assertTrue(self.redis.is_live)
@@ -1158,26 +1168,13 @@ class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
         self.assertFalse(self.redis.is_live)
 
     def test_allowed_to_use_by_default(self):
-        # noinspection PyBroadException
-        try:
-            self.redis._do_not_use_if_recently_went_down()
-        except Exception:
-            self.fail('Expected to be allowed to use Redis.')
+        self.assertFalse(self.redis._do_not_use_if_recently_went_down())
 
     def test_not_allowed_to_use_if_set_as_down_and_within_time_interval(self):
         self.redis._set_as_down()
-        # noinspection PyBroadException
-        try:
-            self.redis._do_not_use_if_recently_went_down()
-            self.fail('Expected to not be allowed to use Redis.')
-        except Exception:
-            pass
+        self.assertTrue(self.redis._do_not_use_if_recently_went_down())
 
-    def test_allowed_to_use_if_set_as_down_and_within_time_interval(self):
+    def test_allowed_to_use_if_set_as_down_and_time_interval_exceeded(self):
         self.redis._set_as_down()
         sleep(self.live_check_time_interval_with_error_margin.seconds)
-        # noinspection PyBroadException
-        try:
-            self.redis._do_not_use_if_recently_went_down()
-        except Exception:
-            self.fail('Expected to be allowed to use Redis.')
+        self.assertFalse(self.redis._do_not_use_if_recently_went_down())

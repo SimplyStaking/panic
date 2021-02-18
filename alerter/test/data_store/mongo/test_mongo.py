@@ -3,8 +3,8 @@ import unittest
 from datetime import timedelta, datetime
 from time import sleep
 
-from pymongo.errors import PyMongoError, OperationFailure, \
-    ServerSelectionTimeoutError
+from pymongo.errors import (PyMongoError, OperationFailure,
+                            ServerSelectionTimeoutError)
 
 from src.data_store.mongo.mongo_api import MongoApi
 from src.utils import env
@@ -31,7 +31,7 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         try:
             mongo.ping_unsafe()
         except PyMongoError:
-            raise Exception('Mongo is not online.')
+            raise Exception("Mongo is not online.")
 
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('dummy')
@@ -46,11 +46,10 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
                               port=self.port,
                               username=self.user, password=self.password)
 
-        # Ping Mongo pip install pytest-timeout
         try:
             self.mongo.ping_unsafe()
         except PyMongoError:
-            self.fail('Mongo is not online.')
+            self.fail("Mongo is not online.")
 
         # Clear test database
         self.mongo.drop_db()
@@ -105,6 +104,7 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.default_bool = False
 
     def tearDown(self) -> None:
+        self.dummy_logger = None
         self.mongo.drop_db()
         self.mongo = None
 
@@ -321,6 +321,11 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
             '$inc': {'n_entries': 1}
         }
 
+    def tearDown(self) -> None:
+        self.dummy_logger = None
+        self.mongo.drop_db()
+        self.mongo = None
+
     def test_insert_one_returns_none_first_time_round(self):
         default_return = self.mongo.insert_one(self.col1, self.val1)
         self.assertIsNone(default_return)
@@ -340,11 +345,11 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
         default_return = self.mongo.get_all(self.col1)
         self.assertIsNone(default_return)
 
-    def test_drop_collection_throws_exception_first_time_round(self):
+    def test_drop_collection_returns_none_first_time_round(self):
         default_return = self.mongo.drop_collection(self.col1)
         self.assertIsNone(default_return)
 
-    def test_drop_db_throws_exception_first_time_round(self):
+    def test_drop_db_returns_none_first_time_round(self):
         default_return = self.mongo.drop_db()
         self.assertIsNone(default_return)
 
@@ -419,6 +424,11 @@ class TestMongoApiLiveAndDownFeaturesWithMongoOffline(unittest.TestCase):
                               live_check_time_interval=
                               self.live_check_time_interval)
 
+    def tearDown(self) -> None:
+        self.dummy_logger = None
+        self.mongo.drop_db()
+        self.mongo = None
+
     def test_is_live_returns_true_by_default(self):
         self.assertTrue(self.mongo.is_live)
 
@@ -448,26 +458,13 @@ class TestMongoApiLiveAndDownFeaturesWithMongoOffline(unittest.TestCase):
         self.assertFalse(self.mongo.is_live)
 
     def test_allowed_to_use_by_default(self):
-        # noinspection PyBroadException
-        try:
-            self.mongo._do_not_use_if_recently_went_down()
-        except Exception:
-            self.fail('Expected to be allowed to use Mongo.')
+        self.assertFalse(self.mongo._do_not_use_if_recently_went_down())
 
     def test_not_allowed_to_use_if_set_as_down_and_within_time_interval(self):
         self.mongo._set_as_down()
-        # noinspection PyBroadException
-        try:
-            self.mongo._do_not_use_if_recently_went_down()
-            self.fail('Expected to not be allowed to use Mongo.')
-        except Exception:
-            pass
+        self.assertTrue(self.mongo._do_not_use_if_recently_went_down())
 
-    def test_allowed_to_use_if_set_as_down_and_within_time_interval(self):
+    def test_allowed_to_use_if_set_as_down_and_interval_exceeded(self):
         self.mongo._set_as_down()
         sleep(self.live_check_time_interval_with_error_margin.seconds)
-        # noinspection PyBroadException
-        try:
-            self.mongo._do_not_use_if_recently_went_down()
-        except Exception:
-            self.fail('Expected to be allowed to use Mongo.')
+        self.assertFalse(self.mongo._do_not_use_if_recently_went_down())
