@@ -277,7 +277,7 @@ class TestGitHubMonitor(unittest.TestCase):
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
                 routing_key='github')
 
-            self.test_monitor._send_data(self.processed_data_example)
+            self.test_monitor._send_alerts(self.processed_data_example)
 
             # By re-declaring the queue again we can get the number of messages
             # in the queue.

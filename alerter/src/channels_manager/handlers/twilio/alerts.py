@@ -12,6 +12,7 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.handlers.handler import ChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -20,11 +21,11 @@ from src.utils.logging import log_and_print
 
 class TwilioAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, twilio_channel: TwilioChannel, call_from: str,
-                 call_to: List[str], twiml: str, twiml_is_url: bool,
-                 max_attempts: int = 3, alert_validity_threshold: int = 300) \
-            -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+                 rabbitmq: RabbitMQApi, twilio_channel: TwilioChannel,
+                 call_from: str, call_to: List[str], twiml: str,
+                 twiml_is_url: bool, max_attempts: int = 3,
+                 alert_validity_threshold: int = 300) -> None:
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._twilio_channel = twilio_channel
         self._call_from = call_from
@@ -103,7 +104,7 @@ class TwilioAlertsHandler(ChannelHandler):
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         calling_successful = RequestStatus.FAILED
@@ -127,9 +128,6 @@ class TwilioAlertsHandler(ChannelHandler):
                 self.logger.exception(e)
             except Exception as e:
                 raise e
-
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
 
     def _call_using_twilio(self, alert: Alert) -> RequestStatus:
         # Do not call if alert_validity_threshold seconds passed since the alert
@@ -195,3 +193,11 @@ class TwilioAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the twilio alerts handler only sends heartbeats. Alerts are sent
+        through the third party channel.
+        """
+        pass

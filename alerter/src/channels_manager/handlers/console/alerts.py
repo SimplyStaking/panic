@@ -10,8 +10,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.console import ConsoleChannel
-from src.channels_manager.handlers.handler import \
-    PublisherSubscriberChannelHandler
+from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
@@ -21,7 +20,7 @@ from src.utils.logging import log_and_print
 CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
 
 
-class ConsoleAlertsHandler(PublisherSubscriberChannelHandler):
+class ConsoleAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi,
                  console_channel: ConsoleChannel) -> None:
@@ -97,7 +96,7 @@ class ConsoleAlertsHandler(PublisherSubscriberChannelHandler):
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         alert_result = RequestStatus.FAILED
@@ -120,9 +119,6 @@ class ConsoleAlertsHandler(PublisherSubscriberChannelHandler):
                 self.logger.exception(e)
             except Exception as e:
                 raise e
-
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
 
     def start(self) -> None:
         self._initialise_rabbitmq()
@@ -148,4 +144,9 @@ class ConsoleAlertsHandler(PublisherSubscriberChannelHandler):
         sys.exit()
 
     def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the console alerts handler only sends heartbeats. Alerts are sent
+        through the third party channel.
+        """
         pass

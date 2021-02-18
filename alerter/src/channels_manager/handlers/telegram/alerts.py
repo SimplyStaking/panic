@@ -12,6 +12,7 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -20,10 +21,10 @@ from src.utils.logging import log_and_print
 
 class TelegramAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, queue_size: int,
-                 telegram_channel: TelegramChannel, max_attempts: int = 6,
+                 rabbitmq: RabbitMQApi, telegram_channel: TelegramChannel,
+                 queue_size: int = 0, max_attempts: int = 6,
                  alert_validity_threshold: int = 600) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._telegram_channel = telegram_channel
         self._alerts_queue = Queue(queue_size)
@@ -104,22 +105,24 @@ class TelegramAlertsHandler(ChannelHandler):
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        # Place the data on the alerts queue if there were no processing errors.
-        # This is done after acknowledging the data, so that if acknowledgement
-        # fails, the data is processed again and we do not have duplication of
-        # data in the queue
+        # Place the alert on the alerts queue if there were no processing
+        # errors. This is done after acknowledging the alert, so that if
+        # acknowledgement fails, the alert is processed again and we do not have
+        # duplication of alerts in the queue
         if not processing_error:
             self._place_alert_on_queue(alert)
 
-        # Send any data waiting in the queue, if any
+        # Send any alerts waiting in the queue, if any
         try:
-            self._send_data()
+            self._send_alerts()
         except Exception as e:
             raise e
 
+        # By this condition we are sending heartbeats only when there were no
+        # processing errors and when all alerts have been sent successfully.
         if self.alerts_queue.empty() and not processing_error:
             try:
                 heartbeat = {
@@ -134,22 +137,19 @@ class TelegramAlertsHandler(ChannelHandler):
             except Exception as e:
                 raise e
 
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
-
     def _place_alert_on_queue(self, alert: Alert) -> None:
         self.logger.debug("Adding %s to the alerts queue ...",
                           alert.alert_code.name)
 
         # Place the alert on the alerts queue. If the queue is full, remove old
-        # data first.
+        # alerts first.
         if self.alerts_queue.full():
             self.alerts_queue.get()
         self.alerts_queue.put(alert)
 
         self.logger.debug("%s added to the alerts queue", alert.alert_code.name)
 
-    def _send_data(self) -> None:
+    def _send_alerts(self) -> None:
         empty = True
         if not self.alerts_queue.empty():
             empty = False
@@ -205,9 +205,9 @@ class TelegramAlertsHandler(ChannelHandler):
         self._initialise_rabbitmq()
         while True:
             try:
-                # Before listening for new alerts, send the data waiting to be
+                # Before listening for new alerts, send the alerts waiting to be
                 # sent in the alerts queue.
-                self._send_data()
+                self._send_alerts()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
@@ -226,3 +226,11 @@ class TelegramAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the telegram alerts handler only sends heartbeats. Alerts are sent
+        through the third party channel.
+        """
+        pass

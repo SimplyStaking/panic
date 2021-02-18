@@ -11,6 +11,7 @@ from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.handlers.handler import ChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -21,8 +22,8 @@ _LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
 
 class LogAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, log_channel: LogChannel) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+                 rabbitmq: RabbitMQApi, log_channel: LogChannel) -> None:
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._log_channel = log_channel
         self._log_alerts_handler_queue = \
@@ -91,7 +92,7 @@ class LogAlertsHandler(ChannelHandler):
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         alert_result = RequestStatus.FAILED
@@ -115,9 +116,6 @@ class LogAlertsHandler(ChannelHandler):
             except Exception as e:
                 raise e
 
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
-
     def start(self) -> None:
         self._initialise_rabbitmq()
         while True:
@@ -140,3 +138,11 @@ class LogAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the log alerts handler only sends heartbeats. Alerts are sent
+        through the third party channel.
+        """
+        pass
