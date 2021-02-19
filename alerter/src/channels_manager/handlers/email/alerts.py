@@ -119,7 +119,7 @@ class EmailAlertsHandler(ChannelHandler):
         if not self.alerts_queue.empty():
             empty = False
             self.logger.debug("Attempting to send all alerts waiting in the "
-                             "alerts queue ...")
+                              "alerts queue ...")
 
         # Try sending the alerts in the alerts queue one by one. If sending
         # fails, try re-sending max_attempts - 1 times with 10 seconds sleep in
