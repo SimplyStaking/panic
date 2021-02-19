@@ -161,7 +161,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
 
         if not empty:
             self.logger.debug("Successfully sent all data from the publishing "
-                             "queue")
+                              "queue")
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
