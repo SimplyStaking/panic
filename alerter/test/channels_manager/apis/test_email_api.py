@@ -11,6 +11,7 @@ from freezegun import freeze_time
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.email_api import EmailApi
+from parameterized import parameterized
 from src.utils.constants import EMAIL_HTML_TEMPLATE, EMAIL_TEXT_TEMPLATE
 
 
@@ -89,8 +90,8 @@ class TestMonitorStarters(unittest.TestCase):
                                        self.test_receiver)
 
         args, _ = mock_send_smtp.call_args
-        self.assertEqual(1, mock_send_smtp.call_count)
         self.assertEqual(1, len(args))
+        mock_send_smtp.assert_called_once()
 
         # By the as_string function we will get the formatted e-mail as string
         self.assertEqual(expected_msg.as_string(), args[0].as_string())
@@ -146,8 +147,8 @@ class TestMonitorStarters(unittest.TestCase):
                                                  self.test_receiver)
 
         args, _ = mock_send_smtp.call_args
-        self.assertEqual(1, mock_send_smtp.call_count)
         self.assertEqual(1, len(args))
+        mock_send_smtp.assert_called_once()
 
         # This must be done because boundaries are auto-generated
         expected_msg.set_boundary('test_boundary')
@@ -156,77 +157,41 @@ class TestMonitorStarters(unittest.TestCase):
         # By the as_string function we will get the formatted e-mail as string
         self.assertEqual(expected_msg.as_string(), args[0].as_string())
 
-    @mock.patch.object(smtplib.SMTP, "send_message")
-    @mock.patch.object(smtplib.SMTP, "quit")
-    @mock.patch.object(smtplib, "SMTP")
-    def test_send_smtp_sends_a_message_correctly_if_no_login(
-            self, mock_smtp_init, mock_quit, mock_send_message) -> None:
-        # In this test we will check that function calls to send a message were
-        # called correctly. Note, we cannot check whether the e-mail was
-        # actually sent without exposing infrastructure details.
-        mock_smtp_init.return_value = self.test_smtp_interface
-        mock_quit.return_value = None
-        mock_send_message.return_value = None
-
-        # Avoid logging in by setting the username to None
-        self.test_email_api._username = None
-
-        self.test_email_api._send_smtp(self.test_msg)
-
-        # Check that the SMTP interface initialisation was performed correctly.
-        args, _ = mock_smtp_init.call_args
-        self.assertEqual(1, mock_smtp_init.call_count)
-        self.assertEqual(2, len(args))
-        self.assertEqual(self.test_smtp, args[0])
-        self.assertEqual(self.test_port, args[1])
-
-        # Check that send_message was called correctly.
-        args, _ = mock_send_message.call_args
-        self.assertEqual(1, mock_send_message.call_count)
-        self.assertEqual(1, len(args))
-        self.assertEqual(self.test_msg, args[0])
-
-        # Check that quit was called correctly.
-        args, _ = mock_quit.call_args
-        self.assertEqual(1, mock_quit.call_count)
-        self.assertEqual(0, len(args))
-
+    @parameterized.expand([('test_username',), (None,), ])
     @mock.patch.object(smtplib.SMTP, "send_message")
     @mock.patch.object(smtplib.SMTP, "quit")
     @mock.patch.object(smtplib.SMTP, "starttls")
     @mock.patch.object(smtplib.SMTP, "login")
     @mock.patch.object(smtplib, "SMTP")
-    def test_send_smtp_sends_a_message_correctly_if_logged_in(
-            self, mock_smtp_init, mock_login, mock_starttls, mock_quit,
-            mock_send_message) -> None:
+    def test_send_smtp_sends_a_message_correctly(
+            self, username, mock_smtp_init, mock_login, mock_starttls,
+            mock_quit, mock_send_message) -> None:
         # In this test we will check that function calls to send a message were
         # called correctly. Note, we cannot check whether the e-mail was
-        # actually sent without exposing infrastructure details.
+        # actually sent without exposing infrastructure details. This test is
+        # parametrized to test for when login occurs and when login does not
+        # occur
         mock_smtp_init.return_value = self.test_smtp_interface
         mock_quit.return_value = None
         mock_send_message.return_value = None
         mock_login.return_value = None
         mock_starttls.return_value = None
 
+        # When the username is None no login is performed
+        self.test_email_api._username = username
+
         self.test_email_api._send_smtp(self.test_msg)
 
         # Check that the SMTP interface initialisation was performed correctly.
-        args, _ = mock_smtp_init.call_args
-        self.assertEqual(1, mock_smtp_init.call_count)
-        self.assertEqual(2, len(args))
-        self.assertEqual(self.test_smtp, args[0])
-        self.assertEqual(self.test_port, args[1])
+        mock_smtp_init.assert_called_once_with(self.test_smtp, self.test_port)
 
         # Check that send_message was called correctly.
-        args, _ = mock_send_message.call_args
-        self.assertEqual(1, mock_send_message.call_count)
-        self.assertEqual(1, len(args))
-        self.assertEqual(self.test_msg, args[0])
+        mock_send_message.assert_called_once_with(self.test_msg)
 
         # Check that quit was called correctly.
         args, _ = mock_quit.call_args
-        self.assertEqual(1, mock_quit.call_count)
         self.assertEqual(0, len(args))
+        mock_quit.assert_called_once()
 
     @mock.patch.object(smtplib.SMTP, "send_message")
     @mock.patch.object(smtplib.SMTP, "quit")
@@ -246,21 +211,48 @@ class TestMonitorStarters(unittest.TestCase):
 
         # Check that the starttls function was called correctly.
         args, _ = mock_starttls.call_args
-        self.assertEqual(1, mock_starttls.call_count)
         self.assertEqual(0, len(args))
+        mock_starttls.assert_called_once()
 
         # Check that the login function was called correctly.
+        mock_login.assert_called_once_with(self.test_username,
+                                           self.test_password)
         args, _ = mock_login.call_args
         self.assertEqual(1, mock_login.call_count)
         self.assertEqual(2, len(args))
         self.assertEqual(self.test_username, args[0])
         self.assertEqual(self.test_password, args[1])
 
-    def test_send_smtp_no_login_if_username_empty(self) -> None:
-        pass
+    @parameterized.expand([
+        (None, 'test_password'),
+        ('test_username', None),
+        (None, None,),
+        ('', 'test_pass'),
+        ('', ''),
+        ('', None,),
+    ])
+    @mock.patch.object(smtplib.SMTP, "send_message")
+    @mock.patch.object(smtplib.SMTP, "quit")
+    @mock.patch.object(smtplib.SMTP, "starttls")
+    @mock.patch.object(smtplib.SMTP, "login")
+    @mock.patch.object(smtplib, "SMTP")
+    def test_send_smtp_no_log_in_if_username_or_password_None_or_username_empty(
+            self, username, password, mock_smtp_init, mock_login, mock_starttls,
+            mock_quit, mock_send_message) -> None:
+        mock_smtp_init.return_value = self.test_smtp_interface
+        mock_quit.return_value = None
+        mock_send_message.return_value = None
+        mock_login.return_value = None
+        mock_starttls.return_value = None
 
-    def test_send_smtp_no_login_if_username_is_None(self) -> None:
-        pass
+        # Set the username and password according to the parametrization
+        self.test_email_api._username = username
+        self.test_email_api._password = password
 
-    def test_send_smtp_no_login_if_password_is_None(self) -> None:
-        pass
+        self.test_email_api._send_smtp(self.test_msg)
+
+        # Check that the starttls function was not called.
+        mock_starttls.assert_not_called()
+
+        # Check that the login function was not called.
+        mock_login.assert_not_called()
