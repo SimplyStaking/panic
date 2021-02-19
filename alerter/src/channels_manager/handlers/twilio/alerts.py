@@ -153,7 +153,7 @@ class TwilioAlertsHandler(ChannelHandler):
             while ret != RequestStatus.SUCCESS and \
                     attempts < self._max_attempts:
                 self.logger.debug("Will re-trying calling in 5 seconds. "
-                                 "Attempts left: %s",
+                                  "Attempts left: %s",
                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(5)
                 ret = self.twilio_channel.alert(call_from=self._call_from,

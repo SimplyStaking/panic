@@ -124,7 +124,7 @@ class HeartbeatHandler:
 
         if len(self._unsavable_redis_data) == 0:
             self.logger.debug("Successfully saved all redis data in waiting "
-                             "state.")
+                              "state.")
         else:
             self.logger.debug("Could not save all data to Redis.")
 
