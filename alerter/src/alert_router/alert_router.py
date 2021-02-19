@@ -280,7 +280,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self._logger.debug("Sent heartbeat to %s exchange",
-                          HEALTH_CHECK_EXCHANGE)
+                           HEALTH_CHECK_EXCHANGE)
 
     def _process_ping(self, ch: BlockingChannel,
                       method: pika.spec.Basic.Deliver,

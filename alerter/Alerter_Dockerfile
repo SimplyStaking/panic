@@ -1,7 +1,4 @@
 FROM python:3.7.5-slim-stretch
-ARG PANIC_ENV
-
-ENV PANIC_ENV=${PANIC_ENV}
 
 # Create app directory
 WORKDIR /opt/panic

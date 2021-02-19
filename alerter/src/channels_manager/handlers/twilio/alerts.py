@@ -79,7 +79,7 @@ class TwilioAlertsHandler(ChannelHandler):
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
-                         HEALTH_CHECK_EXCHANGE)
+                          HEALTH_CHECK_EXCHANGE)
 
     def _process_alert(self, ch: BlockingChannel,
                        method: pika.spec.Basic.Deliver,

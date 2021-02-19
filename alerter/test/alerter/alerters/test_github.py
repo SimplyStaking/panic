@@ -1,21 +1,22 @@
+import datetime
+import json
 import logging
 import unittest
-import pika
-import json
-import datetime
 from queue import Queue
 from unittest import mock
 from unittest.mock import call
+
+import pika
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerts.github_alerts import NewGitHubReleaseAlert
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.alerters.github import GithubAlerter
-from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 from src.utils.constants import (ALERT_EXCHANGE, GITHUB_ALERTER_INPUT_QUEUE,
                                  GITHUB_ALERTER_INPUT_ROUTING_KEY,
                                  HEALTH_CHECK_EXCHANGE)
+from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
 class TestGithubAlerter(unittest.TestCase):
@@ -129,22 +130,27 @@ class TestGithubAlerter(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_rabbit_manager.connect()
-            self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(self.target_queue_used)
-            self.test_manager.rabbitmq.queue_purge(self.heartbeat_queue)
-            self.test_manager.rabbitmq.queue_purge(GITHUB_ALERTER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(self.target_queue_used)
-            self.test_manager.rabbitmq.queue_delete(self.heartbeat_queue)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_ALERTER_INPUT_QUEUE)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
+            self.test_github_alerter.rabbitmq.connect()
+            self.test_github_alerter.rabbitmq.queue_purge(self.test_queue_name)
+            self.test_github_alerter.rabbitmq.queue_purge(
+                self.target_queue_used)
+            self.test_github_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
+            self.test_github_alerter.rabbitmq.queue_purge(
+                GITHUB_ALERTER_INPUT_QUEUE)
+            self.test_github_alerter.rabbitmq.queue_delete(self.test_queue_name)
+            self.test_github_alerter.rabbitmq.queue_delete(
+                self.target_queue_used)
+            self.test_github_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+            self.test_github_alerter.rabbitmq.queue_delete(
+                GITHUB_ALERTER_INPUT_QUEUE)
+            self.test_github_alerter.rabbitmq.exchange_delete(
+                HEALTH_CHECK_EXCHANGE)
+            self.test_github_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_github_alerter.rabbitmq.disconnect()
             self.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Test failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -177,7 +183,7 @@ class TestGithubAlerter(unittest.TestCase):
             self.rabbitmq.connect()
             self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE,
                                         passive=True)
-        except Exception as e:  
+        except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     def test_initialise_rabbit_initialises_exchanges(self) -> None:
@@ -188,9 +194,13 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
     def test_new_github_release_alert(
             self, mock_new_github_release, mock_ack,
             mock_basic_publish_confirm):
@@ -224,9 +234,13 @@ class TestGithubAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([(5,), (None,)])
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
     def test_first_run_no_github_alerts(
             self, param_input, mock_new_github_release, mock_ack,
             mock_basic_publish_confirm):
@@ -256,9 +270,13 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
     def test_run_5_github_alerts_previous_is_0(
             self, mock_new_github_release, mock_ack,
             mock_basic_publish_confirm):
@@ -274,7 +292,8 @@ class TestGithubAlerter(unittest.TestCase):
             method_chains = pika.spec.Basic.Deliver(
                 routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
 
-            self.github_data_received['result']['data']['no_of_releases']['previous'] = 0
+            self.github_data_received['result']['data']['no_of_releases'][
+                'previous'] = 0
 
             properties = pika.spec.BasicProperties()
             self.test_github_alerter._process_data(
@@ -303,11 +322,16 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.CannotAccessGitHubPageAlert", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.CannotAccessGitHubPageAlert",
+                autospec=True)
     def test_cannot_access_github_page_alert(
-            self, mock_cannot_access_github_page_alert, mock_ack, mock_basic_publish_confirm):
+            self, mock_cannot_access_github_page_alert, mock_ack,
+            mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
@@ -336,9 +360,13 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.ReceivedUnexpectedDataException", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.ReceivedUnexpectedDataException",
+                autospec=True)
     def test_received_unexpected_data_error(
             self, mock_received_unexpected_data_error, mock_ack,
             mock_basic_publish_confirm):
@@ -397,9 +425,13 @@ class TestGithubAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.Alerter._send_heartbeat", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.Alerter._send_heartbeat",
+                autospec=True)
     def test_heartbeat_is_being_sent_no_errors(
             self, mock_send_heartbeat, mock_ack, mock_basic_publish_confirm):
         self.rabbitmq.connect()
@@ -429,9 +461,14 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
-    @mock.patch("src.alerter.alerters.github.GithubAlerter._place_latest_data_on_queue", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.github.GithubAlerter._place_latest_data_on_queue",
+        autospec=True)
     def test_place_latest_data_on_queue_called_once_when_no_errors(
             self, mock_place_latest_data_on_queue,
             mock_ack, mock_basic_publish_confirm):
@@ -459,8 +496,11 @@ class TestGithubAlerter(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm", autospec=True)
-    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack", autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
     def test_send_data_works_correctly(
             self, mock_ack, mock_basic_publish_confirm):
         self.rabbitmq.connect()

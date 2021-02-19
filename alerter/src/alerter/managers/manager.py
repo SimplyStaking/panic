@@ -1,6 +1,5 @@
 import logging
-import signal
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from types import FrameType
 from typing import Dict
 
@@ -9,7 +8,6 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 
 
