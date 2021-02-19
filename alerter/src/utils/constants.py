@@ -57,8 +57,8 @@ EMAIL_HTML_TEMPLATE = """<style type="text/css">
     <td>{message}</td>
   </tr>
   <tr>
-    <th>Timestamp:</th>
-    <td>{timestamp}</td>
+    <th>Triggered At:</th>
+    <td>{date_time}</td>
   </tr>
   <tr>
     <th>Parent ID:</th>
@@ -80,7 +80,7 @@ An alert was generated with the following details:
 Alert Code: {alert_code}
 Severity: {severity}
 Message: {message}
-Timestamp: {timestamp}
+Triggered At: {date_time}
 Parent ID: {parent_id}
 Origin ID: {origin_id}
 """
