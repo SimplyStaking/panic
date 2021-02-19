@@ -15,7 +15,7 @@ from src.channels_manager.apis.email_api import EmailApi
 from src.utils.constants import EMAIL_HTML_TEMPLATE, EMAIL_TEXT_TEMPLATE
 
 
-class TestMonitorStarters(unittest.TestCase):
+class TestEmailApi(unittest.TestCase):
     def setUp(self) -> None:
         self.test_smtp = 'test smtp server'
         self.test_sender = 'test sender'
