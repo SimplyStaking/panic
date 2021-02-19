@@ -9,7 +9,8 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.utils.exceptions import (ConnectionNotInitialisedException,
-                                  MessageWasNotDeliveredException)
+                                  MessageWasNotDeliveredException,
+                                  BlankCredentialException)
 from src.utils.timing import TimedTaskLimiter
 
 
@@ -153,17 +154,21 @@ class RabbitMQApi:
             # Open a new connection depending on whether authentication is
             # needed, and set the connection status as 'connected'
             self._logger.info("Connecting with RabbitMQ...")
-            if self.password == '':
+            stripped_username = None if not self.username else self.username.strip()
+            stripped_password = None if not self.password else self.password.strip()
+            if not (stripped_username or stripped_password):
                 self._connection = pika.BlockingConnection(
                     pika.ConnectionParameters(host=self.host))
                 self._channel = self.connection.channel()
-            else:
+            elif self.password and self.username:
                 credentials = pika.PlainCredentials(self.username,
                                                     self.password)
                 parameters = pika.ConnectionParameters(
                     self.host, self.port, '/', credentials)
                 self._connection = pika.BlockingConnection(parameters)
                 self._channel = self.connection.channel()
+            else:
+                raise BlankCredentialException(stripped_username)
             self._logger.info("Connected with RabbitMQ")
             self._set_as_connected()
 

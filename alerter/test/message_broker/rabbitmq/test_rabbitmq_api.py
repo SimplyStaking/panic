@@ -1,7 +1,7 @@
 import copy
 import logging
 from datetime import timedelta
-from typing import List, Any
+from typing import List, Any, Optional
 from unittest import TestCase, skip, mock
 from unittest.mock import MagicMock, PropertyMock
 
@@ -10,8 +10,10 @@ from parameterized import parameterized
 
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.exceptions import ConnectionNotInitialisedException
+from src.utils.exceptions import ConnectionNotInitialisedException, \
+    BlankCredentialException
 from src.utils.timing import TimedTaskLimiter
+from test.test_utils import TestConnection
 
 
 class TestRabbitMQApi(TestCase):
@@ -111,7 +113,7 @@ class TestRabbitMQApi(TestCase):
         mock_function_to_execute = MagicMock(return_value=function_output)
         mock_is_recently_disconnected.return_value = False
 
-        self.assertEquals(
+        self.assertEqual(
             function_output, self.rabbit._safe(
                 mock_function_to_execute, function_arguments, "DEFAULT"
             )
@@ -135,7 +137,7 @@ class TestRabbitMQApi(TestCase):
         mock_function_to_execute.__name__ = "test_function"
         mock_is_recently_disconnected.return_value = True
 
-        self.assertEquals(
+        self.assertEqual(
             "DEFAULT", self.rabbit._safe(
                 mock_function_to_execute, function_arguments, "DEFAULT"
             )
@@ -300,9 +302,75 @@ class TestRabbitMQApi(TestCase):
         self.assertIsNone(self.rabbit.connect_unsafe())
         mock_set_as_connected.assert_not_called()
 
-    @skip("Not Implemented yet")
-    def test_connect_unsafe_opens_connection_if_not_connected(self):
-        pass
+    @parameterized.expand([
+        ("useranme_and_password_blank", '', ''),
+        ("useranme_and_password_none", None, None),
+        ("username_and_password_filled", 'test_user', 'test_password')
+    ])
+    @mock.patch.object(TestConnection, "channel", autospec=True)
+    @mock.patch("pika.BlockingConnection", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_set_as_connected", autospec=True)
+    def test_connect_unsafe_opens_connection_if_not_connected(
+            self, name: str, username: Optional[str], password: Optional[str],
+            mock_set_as_connected: MagicMock,
+            mock_blocking_connection: MagicMock, mock_channel: MagicMock
+    ):
+        def return_dict_from_params(params: pika.ConnectionParameters):
+            print(params._credentials.username)
+            print(params._credentials.password)
+            print(params._credentials.erase_on_connect)
+            return TestConnection(
+                host=params._host, port=params._port,
+                virtual_host=params._virtual_host,
+                credentials=params._credentials
+            )
+
+        mock_set_as_connected.return_value = None
+        mock_blocking_connection.side_effect = return_dict_from_params
+        mock_channel.return_value = True
+
+        self.rabbit._username = username
+        self.rabbit._password = password
+        self.assertIsNone(self.rabbit.connect_unsafe())
+        self.assertIs(type(self.rabbit.connection), TestConnection)
+        self.assertEqual(self.rabbit.host, self.rabbit.connection.host)
+        self.assertEqual(self.rabbit.port, self.rabbit.connection.port)
+        self.assertEqual("/", self.rabbit.connection.virtual_host)
+        self.assertEqual(
+            pika.PlainCredentials(username or 'guest', password or 'guest'),
+            self.rabbit.connection.credentials
+        )
+        self.assertTrue(self.rabbit.channel)
+        mock_set_as_connected.assert_called_once()
+        mock_blocking_connection.assert_called_once()
+        mock_channel.assert_called_once()
+
+    @parameterized.expand([
+        ("password_only_blank", 'test_user', ''),
+        ("password_only_none", 'test_user', None),
+        ("username_only_blank", '', 'test_password'),
+        ("username_only_none", None, 'test_password'),
+    ])
+    @mock.patch.object(TestConnection, "channel", autospec=True)
+    @mock.patch("pika.BlockingConnection", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_set_as_connected", autospec=True)
+    def test_connect_unsafe_raises_exception_if_single_credential_invalid(
+            self, name: str, username: Optional[str], password: Optional[str],
+            mock_set_as_connected: MagicMock,
+            mock_blocking_connection: MagicMock, mock_channel: MagicMock
+    ):
+        mock_set_as_connected.return_value = None
+        mock_blocking_connection.return_value = None
+        mock_channel.return_value = None
+
+        self.rabbit._username = username
+        self.rabbit._password = password
+        self.assertRaises(BlankCredentialException, self.rabbit.connect_unsafe)
+        self.assertIsNone(self.rabbit.connection)
+        self.assertIsNone(self.rabbit.channel)
+        mock_set_as_connected.assert_not_called()
+        mock_blocking_connection.assert_not_called()
+        mock_channel.assert_not_called()
 
     @skip("Not implemented yet")
     def test_connect(self):

@@ -107,3 +107,13 @@ class JSONDecodeException(PANICException):
     def __init__(self, exception: JSONDecodeError) -> None:
         code = 5012
         super().__init__(exception.msg, code)
+
+
+class BlankCredentialException(PANICException):
+    def __init__(self, username) -> None:
+        code = 5013
+        message = \
+            "Tried to initiate a connection with a blank or NoneType {}".format(
+                "username" if not username else "password"
+            )
+        super().__init__(message, code)

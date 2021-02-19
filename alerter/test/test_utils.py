@@ -14,6 +14,27 @@ def infinite_fn() -> None:
         sleep(10)
 
 
+class TestConnection:
+    def __init__(
+            self, host=None, port=None, virtual_host=None, credentials=None
+    ):
+        self.host = host
+        self.port = port
+        self.virtual_host = virtual_host
+        self.credentials = credentials
+
+    def __dict__(self):
+        return {
+            "host": self.host,
+            "port": self.port,
+            "virtual_host": self.virtual_host,
+            "credentials": self.credentials
+        }
+
+    def channel(self):
+        return True
+
+
 class DummyAlertCode(AlertCode):
     TEST_ALERT_CODE = 'test_alert_code'
 
