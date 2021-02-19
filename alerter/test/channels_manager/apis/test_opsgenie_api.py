@@ -70,6 +70,8 @@ class TestOpsgenieApi(unittest.TestCase):
         self.assertEqual(
             expected_api_configuration.__dict__,
             opsgenie_api._alert_api.api_client.configuration.__dict__)
+        self.assertEqual({'_client', '_alert_api'},
+                         set(opsgenie_api.__dict__.keys()))
 
     """
     In the tests below we will only check that the opsgenie_sdk functions are 
