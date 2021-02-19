@@ -1091,7 +1091,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertEqual(2, mock_ack.call_count)
 
     @parameterized.expand([
-        ({},), (None, ), ("test", ), ({'bad_key': 'bad_value'},)
+        ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
     ])
     @mock.patch.object(GitHubDataTransformer, "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")

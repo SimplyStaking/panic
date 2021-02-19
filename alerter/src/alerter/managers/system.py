@@ -10,10 +10,10 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
