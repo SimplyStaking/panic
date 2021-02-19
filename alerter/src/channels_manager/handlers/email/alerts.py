@@ -144,7 +144,7 @@ class EmailAlertsHandler(ChannelHandler):
             while status != RequestStatus.SUCCESS \
                     and attempts < self._max_attempts:
                 self.logger.debug("Will re-trying sending in 10 seconds. "
-                                 "Attempts left: %s",
+                                  "Attempts left: %s",
                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(10)
                 status = self.email_channel.alert(alert)
