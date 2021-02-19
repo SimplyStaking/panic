@@ -6,7 +6,6 @@ from typing import Dict, Type, List
 
 import pika.exceptions
 
-from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.system_alerts import (
     InvalidUrlAlert, OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -19,6 +18,7 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert)
 from src.configs.system_alerts import SystemAlertsConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import floaty
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
@@ -220,7 +220,6 @@ class SystemAlerter(Alerter):
                         data_for_alerting: List) -> None:
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
-        data = error_data['data']
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
                 meta_data['system_name'], error_data['message'],
@@ -241,6 +240,7 @@ class SystemAlerter(Alerter):
                               alert.alert_data)
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
+                data = error_data['data']
                 current = float(data['went_down_at']['current'])
                 monitoring_timestamp = float(meta_data['time'])
                 monitoring_datetime = datetime.fromtimestamp(
