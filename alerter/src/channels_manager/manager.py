@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 import multiprocessing
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -11,6 +10,7 @@ from typing import Dict, List, Optional
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
     start_twilio_alerts_handler, start_console_alerts_handler,
@@ -34,37 +34,25 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes, \
-    convert_to_int_if_not_none_and_not_empty_str
+from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
+                             convert_to_int_if_not_none_and_not_empty_str)
 
 _CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 _CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
 _CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
 
 
-class ChannelsManager:
-
-    def __init__(self, logger: logging.Logger, name: str) -> None:
-        self._logger = logger
+class ChannelsManager(PublisherSubscriberComponent):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
         self._name = name
         self._channel_configs = {}
         self._channel_process_dict = {}
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(
-            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        super().__init__(logger, rabbitmq)
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     @property
     def name(self) -> str:
@@ -77,10 +65,6 @@ class ChannelsManager:
     @property
     def channel_process_dict(self) -> Dict:
         return self._channel_process_dict
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
@@ -990,16 +974,9 @@ class ChannelsManager:
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
     # If termination signals are received, terminate all child process and
     # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running channel handlers will be stopped gracefully. "
@@ -1017,3 +994,10 @@ class ChannelsManager:
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the channels manager only sends heartbeats.
+        """
+        pass
