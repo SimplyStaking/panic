@@ -7,11 +7,11 @@ from email.mime.text import MIMEText
 from unittest import mock
 
 from freezegun import freeze_time
+from parameterized import parameterized
 
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.email_api import EmailApi
-from parameterized import parameterized
 from src.utils.constants import EMAIL_HTML_TEMPLATE, EMAIL_TEXT_TEMPLATE
 
 
