@@ -4,8 +4,8 @@ from unittest import mock
 
 from opsgenie_sdk import SuccessResponse
 
-from src.alerter.alerts.system_alerts import \
-    OpenFileDescriptorsIncreasedAboveThresholdAlert
+from src.alerter.alerts.system_alerts import (
+    OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.opsgenie_api import OpsgenieApi
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.utils.data import RequestStatus
@@ -58,6 +58,10 @@ class TestOpsgenieChannel(unittest.TestCase):
 
     def test_logger_returns_logger(self) -> None:
         self.assertEqual(self.dummy_logger, self.test_opsgenie_channel.logger)
+
+    def test__init__initialised_opsgenie_api_correctly(self) -> None:
+        self.assertEqual(self.test_opsgenie_api.__dict__,
+                         self.test_opsgenie_channel._opsgenie_api.__dict__)
 
     @mock.patch.object(OpsgenieApi, "create_alert")
     def test_alert_triggers_an_alert_correctly(self, mock_create_alert) -> None:
