@@ -237,6 +237,19 @@ class TestSystemAlertersManager(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_manager.rabbitmq.connect()
+            # Declare queues incase they haven't been declared already
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                queue=SYS_ALERTERS_MAN_INPUT_QUEUE, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                queue=SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(

@@ -40,7 +40,6 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_name = 'test_system'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.test_queue_name = 'test_alerter_queue'
         self.test_routing_key = 'test_alert_router.system'
         self.queue_used = "system_alerter_queue_" + self.parent_id
         self.target_queue_used = "alert_router_queue"
@@ -414,17 +413,33 @@ class TestSystemAlerter(unittest.TestCase):
             self.last_monitored, self.warning, self.parent_id,
             self.system_id
         )
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                    ALERT_EXCHANGE, 'topic', False, True, False, False)
+        except Exception as e:
+            print("Setup failed: {}".format(e))
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_system_alerter.rabbitmq.connect()
             self.test_rabbit_manager.connect()
-            self.test_system_alerter.rabbitmq.queue_purge(self.test_queue_name)
+            # Declare the queues incase they aren't there, not to error
+            self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+
             self.test_system_alerter.rabbitmq.queue_purge(self.queue_used)
             self.test_system_alerter.rabbitmq.queue_purge(
                 self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(self.test_queue_name)
             self.test_system_alerter.rabbitmq.queue_delete(self.queue_used)
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
@@ -447,7 +462,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_alerts_config_warnings_disabled = None
         self.system_alerts_config_critical_disabled = None
         self.system_alerts_config_all_disabled = None
-        self.test_rabbit_manager = None
+        self.test_system_alerter = None
 
     def test_returns_alerter_name_as_str(self) -> None:
         self.assertEqual(self.alerter_name, self.test_system_alerter.__str__())
@@ -4524,7 +4539,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter._initialise_rabbitmq()
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
-
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
             res = self.test_system_alerter.rabbitmq.queue_declare(
                 queue=self.target_queue_used, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -4558,6 +4574,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_system_alerter.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -4566,6 +4583,9 @@ class TestSystemAlerter(unittest.TestCase):
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         try:
             self.test_system_alerter._initialise_rabbitmq()
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+
             self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
 
             res = self.test_system_alerter.rabbitmq.queue_declare(
@@ -4682,7 +4702,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -4699,7 +4723,6 @@ class TestSystemAlerter(unittest.TestCase):
         mock_ack.return_value = None
         mock_create_state_for_system.return_value = None
         mock_process_errors.return_value = None
-
         try:
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
@@ -4709,7 +4732,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }                             
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

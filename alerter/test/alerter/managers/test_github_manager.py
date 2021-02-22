@@ -62,6 +62,15 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
+            # Declare queues incase they haven't been declared already
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                queue=GITHUB_MANAGER_INPUT_QUEUE, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
