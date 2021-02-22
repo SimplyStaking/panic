@@ -37,10 +37,9 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.manager_name = 'test_github_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
-        self.timestamp_used = datetime(2012, 1, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
-            'timestamp': self.timestamp_used,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.github_alerter_name = GITHUB_ALERTER_NAME
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -257,7 +256,7 @@ class TestGithubAlertersManager(unittest.TestCase):
                 "component_name": self.manager_name,
                 "dead_processes": [],
                 "running_processes": [GITHUB_ALERTER_NAME],
-                "timestamp": self.timestamp_used
+                "timestamp": datetime(2012, 1, 1).timestamp()
             }
             # Check that the message received is a valid HB
             _, _, body = self.test_manager.rabbitmq.basic_get(
@@ -325,7 +324,7 @@ class TestGithubAlertersManager(unittest.TestCase):
                 "component_name": self.manager_name,
                 "dead_processes": [GITHUB_ALERTER_NAME],
                 "running_processes": [],
-                "timestamp": self.timestamp_used
+                "timestamp": datetime(2012, 1, 1).timestamp()
             }
             # Check that the message received is a valid HB
             _, _, body = self.test_manager.rabbitmq.basic_get(

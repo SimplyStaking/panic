@@ -51,7 +51,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
-            'timestamp': datetime.datetime(2012, 1, 1, 1).timestamp()
+            'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
 
         """
