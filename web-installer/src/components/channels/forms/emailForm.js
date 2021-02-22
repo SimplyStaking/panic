@@ -95,7 +95,7 @@ const EmailForm = ({
                 <TextField
                   error={errors.port}
                   value={values.port}
-                  type="text"
+                  type="number"
                   name="port"
                   placeholder="25"
                   helperText={errors.port ? errors.port : ''}
@@ -324,7 +324,7 @@ EmailForm.propTypes = forbidExtraProps({
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
-    port: PropTypes.string.isRequired,
+    port: PropTypes.number.isRequired,
     email_from: PropTypes.string.isRequired,
     emails_to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
     username: PropTypes.string.isRequired,

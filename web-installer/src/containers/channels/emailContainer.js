@@ -16,7 +16,7 @@ const Form = withFormik({
   mapPropsToValues: () => ({
     channel_name: '',
     smtp: '',
-    port: '',
+    port: 0,
     email_from: '',
     emails_to: [],
     username: '',
