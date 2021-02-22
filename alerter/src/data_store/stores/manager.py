@@ -9,33 +9,25 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
+                                 DATA_STORE_MAN_INPUT_QUEUE,
+                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
-_DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
 
-
-class StoreManager:
-    def __init__(self, logger: logging.Logger, name: str):
+class StoreManager(PublisherSubscriberComponent):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, rabbitmq)
         self._name = name
-        self._logger = logger
         self._store_process_dict = {}
-
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(
-            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
 
     def __str__(self) -> str:
         return self.name
@@ -44,14 +36,6 @@ class StoreManager:
     def name(self) -> str:
         return self._name
 
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
@@ -59,19 +43,19 @@ class StoreManager:
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_DATA_STORE_MAN_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", DATA_STORE_MAN_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(DATA_STORE_MAN_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _DATA_STORE_MAN_INPUT_QUEUE,
+                         "'%s'", DATA_STORE_MAN_INPUT_QUEUE,
                          HEALTH_CHECK_EXCHANGE,
-                         _DATA_STORE_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_DATA_STORE_MAN_INPUT_QUEUE,
+                         DATA_STORE_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DATA_STORE_MAN_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _DATA_STORE_MAN_INPUT_ROUTING_KEY)
+                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          _DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_DATA_STORE_MAN_INPUT_QUEUE,
+                          DATA_STORE_MAN_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(DATA_STORE_MAN_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -176,15 +160,8 @@ class StoreManager:
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
     # If termination signals are received, terminate all child process and exit
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running stores will be stopped gracefully. Afterwards the {} "
@@ -199,3 +176,6 @@ class StoreManager:
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        pass
