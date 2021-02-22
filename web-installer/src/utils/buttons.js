@@ -435,7 +435,7 @@ SendTestEmailButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   smtp: PropTypes.string.isRequired,
-  port: PropTypes.string.isRequired,
+  port: PropTypes.number.isRequired,
   from: PropTypes.string.isRequired,
   user: PropTypes.string.isRequired,
   pass: PropTypes.string.isRequired,

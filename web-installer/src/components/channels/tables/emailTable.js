@@ -100,7 +100,7 @@ EmailTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       channel_name: PropTypes.string,
       smtp: PropTypes.string,
-      port: PropTypes.string,
+      port: PropTypes.number,
       email_from: PropTypes.string,
       emails_to: PropTypes.arrayOf(PropTypes.string),
       username: PropTypes.string,
