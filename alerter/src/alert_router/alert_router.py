@@ -194,13 +194,13 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
                     recv_alert.get('parent_id'), recv_alert.get('severity'))
 
                 if is_all_muted or is_chain_severity_muted:
-                    self._logger.debug("This alert has been muted")
-                    self._logger.debug(
+                    self._logger.info("This alert has been muted")
+                    self._logger.info(
                         "is_all_muted=%s, is_chain_severity_muted=%s",
                         is_all_muted, is_chain_severity_muted)
                 else:
-                    self._logger.debug("Obtaining list of channels to alert")
-                    self._logger.debug([
+                    self._logger.info("Obtaining list of channels to alert")
+                    self._logger.info([
                         channel.get('id') for channel_type in
                         self._config.values() for channel in
                         channel_type.values()
