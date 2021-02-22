@@ -8,7 +8,7 @@ from src.channels_manager.channels.console import ConsoleChannel
 from src.utils.data import RequestStatus
 
 
-class TestConsole(unittest.TestCase):
+class TestConsoleChannel(unittest.TestCase):
     def setUp(self) -> None:
         self.test_channel_name = 'test_console'
         self.test_channel_id = 'test_console_id12345'
