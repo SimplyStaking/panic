@@ -1,3 +1,5 @@
+import itertools
+import json
 import logging
 import unittest
 from datetime import datetime
@@ -8,6 +10,7 @@ from pika.exceptions import AMQPConnectionError
 from pymongo.errors import PyMongoError
 from redis import RedisError
 from telegram import Update, Message, Chat
+from telegram.utils.helpers import escape_markdown
 
 from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.channels import TelegramChannel
@@ -24,11 +27,16 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.test_handler_name = 'test_telegram_command_handlers'
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
-        self.test_kusama_chain_id = 'kusama1234'
-        self.test_cosmos_chain_id = 'cosmos1234'
+        self.test_chain_1 = 'Kusama'
+        self.test_chain_2 = 'Cosmos'
+        self.test_chain_3 = 'Test_Chain'
+        self.test_chain1_id = 'kusama1234'
+        self.test_chain2_id = 'cosmos1234'
+        self.test_chain3_id = 'test_chain11123'
         self.test_associated_chains = {
-            self.test_kusama_chain_id: 'Kusama',
-            self.test_cosmos_chain_id: 'Cosmos'
+            self.test_chain1_id: self.test_chain_1,
+            self.test_chain2_id: self.test_chain_2,
+            self.test_chain3_id: self.test_chain_3
         }
         self.test_channel_name = 'test_telegram_channel'
         self.test_channel_id = 'test_telegram_id12345'
@@ -340,11 +348,224 @@ class TestTelegramCommandHandlers(unittest.TestCase):
             self.test_telegram_command_handlers._get_rabbit_based_status()
         self.assertEqual(expected_status, actual_status)
 
-    def test_get_muted_status_returns_correct_status(self) -> None:
-        # TODO: We must test nothing muted, /muteall INFO CRITICAL, /mute INFO CRITICAL
-        #     : /muteall INFO CRITICAL /mute INFO CRITICAL, /muteall INFO CRITICAL
-        #     : /mute ERROR WARNING, previous case other way round. We try to
-        #     : parametrize everything here and mock redis.
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    def test_get_muted_status_returns_correct_status_if_no_severity_muted(
+            self, mock_exists_unsafe, mock_hexists_unsafe) -> None:
+        mock_exists_unsafe.return_value = False
+        mock_hexists_unsafe.return_value = False
+        expected_status = ''
+        expected_status += "- There is no severity which was muted using " \
+                           "/muteall \n"
+        for _, chain_name in self.test_associated_chains.items():
+            chain_name = escape_markdown(chain_name)
+            expected_status += "- {} has no alerts muted.\n".format(chain_name)
+
+        actual_status = self.test_telegram_command_handlers._get_muted_status()
+
+        self.assertEqual(expected_status, actual_status)
+
+    @parameterized.expand([
+        (json.dumps(
+            {
+                'INFO': True,
+                'WARNING': True,
+                'CRITICAL': True,
+                'ERROR': True,
+            }
+        ).encode(),),
+        (json.dumps(
+            {
+                'INFO': False,
+                'WARNING': True,
+                'CRITICAL': True,
+                'ERROR': True,
+            }
+        ).encode(),),
+        (json.dumps(
+            {
+                'INFO': True,
+                'WARNING': False,
+                'CRITICAL': True,
+                'ERROR': True,
+            }
+        ).encode(),),
+        (json.dumps(
+            {
+                'INFO': True,
+                'WARNING': True,
+                'CRITICAL': False,
+                'ERROR': True,
+            }
+        ).encode(),),
+        (json.dumps(
+            {
+                'INFO': True,
+                'WARNING': True,
+                'CRITICAL': True,
+                'ERROR': False,
+            }
+        ).encode(),),
+    ])
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "get_unsafe")
+    def test_get_muted_status_return_correct_if_muteall_muted_severities_only(
+            self, get_unsafe_ret, mock_get_unsafe, mock_exists_unsafe,
+            mock_hexists_unsafe) -> None:
+        mock_exists_unsafe.return_value = True
+        mock_hexists_unsafe.return_value = False
+        mock_get_unsafe.return_value = get_unsafe_ret
+        all_chains_muted_severities = []
+        for severity, severity_muted in json.loads(
+                get_unsafe_ret.decode()).items():
+            if severity_muted:
+                all_chains_muted_severities.append(severity)
+        expected_status = \
+            "- All chains have {} alerts muted.\n".format(
+                ', '.join(all_chains_muted_severities))
+
+        actual_status = self.test_telegram_command_handlers._get_muted_status()
+
+        self.assertEqual(expected_status, actual_status)
+
+    @mock.patch.object(RedisApi, "hget_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    def test_get_muted_status_return_correct_if_mute_muted_severities_only(
+            self, mock_exists_unsafe, mock_hexists_unsafe,
+            mock_hget_unsafe) -> None:
+        mock_exists_unsafe.return_value = False
+        mock_hexists_unsafe.side_effect = [True, False, True]
+        chain1_muted_severities = json.dumps({
+            'INFO': False,
+            'WARNING': True,
+            'CRITICAL': True,
+            'ERROR': True,
+        }).encode()
+        chain3_muted_severities = json.dumps({
+            'INFO': True,
+            'WARNING': False,
+            'CRITICAL': False,
+            'ERROR': False,
+        }).encode()
+        mock_hget_unsafe.side_effect = [chain1_muted_severities,
+                                        chain3_muted_severities]
+
+        actual_status = self.test_telegram_command_handlers._get_muted_status()
+
+        expected_status = "- There is no severity which was muted using " \
+                          "/muteall \n"
+
+        # We must take care of the order of how severities are pasted in the
+        # string because in the function we are using sets in this case. This is
+        # important because sets may alter the order of a dict.
+        chain1_severity_permutations = list(itertools.permutations(
+            ['WARNING', 'CRITICAL', 'ERROR']))
+        for permutation in chain1_severity_permutations:
+            if ', '.join(permutation) in actual_status:
+                expected_status += "- {} has {} alerts muted.\n".format(
+                    escape_markdown(self.test_chain_1), ', '.join(permutation))
+                break
+
+        expected_status += "- {} has no alerts muted.\n".format(
+            self.test_chain_2)
+        expected_status += "- {} has {} alerts muted.\n".format(
+            escape_markdown(self.test_chain_3), "INFO")
+
+        self.assertEqual(expected_status, actual_status)
+
+    @mock.patch.object(RedisApi, "hget_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(RedisApi, "get_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    def test_get_muted_status_return_correct_if_mute_and_muteall_severities(
+            self, mock_exists_unsafe, mock_get_unsafe, mock_hexists_unsafe,
+            mock_hget_unsafe) -> None:
+        mock_exists_unsafe.return_value = True
+        mock_get_unsafe.return_value = json.dumps({
+            'INFO': False,
+            'WARNING': True,
+            'CRITICAL': True,
+            'ERROR': False,
+        }).encode()
+        mock_hexists_unsafe.side_effect = [True, False, True]
+        chain1_muted_severities = json.dumps({
+            'INFO': False,
+            'WARNING': True,
+            'CRITICAL': True,
+            'ERROR': True,
+        }).encode()
+        chain3_muted_severities = json.dumps({
+            'INFO': True,
+            'WARNING': False,
+            'CRITICAL': False,
+            'ERROR': False,
+        }).encode()
+        mock_hget_unsafe.side_effect = [chain1_muted_severities,
+                                        chain3_muted_severities]
+
+        actual_status = self.test_telegram_command_handlers._get_muted_status()
+
+        expected_status = "- All chains have WARNING, CRITICAL alerts muted.\n"
+
+        # We must take care of the order of how severities are pasted in the
+        # string because in the function we are using sets in this case. This is
+        # important because sets may alter the order of a dict.
+        chain1_severity_permutations = list(itertools.permutations(
+            ['WARNING', 'CRITICAL', 'ERROR']))
+        for permutation in chain1_severity_permutations:
+            if ', '.join(permutation) in actual_status:
+                expected_status += "- {} has {} alerts muted.\n".format(
+                    escape_markdown(self.test_chain_1), ', '.join(permutation))
+                break
+        chain3_severity_permutations = list(itertools.permutations(
+            ['WARNING', 'CRITICAL', 'INFO']))
+        for permutation in chain3_severity_permutations:
+            if ', '.join(permutation) in actual_status:
+                expected_status += "- {} has {} alerts muted.\n".format(
+                    escape_markdown(self.test_chain_3), ', '.join(permutation))
+                break
+
+        self.assertEqual(expected_status, actual_status)
+
+    @parameterized.expand([
+        (RedisError('test'), None, RedisError),
+        (None, RedisError('test'), RedisError),
+        (ConnectionResetError('test'), None, ConnectionResetError),
+        (None, ConnectionResetError('test'), ConnectionResetError),
+        (Exception('test'), None, Exception),
+        (None, Exception('test'), Exception),
+    ])
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    def test_get_muted_status_raises_error_if_raised(
+            self, exists_unsafe_error, hexists_unsafe_error, error_class,
+            mock_exists_unsafe, mock_hexists_unsafe) -> None:
+        # For this test we will check only for RedisError, ConnectionResetError
+        # and a general exception because these are the most important cases.
+        if exists_unsafe_error is None:
+            mock_exists_unsafe.return_value = None
+        else:
+            mock_exists_unsafe.side_effect = exists_unsafe_error
+        if hexists_unsafe_error is None:
+            mock_hexists_unsafe.return_value = None
+        else:
+            mock_hexists_unsafe.side_effect = hexists_unsafe_error
+
+        self.assertRaises(error_class,
+                          self.test_telegram_command_handlers._get_muted_status)
+
+    def test_get_manager_component_hb_status_returns_empty_string_if_hb_ok(
+            self) -> None:
         pass
 
-# TODO: In some tests we might need to clear redis before and after.
+    def test_get_manager_component_hb_status_returns_correct_if_missed_hbs(
+            self) -> None:
+        # The handler assumes that a HB is outdated if the
+        # timstamp > hb_interval (30) + grace_interval (10)
+        pass
+
+    def test_get_manager_component_hb_status_ret_correct_if_some_processes_dead(
+            self) -> None:
+        pass
