@@ -5,22 +5,24 @@ from typing import Dict
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_STORE_INPUT_QUEUE,
+                                 GITHUB_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 
-_GITHUB_STORE_INPUT_QUEUE = 'github_store_queue'
-_GITHUB_STORE_INPUT_ROUTING_KEY = 'github'
-
 
 class GithubStore(Store):
-    def __init__(self, store_name: str, logger: logging.Logger) -> None:
-        super().__init__(store_name, logger)
+    def __init__(self, store_name: str, logger: logging.Logger,
+                 rabbitmq: RabbitMQApi) -> None:
 
-    def _initialise_store(self) -> None:
+        super().__init__(store_name, logger, rabbitmq)
+
+    def _initialise_rabbitmq(self) -> None:
         """
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
@@ -39,12 +41,12 @@ class GithubStore(Store):
                                        exchange_type='direct', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare(_GITHUB_STORE_INPUT_QUEUE, passive=False,
+        self.rabbitmq.queue_declare(GITHUB_STORE_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue=_GITHUB_STORE_INPUT_QUEUE,
+        self.rabbitmq.queue_bind(queue=GITHUB_STORE_INPUT_QUEUE,
                                  exchange=STORE_EXCHANGE,
-                                 routing_key=_GITHUB_STORE_INPUT_ROUTING_KEY)
+                                 routing_key=GITHUB_STORE_INPUT_ROUTING_KEY)
 
         # Set producing configuration for heartbeat
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -53,11 +55,11 @@ class GithubStore(Store):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _start_listening(self) -> None:
+    def _listen_for_data(self) -> None:
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                db_name=self.mongo_db, host=self.mongo_ip,
                                port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue=_GITHUB_STORE_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=GITHUB_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
                                     exclusive=False, consumer_tag=None)
