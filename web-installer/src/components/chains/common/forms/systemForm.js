@@ -149,7 +149,7 @@ const SystemForm = ({
                   <Box px={2}>
                     <PingNodeExporter
                       disabled={Object.keys(errors).length !== 0}
-                      exporter_url={values.exporter_url}
+                      exporterUrl={values.exporter_url}
                     />
                     <Button
                       color="primary"

@@ -75,7 +75,7 @@ class SystemStore(Store):
         sent.
         """
         system_data = json.loads(body.decode())
-        self.logger.info("Received %s. Now processing this data.", system_data)
+        self.logger.debug("Received %s. Now processing this data.", system_data)
 
         processing_error = False
         try:

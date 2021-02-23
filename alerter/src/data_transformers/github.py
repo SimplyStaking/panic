@@ -269,8 +269,8 @@ class GitHubDataTransformer(DataTransformer):
                           properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         raw_data = json.loads(body)
-        self.logger.info("Received %s from monitors. Now processing this data.",
-                         raw_data)
+        self.logger.debug("Received %s from monitors. Now processing this "
+                          "data.", raw_data)
 
         processing_error = False
         transformed_data = {}
