@@ -25,7 +25,7 @@ from src.utils.constants import GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, GITHUB_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-from test.test_utils import infinite_fn
+from test.utils.test_utils import infinite_fn
 
 
 class TestGitHubMonitorsManager(unittest.TestCase):

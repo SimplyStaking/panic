@@ -285,6 +285,7 @@ class RabbitMQApi:
                       auto_ack: bool = False, exclusive: bool = False,
                       consumer_tag: str = None) -> Optional[int]:
         args = [queue, on_message_callback, auto_ack, exclusive, consumer_tag]
+        print(args)
         # Perform operation only if a connection has been initialised, if not,
         # this function will throw a ConnectionNotInitialised exception
         if self._connection_initialised():

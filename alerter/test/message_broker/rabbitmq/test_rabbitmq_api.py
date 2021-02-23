@@ -1,7 +1,6 @@
-import copy
 import logging
 from datetime import timedelta
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Union
 from unittest import TestCase, skip, mock
 from unittest.mock import MagicMock, PropertyMock
 
@@ -11,9 +10,9 @@ from parameterized import parameterized
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.exceptions import ConnectionNotInitialisedException, \
-    BlankCredentialException
+    BlankCredentialException, MessageWasNotDeliveredException
 from src.utils.timing import TimedTaskLimiter
-from test.test_utils import TestConnection
+from test.utils.test_utils import TestConnection, dummy_function
 
 
 class TestRabbitMQApi(TestCase):
@@ -372,49 +371,511 @@ class TestRabbitMQApi(TestCase):
         mock_blocking_connection.assert_not_called()
         mock_channel.assert_not_called()
 
-    @skip("Not implemented yet")
-    def test_connect(self):
-        pass
+    @parameterized.expand([
+        ("connect unsafe returns none", None),
+        ("connect unsafe returns 10", 10),
+        ("connect unsafe returns -1y", -1)
+    ])
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_connect_successful_returns_same_if(
+            self, name: str, expected_return: Optional[int],
+            mock_safe: MagicMock
+    ):
+        mock_safe.return_value = expected_return
+        self.assertEqual(expected_return, self.rabbit.connect())
+        mock_safe.assert_called_once_with(
+            self.rabbit, self.rabbit.connect_unsafe, [], -1
+        )
 
-    @skip("Not implemented yet")
-    def test_disconnect_unsafe(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_connect_propogates_errors(self, mock_safe: MagicMock):
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(Exception, self.rabbit.connect)
+        mock_safe.assert_called_once_with(
+            self.rabbit, self.rabbit.connect_unsafe, [], -1
+        )
 
-    @skip("Not implemented yet")
-    def test_disconnect(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "_set_as_disconnected", autospec=True)
+    @mock.patch.object(RabbitMQApi, "connection", new_callable=PropertyMock)
+    def test_disconnect_unsafe_closes_connection_if_connected(
+            self, mock_connection: PropertyMock,
+            mock_set_as_disconnected: MagicMock,
+    ):
+        mock_connection.return_value.is_open.return_value = True
+        mock_connection.return_value.close.return_value = None
+        mock_set_as_disconnected.return_value = None
+        self.assertIsNone(self.rabbit.disconnect_unsafe())
+        mock_connection.return_value.close.assert_called_once_with()
+        mock_set_as_disconnected.assert_called_once_with(self.rabbit)
 
-    @skip("Not implemented yet")
-    def test_connect_till_successful(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "_set_as_disconnected", autospec=True)
+    @mock.patch.object(RabbitMQApi, "connection", new_callable=PropertyMock)
+    def test_disconnect_unsafe_does_nothing_if_not_connected(
+            self, mock_connection: PropertyMock,
+            mock_set_as_disconnected: MagicMock,
+    ):
+        mock_connection.return_value.is_open = False
+        mock_connection.return_value.close.return_value = None
+        mock_set_as_disconnected.return_value = None
+        self.assertIsNone(self.rabbit.disconnect_unsafe())
+        mock_connection.return_value.close.assert_not_called()
+        mock_set_as_disconnected.assert_called_once_with(self.rabbit)
 
-    @skip("Not implemented yet")
-    def test_disconnect_till_successful(self):
-        pass
+    @parameterized.expand([
+        ("disconnect unsafe returns none", None),
+        ("disconnect unsafe returns 10", 10),
+        ("disconnect unsafe returns -1y", -1)
+    ])
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_disconnect_if_connected_successful_returns_same_if(
+            self, name: str, expected_return: Optional[int],
+            mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = True
+        mock_safe.return_value = expected_return
+        self.assertEqual(expected_return, self.rabbit.disconnect())
+        mock_safe.assert_called_once_with(
+            self.rabbit, self.rabbit.disconnect_unsafe, [], -1
+        )
 
-    @skip("Not implemented yet")
-    def test_queue_declare(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_disconnect_if_not_connected_does_nothing(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.disconnect())
+        mock_safe.assert_not_called()
 
-    @skip("Not implemented yet")
-    def test_queue_bind(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_disconnect_propogates_errors(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(Exception, self.rabbit.disconnect)
+        mock_safe.assert_called_once_with(
+            self.rabbit, self.rabbit.disconnect_unsafe, [], -1
+        )
 
-    @skip("Not implemented yet")
-    def test_basic_publish(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "perform_operation_till_successful",
+                       autospec=True)
+    def test_connect_till_successful_returns_nothing(
+            self, mock_perform_operation_till_successful: MagicMock,
+    ):
+        mock_perform_operation_till_successful.return_value = "dummy return"
+        self.assertIsNone(self.rabbit.connect_till_successful())
+        mock_perform_operation_till_successful.assert_called_once_with(
+            self.rabbit, self.rabbit.connect, [], -1
+        )
 
-    @skip("Not implemented yet")
-    def test_basic_publish_confirm(self):
-        pass
+    @mock.patch.object(RabbitMQApi, "perform_operation_till_successful",
+                       autospec=True)
+    def test_connect_till_successful_even_after_a_number_of_tries(
+            self, mock_perform_operation_till_successful: MagicMock,
+    ):
+        attempts = 3
+        tries = 0
 
-    @skip("Not implemented yet")
-    def test_basic_consume(self):
-        pass
+        def try_n_times_then_return(*args, **kwargs):
+            nonlocal tries
+            if attempts == tries:
+                return None
+            tries += 1
+            print(tries)
+            raise Exception("Test Excepton")
 
-    @skip("Not implemented yet")
-    def test_basic_get(self):
-        pass
+        mock_perform_operation_till_successful.side_effect = \
+            try_n_times_then_return
+        self.assertIsNone(self.rabbit.connect_till_successful())
+        mock_perform_operation_till_successful.assert_called_with(
+            self.rabbit, self.rabbit.connect, [], -1
+        )
+        self.assertEqual(4, mock_perform_operation_till_successful.call_count)
+
+    @mock.patch.object(RabbitMQApi, "perform_operation_till_successful",
+                       autospec=True)
+    def test_disconnect_till_successful_returns_nothing(
+            self, mock_perform_operation_till_successful: MagicMock,
+    ):
+        mock_perform_operation_till_successful.return_value = "dummy return"
+        self.assertIsNone(self.rabbit.disconnect_till_successful())
+        mock_perform_operation_till_successful.assert_called_once_with(
+            self.rabbit, self.rabbit.disconnect, [], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "perform_operation_till_successful",
+                       autospec=True)
+    def test_disconnect_till_successful_even_after_a_number_of_tries(
+            self, mock_perform_operation_till_successful: MagicMock,
+    ):
+        attempts = 3
+        tries = 0
+
+        def try_n_times_then_return(*args, **kwargs):
+            nonlocal tries
+            if attempts == tries:
+                return None
+            tries += 1
+            print(tries)
+            raise Exception("Test Excepton")
+
+        mock_perform_operation_till_successful.side_effect = \
+            try_n_times_then_return
+        self.assertIsNone(self.rabbit.disconnect_till_successful())
+        mock_perform_operation_till_successful.assert_called_with(
+            self.rabbit, self.rabbit.disconnect, [], -1
+        )
+        self.assertEqual(4, mock_perform_operation_till_successful.call_count)
+
+    @parameterized.expand([
+        ((0, "Test"),),
+        (None,),
+        ((1, ""),),
+        ((-1, "Testing"),)
+    ])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_declare_returns_same_if_successful(
+            self, expected_output: Optional[Union[int, str]],
+            mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.queue_bind.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.queue_declare(
+            "test_queue", passive=False, durable=True, exclusive=True,
+            auto_delete=False
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.queue_declare,
+            ["test_queue", False, True, True, False], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_declare_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.queue_declare(
+            "test_queue", passive=False, durable=True, exclusive=True,
+            auto_delete=False
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_declare_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.queue_declare.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.queue_declare, "test_queue", passive=False,
+            durable=True, exclusive=True, auto_delete=False
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.queue_declare,
+            ["test_queue", False, True, True, False], -1
+        )
+
+    @parameterized.expand([
+        (0,),
+        (None,),
+        (1,),
+        (-1,)
+    ])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_bind_returns_same_if_successful(
+            self, expected_output: Optional[int], mock_safe: MagicMock,
+            mock_connection_initialised: MagicMock, mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.queue_bind.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.queue_bind(
+            "test_queue", "TEST_EXCHANGE", routing_key="test.key"
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.queue_bind,
+            ["test_queue", "TEST_EXCHANGE", "test.key"], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_bind_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.queue_bind(
+            "test_queue", "TEST_EXCHANGE", routing_key="test.key"
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_queue_bind_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.queue_bind.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.queue_bind, "test_queue", "TEST_EXCHANGE",
+            routing_key="test.key"
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.queue_bind,
+            ["test_queue", "TEST_EXCHANGE", "test.key"], -1
+        )
+
+    @parameterized.expand([
+        (0,),
+        (None,),
+        (1,),
+        (-1,)
+    ])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_publish_returns_same_if_successful(
+            self, expected_output: Optional[int], mock_safe: MagicMock,
+            mock_connection_initialised: MagicMock, mock_channel: PropertyMock
+
+    ):
+        mock_channel.return_value.basic_publish.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.basic_publish(
+            "TEST_EXCHANGE", "test.key", "Test Body", is_body_dict=False,
+            properties=pika.BasicProperties(), mandatory=True
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_publish,
+            ["TEST_EXCHANGE", "test.key", "Test Body", pika.BasicProperties(),
+             True], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_publish_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.basic_publish(
+            "TEST_EXCHANGE", "test.key", "Test Body", is_body_dict=False,
+            properties=pika.BasicProperties(), mandatory=True
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_publish_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.basic_publish.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.basic_publish, "TEST_EXCHANGE", "test.key",
+            "Test Body", is_body_dict=False, properties=pika.BasicProperties(),
+            mandatory=True
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_publish,
+            ["TEST_EXCHANGE", "test.key", "Test Body", pika.BasicProperties(),
+             True], -1
+        )
+
+    @parameterized.expand([
+        (0,),
+        (None,),
+        (1,),
+        (-1,)
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_publish")
+    def test_basic_publish_confirm_successful_returns_same(
+            self, expected_out: Optional[int], mock_basic_publish: MagicMock
+    ):
+        mock_basic_publish.return_value = expected_out
+        self.assertEqual(expected_out, self.rabbit.basic_publish_confirm(
+            "TEST_EXCHANGE", "test.key", "Test Body", is_body_dict=False,
+            properties=pika.BasicProperties(), mandatory=True
+        ))
+        mock_basic_publish.assert_called_once_with(
+            "TEST_EXCHANGE", "test.key", "Test Body", False,
+            pika.BasicProperties(), True
+        )
+
+    @mock.patch.object(RabbitMQApi, "basic_publish")
+    def test_basic_publish_confirm_unroutable_error_raises_not_delivered(
+            self, mock_basic_publish: MagicMock
+    ):
+        mock_basic_publish.side_effect = pika.exceptions.UnroutableError(
+            "Test Error")
+        self.assertRaises(
+            MessageWasNotDeliveredException, self.rabbit.basic_publish_confirm,
+            "TEST_EXCHANGE", "test.key", "Test Body", is_body_dict=False,
+            properties=pika.BasicProperties(), mandatory=True
+        )
+        mock_basic_publish.assert_called_once_with(
+            "TEST_EXCHANGE", "test.key", "Test Body", False,
+            pika.BasicProperties(), True
+        )
+
+    @mock.patch.object(RabbitMQApi, "basic_publish")
+    def test_basic_publish_confirm_propogrates_other_errors(
+            self, mock_basic_publish: MagicMock
+    ):
+        mock_basic_publish.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.basic_publish_confirm, "TEST_EXCHANGE",
+            "test.key", "Test Body", is_body_dict=False,
+            properties=pika.BasicProperties(), mandatory=True
+        )
+        mock_basic_publish.assert_called_once_with(
+            "TEST_EXCHANGE", "test.key", "Test Body", False,
+            pika.BasicProperties(), True
+        )
+
+    @parameterized.expand([
+        (0,),
+        (None,),
+        (1,),
+        (-1,)
+    ])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_consume_returns_same_if_successful(
+            self, expected_output: Optional[int], mock_safe: MagicMock,
+            mock_connection_initialised: MagicMock, mock_channel: PropertyMock
+
+    ):
+        mock_channel.return_value.basic_consume.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.basic_consume(
+            "TEST_EXCHANGE", dummy_function, auto_ack=True, exclusive=True,
+            consumer_tag="tag1"
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_consume,
+            ["TEST_EXCHANGE", dummy_function, True, True, "tag1"], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_consume_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.basic_consume(
+            "TEST_EXCHANGE", dummy_function, auto_ack=True, exclusive=True,
+            consumer_tag="tag1"
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_consume_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.basic_consume.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.basic_consume, "TEST_EXCHANGE",
+            dummy_function, auto_ack=True, exclusive=True,
+            consumer_tag="tag1"
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_consume,
+            ["TEST_EXCHANGE", dummy_function, True, True, "tag1"], -1
+        )
+
+    @parameterized.expand([
+        (0,),
+        (None,),
+        (1,),
+        (-1,)
+    ])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_get_returns_same_if_successful(
+            self, expected_output: Optional[int], mock_safe: MagicMock,
+            mock_connection_initialised: MagicMock, mock_channel: PropertyMock
+
+    ):
+        mock_channel.return_value.basic_get.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.basic_get(
+            "test_queue", auto_ack=True
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_get,
+            ["test_queue", True], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_get_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(self.rabbit.basic_get("test_queue", auto_ack=True))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_get_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.basic_get.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception("Test Exception")
+        self.assertRaises(
+            Exception, self.rabbit.basic_get, "test_queue", auto_ack=True
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_get,
+            ["test_queue", True], -1
+        )
 
     @skip("Not implemented yet")
     def test_start_consuming(self):
