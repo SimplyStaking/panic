@@ -1,20 +1,32 @@
 import {
-  ADD_CHAIN_COSMOS, ADD_NODE_COSMOS, REMOVE_NODE_COSMOS, LOAD_CONFIG_COSMOS,
-  RESET_CHAIN_COSMOS, UPDATE_CHAIN_NAME, REMOVE_CHAIN_COSMOS,
+  ADD_CHAIN_COSMOS,
+  ADD_NODE_COSMOS,
+  REMOVE_NODE_COSMOS,
+  LOAD_CONFIG_COSMOS,
+  RESET_CHAIN_COSMOS,
+  UPDATE_CHAIN_NAME_COSMOS,
+  REMOVE_CHAIN_COSMOS,
+  LOAD_NODE_COSMOS,
+  LOAD_REPOSITORY_COSMOS,
+  LOAD_KMS_COSMOS,
+  LOAD_REPEAT_ALERTS_COSMOS,
+  LOAD_TIMEWINDOW_ALERTS_COSMOS,
+  LOAD_THRESHOLD_ALERTS_COSMOS,
+  LOAD_SEVERITY_ALERTS_COSMOS,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
-// a new identifer, from then on you re-used the old one.
-// When creating a new chain, we must add empty lists as we need to intialize
+// a new identifier, from then on you re-used the old one.
+// When creating a new chain, we must add empty lists as we need to initialise
 // the key/value pairs beforehand.
 export function addChainCosmos(payload) {
   return {
     type: ADD_CHAIN_COSMOS,
     payload: {
       id: `chain_name_${uuidv4()}`,
-      chainName: payload.chainName,
+      chain_name: payload.chain_name,
     },
   };
 }
@@ -32,7 +44,7 @@ export function removeChainCosmos(payload) {
 // This function is used to change the name of the current chain
 export function updateChainCosmos(payload) {
   return {
-    type: UPDATE_CHAIN_NAME,
+    type: UPDATE_CHAIN_NAME_COSMOS,
     payload,
   };
 }
@@ -47,23 +59,34 @@ export function resetCurrentChainIdCosmos() {
 }
 
 // Action to add a cosmos node to a configuration, payload is intercepted,
-// and a unqiue id is generated for it.
+// and a unique id is generated for it.
 export function addNodeCosmos(payload) {
   return {
     type: ADD_NODE_COSMOS,
     payload: {
       id: `node_${uuidv4()}`,
-      parentId: payload.parentId,
-      cosmosNodeName: payload.cosmosNodeName,
-      tendermintRpcUrl: payload.tendermintRpcUrl,
-      cosmosRpcUrl: payload.cosmosRpcUrl,
-      prometheusUrl: payload.prometheusUrl,
-      exporterUrl: payload.exporterUrl,
-      isValidator: payload.isValidator,
-      monitorNode: payload.monitorNode,
-      isArchiveNode: payload.isArchiveNode,
-      useAsDataSource: payload.useAsDataSource,
+      parent_id: payload.parent_id,
+      name: payload.name,
+      tendermint_rpc_url: payload.tendermint_rpc_url,
+      monitor_tendermint: payload.monitor_tendermint,
+      cosmos_rpc_url: payload.cosmos_rpc_url,
+      monitor_rpc: payload.monitor_rpc,
+      prometheus_url: payload.prometheus_url,
+      monitor_prometheus: payload.monitor_prometheus,
+      exporter_url: payload.exporter_url,
+      monitor_system: payload.monitor_system,
+      is_validator: payload.is_validator,
+      monitor_node: payload.monitor_node,
+      is_archive_node: payload.is_archive_node,
+      use_as_data_source: payload.use_as_data_source,
     },
+  };
+}
+
+export function loadNodeCosmos(payload) {
+  return {
+    type: LOAD_NODE_COSMOS,
+    payload,
   };
 }
 
@@ -78,6 +101,48 @@ export function removeNodeCosmos(payload) {
 export function loadConfigCosmos(payload) {
   return {
     type: LOAD_CONFIG_COSMOS,
+    payload,
+  };
+}
+
+export function loadReposCosmos(payload) {
+  return {
+    type: LOAD_REPOSITORY_COSMOS,
+    payload,
+  };
+}
+
+export function loadKMSCosmos(payload) {
+  return {
+    type: LOAD_KMS_COSMOS,
+    payload,
+  };
+}
+
+export function loadRepeatAlertsCosmos(payload) {
+  return {
+    type: LOAD_REPEAT_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadTimeWindowAlertsCosmos(payload) {
+  return {
+    type: LOAD_TIMEWINDOW_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsCosmos(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_COSMOS,
+    payload,
+  };
+}
+
+export function loadSeverityAlertsCosmos(payload) {
+  return {
+    type: LOAD_SEVERITY_ALERTS_COSMOS,
     payload,
   };
 }

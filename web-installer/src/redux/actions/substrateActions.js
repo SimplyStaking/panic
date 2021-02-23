@@ -1,20 +1,31 @@
 import {
-  ADD_CHAIN_SUBSTRATE, ADD_NODE_SUBSTRATE, REMOVE_NODE_SUBSTRATE, LOAD_CONFIG_SUBSTRATE,
-  RESET_CHAIN_SUBSTRATE, UPDATE_CHAIN_NAME, REMOVE_CHAIN_SUBSTRATE,
+  ADD_CHAIN_SUBSTRATE,
+  ADD_NODE_SUBSTRATE,
+  REMOVE_NODE_SUBSTRATE,
+  LOAD_CONFIG_SUBSTRATE,
+  RESET_CHAIN_SUBSTRATE,
+  UPDATE_CHAIN_NAME_SUBSTRATE,
+  REMOVE_CHAIN_SUBSTRATE,
+  LOAD_NODE_SUBSTRATE,
+  LOAD_REPOSITORY_SUBSTRATE,
+  LOAD_REPEAT_ALERTS_SUBSTRATE,
+  LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+  LOAD_THRESHOLD_ALERTS_SUBSTRATE,
+  LOAD_SEVERITY_ALERTS_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
 
 // Only on the creation of a new chain, do you need to assign it
-// a new identifer, from then on you re-used the old one.
-// When creating a new chain, we must add empty lists as we need to intialize
+// a new identifier, from then on you re-use the old one.
+// When creating a new chain, we must add empty lists as we need to initialise
 // the key/value pairs beforehand.
 export function addChainSubstrate(payload) {
   return {
     type: ADD_CHAIN_SUBSTRATE,
     payload: {
       id: `chain_name_${uuidv4()}`,
-      chainName: payload.chainName,
+      chain_name: payload.chain_name,
     },
   };
 }
@@ -32,7 +43,7 @@ export function removeChainSubstrate(payload) {
 // This function is used to change the name of the current chain
 export function updateChainSubstrate(payload) {
   return {
-    type: UPDATE_CHAIN_NAME,
+    type: UPDATE_CHAIN_NAME_SUBSTRATE,
     payload,
   };
 }
@@ -47,24 +58,35 @@ export function resetCurrentChainIdSubstrate() {
 }
 
 // Action to add a substrate node to a configuration, payload is intercepted,
-// and a unqiue id is generated for it.
+// and a unique id is generated for it.
 export function addNodeSubstrate(payload) {
   return {
     type: ADD_NODE_SUBSTRATE,
     payload: {
       id: `node_${uuidv4()}`,
-      parentId: payload.parentId,
-      substrateNodeName: payload.substrateNodeName,
-      nodeWsUrl: payload.nodeWsUrl,
-      telemetryUrl: payload.telemetryUrl,
-      prometheusUrl: payload.prometheusUrl,
-      exporterUrl: payload.exporterUrl,
-      stashAddress: payload.stashAddress,
-      isValidator: payload.isValidator,
-      monitorNode: payload.monitorNode,
-      isArchiveNode: payload.isArchiveNode,
-      useAsDataSource: payload.useAsDataSource,
+      parent_id: payload.parent_id,
+      name: payload.name,
+      node_ws_url: payload.node_ws_url,
+      monitor_ws: payload.monitor_ws,
+      telemetry_url: payload.telemetry_url,
+      monitor_telemetry: payload.monitor_telemetry,
+      prometheus_url: payload.prometheus_url,
+      monitor_prometheus: payload.monitor_prometheus,
+      exporter_url: payload.exporter_url,
+      monitor_system: payload.monitor_system,
+      stash_address: payload.stash_address,
+      is_validator: payload.is_validator,
+      monitor_node: payload.monitor_node,
+      is_archive_node: payload.is_archive_node,
+      use_as_data_source: payload.use_as_data_source,
     },
+  };
+}
+
+export function loadNodeSubstrate(payload) {
+  return {
+    type: LOAD_NODE_SUBSTRATE,
+    payload,
   };
 }
 
@@ -79,6 +101,41 @@ export function removeNodeSubstrate(payload) {
 export function loadConfigSubstrate(payload) {
   return {
     type: LOAD_CONFIG_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadReposSubstrate(payload) {
+  return {
+    type: LOAD_REPOSITORY_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadRepeatAlertsSubstrate(payload) {
+  return {
+    type: LOAD_REPEAT_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadTimeWindowAlertsSubstrate(payload) {
+  return {
+    type: LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadThresholdAlertsSubstrate(payload) {
+  return {
+    type: LOAD_THRESHOLD_ALERTS_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadSeverityAlertsSubstrate(payload) {
+  return {
+    type: LOAD_SEVERITY_ALERTS_SUBSTRATE,
     payload,
   };
 }

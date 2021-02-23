@@ -1,3 +1,6 @@
+from json import JSONDecodeError
+
+
 class PANICException(Exception):
     def __init__(self, message, code):
         self.message = message
@@ -5,9 +8,9 @@ class PANICException(Exception):
         super().__init__(self.message, self.code)
 
 
-class ConnectionNotInitializedException(PANICException):
+class ConnectionNotInitialisedException(PANICException):
     def __init__(self, component):
-        message = "Did not initialize a connection with {}" \
+        message = "Did not initialise a connection with {}" \
             .format(component)
         code = 5000
         super().__init__(message, code)
@@ -23,7 +26,6 @@ class MessageWasNotDeliveredException(PANICException):
 class NoMetricsGivenException(PANICException):
 
     def __init__(self, message: str) -> None:
-        message = message
         code = 5002
         super().__init__(message, code)
 
@@ -91,3 +93,17 @@ class ParentIdsMissMatchInAlertsConfiguration(PANICException):
         message = "{} Error alerts do not have the same parent_ids".format(err)
         code = 5010
         super().__init__(message, code)
+
+
+class MissingKeyInConfigException(PANICException):
+    def __init__(self, key: str, config_file: str):
+        message = "Expected {} field in the {} config".format(key, config_file)
+        code = 5011
+        super().__init__(message, code)
+
+
+class JSONDecodeException(PANICException):
+
+    def __init__(self, exception: JSONDecodeError) -> None:
+        code = 5012
+        super().__init__(exception.msg, code)

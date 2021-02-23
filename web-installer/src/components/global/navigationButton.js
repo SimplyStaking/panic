@@ -1,30 +1,30 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { Button, Box } from '@material-ui/core';
+import Button from 'components/material_ui/CustomButtons/Button';
 
-const NavigationButton = ({navigation, nextPage, buttonText}) => {
-
+const NavigationButton = ({
+  disabled, navigation, nextPage, buttonText,
+}) => {
   function triggerNextPage(e) {
     e.preventDefault();
     nextPage(navigation);
   }
 
   return (
-    <Box p={5} className="button_float_right">
-      <Button
-        onClick={triggerNextPage}
-        size="large"
-        variant="outlined"
-        color="primary"
-      >
-        {buttonText}
-      </Button>
-    </Box>
+    <Button
+      onClick={triggerNextPage}
+      size="lg"
+      color="primary"
+      disabled={disabled}
+    >
+      {buttonText}
+    </Button>
   );
 };
 
 NavigationButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
   navigation: PropTypes.string.isRequired,
   nextPage: PropTypes.func.isRequired,
   buttonText: PropTypes.string.isRequired,

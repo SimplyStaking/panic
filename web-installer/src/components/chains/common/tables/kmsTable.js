@@ -10,13 +10,15 @@ import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
 
-const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
+const KmsTable = ({
+  currentChain, chainConfig, kmsConfig, removeKmsDetails,
+}) => {
   if (chainConfig.byId[currentChain].kmses.length === 0) {
     return <div />;
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table">
+      <Table className="table" aria-label="simple table" style={{marginBottom: '150px'}}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -29,17 +31,20 @@ const KmsTable = ({currentChain, chainConfig, kmsConfig, removeKmsDetails}) => {
           {chainConfig.byId[currentChain].kmses.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {kmsConfig.byId[id].kmsName}
+                {kmsConfig.byId[id].kms_name}
               </TableCell>
               <TableCell align="center">
-                {kmsConfig.byId[id].exporterUrl}
+                {kmsConfig.byId[id].exporter_url}
               </TableCell>
               <TableCell align="center">
-                {kmsConfig.byId[id].monitorKms ? <CheckIcon /> : <ClearIcon />}
+                {kmsConfig.byId[id].monitor_kms ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
                 <Button onClick={() => {
-                  removeKmsDetails(kmsConfig.byId[id]);
+                  removeKmsDetails({
+                    id: kmsConfig.byId[id].id,
+                    parent_id: currentChain,
+                  });
                 }}
                 >
                   <CancelIcon />
@@ -63,10 +68,10 @@ KmsTable.propTypes = forbidExtraProps({
   kmsConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
-      parentId: PropTypes.string,
-      kmsName: PropTypes.string,
-      exporterUrl: PropTypes.string,
-      monitorKms: PropTypes.bool,
+      parent_id: PropTypes.string,
+      kms_name: PropTypes.string,
+      exporter_url: PropTypes.string,
+      monitor_kms: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

@@ -2,20 +2,25 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
-import WelcomePage from '../../components/welcome/welcomePage';
-import ChannelsPage from '../../components/channels/channelsPage';
-import ChainsPage from '../../components/chains/chainsPage';
-import CosmosSetupPage from '../../components/chains/cosmos/cosmosSetupPage';
-import SubstrateSetupPage from
-  '../../components/chains/substrate/substrateSetupPage';
-import GeneralSetupPage from '../../components/general/generalSetupPage';
-import GeneralPage from '../../components/general/generalPage';
-import UsersPage from '../../components/users/usersPage';
+import WelcomePage from 'components/welcome/welcomePage';
+import ChannelsPage from 'components/channels/channelsPage';
+import ChainsPage from 'components/chains/chainsPage';
+import CosmosSetupPage from 'components/chains/cosmos/cosmosSetupPage';
+import SubstrateSetupPage from 'components/chains/substrate/substrateSetupPage';
+import OtherSetupPage from 'components/chains/other/otherSetupPage';
+import GeneralPage from 'components/general/generalPage';
+import UsersPage from 'components/users/usersPage';
 import {
-  WELCOME_PAGE, CHANNELS_PAGE, CHAINS_PAGE, COSMOS_SETUP_PAGE,
-  SUBSTRATE_SETUP_PAGE, GENERAL_PAGE, USERS_PAGE, GENERAL_SETUP_PAGE,
-} from '../../constants/constants';
-import { refreshAccessToken } from '../../utils/data';
+  WELCOME_PAGE,
+  CHANNELS_PAGE,
+  CHAINS_PAGE,
+  COSMOS_SETUP_PAGE,
+  SUBSTRATE_SETUP_PAGE,
+  GENERAL_PAGE,
+  USERS_PAGE,
+  OTHER_SETUP_PAGE,
+} from 'constants/constants';
+import { refreshAccessToken } from 'utils/data';
 
 const mapStateToProps = (state) => ({
   page: state.ChangePageReducer.page,
@@ -35,8 +40,8 @@ function getPage(pageName) {
       return <CosmosSetupPage />;
     case SUBSTRATE_SETUP_PAGE:
       return <SubstrateSetupPage />;
-    case GENERAL_SETUP_PAGE:
-      return <GeneralSetupPage />;
+    case OTHER_SETUP_PAGE:
+      return <OtherSetupPage />;
     case USERS_PAGE:
       return <UsersPage />;
     case GENERAL_PAGE:
@@ -55,9 +60,7 @@ class PageManager extends Component {
   // This is used to refresh the JWT token
   componentDidMount() {
     this.refreshToken();
-    this.dataTimer = setInterval(
-      this.refreshToken.bind(this), 100000,
-    );
+    this.dataTimer = setInterval(this.refreshToken.bind(this), 100000);
   }
 
   componentWillUnmount() {
@@ -76,14 +79,15 @@ class PageManager extends Component {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           ToastsStore.error(
-            `Could not get authentication status. Error: ${
-              e.response.data.error}`, 5000,
+            `Could not get authentication status. Error: ${e.response.data.error}`,
+            5000,
           );
         } else {
           // Something happened in setting up the request that triggered an
           // error
           ToastsStore.error(
-            `Could not get authentication status. Error: ${e.message}`, 5000,
+            `Could not get authentication status. Error: ${e.message}`,
+            5000,
           );
         }
       }
@@ -92,11 +96,7 @@ class PageManager extends Component {
 
   render() {
     const { page } = this.props;
-    return (
-      <div>
-        {getPage(page)}
-      </div>
-    );
+    return <div>{getPage(page)}</div>;
   }
 }
 

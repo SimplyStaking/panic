@@ -5,6 +5,8 @@ verify_ssl = true
 
 [dev-packages]
 coverage = "*"
+parameterized = "*"
+freezegun = "*"
 
 [packages]
 configparser = "*"
@@ -13,7 +15,9 @@ prometheus_client = "*"
 pymongo = "*"
 python-telegram-bot = "*"
 python-dateutil = "*"
+pdpyras = "*"
 redis = "*"
 requests = "*"
 twilio = "*"
+opsgenie-sdk = "*"
 watchdog = "*"

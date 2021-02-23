@@ -1,11 +1,8 @@
-# TODO: Need to be rebuilt as we go along in development. Basically, redis uses
-#       hashed keys, so these are not known before. What we must keep in mind
-#       is that for a chain, there must be only 1 node with the same name
-#       (This was enforced in the setup but not in the config parsing).
-#       Hash(Chain) -> Key(node)
-
 # Hashes
 _hash_parent = 'hash_p1'
+
+# Unique keys
+_key_alerter_mute = "a1"
 
 # sX_<system_id>
 _key_system_process_cpu_seconds_total = 's1'
@@ -28,6 +25,12 @@ _key_system_went_down_at = 's15'
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'
 
+# cX_<component_name>
+_key_component_heartbeat = 'c1'
+
+# chX_<parent_id>
+_key_chain_mute_alerts = 'ch1'
+
 
 class Keys:
 
@@ -38,6 +41,14 @@ class Keys:
     @staticmethod
     def get_hash_parent(parent_id: str) -> str:
         return Keys._as_prefix(_hash_parent) + parent_id
+
+    @staticmethod
+    def get_hash_parent_raw() -> str:
+        return _hash_parent
+
+    @staticmethod
+    def get_alerter_mute() -> str:
+        return _key_alerter_mute
 
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
@@ -114,3 +125,11 @@ class Keys:
     @staticmethod
     def get_github_last_monitored(repo_id: str) -> str:
         return Keys._as_prefix(_key_github_last_monitored) + repo_id
+
+    @staticmethod
+    def get_component_heartbeat(component_name: str) -> str:
+        return Keys._as_prefix(_key_component_heartbeat) + component_name
+
+    @staticmethod
+    def get_chain_mute_alerts() -> str:
+        return _key_chain_mute_alerts

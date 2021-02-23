@@ -2,21 +2,28 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  TextField, Button, Box, Typography, FormControlLabel, Checkbox, Grid, Tooltip,
+  TextField,
+  Box,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+  Grid,
+  Tooltip,
 } from '@material-ui/core';
+import Button from 'components/material_ui/CustomButtons/Button';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Autocomplete } from '@material-ui/lab';
-import { SendTestEmailButton } from '../../../utils/buttons';
-import { defaultTheme, theme } from '../../theme/default';
-import Data from '../../../data/channels';
+import { SendTestEmailButton } from 'utils/buttons';
+import { defaultTheme, theme } from 'components/theme/default';
+import Data from 'data/channels';
 
-const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
-  }) => {
-
+const EmailForm = ({
+  errors, values, handleSubmit, handleChange, setFieldValue,
+}) => {
   const updateToEmails = (event, emailsTo) => {
-    setFieldValue('emailsTo', emailsTo);
+    setFieldValue('emails_to', emailsTo);
   };
 
   return (
@@ -32,17 +39,18 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
           <Box p={3}>
             <Grid container spacing={3} justify="center" alignItems="center">
               <Grid item xs={2}>
-                <Typography> Configuration Name: </Typography>
+                <Typography> Configuration Name </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.configName}
-                  value={values.configName}
+                  error={errors.channel_name}
+                  value={values.channel_name}
                   type="text"
-                  name="configName"
+                  name="channel_name"
                   placeholder="main_email_channel"
-                  helperText={errors.configName ? errors.configName : ''}
+                  helperText={errors.channel_name ? errors.channel_name : ''}
                   onChange={handleChange}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -56,7 +64,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> SMTP: </Typography>
+                <Typography> SMTP </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -67,6 +75,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   placeholder="my.smtp.com"
                   helperText={errors.smtp ? errors.smtp : ''}
                   onChange={handleChange}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -80,17 +89,43 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Email From: </Typography>
+                <Typography> Port </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
-                  error={errors.emailFrom}
-                  value={values.emailFrom}
-                  type="text"
-                  name="emailFrom"
-                  placeholder="alerter@email.com"
-                  helperText={errors.emailFrom ? errors.emailFrom : ''}
+                  error={errors.port}
+                  value={values.port}
+                  type="number"
+                  name="port"
+                  placeholder="25"
+                  helperText={errors.port ? errors.port : ''}
                   onChange={handleChange}
+                  autoComplete="off"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Grid container justify="center">
+                  <MuiThemeProvider theme={theme}>
+                    <Tooltip title={Data.email.port} placement="left">
+                      <InfoIcon />
+                    </Tooltip>
+                  </MuiThemeProvider>
+                </Grid>
+              </Grid>
+              <Grid item xs={2}>
+                <Typography> Email From </Typography>
+              </Grid>
+              <Grid item xs={9}>
+                <TextField
+                  error={errors.email_from}
+                  value={values.email_from}
+                  type="text"
+                  name="email_from"
+                  placeholder="alerter@email.com"
+                  helperText={errors.email_from ? errors.email_from : ''}
+                  onChange={handleChange}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -104,7 +139,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Emails To: </Typography>
+                <Typography> Emails To </Typography>
               </Grid>
               <Grid item xs={9}>
                 <Autocomplete
@@ -112,17 +147,18 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   freeSolo
                   options={[]}
                   onChange={updateToEmails}
-                  value={values.emailsTo}
+                  value={values.emails_to}
                   renderInput={(params) => (
                     <TextField
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
-                      error={errors.emailsTo}
+                      error={errors.emails_to}
                       type="text"
-                      name="emailsTo"
-                      placeholder="Add a destination email."
+                      name="emails_to"
+                      placeholder={'Add a destination email [Press Enter after each Email].'}
                       variant="standard"
-                      helperText={errors.emailsTo ? errors.emailsTo : ''}
+                      helperText={errors.emails_to ? errors.emails_to : ''}
+                      autoComplete="off"
                       fullWidth
                     />
                   )}
@@ -138,7 +174,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Username: </Typography>
+                <Typography> Username </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -147,6 +183,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="username"
                   placeholder="my_username"
                   onChange={handleChange}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -160,7 +197,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Password: </Typography>
+                <Typography> Password </Typography>
               </Grid>
               <Grid item xs={9}>
                 <TextField
@@ -169,6 +206,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                   name="password"
                   placeholder="*****************"
                   onChange={handleChange}
+                  autoComplete="off"
                   fullWidth
                 />
               </Grid>
@@ -182,7 +220,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 </Grid>
               </Grid>
               <Grid item xs={2}>
-                <Typography> Severities: </Typography>
+                <Typography> Severities </Typography>
               </Grid>
               <Grid item xs={9}>
                 <FormControlLabel
@@ -237,7 +275,7 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.email.severties} placement="left">
+                    <Tooltip title={Data.email.severities} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -248,22 +286,21 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
                 <Grid container direction="row" justify="flex-end" alignItems="center">
                   <Box px={2}>
                     <SendTestEmailButton
-                      disabled={(Object.keys(errors).length !== 0)}
-                      to={values.emailsTo}
-                      from={values.emailFrom}
+                      disabled={Object.keys(errors).length !== 0}
+                      to={values.emails_to}
+                      from={values.email_from}
                       smtp={values.smtp}
                       user={values.username}
                       pass={values.password}
+                      port={values.port}
                     />
                     <Button
-                      variant="outlined"
-                      size="large"
-                      disabled={(Object.keys(errors).length !== 0)}
+                      color="primary"
+                      size="md"
+                      disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
-                      <Box px={2}>
-                        Add
-                      </Box>
+                      Add
                     </Button>
                   </Box>
                 </Grid>
@@ -278,19 +315,18 @@ const EmailForm = ({errors, values, handleSubmit, handleChange, setFieldValue
 
 EmailForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
-    configName: PropTypes.string,
+    channel_name: PropTypes.string,
     smtp: PropTypes.string,
-    emailFrom: PropTypes.string,
-    emailsTo: PropTypes.string,
+    email_from: PropTypes.string,
+    emails_to: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
-    configName: PropTypes.string.isRequired,
+    channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
-    emailFrom: PropTypes.string.isRequired,
-    emailsTo: PropTypes.arrayOf(
-      PropTypes.string.isRequired,
-    ).isRequired,
+    port: PropTypes.number.isRequired,
+    email_from: PropTypes.string.isRequired,
+    emails_to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
     username: PropTypes.string.isRequired,
     password: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
