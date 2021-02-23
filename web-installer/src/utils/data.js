@@ -58,9 +58,9 @@ function deleteAccount(username) {
   return sendData('/server/account/delete', {}, { username });
 }
 
-function sendTestEmail(smtp, from, to, user, pass) {
+function sendTestEmail(smtp, from, to, user, pass, port) {
   return sendData('/server/email/test', {}, {
-    smtp, from, to, user, pass,
+    smtp, from, to, user, pass, port,
   });
 }
 

@@ -17,7 +17,7 @@ class ConsoleChannel(Channel):
         try:
             print(msg)
             sys.stdout.flush()
-            self.logger.info("Sent %s to console.", alert.alert_code.name)
+            self.logger.debug("Sent %s to console.", alert.alert_code.name)
             return RequestStatus.SUCCESS
         except Exception as e:
             self.logger.error("Error when sending %s to console.",

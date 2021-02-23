@@ -154,7 +154,7 @@ class SystemAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
-        self.logger.info("Received %s. Now processing this data.",
+        self.logger.debug("Received %s. Now processing this data.",
                          data_received)
 
         parsed_routing_key = method.routing_key.split('.')
@@ -366,7 +366,7 @@ class SystemAlerter(Alerter):
             previous = metrics['system_ram_usage']['previous']
             if current is not None:
                 self._classify_alert(
-                    current, floaty(previous), cpu_use, meta_data,
+                    current, floaty(previous), ram_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
                     data_for_alerting, _RAM_USE_LIMITER_NAME

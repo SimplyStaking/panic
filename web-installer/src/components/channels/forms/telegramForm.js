@@ -239,7 +239,7 @@ const TelegramForm = ({
                   <SendTestAlertButton
                     disabled={Object.keys(errors).length !== 0}
                     botChatID={values.chat_id}
-                    bot_token={values.bot_token}
+                    botToken={values.bot_token}
                   />
                   <Button
                     color="primary"

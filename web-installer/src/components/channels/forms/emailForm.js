@@ -89,6 +89,31 @@ const EmailForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={2}>
+                <Typography> Port </Typography>
+              </Grid>
+              <Grid item xs={9}>
+                <TextField
+                  error={errors.port}
+                  value={values.port}
+                  type="number"
+                  name="port"
+                  placeholder="25"
+                  helperText={errors.port ? errors.port : ''}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Grid container justify="center">
+                  <MuiThemeProvider theme={theme}>
+                    <Tooltip title={Data.email.port} placement="left">
+                      <InfoIcon />
+                    </Tooltip>
+                  </MuiThemeProvider>
+                </Grid>
+              </Grid>
+              <Grid item xs={2}>
                 <Typography> Email From </Typography>
               </Grid>
               <Grid item xs={9}>
@@ -267,6 +292,7 @@ const EmailForm = ({
                       smtp={values.smtp}
                       user={values.username}
                       pass={values.password}
+                      port={values.port}
                     />
                     <Button
                       color="primary"
@@ -298,6 +324,7 @@ EmailForm.propTypes = forbidExtraProps({
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
+    port: PropTypes.number.isRequired,
     email_from: PropTypes.string.isRequired,
     emails_to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
     username: PropTypes.string.isRequired,

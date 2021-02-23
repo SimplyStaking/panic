@@ -79,7 +79,7 @@ class ConsoleAlertsHandler(ChannelHandler):
                        properties: pika.spec.BasicProperties, body: bytes) \
             -> None:
         alert_json = json.loads(body)
-        self.logger.info("Received %s. Now processing this alert.", alert_json)
+        self.logger.debug("Received %s. Now processing this alert.", alert_json)
 
         processing_error = False
         alert = None
@@ -90,7 +90,7 @@ class ConsoleAlertsHandler(ChannelHandler):
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'])
 
-            self.logger.info("Successfully processed %s", alert_json)
+            self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
             self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)

@@ -67,7 +67,7 @@ class GithubAlerter(Alerter):
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
-        self.logger.info("Received %s. Now processing this data.",
+        self.logger.debug("Received %s. Now processing this data.",
                          data_received)
 
         processing_error = False

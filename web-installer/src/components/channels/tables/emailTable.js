@@ -28,6 +28,7 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
           <TableRow>
             <TableCell align="center">Email Name</TableCell>
             <TableCell align="center">SMTP</TableCell>
+            <TableCell align="center">Port</TableCell>
             <TableCell align="center">Email From</TableCell>
             <TableCell align="center">Email To</TableCell>
             <TableCell align="center">Username</TableCell>
@@ -46,6 +47,7 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
                 {emails.byId[email].channel_name}
               </TableCell>
               <TableCell align="center">{emails.byId[email].smtp}</TableCell>
+              <TableCell align="center">{emails.byId[email].port}</TableCell>
               <TableCell align="center">
                 {emails.byId[email].email_from}
               </TableCell>
@@ -98,6 +100,7 @@ EmailTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       channel_name: PropTypes.string,
       smtp: PropTypes.string,
+      port: PropTypes.number,
       email_from: PropTypes.string,
       emails_to: PropTypes.arrayOf(PropTypes.string),
       username: PropTypes.string,
