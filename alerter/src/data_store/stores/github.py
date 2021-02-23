@@ -6,7 +6,6 @@ from typing import Dict
 import pika.exceptions
 
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -17,10 +16,9 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
 
 
 class GithubStore(Store):
-    def __init__(self, store_name: str, logger: logging.Logger,
+    def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
-
-        super().__init__(store_name, logger, rabbitmq)
+        super().__init__(name, logger, rabbitmq)
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -56,9 +54,6 @@ class GithubStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue=GITHUB_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False,
@@ -98,7 +93,7 @@ class GithubStore(Store):
         if not processing_error:
             try:
                 heartbeat = {
-                    'component_name': self.store_name,
+                    'component_name': self.name,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

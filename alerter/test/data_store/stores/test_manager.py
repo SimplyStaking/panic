@@ -85,19 +85,19 @@ class TestStoreManager(unittest.TestCase):
         self.rabbitmq = None
         self.test_rabbit_manager = None
 
-    def test__str__returns_name_correctly(self):
+    def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.manager_name, str(self.test_store_manager))
 
-    def test_name_property_returns_name_correctly(self):
+    def test_name_property_returns_name_correctly(self) -> None:
         self.assertEqual(self.manager_name, self.test_store_manager.name)
 
-    def test_logger_property_returns_logger_correctly(self):
+    def test_logger_property_returns_logger_correctly(self) -> None:
         self.assertEqual(self.dummy_logger, self.test_store_manager.logger)
 
-    def test_rabbitmq_property_returns_rabbitmq_correctly(self):
+    def test_rabbitmq_property_returns_rabbitmq_correctly(self) -> None:
         self.assertEqual(self.rabbitmq, self.test_store_manager.rabbitmq)
 
-    def test_initialise_rabbitmq_initialises_everything_as_expected(self):
+    def test_initialise_rabbitmq_initialises_everything_as_expected(self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()

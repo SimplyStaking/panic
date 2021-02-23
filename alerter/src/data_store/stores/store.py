@@ -18,10 +18,10 @@ from src.utils.logging import log_and_print
 
 
 class Store(PublisherSubscriberComponent):
-    def __init__(self, store_name: str, logger: logging.Logger,
+    def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, rabbitmq)
-        self._store_name = store_name
+        self._name = name
         self._mongo_ip = env.DB_IP
         self._mongo_db = env.DB_NAME
         self._mongo_port = env.DB_PORT
@@ -37,11 +37,11 @@ class Store(PublisherSubscriberComponent):
                                namespace=unique_alerter_identifier)
 
     def __str__(self) -> str:
-        return self.store_name
+        return self.name
 
     @property
-    def store_name(self) -> str:
-        return self._store_name
+    def name(self) -> str:
+        return self._name
 
     @property
     def mongo_ip(self) -> str:

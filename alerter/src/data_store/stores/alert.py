@@ -16,9 +16,9 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
 
 
 class AlertStore(Store):
-    def __init__(self, store_name: str, logger: logging.Logger,
+    def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
-        super().__init__(store_name, logger, rabbitmq)
+        super().__init__(name, logger, rabbitmq)
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -93,7 +93,7 @@ class AlertStore(Store):
         if not processing_error:
             try:
                 heartbeat = {
-                    'component_name': self.store_name,
+                    'component_name': self.name,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)
