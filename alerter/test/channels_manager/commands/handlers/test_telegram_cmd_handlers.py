@@ -21,6 +21,13 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
+                                 GITHUB_MONITORS_MANAGER_NAME,
+                                 DATA_TRANSFORMERS_MANAGER_NAME,
+                                 SYSTEM_ALERTERS_MANAGER_NAME,
+                                 GITHUB_ALERTER_MANAGER_NAME,
+                                 DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
+                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME)
 
 
 class TestTelegramCommandHandlers(unittest.TestCase):
@@ -71,6 +78,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.test_str = "This is a test string message"
         self.test_hb_interval = 30
         self.test_grace_interval = 10
+        self.test_manager_component = 'Manager_Component1'
+        self.test_worker_component1 = 'Component1'
+        self.test_worker_component2 = 'Component2'
+        self.test_worker_component3 = 'Component3'
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -559,36 +570,404 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.assertRaises(error_class,
                           self.test_telegram_command_handlers._get_muted_status)
 
-    @parameterized.expand([
-        (datetime.now().timestamp(),),
-        (datetime.now().timestamp() + 30,),
-    ])
     @freeze_time("2012-01-01")
     def test_get_manager_component_hb_status_returns_empty_string_if_hb_ok(
-            self, hb_timestamp) -> None:
+            self) -> None:
         # A heartbeat is defined to be "ok" if there are no dead processes and
-        # the timestamp is within the grace interval.
-        test_heartbeat = {
+        # the timestamp is within the grace interval. We will test for both
+        # hb_timestamp < grace_interval + hb_interval,
+        # hb_timestamp = hb_interval, and
+        # hb_timestamp = hb_interval + grace_interval. Note we cannot use
+        # parametrize.expand with frozen times together with freeze_time.
+        test_heartbeat_1 = {
             'dead_processes': [],
-            'running_processes': ['Component1', 'Component2'],
-            'timestamp': hb_timestamp,
-            'component_name': 'Manager_Component1'
+            'running_processes': [self.test_worker_component1,
+                                  self.test_worker_component2],
+            'timestamp': datetime.now().timestamp(),
+            'component_name': self.test_manager_component
         }
-        actual_ret = self.test_telegram_command_handlers\
-            ._get_manager_component_hb_status(test_heartbeat)
+        test_heartbeat_2 = {
+            'dead_processes': [],
+            'running_processes': [self.test_worker_component1,
+                                  self.test_worker_component2],
+            'timestamp': datetime.now().timestamp() - self.test_hb_interval,
+            'component_name': self.test_manager_component
+        }
+        test_heartbeat_3 = {
+            'dead_processes': [],
+            'running_processes': [self.test_worker_component1,
+                                  self.test_worker_component2],
+            'timestamp':
+                datetime.now().timestamp() - self.test_hb_interval
+                - self.test_grace_interval,
+            'component_name': self.test_manager_component
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_manager_component_hb_status(test_heartbeat_1)
+        self.assertEqual('', actual_ret)
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_manager_component_hb_status(test_heartbeat_2)
+        self.assertEqual('', actual_ret)
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_manager_component_hb_status(test_heartbeat_3)
         self.assertEqual('', actual_ret)
 
-    # @freeze_time("2012-01-01")
-    # @parameterized.expand([
-    #     (,),
-    #     ('error', 'self.transformed_data_example_downtime_error'),
-    # ])
-    # def test_get_manager_component_hb_status_return_correct_if_missed_hbs(
-    #         self, hb_timestamp) -> None:
-    #     # The handler assumes that a HB is outdated if
-    #     # hb_timestamp > hb_interval (30) + grace_interval (10)
-    #     pass
+    @parameterized.expand([(41, 1,), (60, 2,), (67, 2,), (89, 2,), (90, 3,), ])
+    @freeze_time("2012-01-01")
+    def test_get_manager_component_hb_status_return_correct_if_missed_hbs(
+            self, hb_delay, expected_missed_hbs) -> None:
+        # The component is declared to miss a HB if
+        # hb_timestamp > hb_interval (30) + grace_interval (10)
+        test_heartbeat = {
+            'dead_processes': [],
+            'running_processes': [self.test_worker_component1,
+                                  self.test_worker_component2],
+            'timestamp': datetime.now().timestamp() - hb_delay,
+            'component_name': self.test_manager_component
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_manager_component_hb_status(test_heartbeat)
+        expected_ret = \
+            "- *{}*: {} - Missed {} heartbeats, either the health-checker " \
+            "found problems when saving the heartbeat or the {} is running " \
+            "into problems. Please check the logs.\n".format(
+                escape_markdown(self.test_manager_component),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs,
+                escape_markdown(self.test_manager_component))
+        self.assertEqual(expected_ret, actual_ret)
 
     def test_get_manager_component_hb_status_ret_correct_if_some_processes_dead(
             self) -> None:
-        pass
+        test_heartbeat = {
+            'dead_processes': [self.test_worker_component1,
+                               self.test_worker_component2],
+            'running_processes': [self.test_worker_component3],
+            'timestamp': datetime.now().timestamp(),
+            'component_name': self.test_manager_component
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_manager_component_hb_status(test_heartbeat)
+        expected_ret = ''
+        for worker_component in test_heartbeat['dead_processes']:
+            worker_component = escape_markdown(worker_component)
+            expected_ret += "- *{}*: {} - Not running. \n".format(
+                worker_component,
+                self.test_telegram_command_handlers._get_running_icon(False))
+        self.assertEqual(expected_ret, actual_ret)
+
+    @freeze_time("2012-01-01")
+    def test_get_worker_component_hb_status_returns_empty_string_if_hb_ok(
+            self) -> None:
+        # A heartbeat is defined to be "ok" if the component is alive and
+        # the timestamp is within the grace interval. We will test for both
+        # hb_timestamp < grace_interval + hb_interval,
+        # hb_timestamp = hb_interval, and
+        # hb_timestamp = hb_interval + grace_interval. Note we cannot use
+        # parametrize.expand with frozen times together with freeze_time.
+        test_heartbeat_1 = {
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp(),
+            'component_name': self.test_worker_component1
+        }
+        test_heartbeat_2 = {
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp() - self.test_hb_interval,
+            'component_name': self.test_worker_component1
+        }
+        test_heartbeat_3 = {
+            'is_alive': True,
+            'timestamp':
+                datetime.now().timestamp() - self.test_hb_interval
+                - self.test_grace_interval,
+            'component_name': self.test_worker_component1
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_worker_component_hb_status(test_heartbeat_1)
+        self.assertEqual('', actual_ret)
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_worker_component_hb_status(test_heartbeat_2)
+        self.assertEqual('', actual_ret)
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_worker_component_hb_status(test_heartbeat_3)
+        self.assertEqual('', actual_ret)
+
+    @parameterized.expand([(41, 1,), (60, 2,), (67, 2,), (89, 2,), (90, 3,), ])
+    @freeze_time("2012-01-01")
+    def test_get_worker_component_hb_status_return_correct_if_missed_hbs(
+            self, hb_delay, expected_missed_hbs) -> None:
+        # The component is declared to miss a HB if
+        # hb_timestamp > hb_interval (30) + grace_interval (10)
+        test_heartbeat = {
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp() - hb_delay,
+            'component_name': self.test_worker_component1
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_worker_component_hb_status(test_heartbeat)
+        expected_ret = \
+            "- *{}*: {} - Missed {} heartbeats, either the health-checker " \
+            "found problems when saving the heartbeat or the {} is running " \
+            "into problems. Please check the logs.\n".format(
+                escape_markdown(self.test_worker_component1),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs,
+                escape_markdown(self.test_worker_component1))
+        self.assertEqual(expected_ret, actual_ret)
+
+    def test_get_worker_component_hb_status_return_correct_if_process_dead(
+            self) -> None:
+        test_heartbeat = {
+            'is_alive': False,
+            'timestamp': datetime.now().timestamp(),
+            'component_name': self.test_manager_component
+        }
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_worker_component_hb_status(test_heartbeat)
+        expected_ret = "- *{}*: {} - Not running. \n".format(
+            escape_markdown(self.test_manager_component),
+            self.test_telegram_command_handlers._get_running_icon(False))
+        self.assertEqual(expected_ret, actual_ret)
+
+    def test_get_panic_components_status_return_correct_if_problems_in_HC(
+            self) -> None:
+        actual_ret = self.test_telegram_command_handlers\
+            ._get_panic_components_status(True)
+        expected_ret = "- *PANIC Components*: {} - Cannot get live status as " \
+                       "there seems to be an issue with the Health " \
+                       "Checker.\n".format(self.test_telegram_command_handlers
+                                           ._get_running_icon(False))
+        self.assertEqual(expected_ret, actual_ret)
+
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_worker_component_hb_status")
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_manager_component_hb_status")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "get_unsafe")
+    def test_get_panic_components_status_return_correct_if_all_ok(
+            self, mock_get_unsafe, mock_exists_unsafe, mock_manager_status,
+            mock_worker_status) -> None:
+        # The PANIC component's status is declared to be all ok if every
+        # component in PANIC is running and sending HBs in a timely manner.
+        # Note, here we are assuming that there are no problems with the Health
+        # Checker
+        mock_get_unsafe.return_value = json.dumps({}).encode()
+        mock_exists_unsafe.return_value = True
+
+        # If the HB is ok an '' is always sent. This was confirmed in a
+        # previous test.
+        mock_manager_status.return_value = ''
+        mock_worker_status.return_value = ''
+
+        actual_ret = self.test_telegram_command_handlers\
+            ._get_panic_components_status(False)
+        expected_ret = "- *PANIC Components*: {}\n".format(
+            self.test_telegram_command_handlers._get_running_icon(True))
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([
+        (
+                {
+                    SYSTEM_MONITORS_MANAGER_NAME: False,
+                    GITHUB_MONITORS_MANAGER_NAME: False,
+                    DATA_TRANSFORMERS_MANAGER_NAME: False,
+                    SYSTEM_ALERTERS_MANAGER_NAME: False,
+                    GITHUB_ALERTER_MANAGER_NAME: False,
+                    DATA_STORE_MANAGER_NAME: False,
+                    ALERT_ROUTER_NAME: False,
+                    CONFIGS_MANAGER_NAME: False,
+                    CHANNELS_MANAGER_NAME: False,
+                },
+        ),
+        (
+                {
+                    SYSTEM_MONITORS_MANAGER_NAME: False,
+                    GITHUB_MONITORS_MANAGER_NAME: False,
+                    DATA_TRANSFORMERS_MANAGER_NAME: False,
+                    SYSTEM_ALERTERS_MANAGER_NAME: False,
+                    GITHUB_ALERTER_MANAGER_NAME: True,
+                    DATA_STORE_MANAGER_NAME: True,
+                    ALERT_ROUTER_NAME: True,
+                    CONFIGS_MANAGER_NAME: True,
+                    CHANNELS_MANAGER_NAME: True,
+                },
+        ),
+    ])
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_worker_component_hb_status")
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_manager_component_hb_status")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "get_unsafe")
+    def test_get_panic_components_status_return_correct_if_no_hbs_yet(
+            self, components_hb_available_dict, mock_get_unsafe,
+            mock_exists_unsafe, mock_manager_status,
+            mock_worker_status) -> None:
+        # We will test for both when there are no hbs yet for every component
+        # and for some components only. Note, here we are assuming that there
+        # are no problems with the Health Checker.
+        mock_get_unsafe.return_value = json.dumps({}).encode()
+        mock_exists_unsafe.side_effect = list(
+            components_hb_available_dict.values())
+
+        # We will assume that every hb is ok if it exists. The case when some
+        # might not be ok will be tackled by the next test.
+        mock_manager_status.return_value = ''
+        mock_worker_status.return_value = ''
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_panic_components_status(False)
+        expected_ret = ''
+        for component, hb_available in components_hb_available_dict.items():
+            if not hb_available:
+                expected_ret += \
+                    "- *{}*: {} - No heartbeats yet.\n".format(
+                        escape_markdown(component),
+                        self.test_telegram_command_handlers._get_running_icon(
+                            False))
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([
+        (
+                {
+                    SYSTEM_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    GITHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    DATA_TRANSFORMERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    SYSTEM_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    DATA_STORE_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    ALERT_ROUTER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CONFIGS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CHANNELS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                },
+        ),
+        (
+                {
+                    SYSTEM_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    GITHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    DATA_TRANSFORMERS_MANAGER_NAME: {
+                        'hb_exists': False,
+                        'hb_ok': False,
+                    },
+                    SYSTEM_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': False,
+                        'hb_ok': False,
+                    },
+                    GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    DATA_STORE_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    ALERT_ROUTER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CONFIGS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CHANNELS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                },
+        ),
+    ])
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_worker_component_hb_status")
+    @mock.patch.object(TelegramCommandHandlers,
+                       "_get_manager_component_hb_status")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "get_unsafe")
+    def test_get_panic_components_status_return_correct_if_some_hbs_not_ok(
+            self, components_hb_status_dict, mock_get_unsafe,
+            mock_exists_unsafe, mock_manager_status,
+            mock_worker_status) -> None:
+        # A hb is declared to be not ok if it exceeds the grace_interval or
+        # it implies that some processes are dead. We will test for both when
+        # every hb is not ok and when there are no hbs mixed with ok hbs and
+        # not ok hbs. Note, here we are assuming that there are no problems with
+        # the Health Checker.
+        mock_get_unsafe.return_value = json.dumps({}).encode()
+        mock_exists_unsafe.side_effect = [
+            value['hb_exists'] for value in list(
+                components_hb_status_dict.values())
+        ]
+        manager_components = [SYSTEM_MONITORS_MANAGER_NAME,
+                              GITHUB_MONITORS_MANAGER_NAME,
+                              DATA_TRANSFORMERS_MANAGER_NAME,
+                              SYSTEM_ALERTERS_MANAGER_NAME,
+                              GITHUB_ALERTER_MANAGER_NAME,
+                              DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
+        worker_components = [ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME]
+        mock_manager_status.side_effect = [
+            '' if components_hb_status_dict[component]['hb_ok']
+            else '- *{}* problems with HB\n'.format(escape_markdown(component))
+            for component in manager_components
+            if components_hb_status_dict[component]['hb_exists']
+        ]
+        mock_worker_status.side_effect = [
+            '' if components_hb_status_dict[component]['hb_ok']
+            else '- *{}* problems with HB\n'.format(escape_markdown(component))
+            for component in worker_components
+            if components_hb_status_dict[component]['hb_exists']
+        ]
+
+        actual_ret = self.test_telegram_command_handlers \
+            ._get_panic_components_status(False)
+        expected_ret = ''
+        for component, hb_status in components_hb_status_dict.items():
+            if hb_status['hb_exists']:
+                if not hb_status['hb_ok']:
+                    expected_ret += '- *{}* problems with HB\n'.format(
+                        escape_markdown(component))
+            else:
+                expected_ret += \
+                    "- *{}*: {} - No heartbeats yet.\n".format(
+                        escape_markdown(component),
+                        self.test_telegram_command_handlers._get_running_icon(
+                            False))
+        self.assertEqual(expected_ret, actual_ret)
