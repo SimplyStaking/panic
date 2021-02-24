@@ -737,7 +737,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
 
     def test_get_panic_components_status_return_correct_if_problems_in_HC(
             self) -> None:
-        actual_ret = self.test_telegram_command_handlers\
+        actual_ret = self.test_telegram_command_handlers \
             ._get_panic_components_status(True)
         expected_ret = "- *PANIC Components*: {} - Cannot get live status as " \
                        "there seems to be an issue with the Health " \
@@ -766,7 +766,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         mock_manager_status.return_value = ''
         mock_worker_status.return_value = ''
 
-        actual_ret = self.test_telegram_command_handlers\
+        actual_ret = self.test_telegram_command_handlers \
             ._get_panic_components_status(False)
         expected_ret = "- *PANIC Components*: {}\n".format(
             self.test_telegram_command_handlers._get_running_icon(True))
