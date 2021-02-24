@@ -722,8 +722,9 @@ app.post('/server/twilio/test', verify, async (req, res) => {
 app.post('/server/email/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    smtp, from, to, user, pass,
+    smtp, from, to, user, pass, port,
   } = req.body;
+
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
 
@@ -737,6 +738,7 @@ app.post('/server/email/test', verify, async (req, res) => {
   // Create mail transport (essentially an email client)
   const transport = nodemailer.createTransport({
     host: smtp,
+    port,
     auth:
       user && pass
         ? {
@@ -959,10 +961,8 @@ app.post('/server/system/exporter', async (req, res) => {
     return;
   }
 
-  const url = `${exporterUrl}/metrics`;
-
   axios
-    .get(url, { params: {} })
+    .get(exporterUrl, { params: {} })
     .then((_) => {
       const msg = new msgs.MessagePong();
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));

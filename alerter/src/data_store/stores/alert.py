@@ -70,7 +70,7 @@ class AlertStore(Store):
         redis. If successful, a heartbeat will be sent.
         """
         alert_data = json.loads(body.decode())
-        self.logger.info("Received %s. Now processing this data.", alert_data)
+        self.logger.debug("Received %s. Now processing this data.", alert_data)
 
         processing_error = False
         try:

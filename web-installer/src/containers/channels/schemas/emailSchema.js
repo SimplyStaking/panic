@@ -41,6 +41,7 @@ const EmailSchema = (props) => Yup.object().shape({
     )
     .required('Config name is required.'),
   smtp: Yup.string().required('SMTP is required.'),
+  port: Yup.string().required('Port is required.'),
   email_from: Yup.string()
     .email('Email is not valid.')
     .required('Email From is required.'),

@@ -25,7 +25,7 @@ class OpsgenieChannel(Channel):
 
         try:
             response = self._opsgenie_api.create_alert(
-                "PANIC - {}".format(alert.alert_code.lower()), alert.message,
+                "PANIC - {}".format(alert.alert_code.name), alert.message,
                 severity, alert.origin_id, alert.timestamp,
                 alias=alert.alert_code.value
             )

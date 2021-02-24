@@ -22,13 +22,13 @@ import sleep from './time';
 
 // Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
-  disabled, to, smtp, from, user, pass,
+  disabled, to, smtp, from, user, pass, port,
 }) {
   const onClick = async () => {
     to.forEach(async (emailTo) => {
       try {
         ToastsStore.info(`Sending test e-mail to address ${to}`, 5000);
-        await sendTestEmail(smtp, from, emailTo, user, pass);
+        await sendTestEmail(smtp, from, emailTo, user, pass, port);
         ToastsStore.success('Test e-mail sent successfully, check inbox', 5000);
       } catch (e) {
         if (e.response) {
@@ -55,25 +55,25 @@ function TestCallButton({
   twilioPhoneNumbersToDialValid,
   accountSid,
   authToken,
-  twilioPhoneNo,
+  twilioPhoneNumber,
 }) {
   const onClick = async () => {
-    twilioPhoneNumbersToDialValid.forEach(async (twilioNumber) => {
+    twilioPhoneNumbersToDialValid.forEach(async (phoneNumberToDial) => {
       try {
-        ToastsStore.info(`Calling number ${twilioNumber}`, 5000);
-        await testCall(accountSid, authToken, twilioPhoneNo, twilioNumber);
+        ToastsStore.info(`Calling number ${phoneNumberToDial}`, 5000);
+        await testCall(accountSid, authToken, twilioPhoneNumber, phoneNumberToDial);
       } catch (e) {
         if (e.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           ToastsStore.error(
-            `Error in calling ${twilioNumber}. Error: ${e.response.data.error}`,
+            `Error in calling ${phoneNumberToDial}. Error: ${e.response.data.error}`,
             5000,
           );
         } else {
           // Something happened in setting up the request that triggered an
           // Error
-          ToastsStore.error(`Error in calling ${twilioNumber}. Error: ${e.message}`, 5000);
+          ToastsStore.error(`Error in calling ${phoneNumberToDial}. Error: ${e.message}`, 5000);
         }
       }
     });
@@ -268,86 +268,93 @@ function AddAccount({
   );
 }
 
-function PingCosmosButton({
-  disabled, tendermintRpcUrl, prometheusUrl, exporterUrl,
-}) {
+function PingTendermint({ disabled, tendermintRpcUrl }) {
   const onClick = async () => {
-    // Check if the tendermint RPC URL given works properly
-    if (tendermintRpcUrl) {
-      try {
-        ToastsStore.info(`Connecting with Tendermint RPC Url ${tendermintRpcUrl}`, 5000);
-        await pingTendermint(tendermintRpcUrl);
-        ToastsStore.success('Successfully connected', 5000);
-      } catch (e) {
-        if (e.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          ToastsStore.error(
-            `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.response.data.message}`,
-            5000,
-          );
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          ToastsStore.error(
-            `Could not connect with Tendermint RPC Url ${tendermintRpcUrl}. Error: ${e.message}`,
-            5000,
-          );
-        }
+    try {
+      ToastsStore.info(`Connecting with Tendermint RPC URL ${tendermintRpcUrl}`, 5000);
+      await pingTendermint(tendermintRpcUrl);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with the Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not connect with Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.message}`,
+          5000,
+        );
       }
     }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
 
-    // Check if the prometheus url given works properly
-    if (prometheusUrl) {
-      try {
-        ToastsStore.info(`Connecting with Prometheus Url ${prometheusUrl}`, 5000);
-        await pingCosmosPrometheus(prometheusUrl);
-        ToastsStore.success('Successfully connected', 5000);
-      } catch (e) {
-        if (e.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          ToastsStore.error(
-            `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.response.data.message}`,
-            5000,
-          );
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          ToastsStore.error(
-            `Could not connect with prometheus url ${prometheusUrl}. Error: ${e.message}`,
-            5000,
-          );
-        }
+function PingPrometheus({disabled, prometheusUrl}) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
+      await pingCosmosPrometheus(prometheusUrl);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
+          5000,
+        );
       }
     }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
 
-    // Check if the node exporter url given works properly
-    if (exporterUrl) {
-      try {
-        ToastsStore.info(`Connecting with Node exporter Url ${exporterUrl}`, 5000);
-        await pingNodeExporter(exporterUrl);
-        ToastsStore.success('Successfully connected', 5000);
-      } catch (e) {
-        if (e.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          ToastsStore.error(
-            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.response.data.message}`,
-            5000,
-          );
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          ToastsStore.error(
-            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.message}`,
-            5000,
-          );
-        }
+function PingNodeExporter({ disabled, exporterUrl }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with Node Exporter URL ${exporterUrl}`, 5000);
+      await pingNodeExporter(exporterUrl);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(
+          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.message}`,
+          5000,
+        );
       }
     }
   };
 
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
-      Test Node
+      Test
     </Button>
   );
 }
@@ -380,40 +387,6 @@ function LoadConfigButton({ onClick }) {
   return (
     <Button onClick={onClick} size="lg" color="primary">
       Load Config
-    </Button>
-  );
-}
-
-function PingNodeExporter({ disabled, exporterUrl }) {
-  const onClick = async () => {
-    // Check if the node exporter url given works properly
-    if (exporterUrl) {
-      try {
-        ToastsStore.info(`Connecting with Node exporter Url ${exporterUrl}`, 5000);
-        await pingNodeExporter(exporterUrl);
-        ToastsStore.success('Successfully connected', 5000);
-      } catch (e) {
-        if (e.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          ToastsStore.error(
-            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.response.data.message}`,
-            5000,
-          );
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          ToastsStore.error(
-            `Could not connect with node exporter url ${exporterUrl}. Error: ${e.message}`,
-            5000,
-          );
-        }
-      }
-    }
-  };
-
-  return (
-    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
-      Test
     </Button>
   );
 }
@@ -462,6 +435,7 @@ SendTestEmailButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   to: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   smtp: PropTypes.string.isRequired,
+  port: PropTypes.number.isRequired,
   from: PropTypes.string.isRequired,
   user: PropTypes.string.isRequired,
   pass: PropTypes.string.isRequired,
@@ -471,7 +445,7 @@ TestCallButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   accountSid: PropTypes.string.isRequired,
   authToken: PropTypes.string.isRequired,
-  twilioPhoneNo: PropTypes.string.isRequired,
+  twilioPhoneNumber: PropTypes.string.isRequired,
   twilioPhoneNumbersToDialValid: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
 });
 
@@ -509,11 +483,14 @@ PingRepoButton.propTypes = forbidExtraProps({
   repo: PropTypes.string.isRequired,
 });
 
-PingCosmosButton.propTypes = forbidExtraProps({
+PingPrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrl: PropTypes.string.isRequired,
+});
+
+PingTendermint.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   tendermintRpcUrl: PropTypes.string.isRequired,
-  prometheusUrl: PropTypes.string.isRequired,
-  exporterUrl: PropTypes.string.isRequired,
 });
 
 PingNodeExporter.propTypes = forbidExtraProps({
@@ -541,7 +518,8 @@ export {
   SendTestOpsGenieButton,
   LoginButton,
   PingRepoButton,
-  PingCosmosButton,
+  PingTendermint,
+  PingPrometheus,
   PingNodeExporter,
   SaveConfigButton,
   LoadConfigButton,

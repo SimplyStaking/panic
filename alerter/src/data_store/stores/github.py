@@ -70,7 +70,7 @@ class GithubStore(Store):
         stored in Redis as required. If successful, a heartbeat will be sent.
         """
         github_data = json.loads(body.decode())
-        self.logger.info("Received %s. Now processing this data.", github_data)
+        self.logger.debug("Received %s. Now processing this data.", github_data)
 
         processing_error = False
         try:

@@ -30,7 +30,7 @@ class EmailChannel(Channel):
             parent_id=alert.parent_id, origin_id=alert.origin_id
         )
         self._logger.debug("Formatted email template")
-        self._logger.info("Sending alert to the channel's destination emails")
+        self._logger.debug("Sending alert to the channel's destination emails")
         self._logger.debug("Destination Emails: %s",
                            self._emails_to)
         try:
@@ -40,7 +40,7 @@ class EmailChannel(Channel):
                     subject, html_email_message, plain_email_message,
                     to_address)
                 self._logger.debug("Sent alert to %s", to_address)
-            self._logger.info("Sent alert to all the emails in the channel")
+            self._logger.debug("Sent alert to all the emails in the channel")
             return RequestStatus.SUCCESS
         except Exception as e:
             self._logger.error("Error when sending %s to Email channel %s",

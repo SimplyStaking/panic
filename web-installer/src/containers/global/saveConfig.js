@@ -51,12 +51,12 @@ class SaveConfig extends Component {
       substrateNodes,
       general,
       systems,
+      closeOnSave,
       // periodic,
     } = this.props;
 
     await deleteConfigs();
 
-    ToastsStore.info('Starting to save data config.', 5000);
     // Save all the channels configurations if any
     if (emails.allIds.length !== 0) {
       await sendConfig("channel", "email_config.ini", "", "", emails.byId);
@@ -95,7 +95,6 @@ class SaveConfig extends Component {
         opsgenies.byId
       );
     }
-    ToastsStore.success("Saved Channel Configs!", 5000);
 
     // We have to use forEach as await requires the For loop to be async
     cosmosChains.allIds.forEach(async (currentChainId) => {
@@ -257,8 +256,6 @@ class SaveConfig extends Component {
       );
     });
 
-    ToastsStore.success("Saved Cosmos Configs!", 5000);
-
     // We have to use forEach as await requires the For loop to be async
     substrateChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = substrateChains.byId[currentChainId];
@@ -404,8 +401,6 @@ class SaveConfig extends Component {
       );
     });
 
-    ToastsStore.success("Saved Substrate Configs!", 5000);
-
     const generalSystems = {};
     for (let k = 0; k < general.systems.length; k += 1) {
       generalSystems[general.systems[k]] = systems.byId[general.systems[k]];
@@ -446,8 +441,8 @@ class SaveConfig extends Component {
     await sendConfig("general", "alerts_config.ini", "", "", thresholdAlertsConfig);
 
     // await sendConfig("general", "periodic_config.ini", "", "", { periodic });
-
-    ToastsStore.success("Saved General configs!", 5000);
+    closeOnSave();
+    ToastsStore.success("Saved Configs!", 5000);
   }
 
   render() {
