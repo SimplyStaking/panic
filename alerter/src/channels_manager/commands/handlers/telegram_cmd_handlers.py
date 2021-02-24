@@ -417,7 +417,7 @@ class TelegramCommandHandlers(CommandHandler):
                     int((current_timestamp - hb_timestamp) // hb_interval)
                 status += \
                     "- *Health Checker ({})*: {} - Missed {} " \
-                    "heartbeats.\n ".format(
+                    "heartbeats.\n".format(
                         escape_markdown(HEARTBEAT_HANDLER_NAME),
                         self._get_running_icon(False), missed_hbs)
                 problems_in_checker = True
@@ -453,7 +453,8 @@ class TelegramCommandHandlers(CommandHandler):
                                       self._get_running_icon(False))
             problems_in_checker = True
 
-        # Just say that PANIC's components are ok if there are no issues.
+        # Just say that Health Checkers's components are ok if there are no
+        # issues.
         if status == '':
             status += "- *Health Checker*: {}\n".format(
                 self._get_running_icon(True))

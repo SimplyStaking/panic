@@ -27,7 +27,8 @@ from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
                                  SYSTEM_ALERTERS_MANAGER_NAME,
                                  GITHUB_ALERTER_MANAGER_NAME,
                                  DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME)
+                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
+                                 PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME)
 
 
 class TestTelegramCommandHandlers(unittest.TestCase):
@@ -543,33 +544,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
 
         self.assertEqual(expected_status, actual_status)
 
-    @parameterized.expand([
-        (RedisError('test'), None, RedisError),
-        (None, RedisError('test'), RedisError),
-        (ConnectionResetError('test'), None, ConnectionResetError),
-        (None, ConnectionResetError('test'), ConnectionResetError),
-        (Exception('test'), None, Exception),
-        (None, Exception('test'), Exception),
-    ])
-    @mock.patch.object(RedisApi, "hexists_unsafe")
-    @mock.patch.object(RedisApi, "exists_unsafe")
-    def test_get_muted_status_raises_error_if_raised(
-            self, exists_unsafe_error, hexists_unsafe_error, error_class,
-            mock_exists_unsafe, mock_hexists_unsafe) -> None:
-        # For this test we will check only for RedisError, ConnectionResetError
-        # and a general exception because these are the most important cases.
-        if exists_unsafe_error is None:
-            mock_exists_unsafe.return_value = None
-        else:
-            mock_exists_unsafe.side_effect = exists_unsafe_error
-        if hexists_unsafe_error is None:
-            mock_hexists_unsafe.return_value = None
-        else:
-            mock_hexists_unsafe.side_effect = hexists_unsafe_error
-
-        self.assertRaises(error_class,
-                          self.test_telegram_command_handlers._get_muted_status)
-
     @freeze_time("2012-01-01")
     def test_get_manager_component_hb_status_returns_empty_string_if_hb_ok(
             self) -> None:
@@ -970,4 +944,197 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         escape_markdown(component),
                         self.test_telegram_command_handlers._get_running_icon(
                             False))
+        self.assertEqual(expected_ret, actual_ret)
+
+    @mock.patch.object(RedisApi, "get_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @freeze_time("2012-01-01")
+    def test_get_health_checker_status_ret_correct_if_hc_sub_components_ok(
+            self, mock_exists, mock_get) -> None:
+        # The Health Checker's sub components are declared to be ok if their
+        # heartbeats are within an acceptable time interval. Therefore for this
+        # test we can mock this scenario. We will parametrize to test for both
+        # when hb_timestamp < hb_interval + grace_interval,
+        # hb_timestamp = hb_interval and when
+        # hb_timestamp = hb_interval + grace_interval. Note we cannot use
+        # parametrize.expand with frozen times together with freeze_time.
+        mock_exists.return_value = True
+        mock_get.side_effect = [
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - self.test_hb_interval,
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - self.test_hb_interval,
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp':
+                    datetime.now().timestamp() - self.test_hb_interval
+                    - self.test_grace_interval,
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp':
+                    datetime.now().timestamp() - self.test_hb_interval
+                    - self.test_grace_interval,
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+        ]
+
+        # We will run it 3 times as there are 3 different pairs of side effects.
+        expected_ret = ("- *Health Checker*: {}\n".format(
+            self.test_telegram_command_handlers._get_running_icon(True)), False)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([(41, 1,), (60, 2,), (67, 2,), (89, 2,), (90, 3,), ])
+    @mock.patch.object(RedisApi, "get_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @freeze_time("2012-01-01")
+    def test_get_health_checker_status_ret_correct_if_hc_sub_components_not_ok(
+            self, hb_delay, expected_missed_hbs, mock_exists, mock_get) -> None:
+        # The Health Checker's sub components are declared to not be ok if their
+        # heartbeats are not within the acceptable time interval. Therefore for
+        # this test we can mock this scenario. We will mock different scenarios
+        # such as both health checker components are not ok, or one of them
+        # is ok. Note we cannot use parametrize.expand with frozen times
+        # together with freeze_time.
+        mock_exists.return_value = True
+        mock_get.side_effect = [
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - hb_delay,
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - hb_delay,
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - hb_delay,
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp() - hb_delay,
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+        ]
+
+        # We will run it 3 times as there are 3 different pairs of side effects.
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - Missed {} heartbeats.\n".format(
+                escape_markdown(HEARTBEAT_HANDLER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs)
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - Missed {} heartbeats.\n".format(
+                escape_markdown(PING_PUBLISHER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs)
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - Missed {} heartbeats.\n".format(
+                escape_markdown(HEARTBEAT_HANDLER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs)
+        expected_status += \
+            "- *Health Checker ({})*: {} - Missed {} heartbeats.\n".format(
+                escape_markdown(PING_PUBLISHER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False),
+                expected_missed_hbs)
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+    @mock.patch.object(RedisApi, "get_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    def test_get_health_checker_status_ret_correct_if_hc_components_no_hbs_yet(
+            self, mock_exists, mock_get) -> None:
+        # We will mock different scenarios such as when both heartbeats are not
+        # there yet and when one of them only is there yet. Note we cannot use
+        # parametrize.expand with frozen times together with freeze_time.
+        mock_exists.side_effect = [True, False, False, True, False, False]
+
+        # Note that we will assume that the hbs are ok. The other cases when the
+        # hbs are not ok is tackled by the previous tests.
+        mock_get.side_effect = [
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': HEARTBEAT_HANDLER_NAME,
+            }).encode(),
+            json.dumps({
+                'timestamp': datetime.now().timestamp(),
+                'component_name': PING_PUBLISHER_NAME,
+            }).encode(),
+        ]
+
+        # We will run it 3 times as there are 3 different pairs of side effects.
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - No heartbeat yet.\n".format(
+                escape_markdown(PING_PUBLISHER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False))
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - No heartbeat yet.\n".format(
+                escape_markdown(HEARTBEAT_HANDLER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False))
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
+        self.assertEqual(expected_ret, actual_ret)
+
+        expected_status = ''
+        expected_status += \
+            "- *Health Checker ({})*: {} - No heartbeat yet.\n".format(
+                escape_markdown(HEARTBEAT_HANDLER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False))
+        expected_status += \
+            "- *Health Checker ({})*: {} - No heartbeat yet.\n".format(
+                escape_markdown(PING_PUBLISHER_NAME),
+                self.test_telegram_command_handlers._get_running_icon(False))
+        expected_ret = (expected_status, True)
+        actual_ret = \
+            self.test_telegram_command_handlers._get_health_checker_status()
         self.assertEqual(expected_ret, actual_ret)
