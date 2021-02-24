@@ -19,6 +19,9 @@ class AlertStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -49,9 +52,6 @@ class AlertStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
@@ -77,10 +77,6 @@ class AlertStore(Store):
             self._process_mongo_store(alert_data)
         except KeyError as e:
             self.logger.error("Error when parsing %s.", alert_data)
-            self.logger.exception(e)
-            processing_error = True
-        except ReceivedUnexpectedDataException as e:
-            self.logger.error("Error when processing %s.", alert_data)
             self.logger.exception(e)
             processing_error = True
         except Exception as e:
@@ -133,7 +129,7 @@ class AlertStore(Store):
                         'alert_name': alert['alert_code']['name'],
                         'severity': alert['severity'],
                         'message': alert['message'],
-                        'timestamp': alert['timestamp'],
+                        'timestamp': str(alert['timestamp']),
                     }
                 },
                 '$min': {'first': alert['timestamp']},
