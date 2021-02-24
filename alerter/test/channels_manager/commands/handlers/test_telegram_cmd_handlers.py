@@ -5,6 +5,7 @@ import unittest
 from datetime import datetime
 from unittest import mock
 
+from freezegun import freeze_time
 from parameterized import parameterized
 from pika.exceptions import AMQPConnectionError
 from pymongo.errors import PyMongoError
@@ -68,6 +69,8 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                                            self.test_chat_object)
         self.test_update = Update(123, self.test_message_object)
         self.test_str = "This is a test string message"
+        self.test_hb_interval = 30
+        self.test_grace_interval = 10
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -556,15 +559,35 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.assertRaises(error_class,
                           self.test_telegram_command_handlers._get_muted_status)
 
+    @parameterized.expand([
+        (datetime.now().timestamp(),),
+        (datetime.now().timestamp() + 30,),
+    ])
+    @freeze_time("2012-01-01")
     def test_get_manager_component_hb_status_returns_empty_string_if_hb_ok(
-            self) -> None:
-        pass
+            self, hb_timestamp) -> None:
+        # A heartbeat is defined to be "ok" if there are no dead processes and
+        # the timestamp is within the grace interval.
+        test_heartbeat = {
+            'dead_processes': [],
+            'running_processes': ['Component1', 'Component2'],
+            'timestamp': hb_timestamp,
+            'component_name': 'Manager_Component1'
+        }
+        actual_ret = self.test_telegram_command_handlers\
+            ._get_manager_component_hb_status(test_heartbeat)
+        self.assertEqual('', actual_ret)
 
-    def test_get_manager_component_hb_status_returns_correct_if_missed_hbs(
-            self) -> None:
-        # The handler assumes that a HB is outdated if the
-        # timstamp > hb_interval (30) + grace_interval (10)
-        pass
+    # @freeze_time("2012-01-01")
+    # @parameterized.expand([
+    #     (,),
+    #     ('error', 'self.transformed_data_example_downtime_error'),
+    # ])
+    # def test_get_manager_component_hb_status_return_correct_if_missed_hbs(
+    #         self, hb_timestamp) -> None:
+    #     # The handler assumes that a HB is outdated if
+    #     # hb_timestamp > hb_interval (30) + grace_interval (10)
+    #     pass
 
     def test_get_manager_component_hb_status_ret_correct_if_some_processes_dead(
             self) -> None:
