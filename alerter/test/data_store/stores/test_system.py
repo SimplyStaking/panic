@@ -15,6 +15,7 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
+from src.data_store.mongo.mongo_api import MongoApi
 from src.message_broker.rabbitmq import RabbitMQApi
 
 from src.data_store.redis.store_keys import Keys
@@ -59,6 +60,11 @@ class TestSystemStore(unittest.TestCase):
         self.mongo_ip = env.DB_IP
         self.mongo_db = env.DB_NAME
         self.mongo_port = env.DB_PORT
+
+        self.mongo = MongoApi(logger=self.dummy_logger.getChild(
+                                  MongoApi.__name__),
+                              db_name=self.mongo_db, host=self.mongo_ip,
+                              port=self.mongo_port)
 
         self.test_store_name = 'store name'
         self.test_store = SystemStore(self.test_store_name,
@@ -209,7 +215,7 @@ class TestSystemStore(unittest.TestCase):
                     "system_name": self.system_name,
                     "system_id": self.system_id,
                     "system_parent_id": self.parent_id,
-                    "last_monitored": self.last_monitored
+                    "time": self.last_monitored
                 },
                 "data": {
                   "went_down_at":  self.last_monitored
@@ -242,6 +248,8 @@ class TestSystemStore(unittest.TestCase):
         self.connection_check_time_interval = None
         self.rabbitmq = None
         self.test_rabbit_manager = None
+        self.mongo.drop_collection(self.parent_id)
+        self.mongo = None
 
     def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, str(self.test_store))
@@ -262,7 +270,7 @@ class TestSystemStore(unittest.TestCase):
         self.assertEqual(type(self.redis), type(self.test_store.redis))
 
     def test_mongo_property_returns_none_when_mongo_not_init(self) -> None:
-        self.assertEqual(None, self.test_store.mongo)
+        self.assertEqual(type(self.mongo), type(self.test_store.mongo))
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
           self) -> None:
@@ -451,7 +459,7 @@ class TestSystemStore(unittest.TestCase):
         ("self.system_data_3", ),
     ])
     @mock.patch("src.data_store.stores.system.SystemStore._process_mongo_store",
-            autospec=True)
+                autospec=True)
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)
     @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
@@ -683,5 +691,472 @@ class TestSystemStore(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(MongoApi, "update_one")
+    def test_process_mongo_store_calls_update_one(self,
+                                                  mock_update_one) -> None:
+        self.test_store._process_mongo_result_store(
+            self.system_data_1['result'])
+        mock_update_one.assert_called_once()
+
+    def test_process_mongo_store_raises_exception_on_unexpected_key(
+            self) -> None:
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_store._process_mongo_store,
+                          self.system_data_unexpected)
+
+    @parameterized.expand([
+        ("self.system_data_1", ),
+        ("self.system_data_2", ),
+        ("self.system_data_3", ),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(MongoApi, "update_one")
+    def test_process_mongo_result_store_calls_mongo_correctly(
+            self, mock_system_data, mock_update_one) -> None:
+        data = eval(mock_system_data)
+        self.test_store._process_mongo_result_store(data['result'])
+
+        meta_data = data['result']['meta_data']
+        system_name = meta_data['system_name']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['result']['data']
+        call_1 = call(
+            parent_id,
+            {'doc_type': 'system', 'd':  datetime.now().hour},
+            {
+                '$push': {
+                    system_id: {
+                        'process_cpu_seconds_total': str(
+                            metrics['process_cpu_seconds_total']),
+                        'process_memory_usage': str(
+                            metrics['process_memory_usage']),
+                        'virtual_memory_usage': str(
+                            metrics['virtual_memory_usage']),
+                        'open_file_descriptors': str(
+                            metrics['open_file_descriptors']),
+                        'system_cpu_usage': str(metrics['system_cpu_usage']),
+                        'system_ram_usage': str(metrics['system_ram_usage']),
+                        'system_storage_usage': str(
+                            metrics['system_storage_usage']),
+                        'network_transmit_bytes_per_second': str(
+                            metrics['network_transmit_bytes_per_second']),
+                        'network_receive_bytes_per_second': str(
+                            metrics['network_receive_bytes_per_second']),
+                        'network_receive_bytes_total': str(
+                            metrics['network_receive_bytes_total']),
+                        'network_transmit_bytes_total': str(
+                            metrics['network_transmit_bytes_total']),
+                        'disk_io_time_seconds_total': str(
+                            metrics['disk_io_time_seconds_total']),
+                        'disk_io_time_seconds_in_interval': str(
+                            metrics['disk_io_time_seconds_in_interval']),
+                        'went_down_at': str(metrics['went_down_at']),
+                        'timestamp': str(meta_data['last_monitored']),
+                    }
+                },
+                '$inc': {'n_entries': 1},
+            }
+        )
+        mock_update_one.assert_has_calls([call_1])
+
+    @parameterized.expand([
+        ("self.system_data_1", ),
+        ("self.system_data_2", ),
+        ("self.system_data_3", ),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
+                autospec=True)
+    @mock.patch.object(MongoApi, "update_one")
+    def test_process_data_calls_mongo_correctly(
+            self, mock_system_data, mock_update_one, mock_process_redis_store,
+            mock_send_hb, mock_ack) -> None:
+
+        mock_ack.return_value = None
+        try:
+            self.test_store._initialise_rabbitmq()
+
+            data = eval(mock_system_data)
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+
+            mock_process_redis_store.assert_called_once()
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
+
+            meta_data = data['result']['meta_data']
+            system_name = meta_data['system_name']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['result']['data']
+            call_1 = call(
+                parent_id,
+                {'doc_type': 'system', 'd':  datetime.now().hour},
+                {
+                    '$push': {
+                        system_id: {
+                            'process_cpu_seconds_total': str(
+                                metrics['process_cpu_seconds_total']),
+                            'process_memory_usage': str(
+                                metrics['process_memory_usage']),
+                            'virtual_memory_usage': str(
+                                metrics['virtual_memory_usage']),
+                            'open_file_descriptors': str(
+                                metrics['open_file_descriptors']),
+                            'system_cpu_usage': str(metrics['system_cpu_usage']),
+                            'system_ram_usage': str(metrics['system_ram_usage']),
+                            'system_storage_usage': str(
+                                metrics['system_storage_usage']),
+                            'network_transmit_bytes_per_second': str(
+                                metrics['network_transmit_bytes_per_second']),
+                            'network_receive_bytes_per_second': str(
+                                metrics['network_receive_bytes_per_second']),
+                            'network_receive_bytes_total': str(
+                                metrics['network_receive_bytes_total']),
+                            'network_transmit_bytes_total': str(
+                                metrics['network_transmit_bytes_total']),
+                            'disk_io_time_seconds_total': str(
+                                metrics['disk_io_time_seconds_total']),
+                            'disk_io_time_seconds_in_interval': str(
+                                metrics['disk_io_time_seconds_in_interval']),
+                            'went_down_at': str(metrics['went_down_at']),
+                            'timestamp': str(meta_data['last_monitored']),
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )
+            mock_update_one.assert_has_calls([call_1])
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(MongoApi, "update_one")
+    def test_process_mongo_error_store_calls_mongo_correctly(
+            self, mock_update_one) -> None:
+
+        data = self.system_data_error
+        self.test_store._process_mongo_error_store(data['error'])
+
+        meta_data = data['error']['meta_data']
+        system_name = meta_data['system_name']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['error']['data']
+
+        call_1 = call(
+            parent_id,
+            {'doc_type': 'system', 'd': datetime.now().hour},
+            {
+                '$push': {
+                    system_id: {
+                        'went_down_at': str(metrics['went_down_at']),
+                        'timestamp': str(meta_data['time']),
+                    }
+                },
+                '$inc': {'n_entries': 1},
+            }
+        )
+        mock_update_one.assert_has_calls([call_1])
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
+                autospec=True)
+    @mock.patch.object(MongoApi, "update_one")
+    def test_process_data_calls_mongo_correctly(
+            self, mock_update_one, mock_process_redis_store,
+            mock_send_hb, mock_ack) -> None:
+
+        mock_ack.return_value = None
+        try:
+            self.test_store._initialise_rabbitmq()
+
+            data = self.system_data_error
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+
+            mock_process_redis_store.assert_called_once()
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
+
+            meta_data = data['error']['meta_data']
+            system_name = meta_data['system_name']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['error']['data']
+
+            call_1 = call(
+                parent_id,
+                {'doc_type': 'system', 'd': datetime.now().hour},
+                {
+                    '$push': {
+                        system_id: {
+                            'went_down_at': str(metrics['went_down_at']),
+                            'timestamp': str(meta_data['time']),
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )
+            mock_update_one.assert_has_calls([call_1])
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("self.system_data_1", ),
+        ("self.system_data_2", ),
+        ("self.system_data_3", ),
+    ])
+    def test_process_mongo_store_mongo_stores_correctly(
+            self, mock_system_data) -> None:
+
+        data = eval(mock_system_data)
+        self.test_store._process_mongo_store(data)
+
+        meta_data = data['result']['meta_data']
+        system_name = meta_data['system_name']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['result']['data']
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+                'system',
+                1,
+                str(metrics['process_cpu_seconds_total']),
+                str(metrics['process_memory_usage']),
+                str(metrics['virtual_memory_usage']),
+                str(metrics['open_file_descriptors']),
+                str(metrics['system_cpu_usage']),
+                str(metrics['system_ram_usage']),
+                str(metrics['system_storage_usage']),
+                str(metrics['network_receive_bytes_total']),
+                str(metrics['network_transmit_bytes_total']),
+                str(metrics['disk_io_time_seconds_total']),
+                str(metrics['network_transmit_bytes_per_second']),
+                str(metrics['network_receive_bytes_per_second']),
+                str(metrics['disk_io_time_seconds_in_interval']),
+                str(metrics['went_down_at'])
+            ]
+        actual = [
+                document['doc_type'],
+                document['n_entries'],
+                document[system_id][0]['process_cpu_seconds_total'],
+                document[system_id][0]['process_memory_usage'],
+                document[system_id][0]['virtual_memory_usage'],
+                document[system_id][0]['open_file_descriptors'],
+                document[system_id][0]['system_cpu_usage'],
+                document[system_id][0]['system_ram_usage'],
+                document[system_id][0]['system_storage_usage'],
+                document[system_id][0]['network_receive_bytes_total'],
+                document[system_id][0]['network_transmit_bytes_total'],
+                document[system_id][0]['disk_io_time_seconds_total'],
+                document[system_id][0]['network_transmit_bytes_per_second'],
+                document[system_id][0]['network_receive_bytes_per_second'],
+                document[system_id][0]['disk_io_time_seconds_in_interval'],
+                document[system_id][0]['went_down_at']
+            ]
+
+        self.assertListEqual(expected, actual)
+
+    @freeze_time("2012-01-01")
+    def test_process_mongo_error_store_store_correctly(self) -> None:
+
+        data = self.system_data_error
+        self.test_store._process_mongo_error_store(data['error'])
+
+        meta_data = data['error']['meta_data']
+        system_name = meta_data['system_name']
+        system_id = meta_data['system_id']
+        parent_id = meta_data['system_parent_id']
+        metrics = data['error']['data']
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+                'system',
+                1,
+                str(meta_data['time']),
+                str(metrics['went_down_at'])
+            ]
+        actual = [
+                document['doc_type'],
+                document['n_entries'],
+                document[system_id][0]['timestamp'],
+                document[system_id][0]['went_down_at']
+            ]
+
+        self.assertListEqual(expected, actual)
+
+    @parameterized.expand([
+        ("self.system_data_1", ),
+        ("self.system_data_2", ),
+        ("self.system_data_3", ),
+    ])
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
+                autospec=True)
+    def test_process_data_results_stores_in_mongo_correctly(
+            self, mock_system_data, mock_process_redis_store,
+            mock_send_hb, mock_ack) -> None:
+
+        mock_ack.return_value = None
+        try:
+            self.test_store._initialise_rabbitmq()
+
+            data = eval(mock_system_data)
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+
+            mock_process_redis_store.assert_called_once()
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
+
+            meta_data = data['result']['meta_data']
+            system_name = meta_data['system_name']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['result']['data']
+
+            documents = self.mongo.get_all(parent_id)
+            document = documents[0]
+            expected = [
+                    'system',
+                    1,
+                    str(metrics['process_cpu_seconds_total']),
+                    str(metrics['process_memory_usage']),
+                    str(metrics['virtual_memory_usage']),
+                    str(metrics['open_file_descriptors']),
+                    str(metrics['system_cpu_usage']),
+                    str(metrics['system_ram_usage']),
+                    str(metrics['system_storage_usage']),
+                    str(metrics['network_receive_bytes_total']),
+                    str(metrics['network_transmit_bytes_total']),
+                    str(metrics['disk_io_time_seconds_total']),
+                    str(metrics['network_transmit_bytes_per_second']),
+                    str(metrics['network_receive_bytes_per_second']),
+                    str(metrics['disk_io_time_seconds_in_interval']),
+                    str(metrics['went_down_at'])
+                ]
+            actual = [
+                    document['doc_type'],
+                    document['n_entries'],
+                    document[system_id][0]['process_cpu_seconds_total'],
+                    document[system_id][0]['process_memory_usage'],
+                    document[system_id][0]['virtual_memory_usage'],
+                    document[system_id][0]['open_file_descriptors'],
+                    document[system_id][0]['system_cpu_usage'],
+                    document[system_id][0]['system_ram_usage'],
+                    document[system_id][0]['system_storage_usage'],
+                    document[system_id][0]['network_receive_bytes_total'],
+                    document[system_id][0]['network_transmit_bytes_total'],
+                    document[system_id][0]['disk_io_time_seconds_total'],
+                    document[system_id][0]['network_transmit_bytes_per_second'],
+                    document[system_id][0]['network_receive_bytes_per_second'],
+                    document[system_id][0]['disk_io_time_seconds_in_interval'],
+                    document[system_id][0]['went_down_at']
+                ]
+
+            self.assertListEqual(expected, actual)
+
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
+                autospec=True)
+    def test_process_data_error_stores_in_mongo_correctly(
+            self, mock_process_redis_store,
+            mock_send_hb, mock_ack) -> None:
+
+        mock_ack.return_value = None
+        try:
+            self.test_store._initialise_rabbitmq()
+
+            data = self.system_data_error
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+
+            mock_process_redis_store.assert_called_once()
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
+
+            meta_data = data['error']['meta_data']
+            system_name = meta_data['system_name']
+            system_id = meta_data['system_id']
+            parent_id = meta_data['system_parent_id']
+            metrics = data['error']['data']
+
+            documents = self.mongo.get_all(parent_id)
+            document = documents[0]
+            expected = [
+                    'system',
+                    1,
+                    str(meta_data['time']),
+                    str(metrics['went_down_at'])
+                ]
+            actual = [
+                    document['doc_type'],
+                    document['n_entries'],
+                    document[system_id][0]['timestamp'],
+                    document[system_id][0]['went_down_at']
+                ]
+
+            self.assertListEqual(expected, actual)
         except Exception as e:
             self.fail("Test failed: {}".format(e))

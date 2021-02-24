@@ -21,6 +21,9 @@ class SystemStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -56,9 +59,6 @@ class SystemStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
         self.rabbitmq.basic_consume(queue=SYSTEM_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
