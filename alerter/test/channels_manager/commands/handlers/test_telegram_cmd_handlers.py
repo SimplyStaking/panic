@@ -1138,3 +1138,16 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         actual_ret = \
             self.test_telegram_command_handlers._get_health_checker_status()
         self.assertEqual(expected_ret, actual_ret)
+
+    def test_get_redis_based_status_ret_correct_if_redis_accessible(
+            self) -> None:
+        # TODO: We need to mock the get_based_statuses and focus on the errors
+        #     : that may be raised here
+        pass
+
+    def test_get_redis_based_status_ret_correct_if_redis_inaccessible(
+            self) -> None:
+        # TODO: We need to mock the get_based_statuses and focus on the errors
+        #     : that may be raised here. Need to parametrize for the 3 error
+        #     : cases
+        pass
