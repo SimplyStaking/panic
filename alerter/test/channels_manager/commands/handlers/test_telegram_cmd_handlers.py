@@ -4,6 +4,7 @@ import logging
 import unittest
 from datetime import datetime
 from unittest import mock
+from unittest.mock import Mock
 
 from freezegun import freeze_time
 from parameterized import parameterized
@@ -29,6 +30,8 @@ from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
                                  DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
                                  CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
                                  PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME)
+from test.test_utils import \
+    assign_side_effect_if_not_none_otherwise_return_value
 
 
 class TestTelegramCommandHandlers(unittest.TestCase):
@@ -83,6 +86,9 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.test_worker_component1 = 'Component1'
         self.test_worker_component2 = 'Component2'
         self.test_worker_component3 = 'Component3'
+        self.test_dummy_panic_comp_status = '- PANIC components status\n'
+        self.test_dummy_hc_status = ('- Health Checker status\n', True)
+        self.test_dummy_muted_status = '- Muted status\n'
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -1139,15 +1145,101 @@ class TestTelegramCommandHandlers(unittest.TestCase):
             self.test_telegram_command_handlers._get_health_checker_status()
         self.assertEqual(expected_ret, actual_ret)
 
+    @mock.patch.object(TelegramCommandHandlers, "_get_muted_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_health_checker_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_panic_components_status")
     def test_get_redis_based_status_ret_correct_if_redis_accessible(
-            self) -> None:
-        # TODO: We need to mock the get_based_statuses and focus on the errors
-        #     : that may be raised here
-        pass
+            self, mock_panic_comp_status, mock_hc_status,
+            mock_muted_status) -> None:
+        # We will test with dummy status returns as the real-value strings were
+        # already tested in previous tests.
+        mock_panic_comp_status.return_value = self.test_dummy_panic_comp_status
+        mock_hc_status.return_value = self.test_dummy_hc_status
+        mock_muted_status.return_value = self.test_dummy_muted_status
 
-    def test_get_redis_based_status_ret_correct_if_redis_inaccessible(
-            self) -> None:
-        # TODO: We need to mock the get_based_statuses and focus on the errors
-        #     : that may be raised here. Need to parametrize for the 3 error
-        #     : cases
-        pass
+        actual_ret = \
+            self.test_telegram_command_handlers._get_redis_based_status()
+
+        expected_ret = "- *Redis*: {} \n".format(
+            self.test_telegram_command_handlers._get_running_icon(True))
+        expected_ret += \
+            self.test_dummy_muted_status + self.test_dummy_hc_status[0] + \
+            self.test_dummy_panic_comp_status
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([
+        (RedisError, None, None),
+        (ConnectionResetError, None, None),
+        (None, RedisError, None),
+        (None, ConnectionResetError, None),
+        (None, None, RedisError),
+        (None, None, ConnectionResetError),
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_get_muted_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_health_checker_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_panic_components_status")
+    def test_get_redis_based_status_return_correct_if_redis_error(
+            self, panic_comp_status_err, hc_status_err, muted_status_err,
+            mock_panic_comp_status, mock_hc_status, mock_muted_status) -> None:
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_panic_comp_status, panic_comp_status_err,
+            self.test_dummy_panic_comp_status, panic_comp_status_err)
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_muted_status, muted_status_err, self.test_dummy_muted_status,
+            muted_status_err)
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_hc_status, hc_status_err, self.test_dummy_hc_status,
+            hc_status_err)
+
+        actual_ret = \
+            self.test_telegram_command_handlers._get_redis_based_status()
+
+        chain_names = [escape_markdown(chain_name) for _, chain_name in
+                       self.test_associated_chains.items()]
+        expected_ret = \
+            "- *Redis*: {} \n".format(
+                self.test_telegram_command_handlers._get_running_icon(
+                    False)) + \
+            "- No {} alert is consider muted as Redis is " \
+            "inaccessible.\n".format(', '.join(chain_names)) + \
+            "- Cannot get Health Checker status as Redis is inaccessible.\n" + \
+            "- Cannot get PANIC components' status as Redis is inaccessible.\n"
+
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([
+        (Exception('Test'), None, None),
+        (None, Exception('Test'), None),
+        (None, None, Exception('Test')),
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_get_muted_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_health_checker_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_panic_components_status")
+    def test_get_redis_based_status_return_correct_if_unrecognized_error(
+            self, panic_comp_status_err, hc_status_err, muted_status_err,
+            mock_panic_comp_status, mock_hc_status, mock_muted_status) -> None:
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_panic_comp_status, panic_comp_status_err,
+            self.test_dummy_panic_comp_status, panic_comp_status_err)
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_muted_status, muted_status_err, self.test_dummy_muted_status,
+            muted_status_err)
+        assign_side_effect_if_not_none_otherwise_return_value(
+            mock_hc_status, hc_status_err, self.test_dummy_hc_status,
+            hc_status_err)
+
+        actual_ret = \
+            self.test_telegram_command_handlers._get_redis_based_status()
+
+        chain_names = [escape_markdown(chain_name) for _, chain_name in
+                       self.test_associated_chains.items()]
+        expected_ret = \
+            "- Could not get Redis status due to an unrecognized error. " \
+            "Check the logs to debug the issue.\n" + \
+            "- Cannot get mute status due to an unrecognized error.\n" + \
+            "- Cannot get Health Checker status due to an unrecognized " \
+            "error.\n" + \
+            "- Cannot get PANIC components' status due to an unrecognized " \
+            "error. \n"
+
+        self.assertEqual(expected_ret, actual_ret)

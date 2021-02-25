@@ -1,4 +1,5 @@
 from time import sleep
+from unittest.mock import Mock
 
 import pika.exceptions
 
@@ -112,3 +113,13 @@ def delete_queue_if_exists(rabbit: RabbitMQApi, queue_name: str) -> None:
         print("Queue {} does not exist - don't need to close".format(
             queue_name
         ))
+
+
+def assign_side_effect_if_not_none_otherwise_return_value(
+        mock_object: Mock, side_effect, return_value, check_value) -> Mock:
+    if check_value is None:
+        mock_object.return_value = return_value
+    else:
+        mock_object.side_effect = side_effect
+
+    return mock_object
