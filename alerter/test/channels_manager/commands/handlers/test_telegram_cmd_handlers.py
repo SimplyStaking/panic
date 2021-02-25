@@ -4,7 +4,7 @@ import logging
 import unittest
 from datetime import datetime
 from unittest import mock
-from unittest.mock import Mock
+from unittest.mock import call
 
 from freezegun import freeze_time
 from parameterized import parameterized
@@ -19,7 +19,7 @@ from src.channels_manager.channels import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
 from src.data_store.mongo import MongoApi
-from src.data_store.redis import RedisApi
+from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
@@ -86,9 +86,12 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.test_worker_component1 = 'Component1'
         self.test_worker_component2 = 'Component2'
         self.test_worker_component3 = 'Component3'
-        self.test_dummy_panic_comp_status = '- PANIC components status\n'
-        self.test_dummy_hc_status = ('- Health Checker status\n', True)
-        self.test_dummy_muted_status = '- Muted status\n'
+        self.test_dummy_panic_comp_status = "- PANIC components status\n"
+        self.test_dummy_hc_status = ("- Health Checker status\n", True)
+        self.test_dummy_muted_status = "- Muted status\n"
+        self.test_dummy_redis_status = "- Redis status\n"
+        self.test_dummy_rabbit_status = "- Rabbit status\n"
+        self.test_dummy_mongo_status = "- Mongo status\n"
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -1231,8 +1234,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         actual_ret = \
             self.test_telegram_command_handlers._get_redis_based_status()
 
-        chain_names = [escape_markdown(chain_name) for _, chain_name in
-                       self.test_associated_chains.items()]
         expected_ret = \
             "- Could not get Redis status due to an unrecognized error. " \
             "Check the logs to debug the issue.\n" + \
@@ -1243,3 +1244,120 @@ class TestTelegramCommandHandlers(unittest.TestCase):
             "error. \n"
 
         self.assertEqual(expected_ret, actual_ret)
+
+    @mock.patch.object(Message, "reply_text")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    def test_status_callback_does_not_return_status_if_user_not_authorised(
+            self, mock_authorise, mock_reply_text) -> None:
+        # We will perform this test by checking that the
+        # Update.message.reply_text() is not called.
+        mock_authorise.return_value = False
+        self.test_telegram_command_handlers.status_callback(
+            self.test_update, None)
+        mock_reply_text.assert_not_called()
+
+    @mock.patch.object(Message, "reply_text")
+    @mock.patch.object(TelegramCommandHandlers, "_get_mongo_based_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_rabbit_based_status")
+    @mock.patch.object(TelegramCommandHandlers, "_get_redis_based_status")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    def test_status_callback_sends_correct_messages_if_user_authorised(
+            self, mock_authorise, mock_get_redis_status, mock_get_rabbit_status,
+            mock_get_mongo_status, mock_reply_text) -> None:
+        # We will perform this test by checking that the
+        # Update.message.reply_text() is called with the correct params.
+        mock_authorise.return_value = True
+        mock_get_redis_status.return_value = self.test_dummy_redis_status
+        mock_get_rabbit_status.return_value = self.test_dummy_rabbit_status
+        mock_get_mongo_status.return_value = self.test_dummy_mongo_status
+
+        self.test_telegram_command_handlers.status_callback(
+            self.test_update, None)
+
+        expected_reply = \
+            self.test_dummy_mongo_status + self.test_dummy_rabbit_status \
+            + self.test_dummy_redis_status
+        expected_reply = expected_reply[:-1] if expected_reply.endswith('\n') \
+            else expected_reply
+        expected_calls = [call("Generating status..."),
+                          call(expected_reply, parse_mode="Markdown")]
+        actual_calls = mock_reply_text.call_args_list
+
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    def test_mute_callback_does_not_mute_chains_if_user_not_authorised(
+            self, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_authorise.return_value = False
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+
+            if self.test_redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                self.fail("Did not expect a mute key for {}".format(
+                    chain_name))
+
+    @parameterized.expand([
+        ("/mute BAD_SEVERITY",), ("/mute bad_severity INFO CRITICAL",),
+        ("/mute 123 bad_sev",), ("/mute None",), ("/mute  ",),
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_does_not_mute_chains_if_unrecognized_severities(
+            self, inputted_command, mock_reply_text, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_authorise.return_value = True
+        mock_reply_text.return_value = None
+        self.test_update.message.text = inputted_command
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+
+            if self.test_redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                self.fail("Did not expect a mute key for {}".format(
+                    chain_name))
+
+    def test_mute_callback_mutes_chains_correctly_first_time(self) -> None:
+        # TODO: Must parametrize to test for multiple severities and chains. We
+        #     : must always clear redis before and after each parametrization
+        #     : for each test. Must also test when no severities inputted.
+        pass
+
+    def test_mute_callback_mutes_chains_correctly_already_muted(self) -> None:
+        # TODO: Must parametrize to test for multiple severities and chains. We
+        #     : must always clear redis before and after each parametrization
+        #     : for each test. Must also test when no severities inputted.
+        pass
+
+    def test_mute_callback_returns_correct_replies_if_unrecognized_severities(
+            self) -> None:
+        # TODO: Parametrize for many values. We can mock redis for these tests.
+        pass
+
+    def test_mute_callback_returns_correct_replies_if_error_when_muting(
+            self) -> None:
+        # TODO: We should parameterize for RedisError, UnexpectedException and
+        #     : ConnectionResetError. Also we must generate such alerts at
+        #     : different points of muting (to check for when some chains muted
+        #     : and some not muted). We can mock redis for these tests.
+        pass
+
+    def test_mute_callback_returns_correct_replies_if_mute_successful(
+            self) -> None:
+        # TODO: Must parametrize to test for multiple severities and chains. We
+        #     : can mock redis for these tests.
+        #     Must also test when no severities inputted.
+        pass
+
+    # TODO: Must do unmute tests after mute
