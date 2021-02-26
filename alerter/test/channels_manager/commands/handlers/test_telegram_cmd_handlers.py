@@ -1328,36 +1328,333 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                 self.fail("Did not expect a mute key for {}".format(
                     chain_name))
 
-    def test_mute_callback_mutes_chains_correctly_first_time(self) -> None:
-        # TODO: Must parametrize to test for multiple severities and chains. We
-        #     : must always clear redis before and after each parametrization
-        #     : for each test. Must also test when no severities inputted.
-        pass
+    @parameterized.expand([
+        ("/mute INFO",), ("/mute CRITICAL",), ("/mute error",),
+        ("/mute WARNING",), ("/mute INFO WARNING",), ("/mute ERROR critical",),
+        ("/mute ERROR critical INFO",), ("/mute WARNING critical INFO",),
+        ("/mute ERROR critical info warning",), ("/mute",)
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_mutes_chains_correctly_first_time(
+            self, inputted_command, mock_reply_text, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        self.test_update.message.text = inputted_command
+        inputted_severities = inputted_command.split(' ')[1:]
+        if not inputted_severities:
+            inputted_severities_upper = ['CRITICAL', 'INFO', 'ERROR', 'WARNING']
+        else:
+            inputted_severities_upper = [severity.upper()
+                                         for severity in inputted_severities]
 
-    def test_mute_callback_mutes_chains_correctly_already_muted(self) -> None:
-        # TODO: Must parametrize to test for multiple severities and chains. We
-        #     : must always clear redis before and after each parametrization
-        #     : for each test. Must also test when no severities inputted.
-        pass
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
 
-    def test_mute_callback_returns_correct_replies_if_unrecognized_severities(
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+
+            if self.test_redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                actual_muted_severities = json.loads(
+                    self.test_redis.hget_unsafe(chain_hash,
+                                                mute_alerts_key).decode())
+                expected_muted_severities = {
+                    'INFO': 'INFO' in inputted_severities_upper,
+                    'WARNING': 'WARNING' in inputted_severities_upper,
+                    'CRITICAL': 'CRITICAL' in inputted_severities_upper,
+                    'ERROR': 'ERROR' in inputted_severities_upper
+                }
+                self.assertEqual(expected_muted_severities,
+                                 actual_muted_severities)
+            else:
+                self.fail("Expected a mute key for {}".format(chain_name))
+
+    @parameterized.expand([
+        ("/mute INFO", "INFO",), ("/mute CRITICAL", "WARNING",),
+        ("/mute error", "CRITICAL",), ("/mute WARNING", "ERROR",),
+        ("/mute INFO WARNING", "WARNING",), ("/mute ERROR critical", "INFO",),
+        ("/mute ERROR critical warning", "CRITICAL",),
+        ("/mute WARNING critical INFO", "ERROR",),
+        ("/mute ERROR critical info warning", "ERROR WARNING",),
+        ("/mute", "INFO CRITICAL WARNING ERROR",)
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_mutes_chains_correctly_already_muted(
+            self, inputted_command, first_round_muted_severities,
+            mock_reply_text, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        self.test_update.message.text = inputted_command
+        inputted_severities = set(inputted_command.split(' ')[1:])
+        if not inputted_severities:
+            inputted_severities_upper = {'CRITICAL', 'INFO', 'ERROR', 'WARNING'}
+        else:
+            inputted_severities_upper = {severity.upper()
+                                         for severity in inputted_severities}
+
+        # Mute INFO alerts for associated chains to see if second round muting
+        # overwrites severities
+        first_round_muted_severities = set(
+            first_round_muted_severities.split(' '))
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+            muted_severities_dict = {
+                'INFO': 'INFO' in first_round_muted_severities,
+                'WARNING': 'WARNING' in first_round_muted_severities,
+                'CRITICAL': 'CRITICAL' in first_round_muted_severities,
+                'ERROR': 'ERROR' in first_round_muted_severities,
+            }
+            self.test_redis.hset_unsafe(chain_hash, mute_alerts_key,
+                                        json.dumps(muted_severities_dict))
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+
+        muted_severities_both_rounds = inputted_severities_upper.union(
+            first_round_muted_severities)
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+
+            if self.test_redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                actual_muted_severities = json.loads(
+                    self.test_redis.hget_unsafe(chain_hash,
+                                                mute_alerts_key).decode())
+                expected_muted_severities = {
+                    'INFO': 'INFO' in muted_severities_both_rounds,
+                    'WARNING': 'WARNING' in muted_severities_both_rounds,
+                    'CRITICAL': 'CRITICAL' in muted_severities_both_rounds,
+                    'ERROR': 'ERROR' in muted_severities_both_rounds,
+                }
+                self.assertEqual(expected_muted_severities,
+                                 actual_muted_severities)
+            else:
+                self.fail("Expected a mute key for {}".format(chain_name))
+
+    @parameterized.expand([
+        ("/mute BAD_SEVERITY", ["BAD_SEVERITY"],),
+        ("/mute bad_severity INFO CRITICAL", ["bad_severity"],),
+        ("/mute 123 bad_sev", ["123", "bad_sev"],), ("/mute None", ["None"]),
+        ("/mute  ", ["", ""]),
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_sends_correct_replies_if_unrecognized_severities(
+            self, inputted_command, unrecognised_severities, mock_reply_text,
+            mock_authorise) -> None:
+        mock_authorise.return_value = True
+        mock_reply_text.return_value = None
+        self.test_update.message.text = inputted_command
+        chain_names = [chain_name
+                       for _, chain_name in self.test_associated_chains.items()]
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+
+        expected_reply = \
+            "Muting Failed: Invalid severity/severities {}. Please enter a " \
+            "combination of CRITICAL, WARNING, INFO or ERROR separated by " \
+            "spaces after the /mute command. You can enter no severities " \
+            "and PANIC will automatically mute all alerts for {}".format(
+                ', '.join(unrecognised_severities), ', '.join(chain_names))
+        expected_calls = [call("Performing mute..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        (RedisError('test'), "Redis error. Muting may not have been successful "
+                             "for all chains. Please check /status or the logs "
+                             "to see which chains were muted (if any) and that "
+                             "Redis is online. Re-try again when the issue is "
+                             "solved.",),
+        (ConnectionResetError('test'), "Redis error. Muting may not have been "
+                                       "successful for all chains. Please "
+                                       "check /status or the logs to see which "
+                                       "chains were muted (if any) and that "
+                                       "Redis is online. Re-try again when the "
+                                       "issue is solved.",),
+        (Exception('test'), "Unrecognized error. Please debug the issue by "
+                            "looking at the logs. Muting may not have been "
+                            "successful for all chains. Please check /status "
+                            "or the logs to see which chains were muted "
+                            "(if any) and that Redis is online. Re-try again "
+                            "when the issue is solved."),
+    ])
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_sends_correct_replies_if_error_when_muting(
+            self, muting_error, expected_reply, mock_reply_text,
+            mock_authorise, mock_hexists_unsafe) -> None:
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.side_effect = muting_error
+        self.test_update.message.text = "/mute INFO"
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+
+        expected_calls = [call("Performing mute..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        ("/mute INFO", ["INFO"],), ("/mute CRITICAL", ["CRITICAL"],),
+        ("/mute error", ["ERROR"],), ("/mute WARNING", ["WARNING"],),
+        ("/mute INFO WARNING", ["INFO", "WARNING"],),
+        ("/mute ERROR critical", ["ERROR", "CRITICAL"],),
+        ("/mute ERROR critical INFO", ["ERROR", "CRITICAL", "INFO"],),
+        ("/mute WARNING critical INFO", ["WARNING", "CRITICAL", "INFO"],),
+        ("/mute ERROR critical info warning", ["ERROR", "CRITICAL", "INFO",
+                                               "WARNING"]),
+        ("/mute", ["INFO", "WARNING", "CRITICAL", "ERROR"],)
+    ])
+    @mock.patch.object(RedisApi, "hset_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_mute_callback_sends_correct_replies_if_mute_successful(
+            self, input_command, inputted_severities, mock_reply_text,
+            mock_authorise, mock_hexists_unsafe, mock_hset_unsafe) -> None:
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.return_value = False
+        mock_hset_unsafe.return_value = None
+        self.test_update.message.text = input_command
+        chain_names = [chain_name
+                       for _, chain_name in self.test_associated_chains.items()]
+
+        self.test_telegram_command_handlers.mute_callback(self.test_update,
+                                                          None)
+        expected_reply = \
+            "Successfully muted all {} alerts for chain(s) {}. Give a few " \
+            "seconds until the alerter picks this up.".format(
+                ', '.join(inputted_severities), ', '.join(chain_names))
+        expected_calls = [call("Performing mute..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(RedisApi, "hremove_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    def test_unmute_callback_does_not_unmute_chains_if_user_unrecognised(
+            self, mock_authorise, mock_hexists_unsafe,
+            mock_hremove_unsafe) -> None:
+        mock_authorise.return_value = False
+
+        self.test_telegram_command_handlers.unmute_callback(self.test_update,
+                                                            None)
+
+        mock_hexists_unsafe.assert_not_called()
+        mock_hremove_unsafe.assert_not_called()
+
+    @mock.patch.object(RedisApi, "hget_unsafe")
+    @mock.patch.object(RedisApi, "hset_unsafe")
+    @mock.patch.object(RedisApi, "hremove_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_unmute_callback_does_nothing_if_chains_not_muted(
+            self, mock_reply_text, mock_authorise, mock_hexists_unsafe,
+            mock_hremove_unsafe, mock_hset_unsafe, mock_hget_unsafe) -> None:
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.return_value = False
+        mock_hremove_unsafe.return_value = None
+        mock_hget_unsafe.return_value = None
+        mock_hset_unsafe.return_value = None
+        mock_reply_text.return_value = None
+
+        self.test_telegram_command_handlers.unmute_callback(self.test_update,
+                                                            None)
+
+        mock_hremove_unsafe.assert_not_called()
+        mock_hset_unsafe.assert_not_called()
+        mock_hget_unsafe.assert_not_called()
+
+    @parameterized.expand([
+        ({"self.test_chain1_id"},),
+        ({"self.test_chain1_id", "self.test_chain2_id"},),
+        ({"self.test_chain1_id", "self.test_chain2_id",
+          "self.test_chain3_id"},),
+    ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_unmute_callback_unmutes_muted_chains(
+            self, muted_chains, mock_reply_text, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+
+        # First perform the muting of some chains
+        muted_severities_dict = {
+            'INFO': True,
+            'WARNING': True,
+            'CRITICAL': True,
+            'ERROR': False
+        }
+        for chain_id in muted_chains:
+            chain_id_eval = eval(chain_id)
+            chain_hash = Keys.get_hash_parent(chain_id_eval)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+            self.test_redis.hset_unsafe(chain_hash, mute_alerts_key,
+                                        json.dumps(muted_severities_dict))
+            self.assertTrue(self.test_redis.hexists_unsafe(chain_hash,
+                                                           mute_alerts_key))
+
+        self.test_telegram_command_handlers.unmute_callback(self.test_update,
+                                                            None)
+
+        # Check that no severity is muted for every associated chain
+        for chain_id, chain_name in self.test_associated_chains.items():
+            chain_hash = Keys.get_hash_parent(chain_id)
+            mute_alerts_key = Keys.get_chain_mute_alerts()
+
+            if self.test_redis.hexists_unsafe(chain_hash, mute_alerts_key):
+                self.fail("Did not expect a mute key for {}".format(
+                    chain_name))
+
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_unmute_callback_sends_correct_replies_if_chains_not_muted(
+            self, mock_reply_text, mock_authorise, mock_hexists_unsafe) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.return_value = False
+        chain_names = [escape_markdown(chain_name)
+                       for _, chain_name in self.test_associated_chains.items()]
+
+        self.test_telegram_command_handlers.unmute_callback(self.test_update,
+                                                            None)
+        expected_reply = "*Unmute result*:\n\n"
+        expected_reply += "- No {} alert severity was muted.\n".format(
+            ', '.join(chain_names))
+        expected_calls = [call("Performing unmute..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    def test_unmute_callback_sends_correct_replies_if_chains_muted(
             self) -> None:
-        # TODO: Parametrize for many values. We can mock redis for these tests.
+        # TODO: Parametrize for 1 chain muted, 2 chains muted, 3 chains muted.
+        #     : Start by muting the chain(s) and then unmute them and check that
+        #     : there is no keys for every chain
+        #     : (even ones which were not muted)
         pass
 
-    def test_mute_callback_returns_correct_replies_if_error_when_muting(
+    def test_unmute_callback_sends_correct_replies_if_error_when_unmuting(
             self) -> None:
-        # TODO: We should parameterize for RedisError, UnexpectedException and
-        #     : ConnectionResetError. Also we must generate such alerts at
-        #     : different points of muting (to check for when some chains muted
-        #     : and some not muted). We can mock redis for these tests.
+        # TODO: Test with RedisError, ConnectionResetError and Exception.
         pass
 
-    def test_mute_callback_returns_correct_replies_if_mute_successful(
-            self) -> None:
-        # TODO: Must parametrize to test for multiple severities and chains. We
-        #     : can mock redis for these tests.
-        #     Must also test when no severities inputted.
-        pass
-
-    # TODO: Must do unmute tests after mute
+    # TODO: Mute tests are ready, when finishing unmute tests skip to muteall
