@@ -1640,7 +1640,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         expected_reply = "*Unmute result*:\n\n"
         expected_reply += "- No {} alert severity was muted.\n".format(
             ', '.join(chain_names))
-        expected_calls = [call("Performing unmute..."), call(expected_reply)]
+        expected_reply = expected_reply[:-1] if expected_reply.endswith('\n') \
+            else expected_reply
+        expected_calls = [call("Performing unmute..."),
+                          call(expected_reply, parse_mode="Markdown")]
         actual_calls = mock_reply_text.call_args_list
         self.assertEqual(expected_calls, actual_calls)
 
