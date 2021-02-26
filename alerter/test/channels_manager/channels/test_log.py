@@ -10,7 +10,7 @@ from src.alerter.alerts.system_alerts import (
 from src.channels_manager.channels.log import LogChannel
 from src.utils.alert import Severity
 from src.utils.data import RequestStatus
-from test.utils.test_utils import assert_not_called_with
+from test.utils.utils import assert_not_called_with
 
 
 class TestLogChannel(unittest.TestCase):

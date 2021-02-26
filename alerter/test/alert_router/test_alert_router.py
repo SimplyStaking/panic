@@ -24,10 +24,9 @@ from src.utils.constants import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME
 )
 from src.utils.exceptions import MissingKeyInConfigException
-from test.test_utils import (
-    DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
-    disconnect_from_rabbit, connect_to_rabbit
-)
+from test.utils.utils import (delete_queue_if_exists, delete_exchange_if_exists,
+                              disconnect_from_rabbit, connect_to_rabbit,
+                              DummyAlertCode)
 
 
 class TestAlertRouter(unittest.TestCase):

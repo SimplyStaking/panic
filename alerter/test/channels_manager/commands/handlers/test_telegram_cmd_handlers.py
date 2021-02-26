@@ -30,8 +30,8 @@ from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
                                  DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
                                  CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
                                  PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME)
-from test.test_utils import \
-    assign_side_effect_if_not_none_otherwise_return_value
+from test.utils.utils import (
+    assign_side_effect_if_not_none_otherwise_return_value)
 
 
 class TestTelegramCommandHandlers(unittest.TestCase):
