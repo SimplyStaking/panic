@@ -24,7 +24,7 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
     SYSTEM_MONITOR_NAME_TEMPLATE
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 class TestSystemMonitorsManager(unittest.TestCase):

@@ -22,7 +22,7 @@ from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  HEALTH_CHECK_EXCHANGE)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 class TestDataTransformersManager(unittest.TestCase):

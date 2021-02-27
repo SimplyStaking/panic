@@ -1,4 +1,6 @@
+from collections import Callable
 from time import sleep
+from typing import Any
 
 import pika.exceptions
 

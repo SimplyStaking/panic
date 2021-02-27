@@ -21,7 +21,7 @@ from src.config_manager.config_manager import CONFIG_PING_QUEUE
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from test.utils.test_utils import (
+from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )

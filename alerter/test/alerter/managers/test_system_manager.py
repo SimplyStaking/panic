@@ -26,7 +26,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
 from src.utils.exceptions import PANICException
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers
