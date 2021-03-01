@@ -16,4 +16,4 @@ RUN pipenv install --dev --deploy --ignore-pipfile
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
 
-CMD /wait && pipenv run coverage run run_tests.py && pipenv run coverage report -m
+CMD /wait && pipenv run coverage run --source=./src run_tests.py && pipenv run coverage report -m
