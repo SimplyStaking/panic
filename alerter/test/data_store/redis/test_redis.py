@@ -86,43 +86,29 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
         self.redis = None
 
     def test_set_unsafe_throws_exception_if_incorrect_password(self):
-        redis_bad_pass = RedisApi(self.dummy_logger, self.db, self.host, self.port,
+        redis_bad_pass = RedisApi(self.dummy_logger, self.db, self.host,
+                                  self.port,
                                   password='incorrect password',
                                   namespace=self.namespace)
 
-        self.redis.set_unsafe(self.key1, self.val1)  # works
-        try:
-            redis_bad_pass.set_unsafe(self.key1, self.val1)
-            self.fail('Expected AuthenticationError to be thrown')
-        except AuthenticationError:
-            pass
-        except ResponseError:
-            pass
+        self.assertRaises((AuthenticationError, ResponseError),
+                          redis_bad_pass.set_unsafe,
+                          self.key1, self.val1)
 
     def test_set_unsafe_sets_the_specified_key_to_the_specified_value(self):
         self.redis.set_unsafe(self.key1, self.val1)
         self.assertEqual(self.redis.get_unsafe(self.key1), self.val1_bytes)
 
     def test_set_unsafe_throws_exception_if_invalid_type(self):
-        try:
-            self.redis.set_unsafe(self.key1, True)
-            self.fail('Expected DataError exception to be thrown.')
-        except DataError:
-            pass
+        self.assertRaises(DataError, self.redis.set_unsafe, self.key1, True)
 
     def test_hset_unsafe_throws_exception_if_incorrect_password(self):
         redis_bad_pass = RedisApi(self.dummy_logger, self.db, self.host,
                                   self.port, password='incorrect password',
                                   namespace=self.namespace)
-
-        self.redis.hset_unsafe(self.hash_name, self.key1, self.val1)  # works
-        try:
-            redis_bad_pass.hset_unsafe(self.hash_name, self.key1, self.val1)
-            self.fail('Expected AuthenticationError to be thrown')
-        except AuthenticationError:
-            pass
-        except ResponseError:
-            pass
+        self.assertRaises((AuthenticationError, ResponseError),
+                          redis_bad_pass.hset_unsafe, self.hash_name,
+                          self.key1, self.val1)
 
     def test_hset_unsafe_sets_the_specified_key_to_the_specified_value(self):
         self.redis.hset_unsafe(self.hash_name, self.key1, self.val1)
@@ -130,11 +116,8 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
                          self.val1_bytes)
 
     def test_hset_unsafe_throws_exception_if_invalid_type(self):
-        try:
-            self.redis.hset_unsafe(self.hash_name, self.key1, True)
-            self.fail('Expected DataError exception to be thrown.')
-        except DataError:
-            pass
+        self.assertRaises(DataError, self.redis.hset_unsafe, self.hash_name,
+                          self.key1, True)
 
     def test_set_multiple_unsafe_sets_multiple_key_value_pairs(self):
         self.redis.set_multiple_unsafe({
@@ -776,148 +759,75 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
                          self.some_key))
 
     def test_set_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.set_unsafe(self.key, self.val)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.set_unsafe,
+                          self.key, self.val)
 
     def test_hset_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hset_unsafe(self.hash_name, self.key, self.val)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hset_unsafe,
+                          self.hash_name, self.key, self.val)
 
     def test_set_multiple_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.set_multiple_unsafe({self.key: self.val})
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.set_multiple_unsafe,
+                          {self.key: self.val})
 
     def test_hset_multiple_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hset_multiple_unsafe(self.hash_name,
-                                            {self.key: self.val})
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError,
+                          self.redis.hset_multiple_unsafe, self.hash_name,
+                          {self.key: self.val})
 
     def test_set_for_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.set_for_unsafe(self.key, self.val, self.time)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.set_for_unsafe,
+                          self.key, self.val, self.time)
 
     def test_time_to_live_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.time_to_live_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError,
+                          self.redis.time_to_live_unsafe, self.key)
 
     def test_get_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.get_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.get_unsafe,
+                          self.key)
 
     def test_hget_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hget_unsafe(self.hash_name, self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hget_unsafe,
+                          self.hash_name, self.key)
 
     def test_get_int_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.get_int_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.get_int_unsafe,
+                          self.key)
 
     def test_hget_int_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hget_int_unsafe(self.hash_name, self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hget_int_unsafe,
+                          self.hash_name, self.key)
 
     def test_get_bool_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.get_bool_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.get_bool_unsafe,
+                          self.key)
 
     def test_hget_bool_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hget_bool_unsafe(self.hash_name, self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hget_bool_unsafe,
+                          self.hash_name, self.key)
 
     def test_exists_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.exists_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.exists_unsafe,
+                          self.key)
 
     def test_hexists_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.hexists_unsafe(self.hash_name, self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hexists_unsafe,
+                          self.hash_name, self.key)
 
     def test_get_keys_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.get_keys_unsafe()
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.get_keys_unsafe)
 
     def test_remove_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.remove_unsafe(self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.remove_unsafe,
+                          self.key)
 
     def test_hremove_unsafe_throws_connection_exception(self):
-        try:
-            self.redis.hremove_unsafe(self.hash_name, self.key)
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.hremove_unsafe,
+                          self.hash_name, self.key)
 
     def test_delete_all_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.delete_all_unsafe()
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.delete_all_unsafe)
 
     def test_set_returns_none(self):
         self.assertIsNone(self.redis.set(self.key, self.val))
@@ -1005,12 +915,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         self.assertIsNone(self.redis.delete_all())
 
     def test_ping_unsafe_throws_connection_exception(self):
-
-        try:
-            self.redis.ping_unsafe()
-            self.fail('Expected RedisConnectionError exception to be thrown.')
-        except RedisConnectionError:
-            pass
+        self.assertRaises(RedisConnectionError, self.redis.ping_unsafe)
 
 
 class TestRedisNamespaceWithRedisOnline(unittest.TestCase):

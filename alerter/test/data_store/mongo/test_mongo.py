@@ -96,6 +96,15 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
             '$inc': {'n_entries': 1}
         }
 
+        self.doc_3 = {
+            '$push': {
+                self.id_1: {
+                    self.key_m_2: self.val_m_2
+                }
+            },
+            '$inc': {'n_entries': 1}
+        }
+
         self.time = timedelta(seconds=3)
         self.time_with_error_margin = timedelta(seconds=4)
 
@@ -170,12 +179,13 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.assertEqual(len(get_result), 0)
 
         self.mongo.update_one(self.col1, self.query1, self.doc_1)
-        self.mongo.update_one(self.col1, self.query1, self.doc_1)
+        self.mongo.update_one(self.col1, self.query1, self.doc_3)
 
         # Check that value was added to col1
         get_result = list(self.mongo._db[self.col1].find({}))
         self.assertEqual(len(get_result), 1)
         self.assertEqual(get_result[0]['1'][0][self.key_m_1], self.val_m_1)
+        self.assertEqual(get_result[0]['1'][1][self.key_m_2], self.val_m_2)
         self.assertEqual(get_result[0]['n_entries'], 2)
         self.assertEqual(get_result[0]['doc_type'], self.test_1)
         self.assertEqual(get_result[0]['d'], self.time_used)
@@ -272,18 +282,11 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.assertTrue(self.mongo.ping_unsafe())
 
     def test_ping_auth_throws_value_error_for_empty_password(self):
-        try:
-            self.mongo.ping_auth(self.user, '')
-            self.fail('Expected ValueError exception to be thrown.')
-        except:
-            pass
+        self.assertRaises(ValueError, self.mongo.ping_auth, self.user, '')
 
     def test_ping_auth_throws_operation_failure_for_wrong_password(self):
-        try:
-            self.mongo.ping_auth(self.user, 'incorrect_password')
-            self.fail('Expected OperationFailure exception to be thrown.')
-        except OperationFailure:
-            pass
+        self.assertRaises(OperationFailure, self.mongo.ping_auth, self.user,
+                          'incorrect_password')
 
 
 class TestMongoApiWithMongoOffline(unittest.TestCase):
@@ -354,18 +357,11 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
         self.assertIsNone(default_return)
 
     def test_ping_unsafe_throws_exception_first_time_round(self):
-        try:
-            self.mongo.ping_unsafe()
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.assertRaises(ServerSelectionTimeoutError, self.mongo.ping_unsafe)
 
     def test_ping_auth_throws_exception_first_time_round(self):
-        try:
-            self.mongo.ping_auth(username=self.user, password=self.password)
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.assertRaises(ServerSelectionTimeoutError, self.mongo.ping_auth,
+                          self.user, self.password)
 
     def test_insert_one_returns_none_if_mongo_already_down(self):
         self.mongo._set_as_down()
@@ -395,19 +391,12 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
 
     def test_ping_unsafe_throws_exception_if_mongo_already_down(self):
         self.mongo._set_as_down()
-        try:
-            self.mongo.ping_unsafe()
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.assertRaises(ServerSelectionTimeoutError, self.mongo.ping_unsafe)
 
     def test_ping_auth_throws_exception_if_mongo_already_down(self):
         self.mongo._set_as_down()
-        try:
-            self.mongo.ping_auth(username=self.user, password=self.password)
-            self.fail('Expected ServerSelectionTimeoutError to be thrown.')
-        except ServerSelectionTimeoutError:
-            pass
+        self.assertRaises(ServerSelectionTimeoutError, self.mongo.ping_auth,
+                          self.user, self.password)
 
 
 class TestMongoApiLiveAndDownFeaturesWithMongoOffline(unittest.TestCase):
