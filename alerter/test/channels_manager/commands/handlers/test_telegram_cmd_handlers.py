@@ -1977,12 +1977,59 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         actual_calls = mock_reply_text.call_args_list
         self.assertEqual(expected_calls, actual_calls)
 
+    @mock.patch.object(RedisApi, "remove_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "hremove_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
     def test_unmuteall_callback_does_not_unmute_all_if_user_unrecognised(
-            self) -> None:
-        pass
+            self, mock_authorise, mock_hexists_unsafe, mock_hremove_unsafe,
+            mock_exists_unsafe, mock_remove_unsafe) -> None:
+        mock_authorise.return_value = False
 
-    def test_unmuteall_callback_does_nothing_if_no_chain_is_muted(self) -> None:
-        pass
+        self.test_telegram_command_handlers.unmuteall_callback(self.test_update,
+                                                               None)
+
+        mock_hexists_unsafe.assert_not_called()
+        mock_hremove_unsafe.assert_not_called()
+        mock_exists_unsafe.assert_not_called()
+        mock_remove_unsafe.assert_not_called()
+
+    @mock.patch.object(RedisApi, "get_unsafe")
+    @mock.patch.object(RedisApi, "set_unsafe")
+    @mock.patch.object(RedisApi, "remove_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "hget_unsafe")
+    @mock.patch.object(RedisApi, "hset_unsafe")
+    @mock.patch.object(RedisApi, "hremove_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_unmuteall_callback_does_nothing_if_no_chain_is_muted(
+            self, mock_reply_text, mock_authorise, mock_hexists_unsafe,
+            mock_hremove_unsafe, mock_hset_unsafe, mock_hget_unsafe,
+            mock_exists_unsafe, mock_remove_unsafe, mock_set_unsafe,
+            mock_get_unsafe) -> None:
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.return_value = False
+        mock_exists_unsafe.return_value = False
+        mock_hremove_unsafe.return_value = None
+        mock_remove_unsafe.return_value = None
+        mock_hget_unsafe.return_value = None
+        mock_get_unsafe.return_value = None
+        mock_hset_unsafe.return_value = None
+        mock_set_unsafe.return_value = None
+        mock_reply_text.return_value = None
+
+        self.test_telegram_command_handlers.unmuteall_callback(
+            self.test_update, None)
+
+        mock_hremove_unsafe.assert_not_called()
+        mock_remove_unsafe.assert_not_called()
+        mock_hset_unsafe.assert_not_called()
+        mock_set_unsafe.assert_not_called()
+        mock_hget_unsafe.assert_not_called()
+        mock_get_unsafe.assert_not_called()
 
     def test_unmuteall_callback_unmutes_muted_chains(self) -> None:
         # TODO: Must parametrize to create these situations: Specific chain
@@ -2012,43 +2059,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         # TODO: Must parametrize with RedisError, ConnectionResetError and
         #     : Exception
         pass
-
-    # @mock.patch.object(RedisApi, "hremove_unsafe")
-    # @mock.patch.object(RedisApi, "hexists_unsafe")
-    # @mock.patch.object(TelegramCommandHandlers, "_authorise")
-    # def test_unmute_callback_does_not_unmute_chains_if_user_unrecognised(
-    #         self, mock_authorise, mock_hexists_unsafe,
-    #         mock_hremove_unsafe) -> None:
-    #     mock_authorise.return_value = False
-    #
-    #     self.test_telegram_command_handlers.unmute_callback(self.test_update,
-    #                                                         None)
-    #
-    #     mock_hexists_unsafe.assert_not_called()
-    #     mock_hremove_unsafe.assert_not_called()
-    #
-    # @mock.patch.object(RedisApi, "hget_unsafe")
-    # @mock.patch.object(RedisApi, "hset_unsafe")
-    # @mock.patch.object(RedisApi, "hremove_unsafe")
-    # @mock.patch.object(RedisApi, "hexists_unsafe")
-    # @mock.patch.object(TelegramCommandHandlers, "_authorise")
-    # @mock.patch.object(Message, "reply_text")
-    # def test_unmute_callback_does_nothing_if_chains_not_muted(
-    #         self, mock_reply_text, mock_authorise, mock_hexists_unsafe,
-    #         mock_hremove_unsafe, mock_hset_unsafe, mock_hget_unsafe) -> None:
-    #     mock_authorise.return_value = True
-    #     mock_hexists_unsafe.return_value = False
-    #     mock_hremove_unsafe.return_value = None
-    #     mock_hget_unsafe.return_value = None
-    #     mock_hset_unsafe.return_value = None
-    #     mock_reply_text.return_value = None
-    #
-    #     self.test_telegram_command_handlers.unmute_callback(self.test_update,
-    #                                                         None)
-    #
-    #     mock_hremove_unsafe.assert_not_called()
-    #     mock_hset_unsafe.assert_not_called()
-    #     mock_hget_unsafe.assert_not_called()
     #
     # @parameterized.expand([
     #     ({"self.test_chain1_id"},),
