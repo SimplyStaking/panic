@@ -774,7 +774,7 @@ class TelegramCommandHandlers(CommandHandler):
         if not self._authorise(update, context):
             return
 
-        update.message.reply_text("Performing unmuteall ...")
+        update.message.reply_text("Performing unmuteall...")
 
         at_least_one_chain_was_muted = False
         try:

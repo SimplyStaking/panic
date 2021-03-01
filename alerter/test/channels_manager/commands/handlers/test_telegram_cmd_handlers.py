@@ -2078,9 +2078,25 @@ class TestTelegramCommandHandlers(unittest.TestCase):
             if self.test_redis.exists_unsafe(mute_alerter_key):
                 self.fail("Did not expect a muteall key to be set")
 
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
     def test_unmuteall_callback_sends_correct_replies_if_no_chain_is_muted(
-            self) -> None:
-        pass
+            self, mock_reply_text, mock_authorise, mock_hexists_unsafe,
+            mock_exists_unsafe) -> None:
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.return_value = False
+        mock_exists_unsafe.return_value = False
+
+        self.test_telegram_command_handlers.unmuteall_callback(self.test_update,
+                                                               None)
+
+        expected_reply = "No alert severity was muted for any chain."
+        expected_calls = [call("Performing unmuteall..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
 
     def test_unmuteall_callback_sends_correct_replies_if_a_chain_was_muted(
             self) -> None:
@@ -2101,29 +2117,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         #     : Exception
         pass
 
-    #
-    # @mock.patch.object(RedisApi, "hexists_unsafe")
-    # @mock.patch.object(TelegramCommandHandlers, "_authorise")
-    # @mock.patch.object(Message, "reply_text")
-    # def test_unmute_callback_sends_correct_replies_if_chains_not_muted(
-    #         self, mock_reply_text, mock_authorise, mock_hexists_unsafe) -> None:
-    #     mock_reply_text.return_value = None
-    #     mock_authorise.return_value = True
-    #     mock_hexists_unsafe.return_value = False
-    #     chain_names = [escape_markdown(chain_name)
-    #                    for _, chain_name in self.test_associated_chains.items()]
-    #
-    #     self.test_telegram_command_handlers.unmute_callback(self.test_update,
-    #                                                         None)
-    #     expected_reply = "*Unmute result*:\n\n"
-    #     expected_reply += "- No {} alert severity was muted.\n".format(
-    #         ', '.join(chain_names))
-    #     expected_reply = expected_reply[:-1] if expected_reply.endswith('\n') \
-    #         else expected_reply
-    #     expected_calls = [call("Performing unmute..."),
-    #                       call(expected_reply, parse_mode="Markdown")]
-    #     actual_calls = mock_reply_text.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
     #
     # @parameterized.expand([
     #     (["self.test_chain1_id"],),
