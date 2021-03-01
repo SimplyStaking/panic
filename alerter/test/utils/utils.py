@@ -15,6 +15,14 @@ def infinite_fn() -> None:
         sleep(10)
 
 
+def dummy_function(*args, **kwargs):
+    return args, kwargs
+
+
+def dummy_none_function(*args, **kwargs) -> None:
+    return None
+
+
 def assert_not_called_with(mocked_function: Mock, *args, **kwargs):
     try:
         mocked_function.assert_has_calls(*args, **kwargs)
@@ -33,14 +41,6 @@ def assign_side_effect_if_not_none_otherwise_return_value(
         mock_object.side_effect = side_effect
 
     return mock_object
-
-
-def dummy_function(*args, **kwargs):
-    return args, kwargs
-
-
-def dummy_none_function(*args, **kwargs) -> None:
-    return None
 
 
 class TestConnection:
