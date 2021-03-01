@@ -322,7 +322,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -341,7 +341,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'data': self.processed_data_example,
             }
@@ -399,14 +399,14 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'data': self.processed_data_example,
             }
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
-            'timestamp': self.test_timestamp
+            'timestamp': datetime(2012, 1, 1).timestamp()
         }
 
         try:
@@ -565,7 +565,7 @@ class TestSystemMonitor(unittest.TestCase):
                                 self.test_monitor.system_config.system_id,
                             'system_parent_id':
                                 self.test_monitor.system_config.parent_id,
-                            'time': self.test_timestamp
+                            'time': datetime(2012, 1, 1).timestamp()
                         },
                         'message': data_ret_exception.message,
                         'code': data_ret_exception.code,
@@ -573,7 +573,7 @@ class TestSystemMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
-                    'timestamp': self.test_timestamp
+                    'timestamp': datetime(2012, 1, 1).timestamp()
                 }
                 # Delete the queue before to avoid messages in the queue on
                 # error.
@@ -640,7 +640,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'data': self.processed_data_example,
             }
@@ -708,7 +708,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'data': self.processed_data_example,
             }
@@ -779,7 +779,7 @@ class TestSystemMonitor(unittest.TestCase):
                     'system_id': self.test_monitor.system_config.system_id,
                     'system_parent_id':
                         self.test_monitor.system_config.parent_id,
-                    'time': self.test_timestamp
+                    'time': datetime(2012, 1, 1).timestamp()
                 },
                 'data': self.processed_data_example,
             }

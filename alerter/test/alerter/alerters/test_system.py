@@ -51,7 +51,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
-            'timestamp': datetime.datetime(2012, 1, 1, 1).timestamp()
+            'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
 
         """
@@ -447,7 +447,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_alerts_config_warnings_disabled = None
         self.system_alerts_config_critical_disabled = None
         self.system_alerts_config_all_disabled = None
-        self.test_rabbit_manager = None
+        self.test_system_alerter = None
 
     def test_returns_alerter_name_as_str(self) -> None:
         self.assertEqual(self.alerter_name, self.test_system_alerter.__str__())
@@ -4682,7 +4682,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -4699,7 +4703,6 @@ class TestSystemAlerter(unittest.TestCase):
         mock_ack.return_value = None
         mock_create_state_for_system.return_value = None
         mock_process_errors.return_value = None
-
         try:
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
@@ -4709,7 +4712,11 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_send_heartbeat.assert_called_with(self.heartbeat_test)
+            heartbeat_test = {
+                'component_name': self.alerter_name,
+                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+            }                             
+            mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
