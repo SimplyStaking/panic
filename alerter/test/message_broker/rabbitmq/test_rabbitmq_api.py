@@ -341,8 +341,14 @@ class TestRabbitMQApi(TestCase):
         self.assertEqual(self.rabbit.host, self.rabbit.connection.host)
         self.assertEqual(self.rabbit.port, self.rabbit.connection.port)
         self.assertEqual("/", self.rabbit.connection.virtual_host)
+        if not (username and username.strip()):
+            username = 'guest'
+
+        if not (password and password.strip()):
+            password = 'guest'
+
         self.assertEqual(
-            pika.PlainCredentials(username or 'guest', password or 'guest'),
+            pika.PlainCredentials(username, password),
             self.rabbit.connection.credentials
         )
         self.assertTrue(self.rabbit.channel)
