@@ -1,4 +1,6 @@
+from collections import Callable
 from time import sleep
+from typing import Any
 
 import pika.exceptions
 
@@ -12,6 +14,35 @@ from src.monitorables.system import System
 def infinite_fn() -> None:
     while True:
         sleep(10)
+
+
+def dummy_function(*args, **kwargs):
+    return args, kwargs
+
+
+def dummy_none_function(*args, **kwargs) -> None:
+    return None
+
+
+class TestConnection:
+    def __init__(
+            self, host=None, port=None, virtual_host=None, credentials=None
+    ):
+        self.host = host
+        self.port = port
+        self.virtual_host = virtual_host
+        self.credentials = credentials
+
+    def __dict__(self):
+        return {
+            "host": self.host,
+            "port": self.port,
+            "virtual_host": self.virtual_host,
+            "credentials": self.credentials
+        }
+
+    def channel(self):
+        return True
 
 
 class DummyAlertCode(AlertCode):

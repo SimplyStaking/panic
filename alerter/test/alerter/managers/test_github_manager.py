@@ -21,7 +21,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
                                  GITHUB_ALERTER_NAME)
 from src.utils.exceptions import PANICException
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers
