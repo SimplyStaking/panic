@@ -35,6 +35,39 @@ def assign_side_effect_if_not_none_otherwise_return_value(
     return mock_object
 
 
+def dummy_function(*args, **kwargs):
+    return args, kwargs
+
+
+def dummy_none_function(*args, **kwargs) -> None:
+    return None
+
+
+class TestConnection:
+    def __init__(
+            self, host=None, port=None, virtual_host=None, credentials=None
+    ):
+        self.host = host
+        self.port = port
+        self.virtual_host = virtual_host
+        self.credentials = credentials
+
+    def __dict__(self):
+        return {
+            "host": self.host,
+            "port": self.port,
+            "virtual_host": self.virtual_host,
+            "credentials": self.credentials
+        }
+
+    def channel(self):
+        return True
+
+
+class DummyAlertCode(AlertCode):
+    TEST_ALERT_CODE = 'test_alert_code'
+
+
 def delete_queue_if_exists(rabbit: RabbitMQApi, queue_name: str) -> None:
     try:
         rabbit.queue_declare(queue_name, passive=True)
@@ -120,10 +153,6 @@ def save_system_to_redis(redis: RedisApi, system: System) -> None:
         Keys.get_system_last_monitored(system_id): system.last_monitored,
         Keys.get_system_went_down_at(system_id): system.went_down_at,
     })
-
-
-class DummyAlertCode(AlertCode):
-    TEST_ALERT_CODE = 'test_alert_code'
 
 
 def save_github_repo_to_redis(redis: RedisApi, github_repo: GitHubRepo) -> None:
