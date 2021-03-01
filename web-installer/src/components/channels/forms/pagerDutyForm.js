@@ -185,8 +185,8 @@ const PagerDutyForm = ({
                 <Box px={2}>
                   <SendTestPagerDutyButton
                     disabled={Object.keys(errors).length !== 0}
-                    api_token={values.api_token}
-                    integration_key={values.integration_key}
+                    apiToken={values.api_token}
+                    integrationKey={values.integration_key}
                   />
                   <Button
                     color="primary"

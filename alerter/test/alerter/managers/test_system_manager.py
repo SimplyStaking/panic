@@ -2,8 +2,8 @@ import copy
 import json
 import logging
 import multiprocessing
-import unittest
 import time
+import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock
@@ -13,10 +13,10 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
-from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.managers.system import SystemAlertersManager
 from src.alerter.alerter_starters import start_system_alerter
+from src.alerter.managers.system import SystemAlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -242,7 +242,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_purge(
                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(SYS_ALERTERS_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(
                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
@@ -278,7 +279,8 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.test_manager._systems_alerts_configs[self.parent_id_1] = \
             self.system_alerts_config
         self.assertEqual(self.system_alerts_config,
-                         self.test_manager.systems_alerts_configs[self.parent_id_1])
+                         self.test_manager.systems_alerts_configs[
+                             self.parent_id_1])
 
     @mock.patch.object(RabbitMQApi, "start_consuming")
     def test_listen_for_data_calls_start_consuming(
@@ -405,7 +407,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
-        self.assertEqual(self.expected_output, self.test_manager.parent_id_process_dict)
+        self.assertEqual(self.expected_output,
+                         self.test_manager.parent_id_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_alerter_process_creates_the_correct_process(
@@ -472,7 +475,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general)
             mock_alerts_config.assert_called_once_with(
-                parent_id=self.parent_id_1, open_file_descriptors=self.open_file_descriptors,
+                parent_id=self.parent_id_1,
+                open_file_descriptors=self.open_file_descriptors,
                 system_cpu_usage=self.system_cpu_usage,
                 system_storage_usage=self.system_storage_usage,
                 system_ram_usage=self.system_ram_usage,
@@ -482,7 +486,8 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                properties, body_chain)
             self.assertEqual(2, mock_alerts_config.call_count)
             mock_alerts_config.assert_called_with(
-                parent_id=self.parent_id_1, open_file_descriptors=self.open_file_descriptors,
+                parent_id=self.parent_id_1,
+                open_file_descriptors=self.open_file_descriptors,
                 system_cpu_usage=self.system_cpu_usage,
                 system_storage_usage=self.system_storage_usage,
                 system_ram_usage=self.system_ram_usage,
@@ -493,7 +498,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    @mock.patch.object(SystemAlertersManager, "_create_and_start_alerter_process")
+    @mock.patch.object(SystemAlertersManager,
+                       "_create_and_start_alerter_process")
     def test_process_configs_stores_new_configs_to_be_alerted_correctly(
             self, startup_mock, mock_ack, mock_system_alerts_config) -> None:
 
@@ -541,13 +547,19 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             mock_system_alerts_config.assert_has_calls([call_2])
 
-            self.open_file_descriptors['enabled'] = str(not bool(self.enabled_alert))
-            self.open_file_descriptors_2['enabled'] = str(not bool(self.enabled_alert))
-            self.sent_configs_example_with_default['1'] = self.open_file_descriptors
-            self.sent_configs_example_with_default_2['1'] = self.open_file_descriptors_2
+            self.open_file_descriptors['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.open_file_descriptors_2['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.sent_configs_example_with_default[
+                '1'] = self.open_file_descriptors
+            self.sent_configs_example_with_default_2[
+                '1'] = self.open_file_descriptors_2
 
-            body_new_configs_chain = json.dumps(self.sent_configs_example_with_default)
-            body_new_configs_general = json.dumps(self.sent_configs_example_with_default_2)
+            body_new_configs_chain = json.dumps(
+                self.sent_configs_example_with_default)
+            body_new_configs_general = json.dumps(
+                self.sent_configs_example_with_default_2)
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
                                                body_new_configs_chain)
@@ -613,13 +625,19 @@ class TestSystemAlertersManager(unittest.TestCase):
             mock_join.assert_not_called()
             mock_terminate.assert_not_called()
 
-            self.open_file_descriptors['enabled'] = str(not bool(self.enabled_alert))
-            self.open_file_descriptors_2['enabled'] = str(not bool(self.enabled_alert))
-            self.sent_configs_example_with_default['1'] = self.open_file_descriptors
-            self.sent_configs_example_with_default_2['1'] = self.open_file_descriptors_2
+            self.open_file_descriptors['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.open_file_descriptors_2['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.sent_configs_example_with_default[
+                '1'] = self.open_file_descriptors
+            self.sent_configs_example_with_default_2[
+                '1'] = self.open_file_descriptors_2
 
-            body_new_configs_chain = json.dumps(self.sent_configs_example_with_default)
-            body_new_configs_general = json.dumps(self.sent_configs_example_with_default_2)
+            body_new_configs_chain = json.dumps(
+                self.sent_configs_example_with_default)
+            body_new_configs_general = json.dumps(
+                self.sent_configs_example_with_default_2)
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
                                                body_new_configs_chain)
@@ -631,32 +649,35 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                body_new_configs_general)
             self.assertEqual(2, mock_join.call_count)
             self.assertEqual(2, mock_terminate.call_count)
-            self.assertTrue(self.parent_id_1 in self.test_manager.parent_id_process_dict)
-            self.assertTrue(self.parent_id_2 in self.test_manager.parent_id_process_dict)
+            self.assertTrue(
+                self.parent_id_1 in self.test_manager.parent_id_process_dict)
+            self.assertTrue(
+                self.parent_id_2 in self.test_manager.parent_id_process_dict)
             self.assertEqual(4, mock_system_alerts_config.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    @mock.patch.object(SystemAlertersManager, "_create_and_start_alerter_process")
+    @mock.patch.object(SystemAlertersManager,
+                       "_create_and_start_alerter_process")
     def test_proc_configs_starts_new_alerters_for_new_configs_to_be_alerted_on(
             self, startup_mock, mock_ack, mock_system_alerters_config) -> None:
 
         mock_system_alerters_config_1 = mock_system_alerters_config(
-                                        parent_id=self.parent_id_1,
-                                        open_file_descriptors=self.open_file_descriptors,
-                                        system_cpu_usage=self.system_cpu_usage,
-                                        system_storage_usage=self.system_storage_usage,
-                                        system_ram_usage=self.system_ram_usage,
-                                        system_is_down=self.system_is_down)
+            parent_id=self.parent_id_1,
+            open_file_descriptors=self.open_file_descriptors,
+            system_cpu_usage=self.system_cpu_usage,
+            system_storage_usage=self.system_storage_usage,
+            system_ram_usage=self.system_ram_usage,
+            system_is_down=self.system_is_down)
         mock_system_alerters_config_2 = mock_system_alerters_config(
-                                        parent_id=self.parent_id_2,
-                                        open_file_descriptors=self.open_file_descriptors_2,
-                                        system_cpu_usage=self.system_cpu_usage_2,
-                                        system_storage_usage=self.system_storage_usage_2,
-                                        system_ram_usage=self.system_ram_usage_2,
-                                        system_is_down=self.system_is_down_2)
+            parent_id=self.parent_id_2,
+            open_file_descriptors=self.open_file_descriptors_2,
+            system_cpu_usage=self.system_cpu_usage_2,
+            system_storage_usage=self.system_storage_usage_2,
+            system_ram_usage=self.system_ram_usage_2,
+            system_is_down=self.system_is_down_2)
         mock_ack.return_value = None
         startup_mock.return_value = None
         try:
@@ -741,13 +762,19 @@ class TestSystemAlertersManager(unittest.TestCase):
             parent_id_2_old_proc = self.test_manager.parent_id_process_dict[
                 self.parent_id_2]['process']
 
-            self.open_file_descriptors['enabled'] = str(not bool(self.enabled_alert))
-            self.open_file_descriptors_2['enabled'] = str(not bool(self.enabled_alert))
-            self.sent_configs_example_with_default['1'] = self.open_file_descriptors
-            self.sent_configs_example_with_default_2['1'] = self.open_file_descriptors_2
+            self.open_file_descriptors['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.open_file_descriptors_2['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.sent_configs_example_with_default[
+                '1'] = self.open_file_descriptors
+            self.sent_configs_example_with_default_2[
+                '1'] = self.open_file_descriptors_2
 
-            body_new_configs_chain = json.dumps(self.sent_configs_example_with_default)
-            body_new_configs_general = json.dumps(self.sent_configs_example_with_default_2)
+            body_new_configs_chain = json.dumps(
+                self.sent_configs_example_with_default)
+            body_new_configs_general = json.dumps(
+                self.sent_configs_example_with_default_2)
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
                                                body_new_configs_chain)
@@ -830,16 +857,21 @@ class TestSystemAlertersManager(unittest.TestCase):
             # started.
             self.assertFalse(parent_id_1_old_proc.is_alive())
             self.assertFalse(parent_id_2_old_proc.is_alive())
-            self.assertFalse(self.parent_id_1 in self.test_manager.parent_id_process_dict)
-            self.assertFalse(self.parent_id_1 in self.test_manager.systems_alerts_configs)
-            self.assertFalse(self.parent_id_2 in self.test_manager.parent_id_process_dict)
-            self.assertFalse(self.parent_id_2 in self.test_manager.systems_alerts_configs)
+            self.assertFalse(
+                self.parent_id_1 in self.test_manager.parent_id_process_dict)
+            self.assertFalse(
+                self.parent_id_1 in self.test_manager.systems_alerts_configs)
+            self.assertFalse(
+                self.parent_id_2 in self.test_manager.parent_id_process_dict)
+            self.assertFalse(
+                self.parent_id_2 in self.test_manager.systems_alerts_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    @mock.patch.object(SystemAlertersManager, "_create_and_start_alerter_process")
+    @mock.patch.object(SystemAlertersManager,
+                       "_create_and_start_alerter_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_alerter_with_the_correct_conf(
@@ -868,10 +900,14 @@ class TestSystemAlertersManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
 
-            self.open_file_descriptors['enabled'] = str(not bool(self.enabled_alert))
-            self.open_file_descriptors_2['enabled'] = str(not bool(self.enabled_alert))
-            self.sent_configs_example_with_default['1'] = self.open_file_descriptors
-            self.sent_configs_example_with_default_2['1'] = self.open_file_descriptors_2
+            self.open_file_descriptors['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.open_file_descriptors_2['enabled'] = str(
+                not bool(self.enabled_alert))
+            self.sent_configs_example_with_default[
+                '1'] = self.open_file_descriptors
+            self.sent_configs_example_with_default_2[
+                '1'] = self.open_file_descriptors_2
 
             mock_system_alerters_config_1 = mock_system_alerters_config(
                 parent_id=self.parent_id_1,
@@ -888,8 +924,10 @@ class TestSystemAlertersManager(unittest.TestCase):
                 system_ram_usage=self.system_ram_usage_2,
                 system_is_down=self.system_is_down_2)
 
-            body_updated_configs_chain = json.dumps(self.sent_configs_example_with_default)
-            body_updated_configs_general = json.dumps(self.sent_configs_example_with_default_2)
+            body_updated_configs_chain = json.dumps(
+                self.sent_configs_example_with_default)
+            body_updated_configs_general = json.dumps(
+                self.sent_configs_example_with_default_2)
 
             properties = pika.spec.BasicProperties()
 
@@ -941,14 +979,16 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                properties,
                                                body_new_configs_general)
             self.assertEqual(1, mock_ack.call_count)
-            self.assertTrue(self.parent_id_2 in self.test_manager.systems_alerts_configs)
+            self.assertTrue(
+                self.parent_id_2 in self.test_manager.systems_alerts_configs)
 
             # This should fail to start a process as there are missing keys
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
                                                body_new_configs_chain_missing)
             self.assertEqual(2, mock_ack.call_count)
-            self.assertFalse(self.parent_id_1 in self.test_manager.systems_alerts_configs)
+            self.assertFalse(
+                self.parent_id_1 in self.test_manager.systems_alerts_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -991,7 +1031,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.parent_id_process_dict)
             self.assertEqual(self.system_alerts_config,
-                             self.test_manager.systems_alerts_configs[self.parent_id_1])
+                             self.test_manager.systems_alerts_configs[
+                                 self.parent_id_1])
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
@@ -1000,7 +1041,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.parent_id_process_dict)
             self.assertEqual(self.system_alerts_config_2,
-                             self.test_manager.systems_alerts_configs[self.parent_id_2])
+                             self.test_manager.systems_alerts_configs[
+                                 self.parent_id_2])
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1321,10 +1363,12 @@ class TestSystemAlertersManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
-            self.assertTrue(self.test_manager.parent_id_process_dict[self.parent_id_1][
-                                'process'].is_alive())
-            self.assertTrue(self.test_manager.parent_id_process_dict[self.parent_id_2][
-                                'process'].is_alive())
+            self.assertTrue(
+                self.test_manager.parent_id_process_dict[self.parent_id_1][
+                    'process'].is_alive())
+            self.assertTrue(
+                self.test_manager.parent_id_process_dict[self.parent_id_2][
+                    'process'].is_alive())
 
             # Clean before test finishes
             self.test_manager.parent_id_process_dict[self.parent_id_1][
@@ -1371,10 +1415,12 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             self.assertEqual(2, startup_mock.call_count)
 
-            call_1 = call(self.test_manager.systems_alerts_configs[self.parent_id_1],
-                          self.parent_id_1, self.chain_1)
-            call_2 = call(self.test_manager.systems_alerts_configs[self.parent_id_2],
-                          self.parent_id_2, self.chain_2)
+            call_1 = call(
+                self.test_manager.systems_alerts_configs[self.parent_id_1],
+                self.parent_id_1, self.chain_1)
+            call_2 = call(
+                self.test_manager.systems_alerts_configs[self.parent_id_2],
+                self.parent_id_2, self.chain_2)
             startup_mock.assert_has_calls([call_1, call_2])
         except Exception as e:
             self.fail("Test failed: {}".format(e))

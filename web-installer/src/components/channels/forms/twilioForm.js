@@ -190,14 +190,14 @@ const TwilioForm = ({
                   <Box px={2}>
                     <TestCallButton
                       disabled={Object.keys(errors).length !== 0}
-                      twilio_phone_numbers_to_dial_valid={
+                      twilioPhoneNumbersToDialValid={
                         values.twilio_phone_numbers_to_dial_valid
                           ? values.twilio_phone_numbers_to_dial_valid
                           : []
                       }
-                      account_sid={values.account_sid}
-                      auth_token={values.auth_token}
-                      twilio_phone_no={values.twilio_phone_no}
+                      accountSid={values.account_sid}
+                      authToken={values.auth_token}
+                      twilioPhoneNumber={values.twilio_phone_no}
                     />
                     <Button
                       color="primary"

@@ -9,12 +9,14 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
     smtp: '',
+    port: '',
     email_from: '',
     emailTo: '',
   }),
   mapPropsToValues: () => ({
     channel_name: '',
     smtp: '',
+    port: 0,
     email_from: '',
     emails_to: [],
     username: '',
@@ -30,6 +32,7 @@ const Form = withFormik({
     const payload = {
       channel_name: values.channel_name,
       smtp: values.smtp,
+      port: values.port,
       email_from: values.email_from,
       emails_to: values.emails_to,
       username: values.username,

@@ -36,7 +36,9 @@ const EndDialog = () => {
         </DialogContent>
         <DialogActions>
           <BackButton onClick={handleClose} />
-          <SaveConfig />
+          <SaveConfig
+            closeOnSave={handleClose}
+          />
         </DialogActions>
       </Dialog>
     </div>

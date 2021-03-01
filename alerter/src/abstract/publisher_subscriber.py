@@ -113,8 +113,8 @@ class QueuingPublisherSubscriberComponent(PublisherSubscriberComponent, ABC):
         empty = True
         if not self._publishing_queue.empty():
             empty = False
-            self._logger.info("Attempting to send all data waiting in the "
-                              "publishing queue ...")
+            self._logger.debug("Attempting to send all data waiting in the "
+                               "publishing queue ...")
 
         # Try sending the data in the publishing queue one by one. Important,
         # remove an item from the queue only if the sending was successful, so
@@ -139,5 +139,5 @@ class QueuingPublisherSubscriberComponent(PublisherSubscriberComponent, ABC):
                 self._publishing_queue.task_done()
 
         if not empty:
-            self._logger.info("Successfully sent all data from the publishing "
-                              "queue")
+            self._logger.debug("Successfully sent all data from the publishing "
+                               "queue")

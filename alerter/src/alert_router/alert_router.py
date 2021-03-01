@@ -184,23 +184,23 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             recv_alert = json.loads(body)
 
             if recv_alert and 'severity' in recv_alert:
-                self._logger.info("Received an alert to route")
-                self._logger.info("recv_alert = %s", recv_alert)
+                self._logger.debug("Received an alert to route")
+                self._logger.debug("recv_alert = %s", recv_alert)
                 # Where to route this alert to
 
-                self._logger.info("Checking if alert is muted")
+                self._logger.debug("Checking if alert is muted")
                 is_all_muted = self.is_all_muted(recv_alert.get('severity'))
                 is_chain_severity_muted = self.is_chain_severity_muted(
                     recv_alert.get('parent_id'), recv_alert.get('severity'))
 
                 if is_all_muted or is_chain_severity_muted:
                     self._logger.info("This alert has been muted")
-                    self._logger.debug(
+                    self._logger.info(
                         "is_all_muted=%s, is_chain_severity_muted=%s",
                         is_all_muted, is_chain_severity_muted)
                 else:
                     self._logger.info("Obtaining list of channels to alert")
-                    self._logger.debug([
+                    self._logger.info([
                         channel.get('id') for channel_type in
                         self._config.values() for channel in
                         channel_type.values()
@@ -262,7 +262,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
                                 mandatory=True)
 
-            self._logger.info("Alert routed successfully")
+            self._logger.debug("Alert routed successfully")
 
         # Send any data waiting in the publisher queue, if any
         try:
