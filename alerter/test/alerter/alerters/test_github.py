@@ -42,7 +42,6 @@ class TestGithubAlerter(unittest.TestCase):
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
         self.target_queue_used = "alert_router_queue"
-        self.test_queue_name = 'test_alerter_queue'
         self.test_routing_key = 'test_alert_router.github'
         self.alert_router_routing_key = 'alert_router.system'
         self.test_github_alerter = GithubAlerter(
@@ -60,7 +59,7 @@ class TestGithubAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
-            'timestamp': datetime.datetime(2021, 1, 28).timestamp()
+            'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
         self.heartbeat_queue = 'heartbeat queue'
 
@@ -106,7 +105,7 @@ class TestGithubAlerter(unittest.TestCase):
             }
         }
         self.github_json = json.dumps(self.github_data_received).encode()
-        self.frozen_timestamp = datetime.datetime(2012, 1, 1, 1).timestamp()
+        self.frozen_timestamp = datetime.datetime(2012, 1, 1).timestamp()
         self.github_data_error = {
             "error": {
                 "meta_data": {
@@ -207,7 +206,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
-
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -284,6 +284,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
 
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -336,6 +338,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
 
+        type(mock_cannot_access_github_page_alert.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -356,6 +360,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.repo_name, self.error, self.last_monitored,
                 self.parent_id, self.repo_id
             )
+
             self.assertEqual(2, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -456,7 +461,8 @@ class TestGithubAlerter(unittest.TestCase):
 
             args, _ = mock_send_heartbeat.call_args
             self.assertEqual(args[1]['component_name'], self.alerter_name)
-            self.assertEqual(args[1]['timestamp'], self.frozen_timestamp)
+            self.assertEqual(args[1]['timestamp'],
+                             datetime.datetime(2012, 1, 1).timestamp())
             mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
