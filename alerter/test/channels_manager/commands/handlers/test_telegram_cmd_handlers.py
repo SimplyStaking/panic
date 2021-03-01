@@ -2213,3 +2213,50 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         expected_calls = [call("Performing unmuteall..."), call(expected_reply)]
         actual_calls = mock_reply_text.call_args_list
         self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_help_callback_does_not_return_help_message_if_user_not_authorised(
+            self, mock_reply_text, mock_authorise) -> None:
+        mock_authorise.return_value = False
+        self.test_telegram_command_handlers.help_callback(self.test_update,
+                                                          None)
+        mock_reply_text.assert_not_called()
+
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def test_help_callback_returns_help_message_if_user_is_authorised(
+            self, mock_reply_text, mock_authorise) -> None:
+        mock_authorise.return_value = True
+        self.test_telegram_command_handlers.help_callback(self.test_update,
+                                                          None)
+        chain_names = [escape_markdown(chain_name)
+                       for _, chain_name in self.test_associated_chains.items()]
+
+        # Send help message with available commands
+        expected_reply = \
+            "Hey! These are the available commands:\n" \
+            "  /start: Welcome message\n" \
+            "  /ping: Ping the Telegram Commands Handler\n" \
+            "  /mute List(<severity>) (*Example*: /mute INFO CRITICAL): " \
+            "Mutes List(<severity>) on all channels for chains {}. If the " \
+            "list of severities is not given, all alerts for chains {} are " \
+            "muted on all channels.\n" \
+            "  /unmute: Unmutes all alert severities on all channels for " \
+            "chains {}.\n" \
+            "  /muteall List(<severity>) (*Example*: /muteall INFO " \
+            "CRITICAL): Mutes List(<severity>) on all channels for every " \
+            "chain being monitored. If the list of severities is not " \
+            "given, all alerts for all chains are muted on all channels.\n" \
+            "  /unmuteall: Unmutes all alert severities on all channels " \
+            "for all chains being monitored.\n" \
+            "  /status: Gives a live status of PANIC's components\n" \
+            "  /help: Shows this message".format(', '.join(chain_names),
+                                                 ', '.join(chain_names),
+                                                 ', '.join(chain_names),
+                                                 ', '.join(chain_names))
+        expected_reply = expected_reply[:-1] if expected_reply.endswith('\n') \
+            else expected_reply
+        expected_calls = [call(expected_reply, parse_mode="Markdown")]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
