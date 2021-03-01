@@ -2098,115 +2098,118 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         actual_calls = mock_reply_text.call_args_list
         self.assertEqual(expected_calls, actual_calls)
 
+    @parameterized.expand([(True, False,), (False, True,), (True, True,), ])
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
     def test_unmuteall_callback_sends_correct_replies_if_a_chain_was_muted(
-            self) -> None:
-        # TODO: Must parametrize to create these situations: Specific chain
-        #     : muting only, entire alerter muted only, both alerter and chains
-        #     : muted.
-        pass
+            self, specific_chain_muted_enabled, all_chains_muted_enabled,
+            mock_reply_text, mock_authorise) -> None:
+        # To make sure that there are no persistent keys from other tests.
+        self.test_redis.delete_all_unsafe()
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        muted_severities_dict = {
+            'INFO': True,
+            'WARNING': True,
+            'CRITICAL': True,
+            'ERROR': False
+        }
 
+        # First perform specific chain muting if enabled for this test. We will
+        # consider only chain 1 for this test.
+        chain_hash = Keys.get_hash_parent(self.test_chain1_id)
+        mute_chain_alerts_key = Keys.get_chain_mute_alerts()
+        mute_alerter_key = Keys.get_alerter_mute()
+        if specific_chain_muted_enabled:
+            self.test_redis.hset_unsafe(chain_hash, mute_chain_alerts_key,
+                                        json.dumps(muted_severities_dict))
+            self.assertTrue(self.test_redis.hexists_unsafe(
+                chain_hash, mute_chain_alerts_key))
+
+        # Perform alerter-wide muting if enabled for this test.
+        if all_chains_muted_enabled:
+            self.test_redis.set_unsafe(mute_alerter_key,
+                                       json.dumps(muted_severities_dict))
+            self.assertTrue(self.test_redis.exists_unsafe(mute_alerter_key))
+
+        self.test_telegram_command_handlers.unmuteall_callback(self.test_update,
+                                                               None)
+
+        expected_reply = \
+            "Successfully unmuted all alert severities of all chains being " \
+            "monitored in panic (including general repositories and general " \
+            "systems, as they belong to the chain GENERAL)."
+        expected_calls = [call("Performing unmuteall..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        (RedisError('test'), "It may be that not all chains were unmuted due "
+                             "to a Redis error. Check /status or the logs to "
+                             "see if unmuting was successful and that redis "
+                             "is online. Re-try again when the issue is "
+                             "solved.",),
+        (ConnectionResetError('test'), "It may be that not all chains were "
+                                       "unmuted due to a Redis error. Check "
+                                       "/status or the logs to see if unmuting "
+                                       "was successful and that redis is "
+                                       "online. Re-try again when the issue "
+                                       "is solved.",),
+        (Exception('test'), "It may be that not all chains were unmuted due "
+                            "to an unrecognized error. Check /status or the "
+                            "logs to see if the unmuting was successful and "
+                            "that redis is online. Re-try again when the "
+                            "issue is solved."),
+    ])
+    @mock.patch.object(RedisApi, "get_keys_unsafe")
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(RedisApi, "hexists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
     def test_unmuteall_callback_correct_replies_if_unmute_error_specific_chains(
-            self) -> None:
-        # TODO: Must parametrize with RedisError, ConnectionResetError and
-        #     : Exception
-        pass
+            self, unmuting_error, expected_reply, mock_reply_text,
+            mock_authorise, mock_hexists_unsafe, mock_exists_unsafe,
+            mock_get_keys_unsafe) -> None:
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_hexists_unsafe.side_effect = unmuting_error
+        mock_exists_unsafe.return_value = False
+        mock_get_keys_unsafe.return_value = ['hash_1', 'hash_2', 'hash_3']
 
+        self.test_telegram_command_handlers.unmuteall_callback(self.test_update,
+                                                               None)
+
+        expected_calls = [call("Performing unmuteall..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        (RedisError('test'), "Unmuting unsuccessful due to an issue with "
+                             "Redis. Check /status or the logs to see if Redis "
+                             "is online and/or re-try again.",),
+        (ConnectionResetError('test'), "Unmuting unsuccessful due to an issue "
+                                       "with Redis. Check /status or the logs "
+                                       "to see if Redis is online and/or "
+                                       "re-try again.",),
+        (Exception('test'), "Unrecognized error, please check the logs to "
+                            "debug the issue. Please also check /status to "
+                            "see if the unmuting was successful and that "
+                            "Redis is online. Re-try again when the issue "
+                            "is solved."),
+    ])
+    @mock.patch.object(RedisApi, "exists_unsafe")
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
     def test_unmuteall_callback_correct_replies_if_unmute_error_all_chains(
-            self) -> None:
-        # TODO: Must parametrize with RedisError, ConnectionResetError and
-        #     : Exception
-        pass
+            self, unmuting_error, expected_reply, mock_reply_text,
+            mock_authorise, mock_exists_unsafe) -> None:
+        mock_reply_text.return_value = None
+        mock_authorise.return_value = True
+        mock_exists_unsafe.side_effect = unmuting_error
 
-    #
-    # @parameterized.expand([
-    #     (["self.test_chain1_id"],),
-    #     (["self.test_chain1_id", "self.test_chain2_id"],),
-    #     (["self.test_chain1_id", "self.test_chain2_id",
-    #       "self.test_chain3_id"],),
-    # ])
-    # @mock.patch.object(TelegramCommandHandlers, "_authorise")
-    # @mock.patch.object(Message, "reply_text")
-    # def test_unmute_callback_sends_correct_replies_if_chains_muted(
-    #         self, muted_chains, mock_reply_text, mock_authorise) -> None:
-    #     # To make sure that there are no persistent keys from other tests.
-    #     self.test_redis.delete_all_unsafe()
-    #     mock_reply_text.return_value = None
-    #     mock_authorise.return_value = True
-    #
-    #     # First perform the muting of some chains
-    #     muted_severities_dict = {
-    #         'INFO': True,
-    #         'WARNING': True,
-    #         'CRITICAL': True,
-    #         'ERROR': False
-    #     }
-    #     for chain_id in muted_chains:
-    #         chain_id_eval = eval(chain_id)
-    #         chain_hash = Keys.get_hash_parent(chain_id_eval)
-    #         mute_alerts_key = Keys.get_chain_mute_alerts()
-    #         self.test_redis.hset_unsafe(chain_hash, mute_alerts_key,
-    #                                     json.dumps(muted_severities_dict))
-    #         self.assertTrue(self.test_redis.hexists_unsafe(chain_hash,
-    #                                                        mute_alerts_key))
-    #
-    #     self.test_telegram_command_handlers.unmute_callback(self.test_update,
-    #                                                         None)
-    #
-    #     successfully_unmuted_chains = [
-    #         escape_markdown(self.test_associated_chains[eval(chain_id)])
-    #         for chain_id in muted_chains
-    #     ]
-    #     all_chains = [escape_markdown(self.test_chain_1),
-    #                   escape_markdown(self.test_chain_2),
-    #                   escape_markdown(self.test_chain_3)]
-    #     already_unmuted_chains = [chain
-    #                               for chain in all_chains
-    #                               if chain not in successfully_unmuted_chains]
-    #     expected_reply = "*Unmute result*:\n\n"
-    #     expected_reply += "- Successfully unmuted all {} alerts.\n".format(
-    #         ', '.join(successfully_unmuted_chains))
-    #     if len(already_unmuted_chains) != 0:
-    #         expected_reply += "- No {} alert severity was muted.\n".format(
-    #             ', '.join(already_unmuted_chains))
-    #     expected_reply = expected_reply[:-1] if expected_reply.endswith('\n') \
-    #         else expected_reply
-    #     expected_calls = [call("Performing unmute..."),
-    #                       call(expected_reply, parse_mode="Markdown")]
-    #     actual_calls = mock_reply_text.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
-    #
-    # @parameterized.expand([
-    #     (RedisError('test'), "Redis error. Unmuting may not have been "
-    #                          "successful for all chains. Please check /status "
-    #                          "or the logs to see which chains were unmuted "
-    #                          "(if any) and that Redis is online. Re-try again "
-    #                          "when the issue is solved.",),
-    #     (ConnectionResetError('test'), "Redis error. Unmuting may not have "
-    #                                    "been successful for all chains. Please "
-    #                                    "check /status or the logs to see which "
-    #                                    "chains were unmuted (if any) and that "
-    #                                    "Redis is online. Re-try again when the "
-    #                                    "issue is solved.",),
-    #     (Exception('test'), "Unrecognized error. Please debug the issue by "
-    #                         "looking at the logs. Unmuting may not have been "
-    #                         "successful for all chains. Please check /status "
-    #                         "or the logs to see which chains were unmuted "
-    #                         "(if any) and that Redis is online. Re-try again "
-    #                         "when the issue is solved."),
-    # ])
-    # @mock.patch.object(RedisApi, "hexists_unsafe")
-    # @mock.patch.object(TelegramCommandHandlers, "_authorise")
-    # @mock.patch.object(Message, "reply_text")
-    # def test_unmute_callback_sends_correct_replies_if_error_when_unmuting(
-    #         self, unmuting_error, expected_reply, mock_reply_text,
-    #         mock_authorise, mock_hexists_unsafe) -> None:
-    #     mock_reply_text.return_value = None
-    #     mock_authorise.return_value = True
-    #     mock_hexists_unsafe.side_effect = unmuting_error
-    #
-    #     self.test_telegram_command_handlers.unmute_callback(self.test_update,
-    #                                                         None)
-    #
-    #     expected_calls = [call("Performing unmute..."), call(expected_reply)]
-    #     actual_calls = mock_reply_text.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
+        self.test_telegram_command_handlers.unmuteall_callback(self.test_update,
+                                                               None)
+
+        expected_calls = [call("Performing unmuteall..."), call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
