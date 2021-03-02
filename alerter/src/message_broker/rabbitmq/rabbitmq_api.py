@@ -9,7 +9,9 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.utils.exceptions import (ConnectionNotInitialisedException,
-                                  MessageWasNotDeliveredException)
+                                  MessageWasNotDeliveredException,
+                                  BlankCredentialException)
+from src.utils.strings import strip_if_not_none
 from src.utils.timing import TimedTaskLimiter
 
 
@@ -98,6 +100,7 @@ class RabbitMQApi:
         # Calls the function with the provided arguments and performs exception
         # handling as well as returns a specified default if RabbtiMQ is running
         # into difficulties. Exceptions are raised to the calling function.
+        ERROR_MESSAGE_TEMPALTE = "RabbitMQ error in %s: %r"
         try:
             if self._is_recently_disconnected():
                 self._logger.debug("RabbitMQ: Could not execute %s as RabbitMQ "
@@ -108,19 +111,19 @@ class RabbitMQApi:
             return ret
         except pika.exceptions.UnroutableError as e:
             # Unroutable errors should be logged and raised
-            self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
             raise e
         except pika.exceptions.AMQPChannelError as e:
             # Channel errors do not reflect a connection error, therefore
             # do not set as disconnected
-            self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
             # On a channel error, create a new channel
             self.new_channel_unsafe()
             raise e
         except pika.exceptions.AMQPConnectionError as e:
             # For connection related errors, if a connection has been
             # initialised, disconnect and mark the connection as down.
-            self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
             if self.connection is not None:
                 self.disconnect_unsafe()
             raise e
@@ -128,7 +131,7 @@ class RabbitMQApi:
             # For any other exception, if the connection is broken mark it as
             # down. Also, raise the exception. If connection is not broken, it
             # is up to the user of the class to close it if need be.
-            self._logger.error("RabbitMQ error in %s: %r", function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
             if self.connection is not None and self.connection.is_closed:
                 self.disconnect_unsafe()
             raise e
@@ -153,17 +156,34 @@ class RabbitMQApi:
             # Open a new connection depending on whether authentication is
             # needed, and set the connection status as 'connected'
             self._logger.info("Connecting with RabbitMQ...")
-            if self.password == '':
+            stripped_credentials = {
+                'username': strip_if_not_none(self.username),
+                'password': strip_if_not_none(self.password)
+            }
+            if not (stripped_credentials['username'] or stripped_credentials[
+                'password']):
+                # If both are blank/none/spaces:
                 self._connection = pika.BlockingConnection(
                     pika.ConnectionParameters(host=self.host))
                 self._channel = self.connection.channel()
-            else:
-                credentials = pika.PlainCredentials(self.username,
-                                                    self.password)
+            elif stripped_credentials['username'] and stripped_credentials[
+                'password']:
+                # Else if neither is blank/none/spaces
+                credentials = pika.PlainCredentials(
+                    self.username, self.password
+                )
                 parameters = pika.ConnectionParameters(
-                    self.host, self.port, '/', credentials)
+                    self.host, self.port, '/', credentials
+                )
                 self._connection = pika.BlockingConnection(parameters)
                 self._channel = self.connection.channel()
+            else:
+                # Error case if exactly one of them is blank/none/spaces:
+                blank_credentials = []
+                for label, credential in stripped_credentials.items():
+                    if not credential:
+                        blank_credentials.append(label)
+                raise BlankCredentialException(blank_credentials)
             self._logger.info("Connected with RabbitMQ")
             self._set_as_connected()
 

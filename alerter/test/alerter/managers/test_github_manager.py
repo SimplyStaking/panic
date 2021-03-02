@@ -21,7 +21,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
                                  GITHUB_ALERTER_NAME)
 from src.utils.exceptions import PANICException
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers
@@ -37,6 +37,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.manager_name = 'test_github_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
+        self.timestamp_used = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
             'timestamp': datetime(2012, 1, 1).timestamp(),
