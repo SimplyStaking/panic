@@ -25,7 +25,7 @@ from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.test_utils import save_github_repo_to_redis
+from test.utils.utils import save_github_repo_to_redis
 
 
 class TestGitHubDataTransformer(unittest.TestCase):

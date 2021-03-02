@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+from typing import List
 
 
 class PANICException(Exception):
@@ -107,3 +108,13 @@ class JSONDecodeException(PANICException):
     def __init__(self, exception: JSONDecodeError) -> None:
         code = 5012
         super().__init__(exception.msg, code)
+
+
+class BlankCredentialException(PANICException):
+    def __init__(self, blank_credentials: List[str]) -> None:
+        code = 5013
+        message = \
+            "Tried to initiate a connection with a blank or NoneType {}".format(
+                ",".join(blank_credentials)
+            )
+        super().__init__(message, code)
