@@ -249,6 +249,10 @@ class TestStoreManager(unittest.TestCase):
             # Give time for the processes to start
             time.sleep(1)
 
+            self.test_rabbit_manager.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
             # Delete the queue before to avoid messages in the queue on error.
             self.test_rabbit_manager.queue_delete(self.test_queue_name)
 
