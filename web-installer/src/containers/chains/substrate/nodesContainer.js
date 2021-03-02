@@ -14,6 +14,7 @@ import NodeSchema from '../common/schemas/nodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
+    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',

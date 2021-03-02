@@ -30,7 +30,15 @@ const SystemSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('System name is required.'),
-  exporter_url: Yup.string().required('Node Exporter Url is required.'),
+    exporter_url: Yup.string()
+      .test('localhost', '127.0.0.1 is not allowed for security reasons.',
+      (value) => {
+        if (value.includes('127.0.0.1') || value.includes('localhost')){
+          return false;
+        }
+        return true;
+      })
+    .required('Node Exporter Url is required.'),
 });
 
 export default SystemSchema;

@@ -241,10 +241,12 @@ const NodesForm = ({
               </Grid>
               <Grid item xs={5}>
                 <TextField
+                  error={errors.exporter_url}
                   value={values.exporter_url}
                   type="text"
                   name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
+                  helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
@@ -495,6 +497,7 @@ const NodesForm = ({
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     name: PropTypes.string,
+    exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
