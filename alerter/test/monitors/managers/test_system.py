@@ -41,10 +41,9 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.manager_name = 'test_system_monitors_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
-        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': self.test_timestamp,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True

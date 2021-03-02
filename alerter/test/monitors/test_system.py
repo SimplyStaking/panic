@@ -47,10 +47,9 @@ class TestSystemMonitor(unittest.TestCase):
             'test_key_1': 'test_val_1',
             'test_key_2': 'test_val_2',
         }
-        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': self.test_timestamp,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
         self.metrics_to_monitor = [

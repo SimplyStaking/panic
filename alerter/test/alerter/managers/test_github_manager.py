@@ -40,7 +40,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.timestamp_used = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
-            'timestamp': self.timestamp_used,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.github_alerter_name = GITHUB_ALERTER_NAME
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -63,6 +63,15 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
+            # Declare queues incase they haven't been declared already
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                queue=GITHUB_MANAGER_INPUT_QUEUE, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -293,6 +302,11 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             # Time for processes to terminate
             time.sleep(1)
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)

@@ -319,8 +319,11 @@ def _initialise_data_store_manager() -> StoreManager:
     # Attempt to initialise the data store manager
     while True:
         try:
+            rabbitmq = RabbitMQApi(
+                logger=data_store_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
             data_store_manager = StoreManager(
-                data_store_manager_logger, manager_display_name)
+                data_store_manager_logger, manager_display_name, rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(

@@ -8,6 +8,7 @@ from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
@@ -48,7 +49,10 @@ def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
     # Try initialising the store until successful
     while True:
         try:
-            store = store_type(store_display_name, store_logger)
+            rabbitmq = RabbitMQApi(
+                logger=store_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            store = store_type(store_display_name, store_logger, rabbitmq)
             log_and_print("Successfully initialised {}".format(
                 store_display_name), store_logger)
             break
