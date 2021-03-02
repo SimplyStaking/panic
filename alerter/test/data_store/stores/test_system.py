@@ -28,10 +28,10 @@ from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.test_utils import (infinite_fn, connect_to_rabbit,
-                             disconnect_from_rabbit,
-                             delete_exchange_if_exists,
-                             delete_queue_if_exists)
+from test.utils.utils import (infinite_fn, connect_to_rabbit,
+                              disconnect_from_rabbit,
+                              delete_exchange_if_exists,
+                              delete_queue_if_exists)
 
 
 class TestSystemStore(unittest.TestCase):

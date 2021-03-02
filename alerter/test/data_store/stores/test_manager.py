@@ -25,10 +25,10 @@ from src.utils.exceptions import (MessageWasNotDeliveredException,
 from src.utils.logging import log_and_print
 from src.utils import env
 
-from test.test_utils import (infinite_fn, connect_to_rabbit,
-                             disconnect_from_rabbit,
-                             delete_exchange_if_exists,
-                             delete_queue_if_exists)
+from test.utils.utils import (infinite_fn, connect_to_rabbit,
+                              disconnect_from_rabbit,
+                              delete_exchange_if_exists,
+                              delete_queue_if_exists)
 
 
 class TestStoreManager(unittest.TestCase):
