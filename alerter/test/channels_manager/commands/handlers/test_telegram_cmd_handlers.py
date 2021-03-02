@@ -2260,3 +2260,86 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         expected_calls = [call(expected_reply, parse_mode="Markdown")]
         actual_calls = mock_reply_text.call_args_list
         self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def start_callback_does_not_reply_with_start_msg_if_user_not_authorised(
+            self, mock_reply_text, mock_authorise) -> None:
+        mock_authorise.return_value = False
+        self.test_telegram_command_handlers.start_callback(self.test_update,
+                                                           None)
+        mock_reply_text.assert_not_called()
+
+    @mock.patch.object(TelegramCommandHandlers, "_authorise")
+    @mock.patch.object(Message, "reply_text")
+    def start_callback_replies_with_start_message_if_user_is_authorised(
+            self, mock_reply_text, mock_authorise) -> None:
+        mock_authorise.return_value = True
+        self.test_telegram_command_handlers.start_callback(self.test_update,
+                                                           None)
+        expected_reply = "Welcome to PANIC's Telegram commands!\n" \
+                         "Type /help for more information."
+        expected_calls = [call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramBotApi, "send_message")
+    @mock.patch.object(Message, "reply_text")
+    def test_authorise_returns_true_if_message_chat_id_is_valid(
+            self, mock_reply_text, mock_send_message) -> None:
+        # A message chat id is valid if it is equal to the telegram bot's
+        # associated chat id, or if the telegram bot's chat id is None.
+        # Therefore in this test we will test for both cases
+        mock_reply_text.return_value = None
+        mock_send_message.return_value = None
+
+        # When the message chat id equals the telegram bot's associated chat id
+        self.test_update.message.chat.id = \
+            self.test_telegram_bot_api.bot_chat_id
+        ret = self.test_telegram_command_handlers._authorise(
+            self.test_update, None)
+        self.assertTrue(ret)
+
+        # When the telegram bot's chat id is None
+        self.test_update.message.chat.id = 245
+        self.test_telegram_bot_api._bot_chat_id = None
+        ret = self.test_telegram_command_handlers._authorise(
+            self.test_update, None)
+        self.assertTrue(ret)
+
+    @mock.patch.object(TelegramBotApi, "send_message")
+    @mock.patch.object(Message, "reply_text")
+    def test_authorise_replies_with_message_in_user_chat_if_not_authorised(
+            self, mock_reply_text, mock_send_message) -> None:
+        mock_reply_text.return_value = None
+        mock_send_message.return_value = None
+        self.test_telegram_command_handlers._authorise(
+            self.test_update, None)
+        expected_reply = "Unrecognised user. This event has been reported."
+        expected_calls = [call(expected_reply)]
+        actual_calls = mock_reply_text.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramBotApi, "send_message")
+    @mock.patch.object(Message, "reply_text")
+    def test_authorise_informs_authenticated_users_if_unauthorised_user(
+            self, mock_reply_text, mock_send_message) -> None:
+        mock_reply_text.return_value = None
+        mock_send_message.return_value = None
+        self.test_telegram_command_handlers._authorise(
+            self.test_update, None)
+        expected_reply = "Received command from unrecognised user: " \
+                         "update={}, context={}".format(self.test_update, None)
+        expected_calls = [call(expected_reply)]
+        actual_calls = mock_send_message.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(TelegramBotApi, "send_message")
+    @mock.patch.object(Message, "reply_text")
+    def test_authorise_returns_false_if_user_is_not_authorised(
+            self, mock_reply_text, mock_send_message) -> None:
+        mock_reply_text.return_value = None
+        mock_send_message.return_value = None
+        ret = self.test_telegram_command_handlers._authorise(self.test_update,
+                                                             None)
+        self.assertFalse(ret)
