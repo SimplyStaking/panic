@@ -69,7 +69,6 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
-            self.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
             print("Test failed: {}".format(e))
@@ -336,7 +335,6 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.alerter_process_dict[
                 GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
-            self.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
