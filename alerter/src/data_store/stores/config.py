@@ -10,7 +10,7 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_ROUTING_KEY)
+                                 STORE_CONFIGS_ROUTING_KEY_CHAINS)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 
@@ -38,15 +38,15 @@ class ConfigStore(Store):
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'",
-                         STORE_CONFIGS_QUEUE_NAME)
+        self.logger.info("Creating queue '%s'", STORE_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME, False, True,
+                                    False, False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", STORE_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, '#')
         self.rabbitmq.queue_bind(queue=STORE_CONFIGS_QUEUE_NAME,
                                  exchange=CONFIG_EXCHANGE,
-                                 routing_key=STORE_CONFIGS_ROUTING_KEY)
-
-        # Set producing configuration for heartbeat
-        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
-        self.rabbitmq.confirm_delivery()
+                                 routing_key='#')
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
@@ -57,6 +57,8 @@ class ConfigStore(Store):
                                     auto_ack=False,
                                     exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -68,6 +70,10 @@ class ConfigStore(Store):
         stored in Redis as required. If successful, a heartbeat will be sent.
         """
         config_data = json.loads(body.decode())
+
+        if 'DEFAULT' in config_data:
+            del config_data['DEFAULT']
+
         self.logger.debug("Received %s. Now processing this data.", config_data)
 
         processing_error = False
@@ -102,30 +108,75 @@ class ConfigStore(Store):
                 raise e
 
     def _process_redis_store(self, routing_key: str, data: Dict) -> None:
-        if 'result' in data:
-            self._process_redis_result_store(data['result'])
-        elif 'error' in data:
-            # No need to store anything if the index key is `error`
-            return
-        else:
-            raise ReceivedUnexpectedDataException(
-                "{}: _process_redis_store".format(self))
+        if 'general' in routing_key[0]:
+            if 'systems_config' in routing_key[1]:
+                self._process_redis_config_system(routing_key[0], data)
+            elif 'alerts_config' in routing_key[1]:
+                self._process_redis_config_alerts(routing_key[0], data)
+            elif 'repos_config' in routing_key[1]:
+                self._process_redis_config_repos(routing_key[0], data)
+        elif 'chains' in routing_key[0]:
+            if 'nodes_config' in routing_key[1]:
+                self._process_redis_config_nodes(routing_key[0], data)
+            elif 'alerts_config' in routing_key[1]:
+                self._process_redis_config_alerts(routing_key[0], data)
+            elif 'repos_config' in routing_key[1]:
+                self._process_redis_config_repos(routing_key[0], data)
+        elif 'channels' in routing_key[0]:
+            if 'opsgenie_config' in routing_key[1]:
+                
+            elif 'pagerduty_config' in routing_key[1]:
+            elif 'telegram_config' in routing_key[1]:
+            elif 'email_config' in routing_key[1]:
 
-    def _process_redis_result_store(self, data: Dict) -> None:
-        meta_data = data['meta_data']
-        repo_name = meta_data['repo_name']
-        repo_id = meta_data['repo_id']
-        parent_id = meta_data['repo_parent_id']
-        metrics = data['data']
+                self._process_redis_config_channel(data)
 
-        self.logger.debug(
-            "Saving %s state: _no_of_releases=%s, _last_monitored=%s",
-            repo_name, metrics['no_of_releases'], meta_data['last_monitored']
-        )
+    def _process_redis_config_system(self, parent_id: str, data: Dict) -> None:
+        for key, value in data.items():
+            self.logger.debug(
+                "Saving %s state: config=%s", key, value
+            )
 
-        self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
-            Keys.get_github_no_of_releases(repo_id):
-                str(metrics['no_of_releases']),
-            Keys.get_github_last_monitored(repo_id):
-                str(meta_data['last_monitored']),
-        })
+            self.redis.hset(Keys.get_hash_parent(parent_id), {
+                Keys.get_config_chain_system(key): value
+            })
+
+    def _process_redis_config_alerts(self, parent_id: str, data: Dict) -> None:
+        for key, value in data.items():
+            self.logger.debug(
+                "Saving %s state: config=%s", key, value
+            )
+
+            self.redis.hset(Keys.get_hash_parent(parent_id), {
+                Keys.get_config_chain_alerts(key): value
+            })
+
+    def _process_redis_config_repos(self, parent_id: str, data: Dict) -> None:
+        for key, value in data.items():
+            self.logger.debug(
+                "Saving %s state: config=%s", key, value
+            )
+
+            self.redis.hset(Keys.get_hash_parent(parent_id), {
+                Keys.get_config_chain_repo(key): value
+            })
+
+    def _process_redis_config_channel(self, parent_id: str, data: Dict) -> None:
+        for key, value in data.items():
+            self.logger.debug(
+                "Saving %s state: config=%s", key, value
+            )
+
+            self.redis.hset(Keys.get_hash_parent(parent_id), {
+                Keys.get_config_chain_repo(key): value
+            })
+
+    def _process_redis_config_nodes(self, parent_id: str, data: Dict) -> None:
+        for key, value in data.items():
+            self.logger.debug(
+                "Saving %s state: config=%s", key, value
+            )
+
+            self.redis.hset(Keys.get_hash_parent(parent_id), {
+                Keys.get_config_chain_node(key): value
+            })

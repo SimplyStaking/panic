@@ -31,6 +31,17 @@ _key_component_heartbeat = 'c1'
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
 
+# mx_<parent_id>
+_key_config_channel_opsgenie = 'm1'
+_key_config_channel_pagerduty = 'm2'
+_key_config_channel_email = 'm3'
+_key_config_channel_telegram = 'm4'
+_key_config_channel_twilio = 'm5'
+_key_config_chain_system = 'm6'
+_key_config_chain_repo = 'm7'
+_key_config_chain_alerts = 'm8'
+_key_config_chain_node = 'm9'
+
 
 class Keys:
 
@@ -133,3 +144,39 @@ class Keys:
     @staticmethod
     def get_chain_mute_alerts() -> str:
         return _key_chain_mute_alerts
+
+    @staticmethod
+    def get_config_channel_opsgenie(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_channel_opsgenie) + config_id
+
+    @staticmethod
+    def get_config_channel_pagerduty(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_channel_pagerduty) + config_id
+
+    @staticmethod
+    def get_config_channel_email(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_channel_email) + config_id
+
+    @staticmethod
+    def get_config_channel_telegram(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_channel_telegram) + config_id
+
+    @staticmethod
+    def get_config_channel_twilio(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_channel_twilio) + config_id
+
+    @staticmethod
+    def get_config_chain_system(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_chain_system) + config_id
+
+    @staticmethod
+    def get_config_chain_repo(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_chain_repo) + config_id
+
+    @staticmethod
+    def get_config_chain_alerts(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_chain_alerts) + config_id
+
+    @staticmethod
+    def get_config_chain_node(config_id: str) -> str:
+        return Keys._as_prefix(_key_config_chain_node) + config_id

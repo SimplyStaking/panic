@@ -806,6 +806,14 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertFalse(parent_id_2_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
                                 self.parent_id_2]['process'].is_alive())
+            self.test_manager.parent_id_process_dict[
+                                self.parent_id_1]['process'].terminate()
+            self.test_manager.parent_id_process_dict[
+                                self.parent_id_2]['process'].terminate()
+            self.test_manager.parent_id_process_dict[
+                                self.parent_id_1]['process'].join()
+            self.test_manager.parent_id_process_dict[
+                                self.parent_id_2]['process'].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
