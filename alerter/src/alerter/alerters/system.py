@@ -16,7 +16,8 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageIncreasedAboveThresholdAlert, SystemStillDownAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
-    OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert)
+    OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
+    ValidUrlAlert, MetricFoundAlert)
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import floaty
@@ -44,6 +45,8 @@ class SystemAlerter(Alerter):
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
+        self._invalid_url = True
+        self._metric_not_found = True
         self._system_initial_downtime_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -155,7 +158,7 @@ class SystemAlerter(Alerter):
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
         self.logger.debug("Received %s. Now processing this data.",
-                         data_received)
+                          data_received)
 
         parsed_routing_key = method.routing_key.split('.')
         processing_error = False
@@ -229,6 +232,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
+            self._metric_not_found = True
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 meta_data['system_name'], error_data['message'],
@@ -238,6 +242,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
+            self._invalid_url = True
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
                 data = error_data['data']
@@ -301,6 +306,30 @@ class SystemAlerter(Alerter):
                                           alert.alert_data)
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
+
+        if self._invalid_url and int(error_data['code']) != 5009:
+            alert = ValidUrlAlert(
+                meta_data['system_name'], "Url is valid!",
+                'INFO', meta_data['time'],
+                meta_data['system_parent_id'],
+                meta_data['system_id']
+            )
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._invalid_url = False
+
+        if self._metric_not_found and int(error_data['code']) != 5003:
+            alert = MetricFoundAlert(
+                meta_data['system_name'], "Metrics have been found!",
+                'INFO', meta_data['time'],
+                meta_data['system_parent_id'],
+                meta_data['system_id']
+            )
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._metric_not_found = False
 
     def _process_results(self, metrics: Dict, meta_data: Dict,
                          data_for_alerting: List) -> None:
@@ -371,6 +400,28 @@ class SystemAlerter(Alerter):
                     SystemRAMUsageDecreasedBelowThresholdAlert,
                     data_for_alerting, _RAM_USE_LIMITER_NAME
                 )
+        if self._invalid_url:
+            alert = ValidUrlAlert(
+                meta_data['system_name'], "Url is valid!",
+                'INFO', meta_data['last_monitored'],
+                meta_data['system_parent_id'],
+                meta_data['system_id']
+            )
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._invalid_url = False
+        if self._metric_not_found:
+            alert = MetricFoundAlert(
+                meta_data['system_name'], "Metrics have been found!",
+                'INFO', meta_data['last_monitored'],
+                meta_data['system_parent_id'],
+                meta_data['system_id']
+            )
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._metric_not_found = False
 
     def _classify_alert(
             self, current: float, previous: float, config: Dict,

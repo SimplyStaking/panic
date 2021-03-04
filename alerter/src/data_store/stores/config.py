@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 import pika.exceptions
 
@@ -78,7 +78,7 @@ class ConfigStore(Store):
 
         processing_error = False
         try:
-            self._process_redis_store(method.routing_key, config_data)
+            self._process_data_sort(method.routing_key.split('.'), config_data)
         except KeyError as e:
             self.logger.error("Error when parsing %s.", config_data)
             self.logger.exception(e)
@@ -107,76 +107,37 @@ class ConfigStore(Store):
                 # For any other exception raise it.
                 raise e
 
-    def _process_redis_store(self, routing_key: str, data: Dict) -> None:
-        if 'general' in routing_key[0]:
-            if 'systems_config' in routing_key[1]:
-                self._process_redis_config_system(routing_key[0], data)
-            elif 'alerts_config' in routing_key[1]:
-                self._process_redis_config_alerts(routing_key[0], data)
-            elif 'repos_config' in routing_key[1]:
-                self._process_redis_config_repos(routing_key[0], data)
-        elif 'chains' in routing_key[0]:
-            if 'nodes_config' in routing_key[1]:
-                self._process_redis_config_nodes(routing_key[0], data)
-            elif 'alerts_config' in routing_key[1]:
-                self._process_redis_config_alerts(routing_key[0], data)
-            elif 'repos_config' in routing_key[1]:
-                self._process_redis_config_repos(routing_key[0], data)
-        elif 'channels' in routing_key[0]:
-            if 'opsgenie_config' in routing_key[1]:
-                
-            elif 'pagerduty_config' in routing_key[1]:
-            elif 'telegram_config' in routing_key[1]:
-            elif 'email_config' in routing_key[1]:
+    def _process_data_sort(self, routing_key: List[str], data: Dict) -> None:
+        if routing_key[0] in ['general', 'channels']:
+            if routing_key[1] in ['systems_config', 'alerts_config',
+                                  'repos_config', 'opsgenie_config',
+                                  'pagerduty_config', 'telegram_config',
+                                  'email_config', 'twilio_config']:
+                self._process_redis_store(routing_key[0], routing_key[1], data)
+        elif 'chains' == routing_key[0]:
+            if routing_key[3] in ['nodes_config', 'alerts_config',
+                                  'repos_config']:
+                chain_path = routing_key[1] + '.' + routing_key[2]
+                self._process_redis_store(chain_path, routing_key[3], data)
 
-                self._process_redis_config_channel(data)
-
-    def _process_redis_config_system(self, parent_id: str, data: Dict) -> None:
-        for key, value in data.items():
+    def _process_redis_store(self, parent_id: str, config_type: str,
+                             data: Dict) -> None:
+        if data:
             self.logger.debug(
-                "Saving %s state: config=%s", key, value
-            )
+                    "Saving for %s the config %s the data=%s.",
+                    parent_id, config_type, data
+                )
 
-            self.redis.hset(Keys.get_hash_parent(parent_id), {
-                Keys.get_config_chain_system(key): value
-            })
-
-    def _process_redis_config_alerts(self, parent_id: str, data: Dict) -> None:
-        for key, value in data.items():
+            self.redis.hset(Keys.get_hash_parent(parent_id),
+                            Keys.get_config(config_type),
+                            json.dumps(data))
+        else:
             self.logger.debug(
-                "Saving %s state: config=%s", key, value
-            )
+                    "Removing for %s the config %s.",
+                    parent_id, config_type
+                )
+            if self.redis.hexists(Keys.get_hash_parent(parent_id),
+                                  Keys.get_config(config_type)):
 
-            self.redis.hset(Keys.get_hash_parent(parent_id), {
-                Keys.get_config_chain_alerts(key): value
-            })
-
-    def _process_redis_config_repos(self, parent_id: str, data: Dict) -> None:
-        for key, value in data.items():
-            self.logger.debug(
-                "Saving %s state: config=%s", key, value
-            )
-
-            self.redis.hset(Keys.get_hash_parent(parent_id), {
-                Keys.get_config_chain_repo(key): value
-            })
-
-    def _process_redis_config_channel(self, parent_id: str, data: Dict) -> None:
-        for key, value in data.items():
-            self.logger.debug(
-                "Saving %s state: config=%s", key, value
-            )
-
-            self.redis.hset(Keys.get_hash_parent(parent_id), {
-                Keys.get_config_chain_repo(key): value
-            })
-
-    def _process_redis_config_nodes(self, parent_id: str, data: Dict) -> None:
-        for key, value in data.items():
-            self.logger.debug(
-                "Saving %s state: config=%s", key, value
-            )
-
-            self.redis.hset(Keys.get_hash_parent(parent_id), {
-                Keys.get_config_chain_node(key): value
-            })
+                self.redis.hremove(Keys.get_hash_parent(parent_id),
+                                   Keys.get_config(config_type))

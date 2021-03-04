@@ -16,3 +16,5 @@ class SystemAlertCode(AlertCode):
     SystemBackUpAgainAlert = 'system_alert_12'
     SystemStillDownAlert = 'system_alert_13'
     MetricNotFoundErrorAlert = 'system_alert_14'
+    MetricFoundAlert = 'system_alert_15'
+    ValidUrlAlert = 'system_alert_16'

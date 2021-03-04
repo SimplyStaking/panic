@@ -31,16 +31,19 @@ _key_component_heartbeat = 'c1'
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
 
-# mx_<parent_id>
-_key_config_channel_opsgenie = 'm1'
-_key_config_channel_pagerduty = 'm2'
-_key_config_channel_email = 'm3'
-_key_config_channel_telegram = 'm4'
-_key_config_channel_twilio = 'm5'
-_key_config_chain_system = 'm6'
-_key_config_chain_repo = 'm7'
-_key_config_chain_alerts = 'm8'
-_key_config_chain_node = 'm9'
+# mx_<config_type>
+_key_config = 'm1'
+
+# amX_<alert_id>
+_key_alert_open_file_descriptors = 'am1'
+_key_alert_system_cpu_usage = 'am2'
+_key_alert_system_storage_usage = 'am3'
+_key_alert_system_ram_usage = 'am4'
+_key_alert_system_is_down = 'am5'
+_key_alert_metric_not_found = 'am6'
+_key_alert_invalid_url = 'am7'
+_key_alert_github_release = 'am8'
+_key_alert_cannot_access_github = 'am9'
 
 
 class Keys:
@@ -146,37 +149,37 @@ class Keys:
         return _key_chain_mute_alerts
 
     @staticmethod
-    def get_config_channel_opsgenie(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_channel_opsgenie) + config_id
+    def get_config(config_type: str) -> str:
+        return Keys._as_prefix(_key_config) + config_type
 
     @staticmethod
-    def get_config_channel_pagerduty(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_channel_pagerduty) + config_id
+    def get_alert_open_file_descriptors(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_open_file_descriptors) + origin_id
 
     @staticmethod
-    def get_config_channel_email(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_channel_email) + config_id
+    def get_alert_system_cpu_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_cpu_usage) + origin_id
 
     @staticmethod
-    def get_config_channel_telegram(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_channel_telegram) + config_id
+    def get_alert_system_storage_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_storage_usage) + origin_id
 
     @staticmethod
-    def get_config_channel_twilio(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_channel_twilio) + config_id
+    def get_alert_system_ram_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_ram_usage) + origin_id
 
     @staticmethod
-    def get_config_chain_system(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_chain_system) + config_id
+    def get_alert_system_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_is_down) + origin_id
 
     @staticmethod
-    def get_config_chain_repo(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_chain_repo) + config_id
+    def get_alert_invalid_url(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_invalid_url) + origin_id
 
     @staticmethod
-    def get_config_chain_alerts(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_chain_alerts) + config_id
+    def get_alert_github_release(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_github_release) + origin_id
 
     @staticmethod
-    def get_config_chain_node(config_id: str) -> str:
-        return Keys._as_prefix(_key_config_chain_node) + config_id
+    def get_alert_cannot_access_github(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id

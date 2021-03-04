@@ -6,13 +6,15 @@ from src.alerter.alert_code import AlertCode
 class Alert:
 
     def __init__(self, alert_code: AlertCode, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+                 timestamp: float, parent_id: str, origin_id: str,
+                 metric: str) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
         self._parent_id = parent_id
         self._origin_id = origin_id
         self._timestamp = timestamp
+        self._metric = metric
 
     def __str__(self) -> str:
         return self.message
@@ -42,12 +44,17 @@ class Alert:
         return self._timestamp
 
     @property
+    def metric(self) -> str:
+        return self._metric
+
+    @property
     def alert_data(self) -> Dict:
         return {
             'alert_code': {
                 'name': self._alert_code.name,
                 'code': self._alert_code.value
             },
+            'metric': self._metric,
             'message': self._message,
             'severity': self._severity,
             'parent_id': self._parent_id,
