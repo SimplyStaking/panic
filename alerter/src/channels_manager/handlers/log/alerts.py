@@ -17,7 +17,7 @@ from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
+LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
 
 
 class LogAlertsHandler(ChannelHandler):
@@ -45,9 +45,9 @@ class LogAlertsHandler(ChannelHandler):
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._log_alerts_handler_queue, ALERT_EXCHANGE,
-                         _LOG_HANDLER_INPUT_ROUTING_KEY)
+                         LOG_HANDLER_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._log_alerts_handler_queue, ALERT_EXCHANGE,
-                                 _LOG_HANDLER_INPUT_ROUTING_KEY)
+                                 LOG_HANDLER_INPUT_ROUTING_KEY)
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
