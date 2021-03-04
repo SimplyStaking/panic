@@ -34,7 +34,7 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self._pd_alerts_handler_queue = \
             "pager_duty_{}_alerts_handler_queue".format(
                 self._pagerduty_channel.channel_id)
-        self._pd_routing_key = "channel.{}".format(
+        self._pd_channel_routing_key = "channel.{}".format(
             self.pagerduty_channel.channel_id)
 
     @property
@@ -178,9 +178,9 @@ class PagerDutyAlertsHandler(ChannelHandler):
 
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                         self._pd_routing_key)
+                         self._pd_channel_routing_key)
         self.rabbitmq.queue_bind(self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                                 self._pd_routing_key)
+                                 self._pd_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
