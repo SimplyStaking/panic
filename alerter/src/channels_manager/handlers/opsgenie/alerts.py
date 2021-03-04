@@ -34,7 +34,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
         self._opsgenie_alerts_handler_queue = \
             "opsgenie_{}_alerts_handler_queue".format(
                 self._opsgenie_channel.channel_id)
-        self._opsgenie_routing_key = "channel.{}".format(
+        self._opsgenie_channel_routing_key = "channel.{}".format(
             self._opsgenie_channel.channel_id)
 
     @property
@@ -149,7 +149,7 @@ class OpsgenieAlertsHandler(ChannelHandler):
                     and attempts < self._max_attempts:
                 self.logger.debug("Will re-try sending in 10 seconds. "
                                   "Attempts left: %s",
-                                 self._max_attempts - attempts)
+                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(10)
                 status = self._opsgenie_channel.alert(alert)
                 attempts += 1
@@ -179,9 +179,10 @@ class OpsgenieAlertsHandler(ChannelHandler):
 
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._opsgenie_alerts_handler_queue,
-                         ALERT_EXCHANGE, self._opsgenie_routing_key)
+                         ALERT_EXCHANGE, self._opsgenie_channel_routing_key)
         self.rabbitmq.queue_bind(self._opsgenie_alerts_handler_queue,
-                                 ALERT_EXCHANGE, self._opsgenie_routing_key)
+                                 ALERT_EXCHANGE,
+                                 self._opsgenie_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
