@@ -43,10 +43,12 @@ class ConfigStore(Store):
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", STORE_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, '#')
+                         CONFIG_EXCHANGE, STORE_CONFIGS_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(queue=STORE_CONFIGS_QUEUE_NAME,
                                  exchange=CONFIG_EXCHANGE,
-                                 routing_key='#')
+                                 routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
+        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
+        self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
@@ -57,8 +59,6 @@ class ConfigStore(Store):
                                     auto_ack=False,
                                     exclusive=False, consumer_tag=None)
         self.rabbitmq.start_consuming()
-        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
-        self.rabbitmq.confirm_delivery()
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
