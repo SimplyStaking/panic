@@ -199,10 +199,12 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
     def test_new_github_release_alert(
-            self, mock_new_github_release, mock_ack,
+            self, mock_new_github_release, mock_github_access, mock_ack,
             mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
@@ -230,6 +232,11 @@ class TestGithubAlerter(unittest.TestCase):
                 self.info, self.last_monitored, self.parent_id,
                 self.repo_id
             )
+            mock_github_access.assert_called_once_with(
+                self.repo_name, self.info,
+                self.last_monitored, self.parent_id,
+                self.repo_id
+            )
             mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -240,11 +247,13 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
     def test_first_run_no_github_alerts(
-            self, param_input, mock_new_github_release, mock_ack,
-            mock_basic_publish_confirm):
+            self, param_input, mock_new_github_release, mock_github_access,
+            mock_ack, mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
@@ -267,7 +276,8 @@ class TestGithubAlerter(unittest.TestCase):
                 json.dumps(self.github_data_received).encode()
             )
             mock_new_github_release.assert_not_called()
-            mock_basic_publish_confirm.assert_called_once()
+            mock_github_access.assert_called_once()
+            self.assertEqual(2, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -276,10 +286,12 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
     def test_run_5_github_alerts_previous_is_0(
-            self, mock_new_github_release, mock_ack,
+            self, mock_new_github_release, mock_github_access, mock_ack,
             mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
@@ -318,10 +330,15 @@ class TestGithubAlerter(unittest.TestCase):
 
             mock_new_github_release.assert_has_calls([call_1, call_2, call_3,
                                                       call_4, call_5])
+            mock_github_access.assert_called_once_with(
+                self.repo_name, self.info, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
             # Call count of basic_publish_confirm is higher than
-            # github_release call_count because of the hb
+            # github_release call_count because of the hb and initial
+            # validation alerts
             self.assertEqual(5, mock_new_github_release.call_count)
-            self.assertEqual(6, mock_basic_publish_confirm.call_count)
+            self.assertEqual(7, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

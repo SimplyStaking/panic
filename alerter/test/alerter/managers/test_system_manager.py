@@ -268,10 +268,6 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
-        self.dummy_process1 = None
-        self.dummy_process2 = None
-        self.dummy_process3 = None
-        self.test_manager = None
         self.test_exception = None
         self.system_alerts_config = None
         self.base_config = None
@@ -281,6 +277,10 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.system_ram_usage = None
         self.system_is_down = None
         self.systems_alerts_configs = None
+
+        self.dummy_process1 = None
+        self.dummy_process2 = None
+        self.dummy_process3 = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())
@@ -1010,6 +1010,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(2, mock_ack.call_count)
             self.assertFalse(
                 self.parent_id_1 in self.test_manager.systems_alerts_configs)
+            self.test_manager._terminate_and_join_chain_alerter_processes(
+                self.parent_id_2)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
