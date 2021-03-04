@@ -148,8 +148,3 @@ class AlertStore(Store):
         self.redis.hset(Keys.get_hash_parent(alert['parent_id']),
                         eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
                         json.dumps(metric_data))
-
-        self.logger.info(
-            self.redis.hget(Keys.get_hash_parent(alert['parent_id']),
-                            eval('Keys.get_alert_{}(key)'.format(
-                                alert['metric']))))
