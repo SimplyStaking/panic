@@ -63,6 +63,15 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
+            # Declare queues incase they haven't been declared already
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_manager.rabbitmq.queue_declare(
+                queue=GITHUB_MANAGER_INPUT_QUEUE, durable=True,
+                exclusive=False, auto_delete=False, passive=False
+            )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -211,21 +220,25 @@ class TestGithubAlertersManager(unittest.TestCase):
         new_entry_process.join()
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_process_is_alive(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_terminate, mock_join, mock_start, mock_is_alive,
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_is_alive.return_value = True
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
-
-            # Give time for the processes to start
-            time.sleep(1)
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -263,37 +276,29 @@ class TestGithubAlertersManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.alerter_process_dict[
-                GITHUB_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_process_is_dead(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_terminate, mock_join, mock_start, mock_is_alive,
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_is_alive.return_value = False
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
-
-            # Give time for the processes to start
-            time.sleep(1)
-
-            self.test_manager.alerter_process_dict[
-                GITHUB_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
-
-            # Time for processes to terminate
-            time.sleep(1)
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -331,14 +336,9 @@ class TestGithubAlertersManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.alerter_process_dict[
-                GITHUB_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
-            self.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
 
     @freeze_time("2012-01-01")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -399,6 +399,11 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)

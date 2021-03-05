@@ -414,17 +414,34 @@ class TestSystemAlerter(unittest.TestCase):
             self.last_monitored, self.warning, self.parent_id,
             self.system_id
         )
+        try:
+            self.test_system_alerter.rabbitmq.connect()
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_system_alerter.rabbitmq.exchange_declare(
+                    ALERT_EXCHANGE, 'topic', False, True, False, False)
+        except Exception as e:
+            print("Setup failed: {}".format(e))
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_system_alerter.rabbitmq.connect()
             self.test_rabbit_manager.connect()
-            self.test_system_alerter.rabbitmq.queue_purge(self.test_queue_name)
+
+            # Declare the queues incase they aren't there, not to error
+            self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.target_queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.test_system_alerter.rabbitmq.queue_declare(
+                queue=self.queue_used, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+
             self.test_system_alerter.rabbitmq.queue_purge(self.queue_used)
             self.test_system_alerter.rabbitmq.queue_purge(
                 self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(self.test_queue_name)
             self.test_system_alerter.rabbitmq.queue_delete(self.queue_used)
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
