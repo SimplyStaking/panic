@@ -812,7 +812,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                'metric'
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -918,7 +919,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                'metric'
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1008,7 +1010,7 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123", 'metric'
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1096,7 +1098,7 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123", 'metric'
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1173,7 +1175,7 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123", 'metric'
             )
 
             alert_json = json.dumps(alert.alert_data)

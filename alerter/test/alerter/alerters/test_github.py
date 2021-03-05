@@ -211,6 +211,8 @@ class TestGithubAlerter(unittest.TestCase):
                                        False, False)
         type(mock_new_github_release.return_value).alert_data = \
             mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -251,13 +253,14 @@ class TestGithubAlerter(unittest.TestCase):
                 autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
-    def test_first_run_no_github_alerts(
+    def test_first_run_no_new_release_github_alerts(
             self, param_input, mock_new_github_release, mock_github_access,
             mock_ack, mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
-
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -298,6 +301,8 @@ class TestGithubAlerter(unittest.TestCase):
                                        False, False)
 
         type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
             mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:

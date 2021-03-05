@@ -1123,12 +1123,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                              self.test_manager.config_process_dict)
             self.assertEqual(self.repos_configs_example,
                              self.test_manager.repos_configs)
-
-            for config_id, process_details in \
-                    self.test_manager.config_process_dict.items():
-                process = process_details['process']
-                process.terminate()
-                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
