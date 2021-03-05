@@ -26,7 +26,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
 from src.utils.exceptions import PANICException
-from test.utils.test_utils import infinite_fn
+from test.utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers
@@ -806,14 +806,16 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertFalse(parent_id_2_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
                                 self.parent_id_2]['process'].is_alive())
-            self.test_manager.parent_id_process_dict[
-                                self.parent_id_1]['process'].terminate()
-            self.test_manager.parent_id_process_dict[
-                                self.parent_id_2]['process'].terminate()
-            self.test_manager.parent_id_process_dict[
-                                self.parent_id_1]['process'].join()
-            self.test_manager.parent_id_process_dict[
-                                self.parent_id_2]['process'].join()
+
+            # Clean before finishing
+            self.test_manager.parent_id_process_dict[self.parent_id_1][
+                'process'].terminate()
+            self.test_manager.parent_id_process_dict[self.parent_id_1][
+                'process'].join()
+            self.test_manager.parent_id_process_dict[self.parent_id_2][
+                'process'].terminate()
+            self.test_manager.parent_id_process_dict[self.parent_id_2][
+                'process'].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1010,8 +1012,12 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(2, mock_ack.call_count)
             self.assertFalse(
                 self.parent_id_1 in self.test_manager.systems_alerts_configs)
-            self.test_manager._terminate_and_join_chain_alerter_processes(
-                self.parent_id_2)
+
+            # Clean started process
+            self.test_manager.parent_id_process_dict[self.parent_id_2][
+                'process'].terminate()
+            self.test_manager.parent_id_process_dict[self.parent_id_2][
+                'process'].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1070,15 +1076,22 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_terminate, mock_join, mock_start, mock_is_alive,
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_is_alive.side_effect = [True, True]
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1097,9 +1110,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                properties, body_chain_initial)
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general_initial)
-
-            # Give time for the processes to start
-            time.sleep(1)
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -1140,29 +1150,26 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].join()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_terminate, mock_join, mock_start, mock_is_alive,
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_is_alive.side_effect = [True, False]
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1181,17 +1188,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                properties, body_chain_initial)
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general_initial)
-
-            # Give time for the processes to start
-            time.sleep(1)
-
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].join()
-
-            # Give time for the process to stop
-            time.sleep(1)
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -1224,33 +1220,33 @@ class TestSystemAlertersManager(unittest.TestCase):
             expected_output = {
                 'component_name': self.test_manager.name,
                 'running_processes':
-                    [self.test_manager.parent_id_process_dict[self.parent_id_2][
-                         'component_name']],
-                'dead_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
                          'component_name']],
+                'dead_processes': [self.test_manager.parent_id_process_dict[
+                                       self.parent_id_2]['component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-
-            # Clean before test finishes
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_terminate, mock_join, mock_start, mock_is_alive,
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_is_alive.side_effect = [False, False]
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1269,21 +1265,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                                                properties, body_chain_initial)
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general_initial)
-
-            # Give time for the processes to start
-            time.sleep(1)
-
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_1][
-                'process'].join()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].join()
-
-            # Give time for the process to stop
-            time.sleep(1)
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)

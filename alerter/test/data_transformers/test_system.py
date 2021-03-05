@@ -25,7 +25,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.test_utils import save_system_to_redis
+from test.utils.utils import save_system_to_redis
 
 
 class TestSystemDataTransformer(unittest.TestCase):
