@@ -33,7 +33,7 @@ class TelegramAlertsHandler(ChannelHandler):
         self._telegram_alerts_handler_queue = \
             'telegram_{}_alerts_handler_queue'.format(
                 self.telegram_channel.channel_id)
-        self._telegram_routing_key = 'channel.{}'.format(
+        self._telegram_channel_routing_key = 'channel.{}'.format(
             self.telegram_channel.channel_id)
 
     @property
@@ -57,9 +57,10 @@ class TelegramAlertsHandler(ChannelHandler):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._telegram_alerts_handler_queue,
-                         ALERT_EXCHANGE, self._telegram_routing_key)
+                         ALERT_EXCHANGE, self._telegram_channel_routing_key)
         self.rabbitmq.queue_bind(self._telegram_alerts_handler_queue,
-                                 ALERT_EXCHANGE, self._telegram_routing_key)
+                                 ALERT_EXCHANGE,
+                                 self._telegram_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.alerts_queue.maxsize / 5)
