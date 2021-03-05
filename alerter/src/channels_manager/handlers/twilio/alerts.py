@@ -37,7 +37,7 @@ class TwilioAlertsHandler(ChannelHandler):
         self._twilio_alerts_handler_queue = \
             'twilio_{}_alerts_handler_queue'.format(
                 self.twilio_channel.channel_id)
-        self._twilio_routing_key = 'channel.{}'.format(
+        self._twilio_channel_routing_key = 'channel.{}'.format(
             self.twilio_channel.channel_id)
 
     @property
@@ -57,9 +57,10 @@ class TwilioAlertsHandler(ChannelHandler):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._twilio_alerts_handler_queue,
-                         ALERT_EXCHANGE, self._twilio_routing_key)
+                         ALERT_EXCHANGE, self._twilio_channel_routing_key)
         self.rabbitmq.queue_bind(self._twilio_alerts_handler_queue,
-                                 ALERT_EXCHANGE, self._twilio_routing_key)
+                                 ALERT_EXCHANGE,
+                                 self._twilio_channel_routing_key)
 
         prefetch_count = 200
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
