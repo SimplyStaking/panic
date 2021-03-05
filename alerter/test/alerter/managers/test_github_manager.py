@@ -338,6 +338,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+
     @freeze_time("2012-01-01")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
@@ -397,6 +398,11 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)

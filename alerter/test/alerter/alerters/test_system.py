@@ -7,6 +7,7 @@ from queue import Queue
 from unittest import mock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
 
 from src.alerter.alerters.system import SystemAlerter
@@ -4575,7 +4576,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(
+                HEALTH_CHECK_EXCHANGE)
             self.test_system_alerter.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
