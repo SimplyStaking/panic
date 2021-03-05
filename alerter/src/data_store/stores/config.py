@@ -79,10 +79,6 @@ class ConfigStore(Store):
         processing_error = False
         try:
             self._process_data_sort(method.routing_key.split('.'), config_data)
-        except KeyError as e:
-            self.logger.error("Error when parsing %s.", config_data)
-            self.logger.exception(e)
-            processing_error = True
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing %s", config_data)
             self.logger.exception(e)
@@ -119,6 +115,9 @@ class ConfigStore(Store):
                                   'repos_config']:
                 chain_path = routing_key[1] + '.' + routing_key[2]
                 self._process_redis_store(chain_path, routing_key[3], data)
+        else:
+            raise ReceivedUnexpectedDataException(
+                "{}: _process_data_store".format(self))
 
     def _process_redis_store(self, parent_id: str, config_type: str,
                              data: Dict) -> None:
