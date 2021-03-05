@@ -59,6 +59,7 @@ class TestGithubAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
+            'is_alive': True,
             'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
         self.heartbeat_queue = 'heartbeat queue'
@@ -463,6 +464,7 @@ class TestGithubAlerter(unittest.TestCase):
 
             args, _ = mock_send_heartbeat.call_args
             self.assertEqual(args[1]['component_name'], self.alerter_name)
+            self.assertEqual(args[1]['is_alive'], True)
             self.assertEqual(args[1]['timestamp'],
                              datetime.datetime(2012, 1, 1).timestamp())
             mock_basic_publish_confirm.assert_called()

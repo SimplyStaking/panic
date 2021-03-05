@@ -1,5 +1,4 @@
 import logging
-import signal
 import sys
 from datetime import datetime
 from multiprocessing import Process
@@ -13,7 +12,6 @@ from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
                                  DATA_STORE_MAN_INPUT_QUEUE,

@@ -50,6 +50,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
+            'is_alive': True,
             'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
 
@@ -4704,6 +4705,7 @@ class TestSystemAlerter(unittest.TestCase):
                                                    properties, body)
             heartbeat_test = {
                 'component_name': self.alerter_name,
+                'is_alive': True,
                 'timestamp': datetime.datetime(2012, 1, 1).timestamp()
             }
             mock_send_heartbeat.assert_called_with(heartbeat_test)
@@ -4734,6 +4736,7 @@ class TestSystemAlerter(unittest.TestCase):
                                                    properties, body)
             heartbeat_test = {
                 'component_name': self.alerter_name,
+                'is_alive': True,
                 'timestamp': datetime.datetime(2012, 1, 1).timestamp()
             }                             
             mock_send_heartbeat.assert_called_with(heartbeat_test)

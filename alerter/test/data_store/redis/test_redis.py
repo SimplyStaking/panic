@@ -1045,7 +1045,7 @@ class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
         self.host = 'dummyhost'
         self.port = 6379
         self.live_check_time_interval = timedelta(seconds=3)
-        self.live_check_time_interval_with_error_margin = timedelta(seconds=3.5)
+        self.live_check_time_interval_with_error_margin = timedelta(seconds=4)
         self.redis = RedisApi(self.dummy_logger, self.db, self.host, self.port,
                               live_check_time_interval=
                               self.live_check_time_interval)

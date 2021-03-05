@@ -128,6 +128,7 @@ class TelegramAlertsHandler(ChannelHandler):
             try:
                 heartbeat = {
                     'component_name': self.handler_name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

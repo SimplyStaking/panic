@@ -124,6 +124,7 @@ class GithubAlerter(Alerter):
             if not processing_error:
                 heartbeat = {
                     'component_name': self.alerter_name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

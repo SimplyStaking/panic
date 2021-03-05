@@ -49,6 +49,7 @@ class TestSystemMonitor(unittest.TestCase):
         }
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
@@ -406,6 +407,7 @@ class TestSystemMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp()
         }
 
@@ -573,6 +575,7 @@ class TestSystemMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
+                    'is_alive': True,
                     'timestamp': datetime(2012, 1, 1).timestamp()
                 }
                 # Delete the queue before to avoid messages in the queue on

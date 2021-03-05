@@ -1,11 +1,9 @@
-import copy
+import json
 import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
-from queue import Queue
-from typing import Union, Dict
 from unittest import mock
 from unittest.mock import call
 
@@ -15,19 +13,16 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
-from src.message_broker.rabbitmq import RabbitMQApi
-
 from src.data_store.redis.store_keys import Keys
-
 from src.data_store.stores.github import GithubStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GITHUB_STORE_INPUT_QUEUE,
                                  GITHUB_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
+                                  ReceivedUnexpectedDataException)
+from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
@@ -216,7 +211,7 @@ class TestGithubStore(unittest.TestCase):
         self.assertEqual(None, self.test_store.mongo)
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-          self) -> None:
+            self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
@@ -252,9 +247,9 @@ class TestGithubStore(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.github_data_1", ),
-        ("self.github_data_2", ),
-        ("self.github_data_3", ),
+        ("self.github_data_1",),
+        ("self.github_data_2",),
+        ("self.github_data_3",),
     ])
     @mock.patch.object(RedisApi, "hset_multiple")
     def test_process_redis_store_redis_is_called_correctly(
@@ -270,11 +265,11 @@ class TestGithubStore(unittest.TestCase):
         metrics = data['result']['data']
 
         call_1 = call(Keys.get_hash_parent(parent_id), {
-                      Keys.get_github_no_of_releases(repo_id):
-                      str(metrics['no_of_releases']),
-                      Keys.get_github_last_monitored(repo_id):
-                      str(meta_data['last_monitored']),
-                      })
+            Keys.get_github_no_of_releases(repo_id):
+                str(metrics['no_of_releases']),
+            Keys.get_github_last_monitored(repo_id):
+                str(meta_data['last_monitored']),
+        })
         mock_hset_multiple.assert_has_calls([call_1])
 
     def test_process_redis_store_does_nothing_on_error_key(self) -> None:
@@ -286,11 +281,10 @@ class TestGithubStore(unittest.TestCase):
                           self.test_store._process_redis_store,
                           self.github_data_unexpected)
 
-
     @parameterized.expand([
-        ("self.github_data_1", ),
-        ("self.github_data_2", ),
-        ("self.github_data_3", ),
+        ("self.github_data_1",),
+        ("self.github_data_2",),
+        ("self.github_data_3",),
     ])
     def test_process_redis_store_redis_stores_correctly(
             self, mock_github_data) -> None:
@@ -306,17 +300,19 @@ class TestGithubStore(unittest.TestCase):
 
         self.assertEqual(str(metrics['no_of_releases']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_github_no_of_releases(repo_id)).decode(
-                            "utf-8"))
+                                         Keys.get_github_no_of_releases(
+                                             repo_id)).decode(
+                             "utf-8"))
         self.assertEqual(str(meta_data['last_monitored']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_github_last_monitored(repo_id)).decode(
-                            "utf-8"))
+                                         Keys.get_github_last_monitored(
+                                             repo_id)).decode(
+                             "utf-8"))
 
     @parameterized.expand([
-        ("self.github_data_1", ),
-        ("self.github_data_2", ),
-        ("self.github_data_3", ),
+        ("self.github_data_1",),
+        ("self.github_data_2",),
+        ("self.github_data_3",),
     ])
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)
@@ -354,12 +350,14 @@ class TestGithubStore(unittest.TestCase):
 
             self.assertEqual(str(metrics['no_of_releases']),
                              self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_github_no_of_releases(repo_id)).decode(
-                                "utf-8"))
+                                             Keys.get_github_no_of_releases(
+                                                 repo_id)).decode(
+                                 "utf-8"))
             self.assertEqual(str(meta_data['last_monitored']),
                              self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_github_last_monitored(repo_id)).decode(
-                                "utf-8"))
+                                             Keys.get_github_last_monitored(
+                                                 repo_id)).decode(
+                                 "utf-8"))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -444,6 +442,7 @@ class TestGithubStore(unittest.TestCase):
 
             heartbeat_test = {
                 'component_name': self.test_store_name,
+                'is_alive': True,
                 'timestamp': datetime(2012, 1, 1).timestamp()
             }
 
