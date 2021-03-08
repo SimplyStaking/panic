@@ -154,7 +154,7 @@ class TwilioAlertsHandler(ChannelHandler):
                     attempts < self._max_attempts:
                 self.logger.debug("Will re-trying calling in 5 seconds. "
                                   "Attempts left: %s",
-                                 self._max_attempts - attempts)
+                                  self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(5)
                 ret = self.twilio_channel.alert(call_from=self._call_from,
                                                 call_to=number,
@@ -166,7 +166,8 @@ class TwilioAlertsHandler(ChannelHandler):
                 calling_status = RequestStatus.FAILED
 
         if calling_status == RequestStatus.SUCCESS:
-            self.logger.debug("Successfully sent all calling requests to Twilio")
+            self.logger.debug(
+                "Successfully sent all calling requests to Twilio")
         else:
             self.logger.error("Could not succesfully send all calling requests "
                               "to Twilio")
