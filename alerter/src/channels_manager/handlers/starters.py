@@ -59,7 +59,7 @@ def _initialise_channel_handler_logger(
             handler_logger = create_logger(
                 env.CHANNEL_HANDLERS_LOG_FILE_TEMPLATE.format(
                     handler_display_name), handler_module_name,
-                env.LOGGING_LEVEL, rotating=True)
+                env.LOGGING_LEVEL, True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(handler_display_name, e)
@@ -79,7 +79,7 @@ def _initialise_alerts_logger() -> logging.Logger:
     while True:
         try:
             alerts_logger = create_logger(env.ALERTS_LOG_FILE, 'Alerts',
-                                          env.LOGGING_LEVEL, rotating=True)
+                                          env.LOGGING_LEVEL, True)
             break
         except Exception as e:
             msg = get_initialisation_error_message('Alerts Log File', e)
