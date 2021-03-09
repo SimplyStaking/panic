@@ -101,6 +101,114 @@ class TestChannelsManager(unittest.TestCase):
         self.console_channel_id = 'test_console1234'
         self.log_channel_name = 'test_logger_channel'
         self.log_channel_id = 'test_logger1234'
+        self.test_channel_process_dict = {
+            self.telegram_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.telegram_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.bot_token,
+                    'bot_chat_id': self.bot_chat_id,
+                    'channel_id': self.telegram_channel_id,
+                    'channel_name': self.telegram_channel_name,
+                    'channel_type': ChannelTypes.TELEGRAM.value,
+                },
+                ChannelHandlerTypes.COMMANDS.value: {
+                    'component_name':
+                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
+                            self.telegram_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.bot_token,
+                    'bot_chat_id': self.bot_chat_id,
+                    'channel_id': self.telegram_channel_id,
+                    'channel_name': self.telegram_channel_name,
+                    'channel_type': ChannelTypes.TELEGRAM.value,
+                    'associated_chains': self.test_associated_chains,
+                },
+            },
+            self.twilio_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        TWILIO_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.twilio_channel_name),
+                    'process': self.dummy_process1,
+                    'account_sid': self.account_sid,
+                    'auth_token': self.auth_token,
+                    'channel_id': self.twilio_channel_id,
+                    'channel_name': self.twilio_channel_name,
+                    'channel_type': ChannelTypes.TWILIO.value,
+                    'call_from': self.call_from,
+                    'call_to': self.call_to,
+                    'twiml': self.twiml,
+                    'twiml_is_url': self.twiml_is_url,
+                },
+            },
+            self.email_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.email_channel_name),
+                    'process': self.dummy_process1,
+                    'smtp': self.smtp,
+                    'email_from': self.sender,
+                    'emails_to': self.emails_to,
+                    'channel_id': self.email_channel_id,
+                    'channel_name': self.email_channel_name,
+                    'channel_type': ChannelTypes.EMAIL.value,
+                    'username': self.username,
+                    'password': self.password,
+                    'port': self.port,
+                },
+            },
+            self.pagerduty_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.pagerduty_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.pagerduty_channel_id,
+                    'channel_name': self.pagerduty_channel_name,
+                    'channel_type': ChannelTypes.PAGERDUTY.value,
+                    'integration_key': self.integration_key,
+                },
+            },
+            self.opsgenie_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.opsgenie_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.opsgenie_channel_id,
+                    'channel_name': self.opsgenie_channel_name,
+                    'channel_type': ChannelTypes.OPSGENIE.value,
+                    'api_key': self.api_key,
+                    'eu_host': self.eu_host
+                },
+            },
+            self.console_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.console_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.console_channel_id,
+                    'channel_name': self.console_channel_name,
+                    'channel_type': ChannelTypes.CONSOLE.value,
+                },
+            },
+            self.log_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.log_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.log_channel_id,
+                    'channel_name': self.log_channel_name,
+                    'channel_type': ChannelTypes.LOG.value,
+                },
+            }
+        }
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -285,6 +393,15 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.TELEGRAM.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.telegram_channel_id: {
+                ChannelHandlerTypes.ALERTS.value:
+                    self.test_channel_process_dict[self.telegram_channel_id][
+                        ChannelHandlerTypes.ALERTS.value]
+            }
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_telegram_alerts_handler_creates_correct_and_start(
@@ -333,6 +450,15 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_type'])
         self.assertEqual(self.test_associated_chains,
                          process_details['associated_chains'])
+        expected_channel_process_dict = {
+            self.telegram_channel_id: {
+                ChannelHandlerTypes.COMMANDS.value:
+                    self.test_channel_process_dict[self.telegram_channel_id][
+                        ChannelHandlerTypes.COMMANDS.value]
+            }
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_telegram_cmds_handler_creates_correct_and_start(
@@ -383,6 +509,12 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.twiml_is_url, process_details['twiml_is_url'])
         self.assertEqual(ChannelTypes.TWILIO.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.twilio_channel_id:
+                self.test_channel_process_dict[self.twilio_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_twilio_alerts_handler_creates_correct_and_start(
@@ -434,6 +566,12 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(ChannelTypes.EMAIL.value,
                          process_details['channel_type'])
         self.assertEqual(self.port, process_details['port'])
+        expected_channel_process_dict = {
+            self.email_channel_id:
+                self.test_channel_process_dict[self.email_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_email_alerts_handler_creates_correct_and_start(
@@ -481,6 +619,12 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.PAGERDUTY.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.pagerduty_channel_id:
+                self.test_channel_process_dict[self.pagerduty_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_pagerduty_alerts_handler_creates_and_start(
@@ -526,6 +670,12 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.eu_host, process_details['eu_host'])
         self.assertEqual(ChannelTypes.OPSGENIE.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.opsgenie_channel_id:
+                self.test_channel_process_dict[self.opsgenie_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_opsgenie_alerts_handler_creates_and_start(
@@ -567,6 +717,12 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.CONSOLE.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.console_channel_id:
+                self.test_channel_process_dict[self.console_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_console_alerts_handler_creates_and_start(
@@ -606,6 +762,12 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.log_channel_name, process_details['channel_name'])
         self.assertEqual(ChannelTypes.LOG.value,
                          process_details['channel_type'])
+        expected_channel_process_dict = {
+            self.log_channel_id:
+                self.test_channel_process_dict[self.log_channel_id]
+        }
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_log_alerts_handler_creates_and_start(
@@ -624,3 +786,28 @@ class TestChannelsManager(unittest.TestCase):
                          process._args)
         self.assertEqual(start_log_alerts_handler, process._target)
         mock_start.assert_called_once_with()
+
+    # @mock.patch.object(ConsoleAlertsHandler,
+    #                    "_create_and_start_console_alerts_handler")
+    # def test_start_persistent_channels_starts_CAH_if_first_time(
+    #         self, mock_start_cah) -> None:
+    #     pass
+    #
+    # def test_start_persistent_channels_starts_CAH_if_not_alive(self) -> None:
+    #     pass
+    #
+    # def test_start_persistent_channels_does_not_start_CAH_if_already_running(
+    #         self) -> None:
+    #     pass
+    #
+    # def test_start_persistent_channels_starts_LAH_if_first_time(self) -> None:
+    #     pass
+    #
+    # def test_start_persistent_channels_starts_LAH_if_not_alive(self) -> None:
+    #     pass
+    #
+    # def test_start_persistent_channels_does_not_start_LAH_if_already_running(
+    #         self) -> None:
+    #     pass
+
+    # TODO: Need to add a self.channel_configs example still
