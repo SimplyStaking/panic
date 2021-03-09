@@ -110,6 +110,11 @@ function LoginLockedError(err) {
   this.code = constants.C_450;
 }
 
+function BlackListError(err) {
+  this.message = `${err} contains blacklisted URL data for security purposes.`;
+  this.code = constants.C_451;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -132,4 +137,5 @@ module.exports = {
   CouldNotWriteConfig,
   UsernameDoesNotExists,
   LoginLockedError,
+  BlackListError,
 };

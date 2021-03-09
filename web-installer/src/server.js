@@ -49,6 +49,9 @@ const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
+const blackList = ['127.0.0.1', 'localhost', 'localtest.me', '2130706433',
+                   '017700000001', '0x7f000001']
+
 // Store the amount of times a login attempt was made unsuccessfully
 let loginAttempts = 0;
 // Store when then next login attempt can be made
@@ -758,11 +761,18 @@ app.post('/server/email/test', verify, async (req, res) => {
 
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
-
+  
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (!!blackList.find(a => smtp.includes(a))) {
+    const error = new errors.BlackListError(smtp);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
@@ -919,6 +929,13 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     return;
   }
 
+  if (!!blackList.find(a => tendermintRpcUrl.includes(a))) {
+    const error = new errors.BlackListError(tendermintRpcUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   const url = `${tendermintRpcUrl}/health?`;
 
   axios
@@ -951,6 +968,13 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (!!blackList.find(a => prometheusUrl.includes(a))) {
+    const error = new errors.BlackListError(prometheusUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
@@ -989,6 +1013,13 @@ app.post('/server/system/exporter', async (req, res) => {
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (!!blackList.find(a => exporterUrl.includes(a))) {
+    const error = new errors.BlackListError(exporterUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
