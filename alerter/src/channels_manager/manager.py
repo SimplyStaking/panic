@@ -37,9 +37,9 @@ from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
                              convert_to_int_if_not_none_and_not_empty_str)
 
-_CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
-_CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
-_CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
+CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
+CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
 
 
 class ChannelsManager(PublisherSubscriberComponent):
@@ -73,19 +73,19 @@ class ChannelsManager(PublisherSubscriberComponent):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_CHANNELS_MANAGER_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(CHANNELS_MANAGER_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _CHANNELS_MANAGER_INPUT_QUEUE,
+                         "'%s'", CHANNELS_MANAGER_INPUT_QUEUE,
                          HEALTH_CHECK_EXCHANGE,
-                         _CHANNELS_MANAGER_HB_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_CHANNELS_MANAGER_INPUT_QUEUE,
+                         CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.rabbitmq.queue_bind(CHANNELS_MANAGER_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _CHANNELS_MANAGER_HB_ROUTING_KEY)
+                                 CHANNELS_MANAGER_HB_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          _CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_CHANNELS_MANAGER_INPUT_QUEUE,
+                          CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(CHANNELS_MANAGER_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -97,10 +97,10 @@ class ChannelsManager(PublisherSubscriberComponent):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                         CONFIG_EXCHANGE, CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on %s",
                           CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
