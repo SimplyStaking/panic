@@ -66,6 +66,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use((err, req, res, next) => {
+  // This check makes sure this is a JSON parsing issue, but it might be
+  // coming from any middleware, not just body-parser:
+
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      console.error(err);
+      return res.sendStatus(400); // Bad request
+  }
+
+  next();
+});
 
 // This function confirms that the authentication of the installer are in the
 // .env file.
