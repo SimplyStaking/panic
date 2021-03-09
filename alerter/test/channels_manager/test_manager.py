@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import multiprocessing
@@ -28,7 +29,9 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
                                  OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE)
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 from src.utils.exceptions import PANICException
 from src.utils.types import ChannelHandlerTypes, ChannelTypes
 from test.utils.utils import infinite_fn
@@ -97,10 +100,10 @@ class TestChannelsManager(unittest.TestCase):
         self.opsgenie_channel_name = 'test_opgenie_channel'
         self.opsgenie_channel_id = 'test_opsgenie_id12345'
         self.eu_host = True
-        self.console_channel_name = 'test_console_channel'
-        self.console_channel_id = 'test_console1234'
-        self.log_channel_name = 'test_logger_channel'
-        self.log_channel_id = 'test_logger1234'
+        self.console_channel_name = CONSOLE_CHANNEL_NAME
+        self.console_channel_id = CONSOLE_CHANNEL_ID
+        self.log_channel_name = LOG_CHANNEL_NAME
+        self.log_channel_id = LOG_CHANNEL_ID
         self.test_channel_process_dict = {
             self.telegram_channel_id: {
                 ChannelHandlerTypes.ALERTS.value: {
@@ -375,6 +378,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_telegram_alerts_handler(
             self.bot_token, self.bot_chat_id, self.telegram_channel_id,
@@ -393,13 +397,12 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.TELEGRAM.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.telegram_channel_id: {
-                ChannelHandlerTypes.ALERTS.value:
-                    self.test_channel_process_dict[self.telegram_channel_id][
-                        ChannelHandlerTypes.ALERTS.value]
-            }
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.telegram_channel_id] = {}
+        expected_channel_process_dict[self.telegram_channel_id][
+            ChannelHandlerTypes.ALERTS.value] = \
+            self.test_channel_process_dict[self.telegram_channel_id][
+                ChannelHandlerTypes.ALERTS.value]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -430,6 +433,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.COMMANDS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_telegram_cmds_handler(
             self.bot_token, self.bot_chat_id, self.telegram_channel_id,
@@ -450,13 +454,12 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_type'])
         self.assertEqual(self.test_associated_chains,
                          process_details['associated_chains'])
-        expected_channel_process_dict = {
-            self.telegram_channel_id: {
-                ChannelHandlerTypes.COMMANDS.value:
-                    self.test_channel_process_dict[self.telegram_channel_id][
-                        ChannelHandlerTypes.COMMANDS.value]
-            }
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.telegram_channel_id] = {}
+        expected_channel_process_dict[self.telegram_channel_id][
+            ChannelHandlerTypes.COMMANDS.value] = \
+            self.test_channel_process_dict[self.telegram_channel_id][
+            ChannelHandlerTypes.COMMANDS.value]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -487,6 +490,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_twilio_alerts_handler(
             self.account_sid, self.auth_token, self.twilio_channel_id,
@@ -509,10 +513,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.twiml_is_url, process_details['twiml_is_url'])
         self.assertEqual(ChannelTypes.TWILIO.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.twilio_channel_id:
-                self.test_channel_process_dict[self.twilio_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.twilio_channel_id] = \
+            self.test_channel_process_dict[self.twilio_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -545,6 +548,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_email_alerts_handler(
             self.smtp, self.sender, self.emails_to, self.email_channel_id,
@@ -566,10 +570,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(ChannelTypes.EMAIL.value,
                          process_details['channel_type'])
         self.assertEqual(self.port, process_details['port'])
-        expected_channel_process_dict = {
-            self.email_channel_id:
-                self.test_channel_process_dict[self.email_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.email_channel_id] = \
+            self.test_channel_process_dict[self.email_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -601,6 +604,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_pagerduty_alerts_handler(
             self.integration_key, self.pagerduty_channel_id,
@@ -619,10 +623,9 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.PAGERDUTY.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.pagerduty_channel_id:
-                self.test_channel_process_dict[self.pagerduty_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.pagerduty_channel_id] = \
+            self.test_channel_process_dict[self.pagerduty_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -652,6 +655,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_opsgenie_alerts_handler(
             self.api_key, self.eu_host, self.opsgenie_channel_id,
@@ -670,10 +674,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.eu_host, process_details['eu_host'])
         self.assertEqual(ChannelTypes.OPSGENIE.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.opsgenie_channel_id:
-                self.test_channel_process_dict[self.opsgenie_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.opsgenie_channel_id] = \
+            self.test_channel_process_dict[self.opsgenie_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -703,6 +706,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_console_alerts_handler(
             self.console_channel_id, self.console_channel_name)
@@ -717,10 +721,9 @@ class TestChannelsManager(unittest.TestCase):
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.CONSOLE.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.console_channel_id:
-                self.test_channel_process_dict[self.console_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.console_channel_id] = \
+            self.test_channel_process_dict[self.console_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -749,6 +752,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process_init.return_value = self.dummy_process1
         handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_log_alerts_handler(
             self.log_channel_id, self.log_channel_name)
@@ -762,10 +766,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(self.log_channel_name, process_details['channel_name'])
         self.assertEqual(ChannelTypes.LOG.value,
                          process_details['channel_type'])
-        expected_channel_process_dict = {
-            self.log_channel_id:
-                self.test_channel_process_dict[self.log_channel_id]
-        }
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.log_channel_id] = \
+            self.test_channel_process_dict[self.log_channel_id]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -787,14 +790,30 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(start_log_alerts_handler, process._target)
         mock_start.assert_called_once_with()
 
-    # @mock.patch.object(ConsoleAlertsHandler,
-    #                    "_create_and_start_console_alerts_handler")
-    # def test_start_persistent_channels_starts_CAH_if_first_time(
-    #         self, mock_start_cah) -> None:
-    #     pass
-    #
-    # def test_start_persistent_channels_starts_CAH_if_not_alive(self) -> None:
-    #     pass
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_creates_and_starts_CAH_if_first_time(
+            self, mock_start_cah, mock_start_lah) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        self.test_manager._start_persistent_channels()
+        mock_start_cah.assert_called_once_with(CONSOLE_CHANNEL_ID,
+                                               CONSOLE_CHANNEL_NAME)
+
+    @mock.patch.object(multiprocessing.Process, 'is_alive')
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_starts_CAH_if_not_alive(
+            self, mock_start_cah, mock_start_lah, mock_is_alive) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        mock_is_alive.return_value = False
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        self.test_manager._start_persistent_channels()
+        mock_start_cah.assert_called_once_with(CONSOLE_CHANNEL_ID,
+                                               CONSOLE_CHANNEL_NAME)
     #
     # def test_start_persistent_channels_does_not_start_CAH_if_already_running(
     #         self) -> None:
