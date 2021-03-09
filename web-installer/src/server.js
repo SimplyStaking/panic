@@ -49,6 +49,13 @@ const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
+// Store the amount of times a login attempt was made unsuccessfully
+let loginAttempts = 0;
+// Store when then next login attempt can be made
+let lockedTime = 0;
+// Store how long someone has to wait after 3 failed login attempts
+const waitTime = 300000;
+
 // Server configuration
 const app = express();
 app.disable('x-powered-by');
@@ -226,41 +233,65 @@ app.post('/server/login', async (req, res) => {
     res.status(err.code).send(utils.errorJson(err.message));
     return;
   }
-
-  // Check if the inputted credentials are correct.
-  if (credentialsCorrect(username, password)) {
-    // If the credentials are correct give the user a jwt token
-    const payload = { username };
-    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
-    });
-    // This will be used to give access tokens
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: parseInt(process.env.REFRESH_TOKEN_LIFE, 10),
-    });
-    // Inform the user that authentication was successful and wrap the token
-    // inside a cookie for additional security
-    const msg = new msgs.AuthenticationSuccessful();
-    try {
-      await saveRefreshTokenToDB(username, refreshToken);
-      res
-        .status(utils.SUCCESS_STATUS)
-        .cookie('authCookie', accessToken, {
-          secure: true,
-          httpOnly: true,
-          sameSite: true,
-          maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
-        })
-        .send(utils.resultJson(msg.message));
-    } catch (err) {
-      // Inform the user of any error that occurs
-      res.status(err.code).send(utils.errorJson(err.message));
+  let currentTime = new Date().getTime();
+  // Check if the checking of credentials is locked
+  if (lockedTime < currentTime) {
+    // Check if the inputted credentials are correct.
+    if (credentialsCorrect(username, password)) {
+      // If the credentials are correct give the user a jwt token
+      const payload = { username };
+      const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+      });
+      // This will be used to give access tokens
+      const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: parseInt(process.env.REFRESH_TOKEN_LIFE, 10),
+      });
+      // Inform the user that authentication was successful and wrap the token
+      // inside a cookie for additional security
+      const msg = new msgs.AuthenticationSuccessful();
+      try {
+        await saveRefreshTokenToDB(username, refreshToken);
+        res
+          .status(utils.SUCCESS_STATUS)
+          .cookie('authCookie', accessToken, {
+            secure: true,
+            httpOnly: true,
+            sameSite: true,
+            maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
+          })
+          .send(utils.resultJson(msg.message));
+      } catch (err) {
+        // Inform the user of any error that occurs
+        res.status(err.code).send(utils.errorJson(err.message));
+      }
+    } else {
+      // Increment the login attempts
+      loginAttempts = loginAttempts + 1;
+      if (loginAttempts === 3) {
+        // Set the locked time
+        lockedTime = currentTime + waitTime;
+        // Reset the login attempts
+        loginAttempts = 0;
+        const err = new errors.AuthenticationError(`Incorrect Credentials,
+            ${0} remaining login attempts, login is locked for 5 minutes`);
+        console.log(err);
+        res.status(err.code).send(utils.errorJson(err.message));
+      }else {
+        // If inputted credentials are incorrect inform the user
+        let remainingAttempts = 3 - loginAttempts;
+        const err = new errors.AuthenticationError(`Incorrect Credentials,
+          ${remainingAttempts} remaining login attempts before it's
+          locked for 5 minutes`);
+        console.log(err);
+        res.status(err.code).send(utils.errorJson(err.message));
+      }
     }
-  } else {
-    // If inputted credentials are incorrect inform the user
-    const err = new errors.AuthenticationError('Incorrect Credentials');
+  }else {
+    // If the login is locked for a certain amount of time inform the user
+    const err = new errors.LoginLockedError((lockedTime - currentTime)/1000);
     console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }

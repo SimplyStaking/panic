@@ -105,6 +105,11 @@ function UsernameDoesNotExists(username) {
   this.code = constants.C_449;
 }
 
+function LoginLockedError(err) {
+  this.message = `Login locked for: ${err} seconds.`;
+  this.code = constants.C_450;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -126,4 +131,5 @@ module.exports = {
   UsernameAlreadyExists,
   CouldNotWriteConfig,
   UsernameDoesNotExists,
+  LoginLockedError,
 };
