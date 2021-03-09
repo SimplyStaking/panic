@@ -115,6 +115,11 @@ function BlackListError(err) {
   this.code = constants.C_451;
 }
 
+function BadRequest() {
+  this.message = `The received request is invalid.`;
+  this.code = constants.C_452;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -138,4 +143,5 @@ module.exports = {
   UsernameDoesNotExists,
   LoginLockedError,
   BlackListError,
+  BadRequest
 };

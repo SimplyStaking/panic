@@ -199,8 +199,22 @@ function credentialsCorrect(username, password) {
 }
 
 function verify(req, res, next) {
-  // Extract the authentication cookie
-  const accessToken = req.cookies.authCookie;
+  let accessToken;
+
+  try {
+
+    console.log('Received POST request for %s', req.url);
+    accessToken = req.cookies.authCookie;
+
+  } catch (err) {
+    console.log(err);
+
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // If authCookie does not exist, the user did not login therefore send an
   // unauthorized error
   if (!accessToken) {
@@ -224,8 +238,18 @@ function verify(req, res, next) {
 // This endpoint attempts to login a user of the installer. The authentication
 // credentials are the ones stored inside the .env file.
 app.post('/server/login', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { username, password } = req.body;
+  let username, password;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({username, password} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if username or password are missing.
   const missingParamsList = utils.missingValues({ username, password });
@@ -303,9 +327,21 @@ app.post('/server/login', async (req, res) => {
 // This endpoint returns a new access token using the stored refresh token if
 // the current access token has a valid signature.
 app.post('/server/refresh', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  // Extract the authentication cookie
-  const accessToken = req.cookies.authCookie;
+  let accessToken;
+  try {
+
+    console.log('Received POST request for %s', req.url);
+    accessToken = req.cookies.authCookie;
+
+  } catch (err) {
+    console.log(err);
+
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // If it does not exist, the user did not login therefore send an unauthorized
   // error
   if (!accessToken) {
@@ -388,8 +424,20 @@ app.post('/server/refresh', async (req, res) => {
 
 // This endpoint saves an account inside the database
 app.post('/server/account/save', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { username, password } = req.body;
+  let username, password;
+  try {
+
+    console.log('Received POST request for %s', req.url);
+    ({username, password} = req.body);
+  } catch (err) {
+    console.log(err);
+
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // Check if username and password are missing
   const missingParamsList = utils.missingValues({ username, password });
   // If some required parameters are missing inform the user.
@@ -426,8 +474,19 @@ app.post('/server/account/save', verify, async (req, res) => {
 
 // This should remove an account by username from the database
 app.post('/server/account/delete', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { username } = req.body;
+  let username;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    username = req.body.username;
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // Check if username is missing
   const missingParamsList = utils.missingValues({ username });
   // If some required parameters are missing inform the user.
@@ -462,8 +521,18 @@ app.post('/server/account/delete', verify, async (req, res) => {
 // This endpoint checks whether an account already exists with the given
 // username
 app.post('/server/account/exists', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { username } = req.body;
+  let username;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    username = req.body.username;
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
   // Check if username is missing
   const missingParamsList = utils.missingValues({ username });
   // If some required parameters are missing inform the user.
@@ -490,7 +559,17 @@ app.post('/server/account/exists', verify, async (req, res) => {
 
 // This endpoint returns all the usernames of the accounts saved
 app.get('/server/account/usernames', verify, async (req, res) => {
-  console.log('Received GET request for %s', req.url);
+
+  try {
+    console.log('Received GET request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   try {
     const result = await mongo.getRecords(
       mongoDBUrl,
@@ -509,8 +588,18 @@ app.get('/server/account/usernames', verify, async (req, res) => {
 
 // This endpoint saves an account inside the database
 app.post('/server/database/drop', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { collection } = req.body;
+  let collection;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    collection = req.body.collection;
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if the collection parameter is missing
   const missingParamsList = utils.missingValues({ collection });
@@ -537,7 +626,16 @@ app.post('/server/database/drop', verify, async (req, res) => {
 // This endpoint is used to a list of paths inside the configuration
 // folder
 app.get('/server/paths', verify, async (req, res) => {
-  console.log('Received GET request for %s', req.url);
+  try {
+    console.log('Received GET request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   const configPath = path.join(__dirname, '../../', 'config');
   try {
     const foundFiles = files
@@ -564,10 +662,17 @@ app.get('/server/paths', verify, async (req, res) => {
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
 app.get('/server/config', verify, async (req, res) => {
-  console.log('Received GET request for %s', req.url);
-  const {
-    configType, fileName, chainName, baseChain,
-  } = req.query;
+  let configType, fileName, chainName, baseChain;
+  try {
+    console.log('Received GET request for %s', req.url);
+    ({configType, fileName, chainName, baseChain} = req.query);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if configType and fileName are missing, as these are independent of
   // other parameters
@@ -618,7 +723,16 @@ app.get('/server/config', verify, async (req, res) => {
 
 // Endpoint to delete all directories so they can be re-written
 app.post('/server/config/delete', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
+
+  try {
+    console.log('Received POST request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   try {
     const configPath = path.join(__dirname, '../../', 'config');
@@ -641,11 +755,18 @@ app.post('/server/config/delete', verify, async (req, res) => {
 // This endpoint writes a config to the inferred path. The config path is
 // inferred from the parameters.
 app.post('/server/config', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const {
-    configType, fileName, chainName, baseChain,
-  } = req.query;
-  const { config } = req.body;
+  let configType, fileName, chainName, baseChain;
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({configType, fileName, chainName, baseChain} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // Check if configType, fileName and config are missing as these are
   // independent of other parameters
   const missingParamsList = utils.missingValues({
@@ -697,13 +818,18 @@ app.post('/server/config', verify, async (req, res) => {
 
 // This endpoint performs a twilio test call on the given phone number.
 app.post('/server/twilio/test', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const {
-    accountSid,
-    authToken,
-    twilioPhoneNumber,
-    phoneNumberToDial,
-  } = req.body;
+  let accountSid, authToken, twilioPhoneNumber, phoneNumberToDial;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({accountSid, authToken, twilioPhoneNumber, phoneNumberToDial} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
   // are missing.
@@ -754,10 +880,18 @@ app.post('/server/twilio/test', verify, async (req, res) => {
 
 // This endpoint sends a test e-mail to the address.
 app.post('/server/email/test', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const {
-    smtp, from, to, user, pass, port,
-  } = req.body;
+  let smtp, from, to, user, pass, port;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({smtp, from, to, user, pass, port} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
@@ -814,7 +948,6 @@ app.post('/server/email/test', verify, async (req, res) => {
         res.status(error.code).send(utils.errorJson(error.message));
         return;
       }
-      console.debug(info);
       const msg = new msgs.EmailSubmitted(to);
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     });
@@ -825,8 +958,18 @@ app.post('/server/email/test', verify, async (req, res) => {
 
 // This endpoint triggers an test alert event to the PagerDuty space.
 app.post('/server/pagerduty/test', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { apiToken, integrationKey } = req.body;
+  let apiToken, integrationKey;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({apiToken, integrationKey} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if apiToken and integrationKey are missing.
   const missingParamsList = utils.missingValues({ apiToken, integrationKey });
@@ -869,8 +1012,19 @@ app.post('/server/pagerduty/test', verify, async (req, res) => {
 
 // This endpoint triggers a test alert event to the OpsGenie space.
 app.post('/server/opsgenie/test', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { apiKey, eu } = req.body;
+  let apiKey, eu;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({apiKey, eu} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   // Check if apiKey is missing.
   const missingParamsList = utils.missingValues({ apiKey });
 
@@ -916,8 +1070,18 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
 // ---------------------------------------- Cosmos
 
 app.post('/server/cosmos/tendermint', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { tendermintRpcUrl } = req.body;
+  let tendermintRpcUrl;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({tendermintRpcUrl} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if tendermintRpcUrl is missing.
   const missingParamsList = utils.missingValues({ tendermintRpcUrl });
@@ -958,8 +1122,18 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
 });
 
 app.post('/server/cosmos/prometheus', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { prometheusUrl } = req.body;
+  let prometheusUrl;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({prometheusUrl} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if prometheusUrl is missing.
   const missingParamsList = utils.missingValues({ prometheusUrl });
@@ -1003,8 +1177,18 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 // ---------------------------------------- System (Node Exporter)
 
 app.post('/server/system/exporter', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { exporterUrl } = req.body;
+  let exporterUrl;
+
+  try {
+    console.log('Received POST request for %s', req.url);
+    ({exporterUrl} = req.body);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
 
   // Check if exporterUrl is missing.
   const missingParamsList = utils.missingValues({ exporterUrl });
@@ -1045,13 +1229,31 @@ app.post('/server/system/exporter', async (req, res) => {
 // ---------------------------------------- Server defaults
 
 app.get('/server/*', verify, async (req, res) => {
-  console.log('Received GET request for %s', req.url);
+
+  try {
+    console.log('Received GET request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   const err = new errors.InvalidEndpoint(req.url);
   res.status(err.code).send(utils.errorJson(err.message));
 });
 
 app.post('/server/*', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
+  try {
+    console.log('Received POST request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
   const err = new errors.InvalidEndpoint(req.url);
   res.status(err.code).send(utils.errorJson(err.message));
 });
@@ -1060,7 +1262,15 @@ app.post('/server/*', verify, async (req, res) => {
 
 // Return the build at the root URL
 app.get('/*', (req, res) => {
-  console.log('Received GET request for %s', req.url);
+  try {
+    console.log('Received GET request for %s', req.url);
+  } catch (err) {
+    console.log(err);
+    const error = new errors.BadRequest();
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
