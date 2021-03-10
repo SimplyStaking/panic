@@ -5,8 +5,10 @@ import multiprocessing
 import unittest
 from datetime import timedelta, datetime
 from unittest import mock
+from unittest.mock import call
 
 import pika
+from parameterized import parameterized
 
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
@@ -211,6 +213,210 @@ class TestChannelsManager(unittest.TestCase):
                     'channel_type': ChannelTypes.LOG.value,
                 },
             }
+        }
+        self.test_channel_process_dict_copy = {
+            self.telegram_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.telegram_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.bot_token,
+                    'bot_chat_id': self.bot_chat_id,
+                    'channel_id': self.telegram_channel_id,
+                    'channel_name': self.telegram_channel_name,
+                    'channel_type': ChannelTypes.TELEGRAM.value,
+                },
+                ChannelHandlerTypes.COMMANDS.value: {
+                    'component_name':
+                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
+                            self.telegram_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.bot_token,
+                    'bot_chat_id': self.bot_chat_id,
+                    'channel_id': self.telegram_channel_id,
+                    'channel_name': self.telegram_channel_name,
+                    'channel_type': ChannelTypes.TELEGRAM.value,
+                    'associated_chains': self.test_associated_chains,
+                },
+            },
+            self.twilio_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        TWILIO_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.twilio_channel_name),
+                    'process': self.dummy_process1,
+                    'account_sid': self.account_sid,
+                    'auth_token': self.auth_token,
+                    'channel_id': self.twilio_channel_id,
+                    'channel_name': self.twilio_channel_name,
+                    'channel_type': ChannelTypes.TWILIO.value,
+                    'call_from': self.call_from,
+                    'call_to': self.call_to,
+                    'twiml': self.twiml,
+                    'twiml_is_url': self.twiml_is_url,
+                },
+            },
+            self.email_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.email_channel_name),
+                    'process': self.dummy_process1,
+                    'smtp': self.smtp,
+                    'email_from': self.sender,
+                    'emails_to': self.emails_to,
+                    'channel_id': self.email_channel_id,
+                    'channel_name': self.email_channel_name,
+                    'channel_type': ChannelTypes.EMAIL.value,
+                    'username': self.username,
+                    'password': self.password,
+                    'port': self.port,
+                },
+            },
+            self.pagerduty_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.pagerduty_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.pagerduty_channel_id,
+                    'channel_name': self.pagerduty_channel_name,
+                    'channel_type': ChannelTypes.PAGERDUTY.value,
+                    'integration_key': self.integration_key,
+                },
+            },
+            self.opsgenie_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.opsgenie_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.opsgenie_channel_id,
+                    'channel_name': self.opsgenie_channel_name,
+                    'channel_type': ChannelTypes.OPSGENIE.value,
+                    'api_key': self.api_key,
+                    'eu_host': self.eu_host
+                },
+            },
+            self.console_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.console_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.console_channel_id,
+                    'channel_name': self.console_channel_name,
+                    'channel_type': ChannelTypes.CONSOLE.value,
+                },
+            },
+            self.log_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.log_channel_name),
+                    'process': self.dummy_process1,
+                    'channel_id': self.log_channel_id,
+                    'channel_name': self.log_channel_name,
+                    'channel_type': ChannelTypes.LOG.value,
+                },
+            }
+        }
+        self.test_channel_configs = {
+            ChannelTypes.TELEGRAM.value: {
+                self.telegram_channel_id: {
+                    'id': self.telegram_channel_id,
+                    'channel_name': self.telegram_channel_name,
+                    'bot_token': self.bot_token,
+                    'chat_id': self.bot_chat_id,
+                    'info': 'True',
+                    'warning': 'True',
+                    'critical': 'True',
+                    'error': 'True',
+                    'alerts': 'True',
+                    'commands': 'True',
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            },
+            ChannelTypes.TWILIO.value: {
+                self.twilio_channel_id: {
+                    'id': self.twilio_channel_id,
+                    'channel_name': self.twilio_channel_name,
+                    'account_sid': self.account_sid,
+                    'auth_token': self.auth_token,
+                    'twilio_phone_no': self.call_from,
+                    'twilio_phone_numbers_to_dial_valid': self.call_to,
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            },
+            ChannelTypes.EMAIL.value: {
+                self.email_channel_id: {
+                    'id': self.email_channel_id,
+                    'channel_name': self.email_channel_name,
+                    'smtp': self.smtp,
+                    'port': self.port,
+                    'email_from': self.sender,
+                    'emails_to': self.emails_to,
+                    'username': self.username,
+                    'password': self.password,
+                    'info': 'True',
+                    'warning': 'True',
+                    'critical': 'True',
+                    'error': 'True',
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            },
+            ChannelTypes.PAGERDUTY.value: {
+                self.pagerduty_channel_id: {
+                    'id': self.pagerduty_channel_id,
+                    'channel_name': self.pagerduty_channel_name,
+                    'api_token': self.api_key,
+                    'integration_key': self.integration_key,
+                    'info': 'True',
+                    'warning': 'True',
+                    'critical': 'True',
+                    'error': 'True',
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            },
+            ChannelTypes.OPSGENIE.value: {
+                self.opsgenie_channel_id: {
+                    'id': self.opsgenie_channel_id,
+                    'channel_name': self.opsgenie_channel_name,
+                    'api_token': self.api_key,
+                    'eu': 'True',
+                    'info': 'True',
+                    'warning': 'True',
+                    'critical': 'True',
+                    'error': 'True',
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            },
         }
 
     def tearDown(self) -> None:
@@ -459,7 +665,7 @@ class TestChannelsManager(unittest.TestCase):
         expected_channel_process_dict[self.telegram_channel_id][
             ChannelHandlerTypes.COMMANDS.value] = \
             self.test_channel_process_dict[self.telegram_channel_id][
-            ChannelHandlerTypes.COMMANDS.value]
+                ChannelHandlerTypes.COMMANDS.value]
         self.assertEqual(expected_channel_process_dict,
                          self.test_manager.channel_process_dict)
 
@@ -814,19 +1020,468 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._start_persistent_channels()
         mock_start_cah.assert_called_once_with(CONSOLE_CHANNEL_ID,
                                                CONSOLE_CHANNEL_NAME)
-    #
-    # def test_start_persistent_channels_does_not_start_CAH_if_already_running(
-    #         self) -> None:
-    #     pass
-    #
-    # def test_start_persistent_channels_starts_LAH_if_first_time(self) -> None:
-    #     pass
-    #
-    # def test_start_persistent_channels_starts_LAH_if_not_alive(self) -> None:
-    #     pass
-    #
-    # def test_start_persistent_channels_does_not_start_LAH_if_already_running(
-    #         self) -> None:
-    #     pass
 
-    # TODO: Need to add a self.channel_configs example still
+    @mock.patch.object(multiprocessing.Process, 'is_alive')
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_does_not_start_CAH_if_already_running(
+            self, mock_start_cah, mock_start_lah, mock_is_alive) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        mock_is_alive.return_value = True
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        self.test_manager._start_persistent_channels()
+        mock_start_cah.assert_not_called()
+
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_creates_and_starts_LAH_if_first_time(
+            self, mock_start_cah, mock_start_lah) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        self.test_manager._start_persistent_channels()
+        mock_start_lah.assert_called_once_with(LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+
+    @mock.patch.object(multiprocessing.Process, 'is_alive')
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_starts_LAH_if_not_alive(
+            self, mock_start_cah, mock_start_lah, mock_is_alive) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        mock_is_alive.return_value = False
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        self.test_manager._start_persistent_channels()
+        mock_start_lah.assert_called_once_with(LOG_CHANNEL_ID,
+                                               LOG_CHANNEL_NAME)
+
+    @mock.patch.object(multiprocessing.Process, 'is_alive')
+    @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    def test_start_persistent_channels_does_not_start_LAH_if_already_running(
+            self, mock_start_cah, mock_start_lah, mock_is_alive) -> None:
+        mock_start_cah.return_value = None
+        mock_start_lah.return_value = None
+        mock_is_alive.return_value = True
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        self.test_manager._start_persistent_channels()
+        mock_start_lah.assert_not_called()
+
+    @parameterized.expand([('True',), ('False',), ])
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_new_configs_and_alerts_true(
+            self, commands, mock_start_tah, mock_start_tch) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the telegram channel state is empty and when
+        # it is not.
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+
+        # Test with no telegram configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = 'True'
+        sent_configs[self.telegram_channel_id]['commands'] = commands
+        del current_configs[ChannelTypes.TELEGRAM.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_configs[self.telegram_channel_id]['commands'] = commands
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with telegram configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = 'True'
+        sent_configs[self.telegram_channel_id]['commands'] = commands
+        del current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]
+        current_configs[ChannelTypes.TELEGRAM.value][
+            'Another_Telegram_Config'] = self.test_dict
+        sent_configs['Another_Telegram_Config'] = self.test_dict
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_configs['Another_Telegram_Config'] = self.test_dict
+        expected_configs[self.telegram_channel_id]['commands'] = commands
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 self.telegram_channel_name),
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 self.telegram_channel_name),
+        ]
+        actual_calls = mock_start_tah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([('True',), ('False',), ])
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_new_configs_and_commands_true(
+            self, alerts, mock_start_tah, mock_start_tch) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # will test this for both when the telegram channel state is empty and
+        # when it is not.
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+
+        # Test with no telegram configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = alerts
+        sent_configs[self.telegram_channel_id]['commands'] = 'True'
+        del current_configs[ChannelTypes.TELEGRAM.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_configs[self.telegram_channel_id]['alerts'] = alerts
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with telegram configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = alerts
+        sent_configs[self.telegram_channel_id]['commands'] = 'True'
+        del current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]
+        current_configs[ChannelTypes.TELEGRAM.value][
+            'Another_Telegram_Config'] = self.test_dict
+        sent_configs['Another_Telegram_Config'] = self.test_dict
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_configs['Another_Telegram_Config'] = self.test_dict
+        expected_configs[self.telegram_channel_id]['alerts'] = alerts
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 self.telegram_channel_name, self.test_associated_chains),
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 self.telegram_channel_name, self.test_associated_chains),
+        ]
+        actual_calls = mock_start_tch.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_new_configs_and_commands_alerts_false(
+            self, mock_start_tah, mock_start_tch) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective processes were not called since both alerts and
+        # commands are disabled. Note that we will test this for both when the
+        # telegram channel state is empty and when it is not.
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+
+        # Test with no telegram configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = 'False'
+        sent_configs[self.telegram_channel_id]['commands'] = 'False'
+        del current_configs[ChannelTypes.TELEGRAM.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = {}
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with telegram configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['alerts'] = 'False'
+        sent_configs[self.telegram_channel_id]['commands'] = 'False'
+        del current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]
+        current_configs[ChannelTypes.TELEGRAM.value][
+            'Another_Telegram_Config'] = self.test_dict
+        sent_configs['Another_Telegram_Config'] = self.test_dict
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_telegram_configs(
+            sent_configs)
+        expected_configs = {'Another_Telegram_Config': self.test_dict}
+
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that no process was started.
+        mock_start_tch.assert_not_called()
+        mock_start_tah.assert_not_called()
+
+    @parameterized.expand([('True',), ('False',), ])
+    @mock.patch.object(multiprocessing.Process, 'terminate')
+    @mock.patch.object(multiprocessing.Process, 'join')
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_modified_configs_and_alerts_true(
+            self, commands_enabled, mock_start_tah, mock_start_tch, mock_join,
+            mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # the respective process calls were done successfully. Note that we will
+        # test this for both when alerts were already enabled and when they were
+        # disabled
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        # Test with alerts currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['commands'] = commands_enabled
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        expected_confs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        expected_confs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        expected_confs[self.telegram_channel_id]['commands'] = commands_enabled
+        self.assertEqual(expected_confs, actual_confs)
+        self.assertEqual(2, len(mock_terminate.call_args_list))
+        self.assertEqual(2, len(mock_join.call_args_list))
+        if not commands_enabled:
+            self.assertTrue(ChannelHandlerTypes.COMMANDS.value not in
+                            self.test_manager.channel_process_dict[
+                                self.telegram_channel_id])
+
+        # Test with alerts not currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['commands'] = commands_enabled
+        current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]['alerts'] = 'False'
+        del self.test_channel_process_dict_copy[self.telegram_channel_id][
+            ChannelHandlerTypes.ALERTS.value]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = \
+            self.test_channel_process_dict_copy
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        expected_confs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_confs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        expected_confs[self.telegram_channel_id]['commands'] = commands_enabled
+        self.assertEqual(expected_confs, actual_confs)
+        self.assertEqual(3, len(mock_terminate.call_args_list))
+        self.assertEqual(3, len(mock_join.call_args_list))
+        if not commands_enabled:
+            self.assertTrue(ChannelHandlerTypes.COMMANDS.value not in
+                            self.test_manager.channel_process_dict[
+                                self.telegram_channel_id])
+
+        expected_calls = [
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 new_channel_name),
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 new_channel_name),
+        ]
+        actual_calls = mock_start_tah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([('True',), ('False',), ])
+    @mock.patch.object(multiprocessing.Process, 'terminate')
+    @mock.patch.object(multiprocessing.Process, 'join')
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_modified_configs_and_commands_true(
+            self, alerts_enabled, mock_start_tah, mock_start_tch, mock_join,
+            mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # the respective process calls were done successfully. Note that we will
+        # test this for both when commands were already enabled and when they
+        # were disabled
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        # Test with commands currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['alerts'] = alerts_enabled
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        expected_confs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        expected_confs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        expected_confs[self.telegram_channel_id]['alerts'] = alerts_enabled
+        self.assertEqual(expected_confs, actual_confs)
+        self.assertEqual(2, len(mock_terminate.call_args_list))
+        self.assertEqual(2, len(mock_join.call_args_list))
+        if not alerts_enabled:
+            self.assertTrue(ChannelHandlerTypes.ALERTS.value not in
+                            self.test_manager.channel_process_dict[
+                                self.telegram_channel_id])
+
+        # Test with commands not currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['alerts'] = alerts_enabled
+        current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]['commands'] = 'False'
+        del self.test_channel_process_dict_copy[self.telegram_channel_id][
+            ChannelHandlerTypes.COMMANDS.value]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = \
+            self.test_channel_process_dict_copy
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        expected_confs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TELEGRAM.value])
+        expected_confs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        expected_confs[self.telegram_channel_id]['alerts'] = alerts_enabled
+        self.assertEqual(expected_confs, actual_confs)
+        self.assertEqual(3, len(mock_terminate.call_args_list))
+        self.assertEqual(3, len(mock_join.call_args_list))
+        if not alerts_enabled:
+            self.assertTrue(ChannelHandlerTypes.ALERTS.value not in
+                            self.test_manager.channel_process_dict[
+                                self.telegram_channel_id])
+
+        expected_calls = [
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 new_channel_name, self.test_associated_chains),
+            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+                 new_channel_name, self.test_associated_chains),
+        ]
+        actual_calls = mock_start_tch.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, 'terminate')
+    @mock.patch.object(multiprocessing.Process, 'join')
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_modified_configs_and_cmds_alerts_false(
+            self, mock_start_tah, mock_start_tch, mock_join,
+            mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # the respective process calls were done successfully. Note that we will
+        # test this for both when commands and alerts were already enabled and
+        # when they were both disabled
+        mock_start_tah.return_value = None
+        mock_start_tch.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        # Test with alerts and commands currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['alerts'] = 'False'
+        sent_configs[self.telegram_channel_id]['commands'] = 'False'
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        self.assertEqual({}, actual_confs)
+        self.assertEqual(2, len(mock_terminate.call_args_list))
+        self.assertEqual(2, len(mock_join.call_args_list))
+        self.assertTrue(self.telegram_channel_id
+                        not in self.test_manager._channel_process_dict)
+
+        # Test with commands and alerts not currently enabled
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        sent_configs[self.telegram_channel_id]['channel_name'] = \
+            new_channel_name
+        sent_configs[self.telegram_channel_id]['alerts'] = 'False'
+        sent_configs[self.telegram_channel_id]['commands'] = 'False'
+        current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]['commands'] = 'False'
+        del self.test_channel_process_dict_copy[self.telegram_channel_id][
+            ChannelHandlerTypes.COMMANDS.value]
+        current_configs[ChannelTypes.TELEGRAM.value][
+            self.telegram_channel_id]['alerts'] = 'False'
+        del self.test_channel_process_dict_copy[self.telegram_channel_id][
+            ChannelHandlerTypes.ALERTS.value]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = \
+            self.test_channel_process_dict_copy
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        self.assertEqual({}, actual_confs)
+        self.assertEqual(2, len(mock_terminate.call_args_list))
+        self.assertEqual(2, len(mock_join.call_args_list))
+        self.assertTrue(self.telegram_channel_id
+                        not in self.test_manager._channel_process_dict)
+        mock_start_tch.assert_not_called()
+        mock_start_tah.assert_not_called()
+
+    # TODO: Continue for remove.
