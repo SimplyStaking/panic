@@ -2024,3 +2024,124 @@ class TestChannelsManager(unittest.TestCase):
         mock_terminate.assert_called_once()
         mock_join.assert_called_once()
         mock_oah.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ChannelsManager, "_process_telegram_configs")
+    @mock.patch.object(ChannelsManager, "_process_twilio_configs")
+    @mock.patch.object(ChannelsManager, "_process_email_configs")
+    @mock.patch.object(ChannelsManager, "_process_pagerduty_configs")
+    @mock.patch.object(ChannelsManager, "_process_opsgenie_configs")
+    def test_process_configs_does_not_process_if_bad_routing_key(
+            self, mock_opsgenie, mock_pagerduty, mock_email, mock_twilio,
+            mock_telegram, mock_ack) -> None:
+        mock_ack.return_value = None
+        mock_pagerduty.return_value = None
+        mock_opsgenie.return_value = None
+        mock_telegram.return_value = None
+        mock_twilio.return_value = None
+        mock_email.return_value = None
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key='invalid_routing_key')
+            body = json.dumps(self.test_dict)
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_configs(blocking_channel, method,
+                                               properties, body)
+
+            mock_opsgenie.assert_not_called()
+            mock_pagerduty.assert_not_called()
+            mock_email.assert_not_called()
+            mock_twilio.assert_not_called()
+            mock_telegram.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('channels.telegram_config',),
+        ('channels.twilio_config',),
+        ('channels.email_config',),
+        ('channels.opsgenie_config',),
+        ('channels.pagerduty_config',),
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ChannelsManager, "_process_telegram_configs")
+    @mock.patch.object(ChannelsManager, "_process_twilio_configs")
+    @mock.patch.object(ChannelsManager, "_process_email_configs")
+    @mock.patch.object(ChannelsManager, "_process_pagerduty_configs")
+    @mock.patch.object(ChannelsManager, "_process_opsgenie_configs")
+    def test_process_configs_stores_configs_in_state_correctly(
+            self, routing_key, mock_opsgenie, mock_pagerduty, mock_email,
+            mock_twilio, mock_telegram, mock_ack) -> None:
+        mock_ack.return_value = None
+        mock_pagerduty.return_value = self.test_dict \
+            if routing_key == 'channels.pagerduty_config' else None
+        mock_opsgenie.return_value = self.test_dict \
+            if routing_key == 'channels.opsgenie_config' else None
+        mock_telegram.return_value = self.test_dict \
+            if routing_key == 'channels.telegram_config' else None
+        mock_twilio.return_value = self.test_dict \
+            if routing_key == 'channels.twilio_config' else None
+        mock_email.return_value = self.test_dict \
+            if routing_key == 'channels.email_config' else None
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=routing_key)
+            body = json.dumps(self.test_dict)
+            properties = pika.spec.BasicProperties()
+            self.test_manager._channel_configs = self.test_channel_configs
+
+            self.test_manager._process_configs(blocking_channel, method,
+                                               properties, body)
+
+            expected_configs = copy.deepcopy(self.test_channel_configs)
+            if routing_key == 'channels.telegram_config':
+                expected_configs[ChannelTypes.TELEGRAM.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_opsgenie.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_email.assert_not_called()
+                mock_twilio.assert_not_called()
+            elif routing_key == 'channels.twilio_config':
+                expected_configs[ChannelTypes.TWILIO.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_opsgenie.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_email.assert_not_called()
+                mock_telegram.assert_not_called()
+            elif routing_key == 'channels.email_config':
+                expected_configs[ChannelTypes.EMAIL.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_opsgenie.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_telegram.assert_not_called()
+                mock_twilio.assert_not_called()
+            elif routing_key == 'channels.pagerduty_config':
+                expected_configs[ChannelTypes.PAGERDUTY.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_opsgenie.assert_not_called()
+                mock_telegram.assert_not_called()
+                mock_email.assert_not_called()
+                mock_twilio.assert_not_called()
+            elif routing_key == 'channels.opsgenie_config':
+                expected_configs[ChannelTypes.OPSGENIE.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_telegram.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_email.assert_not_called()
+                mock_twilio.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_ack.assert_called_once()
