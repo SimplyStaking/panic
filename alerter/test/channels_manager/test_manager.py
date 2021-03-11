@@ -8,6 +8,7 @@ from unittest import mock
 from unittest.mock import call
 
 import pika
+from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.channels_manager.handlers.starters import (
@@ -2145,3 +2146,245 @@ class TestChannelsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         mock_ack.assert_called_once()
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
+            self, mock_send_hb, mock_is_alive) -> None:
+        # We will perform this test by checking that send_hb is called with the
+        # correct heartbeat. The actual sending was already tested above.
+        mock_send_hb.return_value = None
+        mock_is_alive.return_value = True
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            expected_hb = {
+                'component_name': self.manager_name,
+                'running_processes': [
+                    self.test_channel_process_dict[channel_id][handler][
+                        'component_name']
+                    for channel_id in self.test_channel_process_dict
+                    for handler in self.test_channel_process_dict[channel_id]
+                ],
+                'dead_processes': [],
+                'timestamp': datetime.now().timestamp()
+            }
+            mock_send_hb.assert_called_once_with(expected_hb)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ([False, True, True, True, True, True, True, True],
+         'Telegram Alerts Handler (test_telegram_channel)'),
+        ([True, False, True, True, True, True, True, True],
+         'Telegram Commands Handler (test_telegram_channel)'),
+        ([True, True, False, True, True, True, True, True],
+         'Twilio Alerts Handler (test_twilio_channel)'),
+        ([True, True, True, False, True, True, True, True],
+         'Email Alerts Handler (test_email_channel)'),
+        ([True, True, True, True, False, True, True, True],
+         'PagerDuty Alerts Handler (test_pagerduty_channel)'),
+        ([True, True, True, True, True, False, True, True],
+         'Opsgenie Alerts Handler (test_opsgenie_channel)'),
+        ([True, True, True, True, True, True, False, True],
+         'Console Alerts Handler (CONSOLE)'),
+        ([True, True, True, True, True, True, True, False],
+         'Log Alerts Handler (LOG)'),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_log_alerts_handler")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_process_ping_sends_a_valid_hb_if_telegram_alerts_handler_is_dead(
+            self, is_alive_side_effect, dead_process, mock_send_hb,
+            mock_is_alive, mock_join, mock_log, mock_console, mock_opsgenie,
+            mock_pagerduty, mock_email, mock_twilio, mock_telegram_cmds,
+            mock_telegram_alerts) -> None:
+        # TODO: Check why this test is not passing and afterwards run it
+        #     : in production.
+        # We will perform this test by checking that send_hb is called with the
+        # correct heartbeat. The actual sending was already tested above.
+        mock_send_hb.return_value = None
+        mock_is_alive.side_effect = is_alive_side_effect
+        mock_join.return_value = None
+        mock_log.return_value = None
+        mock_console.return_value = None
+        mock_opsgenie.return_value = None
+        mock_pagerduty.return_value = None
+        mock_email.return_value = None
+        mock_twilio.return_value = None
+        mock_telegram_cmds.return_value = None
+        mock_telegram_alerts.return_value = None
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+            expected_hb = {
+                'component_name': self.manager_name,
+                'running_processes': [
+                    self.test_channel_process_dict[channel_id][handler][
+                        'component_name']
+                    for channel_id in self.test_channel_process_dict
+                    for handler in self.test_channel_process_dict[channel_id]
+                    if self.test_channel_process_dict[channel_id][handler][
+                           'component_name'] != dead_process
+                ],
+                'dead_processes': [dead_process],
+                'timestamp': datetime.now().timestamp()
+            }
+            mock_send_hb.assert_called_once_with(expected_hb)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_process_ping_restarts_a_dead_handler(self) -> None:
+        pass
+
+    # @freeze_time("2012-01-01")
+    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
+    # @mock.patch.object(multiprocessing.Process, "is_alive")
+    # def test_process_ping_does_not_send_hb_if_processing_fails(
+    #         self, mock_is_alive, mock_send_hb) -> None:
+    #     # We will perform this test by checking that _send_heartbeat is not
+    #     # called. Note we will generate an exception from is_alive
+    #     mock_is_alive.side_effect = self.test_exception
+    #     mock_send_hb.return_value = None
+    #     try:
+    #         # Some of the variables below are needed as parameters for the
+    #         # process_ping function
+    #         self.test_manager._initialise_rabbitmq()
+    #         blocking_channel = self.test_manager.rabbitmq.channel
+    #         method = pika.spec.Basic.Deliver(
+    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
+    #         body = 'ping'
+    #         properties = pika.spec.BasicProperties()
+    #
+    #         # Make the state non-empty to mock the fact that the processes were
+    #         # already created
+    #         self.test_manager._transformer_process_dict = \
+    #             self.transformer_process_dict_example
+    #
+    #         self.test_manager._process_ping(blocking_channel, method,
+    #                                         properties, body)
+    #
+    #         mock_send_hb.assert_not_called()
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
+    #
+    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
+    # def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
+    #         self, mock_send_hb) -> None:
+    #     # This test would fail if a msg not del excep is raised, as it is not
+    #     # caught in the test.
+    #     mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
+    #     try:
+    #         # Some of the variables below are needed as parameters for the
+    #         # process_ping function
+    #         self.test_manager._initialise_rabbitmq()
+    #         blocking_channel = self.test_manager.rabbitmq.channel
+    #         method = pika.spec.Basic.Deliver(
+    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
+    #         body = 'ping'
+    #         properties = pika.spec.BasicProperties()
+    #
+    #         self.test_manager._process_ping(blocking_channel, method,
+    #                                         properties, body)
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
+    #
+    # # TODO: Join the errors below into one test
+    #
+    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
+    # def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
+    #         self, mock_send_hb) -> None:
+    #     mock_send_hb.side_effect = pika.exceptions.AMQPConnectionError('test')
+    #     try:
+    #         # Some of the variables below are needed as parameters for the
+    #         # process_ping function
+    #         self.test_manager._initialise_rabbitmq()
+    #         blocking_channel = self.test_manager.rabbitmq.channel
+    #         method = pika.spec.Basic.Deliver(
+    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
+    #         body = 'ping'
+    #         properties = pika.spec.BasicProperties()
+    #
+    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
+    #                           self.test_manager._process_ping, blocking_channel,
+    #                           method, properties, body)
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
+    #
+    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
+    # def test_process_ping_send_hb_raises_amqp_channel_err_on_channel_err(
+    #         self, mock_send_hb) -> None:
+    #     mock_send_hb.side_effect = pika.exceptions.AMQPChannelError('test')
+    #     try:
+    #         # Some of the variables below are needed as parameters for the
+    #         # process_ping function
+    #         self.test_manager._initialise_rabbitmq()
+    #         blocking_channel = self.test_manager.rabbitmq.channel
+    #         method = pika.spec.Basic.Deliver(
+    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
+    #         body = 'ping'
+    #         properties = pika.spec.BasicProperties()
+    #
+    #         self.assertRaises(pika.exceptions.AMQPChannelError,
+    #                           self.test_manager._process_ping, blocking_channel,
+    #                           method, properties, body)
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
+    #
+    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
+    # def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
+    #         self, mock_send_hb) -> None:
+    #     mock_send_hb.side_effect = self.test_exception
+    #     try:
+    #         # Some of the variables below are needed as parameters for the
+    #         # process_ping function
+    #         self.test_manager._initialise_rabbitmq()
+    #         blocking_channel = self.test_manager.rabbitmq.channel
+    #         method = pika.spec.Basic.Deliver(
+    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
+    #         body = 'ping'
+    #         properties = pika.spec.BasicProperties()
+    #
+    #         self.assertRaises(PANICException, self.test_manager._process_ping,
+    #                           blocking_channel, method, properties, body)
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
