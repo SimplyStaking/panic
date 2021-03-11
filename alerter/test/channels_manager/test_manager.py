@@ -84,8 +84,8 @@ class TestChannelsManager(unittest.TestCase):
         self.auth_token = 'test_auth_token'
         self.call_from = '+35699999999'
         self.call_to = ['+35611111111', '+35644545454', '+35634343434']
-        self.twiml = '<Response><Reject/></Response>'
-        self.twiml_is_url = False
+        self.twiml = env.TWIML
+        self.twiml_is_url = env.TWIML_IS_URL
         self.email_channel_name = 'test_email_channel'
         self.email_channel_id = 'test_email1234'
         self.emails_to = ['test1@example.com', 'test2@example.com',
@@ -350,7 +350,8 @@ class TestChannelsManager(unittest.TestCase):
                     'account_sid': self.account_sid,
                     'auth_token': self.auth_token,
                     'twilio_phone_no': self.call_from,
-                    'twilio_phone_numbers_to_dial_valid': self.call_to,
+                    'twilio_phone_numbers_to_dial_valid':
+                        "{}".format(','.join(self.call_to)),
                     'parent_ids': "{},{},{}".format(self.test_chain1_id,
                                                     self.test_chain2_id,
                                                     self.test_chain3_id),
@@ -366,7 +367,7 @@ class TestChannelsManager(unittest.TestCase):
                     'smtp': self.smtp,
                     'port': self.port,
                     'email_from': self.sender,
-                    'emails_to': self.emails_to,
+                    'emails_to': "{}".format(','.join(self.emails_to)),
                     'username': self.username,
                     'password': self.password,
                     'info': 'True',
@@ -1484,4 +1485,542 @@ class TestChannelsManager(unittest.TestCase):
         mock_start_tch.assert_not_called()
         mock_start_tah.assert_not_called()
 
-    # TODO: Continue for remove.
+    @parameterized.expand([
+        ('True', 'False'), ('False', 'True'), ('True', 'True',)
+    ])
+    @mock.patch.object(multiprocessing.Process, 'terminate')
+    @mock.patch.object(multiprocessing.Process, 'join')
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    def test_process_telegram_configs_if_removed_configs(
+            self, cmds_running, alerts_running, mock_tah, mock_tch, mock_join,
+            mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # the respective process calls were done successfully. We will perform
+        # this test for when both cmds and alert handlers are running and when
+        # one of them is running. For the configs to be removed at least one of
+        # the handlers must be running.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_tah.return_value = None
+        mock_tch.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.TELEGRAM.value][
+            'Another_Telegram_Config'] = self.test_dict
+        if not cmds_running:
+            current_configs[ChannelTypes.TELEGRAM.value][
+                self.telegram_channel_id]['commands'] = 'False'
+            del self.test_channel_process_dict[self.telegram_channel_id][
+                ChannelHandlerTypes.COMMANDS.value]
+        if not alerts_running:
+            current_configs[ChannelTypes.TELEGRAM.value][
+                self.telegram_channel_id]['alerts'] = 'False'
+            del self.test_channel_process_dict[self.telegram_channel_id][
+                ChannelHandlerTypes.ALERTS.value]
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TELEGRAM.value])
+        del sent_configs[self.telegram_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+
+        expected_confs = {'Another_Telegram_Config': self.test_dict}
+        self.assertEqual(expected_confs, actual_confs)
+        self.assertTrue(self.telegram_channel_id not in
+                        self.test_manager._channel_process_dict)
+        if alerts_running and cmds_running:
+            self.assertEqual(2, len(mock_join.call_args_list))
+            self.assertEqual(2, len(mock_terminate.call_args_list))
+        else:
+            mock_join.assert_called_once()
+            mock_terminate.assert_called_once()
+        mock_tah.assert_not_called()
+        mock_tch.assert_not_called()
+
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    def test_process_twilio_configs_if_new_configs(self,
+                                                   mock_start_tah) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the twilio channel state is empty and when
+        # it is not.
+        mock_start_tah.return_value = None
+
+        # Test with no twilio configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        del current_configs[ChannelTypes.TWILIO.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TWILIO.value])
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with twilio configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.TWILIO.value][
+            'Another_Twilio_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        del current_configs[ChannelTypes.TWILIO.value][self.twilio_channel_id]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TWILIO.value])
+        expected_configs['Another_Twilio_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.account_sid, self.auth_token, self.twilio_channel_id,
+                 self.twilio_channel_name, self.call_from, self.call_to,
+                 self.twiml, self.twiml_is_url),
+            call(self.account_sid, self.auth_token, self.twilio_channel_id,
+                 self.twilio_channel_name, self.call_from, self.call_to,
+                 self.twiml, self.twiml_is_url),
+        ]
+        actual_calls = mock_start_tah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    def test_process_twilio_configs_if_modified_configs(
+            self, mock_start_tah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_start_tah.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.TWILIO.value][
+            'Another_Twilio_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs[self.twilio_channel_id]['channel_name'] = new_channel_name
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.TWILIO.value])
+        expected_configs[self.twilio_channel_id][
+            'channel_name'] = new_channel_name
+        expected_configs['Another_Twilio_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to restart the process was done correctly.
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        expected_calls = [
+            call(self.account_sid, self.auth_token, self.twilio_channel_id,
+                 new_channel_name, self.call_from, self.call_to, self.twiml,
+                 self.twiml_is_url),
+        ]
+        actual_calls = mock_start_tah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    def test_process_twilio_configs_if_removed_configs(
+            self, mock_tah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_tah.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.TWILIO.value][
+            'Another_Twilio_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        del sent_configs[self.twilio_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+
+        expected_configs = {'Another_Twilio_Config': self.test_dict}
+        self.assertEqual(expected_configs, actual_configs)
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_tah.assert_not_called()
+
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    def test_process_pagerduty_configs_if_new_configs(self,
+                                                      mock_start_pah) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the pagerduty channel state is empty and when
+        # it is not.
+        mock_start_pah.return_value = None
+
+        # Test with no pagerduty configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.PAGERDUTY.value])
+        del current_configs[ChannelTypes.PAGERDUTY.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_pagerduty_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.PAGERDUTY.value])
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with pagerduty configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.PAGERDUTY.value][
+            'Another_PagerDuty_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.PAGERDUTY.value])
+        del current_configs[ChannelTypes.PAGERDUTY.value][
+            self.pagerduty_channel_id]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_pagerduty_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.PAGERDUTY.value])
+        expected_configs['Another_PagerDuty_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.integration_key, self.pagerduty_channel_id,
+                 self.pagerduty_channel_name),
+            call(self.integration_key, self.pagerduty_channel_id,
+                 self.pagerduty_channel_name),
+        ]
+        actual_calls = mock_start_pah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    def test_process_pagerduty_configs_if_modified_configs(
+            self, mock_start_pah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_start_pah.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.PAGERDUTY.value][
+            'Another_PagerDuty_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.PAGERDUTY.value])
+        sent_configs[self.pagerduty_channel_id][
+            'channel_name'] = new_channel_name
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_pagerduty_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.PAGERDUTY.value])
+        expected_configs[self.pagerduty_channel_id][
+            'channel_name'] = new_channel_name
+        expected_configs['Another_PagerDuty_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to restart the process was done correctly.
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        expected_calls = [
+            call(self.integration_key, self.pagerduty_channel_id,
+                 new_channel_name),
+        ]
+        actual_calls = mock_start_pah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    def test_process_pagerduty_configs_if_removed_configs(
+            self, mock_pah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_pah.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.PAGERDUTY.value][
+            'Another_PagerDuty_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.PAGERDUTY.value])
+        del sent_configs[self.pagerduty_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_pagerduty_configs(
+            sent_configs)
+
+        expected_configs = {'Another_PagerDuty_Config': self.test_dict}
+        self.assertEqual(expected_configs, actual_configs)
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_pah.assert_not_called()
+
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    def test_process_email_configs_if_new_configs(self, mock_start_eah) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the email channel state is empty and when it
+        # is not.
+        mock_start_eah.return_value = None
+
+        # Test with no email configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.EMAIL.value])
+        del current_configs[ChannelTypes.EMAIL.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_email_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.EMAIL.value])
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with email configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.EMAIL.value][
+            'Another_Email_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.EMAIL.value])
+        del current_configs[ChannelTypes.EMAIL.value][self.email_channel_id]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_email_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.EMAIL.value])
+        expected_configs['Another_Email_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.smtp, self.sender, self.emails_to, self.email_channel_id,
+                 self.email_channel_name, self.username, self.password,
+                 self.port),
+            call(self.smtp, self.sender, self.emails_to, self.email_channel_id,
+                 self.email_channel_name, self.username, self.password,
+                 self.port),
+        ]
+        actual_calls = mock_start_eah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    def test_process_email_configs_if_modified_configs(
+            self, mock_start_eah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_start_eah.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.EMAIL.value][
+            'Another_Email_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.EMAIL.value])
+        sent_configs[self.email_channel_id]['channel_name'] = new_channel_name
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_email_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.EMAIL.value])
+        expected_configs[self.email_channel_id][
+            'channel_name'] = new_channel_name
+        expected_configs['Another_Email_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to restart the process was done correctly.
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        expected_calls = [
+            call(self.smtp, self.sender, self.emails_to, self.email_channel_id,
+                 new_channel_name, self.username, self.password, self.port),
+        ]
+        actual_calls = mock_start_eah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    def test_process_email_configs_if_removed_configs(self, mock_eah, mock_join,
+                                                      mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_eah.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.EMAIL.value][
+            'Another_Email_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.EMAIL.value])
+        del sent_configs[self.email_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_email_configs(sent_configs)
+
+        expected_configs = {'Another_Email_Config': self.test_dict}
+        self.assertEqual(expected_configs, actual_configs)
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_eah.assert_not_called()
+
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    def test_process_opsgenie_configs_if_new_configs(self,
+                                                     mock_start_oah) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the opsgenie channel state is empty and when
+        # it is not.
+        mock_start_oah.return_value = None
+
+        # Test with no opsgenie configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.OPSGENIE.value])
+        del current_configs[ChannelTypes.OPSGENIE.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_opsgenie_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.OPSGENIE.value])
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with opsgenie configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.OPSGENIE.value][
+            'Another_Opsgenie_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.OPSGENIE.value])
+        del current_configs[ChannelTypes.OPSGENIE.value][
+            self.opsgenie_channel_id]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_opsgenie_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.OPSGENIE.value])
+        expected_configs['Another_Opsgenie_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.api_key, self.eu_host, self.opsgenie_channel_id,
+                 self.opsgenie_channel_name),
+            call(self.api_key, self.eu_host, self.opsgenie_channel_id,
+                 self.opsgenie_channel_name),
+        ]
+        actual_calls = mock_start_oah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    def test_process_opsgenie_configs_if_modified_configs(
+            self, mock_start_oah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_start_oah.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.OPSGENIE.value][
+            'Another_Opsgenie_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.OPSGENIE.value])
+        sent_configs[self.opsgenie_channel_id][
+            'channel_name'] = new_channel_name
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_opsgenie_configs(
+            sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.OPSGENIE.value])
+        expected_configs[self.opsgenie_channel_id][
+            'channel_name'] = new_channel_name
+        expected_configs['Another_Opsgenie_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to restart the process was done correctly.
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        expected_calls = [
+            call(self.api_key, self.eu_host, self.opsgenie_channel_id,
+                 new_channel_name),
+        ]
+        actual_calls = mock_start_oah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    def test_process_opsgenie_configs_if_removed_configs(
+            self, mock_oah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_oah.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.OPSGENIE.value][
+            'Another_Opsgenie_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.OPSGENIE.value])
+        del sent_configs[self.opsgenie_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_opsgenie_configs(
+            sent_configs)
+
+        expected_configs = {'Another_Opsgenie_Config': self.test_dict}
+        self.assertEqual(expected_configs, actual_configs)
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_oah.assert_not_called()
