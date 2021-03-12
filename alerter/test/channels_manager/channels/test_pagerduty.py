@@ -83,5 +83,3 @@ class TestPagerDutyChannel(unittest.TestCase):
         mock_trigger.side_effect = Exception('test')
         actual_ret = self.test_pagerduty_channel.alert(self.test_alert)
         self.assertEqual(RequestStatus.FAILED, actual_ret)
-
-

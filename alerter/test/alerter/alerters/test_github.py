@@ -138,7 +138,7 @@ class TestGithubAlerter(unittest.TestCase):
             self.test_github_alerter.rabbitmq.queue_declare(
                 queue=self.heartbeat_queue, durable=True, exclusive=False,
                 auto_delete=False, passive=False
-            ) 
+            )
             self.test_github_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
             self.test_github_alerter.rabbitmq.queue_purge(
                 GITHUB_ALERTER_INPUT_QUEUE)

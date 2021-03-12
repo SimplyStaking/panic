@@ -155,7 +155,7 @@ class SystemAlerter(Alerter):
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
         self.logger.debug("Received %s. Now processing this data.",
-                         data_received)
+                          data_received)
 
         parsed_routing_key = method.routing_key.split('.')
         processing_error = False

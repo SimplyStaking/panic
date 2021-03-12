@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 import unittest
 from datetime import datetime

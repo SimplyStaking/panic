@@ -1,9 +1,7 @@
 import logging
-import signal
 import sys
-from types import FrameType
-
 from abc import abstractmethod
+from types import FrameType
 
 import pika
 import pika.exceptions

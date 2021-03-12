@@ -173,7 +173,8 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.assertEqual(get_result[0]['doc_type'], self.test_1)
         self.assertEqual(get_result[0]['d'], self.time_used)
 
-    def test_update_one_multiple_times_inserts_values_into_the_specified_collection(self):
+    def test_update_one_multiple_times_inserts_values_into_the_specified_collection(
+            self):
         # Check that col1 is empty
         get_result = list(self.mongo._db[self.col1].find({}))
         self.assertEqual(len(get_result), 0)
@@ -190,7 +191,8 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.assertEqual(get_result[0]['doc_type'], self.test_1)
         self.assertEqual(get_result[0]['d'], self.time_used)
 
-    def test_update_one_multiple_documents_inserts_values_into_the_specified_collection(self):
+    def test_update_one_multiple_documents_inserts_values_into_the_specified_collection(
+            self):
         # Check that col1 is empty
         get_result = list(self.mongo._db[self.col1].find({}))
         self.assertEqual(len(get_result), 0)

@@ -68,7 +68,7 @@ class GithubAlerter(Alerter):
                       body: bytes) -> None:
         data_received = json.loads(body.decode())
         self.logger.debug("Received %s. Now processing this data.",
-                         data_received)
+                          data_received)
 
         processing_error = False
         data_for_alerting = []
