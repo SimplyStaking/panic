@@ -1,12 +1,12 @@
-import React from "react";
+import React from 'react';
 // nodejs library to set properties for components
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 // nodejs library that concatenates classes
-import classNames from "classnames";
+import classNames from 'classnames';
 // @material-ui/core components
-import FormControl from "@material-ui/core/FormControl";
-import TextField from "@material-ui/core/TextField";
-import useStyles from "assets/jss/material-kit-react/components/customInputStyle";
+import FormControl from '@material-ui/core/FormControl';
+import TextField from '@material-ui/core/TextField';
+import useStyles from 'assets/jss/material-kit-react/components/customInputStyle';
 
 export default function CustomInput(props) {
   const classes = useStyles();
@@ -22,11 +22,11 @@ export default function CustomInput(props) {
     name,
   } = props;
 
-  var formControlClasses;
+  let formControlClasses;
   if (formControlProps !== undefined) {
     formControlClasses = classNames(
       formControlProps.className,
-      classes.formControl
+      classes.formControl,
     );
   } else {
     formControlClasses = classes.formControl;
@@ -41,11 +41,11 @@ export default function CustomInput(props) {
         placeholder={placeHolder}
         helperText={helperText}
         onChange={handleChange}
-        autoComplete='off'
+        autoComplete="off"
         fullWidth
         InputProps={inputProps}
         FormHelperTextProps={{
-          className: classes.helperText
+          className: classes.helperText,
         }}
       />
     </FormControl>
@@ -65,5 +65,5 @@ CustomInput.propTypes = {
   inputRootCustomClasses: PropTypes.string,
   error: PropTypes.bool,
   success: PropTypes.bool,
-  white: PropTypes.bool
+  white: PropTypes.bool,
 };

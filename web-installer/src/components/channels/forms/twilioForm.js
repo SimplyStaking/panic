@@ -155,9 +155,7 @@ const TwilioForm = ({
                       error={errors.twilio_phone_numbers_to_dial_valid}
                       type="text"
                       name="twilio_phone_numbers_to_dial_valid"
-                      placeholder={
-                        'Add Phone Numbers [Press Enter after each Number]'
-                      }
+                      placeholder="Add Phone Numbers [Press Enter after each Number]"
                       variant="standard"
                       helperText={
                         errors.twilio_phone_numbers_to_dial_valid

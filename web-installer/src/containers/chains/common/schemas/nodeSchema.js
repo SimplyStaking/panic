@@ -30,10 +30,10 @@ const NodeSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Node name is required.'),
-    exporter_url: Yup.string()
-      .test('localhost', '127.0.0.1 is not allowed for security reasons.',
+  exporter_url: Yup.string()
+    .test('localhost', '127.0.0.1 is not allowed for security reasons.',
       (value) => {
-        if (value.includes('127.0.0.1') || value.includes('localhost')){
+        if (value.includes('127.0.0.1') || value.includes('localhost')) {
           return false;
         }
         return true;

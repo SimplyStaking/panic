@@ -17,7 +17,6 @@ import EndDialog from 'components/users/endDialog';
 import Data from 'data/users';
 import Background from 'assets/img/backgrounds/background.png';
 
-
 function UsersPage() {
   const classes = useStyles();
 

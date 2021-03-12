@@ -298,7 +298,7 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
   );
 }
 
-function PingPrometheus({disabled, prometheusUrl}) {
+function PingPrometheus({ disabled, prometheusUrl }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);

@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
-const { resolve } = require('path');
-const { readdir } = require('fs').promises;
 const fsExtra = require('fs-extra');
 const path = require('path');
 const twilio = require('twilio');
@@ -50,7 +48,7 @@ const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
 const blackList = ['127.0.0.1', 'localhost', 'localtest.me', '2130706433',
-                   '017700000001', '0x7f000001']
+  '017700000001', '0x7f000001'];
 
 // Store the amount of times a login attempt was made unsuccessfully
 let loginAttempts = 0;
@@ -71,8 +69,8 @@ app.use((err, req, res, next) => {
   // coming from any middleware, not just body-parser:
 
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-      console.error(err);
-      return res.sendStatus(400); // Bad request
+    console.error(err);
+    return res.sendStatus(400); // Bad request
   }
 
   next();
@@ -247,7 +245,7 @@ app.post('/server/login', async (req, res) => {
     res.status(err.code).send(utils.errorJson(err.message));
     return;
   }
-  let currentTime = new Date().getTime();
+  const currentTime = new Date().getTime();
   // Check if the checking of credentials is locked
   if (lockedTime < currentTime) {
     // Check if the inputted credentials are correct.
@@ -283,7 +281,7 @@ app.post('/server/login', async (req, res) => {
       }
     } else {
       // Increment the login attempts
-      loginAttempts = loginAttempts + 1;
+      loginAttempts += 1;
       if (loginAttempts === 3) {
         // Set the locked time
         lockedTime = currentTime + waitTime;
@@ -293,9 +291,9 @@ app.post('/server/login', async (req, res) => {
             ${0} remaining login attempts, login is locked for 5 minutes`);
         console.log(err);
         res.status(err.code).send(utils.errorJson(err.message));
-      }else {
+      } else {
         // If inputted credentials are incorrect inform the user
-        let remainingAttempts = 3 - loginAttempts;
+        const remainingAttempts = 3 - loginAttempts;
         const err = new errors.AuthenticationError(`Incorrect Credentials,
           ${remainingAttempts} remaining login attempts before it's
           locked for 5 minutes`);
@@ -303,9 +301,9 @@ app.post('/server/login', async (req, res) => {
         res.status(err.code).send(utils.errorJson(err.message));
       }
     }
-  }else {
+  } else {
     // If the login is locked for a certain amount of time inform the user
-    const err = new errors.LoginLockedError((lockedTime - currentTime)/1000);
+    const err = new errors.LoginLockedError((lockedTime - currentTime) / 1000);
     console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -633,7 +631,7 @@ app.post('/server/config/delete', verify, async (req, res) => {
 
   try {
     const configPath = path.join(__dirname, '../../', 'config');
-    const gitKeep = path.join(configPath, '/', '.gitkeep')
+    const gitKeep = path.join(configPath, '/', '.gitkeep');
     fsExtra.emptyDirSync(configPath);
     try {
       await fs.openSync(gitKeep, 'w');
@@ -772,7 +770,7 @@ app.post('/server/email/test', verify, async (req, res) => {
 
   // Check if smtp, from, to, user and pass are missing.
   const missingParamsList = utils.missingValues({ smtp, from, to });
-  
+
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
@@ -780,7 +778,7 @@ app.post('/server/email/test', verify, async (req, res) => {
     return;
   }
 
-  if (!!blackList.find(a => smtp.includes(a))) {
+  if (blackList.find((a) => smtp.includes(a))) {
     const error = new errors.BlackListError(smtp);
     console.log(error);
     res.status(error.code).send(utils.errorJson(error.message));
@@ -940,7 +938,7 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     return;
   }
 
-  if (!!blackList.find(a => tendermintRpcUrl.includes(a))) {
+  if (blackList.find((a) => tendermintRpcUrl.includes(a))) {
     const error = new errors.BlackListError(tendermintRpcUrl);
     console.log(error);
     res.status(error.code).send(utils.errorJson(error.message));
@@ -982,7 +980,7 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
     return;
   }
 
-  if (!!blackList.find(a => prometheusUrl.includes(a))) {
+  if (blackList.find((a) => prometheusUrl.includes(a))) {
     const error = new errors.BlackListError(prometheusUrl);
     console.log(error);
     res.status(error.code).send(utils.errorJson(error.message));
@@ -1027,7 +1025,7 @@ app.post('/server/system/exporter', async (req, res) => {
     return;
   }
 
-  if (!!blackList.find(a => exporterUrl.includes(a))) {
+  if (blackList.find((a) => exporterUrl.includes(a))) {
     const error = new errors.BlackListError(exporterUrl);
     console.log(error);
     res.status(error.code).send(utils.errorJson(error.message));

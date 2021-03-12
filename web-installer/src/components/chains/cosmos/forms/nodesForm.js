@@ -23,7 +23,6 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 
-
 const NodesForm = ({
   errors,
   values,
@@ -178,8 +177,8 @@ const NodesForm = ({
               </Grid>
               <Grid item xs={2}>
                 <PingNodeExporter
-                  disabled={true}
-                  exporterUrl={""}
+                  disabled
+                  exporterUrl=""
                 />
               </Grid>
               <Grid item xs={2}>
@@ -432,7 +431,7 @@ const NodesForm = ({
                   </Button>
                 </Grid>
               </Grid>
-              <Grid item xs={12} style={{marginBottom: '150px'}} />
+              <Grid item xs={12} style={{ marginBottom: '150px' }} />
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
