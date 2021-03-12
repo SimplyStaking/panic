@@ -299,6 +299,21 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
 
+            # Give time for the processes to start
+            time.sleep(1)
+
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
+
+            # Time for processes to terminate
+            time.sleep(1)
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
