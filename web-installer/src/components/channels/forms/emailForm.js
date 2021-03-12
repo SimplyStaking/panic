@@ -319,7 +319,7 @@ EmailForm.propTypes = forbidExtraProps({
     smtp: PropTypes.string,
     email_from: PropTypes.string,
     emails_to: PropTypes.string,
-    port: PropTypes.number,
+    port: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({

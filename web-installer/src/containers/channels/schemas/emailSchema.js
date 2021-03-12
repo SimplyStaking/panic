@@ -1,3 +1,4 @@
+/* eslint-disable func-names */
 import * as Yup from 'yup';
 
 const EmailSchema = (props) => Yup.object().shape({
@@ -46,7 +47,7 @@ const EmailSchema = (props) => Yup.object().shape({
     .email('Email is not valid.')
     .required('Email From is required.'),
   emails_to: Yup.array()
-    .transform((value, originalValue) => {
+    .transform(function (value, originalValue) {
       if (this.isType(value) && value !== null) {
         return value;
       }
