@@ -15,5 +15,5 @@ export default function Danger(props) {
 }
 
 Danger.propTypes = {
-  children: PropTypes.node,
+  children: PropTypes.node.isRequired,
 };

@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 // nodejs library to set properties for components
 import PropTypes from 'prop-types';
@@ -31,6 +32,6 @@ GridContainer.defaultProps = {
 };
 
 GridContainer.propTypes = {
-  children: PropTypes.node,
+  children: PropTypes.node.isRequired,
   className: PropTypes.string,
 };

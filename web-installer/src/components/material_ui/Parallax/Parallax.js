@@ -17,6 +17,10 @@ export default function Parallax(props) {
   const [transform, setTransform] = React.useState(
     `translate3d(0,${windowScrollTop}px,0)`,
   );
+  const resetTransform = () => {
+    windowScrollTop = window.pageYOffset / 3;
+    setTransform(`translate3d(0,${windowScrollTop}px,0)`);
+  };
   React.useEffect(() => {
     if (window.innerWidth >= 768) {
       window.addEventListener('scroll', resetTransform);
@@ -27,10 +31,6 @@ export default function Parallax(props) {
       }
     };
   });
-  const resetTransform = () => {
-    const windowScrollTop = window.pageYOffset / 3;
-    setTransform(`translate3d(0,${windowScrollTop}px,0)`);
-  };
   const {
     filter, className, children, style, image, small,
   } = props;
@@ -56,10 +56,10 @@ export default function Parallax(props) {
 }
 
 Parallax.propTypes = {
-  className: PropTypes.string,
-  filter: PropTypes.bool,
-  children: PropTypes.node,
-  style: PropTypes.string,
-  image: PropTypes.string,
-  small: PropTypes.bool,
+  className: PropTypes.string.isRequired,
+  filter: PropTypes.bool.isRequired,
+  children: PropTypes.node.isRequired,
+  style: PropTypes.string.isRequired,
+  image: PropTypes.string.isRequired,
+  small: PropTypes.bool.isRequired,
 };

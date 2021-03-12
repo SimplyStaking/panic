@@ -1,3 +1,5 @@
+/* eslint-disable react/require-default-props */
+/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 // nodejs library to set properties for components
 import PropTypes from 'prop-types';

@@ -1,3 +1,5 @@
+/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable react/forbid-prop-types */
 import React from 'react';
 // nodejs library to set properties for components
 import PropTypes from 'prop-types';
@@ -53,17 +55,19 @@ export default function CustomInput(props) {
 }
 
 CustomInput.propTypes = {
-  labelText: PropTypes.node,
-  labelProps: PropTypes.object,
-  id: PropTypes.string,
-  value: PropTypes.string,
-  placeHolder: PropTypes.string,
-  helperText: PropTypes.string,
-  handleChange: PropTypes.func,
-  inputProps: PropTypes.object,
-  formControlProps: PropTypes.object,
-  inputRootCustomClasses: PropTypes.string,
-  error: PropTypes.bool,
-  success: PropTypes.bool,
-  white: PropTypes.bool,
+  labelText: PropTypes.node.isRequired,
+  labelProps: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  placeHolder: PropTypes.string.isRequired,
+  helperText: PropTypes.string.isRequired,
+  handleChange: PropTypes.func.isRequired,
+  inputProps: PropTypes.object.isRequired,
+  formControlProps: PropTypes.object.isRequired,
+  inputRootCustomClasses: PropTypes.string.isRequired,
+  error: PropTypes.bool.isRequired,
+  success: PropTypes.bool.isRequired,
+  white: PropTypes.bool.isRequired,
+  type: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
 };

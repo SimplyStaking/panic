@@ -9,7 +9,7 @@ import useStyles from
 
 export default function SnackbarContent(props) {
   const {
-    message, color, icon, icon_color,
+    message, color, icon, iconColor,
   } = props;
   const classes = useStyles();
   let snackIcon = null;
@@ -18,12 +18,12 @@ export default function SnackbarContent(props) {
       snackIcon = (
         <props.icon
           className={classes.icon}
-          style={{ color: icon_color }}
+          style={{ color: iconColor }}
         />
       );
       break;
     case 'string':
-      snackIcon = <Icon className={classes.icon} style={{ color: icon_color }}>{props.icon}</Icon>;
+      snackIcon = <Icon className={classes.icon} style={{ color: iconColor }}>{props.icon}</Icon>;
       break;
     default:
       snackIcon = null;
@@ -47,8 +47,7 @@ export default function SnackbarContent(props) {
 
 SnackbarContent.propTypes = {
   message: PropTypes.node.isRequired,
-  color: PropTypes.oneOf(['default', 'info', 'success', 'warning', 'danger', 'primary']),
-  close: PropTypes.bool,
-  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-  icon_color: PropTypes.string,
+  color: PropTypes.oneOf(['default', 'info', 'success', 'warning', 'danger', 'primary']).isRequired,
+  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]).isRequired,
+  iconColor: PropTypes.string.isRequired,
 };

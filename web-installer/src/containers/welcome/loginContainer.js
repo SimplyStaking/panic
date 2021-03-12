@@ -12,7 +12,7 @@ import LoginSchema from './loginSchema';
 async function CheckForConfigs() {
   const paths = await getConfigPaths();
   const files = paths.data.result;
-  for (let i = 0; i < files.length; i++) {
+  for (let i = 0; i < files.length; i += 1) {
     const res = files[i].split('/');
     // We are only going to check res[2] for file names, if at least one
     // valid file exists attempt to load it's config
@@ -48,11 +48,10 @@ async function CheckForConfigs() {
 async function LoadUsersFromMongo(addUserRedux) {
   const accounts = await loadAccounts();
   try {
-    Object.keys(accounts.data.result).forEach((key, index) => {
+    Object.keys(accounts.data.result).forEach((key, _) => {
       addUserRedux(accounts.data.result[key].username);
     });
   } catch (err) {
-    console.log(err);
     ToastsStore.info(
       'An error has occurred when retrieving accounts from mongo.', 5000,
     );

@@ -24,12 +24,8 @@ const constants = require('./server/constants');
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
-const httpsKey = files.readFile(
-  path.join(__dirname, '../../', 'certificates', 'key.pem'),
-);
-const httpsCert = files.readFile(
-  path.join(__dirname, '../../', 'certificates', 'cert.pem'),
-);
+const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates', 'key.pem'));
+const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates', 'cert.pem'));
 const httpsOptions = {
   key: httpsKey,
   cert: httpsCert,
@@ -47,8 +43,14 @@ const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
-const blackList = ['127.0.0.1', 'localhost', 'localtest.me', '2130706433',
-  '017700000001', '0x7f000001'];
+const blackList = [
+  '127.0.0.1',
+  'localhost',
+  'localtest.me',
+  '2130706433',
+  '017700000001',
+  '0x7f000001',
+];
 
 // Store the amount of times a login attempt was made unsuccessfully
 let loginAttempts = 0;
@@ -64,6 +66,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
+// eslint-disable-next-line consistent-return
 app.use((err, req, res, next) => {
   // This check makes sure this is a JSON parsing issue, but it might be
   // coming from any middleware, not just body-parser:
@@ -99,10 +102,7 @@ async function loadAuthenticationToDB() {
     db = client.db(dbname);
     const collection = db.collection(instAuthCollection);
     const username = installerCredentials.INSTALLER_USERNAME;
-    const hashedPass = bcrypt.hashSync(
-      installerCredentials.INSTALLER_PASSWORD,
-      10,
-    );
+    const hashedPass = bcrypt.hashSync(installerCredentials.INSTALLER_PASSWORD, 10);
     const password = installerCredentials.INSTALLER_PASSWORD;
     const authDoc = { username, password: hashedPass, refreshToken: '' };
     // Find authentication document
@@ -369,14 +369,10 @@ app.post('/server/refresh', async (req, res) => {
     // user that he has been authenticated again
     const msg = new msgs.AuthenticationSuccessful();
     const newPayload = { username: payload.username }; // Must be overwritten
-    const newAccessToken = jwt.sign(
-      newPayload,
-      process.env.ACCESS_TOKEN_SECRET,
-      {
-        algorithm: 'HS256',
-        expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
-      },
-    );
+    const newAccessToken = jwt.sign(newPayload, process.env.ACCESS_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+    });
     res
       .status(utils.SUCCESS_STATUS)
       .cookie('authCookie', newAccessToken, {
@@ -483,12 +479,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
   }
   try {
     // Check if the username already exists and inform the user about the result
-    const result = await mongo.recordExists(
-      mongoDBUrl,
-      dbname,
-      accountsCollection,
-      { username },
-    );
+    const result = await mongo.recordExists(mongoDBUrl, dbname, accountsCollection, { username });
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
     // Inform the user of any errors.
@@ -501,11 +492,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
 app.get('/server/account/usernames', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   try {
-    const result = await mongo.getRecords(
-      mongoDBUrl,
-      dbname,
-      accountsCollection,
-    );
+    const result = await mongo.getRecords(mongoDBUrl, dbname, accountsCollection);
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
     // Inform the user of any errors.
@@ -560,9 +547,7 @@ app.get('/server/paths', verify, async (req, res) => {
         return processedPaths;
       })
       .catch((e) => console.error(e));
-    return res
-      .status(utils.SUCCESS_STATUS)
-      .send(utils.resultJson(await foundFiles));
+    return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(await foundFiles));
   } catch (err) {
     console.log(err);
     // Inform the user about the error.
@@ -598,12 +583,7 @@ app.get('/server/config', verify, async (req, res) => {
     // If the file is expected in the inferred location get its path, read it
     // and send it to the client.
     if (configs.fileValid(configType, fileName)) {
-      const configPath = configs.getConfigPath(
-        configType,
-        fileName,
-        chainName,
-        baseChain,
-      );
+      const configPath = configs.getConfigPath(configType, fileName, chainName, baseChain);
       const data = configs.readConfig(configPath);
       return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(data));
     }
@@ -615,9 +595,7 @@ app.get('/server/config', verify, async (req, res) => {
     if (err.code === 'ENOENT') {
       const errNotFound = new errors.ConfigNotFound(fileName);
       console.log(err);
-      return res
-        .status(errNotFound.code)
-        .send(utils.errorJson(errNotFound.message));
+      return res.status(errNotFound.code).send(utils.errorJson(errNotFound.message));
     }
     console.log(err);
     // Otherwise inform the user about the error.
@@ -680,17 +658,10 @@ app.post('/server/config', verify, async (req, res) => {
     // If the file is expected in the inferred location get its path, write it
     // and inform the user if successful.
     if (configs.fileValid(configType, fileName)) {
-      const configPath = configs.getConfigPath(
-        configType,
-        fileName,
-        chainName,
-        baseChain,
-      );
+      const configPath = configs.getConfigPath(configType, fileName, chainName, baseChain);
       configs.writeConfig(configPath, config);
       const msg = new msgs.ConfigSubmitted(fileName, configPath);
-      return res
-        .status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(msg.message));
+      return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     }
     // If the file is not expected in the inferred location inform the client.
     const err = new errors.ConfigUnrecognized(fileName);
@@ -708,10 +679,7 @@ app.post('/server/config', verify, async (req, res) => {
 app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    accountSid,
-    authToken,
-    twilioPhoneNumber,
-    phoneNumberToDial,
+    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
   } = req.body;
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
@@ -893,9 +861,7 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   // If the eu=true set the host to the opsgenie EU url otherwise the sdk will
   // run into an authentication error.
   const euString = String(eu);
-  const host = utils.toBool(euString)
-    ? 'https://api.eu.opsgenie.com'
-    : 'https://api.opsgenie.com';
+  const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com' : 'https://api.opsgenie.com';
 
   // Create OpsGenie client and test alert message
   opsgenie.configure({ api_key: apiKey, host });

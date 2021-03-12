@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -63,23 +64,11 @@ class SaveConfig extends Component {
     }
 
     if (pagerduties.allIds.length !== 0) {
-      await sendConfig(
-        'channel',
-        'pagerduty_config.ini',
-        '',
-        '',
-        pagerduties.byId,
-      );
+      await sendConfig('channel', 'pagerduty_config.ini', '', '', pagerduties.byId);
     }
 
     if (telegrams.allIds.length !== 0) {
-      await sendConfig(
-        'channel',
-        'telegram_config.ini',
-        '',
-        '',
-        telegrams.byId,
-      );
+      await sendConfig('channel', 'telegram_config.ini', '', '', telegrams.byId);
     }
 
     if (twilios.allIds.length !== 0) {
@@ -87,13 +76,7 @@ class SaveConfig extends Component {
     }
 
     if (opsgenies.allIds.length !== 0) {
-      await sendConfig(
-        'channel',
-        'opsgenie_config.ini',
-        '',
-        '',
-        opsgenies.byId,
-      );
+      await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
     }
 
     // We have to use forEach as await requires the For loop to be async
@@ -521,16 +504,6 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: [],
   }).isRequired,
-  // kmses: PropTypes.shape({
-  //   byId: PropTypes.shape({
-  //     id: PropTypes.string,
-  //     parent_id: PropTypes.string,
-  //     kms_name: PropTypes.string,
-  //     exporter_url: PropTypes.string,
-  //     monitor_kms: PropTypes.bool,
-  //   }).isRequired,
-  //   allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-  // }).isRequired,
   systems: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -669,10 +642,7 @@ SaveConfig.propTypes = {
       allIds: [],
     }),
   }).isRequired,
-  // periodic: PropTypes.shape({
-  //   time: PropTypes.string,
-  //   enabled: PropTypes.bool,
-  // }).isRequired,
+  closeOnSave: PropTypes.func.isRequired,
 };
 
 export default connect(mapStateToProps)(SaveConfig);

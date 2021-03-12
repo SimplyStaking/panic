@@ -16,6 +16,6 @@ export default function Quote(props) {
 }
 
 Quote.propTypes = {
-  text: PropTypes.node,
-  author: PropTypes.node,
+  text: PropTypes.node.isRequired,
+  author: PropTypes.node.isRequired,
 };

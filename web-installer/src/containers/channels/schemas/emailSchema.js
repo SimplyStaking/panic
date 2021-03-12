@@ -46,7 +46,7 @@ const EmailSchema = (props) => Yup.object().shape({
     .email('Email is not valid.')
     .required('Email From is required.'),
   emails_to: Yup.array()
-    .transform(function (value, originalValue) {
+    .transform((value, originalValue) => {
       if (this.isType(value) && value !== null) {
         return value;
       }

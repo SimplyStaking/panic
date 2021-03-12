@@ -180,16 +180,14 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               InputProps={{
                                 endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               autoComplete="off"
                               fullWidth
@@ -264,10 +262,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -275,6 +269,8 @@ const AlertsTable = ({
                                     {RepeatAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -409,10 +405,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -423,6 +415,8 @@ const AlertsTable = ({
                                     }
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -466,10 +460,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -477,6 +467,8 @@ const AlertsTable = ({
                                     {TimeWindowAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -572,10 +564,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -586,6 +574,8 @@ const AlertsTable = ({
                                     }
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -628,10 +618,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -639,6 +625,8 @@ const AlertsTable = ({
                                     {TimeWindowAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -765,10 +753,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -776,6 +760,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -863,10 +849,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -874,6 +856,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -913,10 +897,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: 'right' },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -924,6 +904,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
