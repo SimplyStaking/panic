@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 import unittest
 from datetime import datetime
@@ -293,6 +292,7 @@ class TestAlertStore(unittest.TestCase):
 
             heartbeat_test = {
                 'component_name': self.test_store_name,
+                'is_alive': True,
                 'timestamp': datetime(2012, 1, 1).timestamp()
             }
 
