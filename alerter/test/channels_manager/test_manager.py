@@ -10,6 +10,7 @@ from unittest.mock import call
 import pika
 from freezegun import freeze_time
 from parameterized import parameterized
+from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
@@ -35,7 +36,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  LOG_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
                                  LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.types import ChannelHandlerTypes, ChannelTypes
 from test.utils.utils import infinite_fn
 
@@ -100,7 +101,7 @@ class TestChannelsManager(unittest.TestCase):
         self.pagerduty_channel_name = 'test_pagerduty_channel'
         self.pagerduty_channel_id = 'test_pagerduty_id12345'
         self.api_key = 'test api key'
-        self.opsgenie_channel_name = 'test_opgenie_channel'
+        self.opsgenie_channel_name = 'test_opsgenie_channel'
         self.opsgenie_channel_id = 'test_opsgenie_id12345'
         self.eu_host = True
         self.console_channel_name = CONSOLE_CHANNEL_NAME
@@ -2150,7 +2151,7 @@ class TestChannelsManager(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(ChannelsManager, "_send_heartbeat")
-    def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
+    def test_process_ping_sends_a_valid_hb_if_all_handler_processes_are_alive(
             self, mock_send_hb, mock_is_alive) -> None:
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat. The actual sending was already tested above.
@@ -2179,6 +2180,72 @@ class TestChannelsManager(unittest.TestCase):
                     for handler in self.test_channel_process_dict[channel_id]
                 ],
                 'dead_processes': [],
+                'timestamp': datetime.now().timestamp()
+            }
+            mock_send_hb.assert_called_once_with(expected_hb)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_log_alerts_handler")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_process_ping_sends_a_valid_hb_if_all_handler_processes_are_dead(
+            self, mock_send_hb, mock_is_alive, mock_join, mock_log,
+            mock_console, mock_opsgenie, mock_pagerduty, mock_email,
+            mock_twilio, mock_telegram_cmds, mock_telegram_alerts) -> None:
+        # We will perform this test by checking that send_hb is called with the
+        # correct heartbeat. The actual sending was already tested above.
+        mock_send_hb.return_value = None
+        mock_is_alive.return_value = False
+        mock_join.return_value = None
+        mock_log.return_value = None
+        mock_console.return_value = None
+        mock_opsgenie.return_value = None
+        mock_pagerduty.return_value = None
+        mock_email.return_value = None
+        mock_twilio.return_value = None
+        mock_telegram_cmds.return_value = None
+        mock_telegram_alerts.return_value = None
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            expected_hb = {
+                'component_name': self.manager_name,
+                'dead_processes': [
+                    self.test_channel_process_dict[channel_id][handler][
+                        'component_name']
+                    for channel_id in self.test_channel_process_dict
+                    for handler in self.test_channel_process_dict[channel_id]
+                ],
+                'running_processes': [],
                 'timestamp': datetime.now().timestamp()
             }
             mock_send_hb.assert_called_once_with(expected_hb)
@@ -2223,13 +2290,11 @@ class TestChannelsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(ChannelsManager, "_send_heartbeat")
-    def test_process_ping_sends_a_valid_hb_if_telegram_alerts_handler_is_dead(
+    def test_process_ping_sends_a_valid_hb_if_an_alerts_handler_is_dead(
             self, is_alive_side_effect, dead_process, mock_send_hb,
             mock_is_alive, mock_join, mock_log, mock_console, mock_opsgenie,
             mock_pagerduty, mock_email, mock_twilio, mock_telegram_cmds,
             mock_telegram_alerts) -> None:
-        # TODO: Check why this test is not passing and afterwards run it
-        #     : in production.
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat. The actual sending was already tested above.
         mock_send_hb.return_value = None
@@ -2273,118 +2338,263 @@ class TestChannelsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_process_ping_restarts_a_dead_handler(self) -> None:
-        pass
+    @parameterized.expand([
+        ([False, True, True, True, True, True, True, True],
+         'mock_telegram_alerts',),
+        ([True, False, True, True, True, True, True, True],
+         'mock_telegram_cmds',),
+        ([True, True, False, True, True, True, True, True], 'mock_twilio',),
+        ([True, True, True, False, True, True, True, True], 'mock_email',),
+        ([True, True, True, True, False, True, True, True], 'mock_pagerduty',),
+        ([True, True, True, True, True, False, True, True], 'mock_opsgenie',),
+        ([True, True, True, True, True, True, False, True], 'mock_console',),
+        ([True, True, True, True, True, True, True, False], 'mock_log',),
+    ])
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_twilio_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_email_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_pagerduty_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_opsgenie_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_console_alerts_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_log_alerts_handler")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_process_ping_restarts_a_dead_handler(
+            self, is_alive_side_effect, dead_handler_start_mock, mock_send_hb,
+            mock_is_alive, mock_join, mock_log, mock_console, mock_opsgenie,
+            mock_pagerduty, mock_email, mock_twilio, mock_telegram_cmds,
+            mock_telegram_alerts) -> None:
+        # We will perform this test by checking that the dead handler's create
+        # function was called correctly, and the other handler's create
+        # functions were not called
+        mock_send_hb.return_value = None
+        mock_is_alive.side_effect = is_alive_side_effect
+        mock_join.return_value = None
+        mock_log.return_value = None
+        mock_console.return_value = None
+        mock_opsgenie.return_value = None
+        mock_pagerduty.return_value = None
+        mock_email.return_value = None
+        mock_twilio.return_value = None
+        mock_telegram_cmds.return_value = None
+        mock_telegram_alerts.return_value = None
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
 
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
-    # @mock.patch.object(multiprocessing.Process, "is_alive")
-    # def test_process_ping_does_not_send_hb_if_processing_fails(
-    #         self, mock_is_alive, mock_send_hb) -> None:
-    #     # We will perform this test by checking that _send_heartbeat is not
-    #     # called. Note we will generate an exception from is_alive
-    #     mock_is_alive.side_effect = self.test_exception
-    #     mock_send_hb.return_value = None
-    #     try:
-    #         # Some of the variables below are needed as parameters for the
-    #         # process_ping function
-    #         self.test_manager._initialise_rabbitmq()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
-    #         body = 'ping'
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Make the state non-empty to mock the fact that the processes were
-    #         # already created
-    #         self.test_manager._transformer_process_dict = \
-    #             self.transformer_process_dict_example
-    #
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
-    # def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-    #         self, mock_send_hb) -> None:
-    #     # This test would fail if a msg not del excep is raised, as it is not
-    #     # caught in the test.
-    #     mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
-    #     try:
-    #         # Some of the variables below are needed as parameters for the
-    #         # process_ping function
-    #         self.test_manager._initialise_rabbitmq()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
-    #         body = 'ping'
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # # TODO: Join the errors below into one test
-    #
-    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
-    #         self, mock_send_hb) -> None:
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPConnectionError('test')
-    #     try:
-    #         # Some of the variables below are needed as parameters for the
-    #         # process_ping function
-    #         self.test_manager._initialise_rabbitmq()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
-    #         body = 'ping'
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_manager._process_ping, blocking_channel,
-    #                           method, properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_amqp_channel_err_on_channel_err(
-    #         self, mock_send_hb) -> None:
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPChannelError('test')
-    #     try:
-    #         # Some of the variables below are needed as parameters for the
-    #         # process_ping function
-    #         self.test_manager._initialise_rabbitmq()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
-    #         body = 'ping'
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_manager._process_ping, blocking_channel,
-    #                           method, properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(DataTransformersManager, "_send_heartbeat")
-    # def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
-    #         self, mock_send_hb) -> None:
-    #     mock_send_hb.side_effect = self.test_exception
-    #     try:
-    #         # Some of the variables below are needed as parameters for the
-    #         # process_ping function
-    #         self.test_manager._initialise_rabbitmq()
-    #         blocking_channel = self.test_manager.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=DT_MAN_INPUT_ROUTING_KEY)
-    #         body = 'ping'
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.assertRaises(PANICException, self.test_manager._process_ping,
-    #                           blocking_channel, method, properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            if dead_handler_start_mock == 'mock_telegram_alerts':
+                process_details = self.test_channel_process_dict[
+                    self.telegram_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_telegram_alerts.assert_called_once_with(
+                    process_details['bot_token'],
+                    process_details['bot_chat_id'],
+                    process_details['channel_id'],
+                    process_details['channel_name'])
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_telegram_cmds':
+                process_details = self.test_channel_process_dict[
+                    self.telegram_channel_id][
+                    ChannelHandlerTypes.COMMANDS.value]
+                mock_telegram_cmds.assert_called_once_with(
+                    process_details['bot_token'],
+                    process_details['bot_chat_id'],
+                    process_details['channel_id'],
+                    process_details['channel_name'],
+                    process_details['associated_chains'])
+                mock_telegram_alerts.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_twilio':
+                process_details = self.test_channel_process_dict[
+                    self.twilio_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_twilio.assert_called_once_with(
+                    process_details['account_sid'],
+                    process_details['auth_token'],
+                    process_details['channel_id'],
+                    process_details['channel_name'],
+                    process_details['call_from'], process_details['call_to'],
+                    process_details['twiml'], process_details['twiml_is_url'])
+                mock_telegram_cmds.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_email':
+                process_details = self.test_channel_process_dict[
+                    self.email_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_email.assert_called_once_with(
+                    process_details['smtp'], process_details['email_from'],
+                    process_details['emails_to'], process_details['channel_id'],
+                    process_details['channel_name'],
+                    process_details['username'], process_details['password'],
+                    process_details['port'])
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_pagerduty':
+                process_details = self.test_channel_process_dict[
+                    self.pagerduty_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_pagerduty.assert_called_once_with(
+                    process_details['integration_key'],
+                    process_details['channel_id'],
+                    process_details['channel_name'])
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_opsgenie':
+                process_details = self.test_channel_process_dict[
+                    self.opsgenie_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_opsgenie.assert_called_once_with(
+                    process_details['api_key'], process_details['eu_host'],
+                    process_details['channel_id'],
+                    process_details['channel_name'], )
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_console':
+                process_details = self.test_channel_process_dict[
+                    self.console_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_console.assert_called_once_with(
+                    process_details['channel_id'],
+                    process_details['channel_name'])
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+                mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_log':
+                process_details = self.test_channel_process_dict[
+                    self.log_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_log.assert_called_once_with(
+                    process_details['channel_id'],
+                    process_details['channel_name'])
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_telegram_alerts.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    def test_process_ping_does_not_send_hb_if_hb_processing_fails(
+            self, mock_is_alive, mock_send_hb) -> None:
+        # We will perform this test by checking that _send_heartbeat is not
+        # called. Note we will generate an exception from is_alive
+        mock_is_alive.side_effect = self.test_exception
+        mock_send_hb.return_value = None
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            mock_send_hb.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
+            self, mock_send_hb) -> None:
+        # This test would fail if a msg not del excep is raised, as it is not
+        # caught in the test.
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(ChannelsManager, "_send_heartbeat")
+    def test_process_ping_raises_error_if_raised_by_send_heartbeat(
+            self, exception_class, exception_instance,
+            mock_send_heartbeat) -> None:
+        # For this test we will check for channel, connection and unexpected
+        # errors.
+        mock_send_heartbeat.side_effect = exception_instance
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_manager._initialise_rabbitmq()
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.assertRaises(
+                exception_class, self.test_manager._process_ping,
+                blocking_channel, method, properties, body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
