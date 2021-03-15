@@ -92,6 +92,7 @@ class AlertStore(Store):
             try:
                 heartbeat = {
                     'component_name': self.name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

@@ -31,19 +31,19 @@ _key_component_heartbeat = 'c1'
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
 
-# mx_<config_type>
-_key_config = 'm1'
+# confx_<config_type>
+_key_config = 'conf1'
 
-# amX_<alert_id>
-_key_alert_open_file_descriptors = 'am1'
-_key_alert_system_cpu_usage = 'am2'
-_key_alert_system_storage_usage = 'am3'
-_key_alert_system_ram_usage = 'am4'
-_key_alert_system_is_down = 'am5'
-_key_alert_metric_not_found = 'am6'
-_key_alert_invalid_url = 'am7'
-_key_alert_github_release = 'am8'
-_key_alert_cannot_access_github = 'am9'
+# alertX_<alert_id>
+_key_alert_open_file_descriptors = 'alert1'
+_key_alert_system_cpu_usage = 'alert2'
+_key_alert_system_storage_usage = 'alert3'
+_key_alert_system_ram_usage = 'alert4'
+_key_alert_system_is_down = 'alert5'
+_key_alert_metric_not_found = 'alert6'
+_key_alert_invalid_url = 'alert7'
+_key_alert_github_release = 'alert8'
+_key_alert_cannot_access_github = 'alert9'
 
 
 class Keys:

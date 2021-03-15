@@ -76,6 +76,15 @@ class GithubAlerter(Alerter):
         data_for_alerting = []
         try:
             if 'result' in data_received:
+                if self._cannot_access_github_page:
+                    alert = GitHubPageNowAccessibleAlert(
+                                meta['repo_name'], 'INFO',
+                                meta['last_monitored'], meta['repo_parent_id'],
+                                meta['repo_id'])
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
+                    self._cannot_access_github_page = False
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
                 current = data['no_of_releases']['current']
@@ -92,15 +101,6 @@ class GithubAlerter(Alerter):
                         data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert %s",
                                           alert.alert_data)
-                if self._cannot_access_github_page:
-                    alert = GitHubPageNowAccessibleAlert(
-                                meta['repo_name'], 'INFO',
-                                meta['last_monitored'], meta['repo_parent_id'],
-                                meta['repo_id'])
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._cannot_access_github_page = False
             elif 'error' in data_received:
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']

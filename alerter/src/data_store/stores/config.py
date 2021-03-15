@@ -26,10 +26,9 @@ class ConfigStore(Store):
         store as well as appropriately communicate with it.
 
         Creates a config exchange of type `topic`
-        Declares a queue named `github_store_queue` and binds it to the store
-        exchange with a routing key `github` meaning anything
-        coming from the transformer with regards to github updates will be
-        received here.
+        Declares a queue named `store_configs_queue` and binds it to the config
+        exchange with a routing key `#` meaning anything
+        coming from the config manager will be accepted here
 
         The HEALTH_CHECK_EXCHANGE is also declared so that whenever a successful
         store round occurs, a heartbeat is sent
@@ -71,10 +70,10 @@ class ConfigStore(Store):
         """
         config_data = json.loads(body.decode())
 
+        self.logger.debug("Received %s. Now processing this data.", config_data)
+
         if 'DEFAULT' in config_data:
             del config_data['DEFAULT']
-
-        self.logger.debug("Received %s. Now processing this data.", config_data)
 
         processing_error = False
         try:
@@ -94,6 +93,7 @@ class ConfigStore(Store):
             try:
                 heartbeat = {
                     'component_name': self.name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)
