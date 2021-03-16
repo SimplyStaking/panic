@@ -1,4 +1,4 @@
-from src.data_store.metric_code.metric_code import MetricCode
+from src.alerter.metric_code.metric_code import MetricCode
 
 
 class GithubMetricCode(MetricCode):

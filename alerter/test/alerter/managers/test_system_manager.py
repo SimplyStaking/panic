@@ -1013,11 +1013,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertFalse(
                 self.parent_id_1 in self.test_manager.systems_alerts_configs)
 
-            # Clean started process
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].join()
+            self.test_manager._terminate_and_join_chain_alerter_processes(
+                self.parent_id_2)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

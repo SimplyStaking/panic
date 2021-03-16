@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from src.alerter.alert_code import SystemAlertCode
+from src.alerter.metric_code import SystemMetricCode
 from src.alerter.alerts.alert import Alert
 from src.utils.datetime import strfdelta
 
@@ -12,7 +13,8 @@ class SystemWentDownAtAlert(Alert):
             SystemAlertCode.SystemWentDownAtAlert,
             "{} System is down, last time checked: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
-            severity, timestamp, parent_id, origin_id, 'system_is_down')
+            severity, timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemIsDown)
 
 
 class SystemBackUpAgainAlert(Alert):
@@ -22,7 +24,8 @@ class SystemBackUpAgainAlert(Alert):
             SystemAlertCode.SystemBackUpAgainAlert,
             "{} System is back up, last successful monitor at: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
-            severity, timestamp, parent_id, origin_id, 'system_is_down')
+            severity, timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemIsDown)
 
 
 class SystemStillDownAlert(Alert):
@@ -33,7 +36,8 @@ class SystemStillDownAlert(Alert):
             "{} System is still down, it has been down for {}.".format(
                 origin_name, strfdelta(timedelta(seconds=difference),
                                        "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id, 'system_is_down')
+            severity, timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemIsDown)
 
 
 class InvalidUrlAlert(Alert):
@@ -42,7 +46,8 @@ class InvalidUrlAlert(Alert):
         super().__init__(
             SystemAlertCode.InvalidUrlAlert,
             "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, 'invalid_url')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.InvalidUrl)
 
 
 class OpenFileDescriptorsIncreasedAboveThresholdAlert(Alert):
@@ -53,7 +58,8 @@ class OpenFileDescriptorsIncreasedAboveThresholdAlert(Alert):
             SystemAlertCode.OpenFileDescriptorsIncreasedAboveThresholdAlert,
             "{} open file descriptors INCREASED above {} Threshold. Current "
             "value {}%.".format(origin_name, threshold, new_value),
-            severity, timestamp, parent_id, origin_id, 'open_file_descriptors')
+            severity, timestamp, parent_id, origin_id,
+            SystemMetricCode.OpenFileDescriptors)
 
 
 class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
@@ -64,7 +70,8 @@ class OpenFileDescriptorsDecreasedBelowThresholdAlert(Alert):
             SystemAlertCode.OpenFileDescriptorsDecreasedBelowThresholdAlert,
             "{} open file descriptors DECREASED below {} Threshold. Current "
             "value {}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'open_file_descriptors')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.OpenFileDescriptors)
 
 
 class SystemCPUUsageIncreasedAboveThresholdAlert(Alert):
@@ -75,7 +82,7 @@ class SystemCPUUsageIncreasedAboveThresholdAlert(Alert):
             SystemAlertCode.SystemCPUUsageIncreasedAboveThresholdAlert,
             "{} system CPU usage INCREASED above {} Threshold. Current value: "
             "{}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_cpu_usage')
+            timestamp, parent_id, origin_id, SystemMetricCode.SystemCPUUsage)
 
 
 class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
@@ -86,7 +93,8 @@ class SystemCPUUsageDecreasedBelowThresholdAlert(Alert):
             SystemAlertCode.SystemCPUUsageDecreasedBelowThresholdAlert,
             "{} system CPU usage DECREASED below {} Threshold. Current value: "
             "{}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_cpu_usage')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemCPUUsage)
 
 
 class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
@@ -97,7 +105,7 @@ class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
             "{} system RAM usage INCREASED above {} Threshold. Current value:"
             "{}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_ram_usage')
+            timestamp, parent_id, origin_id, SystemMetricCode.SystemRAMUsage)
 
 
 class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
@@ -108,7 +116,8 @@ class SystemRAMUsageDecreasedBelowThresholdAlert(Alert):
             SystemAlertCode.SystemRAMUsageDecreasedBelowThresholdAlert,
             "{} system RAM usage DECREASED below {} Threshold. Current value: "
             "{}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_ram_usage')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemRAMUsage)
 
 
 class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
@@ -119,7 +128,8 @@ class SystemStorageUsageIncreasedAboveThresholdAlert(Alert):
             SystemAlertCode.SystemStorageUsageIncreasedAboveThresholdAlert,
             "{} system storage usage INCREASED above {} Threshold. Current "
             "value: {}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_storage_usage')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemStorageUsage)
 
 
 class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
@@ -130,7 +140,8 @@ class SystemStorageUsageDecreasedBelowThresholdAlert(Alert):
             SystemAlertCode.SystemStorageUsageDecreasedBelowThresholdAlert,
             "{} system storage usage DECREASED below {} Threshold. Current "
             "value: {}%.".format(origin_name, threshold, new_value), severity,
-            timestamp, parent_id, origin_id, 'system_storage_usage')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.SystemStorageUsage)
 
 
 class MetricNotFoundErrorAlert(Alert):
@@ -139,7 +150,7 @@ class MetricNotFoundErrorAlert(Alert):
         super().__init__(
             SystemAlertCode.MetricNotFoundErrorAlert,
             "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, 'metric_not_found')
+            timestamp, parent_id, origin_id, SystemMetricCode.MetricNotFound)
 
 
 class MetricFoundAlert(Alert):
@@ -148,7 +159,8 @@ class MetricFoundAlert(Alert):
         super().__init__(
             SystemAlertCode.MetricFoundAlert,
             "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, 'metric_not_found')
+            timestamp, parent_id, origin_id,
+            SystemMetricCode.MetricNotFound)
 
 
 class ValidUrlAlert(Alert):
@@ -157,4 +169,4 @@ class ValidUrlAlert(Alert):
         super().__init__(
             SystemAlertCode.ValidUrlAlert,
             "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, 'invalid_url')
+            timestamp, parent_id, origin_id, SystemMetricCode.InvalidUrl)

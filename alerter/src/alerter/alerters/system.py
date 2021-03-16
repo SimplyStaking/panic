@@ -221,6 +221,8 @@ class SystemAlerter(Alerter):
 
     def _process_errors(self, error_data: Dict,
                         data_for_alerting: List) -> None:
+        is_down = self.alerts_configs.system_is_down
+        meta_data = error_data['meta_data']
 
         if self._invalid_url and int(error_data['code']) != 5009:
             alert = ValidUrlAlert(
@@ -246,8 +248,6 @@ class SystemAlerter(Alerter):
                               alert.alert_data)
             self._metric_not_found = False
 
-        is_down = self.alerts_configs.system_is_down
-        meta_data = error_data['meta_data']
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
                 meta_data['system_name'], error_data['message'],
