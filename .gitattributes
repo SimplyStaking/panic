@@ -1,5 +1,8 @@
 # Obtained from here: https://stackoverflow.com/questions/19411981/images-corrupt-after-git-push
 
+# Set the default behavior
+* text=auto
+
 # source code
 *.php text
 *.css text
@@ -7,7 +10,8 @@
 *.scss text
 *.less text
 *.styl text
-*.js text
+*.js text eol=lf
+*.jsx text eol=lf
 *.coffee text
 *.json text
 *.htm text
