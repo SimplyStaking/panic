@@ -39,6 +39,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_heartbeat = {
             'component_name': self.manager_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.github_alerter_name = GITHUB_ALERTER_NAME

@@ -188,4 +188,8 @@ class StoreManager(PublisherSubscriberComponent):
         sys.exit()
 
     def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because wrt rabbit,
+        the channel's manager only sends heartbeats.
+        """
         pass

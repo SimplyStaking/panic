@@ -59,6 +59,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': self.test_last_monitored,
         }
         self.test_exception = PANICException('test_exception', 1)

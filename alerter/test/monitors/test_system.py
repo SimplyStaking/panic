@@ -48,6 +48,7 @@ class TestSystemMonitor(unittest.TestCase):
         }
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'

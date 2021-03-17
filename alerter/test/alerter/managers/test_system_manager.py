@@ -50,6 +50,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.chain_3 = 'Cosmos'
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1, 1).timestamp(),
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())

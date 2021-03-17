@@ -58,6 +58,7 @@ class TestGithubAlerter(unittest.TestCase):
 
         self.heartbeat_test = {
             'component_name': self.alerter_name,
+            'is_alive': True,
             'timestamp': datetime.datetime(2012, 1, 1).timestamp()
         }
         self.heartbeat_queue = 'heartbeat queue'

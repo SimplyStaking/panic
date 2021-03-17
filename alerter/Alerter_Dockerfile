@@ -10,10 +10,10 @@ WORKDIR ./alerter
 
 # Install app dependencies
 RUN pip3 install pipenv
-RUN pipenv install --deploy --ignore-pipfile
+RUN pipenv install --dev --deploy --ignore-pipfile
 
 # Tool which waits for dependent containers
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
 
-CMD /wait && pipenv run python run_alerter.py
+CMD /wait && pipenv run coverage run --source=./src run_tests.py && pipenv run coverage report -m

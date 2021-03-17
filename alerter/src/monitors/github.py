@@ -153,6 +153,7 @@ class GitHubMonitor(Monitor):
         # Send a heartbeat only if the entire round was successful
         heartbeat = {
             'component_name': self.monitor_name,
+            'is_alive': True,
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)

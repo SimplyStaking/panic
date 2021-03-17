@@ -13,7 +13,6 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.data_store.config_code.config_name_code import ConfigNameCode
 
 
 class ConfigStore(Store):

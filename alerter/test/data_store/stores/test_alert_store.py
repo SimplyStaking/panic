@@ -102,18 +102,21 @@ class TestAlertStore(unittest.TestCase):
         self.metric = 'system_is_down'
         self.severity = 'warning'
         self.message = 'alert message'
+        self.value = 'alert_code_1'
 
-        self.alert_id_2 = 'test_origin_id_2'
+        self.alert_id_2 = 'test_alert_id_2'
         self.origin_id_2 = 'test_origin_id_2'
         self.alert_name_2 = 'test_alert_2'
         self.severity_2 = 'critical'
         self.message_2 = 'alert message 2'
+        self.value_2 = 'alert_code_2'
 
-        self.alert_id_3 = 'test_origin_id_3'
+        self.alert_id_3 = 'test_alert_id_3'
         self.origin_id_3 = 'test_origin_id_3'
         self.alert_name_3 = 'test_alert_3'
         self.severity_3 = 'info'
         self.message_3 = 'alert message 3'
+        self.value_3 = 'alert_code_3'
 
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
@@ -122,7 +125,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': self.origin_id,
             'alert_code': {
-                'name': self.alert_name
+                'name': self.alert_name,
+                'value': self.value,
             },
             'severity': self.severity,
             'metric': self.metric,
@@ -133,7 +137,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': self.origin_id_2,
             'alert_code': {
-                'name': self.alert_name_2
+                'name': self.alert_name_2,
+                'value': self.value_2,
             },
             'severity': self.severity_2,
             'metric': self.metric,
@@ -144,7 +149,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': self.origin_id_3,
             'alert_code': {
-                'name': self.alert_name_3
+                'name': self.alert_name_3,
+                'value': self.value_3,
             },
             'severity': self.severity_3,
             'metric': self.metric,
@@ -176,6 +182,8 @@ class TestAlertStore(unittest.TestCase):
         self.connection_check_time_interval = None
         self.rabbitmq = None
         self.test_rabbit_manager = None
+        self.redis.delete_all_unsafe()
+        self.redis = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
 
@@ -194,7 +202,7 @@ class TestAlertStore(unittest.TestCase):
     def test_mongo_port_property_returns_mongo_port_correctly(self) -> None:
         self.assertEqual(self.mongo_port, self.test_store.mongo_port)
 
-    def test_mongo_property_returns_none_when_mongo_not_init(self) -> None:
+    def test_mongo_property_returns_mongo_when_(self) -> None:
         self.assertEqual(type(self.mongo), type(self.test_store.mongo))
 
     def test_redis_property_returns_redis_correctly(self) -> None:
@@ -205,6 +213,8 @@ class TestAlertStore(unittest.TestCase):
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
+            self.rabbitmq.queue_delete(ALERT_STORE_INPUT_QUEUE)
+            self.test_rabbit_manager.queue_delete(self.test_queue_name)
             self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.rabbitmq.exchange_delete(STORE_EXCHANGE)
             self.rabbitmq.disconnect()
@@ -218,6 +228,14 @@ class TestAlertStore(unittest.TestCase):
             self.assertTrue(
                 self.test_store.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store.rabbitmq.exchange_declare(
+                STORE_EXCHANGE, passive=True)
+            self.test_store.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
@@ -225,6 +243,7 @@ class TestAlertStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
@@ -233,6 +252,12 @@ class TestAlertStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            # Re-declare queue to get the number of messages
+            res = self.test_store.rabbitmq.queue_declare(
+                ALERT_STORE_INPUT_QUEUE, False, True, False, False)
+
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -246,8 +271,6 @@ class TestAlertStore(unittest.TestCase):
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()

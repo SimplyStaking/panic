@@ -34,7 +34,7 @@ _key_chain_mute_alerts = 'ch1'
 # confx_<config_type>
 _key_config = 'conf1'
 
-# alertX_<alert_id>
+# alertX_<origin_id>
 _key_alert_open_file_descriptors = 'alert1'
 _key_alert_system_cpu_usage = 'alert2'
 _key_alert_system_storage_usage = 'alert3'

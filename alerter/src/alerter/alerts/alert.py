@@ -55,7 +55,7 @@ class Alert:
                 'name': self._alert_code.name,
                 'code': self._alert_code.value
             },
-            'metric': self._metric_code.name,
+            'metric': self._metric_code.value,
             'message': self._message,
             'severity': self._severity,
             'parent_id': self._parent_id,

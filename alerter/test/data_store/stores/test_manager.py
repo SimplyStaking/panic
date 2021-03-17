@@ -67,6 +67,7 @@ class TestStoreManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_heartbeat = {
             'component_name': self.manager_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_exception = PANICException('test_exception', 1)
@@ -114,6 +115,18 @@ class TestStoreManager(unittest.TestCase):
             self.assertTrue(
                 self.test_store_manager.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
+            self.test_rabbit_manager.queue_declare(
+                self.test_queue_name, False, True, False, False)
+            self.test_rabbit_manager.queue_bind(
+                self.test_queue_name, HEALTH_CHECK_EXCHANGE,
+                self.routing_key)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store_manager.rabbitmq.basic_publish_confirm(
@@ -121,6 +134,10 @@ class TestStoreManager(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            res = self.test_rabbit_manager.queue_declare(
+                self.test_queue_name, False, True, False, False)
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -164,8 +181,6 @@ class TestStoreManager(unittest.TestCase):
 
         self.test_store_manager._start_stores_processes()
 
-        time.sleep(1)
-
         new_entry_process = self.test_store_manager._store_process_dict[
             SYSTEM_STORE_NAME]
 
@@ -179,8 +194,6 @@ class TestStoreManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_store_manager._start_stores_processes()
-
-        time.sleep(1)
 
         new_entry_process = self.test_store_manager._store_process_dict[
             GITHUB_STORE_NAME]
@@ -196,8 +209,6 @@ class TestStoreManager(unittest.TestCase):
 
         self.test_store_manager._start_stores_processes()
 
-        time.sleep(1)
-
         new_entry_process = self.test_store_manager._store_process_dict[
             ALERT_STORE_NAME]
 
@@ -211,8 +222,6 @@ class TestStoreManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_store_manager._start_stores_processes()
-
-        time.sleep(1)
 
         new_entry_process = self.test_store_manager._store_process_dict[
             CONFIG_STORE_NAME]
@@ -559,6 +568,10 @@ class TestStoreManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
+            for store, process in \
+                    self.test_store_manager._store_process_dict.items():
+                process.terminate()
+                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -578,6 +591,10 @@ class TestStoreManager(unittest.TestCase):
 
             self.test_store_manager._process_ping(blocking_channel, method,
                                                   properties, body)
+            for store, process in \
+                    self.test_store_manager._store_process_dict.items():
+                process.terminate()
+                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -585,6 +602,8 @@ class TestStoreManager(unittest.TestCase):
         ("pika.exceptions.AMQPChannelError('test')",
          "pika.exceptions.AMQPChannelError"),
         ("self.test_exception", "PANICException"),
+        ("pika.exceptions.AMQPConnectionError",
+         "pika.exceptions.AMQPConnectionError")
     ])
     @mock.patch.object(StoreManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
