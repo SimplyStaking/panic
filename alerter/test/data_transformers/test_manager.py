@@ -40,6 +40,7 @@ class TestDataTransformersManager(unittest.TestCase):
         self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': self.test_timestamp,
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())

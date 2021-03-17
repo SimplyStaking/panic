@@ -59,6 +59,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': self.test_last_monitored,
         }
         self.test_system_is_down_exception = SystemIsDownException(
@@ -1657,6 +1658,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         mock_send_hb.return_value = None
         test_hb = {
             'component_name': self.transformer_name,
+            'is_alive': True,
             'timestamp': datetime.now().timestamp()
         }
 

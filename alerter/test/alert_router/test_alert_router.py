@@ -28,13 +28,18 @@ from test.utils.utils import (
     DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )
+from src.alerter.metric_code.github_metric_code import GithubMetricCode
 
 
 class TestAlertRouter(unittest.TestCase):
     def setUp(self) -> None:
         self._alert_router_logger = logging.getLogger('test_alert_router')
+        self._alert_router_logger.disabled = True
         self._rabbit_logger = logging.getLogger('test_rabbit')
+        self._rabbit_logger.disabled = True
         self._redis_logger = logging.getLogger('test_redis')
+        self._redis_logger.disabled = True
+
         self._connection_check_time_interval = timedelta(seconds=0)
 
         self._rabbit_ip = env.RABBIT_IP
@@ -103,7 +108,7 @@ class TestAlertRouter(unittest.TestCase):
 
     def tearDown(self) -> None:
         # flush and consume all from rabbit queues and exchanges
-        self.rabbitmq.connect_till_successful()
+        self.rabbitmq.connect()
         queues = [ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                   _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME]
         for queue in queues:
@@ -119,6 +124,7 @@ class TestAlertRouter(unittest.TestCase):
             self.rabbitmq.exchange_delete(exchange)
 
         disconnect_from_rabbit(self.rabbitmq)
+        self.rabbitmq = None
 
     def test_alert_router_initialised(self):
         self.assertIsNotNone(self._test_alert_router)
@@ -812,7 +818,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -918,7 +925,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1008,7 +1016,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1096,7 +1105,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1173,7 +1183,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)

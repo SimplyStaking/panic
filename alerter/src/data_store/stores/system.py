@@ -5,23 +5,27 @@ from typing import Dict
 
 import pika.exceptions
 
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.utils.constants import STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_STORE_INPUT_QUEUE,
+                                 SYSTEM_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
 
-_SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
-_SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
-
 
 class SystemStore(Store):
-    def __init__(self, store_name: str, logger: logging.Logger) -> None:
-        super().__init__(store_name, logger)
+    def __init__(self, name: str, logger: logging.Logger,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(name, logger, rabbitmq)
+        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
+                               db_name=self.mongo_db, host=self.mongo_ip,
+                               port=self.mongo_port)
 
-    def _initialise_store(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         """
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
@@ -32,20 +36,20 @@ class SystemStore(Store):
         coming from the transformer with regards to a system will be received
         here.
 
-        The HEALTH_CHECK_EXCHANGE is also declared so that whenever a successful
-        store round occurs, a heartbeat is sent
+        The HEALTH_CHECK_EXCHANGE is also declared so that whenever a
+        successful store round occurs, a heartbeat is sent
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
                                        exchange_type='direct',
                                        passive=False, durable=True,
                                        auto_delete=False, internal=False)
-        self.rabbitmq.queue_declare(_SYSTEM_STORE_INPUT_QUEUE, passive=False,
+        self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue=_SYSTEM_STORE_INPUT_QUEUE,
+        self.rabbitmq.queue_bind(queue=SYSTEM_STORE_INPUT_QUEUE,
                                  exchange=STORE_EXCHANGE,
-                                 routing_key=_SYSTEM_STORE_INPUT_ROUTING_KEY)
+                                 routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
 
         # Set producing configuration for heartbeat
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -54,11 +58,8 @@ class SystemStore(Store):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _start_listening(self) -> None:
-        self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
-        self.rabbitmq.basic_consume(queue=_SYSTEM_STORE_INPUT_QUEUE,
+    def _listen_for_data(self) -> None:
+        self.rabbitmq.basic_consume(queue=SYSTEM_STORE_INPUT_QUEUE,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)
@@ -99,7 +100,8 @@ class SystemStore(Store):
         if not processing_error:
             try:
                 heartbeat = {
-                    'component_name': self.store_name,
+                    'component_name': self.name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

@@ -28,6 +28,21 @@ SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
 
+DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
+DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
+
+ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
+ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
+
+GITHUB_STORE_INPUT_QUEUE = 'github_store_queue'
+GITHUB_STORE_INPUT_ROUTING_KEY = 'github'
+
+SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
+SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
+
+STORE_CONFIGS_QUEUE_NAME = 'store_configs_queue'
+STORE_CONFIGS_ROUTING_KEY_CHAINS = '#'
+
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10
 RE_INITIALISE_SLEEPING_PERIOD = 10
@@ -88,6 +103,7 @@ Origin ID: {origin_id}
 # Component names/name templates/ids
 GITHUB_ALERTER_NAME = 'GitHub Alerter'
 SYSTEM_STORE_NAME = 'System Store'
+CONFIG_STORE_NAME = 'Config Store'
 GITHUB_STORE_NAME = 'GitHub Store'
 ALERT_STORE_NAME = 'Alert Store'
 SYSTEM_DATA_TRANSFORMER_NAME = 'System Data Transformer'

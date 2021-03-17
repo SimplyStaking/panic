@@ -37,10 +37,10 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.manager_name = 'test_github_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
-        self.timestamp_used = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
-            'timestamp': self.timestamp_used,
+            'is_alive': True,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.github_alerter_name = GITHUB_ALERTER_NAME
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -86,12 +86,12 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
+        self.test_exception = None
+        self.test_rabbit_manager = None
+
         self.dummy_process1 = None
         self.dummy_process2 = None
         self.dummy_process3 = None
-        self.test_manager = None
-        self.test_exception = None
-        self.test_rabbit_manager = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())
@@ -299,6 +299,21 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
+
+            # Give time for the processes to start
+            time.sleep(1)
+
+            self.test_manager.alerter_process_dict[
+                GITHUB_ALERTER_NAME].terminate()
+            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
+
+            # Time for processes to terminate
+            time.sleep(1)
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
 
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
