@@ -1315,6 +1315,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
         mock_send_hb.return_value = None
         test_hb = {
             'component_name': self.transformer_name,
+            'is_alive': True,
             'timestamp': datetime.now().timestamp()
         }
         try:

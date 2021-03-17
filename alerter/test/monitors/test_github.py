@@ -312,6 +312,7 @@ class TestGitHubMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp()
         }
 
@@ -457,6 +458,7 @@ class TestGitHubMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp()
         }
         try:
@@ -541,6 +543,7 @@ class TestGitHubMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
+                    'is_alive': True,
                     'timestamp': datetime(2012, 1, 1).timestamp()
                 }
                 # Delete the queue before to avoid messages in the queue on
