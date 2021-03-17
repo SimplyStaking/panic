@@ -17,10 +17,7 @@ from src.channels_manager.handlers.starters import (
     start_twilio_alerts_handler, start_email_alerts_handler,
     start_pagerduty_alerts_handler, start_opsgenie_alerts_handler,
     start_console_alerts_handler, start_log_alerts_handler)
-from src.channels_manager.manager import (ChannelsManager,
-                                          CHANNELS_MANAGER_INPUT_QUEUE,
-                                          CHANNELS_MANAGER_HB_ROUTING_KEY,
-                                          CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+from src.channels_manager.manager import ChannelsManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
@@ -35,7 +32,10 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  LOG_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
-                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
+                                 CHANNELS_MANAGER_INPUT_QUEUE,
+                                 CHANNELS_MANAGER_HB_ROUTING_KEY,
+                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.types import ChannelHandlerTypes, ChannelTypes
 from test.utils.utils import infinite_fn

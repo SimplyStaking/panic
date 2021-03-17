@@ -31,10 +31,10 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self._alerts_queue = Queue(queue_size)
         self._max_attempts = max_attempts
         self._alert_validity_threshold = alert_validity_threshold
-        self._pd_alerts_handler_queue = \
+        self._pagerduty_alerts_handler_queue = \
             "pager_duty_{}_alerts_handler_queue".format(
                 self._pagerduty_channel.channel_id)
-        self._pd_channel_routing_key = "channel.{}".format(
+        self._pagerduty_channel_routing_key = "channel.{}".format(
             self.pagerduty_channel.channel_id)
 
     @property
@@ -173,21 +173,24 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self.logger.info("Creating %s exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", self._pd_alerts_handler_queue)
-        self.rabbitmq.queue_declare(self._pd_alerts_handler_queue, False,
+        self.logger.info("Creating queue '%s'",
+                         self._pagerduty_alerts_handler_queue)
+        self.rabbitmq.queue_declare(self._pagerduty_alerts_handler_queue, False,
                                     True, False, False)
 
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                         self._pd_channel_routing_key)
-        self.rabbitmq.queue_bind(self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                                 self._pd_channel_routing_key)
+                         "'%s'", self._pagerduty_alerts_handler_queue,
+                         ALERT_EXCHANGE,
+                         self._pagerduty_channel_routing_key)
+        self.rabbitmq.queue_bind(self._pagerduty_alerts_handler_queue,
+                                 ALERT_EXCHANGE,
+                                 self._pagerduty_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(self._pd_alerts_handler_queue,
+        self.rabbitmq.basic_consume(self._pagerduty_alerts_handler_queue,
                                     self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
@@ -224,8 +227,8 @@ class PagerDutyAlertsHandler(ChannelHandler):
 
     def _send_data(self, alert: Alert) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the opsgenie alerts handler only sends heartbeats. Alerts are sent
-        through the third party channel.
+        We are not implementing the _send_data function because with respect to
+        rabbit, the opsgenie alerts handler only sends heartbeats. Alerts are
+        sent through the third party channel.
         """
         pass

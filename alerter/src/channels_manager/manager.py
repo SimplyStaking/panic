@@ -31,15 +31,14 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  LOG_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
-                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
+                                 CHANNELS_MANAGER_INPUT_QUEUE,
+                                 CHANNELS_MANAGER_HB_ROUTING_KEY,
+                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
                              convert_to_int_if_not_none_and_not_empty_str)
-
-CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
-CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
-CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
 
 
 class ChannelsManager(PublisherSubscriberComponent):
@@ -997,7 +996,7 @@ class ChannelsManager(PublisherSubscriberComponent):
 
     def _send_data(self, *args) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the channels manager only sends heartbeats.
+        We are not implementing the _send_data function because with respect to
+        rabbit, the channels manager only sends heartbeats.
         """
         pass

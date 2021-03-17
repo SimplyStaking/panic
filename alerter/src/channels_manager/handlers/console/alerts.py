@@ -12,12 +12,11 @@ from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-
-CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
 
 
 class ConsoleAlertsHandler(ChannelHandler):
@@ -146,8 +145,8 @@ class ConsoleAlertsHandler(ChannelHandler):
 
     def _send_data(self, alert: Alert) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the console alerts handler only sends heartbeats. Alerts are sent
-        through the third party channel.
+        We are not implementing the _send_data function because with respect to
+        rabbit, the console alerts handler only sends heartbeats. Alerts are
+        sent through the third party channel.
         """
         pass

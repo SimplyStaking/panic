@@ -199,8 +199,8 @@ class TwilioAlertsHandler(ChannelHandler):
 
     def _send_data(self, alert: Alert) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the twilio alerts handler only sends heartbeats. Alerts are sent
+        We are not implementing the _send_data function because with respect to
+        rabbit, the twilio alerts handler only sends heartbeats. Alerts are sent
         through the third party channel.
         """
         pass

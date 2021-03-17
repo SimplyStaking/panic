@@ -23,7 +23,7 @@ from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.channels_manager.handlers.log.alerts import LogAlertsHandler
 from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
-from src.channels_manager.handlers.pager_duty.alerts import (
+from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
 from src.channels_manager.handlers.telegram.commands import (

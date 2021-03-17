@@ -231,8 +231,8 @@ class TelegramAlertsHandler(ChannelHandler):
 
     def _send_data(self, alert: Alert) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the telegram alerts handler only sends heartbeats. Alerts are sent
-        through the third party channel.
+        We are not implementing the _send_data function because wih respect to
+        rabbit, the telegram alerts handler only sends heartbeats. Alerts are
+        sent through the third party channel.
         """
         pass
