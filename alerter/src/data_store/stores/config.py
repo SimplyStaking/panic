@@ -13,6 +13,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
+from src.data_store.config_code.config_name_code import ConfigNameCode
 
 
 class ConfigStore(Store):
@@ -77,7 +78,7 @@ class ConfigStore(Store):
 
         processing_error = False
         try:
-            self._process_data_sort(method.routing_key.split('.'), config_data)
+            self._process_redis_store(method.routing_key, config_data)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing %s", config_data)
             self.logger.exception(e)
@@ -103,40 +104,12 @@ class ConfigStore(Store):
                 # For any other exception raise it.
                 raise e
 
-    def _process_data_sort(self, routing_key: List[str], data: Dict) -> None:
-        if routing_key[0] in ['general', 'channels']:
-            if routing_key[1] in ['systems_config', 'alerts_config',
-                                  'repos_config', 'opsgenie_config',
-                                  'pagerduty_config', 'telegram_config',
-                                  'email_config', 'twilio_config']:
-                self._process_redis_store(routing_key[0], routing_key[1], data)
-        elif 'chains' == routing_key[0]:
-            if routing_key[3] in ['nodes_config', 'alerts_config',
-                                  'repos_config']:
-                chain_path = routing_key[1] + '.' + routing_key[2]
-                self._process_redis_store(chain_path, routing_key[3], data)
-        else:
-            raise ReceivedUnexpectedDataException(
-                "{}: _process_data_store".format(self))
-
-    def _process_redis_store(self, parent_id: str, config_type: str,
-                             data: Dict) -> None:
+    def _process_redis_store(self, routing_key: str, data: Dict) -> None:
         if data:
-            self.logger.debug(
-                    "Saving for %s the config %s the data=%s.",
-                    parent_id, config_type, data
-                )
-
-            self.redis.hset(Keys.get_hash_parent(parent_id),
-                            Keys.get_config(config_type),
-                            json.dumps(data))
+            self.logger.debug("Saving for %s the data=%s.", routing_key, data)
+            self.redis.set(Keys.get_config(routing_key), json.dumps(data))
         else:
-            self.logger.debug(
-                    "Removing for %s the config %s.",
-                    parent_id, config_type
-                )
-            if self.redis.hexists(Keys.get_hash_parent(parent_id),
-                                  Keys.get_config(config_type)):
-
-                self.redis.hremove(Keys.get_hash_parent(parent_id),
-                                   Keys.get_config(config_type))
+            self.logger.debug("Removing the saved config for key %s .",
+                              routing_key)
+            if self.redis.exists(Keys.get_config(routing_key)):
+                self.redis.remove(Keys.get_config(routing_key))
