@@ -22,7 +22,6 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  DATA_STORE_MAN_INPUT_ROUTING_KEY,
                                  CONFIG_STORE_NAME)
 from src.utils.exceptions import (PANICException)
-from test.utils.utils import (DATA_STORE_MAN_INPUT_ROUTING_KEY)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,

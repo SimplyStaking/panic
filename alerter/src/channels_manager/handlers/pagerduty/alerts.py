@@ -11,6 +11,7 @@ from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code import MetricCode
 from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.handlers import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -65,9 +66,13 @@ class PagerDutyAlertsHandler(ChannelHandler):
         try:
             alert_code = alert_json['alert_code']
             alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
+            metric_code_enum = MetricCode.get_enum_by_value(
+                alert_json['metric'])
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
-                          alert_json['parent_id'], alert_json['origin_id'])
+                          alert_json['parent_id'], alert_json['origin_id'],
+                          metric_code_enum)
+
             self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
             self.logger.error("Error when processing %s", alert_json)

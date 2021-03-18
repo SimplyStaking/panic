@@ -274,7 +274,6 @@ class TestGithubStore(unittest.TestCase):
         self.test_store._process_redis_store(data)
 
         meta_data = data['result']['meta_data']
-        repo_name = meta_data['repo_name']
         repo_id = meta_data['repo_id']
         parent_id = meta_data['repo_parent_id']
         metrics = data['result']['data']
@@ -312,7 +311,6 @@ class TestGithubStore(unittest.TestCase):
         self.test_store._process_redis_store(data)
 
         meta_data = data['result']['meta_data']
-        repo_name = meta_data['repo_name']
         repo_id = meta_data['repo_id']
         parent_id = meta_data['repo_parent_id']
         metrics = data['result']['data']
@@ -360,7 +358,6 @@ class TestGithubStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['result']['meta_data']
-            repo_name = meta_data['repo_name']
             repo_id = meta_data['repo_id']
             parent_id = meta_data['repo_parent_id']
             metrics = data['result']['data']

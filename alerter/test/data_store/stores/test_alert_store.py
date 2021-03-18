@@ -179,6 +179,7 @@ class TestAlertStore(unittest.TestCase):
         self.redis = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, str(self.test_store))
@@ -263,7 +264,6 @@ class TestAlertStore(unittest.TestCase):
                 autospec=True)
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
-        self.rabbitmq.connect()
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
