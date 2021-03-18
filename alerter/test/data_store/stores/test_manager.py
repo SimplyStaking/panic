@@ -12,15 +12,17 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.starters import (start_system_store, start_github_store,
-                                     start_alert_store)
+                                     start_alert_store, start_config_store)
 from src.data_store.stores.manager import StoreManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
                                  DATA_STORE_MAN_INPUT_QUEUE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
+                                 DATA_STORE_MAN_INPUT_ROUTING_KEY,
+                                 CONFIG_STORE_NAME)
 from src.utils.exceptions import (PANICException)
+from test.utils.utils import (DATA_STORE_MAN_INPUT_ROUTING_KEY)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
@@ -62,6 +64,7 @@ class TestStoreManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_heartbeat = {
             'component_name': self.manager_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_exception = PANICException('test_exception', 1)
@@ -110,6 +113,18 @@ class TestStoreManager(unittest.TestCase):
             self.assertTrue(
                 self.test_store_manager.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
+            self.test_rabbit_manager.queue_declare(
+                self.test_queue_name, False, True, False, False)
+            self.test_rabbit_manager.queue_bind(
+                self.test_queue_name, HEALTH_CHECK_EXCHANGE,
+                self.routing_key)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store_manager.rabbitmq.basic_publish_confirm(
@@ -117,6 +132,10 @@ class TestStoreManager(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            res = self.test_rabbit_manager.queue_declare(
+                self.test_queue_name, False, True, False, False)
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -160,8 +179,6 @@ class TestStoreManager(unittest.TestCase):
 
         self.test_store_manager._start_stores_processes()
 
-        time.sleep(1)
-
         new_entry_process = self.test_store_manager._store_process_dict[
             SYSTEM_STORE_NAME]
 
@@ -175,8 +192,6 @@ class TestStoreManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_store_manager._start_stores_processes()
-
-        time.sleep(1)
 
         new_entry_process = self.test_store_manager._store_process_dict[
             GITHUB_STORE_NAME]
@@ -192,14 +207,26 @@ class TestStoreManager(unittest.TestCase):
 
         self.test_store_manager._start_stores_processes()
 
-        time.sleep(1)
-
         new_entry_process = self.test_store_manager._store_process_dict[
             ALERT_STORE_NAME]
 
         self.assertTrue(new_entry_process.daemon)
         self.assertEqual(0, len(new_entry_process._args))
         self.assertEqual(start_alert_store, new_entry_process._target)
+
+    @mock.patch.object(multiprocessing.Process, "start")
+    def test_start_stores_processes_starts_config_store_correctly(
+            self, mock_start) -> None:
+        mock_start.return_value = None
+
+        self.test_store_manager._start_stores_processes()
+
+        new_entry_process = self.test_store_manager._store_process_dict[
+            CONFIG_STORE_NAME]
+
+        self.assertTrue(new_entry_process.daemon)
+        self.assertEqual(0, len(new_entry_process._args))
+        self.assertEqual(start_config_store, new_entry_process._target)
 
     @mock.patch("src.data_store.starters.create_logger")
     def test_start_stores_processes_starts_the_processes_correctly(
@@ -225,6 +252,12 @@ class TestStoreManager(unittest.TestCase):
 
         new_alert_process = self.test_store_manager._store_process_dict[
             ALERT_STORE_NAME]
+        self.assertTrue(new_alert_process.is_alive())
+        new_alert_process.terminate()
+        new_alert_process.join()
+
+        new_alert_process = self.test_store_manager._store_process_dict[
+            CONFIG_STORE_NAME]
         self.assertTrue(new_alert_process.is_alive())
         new_alert_process.terminate()
         new_alert_process.join()
@@ -282,7 +315,7 @@ class TestStoreManager(unittest.TestCase):
                 "component_name": self.manager_name,
                 "dead_processes": [],
                 "running_processes": [SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
-                                      ALERT_STORE_NAME],
+                                      ALERT_STORE_NAME, CONFIG_STORE_NAME],
                 "timestamp": datetime(2012, 1, 1).timestamp()
             }
             # Check that the message received is a valid HB
@@ -298,11 +331,15 @@ class TestStoreManager(unittest.TestCase):
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].terminate()
             self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].terminate()
+            self.test_store_manager._store_process_dict[
                 SYSTEM_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 GITHUB_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].join()
+            self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -330,11 +367,15 @@ class TestStoreManager(unittest.TestCase):
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].terminate()
             self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].terminate()
+            self.test_store_manager._store_process_dict[
                 SYSTEM_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 GITHUB_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].join()
+            self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].join()
 
             # Time for processes to terminate
             time.sleep(1)
@@ -370,7 +411,7 @@ class TestStoreManager(unittest.TestCase):
             expected_output = {
                 "component_name": self.manager_name,
                 "dead_processes": [SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
-                                   ALERT_STORE_NAME],
+                                   ALERT_STORE_NAME, CONFIG_STORE_NAME],
                 "running_processes": [],
                 "timestamp": datetime(2012, 1, 1).timestamp()
             }
@@ -387,11 +428,15 @@ class TestStoreManager(unittest.TestCase):
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].terminate()
             self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].terminate()
+            self.test_store_manager._store_process_dict[
                 SYSTEM_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 GITHUB_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].join()
+            self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].join()
             self.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -419,11 +464,15 @@ class TestStoreManager(unittest.TestCase):
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].terminate()
             self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].terminate()
+            self.test_store_manager._store_process_dict[
                 SYSTEM_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 GITHUB_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].join()
+            self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].join()
 
             # Give time for the processes to terminate
             time.sleep(1)
@@ -435,6 +484,8 @@ class TestStoreManager(unittest.TestCase):
                                  GITHUB_STORE_NAME].is_alive())
             self.assertFalse(self.test_store_manager._store_process_dict[
                                  ALERT_STORE_NAME].is_alive())
+            self.assertFalse(self.test_store_manager._store_process_dict[
+                                 CONFIG_STORE_NAME].is_alive())
 
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
@@ -453,6 +504,8 @@ class TestStoreManager(unittest.TestCase):
                                 GITHUB_STORE_NAME].is_alive())
             self.assertTrue(self.test_store_manager._store_process_dict[
                                 ALERT_STORE_NAME].is_alive())
+            self.assertTrue(self.test_store_manager._store_process_dict[
+                                CONFIG_STORE_NAME].is_alive())
 
             # Clean before test finishes
             self.test_store_manager._store_process_dict[
@@ -462,11 +515,15 @@ class TestStoreManager(unittest.TestCase):
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].terminate()
             self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].terminate()
+            self.test_store_manager._store_process_dict[
                 SYSTEM_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 GITHUB_STORE_NAME].join()
             self.test_store_manager._store_process_dict[
                 ALERT_STORE_NAME].join()
+            self.test_store_manager._store_process_dict[
+                CONFIG_STORE_NAME].join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -509,6 +566,10 @@ class TestStoreManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
+            for store, process in \
+                    self.test_store_manager._store_process_dict.items():
+                process.terminate()
+                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -528,6 +589,10 @@ class TestStoreManager(unittest.TestCase):
 
             self.test_store_manager._process_ping(blocking_channel, method,
                                                   properties, body)
+            for store, process in \
+                    self.test_store_manager._store_process_dict.items():
+                process.terminate()
+                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -535,6 +600,8 @@ class TestStoreManager(unittest.TestCase):
         ("pika.exceptions.AMQPChannelError('test')",
          "pika.exceptions.AMQPChannelError"),
         ("self.test_exception", "PANICException"),
+        ("pika.exceptions.AMQPConnectionError",
+         "pika.exceptions.AMQPConnectionError")
     ])
     @mock.patch.object(StoreManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(

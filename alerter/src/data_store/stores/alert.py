@@ -6,6 +6,7 @@ from typing import Dict
 import pika.exceptions
 
 from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -73,6 +74,7 @@ class AlertStore(Store):
 
         processing_error = False
         try:
+            self._process_redis_store(alert_data)
             self._process_mongo_store(alert_data)
         except KeyError as e:
             self.logger.error("Error when parsing %s.", alert_data)
@@ -129,6 +131,7 @@ class AlertStore(Store):
                         'alert_name': alert['alert_code']['name'],
                         'severity': alert['severity'],
                         'message': alert['message'],
+                        'metric': alert['metric'],
                         'timestamp': str(alert['timestamp']),
                     }
                 },
@@ -137,3 +140,11 @@ class AlertStore(Store):
                 '$inc': {'n_alerts': 1},
             }
         )
+
+    def _process_redis_store(self, alert: Dict) -> None:
+        metric_data = {'severity': alert['severity'],
+                       'message': alert['message']}
+        key = alert['origin_id']
+        self.redis.hset(Keys.get_hash_parent(alert['parent_id']),
+                        eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                        json.dumps(metric_data))

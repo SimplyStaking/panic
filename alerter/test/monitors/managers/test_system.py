@@ -43,6 +43,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())

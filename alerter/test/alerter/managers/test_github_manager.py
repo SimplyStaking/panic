@@ -37,9 +37,9 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.manager_name = 'test_github_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
-        self.timestamp_used = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': self.manager_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.github_alerter_name = GITHUB_ALERTER_NAME
@@ -85,12 +85,12 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
+        self.test_exception = None
+        self.test_rabbit_manager = None
+
         self.dummy_process1 = None
         self.dummy_process2 = None
         self.dummy_process3 = None
-        self.test_manager = None
-        self.test_exception = None
-        self.test_rabbit_manager = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())

@@ -40,6 +40,9 @@ GITHUB_STORE_INPUT_ROUTING_KEY = 'github'
 SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
 SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
 
+STORE_CONFIGS_QUEUE_NAME = 'store_configs_queue'
+STORE_CONFIGS_ROUTING_KEY_CHAINS = '#'
+
 CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
 
 LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
@@ -110,6 +113,7 @@ Origin ID: {origin_id}
 # Component names/name templates/ids
 GITHUB_ALERTER_NAME = 'GitHub Alerter'
 SYSTEM_STORE_NAME = 'System Store'
+CONFIG_STORE_NAME = 'Config Store'
 GITHUB_STORE_NAME = 'GitHub Store'
 ALERT_STORE_NAME = 'Alert Store'
 SYSTEM_DATA_TRANSFORMER_NAME = 'System Data Transformer'

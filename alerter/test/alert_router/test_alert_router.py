@@ -28,6 +28,7 @@ from test.utils.utils import (
     DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )
+from src.alerter.metric_code.github_metric_code import GithubMetricCode
 
 
 class TestAlertRouter(unittest.TestCase):
@@ -819,7 +820,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -925,7 +927,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
-                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1015,7 +1018,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1103,7 +1107,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1180,7 +1185,8 @@ class TestAlertRouter(unittest.TestCase):
             )
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
-                alert_timestamp.timestamp(), "GENERAL", "origin_123"
+                alert_timestamp.timestamp(), "GENERAL", "origin_123",
+                GithubMetricCode.GithubRelease
             )
 
             alert_json = json.dumps(alert.alert_data)

@@ -160,7 +160,7 @@ class TestGithubStore(unittest.TestCase):
                     "repo_parent_id": self.parent_id_2,
                     "last_monitored": self.last_monitored
                 },
-                "data": {
+                "wrong_data": {
                     "no_of_releases": {
                         "current": 8,
                         "previous": 1,
@@ -183,6 +183,8 @@ class TestGithubStore(unittest.TestCase):
         delete_queue_if_exists(self.test_rabbit_manager, self.test_queue_name)
         disconnect_from_rabbit(self.test_rabbit_manager)
 
+        self.redis.delete_all_unsafe()
+        self.redis = None
         self.dummy_logger = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
@@ -227,6 +229,14 @@ class TestGithubStore(unittest.TestCase):
             self.assertTrue(
                 self.test_store.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store.rabbitmq.exchange_declare(
+                STORE_EXCHANGE, passive=True)
+            self.test_store.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
@@ -242,6 +252,12 @@ class TestGithubStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            # Re-declare queue to get the number of messages
+            res = self.test_store.rabbitmq.queue_declare(
+                GITHUB_STORE_INPUT_QUEUE, False, True, False, False)
+
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -271,8 +287,12 @@ class TestGithubStore(unittest.TestCase):
         })
         mock_hset_multiple.assert_has_calls([call_1])
 
-    def test_process_redis_store_does_nothing_on_error_key(self) -> None:
+    @mock.patch("src.data_store.stores.store.RedisApi.hset_multiple",
+                autospec=True)
+    def test_process_redis_store_does_nothing_on_error_key(
+            self, mock_hset_multiple) -> None:
         self.test_store._process_redis_store(self.github_data_error)
+        mock_hset_multiple.assert_not_called()
 
     def test_process_redis_store_raises_exception_on_unexpected_key(
             self) -> None:
@@ -320,8 +340,6 @@ class TestGithubStore(unittest.TestCase):
     def test_process_data_saves_in_redis(self, mock_github_data, mock_send_hb,
                                          mock_ack) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -371,8 +389,6 @@ class TestGithubStore(unittest.TestCase):
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()

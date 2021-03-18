@@ -239,6 +239,8 @@ class TestSystemStore(unittest.TestCase):
         delete_queue_if_exists(self.test_rabbit_manager, self.test_queue_name)
         disconnect_from_rabbit(self.test_rabbit_manager)
 
+        self.redis.delete_all_unsafe()
+        self.redis = None
         self.dummy_logger = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
@@ -264,7 +266,7 @@ class TestSystemStore(unittest.TestCase):
     def test_redis_property_returns_redis_correctly(self) -> None:
         self.assertEqual(type(self.redis), type(self.test_store.redis))
 
-    def test_mongo_property_returns_none_when_mongo_not_init(self) -> None:
+    def test_mongo_property_returns_mongo_when_store_exists(self) -> None:
         self.assertEqual(type(self.mongo), type(self.test_store.mongo))
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
@@ -285,6 +287,14 @@ class TestSystemStore(unittest.TestCase):
             self.assertTrue(
                 self.test_store.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store.rabbitmq.exchange_declare(
+                STORE_EXCHANGE, passive=True)
+            self.test_store.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
@@ -300,6 +310,12 @@ class TestSystemStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            # Re-declare queue to get the number of messages
+            res = self.test_store.rabbitmq.queue_declare(
+                SYSTEM_STORE_INPUT_QUEUE, False, True, False, False)
+
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -358,7 +374,7 @@ class TestSystemStore(unittest.TestCase):
         mock_hset_multiple.assert_has_calls([call_1])
 
     @mock.patch.object(RedisApi, "hset")
-    def test_process_redis_store_calls_hset(self, mock_hset) -> None:
+    def test_process_redis_store_calls_hset_on_error(self, mock_hset) -> None:
         self.test_store._process_redis_store(self.system_data_error)
         call_1 = call(Keys.get_hash_parent(self.parent_id),
                       Keys.get_system_went_down_at(self.system_id),
@@ -462,8 +478,6 @@ class TestSystemStore(unittest.TestCase):
     def test_process_data_saves_in_redis(self, mock_system_data, mock_send_hb,
                                          mock_ack, mock_process_mongo) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -564,8 +578,6 @@ class TestSystemStore(unittest.TestCase):
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -882,7 +894,7 @@ class TestSystemStore(unittest.TestCase):
     @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
                 autospec=True)
     @mock.patch.object(MongoApi, "update_one")
-    def test_process_data_calls_mongo_correctly(
+    def test_process_data_calls_mongo_correctly_on_error_data(
             self, mock_update_one, mock_process_redis_store,
             mock_send_hb, mock_ack) -> None:
 

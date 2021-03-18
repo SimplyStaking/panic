@@ -27,6 +27,7 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                  SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 STORE_CONFIGS_QUEUE_NAME,
                                  RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTERS_MANAGER_NAME,
@@ -661,6 +662,19 @@ def _initialise_and_declare_config_queues() -> None:
                 dummy_logger)
             rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE, 'general.systems_config')
+
+            # Config Store queues
+            log_and_print("Creating queue '{}'".format(
+                STORE_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(STORE_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE, '#'),
+                dummy_logger)
+            rabbitmq.queue_bind(STORE_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, '#')
 
             ret = rabbitmq.disconnect()
             if ret == -1:

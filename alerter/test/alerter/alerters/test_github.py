@@ -41,7 +41,6 @@ class TestGithubAlerter(unittest.TestCase):
         self.github_name = 'test_github'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.target_queue_used = "alert_router_queue"
         self.test_routing_key = 'test_alert_router.github'
         self.alert_router_routing_key = 'alert_router.system'
         self.test_github_alerter = GithubAlerter(
@@ -139,9 +138,11 @@ class TestGithubAlerter(unittest.TestCase):
                 queue=self.heartbeat_queue, durable=True, exclusive=False,
                 auto_delete=False, passive=False
             )
+
             self.test_github_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
             self.test_github_alerter.rabbitmq.queue_purge(
                 GITHUB_ALERTER_INPUT_QUEUE)
+
             self.test_github_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
             self.test_github_alerter.rabbitmq.queue_delete(
                 GITHUB_ALERTER_INPUT_QUEUE)
@@ -201,15 +202,19 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
     def test_new_github_release_alert(
-            self, mock_new_github_release, mock_ack,
+            self, mock_new_github_release, mock_github_access, mock_ack,
             mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
         type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
             mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
@@ -232,6 +237,11 @@ class TestGithubAlerter(unittest.TestCase):
                 self.info, self.last_monitored, self.parent_id,
                 self.repo_id
             )
+            mock_github_access.assert_called_once_with(
+                self.repo_name, self.info,
+                self.last_monitored, self.parent_id,
+                self.repo_id
+            )
             mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -242,15 +252,18 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
-    def test_first_run_no_github_alerts(
-            self, param_input, mock_new_github_release, mock_ack,
-            mock_basic_publish_confirm):
+    def test_first_run_no_new_release_github_alerts(
+            self, param_input, mock_new_github_release, mock_github_access,
+            mock_ack, mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
-
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
@@ -269,7 +282,8 @@ class TestGithubAlerter(unittest.TestCase):
                 json.dumps(self.github_data_received).encode()
             )
             mock_new_github_release.assert_not_called()
-            mock_basic_publish_confirm.assert_called_once()
+            mock_github_access.assert_called_once()
+            self.assertEqual(2, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -278,16 +292,20 @@ class TestGithubAlerter(unittest.TestCase):
         autospec=True)
     @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
                 autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
     @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
                 autospec=True)
     def test_run_5_github_alerts_previous_is_0(
-            self, mock_new_github_release, mock_ack,
+            self, mock_new_github_release, mock_github_access, mock_ack,
             mock_basic_publish_confirm):
         self.rabbitmq.connect()
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
 
         type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
             mock.PropertyMock(return_value={})
         mock_ack.return_value = self.none
         try:
@@ -320,10 +338,15 @@ class TestGithubAlerter(unittest.TestCase):
 
             mock_new_github_release.assert_has_calls([call_1, call_2, call_3,
                                                       call_4, call_5])
+            mock_github_access.assert_called_once_with(
+                self.repo_name, self.info, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
             # Call count of basic_publish_confirm is higher than
-            # github_release call_count because of the hb
+            # github_release call_count because of the hb and initial
+            # validation alerts
             self.assertEqual(5, mock_new_github_release.call_count)
-            self.assertEqual(6, mock_basic_publish_confirm.call_count)
+            self.assertEqual(7, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -487,6 +510,7 @@ class TestGithubAlerter(unittest.TestCase):
                                        False, False)
 
         mock_ack.return_value = self.none
+        mock_basic_publish_confirm.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
             blocking_channel = self.test_github_alerter.rabbitmq.channel

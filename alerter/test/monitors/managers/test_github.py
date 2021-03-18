@@ -43,6 +43,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -152,14 +153,15 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
         self.dummy_logger = None
         self.rabbitmq = None
-        self.dummy_process1 = None
-        self.dummy_process2 = None
-        self.dummy_process3 = None
         self.config_process_dict_example = None
         self.repos_configs_example = None
         self.repo_config_example = None
         self.test_manager = None
         self.test_exception = None
+
+        self.dummy_process1 = None
+        self.dummy_process2 = None
+        self.dummy_process3 = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, str(self.test_manager))

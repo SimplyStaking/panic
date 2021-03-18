@@ -10,12 +10,13 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
-                                     start_alert_store)
+                                     start_alert_store, start_config_store)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
                                  DATA_STORE_MAN_INPUT_QUEUE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
+                                 DATA_STORE_MAN_INPUT_ROUTING_KEY,
+                                 CONFIG_STORE_NAME)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -141,6 +142,15 @@ class StoreManager(PublisherSubscriberComponent):
             alert_store_process.start()
             self._store_process_dict[ALERT_STORE_NAME] = alert_store_process
 
+        if CONFIG_STORE_NAME not in self._store_process_dict or \
+                not self._store_process_dict[CONFIG_STORE_NAME].is_alive():
+            log_and_print("Attempting to start the {}.".format(
+                CONFIG_STORE_NAME), self.logger)
+            config_store_process = Process(target=start_config_store, args=())
+            config_store_process.daemon = True
+            config_store_process.start()
+            self._store_process_dict[CONFIG_STORE_NAME] = config_store_process
+
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
@@ -176,4 +186,8 @@ class StoreManager(PublisherSubscriberComponent):
         sys.exit()
 
     def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because wrt rabbit,
+        the channel's manager only sends heartbeats.
+        """
         pass

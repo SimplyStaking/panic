@@ -107,4 +107,8 @@ class Store(PublisherSubscriberComponent):
         sys.exit()
 
     def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because wrt rabbit,
+        any data store only sends heartbeats.
+        """
         pass
