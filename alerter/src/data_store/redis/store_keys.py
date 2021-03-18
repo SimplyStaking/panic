@@ -31,6 +31,20 @@ _key_component_heartbeat = 'c1'
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
 
+# confx_<config_type>
+_key_config = 'conf1'
+
+# alertX_<origin_id>
+_key_alert_open_file_descriptors = 'alert1'
+_key_alert_system_cpu_usage = 'alert2'
+_key_alert_system_storage_usage = 'alert3'
+_key_alert_system_ram_usage = 'alert4'
+_key_alert_system_is_down = 'alert5'
+_key_alert_metric_not_found = 'alert6'
+_key_alert_invalid_url = 'alert7'
+_key_alert_github_release = 'alert8'
+_key_alert_cannot_access_github = 'alert9'
+
 
 class Keys:
 
@@ -133,3 +147,39 @@ class Keys:
     @staticmethod
     def get_chain_mute_alerts() -> str:
         return _key_chain_mute_alerts
+
+    @staticmethod
+    def get_config(config_type: str) -> str:
+        return Keys._as_prefix(_key_config) + config_type
+
+    @staticmethod
+    def get_alert_open_file_descriptors(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_open_file_descriptors) + origin_id
+
+    @staticmethod
+    def get_alert_system_cpu_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_cpu_usage) + origin_id
+
+    @staticmethod
+    def get_alert_system_storage_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_storage_usage) + origin_id
+
+    @staticmethod
+    def get_alert_system_ram_usage(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_ram_usage) + origin_id
+
+    @staticmethod
+    def get_alert_system_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_system_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_invalid_url(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_invalid_url) + origin_id
+
+    @staticmethod
+    def get_alert_github_release(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_github_release) + origin_id
+
+    @staticmethod
+    def get_alert_cannot_access_github(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id

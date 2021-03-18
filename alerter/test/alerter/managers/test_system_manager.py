@@ -50,6 +50,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.chain_3 = 'Cosmos'
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1, 1).timestamp(),
         }
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -250,7 +251,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                 queue=SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False
             )
-
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
@@ -269,10 +269,6 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.dummy_logger = None
         self.rabbitmq = None
         self.test_manager = None
-        self.dummy_process1 = None
-        self.dummy_process2 = None
-        self.dummy_process3 = None
-        self.test_manager = None
         self.test_exception = None
         self.system_alerts_config = None
         self.base_config = None
@@ -282,6 +278,10 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.system_ram_usage = None
         self.system_is_down = None
         self.systems_alerts_configs = None
+
+        self.dummy_process1 = None
+        self.dummy_process2 = None
+        self.dummy_process3 = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.__str__())
@@ -1014,11 +1014,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertFalse(
                 self.parent_id_1 in self.test_manager.systems_alerts_configs)
 
-            # Clean started process
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].terminate()
-            self.test_manager.parent_id_process_dict[self.parent_id_2][
-                'process'].join()
+            self.test_manager._terminate_and_join_chain_alerter_processes(
+                self.parent_id_2)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

@@ -587,6 +587,7 @@ class SystemDataTransformer(DataTransformer):
             if not processing_error:
                 heartbeat = {
                     'component_name': self.transformer_name,
+                    'is_alive': True,
                     'timestamp': datetime.now().timestamp()
                 }
                 self._send_heartbeat(heartbeat)

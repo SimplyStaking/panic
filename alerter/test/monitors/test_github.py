@@ -46,10 +46,10 @@ class TestGitHubMonitor(unittest.TestCase):
             'test_key_1': 'test_val_1',
             'test_key_2': 'test_val_2',
         }
-        self.test_timestamp = datetime(2012, 1, 1).timestamp()
         self.test_heartbeat = {
             'component_name': 'Test Component',
-            'timestamp': self.test_timestamp,
+            'is_alive': True,
+            'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
         # In the real retrieved data there are more fields, but these are the
@@ -312,6 +312,7 @@ class TestGitHubMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp()
         }
 
@@ -457,6 +458,7 @@ class TestGitHubMonitor(unittest.TestCase):
         }
         expected_output_hb = {
             'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp()
         }
         try:
@@ -541,6 +543,7 @@ class TestGitHubMonitor(unittest.TestCase):
                 }
                 expected_output_hb = {
                     'component_name': self.test_monitor.monitor_name,
+                    'is_alive': True,
                     'timestamp': datetime(2012, 1, 1).timestamp()
                 }
                 # Delete the queue before to avoid messages in the queue on

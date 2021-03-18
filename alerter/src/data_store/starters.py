@@ -4,14 +4,17 @@ from typing import TypeVar, Type
 
 import pika.exceptions
 
+from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
+                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
+                                 CONFIG_STORE_NAME)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
@@ -48,7 +51,10 @@ def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
     # Try initialising the store until successful
     while True:
         try:
-            store = store_type(store_display_name, store_logger)
+            rabbitmq = RabbitMQApi(
+                logger=store_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            store = store_type(store_display_name, store_logger, rabbitmq)
             log_and_print("Successfully initialised {}".format(
                 store_display_name), store_logger)
             break
@@ -59,6 +65,11 @@ def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return store
+
+
+def start_config_store() -> None:
+    config_store = _initialise_store(ConfigStore, CONFIG_STORE_NAME)
+    start_store(config_store)
 
 
 def start_system_store() -> None:

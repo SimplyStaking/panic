@@ -1,12 +1,14 @@
 import logging
 import signal
 import sys
-from abc import ABC, abstractmethod
 from types import FrameType
+
+from abc import abstractmethod
 
 import pika
 import pika.exceptions
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
@@ -15,37 +17,31 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.logging import log_and_print
 
 
-class Store(ABC):
-    def __init__(self, store_name: str, logger: logging.Logger):
-        self._store_name = store_name
-        rabbit_ip = env.RABBIT_IP
+class Store(PublisherSubscriberComponent):
+    def __init__(self, name: str, logger: logging.Logger,
+                 rabbitmq: RabbitMQApi) -> None:
+        super().__init__(logger, rabbitmq)
+        self._name = name
         self._mongo_ip = env.DB_IP
         self._mongo_db = env.DB_NAME
         self._mongo_port = env.DB_PORT
+
         redis_ip = env.REDIS_IP
         redis_db = env.REDIS_DB
         redis_port = env.REDIS_PORT
         unique_alerter_identifier = env.UNIQUE_ALERTER_IDENTIFIER
 
-        self._logger = logger
-        self._rabbitmq = RabbitMQApi(
-            logger=self._logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
         self._mongo = None
         self._redis = RedisApi(logger=self._logger.getChild(RedisApi.__name__),
                                db=redis_db, host=redis_ip, port=redis_port,
                                namespace=unique_alerter_identifier)
 
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
-
     def __str__(self) -> str:
-        return self.store_name
+        return self.name
 
     @property
-    def store_name(self) -> str:
-        return self._store_name
+    def name(self) -> str:
+        return self._name
 
     @property
     def mongo_ip(self) -> str:
@@ -60,24 +56,12 @@ class Store(ABC):
         return self._mongo_port
 
     @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
-    @property
     def redis(self) -> RedisApi:
         return self._redis
 
     @property
     def mongo(self) -> MongoApi:
         return self._mongo
-
-    @abstractmethod
-    def _initialise_store(self) -> None:
-        pass
 
     def _process_redis_store(self, *args) -> None:
         pass
@@ -93,10 +77,6 @@ class Store(ABC):
                       body: bytes) -> None:
         pass
 
-    @abstractmethod
-    def _start_listening(self):
-        pass
-
     def _send_heartbeat(self, data_to_send: dict) -> None:
         self.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
@@ -106,10 +86,10 @@ class Store(ABC):
                           HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:
-        self._initialise_store()
+        self._initialise_rabbitmq()
         while True:
             try:
-                self._start_listening()
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -120,17 +100,17 @@ class Store(ABC):
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will exit."
                       .format(self), self.logger)
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because wrt rabbit,
+        any data store only sends heartbeats.
+        """
+        pass

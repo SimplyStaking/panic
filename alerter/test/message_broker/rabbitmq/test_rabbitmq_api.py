@@ -27,6 +27,7 @@ class TestRabbitMQApi(TestCase):
         self.rabbit_ip = env.RABBIT_IP
         self.rabbit_port = env.RABBIT_PORT
         self.rabbit_logger = logging.getLogger("testRabbit")
+        self.rabbit_logger.disabled = True
         self.username = ''
         self.password = ''
         self.connection_check_time_interval = timedelta(seconds=10)

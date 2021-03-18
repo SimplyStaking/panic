@@ -293,7 +293,7 @@ class RedisApi:
         return self._safe(self.get_keys_unsafe, [pattern], [])
 
     def remove(self, *keys):
-        return self._safe(self.remove_unsafe, [keys], None)
+        return self._safe(self.remove_unsafe, [*keys], None)
 
     def delete_all(self):
         return self._safe(self.delete_all_unsafe, [], None)
