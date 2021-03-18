@@ -189,9 +189,7 @@ class TestEmailApi(unittest.TestCase):
         mock_send_message.assert_called_once_with(self.test_msg)
 
         # Check that quit was called correctly.
-        args, _ = mock_quit.call_args
-        self.assertEqual(0, len(args))
-        mock_quit.assert_called_once()
+        mock_quit.assert_called_once_with()
 
     @mock.patch.object(smtplib.SMTP, "send_message")
     @mock.patch.object(smtplib.SMTP, "quit")
@@ -210,18 +208,11 @@ class TestEmailApi(unittest.TestCase):
         self.test_email_api._send_smtp(self.test_msg)
 
         # Check that the starttls function was called correctly.
-        args, _ = mock_starttls.call_args
-        self.assertEqual(0, len(args))
-        mock_starttls.assert_called_once()
+        mock_starttls.assert_called_once_with()
 
         # Check that the login function was called correctly.
         mock_login.assert_called_once_with(self.test_username,
                                            self.test_password)
-        args, _ = mock_login.call_args
-        self.assertEqual(1, mock_login.call_count)
-        self.assertEqual(2, len(args))
-        self.assertEqual(self.test_username, args[0])
-        self.assertEqual(self.test_password, args[1])
 
     @parameterized.expand([
         (None, 'test_password'),

@@ -16,6 +16,7 @@ from src.alert_router.alert_router import (
     AlertRouter, _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME
 )
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -28,7 +29,6 @@ from test.utils.utils import (
     DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )
-from src.alerter.metric_code.github_metric_code import GithubMetricCode
 
 
 class TestAlertRouter(unittest.TestCase):
