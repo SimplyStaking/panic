@@ -56,7 +56,9 @@ const blackList = [
 let loginAttempts = 0;
 // Store when then next login attempt can be made
 let lockedTime = 0;
-// Store how long someone has to wait after 3 failed login attempts
+// Max number of attempts one can login before being locked
+const maxAttempts = 3;
+// Store how long someone has to wait after 5 failed login attempts
 const waitTime = 300000;
 
 // Server configuration
@@ -275,6 +277,8 @@ app.post('/server/login', async (req, res) => {
             maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
           })
           .send(utils.resultJson(msg.message));
+        loginAttempts = 0;
+        lockedTime = 0;
       } catch (err) {
         // Inform the user of any error that occurs
         res.status(err.code).send(utils.errorJson(err.message));
@@ -282,7 +286,7 @@ app.post('/server/login', async (req, res) => {
     } else {
       // Increment the login attempts
       loginAttempts += 1;
-      if (loginAttempts === 3) {
+      if (loginAttempts === maxAttempts) {
         // Set the locked time
         lockedTime = currentTime + waitTime;
         // Reset the login attempts
@@ -293,7 +297,7 @@ app.post('/server/login', async (req, res) => {
         res.status(err.code).send(utils.errorJson(err.message));
       } else {
         // If inputted credentials are incorrect inform the user
-        const remainingAttempts = 3 - loginAttempts;
+        const remainingAttempts = maxAttempts - loginAttempts;
         const err = new errors.AuthenticationError(`Incorrect Credentials,
           ${remainingAttempts} remaining login attempts before it's
           locked for 5 minutes`);
