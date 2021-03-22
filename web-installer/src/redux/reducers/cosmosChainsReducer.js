@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import { combineReducers } from 'redux';
 import { INFO, WARNING, CRITICAL } from 'constants/constants';
@@ -88,8 +90,7 @@ const cosmosThresholdAlerts = {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
-        'The Node Exporter URL is unreachable therefore the '
-        + 'system is declared to be down.',
+        'The Node Exporter URL is unreachable therefore the system is declared to be down.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -125,8 +126,7 @@ const cosmosThresholdAlerts = {
     6: {
       name: 'No change in block height',
       identifier: 'no_change_in_block_height',
-      description:
-        'This alert is raised when the block height does not change after some time.',
+      description: 'This alert is raised when the block height does not change after some time.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -164,9 +164,7 @@ const cosmosThresholdAlerts = {
     8: {
       name: 'Mempool Size',
       identifier: 'mempool_size',
-      description:
-        'Alerts will be sent based on how many transactions are in '
-        + 'the mempool.',
+      description: 'Alerts will be sent based on how many transactions are in the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -184,8 +182,7 @@ const cosmosThresholdAlerts = {
     9: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
-      description:
-        'Open File Descriptors alerted on based on percentage usage .',
+      description: 'Open File Descriptors alerted on based on percentage usage .',
       adornment: '%',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -263,9 +260,7 @@ const cosmosTimeWindowAlerts = {
     13: {
       name: 'Missed Blocks',
       identifier: 'missed_blocks',
-      description:
-        'After a number of consecutive missed blocks you will '
-        + 'receive an alert.',
+      description: 'After a number of consecutive missed blocks you will receive an alert.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -325,8 +320,7 @@ const cosmosSeverityAlerts = {
       name: 'Validator is not active in this session',
       identifier: 'validator_not_active_in_session',
       description:
-        'Occurs when your validator is not participating in the '
-        + 'current consensus round.',
+        'Occurs when your validator is not participating in the current consensus round.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
@@ -390,8 +384,7 @@ const cosmosSeverityAlerts = {
     26: {
       name: 'Delegated balance increase',
       identifier: 'delegated_balance_increase',
-      description:
-        'The amount of tokens delegated to your validator has increased.',
+      description: 'The amount of tokens delegated to your validator has increased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -399,29 +392,13 @@ const cosmosSeverityAlerts = {
     27: {
       name: 'Delegated balance decrease',
       identifier: 'delegated_balance_decrease',
-      description:
-        'The amount of tokens delegated to your validator has decreased.',
+      description: 'The amount of tokens delegated to your validator has decreased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
     },
   },
-  allIds: [
-    '14',
-    '15',
-    '16',
-    '17',
-    '18',
-    '19',
-    '20',
-    '21',
-    '22',
-    '23',
-    '24',
-    '25',
-    '26',
-    '27',
-  ],
+  allIds: ['14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27'],
 };
 
 // Reducers to add and remove cosmos node configurations from global state
@@ -494,81 +471,43 @@ function cosmosChainsById(state = {}, action) {
     case REMOVE_CHAIN_COSMOS:
       return _.omit(state, action.payload.id);
     case ADD_NODE_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].nodes = [];
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          nodes: state[action.payload.parent_id].nodes.concat(
-            action.payload.id,
-          ),
+          nodes: state[action.payload.parent_id].nodes.concat(action.payload.id),
         },
       };
     case LOAD_NODE_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state.hasOwnProperty(action.payload.node.parent_id)) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.node.parent_id] = {};
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.node.parent_id].hasOwnProperty('nodes')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.node.parent_id].nodes = [];
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
+      if (!state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.node.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.node.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[action.payload.node.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.node.parent_id
-        ].thresholdAlerts = cosmosThresholdAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[action.payload.node.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.node.parent_id
-        ].severityAlerts = cosmosSeverityAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')) {
+        state[action.payload.node.parent_id].severityAlerts = cosmosSeverityAlerts;
       }
-      if (
-        !state[action.payload.node.parent_id].nodes.includes(
-          action.payload.node.id,
-        )
-      ) {
+      if (!state[action.payload.node.parent_id].nodes.includes(action.payload.node.id)) {
         return {
           ...state,
           [action.payload.node.parent_id]: {
             ...state[action.payload.node.parent_id],
-            nodes: state[action.payload.node.parent_id].nodes.concat(
-              action.payload.node.id,
-            ),
+            nodes: state[action.payload.node.parent_id].nodes.concat(action.payload.node.id),
           },
         };
       }
@@ -589,83 +528,45 @@ function cosmosChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].repositories = [];
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(
-            action.payload.id,
-          ),
+          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
         },
       };
     case LOAD_REPOSITORY_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state.hasOwnProperty(action.payload.repo.parent_id)) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.repo.parent_id] = {};
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.repo.parent_id].hasOwnProperty('repositories')
-      ) {
-        // eslint-disable-next-line no-param-reassign
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('repositories')) {
         state[action.payload.repo.parent_id].repositories = [];
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.repo.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.repo.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[action.payload.repo.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.repo.parent_id
-        ].thresholdAlerts = cosmosThresholdAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[action.payload.repo.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.repo.parent_id
-        ].severityAlerts = cosmosSeverityAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')) {
+        state[action.payload.repo.parent_id].severityAlerts = cosmosSeverityAlerts;
       }
-      if (
-        !state[action.payload.repo.parent_id].repositories.includes(
-          action.payload.repo.id,
-        )
-      ) {
+      if (!state[action.payload.repo.parent_id].repositories.includes(action.payload.repo.id)) {
         return {
           ...state,
           [action.payload.repo.parent_id]: {
             ...state[action.payload.repo.parent_id],
-            repositories: state[
-              action.payload.repo.parent_id
-            ].repositories.concat(action.payload.repo.id),
+            repositories: state[action.payload.repo.parent_id].repositories.concat(
+              action.payload.repo.id,
+            ),
           },
         };
       }
@@ -692,79 +593,43 @@ function cosmosChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].kmses = [];
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          kmses: state[action.payload.parent_id].kmses.concat(
-            action.payload.id,
-          ),
+          kmses: state[action.payload.parent_id].kmses.concat(action.payload.id),
         },
       };
     case LOAD_KMS_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state.hasOwnProperty(action.payload.kms.parent_id)) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.kms.parent_id] = {};
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.kms.parent_id].hasOwnProperty('kmses')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.kms.parent_id].kmses = [];
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.kms.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.kms.parent_id].id = action.payload.kms.parent_id;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.kms.parent_id].hasOwnProperty('repeatAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.kms.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.kms.parent_id].hasOwnProperty('timeWindowAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.kms.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+      if (!state[action.payload.kms.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[action.payload.kms.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.kms.parent_id].hasOwnProperty('thresholdAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.kms.parent_id
-        ].thresholdAlerts = cosmosThresholdAlerts;
+      if (!state[action.payload.kms.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[action.payload.kms.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state[action.payload.kms.parent_id].hasOwnProperty('severityAlerts')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.kms.parent_id
-        ].severityAlerts = cosmosSeverityAlerts;
+      if (!state[action.payload.kms.parent_id].hasOwnProperty('severityAlerts')) {
+        state[action.payload.kms.parent_id].severityAlerts = cosmosSeverityAlerts;
       }
-      if (
-        !state[action.payload.kms.parent_id].kmses.includes(
-          action.payload.kms.id,
-        )
-      ) {
+      if (!state[action.payload.kms.parent_id].kmses.includes(action.payload.kms.id)) {
         return {
           ...state,
           [action.payload.kms.parent_id]: {
             ...state[action.payload.kms.parent_id],
-            kmses: state[action.payload.kms.parent_id].kmses.concat(
-              action.payload.kms.id,
-            ),
+            kmses: state[action.payload.kms.parent_id].kmses.concat(action.payload.kms.id),
           },
         };
       }
@@ -805,35 +670,21 @@ function cosmosChainsById(state = {}, action) {
         },
       };
     case LOAD_REPEAT_ALERTS_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state.hasOwnProperty(action.payload.parent_id)) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id] = {};
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].repeatAlerts = {};
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        // eslint-disable-next-line no-param-reassign
-        state[
-          action.payload.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+        state[action.payload.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].severityAlerts = cosmosSeverityAlerts;
       }
       return {
@@ -863,26 +714,17 @@ function cosmosChainsById(state = {}, action) {
         },
       };
     case LOAD_TIMEWINDOW_ALERTS_COSMOS:
-      // eslint-disable-next-line no-prototype-builtins
       if (!state.hasOwnProperty(action.payload.parent_id)) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id] = {};
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].timeWindowAlerts = {};
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
         state[action.payload.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
@@ -928,9 +770,7 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[
-          action.payload.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+        state[action.payload.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
         state[action.payload.parent_id].severityAlerts = cosmosSeverityAlerts;
@@ -967,26 +807,17 @@ function cosmosChainsById(state = {}, action) {
       }
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
         state[action.payload.parent_id].severityAlerts = {};
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
         // eslint-disable-next-line no-param-reassign,no-undef
-        tate[
-          action.payload.parent_id
-        ].timeWindowAlerts = cosmosTimeWindowAlerts;
+        tate[action.payload.parent_id].timeWindowAlerts = cosmosTimeWindowAlerts;
       }
-      // eslint-disable-next-line no-prototype-builtins
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        // eslint-disable-next-line no-param-reassign
         state[action.payload.parent_id].thresholdAlerts = cosmosThresholdAlerts;
       }
       return {

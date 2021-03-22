@@ -8,7 +8,6 @@ import InfoArea from 'components/material_ui/InfoArea/InfoArea';
 import Data from 'data/chains';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 
-
 export default function DescriptionSection() {
   const classes = useStyles();
   return (

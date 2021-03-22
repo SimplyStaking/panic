@@ -43,7 +43,6 @@ import Data from 'data/alert';
 const AlertsTable = ({
   config,
   currentChain,
-  updateRepeatAlertDetails,
   updateThresholdAlertDetails,
   pageChanger,
   stepChanger,
@@ -457,7 +456,6 @@ AlertsTable.propTypes = forbidExtraProps({
       }),
     }).isRequired,
   }).isRequired,
-  updateRepeatAlertDetails: PropTypes.func.isRequired,
   updateThresholdAlertDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
 });

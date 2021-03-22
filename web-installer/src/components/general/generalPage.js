@@ -15,7 +15,6 @@ import Card from 'components/material_ui/Card/Card';
 import CardBody from 'components/material_ui/Card/CardBody';
 import Background from 'assets/img/backgrounds/background.png';
 
-
 function GeneralsPage() {
   const classes = useStyles();
 

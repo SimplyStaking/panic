@@ -1,18 +1,18 @@
-import React from "react";
+import React from 'react';
 
 // mterial-ui components
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from '@material-ui/core/styles';
 
 const styles = {
   clearfix: {
-    "&:after,&:before": {
-      display: "table",
-      content: '" "'
+    '&:after,&:before': {
+      display: 'table',
+      content: '" "',
     },
-    "&:after": {
-      clear: "both"
-    }
-  }
+    '&:after': {
+      clear: 'both',
+    },
+  },
 };
 
 const useStyles = makeStyles(styles);

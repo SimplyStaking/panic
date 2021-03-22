@@ -50,3 +50,12 @@ export const CRITICAL = 'CRITICAL';
 export const PERIODIC = 'Periodic';
 export const SYSTEM = 'Systems';
 export const GITHUB = 'Github';
+
+const BLACKLIST = [
+  '127.0.0.1',
+  'localhost',
+  'localtest.me',
+  '2130706433',
+  '017700000001',
+  '0x7f000001',
+];

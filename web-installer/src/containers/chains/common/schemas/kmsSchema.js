@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import BLACKLIST from 'constants/constants';
 
 const KmsSchema = (props) => Yup.object().shape({
   kms_name: Yup.string()
@@ -19,7 +20,15 @@ const KmsSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('KMS name is required.'),
-  exporter_url: Yup.string().required('Node Exporter Url is required.'),
+  exporter_url: Yup.string()
+    .test('localhost', '127.0.0.1 is not allowed for security reasons.',
+      (value) => {
+        if (BLACKLIST.find((a) => value.includes(a))) {
+          return false;
+        }
+        return true;
+      })
+    .required('Node Exporter Url is required.'),
 });
 
 export default KmsSchema;

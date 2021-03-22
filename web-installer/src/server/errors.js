@@ -105,6 +105,16 @@ function UsernameDoesNotExists(username) {
   this.code = constants.C_449;
 }
 
+function LoginLockedError(lockingPeriodSeconds) {
+  this.message = `Login locked for ${lockingPeriodSeconds} seconds.`;
+  this.code = constants.C_450;
+}
+
+function BlackListError(errorValue) {
+  this.message = `${errorValue} contains blacklisted URL data for security purposes.`;
+  this.code = constants.C_451;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -126,4 +136,6 @@ module.exports = {
   UsernameAlreadyExists,
   CouldNotWriteConfig,
   UsernameDoesNotExists,
+  LoginLockedError,
+  BlackListError,
 };

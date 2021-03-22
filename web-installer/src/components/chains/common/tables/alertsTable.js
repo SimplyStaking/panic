@@ -1,6 +1,6 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { forbidExtraProps } from "airbnb-prop-types";
+import React from 'react';
+import PropTypes from 'prop-types';
+import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -17,25 +17,25 @@ import {
   MenuItem,
   Select,
   FormControl,
-} from "@material-ui/core";
-import Paper from "@material-ui/core/Paper";
-import StepButtonContainer from "containers/chains/common/stepButtonContainer";
-import NavigationButton from "components/global/navigationButton";
+} from '@material-ui/core';
+import Paper from '@material-ui/core/Paper';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
+import NavigationButton from 'components/global/navigationButton';
 import {
   CHAINS_PAGE,
   DONE,
   BACK,
   CHANNELS_STEP,
   CHAINS_STEP,
-} from "constants/constants";
-import { MuiThemeProvider } from "@material-ui/core/styles";
-import { defaultTheme } from "components/theme/default";
-import useStyles from "assets/jss/material-kit-react/views/landingPageSections/productStyle";
-import InputAdornment from "@material-ui/core/InputAdornment";
-import GridContainer from "components/material_ui/Grid/GridContainer";
-import GridItem from "components/material_ui/Grid/GridItem";
-import Divider from "@material-ui/core/Divider";
-import Data from "data/alert";
+} from 'constants/constants';
+import { MuiThemeProvider } from '@material-ui/core/styles';
+import { defaultTheme } from 'components/theme/default';
+import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import GridContainer from 'components/material_ui/Grid/GridContainer';
+import GridItem from 'components/material_ui/Grid/GridItem';
+import Divider from '@material-ui/core/Divider';
+import Data from 'data/alert';
 
 /*
  * AlertsTable will show display all the 4 alert types together with the
@@ -118,7 +118,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].warning.enabled}
                                 onClick={() => {
@@ -146,7 +146,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -180,16 +180,14 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               InputProps={{
                                 endAdornment: (
                                   <InputAdornment position="end">
                                     {RepeatAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               autoComplete="off"
                               fullWidth
@@ -202,7 +200,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={RepeatAlerts.byId[id].critical.enabled}
                                 onClick={() => {
@@ -230,7 +228,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -264,10 +262,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -275,6 +269,8 @@ const AlertsTable = ({
                                     {RepeatAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -284,7 +280,7 @@ const AlertsTable = ({
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={
+                        control={(
                           <Checkbox
                             checked={RepeatAlerts.byId[id].enabled}
                             onClick={() => {
@@ -306,7 +302,7 @@ const AlertsTable = ({
                             name="enabled"
                             color="primary"
                           />
-                        }
+                        )}
                         label=""
                       />
                     </TableCell>
@@ -324,7 +320,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={
                                   TimeWindowAlerts.byId[id].warning.enabled
@@ -364,7 +360,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -409,10 +405,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -423,6 +415,8 @@ const AlertsTable = ({
                                     }
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -466,10 +460,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -477,6 +467,8 @@ const AlertsTable = ({
                                     {TimeWindowAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -488,7 +480,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={
                                   TimeWindowAlerts.byId[id].critical.enabled
@@ -528,7 +520,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -572,10 +564,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -586,6 +574,8 @@ const AlertsTable = ({
                                     }
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -628,10 +618,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -639,6 +625,8 @@ const AlertsTable = ({
                                     {TimeWindowAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -648,7 +636,7 @@ const AlertsTable = ({
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={
+                        control={(
                           <Checkbox
                             checked={TimeWindowAlerts.byId[id].enabled}
                             onClick={() => {
@@ -675,7 +663,7 @@ const AlertsTable = ({
                             name="enabled"
                             color="primary"
                           />
-                        }
+                        )}
                         label=""
                       />
                     </TableCell>
@@ -693,7 +681,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={
                                   ThresholdAlerts.byId[id].warning.enabled
@@ -727,7 +715,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -765,10 +753,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -776,6 +760,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -787,7 +773,7 @@ const AlertsTable = ({
                       <Grid container>
                         <Grid item>
                           <FormControlLabel
-                            control={
+                            control={(
                               <Checkbox
                                 checked={
                                   ThresholdAlerts.byId[id].critical.enabled
@@ -820,7 +806,7 @@ const AlertsTable = ({
                                 }}
                                 color="primary"
                               />
-                            }
+                            )}
                             label="Enabled"
                             labelPlacement="end"
                           />
@@ -863,10 +849,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -874,6 +856,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -913,10 +897,6 @@ const AlertsTable = ({
                                   },
                                 });
                               }}
-                              inputProps={{
-                                min: 0,
-                                style: { textAlign: "right" },
-                              }}
                               autoComplete="off"
                               InputProps={{
                                 endAdornment: (
@@ -924,6 +904,8 @@ const AlertsTable = ({
                                     {ThresholdAlerts.byId[id].adornment_time}
                                   </InputAdornment>
                                 ),
+                                min: 0,
+                                style: { textAlign: 'right' },
                               }}
                               fullWidth
                             />
@@ -933,7 +915,7 @@ const AlertsTable = ({
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={
+                        control={(
                           <Checkbox
                             checked={ThresholdAlerts.byId[id].enabled}
                             onClick={() => {
@@ -958,7 +940,7 @@ const AlertsTable = ({
                             name="enabled"
                             color="primary"
                           />
-                        }
+                        )}
                         label=""
                       />
                     </TableCell>
@@ -1023,7 +1005,7 @@ const AlertsTable = ({
                     </TableCell>
                     <TableCell align="center">
                       <FormControlLabel
-                        control={
+                        control={(
                           <Checkbox
                             checked={SeverityAlerts.byId[id].enabled}
                             onClick={() => {
@@ -1044,7 +1026,7 @@ const AlertsTable = ({
                             name="enabled"
                             color="primary"
                           />
-                        }
+                        )}
                         label=""
                       />
                     </TableCell>
