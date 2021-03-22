@@ -1,0 +1,166 @@
+version: '3.7'
+
+services:
+  installer:
+    environment:
+      - 'ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}'
+      - 'ACCESS_TOKEN_LIFE=${ACCESS_TOKEN_LIFE}'
+      - 'REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}'
+      - 'REFRESH_TOKEN_LIFE=${REFRESH_TOKEN_LIFE}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'INSTALLER_USERNAME=${INSTALLER_USERNAME}'
+      - 'INSTALLER_PASSWORD=${INSTALLER_PASSWORD}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'INSTALLER_AUTH_COLLECTION=${INSTALLER_AUTH_COLLECTION}'
+      - 'ACCOUNTS_COLLECTION=${ACCOUNTS_COLLECTION}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}'
+    build:
+      context: './'
+      dockerfile: './web-installer/Dockerfile'
+    image: 'simplyvc/panic_installer:1.0.0'
+    volumes:
+      - './config:/opt/panic/config'
+      - './certificates:/opt/panic/certificates'
+    ports:
+      - '${INSTALLER_PORT}:8000'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${INSTALLER_IP}'
+    depends_on:
+      - mongo
+
+  mongo:
+    image: 'mongo'
+    networks:
+      panic_net:
+        ipv4_address: '${DB_IP}'
+    restart: always
+    container_name: 'mongo'
+    volumes:
+      - 'db-data:/data/db'
+
+  redis:
+    image: 'redis'
+    networks:
+      panic_net:
+        ipv4_address: '${REDIS_IP}'
+    restart: always
+    container_name: 'redis'
+
+  rabbitmq:
+    image: 'rabbitmq:3-management'
+    networks:
+      panic_net:
+        ipv4_address: '${RABBIT_IP}'
+    restart: always
+    container_name: 'rabbitmq'
+
+  alerter:
+    environment:
+      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_IP=${REDIS_IP}'
+      - 'REDIS_PORT=${REDIS_PORT}'
+      - 'RABBIT_IP=${RABBIT_IP}'
+      - 'RABBIT_PORT=${RABBIT_PORT}'
+      - 'LOGGING_LEVEL=${LOGGING_LEVEL}'
+      - 'DATA_STORE_LOG_FILE_TEMPLATE=${DATA_STORE_LOG_FILE_TEMPLATE}'
+      - 'MONITORS_LOG_FILE_TEMPLATE=${MONITORS_LOG_FILE_TEMPLATE}'
+      - 'TRANSFORMERS_LOG_FILE_TEMPLATE=${TRANSFORMERS_LOG_FILE_TEMPLATE}'
+      - 'MANAGERS_LOG_FILE_TEMPLATE=${MANAGERS_LOG_FILE_TEMPLATE}'
+      - 'ALERTERS_LOG_FILE_TEMPLATE=${ALERTERS_LOG_FILE_TEMPLATE}'
+      - 'ALERT_ROUTER_LOG_FILE=${ALERT_ROUTER_LOG_FILE}'
+      - 'ALERT_ROUTER_PUBLISHING_QUEUE_SIZE=${ALERT_ROUTER_PUBLISHING_QUEUE_SIZE}'
+      - 'CONFIG_MANAGER_LOG_FILE=${CONFIG_MANAGER_LOG_FILE}'
+      - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
+      - 'SYSTEM_MONITOR_PERIOD_SECONDS=${SYSTEM_MONITOR_PERIOD_SECONDS}'
+      - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
+      - 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE=${DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE}'
+      - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
+      - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
+      - 'ENABLE_LOG_ALERTS=${ENABLE_LOG_ALERTS}'
+      - 'CHANNEL_HANDLERS_LOG_FILE_TEMPLATE=${CHANNEL_HANDLERS_LOG_FILE_TEMPLATE}'
+      - 'ALERTS_LOG_FILE=${ALERTS_LOG_FILE}'
+      - 'TWIML=${TWIML}'
+      - 'TWIML_IS_URL=${TWIML_IS_URL}'
+      - 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE=${CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE}'
+      - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
+    build:
+      context: './'
+      dockerfile: './alerter/Alerter_Dockerfile'
+    image: 'simplyvc/panic_alerter:1.0.0'
+    volumes:
+      - './config:/opt/panic/config'
+      - './alerter/logs:/opt/panic/alerter/logs'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${ALERTER_IP}'
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+
+  health-checker:
+    environment:
+      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'REDIS_IP=${REDIS_IP}'
+      - 'REDIS_PORT=${REDIS_PORT}'
+      - 'RABBIT_IP=${RABBIT_IP}'
+      - 'RABBIT_PORT=${RABBIT_PORT}'
+      - 'LOGGING_LEVEL=${LOGGING_LEVEL}'
+      - 'ALERT_ROUTER_PUBLISHING_QUEUE_SIZE=${ALERT_ROUTER_PUBLISHING_QUEUE_SIZE}'
+      - 'DATA_STORE_LOG_FILE_TEMPLATE=${DATA_STORE_LOG_FILE_TEMPLATE}'
+      - 'MONITORS_LOG_FILE_TEMPLATE=${MONITORS_LOG_FILE_TEMPLATE}'
+      - 'TRANSFORMERS_LOG_FILE_TEMPLATE=${TRANSFORMERS_LOG_FILE_TEMPLATE}'
+      - 'MANAGERS_LOG_FILE_TEMPLATE=${MANAGERS_LOG_FILE_TEMPLATE}'
+      - 'ALERTERS_LOG_FILE_TEMPLATE=${ALERTERS_LOG_FILE_TEMPLATE}'
+      - 'ALERT_ROUTER_LOG_FILE=${ALERT_ROUTER_LOG_FILE}'
+      - 'CONFIG_MANAGER_LOG_FILE=${CONFIG_MANAGER_LOG_FILE}'
+      - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
+      - 'SYSTEM_MONITOR_PERIOD_SECONDS=${SYSTEM_MONITOR_PERIOD_SECONDS}'
+      - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
+      - 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE=${DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE}'
+      - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
+      - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
+      - 'ENABLE_LOG_ALERTS=${ENABLE_LOG_ALERTS}'
+      - 'CHANNEL_HANDLERS_LOG_FILE_TEMPLATE=${CHANNEL_HANDLERS_LOG_FILE_TEMPLATE}'
+      - 'ALERTS_LOG_FILE=${ALERTS_LOG_FILE}'
+      - 'TWIML=${TWIML}'
+      - 'TWIML_IS_URL=${TWIML_IS_URL}'
+      - 'CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE=${CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE}'
+      - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
+      - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
+    build:
+      context: './'
+      dockerfile: './alerter/Health_Checker_Dockerfile'
+    image: 'simplyvc/alerter_health_checker:1.0.0'
+    volumes:
+      - './alerter/logs:/opt/panic/alerter/logs'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${HEALTH_CHECKER_IP}'
+    depends_on:
+      - alerter
+      - rabbitmq
+
+networks:
+  panic_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/24
+
+volumes:
+  db-data:

@@ -1,0 +1,21 @@
+import { container, title } from 'assets/jss/material-kit-react.js';
+import { makeStyles } from '@material-ui/core/styles';
+
+const notificationsStyles = {
+  section: {
+    backgroundColor: '#FFFFFF',
+    display: 'block',
+    width: '100%',
+    position: 'relative',
+    padding: '0',
+  },
+  title: {
+    ...title,
+    marginTop: '30px',
+    minHeight: '32px',
+    textDecoration: 'none',
+  },
+  container,
+};
+
+export default makeStyles(notificationsStyles);
