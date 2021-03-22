@@ -46,7 +46,6 @@ import Parallax from 'components/material_ui/Parallax/Parallax';
 import DescriptionSection from 'components/channels/descriptionSection';
 import Background from 'assets/img/backgrounds/background.png';
 
-
 function ChannelsPage() {
   const classes = useStyles();
 

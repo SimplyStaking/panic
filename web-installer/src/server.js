@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
-const { resolve } = require('path');
-const { readdir } = require('fs').promises;
 const fsExtra = require('fs-extra');
 const path = require('path');
 const twilio = require('twilio');
@@ -26,12 +24,8 @@ const constants = require('./server/constants');
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
-const httpsKey = files.readFile(
-  path.join(__dirname, '../../', 'certificates', 'key.pem'),
-);
-const httpsCert = files.readFile(
-  path.join(__dirname, '../../', 'certificates', 'cert.pem'),
-);
+const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates', 'key.pem'));
+const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates', 'cert.pem'));
 const httpsOptions = {
   key: httpsKey,
   cert: httpsCert,
@@ -49,6 +43,24 @@ const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
 
+const blackList = [
+  '127.0.0.1',
+  'localhost',
+  'localtest.me',
+  '2130706433',
+  '017700000001',
+  '0x7f000001',
+];
+
+// Store the amount of times a login attempt was made unsuccessfully
+let loginAttempts = 0;
+// Store when then next login attempt can be made
+let lockedTime = 0;
+// Max number of attempts one can login before being locked
+const maxAttempts = 3;
+// Store how long someone has to wait after 5 failed login attempts
+const waitTime = 300000;
+
 // Server configuration
 const app = express();
 app.disable('x-powered-by');
@@ -56,6 +68,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
+// eslint-disable-next-line consistent-return
+app.use((err, req, res, next) => {
+  // This check makes sure this is a JSON parsing issue, but it might be
+  // coming from any middleware, not just body-parser:
+
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error(err);
+    return res.sendStatus(400); // Bad request
+  }
+
+  next();
+});
 
 // This function confirms that the authentication of the installer are in the
 // .env file.
@@ -80,10 +104,7 @@ async function loadAuthenticationToDB() {
     db = client.db(dbname);
     const collection = db.collection(instAuthCollection);
     const username = installerCredentials.INSTALLER_USERNAME;
-    const hashedPass = bcrypt.hashSync(
-      installerCredentials.INSTALLER_PASSWORD,
-      10,
-    );
+    const hashedPass = bcrypt.hashSync(installerCredentials.INSTALLER_PASSWORD, 10);
     const password = installerCredentials.INSTALLER_PASSWORD;
     const authDoc = { username, password: hashedPass, refreshToken: '' };
     // Find authentication document
@@ -226,41 +247,67 @@ app.post('/server/login', async (req, res) => {
     res.status(err.code).send(utils.errorJson(err.message));
     return;
   }
-
-  // Check if the inputted credentials are correct.
-  if (credentialsCorrect(username, password)) {
-    // If the credentials are correct give the user a jwt token
-    const payload = { username };
-    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
-    });
-    // This will be used to give access tokens
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: parseInt(process.env.REFRESH_TOKEN_LIFE, 10),
-    });
-    // Inform the user that authentication was successful and wrap the token
-    // inside a cookie for additional security
-    const msg = new msgs.AuthenticationSuccessful();
-    try {
-      await saveRefreshTokenToDB(username, refreshToken);
-      res
-        .status(utils.SUCCESS_STATUS)
-        .cookie('authCookie', accessToken, {
-          secure: true,
-          httpOnly: true,
-          sameSite: true,
-          maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
-        })
-        .send(utils.resultJson(msg.message));
-    } catch (err) {
-      // Inform the user of any error that occurs
-      res.status(err.code).send(utils.errorJson(err.message));
+  const currentTime = new Date().getTime();
+  // Check if the checking of credentials is locked
+  if (lockedTime < currentTime) {
+    // Check if the inputted credentials are correct.
+    if (credentialsCorrect(username, password)) {
+      // If the credentials are correct give the user a jwt token
+      const payload = { username };
+      const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+      });
+      // This will be used to give access tokens
+      const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: parseInt(process.env.REFRESH_TOKEN_LIFE, 10),
+      });
+      // Inform the user that authentication was successful and wrap the token
+      // inside a cookie for additional security
+      const msg = new msgs.AuthenticationSuccessful();
+      try {
+        await saveRefreshTokenToDB(username, refreshToken);
+        res
+          .status(utils.SUCCESS_STATUS)
+          .cookie('authCookie', accessToken, {
+            secure: true,
+            httpOnly: true,
+            sameSite: true,
+            maxAge: parseInt(process.env.ACCESS_TOKEN_LIFE, 10) * 1000,
+          })
+          .send(utils.resultJson(msg.message));
+        loginAttempts = 0;
+        lockedTime = 0;
+      } catch (err) {
+        // Inform the user of any error that occurs
+        res.status(err.code).send(utils.errorJson(err.message));
+      }
+    } else {
+      // Increment the login attempts
+      loginAttempts += 1;
+      if (loginAttempts === maxAttempts) {
+        // Set the locked time
+        lockedTime = currentTime + waitTime;
+        // Reset the login attempts
+        loginAttempts = 0;
+        const err = new errors.AuthenticationError(`Incorrect Credentials,
+            ${0} remaining login attempts, login is locked for 5 minutes`);
+        console.log(err);
+        res.status(err.code).send(utils.errorJson(err.message));
+      } else {
+        // If inputted credentials are incorrect inform the user
+        const remainingAttempts = maxAttempts - loginAttempts;
+        const err = new errors.AuthenticationError(`Incorrect Credentials,
+          ${remainingAttempts} remaining login attempts before it's
+          locked for 5 minutes`);
+        console.log(err);
+        res.status(err.code).send(utils.errorJson(err.message));
+      }
     }
   } else {
-    // If inputted credentials are incorrect inform the user
-    const err = new errors.AuthenticationError('Incorrect Credentials');
+    // If the login is locked for a certain amount of time inform the user
+    const err = new errors.LoginLockedError((lockedTime - currentTime) / 1000);
     console.log(err);
     res.status(err.code).send(utils.errorJson(err.message));
   }
@@ -326,14 +373,10 @@ app.post('/server/refresh', async (req, res) => {
     // user that he has been authenticated again
     const msg = new msgs.AuthenticationSuccessful();
     const newPayload = { username: payload.username }; // Must be overwritten
-    const newAccessToken = jwt.sign(
-      newPayload,
-      process.env.ACCESS_TOKEN_SECRET,
-      {
-        algorithm: 'HS256',
-        expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
-      },
-    );
+    const newAccessToken = jwt.sign(newPayload, process.env.ACCESS_TOKEN_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: parseInt(process.env.ACCESS_TOKEN_LIFE, 10),
+    });
     res
       .status(utils.SUCCESS_STATUS)
       .cookie('authCookie', newAccessToken, {
@@ -440,12 +483,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
   }
   try {
     // Check if the username already exists and inform the user about the result
-    const result = await mongo.recordExists(
-      mongoDBUrl,
-      dbname,
-      accountsCollection,
-      { username },
-    );
+    const result = await mongo.recordExists(mongoDBUrl, dbname, accountsCollection, { username });
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
     // Inform the user of any errors.
@@ -458,11 +496,7 @@ app.post('/server/account/exists', verify, async (req, res) => {
 app.get('/server/account/usernames', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   try {
-    const result = await mongo.getRecords(
-      mongoDBUrl,
-      dbname,
-      accountsCollection,
-    );
+    const result = await mongo.getRecords(mongoDBUrl, dbname, accountsCollection);
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(result));
   } catch (err) {
     // Inform the user of any errors.
@@ -517,9 +551,7 @@ app.get('/server/paths', verify, async (req, res) => {
         return processedPaths;
       })
       .catch((e) => console.error(e));
-    return res
-      .status(utils.SUCCESS_STATUS)
-      .send(utils.resultJson(await foundFiles));
+    return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(await foundFiles));
   } catch (err) {
     console.log(err);
     // Inform the user about the error.
@@ -555,12 +587,7 @@ app.get('/server/config', verify, async (req, res) => {
     // If the file is expected in the inferred location get its path, read it
     // and send it to the client.
     if (configs.fileValid(configType, fileName)) {
-      const configPath = configs.getConfigPath(
-        configType,
-        fileName,
-        chainName,
-        baseChain,
-      );
+      const configPath = configs.getConfigPath(configType, fileName, chainName, baseChain);
       const data = configs.readConfig(configPath);
       return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(data));
     }
@@ -572,9 +599,7 @@ app.get('/server/config', verify, async (req, res) => {
     if (err.code === 'ENOENT') {
       const errNotFound = new errors.ConfigNotFound(fileName);
       console.log(err);
-      return res
-        .status(errNotFound.code)
-        .send(utils.errorJson(errNotFound.message));
+      return res.status(errNotFound.code).send(utils.errorJson(errNotFound.message));
     }
     console.log(err);
     // Otherwise inform the user about the error.
@@ -588,7 +613,7 @@ app.post('/server/config/delete', verify, async (req, res) => {
 
   try {
     const configPath = path.join(__dirname, '../../', 'config');
-    const gitKeep = path.join(configPath, '/', '.gitkeep')
+    const gitKeep = path.join(configPath, '/', '.gitkeep');
     fsExtra.emptyDirSync(configPath);
     try {
       await fs.openSync(gitKeep, 'w');
@@ -637,17 +662,10 @@ app.post('/server/config', verify, async (req, res) => {
     // If the file is expected in the inferred location get its path, write it
     // and inform the user if successful.
     if (configs.fileValid(configType, fileName)) {
-      const configPath = configs.getConfigPath(
-        configType,
-        fileName,
-        chainName,
-        baseChain,
-      );
+      const configPath = configs.getConfigPath(configType, fileName, chainName, baseChain);
       configs.writeConfig(configPath, config);
       const msg = new msgs.ConfigSubmitted(fileName, configPath);
-      return res
-        .status(utils.SUCCESS_STATUS)
-        .send(utils.resultJson(msg.message));
+      return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     }
     // If the file is not expected in the inferred location inform the client.
     const err = new errors.ConfigUnrecognized(fileName);
@@ -665,10 +683,7 @@ app.post('/server/config', verify, async (req, res) => {
 app.post('/server/twilio/test', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const {
-    accountSid,
-    authToken,
-    twilioPhoneNumber,
-    phoneNumberToDial,
+    accountSid, authToken, twilioPhoneNumber, phoneNumberToDial,
   } = req.body;
 
   // Check if accountSid, authToken, twilioPhoneNumber and phoneNumberToDial
@@ -732,6 +747,13 @@ app.post('/server/email/test', verify, async (req, res) => {
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => smtp.includes(a))) {
+    const error = new errors.BlackListError(smtp);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
@@ -843,9 +865,7 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   // If the eu=true set the host to the opsgenie EU url otherwise the sdk will
   // run into an authentication error.
   const euString = String(eu);
-  const host = utils.toBool(euString)
-    ? 'https://api.eu.opsgenie.com'
-    : 'https://api.opsgenie.com';
+  const host = utils.toBool(euString) ? 'https://api.eu.opsgenie.com' : 'https://api.opsgenie.com';
 
   // Create OpsGenie client and test alert message
   opsgenie.configure({ api_key: apiKey, host });
@@ -888,6 +908,13 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     return;
   }
 
+  if (blackList.find((a) => tendermintRpcUrl.includes(a))) {
+    const error = new errors.BlackListError(tendermintRpcUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
   const url = `${tendermintRpcUrl}/health?`;
 
   axios
@@ -920,6 +947,13 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => prometheusUrl.includes(a))) {
+    const error = new errors.BlackListError(prometheusUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
@@ -958,6 +992,13 @@ app.post('/server/system/exporter', async (req, res) => {
   if (missingParamsList.length !== 0) {
     const err = new errors.MissingArguments(missingParamsList);
     res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => exporterUrl.includes(a))) {
+    const error = new errors.BlackListError(exporterUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 

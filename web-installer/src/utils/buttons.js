@@ -298,7 +298,7 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
   );
 }
 
-function PingPrometheus({disabled, prometheusUrl}) {
+function PingPrometheus({ disabled, prometheusUrl }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
@@ -405,10 +405,10 @@ function LoginButton({
       if (e.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        ToastsStore.error(`Authentication failed. Error: ${e.response.data.error}`, 5000);
+        ToastsStore.error(`${e.response.data.error}`, 5000);
       } else {
         // Something happened in setting up the request that triggered an Error
-        ToastsStore.error(`Authentication failed. Error: ${e.message}`, 5000);
+        ToastsStore.error(`${e.message}`, 5000);
       }
     }
   };

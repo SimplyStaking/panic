@@ -1,3 +1,7 @@
+/* eslint-disable no-multi-assign */
+/* eslint-disable max-len */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable camelcase */
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -101,8 +105,10 @@ function mapDispatchToProps(dispatch) {
     loadNodeSubstrateDetails: (details) => dispatch(loadNodeSubstrate(details)),
     loadReposSubstrateDetails: (details) => dispatch(loadReposSubstrate(details)),
     loadRepeatAlertsSubstrateDetails: (details) => dispatch(loadRepeatAlertsSubstrate(details)),
-    loadTimeWindowAlertsSubstrateDetails: (details) => dispatch(loadTimeWindowAlertsSubstrate(details)),
-    loadThresholdAlertsSubstrateDetails: (details) => dispatch(loadThresholdAlertsSubstrate(details)),
+    loadTimeWindowAlertsSubstrateDetails:
+      (details) => dispatch(loadTimeWindowAlertsSubstrate(details)),
+    loadThresholdAlertsSubstrateDetails:
+      (details) => dispatch(loadThresholdAlertsSubstrate(details)),
     loadSeverityAlertsSubstrateDetails: (details) => dispatch(loadSeverityAlertsSubstrate(details)),
 
     loadReposGeneralDetails: (details) => dispatch(loadReposGeneral(details)),
@@ -163,9 +169,10 @@ class LoadConfig extends Component {
     let warning = {};
     let critical = {};
     let parent_id = '';
+    let res;
     try {
-      for (let i = 0; i < files.length; i++) {
-        var res = files[i].split('/');
+      for (let i = 0; i < files.length; i += 1) {
+        res = files[i].split('/');
         if (res[1] === 'general') {
           if (res[2] === 'periodic_config.ini') {
             config = await getConfig('general', 'periodic_config.ini', '', '');
@@ -608,7 +615,6 @@ class LoadConfig extends Component {
         }
       }
     } catch (err) {
-      console.log(err);
       ToastsStore.error(
         'An Error occurred your configuration may be corrupted.',
         5000,
@@ -629,6 +635,26 @@ LoadConfig.propTypes = {
   loadPagerdutyDetails: PropTypes.func.isRequired,
   loadOpsgenieDetails: PropTypes.func.isRequired,
   loadNodeCosmosDetails: PropTypes.func.isRequired,
+  loadReposCosmosDetails: PropTypes.func.isRequired,
+  loadRepositoryDetails: PropTypes.func.isRequired,
+  loadKMSCosmosDetails: PropTypes.func.isRequired,
+  loadKMSDetails: PropTypes.func.isRequired,
+  loadRepeatAlertsCosmosDetails: PropTypes.func.isRequired,
+  loadSystemDetails: PropTypes.func.isRequired,
+  loadTimeWindowAlertsCosmosDetails: PropTypes.func.isRequired,
+  loadThresholdAlertsCosmosDetails: PropTypes.func.isRequired,
+  loadSeverityAlertsCosmosDetails: PropTypes.func.isRequired,
+  loadReposGeneralDetails: PropTypes.func.isRequired,
+  loadSystemGeneralDetails: PropTypes.func.isRequired,
+  loadThresholdAlertsGeneralDetails: PropTypes.func.isRequired,
+  loadNodeSubstrateDetails: PropTypes.func.isRequired,
+  loadReposSubstrateDetails: PropTypes.func.isRequired,
+  loadRepeatAlertsSubstrateDetails: PropTypes.func.isRequired,
+  loadTimeWindowAlertsSubstrateDetails: PropTypes.func.isRequired,
+  loadThresholdAlertsSubstrateDetails: PropTypes.func.isRequired,
+  loadSeverityAlertsSubstrateDetails: PropTypes.func.isRequired,
+  updatePeriodicDetails: PropTypes.func.isRequired,
+  handleClose: PropTypes.func.isRequired,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(LoadConfig);

@@ -155,7 +155,7 @@ const EmailForm = ({
                       error={errors.emails_to}
                       type="text"
                       name="emails_to"
-                      placeholder={'Add a destination email [Press Enter after each Email].'}
+                      placeholder="Add a destination email [Press Enter after each Email]."
                       variant="standard"
                       helperText={errors.emails_to ? errors.emails_to : ''}
                       autoComplete="off"
@@ -319,6 +319,7 @@ EmailForm.propTypes = forbidExtraProps({
     smtp: PropTypes.string,
     email_from: PropTypes.string,
     emails_to: PropTypes.string,
+    port: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({

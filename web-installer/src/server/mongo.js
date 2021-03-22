@@ -116,7 +116,7 @@ module.exports = {
     }
   },
 
-  // This function returns all records 
+  // This function returns all records
   getRecords: async (mongoDBUrl, dbname, collection) => {
     let client;
     let db;

@@ -1,23 +1,29 @@
-import React from "react";
+import React from 'react';
 // nodejs library to set properties for components
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 // @material-ui/core components
-import Snack from "@material-ui/core/SnackbarContent";
-import Icon from "@material-ui/core/Icon";
+import Snack from '@material-ui/core/SnackbarContent';
+import Icon from '@material-ui/core/Icon';
 import useStyles from
-  "assets/jss/material-kit-react/components/snackbarContentStyle";
+  'assets/jss/material-kit-react/components/snackbarContentStyle';
 
 export default function SnackbarContent(props) {
-  const { message, color, icon, icon_color } = props;
+  const {
+    message, color, icon, iconColor,
+  } = props;
   const classes = useStyles();
   let snackIcon = null;
   switch (typeof icon) {
-    case "object":
-      snackIcon = <props.icon
-                    className={classes.icon} style={{color: icon_color}}/>;
+    case 'object':
+      snackIcon = (
+        <props.icon
+          className={classes.icon}
+          style={{ color: iconColor }}
+        />
+      );
       break;
-    case "string":
-      snackIcon = <Icon className={classes.icon} style={{color: icon_color}} >{props.icon}</Icon>;
+    case 'string':
+      snackIcon = <Icon className={classes.icon} style={{ color: iconColor }}>{props.icon}</Icon>;
       break;
     default:
       snackIcon = null;
@@ -25,15 +31,15 @@ export default function SnackbarContent(props) {
   }
   return (
     <Snack
-      message={
+      message={(
         <div>
           {snackIcon}
           {message}
         </div>
-      }
+      )}
       classes={{
-        root: classes.root + " " + classes[color],
-        message: classes.message + " " + classes.container
+        root: `${classes.root} ${classes[color]}`,
+        message: `${classes.message} ${classes.container}`,
       }}
     />
   );
@@ -41,8 +47,7 @@ export default function SnackbarContent(props) {
 
 SnackbarContent.propTypes = {
   message: PropTypes.node.isRequired,
-  color: PropTypes.oneOf(["default","info", "success", "warning", "danger", "primary"]),
-  close: PropTypes.bool,
-  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-  icon_color: PropTypes.string
+  color: PropTypes.oneOf(['default', 'info', 'success', 'warning', 'danger', 'primary']).isRequired,
+  icon: PropTypes.oneOfType([PropTypes.object, PropTypes.string]).isRequired,
+  iconColor: PropTypes.string.isRequired,
 };
