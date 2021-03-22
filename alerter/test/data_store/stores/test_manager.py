@@ -4,7 +4,6 @@ import multiprocessing
 import time
 import unittest
 from datetime import timedelta, datetime
-from multiprocessing import Process
 from unittest import mock
 
 import pika
@@ -12,21 +11,18 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.data_store.stores.manager import StoreManager
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store, start_config_store)
+from src.data_store.stores.manager import StoreManager
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
                                  DATA_STORE_MAN_INPUT_QUEUE,
                                  DATA_STORE_MAN_INPUT_ROUTING_KEY,
                                  CONFIG_STORE_NAME)
-from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  PANICException)
-from src.utils.logging import log_and_print
-from src.utils import env
-
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
+from src.utils.exceptions import (PANICException)
+from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
@@ -99,7 +95,8 @@ class TestStoreManager(unittest.TestCase):
     def test_rabbitmq_property_returns_rabbitmq_correctly(self) -> None:
         self.assertEqual(self.rabbitmq, self.test_store_manager.rabbitmq)
 
-    def test_initialise_rabbitmq_initialises_everything_as_expected(self) -> None:
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
+            self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
@@ -481,13 +478,13 @@ class TestStoreManager(unittest.TestCase):
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_store_manager._store_process_dict[
-                                SYSTEM_STORE_NAME].is_alive())
+                                 SYSTEM_STORE_NAME].is_alive())
             self.assertFalse(self.test_store_manager._store_process_dict[
-                                GITHUB_STORE_NAME].is_alive())
+                                 GITHUB_STORE_NAME].is_alive())
             self.assertFalse(self.test_store_manager._store_process_dict[
-                                ALERT_STORE_NAME].is_alive())
+                                 ALERT_STORE_NAME].is_alive())
             self.assertFalse(self.test_store_manager._store_process_dict[
-                                CONFIG_STORE_NAME].is_alive())
+                                 CONFIG_STORE_NAME].is_alive())
 
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel

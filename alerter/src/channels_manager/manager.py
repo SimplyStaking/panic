@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 import multiprocessing
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -11,6 +10,7 @@ from typing import Dict, List, Optional
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
     start_twilio_alerts_handler, start_console_alerts_handler,
@@ -31,39 +31,27 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  LOG_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
-                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
+                                 CHANNELS_MANAGER_INPUT_QUEUE,
+                                 CHANNELS_MANAGER_HB_ROUTING_KEY,
+                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import str_to_bool, ChannelTypes, ChannelHandlerTypes
-
-_CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
-_CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
-_CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
+                             convert_to_int_if_not_none_and_not_empty_str)
 
 
-class ChannelsManager:
-
-    def __init__(self, logger: logging.Logger, name: str) -> None:
-        self._logger = logger
+class ChannelsManager(PublisherSubscriberComponent):
+    def __init__(self, logger: logging.Logger, name: str,
+                 rabbitmq: RabbitMQApi) -> None:
         self._name = name
         self._channel_configs = {}
         self._channel_process_dict = {}
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(
-            logger=self.logger.getChild(RabbitMQApi.__name__), host=rabbit_ip)
-
-        # Handle termination signals by stopping the manager gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
+        super().__init__(logger, rabbitmq)
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     @property
     def name(self) -> str:
@@ -77,10 +65,6 @@ class ChannelsManager:
     def channel_process_dict(self) -> Dict:
         return self._channel_process_dict
 
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
-
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
@@ -88,19 +72,19 @@ class ChannelsManager:
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", _CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(_CHANNELS_MANAGER_INPUT_QUEUE, False, True,
+        self.logger.info("Creating queue '%s'", CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.queue_declare(CHANNELS_MANAGER_INPUT_QUEUE, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", _CHANNELS_MANAGER_INPUT_QUEUE,
+                         "'%s'", CHANNELS_MANAGER_INPUT_QUEUE,
                          HEALTH_CHECK_EXCHANGE,
-                         _CHANNELS_MANAGER_HB_ROUTING_KEY)
-        self.rabbitmq.queue_bind(_CHANNELS_MANAGER_INPUT_QUEUE,
+                         CHANNELS_MANAGER_HB_ROUTING_KEY)
+        self.rabbitmq.queue_bind(CHANNELS_MANAGER_INPUT_QUEUE,
                                  HEALTH_CHECK_EXCHANGE,
-                                 _CHANNELS_MANAGER_HB_ROUTING_KEY)
+                                 CHANNELS_MANAGER_HB_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          _CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(_CHANNELS_MANAGER_INPUT_QUEUE,
+                          CHANNELS_MANAGER_INPUT_QUEUE)
+        self.rabbitmq.basic_consume(CHANNELS_MANAGER_INPUT_QUEUE,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -112,10 +96,10 @@ class ChannelsManager:
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                         CONFIG_EXCHANGE, CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 _CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on %s",
                           CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -226,11 +210,11 @@ class ChannelsManager:
     def _create_and_start_email_alerts_handler(
             self, smtp: str, email_from: str, emails_to: List[str],
             channel_id: str, channel_name: str, username: Optional[str],
-            password: Optional[str]) -> None:
+            password: Optional[str], port: int = 0) -> None:
         process = multiprocessing.Process(
             target=start_email_alerts_handler,
             args=(smtp, email_from, emails_to, channel_id, channel_name,
-                  username, password))
+                  username, password, port))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
                       "e-mail channel {}".format(channel_name), self.logger)
@@ -253,6 +237,7 @@ class ChannelsManager:
         process_details['username'] = username
         process_details['password'] = password
         process_details['channel_type'] = ChannelTypes.EMAIL.value
+        process_details['port'] = port
 
     def _create_and_start_pagerduty_alerts_handler(
             self, integration_key: str, channel_id: str, channel_name: str) \
@@ -633,10 +618,12 @@ class ChannelsManager:
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
+                port = convert_to_int_if_not_none_and_not_empty_str(
+                    config['port'], 0)
 
                 self._create_and_start_email_alerts_handler(
                     smtp, email_from, emails_to, channel_id, channel_name,
-                    username, password)
+                    username, password, port)
                 correct_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -651,6 +638,8 @@ class ChannelsManager:
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
+                port = convert_to_int_if_not_none_and_not_empty_str(
+                    config['port'], 0)
 
                 alerts_handler_type = ChannelHandlerTypes.ALERTS.value
                 if alerts_handler_type in self.channel_process_dict[channel_id]:
@@ -664,7 +653,7 @@ class ChannelsManager:
                               self.logger)
                 self._create_and_start_email_alerts_handler(
                     smtp, email_from, emails_to, channel_id, channel_name,
-                    username, password)
+                    username, password, port)
                 correct_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
@@ -924,7 +913,8 @@ class ChannelsManager:
                                 process_details['channel_id'],
                                 process_details['channel_name'],
                                 process_details['username'],
-                                process_details['password']
+                                process_details['password'],
+                                process_details['port']
                             )
                         elif channel_type == ChannelTypes.PAGERDUTY.value:
                             self._create_and_start_pagerduty_alerts_handler(
@@ -983,16 +973,9 @@ class ChannelsManager:
                 self.logger.exception(e)
                 raise e
 
-    def disconnect_from_rabbit(self) -> None:
-        """
-        Disconnects the component from RabbitMQ
-        :return:
-        """
-        self.rabbitmq.disconnect_till_successful()
-
     # If termination signals are received, terminate all child process and
-    # close the connection with rabbit mq before exiting
-    def on_terminate(self, signum: int, stack: FrameType) -> None:
+    # close the connection with rabbitmq before exiting
+    def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "
             "any running channel handlers will be stopped gracefully. "
@@ -1010,3 +993,10 @@ class ChannelsManager:
 
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, *args) -> None:
+        """
+        We are not implementing the _send_data function because with respect to
+        rabbit, the channels manager only sends heartbeats.
+        """
+        pass

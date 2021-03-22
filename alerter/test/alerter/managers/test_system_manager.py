@@ -264,7 +264,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
-            print("Test failed: %s".format(e))
+            print("Test failed: {}".format(e))
 
         self.dummy_logger = None
         self.rabbitmq = None

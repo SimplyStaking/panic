@@ -16,17 +16,22 @@ from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.twilio import TwilioChannel
+from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
+    TelegramCommandHandlers)
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.channels_manager.handlers.log.alerts import LogAlertsHandler
 from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
-from src.channels_manager.handlers.pager_duty.alerts import \
-    PagerDutyAlertsHandler
+from src.channels_manager.handlers.pagerduty.alerts import (
+    PagerDutyAlertsHandler)
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
-from src.channels_manager.handlers.telegram.commands import \
-    TelegramCommandsHandler
+from src.channels_manager.handlers.telegram.commands import (
+    TelegramCommandsHandler)
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
+from src.data_store.mongo import MongoApi
+from src.data_store.redis import RedisApi
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
@@ -37,7 +42,8 @@ from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
                                  EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
                                  OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE)
+                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                 TELEGRAM_COMMAND_HANDLERS_NAME)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
@@ -53,7 +59,7 @@ def _initialise_channel_handler_logger(
             handler_logger = create_logger(
                 env.CHANNEL_HANDLERS_LOG_FILE_TEMPLATE.format(
                     handler_display_name), handler_module_name,
-                env.LOGGING_LEVEL, rotating=True)
+                env.LOGGING_LEVEL, True)
             break
         except Exception as e:
             msg = get_initialisation_error_message(handler_display_name, e)
@@ -73,7 +79,7 @@ def _initialise_alerts_logger() -> logging.Logger:
     while True:
         try:
             alerts_logger = create_logger(env.ALERTS_LOG_FILE, 'Alerts',
-                                          env.LOGGING_LEVEL, rotating=True)
+                                          env.LOGGING_LEVEL, True)
             break
         except Exception as e:
             msg = get_initialisation_error_message('Alerts Log File', e)
@@ -86,9 +92,9 @@ def _initialise_alerts_logger() -> logging.Logger:
     return alerts_logger
 
 
-def _initialise_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
-                                        channel_id: str, channel_name: str) \
-        -> TelegramAlertsHandler:
+def _initialise_telegram_alerts_handler(
+        bot_token: str, bot_chat_id: str, channel_id: str,
+        channel_name: str) -> TelegramAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -104,11 +110,13 @@ def _initialise_telegram_alerts_handler(bot_token: str, bot_chat_id: str,
                 channel_name, channel_id, handler_logger.getChild(
                     TelegramChannel.__name__), telegram_bot)
 
-            rabbit_ip = env.RABBIT_IP
-            queue_size = env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             telegram_alerts_handler = TelegramAlertsHandler(
-                handler_display_name, handler_logger, rabbit_ip, queue_size,
-                telegram_channel)
+                handler_display_name, handler_logger, rabbitmq,
+                telegram_channel, env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -146,11 +154,30 @@ def _initialise_telegram_commands_handler(
                 channel_name, channel_id, handler_logger.getChild(
                     TelegramChannel.__name__), telegram_bot)
 
+            cmd_handlers_logger = handler_logger.getChild(
+                TelegramCommandHandlers.__name__)
+            cmd_handlers_rabbitmq = RabbitMQApi(
+                logger=cmd_handlers_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            cmd_handlers_redis = RedisApi(
+                logger=cmd_handlers_logger.getChild(RedisApi.__name__),
+                host=env.REDIS_IP, db=env.REDIS_DB, port=env.REDIS_PORT,
+                namespace=env.UNIQUE_ALERTER_IDENTIFIER)
+            cmd_handlers_mongo = MongoApi(
+                logger=cmd_handlers_logger.getChild(MongoApi.__name__),
+                host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+
+            cmd_handlers = TelegramCommandHandlers(
+                TELEGRAM_COMMAND_HANDLERS_NAME, cmd_handlers_logger,
+                associated_chains, telegram_channel, cmd_handlers_rabbitmq,
+                cmd_handlers_redis, cmd_handlers_mongo)
+            handler_rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             telegram_commands_handler = TelegramCommandsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                env.REDIS_IP, env.REDIS_DB, env.REDIS_PORT,
-                env.UNIQUE_ALERTER_IDENTIFIER, env.DB_IP, env.DB_NAME,
-                env.DB_PORT, associated_chains, telegram_channel)
+                handler_display_name, handler_logger, handler_rabbitmq,
+                telegram_channel, cmd_handlers)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -190,8 +217,12 @@ def _initialise_twilio_alerts_handler(
                 channel_name, channel_id, handler_logger.getChild(
                     TwilioChannel.__name__), twilio_api)
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             twilio_alerts_handler = TwilioAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
+                handler_display_name, handler_logger, rabbitmq,
                 twilio_channel, call_from, call_to, twiml, twiml_is_url)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
@@ -215,9 +246,9 @@ def start_twilio_alerts_handler(
     start_handler(twilio_alerts_handler)
 
 
-def _initialise_pagerduty_alerts_handler(integration_key: str, channel_id: str,
-                                         channel_name: str) \
-        -> PagerDutyAlertsHandler:
+def _initialise_pagerduty_alerts_handler(
+        integration_key: str, channel_id: str,
+        channel_name: str) -> PagerDutyAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -228,13 +259,18 @@ def _initialise_pagerduty_alerts_handler(integration_key: str, channel_id: str,
     while True:
         try:
             pagerduty_api = PagerDutyApi(integration_key)
+
             pagerduty_channel = PagerDutyChannel(
                 channel_name, channel_id, handler_logger.getChild(
                     PagerDutyChannel.__name__), pagerduty_api)
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             pagerduty_alerts_handler = PagerDutyAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, pagerduty_channel)
+                handler_display_name, handler_logger, rabbitmq,
+                pagerduty_channel, env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -257,7 +293,7 @@ def start_pagerduty_alerts_handler(integration_key: str, channel_id: str,
 def _initialise_email_alerts_handler(
         smtp: str, email_from: str, emails_to: List[str],
         channel_id: str, channel_name: str, username: Optional[str],
-        password: Optional[str]) -> EmailAlertsHandler:
+        password: Optional[str], port: int = 0) -> EmailAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = EMAIL_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -267,14 +303,19 @@ def _initialise_email_alerts_handler(
     # Try initialising handler until successful
     while True:
         try:
-            email_api = EmailApi(smtp, email_from, username, password)
+            email_api = EmailApi(smtp, email_from, username, password, port)
+
             email_channel = EmailChannel(
                 channel_name, channel_id, handler_logger.getChild(
                     EmailChannel.__name__), emails_to, email_api)
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             email_alerts_handler = EmailAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, email_channel)
+                handler_display_name, handler_logger, rabbitmq, email_channel,
+                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -289,17 +330,17 @@ def _initialise_email_alerts_handler(
 
 def start_email_alerts_handler(
         smtp: str, email_from: str, emails_to: List[str], channel_id: str,
-        channel_name: str, username: Optional[str],
-        password: Optional[str]) -> None:
+        channel_name: str, username: Optional[str], password: Optional[str],
+        port: int = 0) -> None:
     email_alerts_handler = _initialise_email_alerts_handler(
         smtp, email_from, emails_to, channel_id, channel_name, username,
-        password)
+        password, port)
     start_handler(email_alerts_handler)
 
 
-def _initialise_opsgenie_alerts_handler(api_key: str, eu_host: bool,
-                                        channel_id: str, channel_name: str) \
-        -> OpsgenieAlertsHandler:
+def _initialise_opsgenie_alerts_handler(
+        api_key: str, eu_host: bool, channel_id: str,
+        channel_name: str) -> OpsgenieAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -315,9 +356,13 @@ def _initialise_opsgenie_alerts_handler(api_key: str, eu_host: bool,
                 channel_name, channel_id, handler_logger.getChild(
                     OpsgenieChannel.__name__), opsgenie_api)
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             opsgenie_alerts_handler = OpsgenieAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE, opsgenie_channel)
+                handler_display_name, handler_logger, rabbitmq,
+                opsgenie_channel, env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -337,8 +382,8 @@ def start_opsgenie_alerts_handler(api_key: str, eu_host: bool, channel_id: str,
     start_handler(opsgenie_alerts_handler)
 
 
-def _initialise_console_alerts_handler(channel_id: str, channel_name: str) \
-        -> ConsoleAlertsHandler:
+def _initialise_console_alerts_handler(
+        channel_id: str, channel_name: str) -> ConsoleAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -352,9 +397,12 @@ def _initialise_console_alerts_handler(channel_id: str, channel_name: str) \
                 channel_name, channel_id,
                 handler_logger.getChild(ConsoleChannel.__name__))
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             console_alerts_handler = ConsoleAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                console_channel)
+                handler_display_name, handler_logger, rabbitmq, console_channel)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break
@@ -373,8 +421,8 @@ def start_console_alerts_handler(channel_id: str, channel_name: str) -> None:
     start_handler(console_alerts_handler)
 
 
-def _initialise_log_alerts_handler(channel_id: str, channel_name: str) \
-        -> LogAlertsHandler:
+def _initialise_log_alerts_handler(
+        channel_id: str, channel_name: str) -> LogAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
     handler_logger = _initialise_channel_handler_logger(
@@ -388,9 +436,12 @@ def _initialise_log_alerts_handler(channel_id: str, channel_name: str) \
                 channel_name, channel_id,
                 handler_logger.getChild(LogChannel.__name__), alerts_logger)
 
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
             log_alerts_handler = LogAlertsHandler(
-                handler_display_name, handler_logger, env.RABBIT_IP,
-                log_channel)
+                handler_display_name, handler_logger, rabbitmq, log_channel)
             log_and_print("Successfully initialised {}".format(
                 handler_display_name), handler_logger)
             break

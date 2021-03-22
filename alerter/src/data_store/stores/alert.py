@@ -5,15 +5,14 @@ from typing import Dict
 
 import pika.exceptions
 
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.data_store.redis.store_keys import Keys
 from src.data_store.mongo.mongo_api import MongoApi
+from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
-from src.utils.exceptions import (ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
+from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
 class AlertStore(Store):

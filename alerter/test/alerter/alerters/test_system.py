@@ -7,6 +7,7 @@ from queue import Queue
 from unittest import mock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
 
 from src.alerter.alerters.system import SystemAlerter
@@ -419,7 +420,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
             self.test_system_alerter.rabbitmq.exchange_declare(
-                    ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, 'topic', False, True, False, False)
         except Exception as e:
             print("Setup failed: {}".format(e))
 
@@ -4769,7 +4770,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_system_alerter.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_system_alerter.rabbitmq.exchange_delete(
+                HEALTH_CHECK_EXCHANGE)
             self.test_system_alerter.rabbitmq.disconnect()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -4932,7 +4934,7 @@ class TestSystemAlerter(unittest.TestCase):
                 'component_name': self.alerter_name,
                 'is_alive': True,
                 'timestamp': datetime.datetime(2012, 1, 1).timestamp()
-            }                             
+            }
             mock_send_heartbeat.assert_called_with(heartbeat_test)
         except Exception as e:
             self.fail("Test failed: {}".format(e))

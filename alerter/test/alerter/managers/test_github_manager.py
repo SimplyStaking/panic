@@ -78,7 +78,6 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
-            self.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
             print("Test failed: {}".format(e))
@@ -300,21 +299,6 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
 
-            # Give time for the processes to start
-            time.sleep(1)
-
-            self.test_manager.alerter_process_dict[
-                GITHUB_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
-
-            # Time for processes to terminate
-            time.sleep(1)
-
-            self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
@@ -353,7 +337,6 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(expected_output, json.loads(body))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
 
     @freeze_time("2012-01-01")
     @mock.patch.object(RabbitMQApi, "basic_ack")

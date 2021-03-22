@@ -1,12 +1,12 @@
 import logging
-import time
 import unittest
 from datetime import timedelta
 from time import sleep
 from unittest.mock import patch
 
 from redis import ConnectionError as RedisConnectionError, DataError, \
-                                      AuthenticationError, ResponseError
+    AuthenticationError, ResponseError
+
 from src.data_store.redis.redis_api import RedisApi
 from src.utils import env
 
@@ -405,9 +405,9 @@ class TestRedisApiWithRedisOnline(unittest.TestCase):
             self.key2: self.val2
         })
         self.assertEqual(self.redis.hget(self.hash_name, self.key1),
-                                         self.val1_bytes)
+                         self.val1_bytes)
         self.assertEqual(self.redis.hget(self.hash_name, self.key2),
-                                         self.val2_bytes)
+                         self.val2_bytes)
 
     @patch(REDIS_RECENTLY_DOWN_FUNCTION, return_value=True)
     def test_hset_multiple_returns_none_and_nothing_set_if_redis_down(self, _):
@@ -746,7 +746,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         key_with_namespace = self.namespace + ':' + self.some_key
 
         self.assertEqual(self.some_key, self.redis._remove_namespace(
-                         key_with_namespace))
+            key_with_namespace))
 
     def test_add_namespace_adds_nothing_if_already_added_namespace(self):
         key_with_namespace = self.namespace + ':' + self.some_key
@@ -756,7 +756,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
 
     def test_remove_namespace_removes_nothing_if_no_namespace(self):
         self.assertEqual(self.some_key, self.redis._remove_namespace(
-                         self.some_key))
+            self.some_key))
 
     def test_set_unsafe_throws_connection_exception(self):
         self.assertRaises(RedisConnectionError, self.redis.set_unsafe,
@@ -877,7 +877,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         default = 123456
         self.assertEqual(
             self.redis.hget_int(self.hash_name, self.key, default=default),
-                                default)
+            default)
 
     def test_get_bool_returns_none_if_no_default_specified(self):
         self.assertIsNone(self.redis.get_bool(self.key))
@@ -894,7 +894,7 @@ class TestRedisApiWithRedisOffline(unittest.TestCase):
         default = True
         self.assertEqual(
             self.redis.hget_bool(self.hash_name, self.key, default=default),
-                                 default)
+            default)
 
     def test_exists_returns_false(self):
         self.assertFalse(self.redis.exists(self.key))
@@ -1033,7 +1033,8 @@ class TestRedisNamespaceWithRedisOnline(unittest.TestCase):
         self.redis.set_unsafe(self.key1, self.val1)
 
         self.assertNotEqual(
-            self.redis_different_namespace.get_unsafe(self.key1), self.val1_bytes)
+            self.redis_different_namespace.get_unsafe(self.key1),
+            self.val1_bytes)
 
 
 class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
@@ -1045,7 +1046,7 @@ class TestRedisApiLiveAndDownFeaturesWithRedisOffline(unittest.TestCase):
         self.host = 'dummyhost'
         self.port = 6379
         self.live_check_time_interval = timedelta(seconds=3)
-        self.live_check_time_interval_with_error_margin = timedelta(seconds=3.5)
+        self.live_check_time_interval_with_error_margin = timedelta(seconds=4)
         self.redis = RedisApi(self.dummy_logger, self.db, self.host, self.port,
                               live_check_time_interval=
                               self.live_check_time_interval)

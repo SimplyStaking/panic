@@ -1,11 +1,8 @@
-import copy
 import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
-from queue import Queue
-from typing import Union, Dict
 from unittest import mock
 from unittest.mock import call
 
@@ -14,20 +11,17 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.data_store.redis.redis_api import RedisApi
 from src.data_store.mongo.mongo_api import MongoApi
-from src.message_broker.rabbitmq import RabbitMQApi
+from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
-
 from src.data_store.stores.alert import AlertStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
-from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
+from src.utils.exceptions import (PANICException)
+from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
@@ -52,9 +46,8 @@ class TestAlertStore(unittest.TestCase):
         self.mongo_port = env.DB_PORT
 
         self.mongo = MongoApi(logger=self.dummy_logger.getChild(
-                                  MongoApi.__name__),
-                              db_name=self.mongo_db, host=self.mongo_ip,
-                              port=self.mongo_port)
+            MongoApi.__name__), db_name=self.mongo_db, host=self.mongo_ip,
+            port=self.mongo_port)
 
         self.redis_db = env.REDIS_DB
         self.redis_host = env.REDIS_IP
@@ -186,6 +179,7 @@ class TestAlertStore(unittest.TestCase):
         self.redis = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, str(self.test_store))
@@ -202,14 +196,14 @@ class TestAlertStore(unittest.TestCase):
     def test_mongo_port_property_returns_mongo_port_correctly(self) -> None:
         self.assertEqual(self.mongo_port, self.test_store.mongo_port)
 
-    def test_mongo_property_returns_mongo_when_(self) -> None:
+    def test_mongo_property_returns_mongo(self) -> None:
         self.assertEqual(type(self.mongo), type(self.test_store.mongo))
 
     def test_redis_property_returns_redis_correctly(self) -> None:
         self.assertEqual(type(self.redis), type(self.test_store.redis))
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-          self) -> None:
+            self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
@@ -270,7 +264,6 @@ class TestAlertStore(unittest.TestCase):
                 autospec=True)
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
-        self.rabbitmq.connect()
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -407,9 +400,9 @@ class TestAlertStore(unittest.TestCase):
         mock_hset.assert_called_once()
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(MongoApi, "update_one")
@@ -443,9 +436,9 @@ class TestAlertStore(unittest.TestCase):
         mock_update_one.assert_has_calls([call_1])
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(RedisApi, "hset")
@@ -464,9 +457,9 @@ class TestAlertStore(unittest.TestCase):
         mock_hset.assert_has_calls([call_1])
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
@@ -528,9 +521,9 @@ class TestAlertStore(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
@@ -577,9 +570,9 @@ class TestAlertStore(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     def test_process_mongo_store_mongo_stores_correctly(
             self, mock_system_data) -> None:
@@ -590,32 +583,32 @@ class TestAlertStore(unittest.TestCase):
         documents = self.mongo.get_all(data['parent_id'])
         document = documents[0]
         expected = [
-                'alert',
-                1,
-                str(data['origin_id']),
-                str(data['alert_code']['name']),
-                str(data['severity']),
-                str(data['metric']),
-                str(data['message']),
-                str(data['timestamp'])
-            ]
+            'alert',
+            1,
+            str(data['origin_id']),
+            str(data['alert_code']['name']),
+            str(data['severity']),
+            str(data['metric']),
+            str(data['message']),
+            str(data['timestamp'])
+        ]
         actual = [
-                document['doc_type'],
-                document['n_alerts'],
-                document['alerts'][0]['origin'],
-                document['alerts'][0]['alert_name'],
-                document['alerts'][0]['severity'],
-                document['alerts'][0]['metric'],
-                document['alerts'][0]['message'],
-                document['alerts'][0]['timestamp']
-            ]
+            document['doc_type'],
+            document['n_alerts'],
+            document['alerts'][0]['origin'],
+            document['alerts'][0]['alert_name'],
+            document['alerts'][0]['severity'],
+            document['alerts'][0]['metric'],
+            document['alerts'][0]['message'],
+            document['alerts'][0]['timestamp']
+        ]
 
         self.assertListEqual(expected, actual)
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     def test_process_redis_store_redis_stores_correctly(
             self, mock_system_data) -> None:
@@ -635,9 +628,9 @@ class TestAlertStore(unittest.TestCase):
         self.assertEqual(expected_data, json.loads(stored_data))
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)
@@ -673,32 +666,32 @@ class TestAlertStore(unittest.TestCase):
             documents = self.mongo.get_all(data['parent_id'])
             document = documents[0]
             expected = [
-                    'alert',
-                    1,
-                    str(data['origin_id']),
-                    str(data['alert_code']['name']),
-                    str(data['severity']),
-                    str(data['message']),
-                    str(data['timestamp'])
-                ]
+                'alert',
+                1,
+                str(data['origin_id']),
+                str(data['alert_code']['name']),
+                str(data['severity']),
+                str(data['message']),
+                str(data['timestamp'])
+            ]
             actual = [
-                    document['doc_type'],
-                    document['n_alerts'],
-                    document['alerts'][0]['origin'],
-                    document['alerts'][0]['alert_name'],
-                    document['alerts'][0]['severity'],
-                    document['alerts'][0]['message'],
-                    document['alerts'][0]['timestamp']
-                ]
+                document['doc_type'],
+                document['n_alerts'],
+                document['alerts'][0]['origin'],
+                document['alerts'][0]['alert_name'],
+                document['alerts'][0]['severity'],
+                document['alerts'][0]['message'],
+                document['alerts'][0]['timestamp']
+            ]
 
             self.assertListEqual(expected, actual)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.alert_data_1", ),
-        ("self.alert_data_2", ),
-        ("self.alert_data_3", ),
+        ("self.alert_data_1",),
+        ("self.alert_data_2",),
+        ("self.alert_data_3",),
     ])
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)

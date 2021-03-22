@@ -11,8 +11,10 @@ from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code import MetricCode
 from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.handlers import ChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -21,19 +23,19 @@ from src.utils.logging import log_and_print
 
 class PagerDutyAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, queue_size: int,
-                 pagerduty_channel: PagerDutyChannel, max_attempts: int = 6,
+                 rabbitmq: RabbitMQApi, pagerduty_channel: PagerDutyChannel,
+                 queue_size: int = 0, max_attempts: int = 6,
                  alert_validity_threshold: int = 600):
-        super().__init__(handler_name, logger, rabbit_ip)
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._pagerduty_channel = pagerduty_channel
         self._alerts_queue = Queue(queue_size)
         self._max_attempts = max_attempts
         self._alert_validity_threshold = alert_validity_threshold
-        self._pd_alerts_handler_queue = \
+        self._pagerduty_alerts_handler_queue = \
             "pager_duty_{}_alerts_handler_queue".format(
                 self._pagerduty_channel.channel_id)
-        self._pager_duty_routing_key = "channel.{}".format(
+        self._pagerduty_channel_routing_key = "channel.{}".format(
             self.pagerduty_channel.channel_id)
 
     @property
@@ -62,34 +64,39 @@ class PagerDutyAlertsHandler(ChannelHandler):
         processing_error = False
         alert = None
         try:
-            # We check that everything is in the alert dict
             alert_code = alert_json['alert_code']
             alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
+            metric_code_enum = MetricCode.get_enum_by_value(
+                alert_json['metric'])
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
-                          alert_json['parent_id'], alert_json['origin_id'])
+                          alert_json['parent_id'], alert_json['origin_id'],
+                          metric_code_enum)
+
             self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
             self.logger.error("Error when processing %s", alert_json)
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-        # Place the data on the alerts queue if there were no processing errors.
-        # This is done after acknowledging the data, so that if acknowledgement
-        # fails, the data is processed again and we do not have duplication of
-        # data in the queue
+        # Place the alert on the alerts queue if there were no processing
+        # errors. This is done after acknowledging the alert, so that if
+        # acknowledgement fails, the alert is processed again and we do not have
+        # duplication of alerts in the queue
         if not processing_error:
             self._place_alert_on_queue(alert)
 
-        # Send any data waiting in the queue, if any
+        # Send any alerts waiting in the queue, if any
         try:
-            self._send_data()
+            self._send_alerts()
         except Exception as e:
             raise e
 
+        # By this condition we are sending heartbeats only when there were no
+        # processing errors and when all alerts have been sent successfully.
         if self.alerts_queue.empty() and not processing_error:
             try:
                 heartbeat = {
@@ -110,14 +117,14 @@ class PagerDutyAlertsHandler(ChannelHandler):
                           alert.alert_code.name)
 
         # Place the alert on the alerts queue. If the queue is full, remove old
-        # data first.
+        # alerts first.
         if self._alerts_queue.full():
             self._alerts_queue.get()
         self._alerts_queue.put(alert)
 
         self.logger.debug("%s added to the alerts queue", alert.alert_code.name)
 
-    def _send_data(self) -> None:
+    def _send_alerts(self) -> None:
         empty = True
         if not self._alerts_queue.empty():
             empty = False
@@ -171,21 +178,24 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self.logger.info("Creating %s exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", self._pd_alerts_handler_queue)
-        self.rabbitmq.queue_declare(self._pd_alerts_handler_queue, False,
+        self.logger.info("Creating queue '%s'",
+                         self._pagerduty_alerts_handler_queue)
+        self.rabbitmq.queue_declare(self._pagerduty_alerts_handler_queue, False,
                                     True, False, False)
 
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                         self._pager_duty_routing_key)
-        self.rabbitmq.queue_bind(self._pd_alerts_handler_queue, ALERT_EXCHANGE,
-                                 self._pager_duty_routing_key)
+                         "'%s'", self._pagerduty_alerts_handler_queue,
+                         ALERT_EXCHANGE,
+                         self._pagerduty_channel_routing_key)
+        self.rabbitmq.queue_bind(self._pagerduty_alerts_handler_queue,
+                                 ALERT_EXCHANGE,
+                                 self._pagerduty_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self._alerts_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(self._pd_alerts_handler_queue,
+        self.rabbitmq.basic_consume(self._pagerduty_alerts_handler_queue,
                                     self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
@@ -195,16 +205,13 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
-
     def start(self) -> None:
         self._initialise_rabbitmq()
         while True:
             try:
-                # Before listening for new alerts, send the data waiting to be
+                # Before listening for new alerts, send the alerts waiting to be
                 # sent in the alerts queue.
-                self._send_data()
+                self._send_alerts()
                 self._listen_for_data()
             except (AMQPConnectionError, AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -222,3 +229,11 @@ class PagerDutyAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because with respect to
+        rabbit, the opsgenie alerts handler only sends heartbeats. Alerts are
+        sent through the third party channel.
+        """
+        pass
