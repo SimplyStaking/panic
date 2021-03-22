@@ -1,36 +1,5 @@
----
-  parserOptions:
-    sourceType: module
-    ecmaFeatures:
-      jsx: true
-
-  extends: [airbnb]
-
-  env:
-    amd: true
-    browser: true
-    es6: true
-    jquery: true
-    node: true
-
-  # http://eslint.org/docs/rules/
-  rules:
-
-    # Variables
-    no-unused-vars:
-      - error
-      - vars: all
-        args: after-used
-        argsIgnorePattern: _
-        ignoreRestSiblings: true
-
-    no-underscore-dangle: off
-    import/extensions: off
-    import/no-unresolved: off
-
-    # React Specific
-    react/jsx-filename-extension:
-      - error
-      - extensions:
-          - .jsx
-          - .js
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["plugin:@typescript-eslint/recommended"]
+}
