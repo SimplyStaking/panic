@@ -1,13 +1,13 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict
 
 import pika.exceptions
 
-from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS)

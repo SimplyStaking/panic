@@ -81,9 +81,9 @@ class GithubAlerter(Alerter):
 
                 if self._cannot_access_github_page:
                     alert = GitHubPageNowAccessibleAlert(
-                                meta['repo_name'], 'INFO',
-                                meta['last_monitored'], meta['repo_parent_id'],
-                                meta['repo_id'])
+                        meta['repo_name'], 'INFO',
+                        meta['last_monitored'], meta['repo_parent_id'],
+                        meta['repo_id'])
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)

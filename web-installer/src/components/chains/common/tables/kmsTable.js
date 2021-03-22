@@ -18,7 +18,7 @@ const KmsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="simple table" style={{marginBottom: '150px'}}>
+      <Table className="table" aria-label="simple table" style={{ marginBottom: '150px' }}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>

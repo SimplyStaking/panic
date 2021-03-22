@@ -36,8 +36,12 @@ function getConfigPaths() {
 }
 
 function getConfig(configType, fileName, chainName, baseChain) {
-  return fetchData('/server/config', {configType, fileName, chainName,
-    baseChain})
+  return fetchData('/server/config', {
+    configType,
+    fileName,
+    chainName,
+    baseChain,
+  });
 }
 
 function sendConfig(configType, fileName, chainName, baseChain, config) {

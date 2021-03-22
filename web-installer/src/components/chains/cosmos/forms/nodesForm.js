@@ -23,7 +23,6 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 
-
 const NodesForm = ({
   errors,
   values,
@@ -178,8 +177,8 @@ const NodesForm = ({
               </Grid>
               <Grid item xs={2}>
                 <PingNodeExporter
-                  disabled={true}
-                  exporterUrl={""}
+                  disabled
+                  exporterUrl=""
                 />
               </Grid>
               <Grid item xs={2}>
@@ -238,10 +237,12 @@ const NodesForm = ({
               </Grid>
               <Grid item xs={5}>
                 <TextField
+                  error={errors.exporter_url}
                   value={values.exporter_url}
                   type="text"
                   name="exporter_url"
                   placeholder={data.nodeForm.exporterUrlHolder}
+                  helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
                   inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
@@ -430,7 +431,7 @@ const NodesForm = ({
                   </Button>
                 </Grid>
               </Grid>
-              <Grid item xs={12} style={{marginBottom: '150px'}} />
+              <Grid item xs={12} style={{ marginBottom: '150px' }} />
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
@@ -463,6 +464,7 @@ const NodesForm = ({
 NodesForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     name: PropTypes.string,
+    exporter_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({

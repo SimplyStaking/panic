@@ -21,8 +21,9 @@ from src.monitors.managers.github import (GitHubMonitorsManager,
                                           GH_MON_MAN_INPUT_ROUTING_KEY)
 from src.monitors.starters import start_github_monitor
 from src.utils import env
-from src.utils.constants import GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
-    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants import (GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn

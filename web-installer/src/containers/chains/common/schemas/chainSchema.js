@@ -4,8 +4,8 @@ const ChainNameSchema = (props) => Yup.object().shape({
   chain_name: Yup.string()
     .test('unique-chain-name', 'Chain name is not unique.', (value) => {
       const { config, config2, currentChain } = props;
-      
-      if(currentChain){
+
+      if (currentChain) {
         if (config.byId[currentChain].chain_name === value) {
           return true;
         }

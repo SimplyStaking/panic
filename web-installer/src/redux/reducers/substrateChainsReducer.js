@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import { combineReducers } from 'redux';
 import { INFO, WARNING, CRITICAL } from 'constants/constants';
@@ -84,8 +86,7 @@ const substrateTimeWindowAlerts = {
     4: {
       name: 'No change in best block height above threshold',
       identifier: 'no_change_in_best_block_height',
-      description:
-        "There hasn't been a change in best block height after some time.",
+      description: "There hasn't been a change in best block height after some time.",
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -104,9 +105,7 @@ const substrateTimeWindowAlerts = {
     5: {
       name: 'No change in finalized block height above threshold',
       identifier: 'no_change_in_finalized_block_height',
-      description:
-        "There hasn't been a change in finalized block height after"
-        + ' some time.',
+      description: "There hasn't been a change in finalized block height after some time.",
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -132,8 +131,7 @@ const substrateThresholdAlerts = {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
-        'The Node Exporter URL is unreachable therefore the '
-        + 'system is declared to be down.',
+        'The Node Exporter URL is unreachable therefore the system is declared to be down.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -171,9 +169,7 @@ const substrateThresholdAlerts = {
     8: {
       name: 'Mempool Size',
       identifier: 'mempool_size',
-      description:
-        'Alerts will be sent based on how many transactions are in '
-        + 'the mempool.',
+      description: 'Alerts will be sent based on how many transactions are in the mempool.',
       adornment: 'Megabytes',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -191,8 +187,7 @@ const substrateThresholdAlerts = {
     9: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
-      description:
-        'Open File Descriptors alerted on based on percentage usage.',
+      description: 'Open File Descriptors alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -305,8 +300,7 @@ const substrateSeverityAlerts = {
       name: 'Validator is not active in this session',
       identifier: 'validator_not_active_in_session',
       description:
-        'Occurs when your validator is not participating in the '
-        + 'current consensus round.',
+        'Occurs when your validator is not participating in the current consensus round.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
@@ -339,8 +333,7 @@ const substrateSeverityAlerts = {
       name: 'Validator not authoring',
       identifier: 'validator_not_authoring',
       description:
-        'The Validator did not author a block and sent no heartbeats'
-        + ' in the previous session',
+        'The Validator did not author a block and sent no heartbeats in the previous session',
       severity: WARNING,
       parent_id: '',
       enabled: false,
@@ -372,8 +365,7 @@ const substrateSeverityAlerts = {
     25: {
       name: 'Delegated balance increase',
       identifier: 'delegated_balance_increase',
-      description:
-        'The amount of tokens delegated to your validator has increased.',
+      description: 'The amount of tokens delegated to your validator has increased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -381,8 +373,7 @@ const substrateSeverityAlerts = {
     26: {
       name: 'Delegated balance decrease',
       identifier: 'delegated_balance_decrease',
-      description:
-        'The amount of tokens delegated to your validator has decreased.',
+      description: 'The amount of tokens delegated to your validator has decreased.',
       severity: INFO,
       parent_id: '',
       enabled: false,
@@ -636,9 +627,7 @@ function substrateChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          nodes: state[action.payload.parent_id].nodes.concat(
-            action.payload.id,
-          ),
+          nodes: state[action.payload.parent_id].nodes.concat(action.payload.id),
         },
       };
     case LOAD_NODE_SUBSTRATE:
@@ -650,46 +639,24 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
-      if (
-        !state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')
-      ) {
-        state[
-          action.payload.node.parent_id
-        ].repeatAlerts = substrateRepeatAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')) {
+        state[action.payload.node.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
-      if (
-        !state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')
-      ) {
-        state[
-          action.payload.node.parent_id
-        ].timeWindowAlerts = substrateTimeWindowAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[action.payload.node.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (
-        !state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')
-      ) {
-        state[
-          action.payload.node.parent_id
-        ].thresholdAlerts = substrateThresholdAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[action.payload.node.parent_id].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (
-        !state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')
-      ) {
-        state[
-          action.payload.node.parent_id
-        ].severityAlerts = substrateSeverityAlerts;
+      if (!state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')) {
+        state[action.payload.node.parent_id].severityAlerts = substrateSeverityAlerts;
       }
-      if (
-        !state[action.payload.node.parent_id].nodes.includes(
-          action.payload.node.id,
-        )
-      ) {
+      if (!state[action.payload.node.parent_id].nodes.includes(action.payload.node.id)) {
         return {
           ...state,
           [action.payload.node.parent_id]: {
             ...state[action.payload.node.parent_id],
-            nodes: state[action.payload.node.parent_id].nodes.concat(
-              action.payload.node.id,
-            ),
+            nodes: state[action.payload.node.parent_id].nodes.concat(action.payload.node.id),
           },
         };
       }
@@ -718,62 +685,38 @@ function substrateChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(
-            action.payload.id,
-          ),
+          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
         },
       };
     case LOAD_REPOSITORY_SUBSTRATE:
       if (!state.hasOwnProperty(action.payload.repo.parent_id)) {
         state[action.payload.repo.parent_id] = {};
       }
-      if (
-        !state[action.payload.repo.parent_id].hasOwnProperty('repositories')
-      ) {
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('repositories')) {
         state[action.payload.repo.parent_id].repositories = [];
         state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
       }
-      if (
-        !state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')
-      ) {
-        state[
-          action.payload.repo.parent_id
-        ].repeatAlerts = substrateRepeatAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')) {
+        state[action.payload.repo.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
-      if (
-        !state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')
-      ) {
-        state[
-          action.payload.repo.parent_id
-        ].timeWindowAlerts = substrateTimeWindowAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')) {
+        state[action.payload.repo.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
       }
-      if (
-        !state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')
-      ) {
-        state[
-          action.payload.repo.parent_id
-        ].thresholdAlerts = substrateThresholdAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')) {
+        state[action.payload.repo.parent_id].thresholdAlerts = substrateThresholdAlerts;
       }
-      if (
-        !state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')
-      ) {
-        state[
-          action.payload.repo.parent_id
-        ].severityAlerts = substrateSeverityAlerts;
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')) {
+        state[action.payload.repo.parent_id].severityAlerts = substrateSeverityAlerts;
       }
-      if (
-        !state[action.payload.repo.parent_id].repositories.includes(
-          action.payload.repo.id,
-        )
-      ) {
+      if (!state[action.payload.repo.parent_id].repositories.includes(action.payload.repo.id)) {
         return {
           ...state,
           [action.payload.repo.parent_id]: {
             ...state[action.payload.repo.parent_id],
-            repositories: state[
-              action.payload.repo.parent_id
-            ].repositories.concat(action.payload.repo.id),
+            repositories: state[action.payload.repo.parent_id].repositories.concat(
+              action.payload.repo.id,
+            ),
           },
         };
       }
@@ -823,19 +766,13 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[
-          action.payload.parent_id
-        ].timeWindowAlerts = substrateTimeWindowAlerts;
+        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[
-          action.payload.parent_id
-        ].thresholdAlerts = substrateThresholdAlerts;
+        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[
-          action.payload.parent_id
-        ].severityAlerts = substrateSeverityAlerts;
+        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -876,14 +813,10 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[
-          action.payload.parent_id
-        ].thresholdAlerts = substrateThresholdAlerts;
+        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[
-          action.payload.parent_id
-        ].severityAlerts = substrateSeverityAlerts;
+        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -924,14 +857,10 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[
-          action.payload.parent_id
-        ].timeWindowAlerts = substrateTimeWindowAlerts;
+        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[
-          action.payload.parent_id
-        ].severityAlerts = substrateSeverityAlerts;
+        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
       }
       return {
         ...state,
@@ -972,14 +901,10 @@ function substrateChainsById(state = {}, action) {
         state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[
-          action.payload.parent_id
-        ].timeWindowAlerts = substrateTimeWindowAlerts;
+        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
       }
       if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[
-          action.payload.parent_id
-        ].thresholdAlerts = substrateThresholdAlerts;
+        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
       }
       return {
         ...state,

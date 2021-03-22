@@ -43,6 +43,16 @@ SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
 STORE_CONFIGS_QUEUE_NAME = 'store_configs_queue'
 STORE_CONFIGS_ROUTING_KEY_CHAINS = '#'
 
+CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
+
+LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
+
+TCH_INPUT_ROUTING_KEY = 'ping'
+
+CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
+CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
+CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10
 RE_INITIALISE_SLEEPING_PERIOD = 10
@@ -72,8 +82,8 @@ EMAIL_HTML_TEMPLATE = """<style type="text/css">
     <td>{message}</td>
   </tr>
   <tr>
-    <th>Timestamp:</th>
-    <td>{timestamp}</td>
+    <th>Triggered At:</th>
+    <td>{date_time}</td>
   </tr>
   <tr>
     <th>Parent ID:</th>
@@ -95,7 +105,7 @@ An alert was generated with the following details:
 Alert Code: {alert_code}
 Severity: {severity}
 Message: {message}
-Timestamp: {timestamp}
+Triggered At: {date_time}
 Parent ID: {parent_id}
 Origin ID: {origin_id}
 """
@@ -123,6 +133,7 @@ HEALTH_CHECKER_MANAGER_NAME = 'Health Checker Manager'
 CONSOLE_CHANNEL_NAME = 'CONSOLE'
 CONSOLE_CHANNEL_ID = 'CONSOLE'
 LOG_CHANNEL_NAME = 'LOG'
+TELEGRAM_COMMAND_HANDLERS_NAME = 'Telegram Command Handlers'
 LOG_CHANNEL_ID = 'LOG'
 SYSTEM_ALERTER_NAME_TEMPLATE = 'System alerter ({})'
 GITHUB_MONITOR_NAME_TEMPLATE = 'GitHub monitor ({})'

@@ -19,7 +19,7 @@ export default function AlertsSection() {
         )}
         color="default"
         icon="info_outline"
-        icon_color="#339900"
+        iconColor="#339900"
       />
       <SnackbarContent
         message={(
@@ -29,7 +29,7 @@ export default function AlertsSection() {
         )}
         color="default"
         icon={Warning}
-        icon_color="#EED202"
+        iconColor="#EED202"
       />
       <SnackbarContent
         message={(
@@ -39,7 +39,7 @@ export default function AlertsSection() {
         )}
         color="default"
         icon={NewReleasesIcon}
-        icon_color="#cc3300"
+        iconColor="#cc3300"
       />
       <SnackbarContent
         message={(
@@ -49,7 +49,7 @@ export default function AlertsSection() {
         )}
         color="default"
         icon={ErrorIcon}
-        icon_color="#000000"
+        iconColor="#000000"
       />
       <Clearfix />
     </div>

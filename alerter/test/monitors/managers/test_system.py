@@ -14,14 +14,16 @@ from freezegun import freeze_time
 
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.managers.system import SystemMonitorsManager, \
-    SYS_MON_MAN_INPUT_QUEUE, SYS_MON_MAN_INPUT_ROUTING_KEY, \
-    SYS_MON_MAN_ROUTING_KEY_CHAINS, SYS_MON_MAN_ROUTING_KEY_GEN
+from src.monitors.managers.system import (SystemMonitorsManager,
+                                          SYS_MON_MAN_INPUT_QUEUE,
+                                          SYS_MON_MAN_INPUT_ROUTING_KEY,
+                                          SYS_MON_MAN_ROUTING_KEY_CHAINS,
+                                          SYS_MON_MAN_ROUTING_KEY_GEN)
 from src.monitors.starters import start_system_monitor
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, \
-    CONFIG_EXCHANGE, SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
-    SYSTEM_MONITOR_NAME_TEMPLATE
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYSTEM_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn

@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import BLACKLIST from 'constants/constants';
 
 const NodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
@@ -30,6 +31,14 @@ const NodeSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Node name is required.'),
+  exporter_url: Yup.string()
+    .test('localhost', '127.0.0.1 is not allowed for security reasons.',
+      (value) => {
+        if (BLACKLIST.find((a) => value.includes(a))) {
+          return false;
+        }
+        return true;
+      }),
 });
 
 export default NodeSchema;

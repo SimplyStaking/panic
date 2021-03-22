@@ -30,7 +30,7 @@ class TestRabbitMQApi(TestCase):
         self.rabbit_logger.disabled = True
         self.username = ''
         self.password = ''
-        self.connection_check_time_interval = timedelta(seconds=10)
+        self.connection_check_time_interval = timedelta(seconds=1)
         self.rabbit = RabbitMQApi(
             self.rabbit_logger, self.rabbit_ip, self.rabbit_port, self.username,
             self.password, self.connection_check_time_interval

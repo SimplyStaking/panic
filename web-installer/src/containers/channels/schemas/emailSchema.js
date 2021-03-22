@@ -1,3 +1,4 @@
+/* eslint-disable func-names */
 import * as Yup from 'yup';
 
 const EmailSchema = (props) => Yup.object().shape({

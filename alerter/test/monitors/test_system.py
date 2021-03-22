@@ -19,9 +19,10 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
 from src.utils import env
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import PANICException, SystemIsDownException, \
-    DataReadingException, InvalidUrlException, MetricNotFoundException, \
-    MessageWasNotDeliveredException
+from src.utils.exceptions import (PANICException, SystemIsDownException,
+                                  DataReadingException, InvalidUrlException,
+                                  MetricNotFoundException,
+                                  MessageWasNotDeliveredException)
 
 
 class TestSystemMonitor(unittest.TestCase):
