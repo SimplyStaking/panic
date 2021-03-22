@@ -9,6 +9,7 @@
 
 # dependencies
 web-installer/node_modules
+ui/node_modules
 # IDE
 .idea
 
