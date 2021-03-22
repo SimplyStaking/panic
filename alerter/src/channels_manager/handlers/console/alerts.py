@@ -53,8 +53,7 @@ class ConsoleAlertsHandler(ChannelHandler):
                                  ALERT_EXCHANGE,
                                  CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 
-        prefetch_count = 200
-        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self.rabbitmq.basic_qos(prefetch_count=200)
         self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(self._console_alerts_handler_queue,
                                     self._process_alert, False, False, None)
