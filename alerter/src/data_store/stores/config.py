@@ -10,7 +10,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_ROUTING_KEY_CHAINS)
+                                 STORE_CONFIGS_ROUTING_KEY_CHAINS,
+                                 GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 
@@ -105,6 +106,7 @@ class ConfigStore(Store):
 
     def _process_redis_store(self, routing_key: str, data: Dict) -> None:
         if data:
+            # Store all the config under the routing_key
             self.logger.debug("Saving for %s the data=%s.", routing_key, data)
             self.redis.set(Keys.get_config(routing_key), json.dumps(data))
         else:
@@ -112,3 +114,44 @@ class ConfigStore(Store):
                               routing_key)
             if self.redis.exists(Keys.get_config(routing_key)):
                 self.redis.remove(Keys.get_config(routing_key))
+
+    def _process_redis_store_ids(self, routing_key: str, data: Dict) -> None:
+        temp_data = {}
+        monitored_list = []
+        not_monitored_list = []
+        key = ''
+        if data:
+            parsed_routing_key = routing_key.split('.')
+            if parsed_routing_key[0] is GENERAL:
+                if parsed_routing_key[1] is REPOS_CONFIG:
+                    # Get a list of all the REPO ids from the config
+                    for _, repo_details in data.items():
+                        if bool(repo_details['monitor_repo']):
+                            monitored_list.append(repo_details['id'])
+                        else:
+                            not_monitored_list.append(repo_details['id'])
+                    # Load the currently saved data from REDIS
+                    loaded_data = json.loads(self.redis.get(
+                        Keys.get_chain_info(routing_key)).decode('utf-8'))
+                    if loaded_data:
+                        temp_data = loaded_data
+                        temp_data['monitored']['repos'] = monitored_list
+                        temp_data['not_monitored']['repos'] = not_monitored_list
+                    else:
+                        temp_data = {
+                            'general': 'GLOBAL',
+                            'monitored': {
+                                'repos': monitored_list,
+                                'systems': []
+                            },
+                            'not_monitored': {
+                                'repos': not_monitored_list,
+                                'systems': []
+                            }
+                        }
+            self.redis.set()
+        else:
+            print("BREAK")
+
+    # {regen: id, monitored{ nodes[], repos[] , systems[]},not_monitored:
+    # { nodes: [], repos:{}, systems:{}}
