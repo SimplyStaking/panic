@@ -974,7 +974,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 raise e
 
     # If termination signals are received, terminate all child process and
-    # close the connection with rabbit mq before exiting
+    # close the connection with rabbitmq before exiting
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print(
             "{} is terminating. Connections with RabbitMQ will be closed, and "

@@ -98,6 +98,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         self.test_telegram_bot_api = None
         self.test_telegram_channel = None
         self.test_rabbitmq = None
+        self.test_redis.delete_all_unsafe()
         self.test_redis = None
         self.test_mongo = None
         self.test_telegram_command_handlers = None
