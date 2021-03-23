@@ -180,6 +180,10 @@ class Keys:
         return Keys._as_prefix(_key_alert_invalid_url) + origin_id
 
     @staticmethod
+    def get_alert_metric_not_found(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_metric_not_found) + origin_id
+
+    @staticmethod
     def get_alert_github_release(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_github_release) + origin_id
 

@@ -79,6 +79,7 @@ class ConfigStore(Store):
         processing_error = False
         try:
             self._process_redis_store(method.routing_key, config_data)
+            self._process_redis_store_ids(method.routing_key, config_data)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing %s", config_data)
             self.logger.exception(e)
@@ -120,19 +121,21 @@ class ConfigStore(Store):
         monitored_list = []
         not_monitored_list = []
         key = ''
+        parsed_routing_key = routing_key.split('.')
         if data:
-            parsed_routing_key = routing_key.split('.')
             if parsed_routing_key[0] is GENERAL:
                 if parsed_routing_key[1] is REPOS_CONFIG:
                     # Get a list of all the REPO ids from the config
-                    for _, repo_details in data.items():
-                        if bool(repo_details['monitor_repo']):
-                            monitored_list.append(repo_details['id'])
+                    for _, config_details in data.items():
+                        if bool(config_details['monitor_repo']):
+                            monitored_list.append(config_details['id'])
                         else:
-                            not_monitored_list.append(repo_details['id'])
+                            not_monitored_list.append(config_details['id'])
                     # Load the currently saved data from REDIS
                     loaded_data = json.loads(self.redis.get(
-                        Keys.get_chain_info(routing_key)).decode('utf-8'))
+                        Keys.get_chain_info(parsed_routing_key[0])).decode(
+                            'utf-8'))
+                    # These can be overwritten as it's only for general
                     if loaded_data:
                         temp_data = loaded_data
                         temp_data['monitored']['repos'] = monitored_list
@@ -149,7 +152,45 @@ class ConfigStore(Store):
                                 'systems': []
                             }
                         }
-            self.redis.set()
+                    self.redis.set(Keys.get_chain_info(parsed_routing_key[0]),
+                                   json.dumps(temp_data))
+                    print("SUCCESS REPOS")
+                    print(self.redis.get(Keys.get_chain_info(
+                        parsed_routing_key[0])))
+                elif parsed_routing_key[1] is SYSTEMS_CONFIG:
+                    # Get a list of all the System ids from the config
+                    for _, config_details in data.items():
+                        if bool(config_details['monitor_system']):
+                            monitored_list.append(config_details['id'])
+                        else:
+                            not_monitored_list.append(config_details['id'])
+                    # Load the currently saved data from REDIS
+                    loaded_data = json.loads(self.redis.get(
+                        Keys.get_chain_info(parsed_routing_key[0])).decode(
+                            'utf-8'))
+                    # These can be overwritten as it's only for general
+                    if loaded_data:
+                        temp_data = loaded_data
+                        temp_data['monitored']['systems'] = monitored_list
+                        temp_data['not_monitored']['systems'] = \
+                            not_monitored_list
+                    else:
+                        temp_data = {
+                            'general': 'GLOBAL',
+                            'monitored': {
+                                'repos': [],
+                                'systems': monitored_list
+                            },
+                            'not_monitored': {
+                                'repos': [],
+                                'systems': not_monitored_list
+                            }
+                        }
+                    self.redis.set(Keys.get_chain_info(parsed_routing_key[0]),
+                                   json.dumps(temp_data))
+                    print("SUCCESS SYSTEMS")
+                    print(self.redis.get(Keys.get_chain_info(
+                        parsed_routing_key[0])))
         else:
             print("BREAK")
 
