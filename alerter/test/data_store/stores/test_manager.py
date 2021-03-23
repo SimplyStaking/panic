@@ -255,11 +255,11 @@ class TestStoreManager(unittest.TestCase):
         new_alert_process.terminate()
         new_alert_process.join()
 
-        new_alert_process = self.test_store_manager._store_process_dict[
+        new_config_process = self.test_store_manager._store_process_dict[
             CONFIG_STORE_NAME]
-        self.assertTrue(new_alert_process.is_alive())
-        new_alert_process.terminate()
-        new_alert_process.join()
+        self.assertTrue(new_config_process.is_alive())
+        new_config_process.terminate()
+        new_config_process.join()
 
     @freeze_time("2012-01-01")
     @mock.patch("src.data_store.starters.create_logger")
@@ -565,10 +565,6 @@ class TestStoreManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
-            for store, process in \
-                    self.test_store_manager._store_process_dict.items():
-                process.terminate()
-                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -588,10 +584,6 @@ class TestStoreManager(unittest.TestCase):
 
             self.test_store_manager._process_ping(blocking_channel, method,
                                                   properties, body)
-            for store, process in \
-                    self.test_store_manager._store_process_dict.items():
-                process.terminate()
-                process.join()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
