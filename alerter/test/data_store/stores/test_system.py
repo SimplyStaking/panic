@@ -6,6 +6,7 @@ from datetime import timedelta
 from unittest import mock
 from unittest.mock import call
 
+import time
 import pika
 import pika.exceptions
 from freezegun import freeze_time
@@ -310,7 +311,7 @@ class TestSystemStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
-
+            time.sleep(1)
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
                 SYSTEM_STORE_INPUT_QUEUE, False, True, False, False)
