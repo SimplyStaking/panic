@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from src.alerter.alert_code import SystemAlertCode
-from src.alerter.metric_code import SystemMetricCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code import SystemMetricCode
 from src.utils.datetime import strfdelta
 
 

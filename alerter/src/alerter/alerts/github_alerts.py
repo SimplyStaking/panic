@@ -1,6 +1,6 @@
-from src.alerter.metric_code import GithubMetricCode
 from src.alerter.alert_code import GithubAlertCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code import GithubMetricCode
 
 
 class NewGitHubReleaseAlert(Alert):

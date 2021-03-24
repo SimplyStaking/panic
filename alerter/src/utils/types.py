@@ -28,7 +28,7 @@ DecreasedBelowThresholdSystemAlert = Union[
 
 class OpsgenieSeverities(Enum):
     CRITICAL = 'P1'
-    ERROR = 'P3'
+    ERROR = 'P4'
     WARNING = 'P3'
     INFO = 'P5'
 

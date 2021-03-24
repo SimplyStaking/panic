@@ -16,6 +16,7 @@ from src.alert_router.alert_router import (
     AlertRouter, _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME
 )
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -28,7 +29,6 @@ from test.utils.utils import (
     DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )
-from src.alerter.metric_code.github_metric_code import GithubMetricCode
 
 
 class TestAlertRouter(unittest.TestCase):
@@ -125,6 +125,7 @@ class TestAlertRouter(unittest.TestCase):
 
         disconnect_from_rabbit(self.rabbitmq)
         self.rabbitmq = None
+        self._test_alert_router = None
 
     def test_alert_router_initialised(self):
         self.assertIsNotNone(self._test_alert_router)
@@ -162,7 +163,7 @@ class TestAlertRouter(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(queue_to_check))
         finally:
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @parameterized.expand([
         (CONFIG_EXCHANGE,),
@@ -193,7 +194,7 @@ class TestAlertRouter(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(exchange_to_check))
         finally:
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -234,7 +235,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -307,7 +308,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -374,7 +375,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -441,7 +442,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -527,17 +528,18 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "extract_config", autospec=True)
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_config_multiple_channel_single_config_correct(
             self, mock_ack: MagicMock, mock_extract_config: MagicMock
     ):
-        def generate_extract_config_mocker(config: Dict[str, Dict[str, Any]]
-                                           ) -> Callable[..., Dict[str, Any]]:
+        def generate_extract_config_mocker(
+                config_dict: Dict[str, Dict[str, Any]]) \
+                -> Callable[..., Dict[str, Any]]:
             def extract_config_mocker(section, _) -> Dict[str, str]:
-                return config[section['id']]
+                return config_dict[section['id']]
 
             return extract_config_mocker
 
@@ -602,7 +604,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             # Clean before test finishes
             delete_exchange_if_exists(self.rabbitmq, CONFIG_EXCHANGE)
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @parameterized.expand([
         (
@@ -866,7 +868,7 @@ class TestAlertRouter(unittest.TestCase):
             mock_send_data.assert_called_once_with(self._test_alert_router)
             self.assertEqual(1, mock_send_data.call_count)
         finally:
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @parameterized.expand([
         ("error",), ("warning",), ("critical",), ("info",),
@@ -964,7 +966,7 @@ class TestAlertRouter(unittest.TestCase):
             mock_send_data.assert_called_once_with(self._test_alert_router)
             self.assertEqual(1, mock_send_data.call_count)
         finally:
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "_send_data", autospec=True)
     @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
@@ -1055,7 +1057,7 @@ class TestAlertRouter(unittest.TestCase):
             mock_send_data.assert_called_once_with(self._test_alert_router)
             self.assertEqual(1, mock_send_data.call_count)
         finally:
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "_send_data", autospec=True)
     @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
@@ -1144,7 +1146,7 @@ class TestAlertRouter(unittest.TestCase):
             mock_send_data.assert_called_once_with(self._test_alert_router)
             self.assertEqual(1, mock_send_data.call_count)
         finally:
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @mock.patch.object(AlertRouter, "_send_data", autospec=True)
     @mock.patch.object(AlertRouter, "_push_to_queue", autospec=True)
@@ -1198,7 +1200,7 @@ class TestAlertRouter(unittest.TestCase):
             mock_send_data.assert_called_once_with(self._test_alert_router)
             self.assertEqual(1, mock_send_data.call_count)
         finally:
-            self._test_alert_router.disconnect_from_rabbit()
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @freeze_time("1997-08-15T10:21:33.000030")
     @mock.patch.object(RabbitMQApi, "basic_ack", autospec=True)
@@ -1254,7 +1256,7 @@ class TestAlertRouter(unittest.TestCase):
         finally:
             delete_queue_if_exists(self.rabbitmq, HEARTBEAT_QUEUE)
             delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self._test_alert_router.rabbitmq)
 
     @parameterized.expand([
         ("PARENT_1", "x", "{}", False),

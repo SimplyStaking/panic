@@ -487,6 +487,7 @@ class TestGithubAlerter(unittest.TestCase):
 
             args, _ = mock_send_heartbeat.call_args
             self.assertEqual(args[1]['component_name'], self.alerter_name)
+            self.assertEqual(args[1]['is_alive'], True)
             self.assertEqual(args[1]['timestamp'],
                              datetime.datetime(2012, 1, 1).timestamp())
             mock_basic_publish_confirm.assert_called()
@@ -509,6 +510,7 @@ class TestGithubAlerter(unittest.TestCase):
                                        False, False)
 
         mock_ack.return_value = self.none
+        mock_basic_publish_confirm.return_value = self.none
         try:
             self.test_github_alerter._initialise_rabbitmq()
             blocking_channel = self.test_github_alerter.rabbitmq.channel

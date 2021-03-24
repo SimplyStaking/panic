@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import List
 
 from src.alerter.alerts.alert import Alert
@@ -21,12 +22,14 @@ class EmailChannel(Channel):
         subject = "PANIC {}".format(alert.severity)
         html_email_message = EMAIL_HTML_TEMPLATE.format(
             alert_code=alert.alert_code.value, severity=alert.severity,
-            message=alert.message, timestamp=alert.timestamp,
+            message=alert.message,
+            date_time=datetime.fromtimestamp(alert.timestamp),
             parent_id=alert.parent_id, origin_id=alert.origin_id
         )
         plain_email_message = EMAIL_TEXT_TEMPLATE.format(
             alert_code=alert.alert_code.value, severity=alert.severity,
-            message=alert.message, timestamp=alert.timestamp,
+            message=alert.message,
+            date_time=datetime.fromtimestamp(alert.timestamp),
             parent_id=alert.parent_id, origin_id=alert.origin_id
         )
         self._logger.debug("Formatted email template")

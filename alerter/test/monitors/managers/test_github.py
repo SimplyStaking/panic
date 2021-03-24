@@ -21,8 +21,9 @@ from src.monitors.managers.github import (GitHubMonitorsManager,
                                           GH_MON_MAN_INPUT_ROUTING_KEY)
 from src.monitors.starters import start_github_monitor
 from src.utils import env
-from src.utils.constants import GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, \
-    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants import (GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn
@@ -1565,12 +1566,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing, 'Process')
     def test_process_ping_does_not_send_hb_if_processing_fails(
-            self, is_alive_mock) -> None:
+            self, mock_process, mock_start, is_alive_mock) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat. In this test we will
         # check that no heartbeat is sent when mocking a raised exception.
         is_alive_mock.side_effect = self.test_exception
+        mock_start.return_value = None
+        mock_process.side_effect = self.dummy_process1
         try:
             self.test_manager._initialise_rabbitmq()
 

@@ -4,8 +4,8 @@ from typing import TypeVar, Type
 
 import pika.exceptions
 
-from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.alert import AlertStore
+from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore

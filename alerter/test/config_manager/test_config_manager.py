@@ -9,6 +9,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 from watchdog.events import (
@@ -31,7 +32,9 @@ class TestConfigsManager(unittest.TestCase):
     def setUp(self) -> None:
         self.CONFIG_MANAGER_NAME = "Config Manager"
         self.config_manager_logger = logging.getLogger("test_config_manager")
+        self.config_manager_logger.disabled = True
         self.rabbit_logger = logging.getLogger("test_rabbit")
+        self.rabbit_logger.disabled = True
         self.config_directory = "config"
         file_patterns = ["*.ini"]
         rabbit_ip = env.RABBIT_IP
@@ -59,6 +62,10 @@ class TestConfigsManager(unittest.TestCase):
             delete_exchange_if_exists(self.rabbitmq, exchange)
 
         disconnect_from_rabbit(self.rabbitmq)
+        self.rabbitmq = None
+        self.test_config_manager._rabbitmq = None
+        self.test_config_manager._heartbeat_rabbit = None
+        self.test_config_manager = None
 
     def test_instance_created(self):
         self.assertIsNotNone(self.test_config_manager)
@@ -94,7 +101,8 @@ class TestConfigsManager(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Queue {} was not declared".format(queue_to_check))
         finally:
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @parameterized.expand([
         (CONFIG_EXCHANGE,),
@@ -124,7 +132,8 @@ class TestConfigsManager(unittest.TestCase):
         except pika.exceptions.ConnectionClosedByBroker:
             self.fail("Exchange {} was not declared".format(exchange_to_check))
         finally:
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @mock.patch.object(RabbitMQApi, "connect_till_successful", autospec=True)
     def test__connect_to_rabbit(self, mock_connect: MagicMock):
@@ -200,7 +209,8 @@ class TestConfigsManager(unittest.TestCase):
         finally:
             delete_queue_if_exists(self.rabbitmq, HEARTBEAT_QUEUE)
             delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @parameterized.expand([
         (FileCreatedEvent("test_config"),
@@ -223,7 +233,7 @@ class TestConfigsManager(unittest.TestCase):
              test_field_2=
              test_field_3=10
              test_field_4=true
-             
+
             [test_section_2]
             test_field_1=OK
             test_field_2=Bye
@@ -332,7 +342,8 @@ class TestConfigsManager(unittest.TestCase):
             self.assertDictEqual(config, json.loads(body))
         finally:
             delete_queue_if_exists(self.rabbitmq, CONFIG_QUEUE)
-            disconnect_from_rabbit(self.rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+            disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
@@ -355,6 +366,9 @@ class TestConfigsManager(unittest.TestCase):
         mock_observer_start.assert_called_once()
         mock_start_consuming.assert_called_once()
 
+        disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+        disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
+
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
     @mock.patch.object(PollingObserver, "start", autospec=True)
@@ -371,6 +385,9 @@ class TestConfigsManager(unittest.TestCase):
         mock_initialise_rabbit.assert_called_once()
         mock_foreach.assert_called_once()
         mock_observer_start.assert_not_called()
+
+        disconnect_from_rabbit(self.test_config_manager._rabbitmq)
+        disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @mock.patch('sys.exit', autospec=True)
     @mock.patch.object(ConfigsManager, "disconnect_from_rabbit", autospec=True)

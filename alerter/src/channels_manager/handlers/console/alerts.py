@@ -9,20 +9,22 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.metric_code import MetricCode
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
-
 
 class ConsoleAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, console_channel: ConsoleChannel) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+                 rabbitmq: RabbitMQApi,
+                 console_channel: ConsoleChannel) -> None:
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._console_channel = console_channel
         self._console_alerts_handler_queue = \
@@ -46,13 +48,12 @@ class ConsoleAlertsHandler(ChannelHandler):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._console_alerts_handler_queue,
-                         ALERT_EXCHANGE, _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+                         ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._console_alerts_handler_queue,
                                  ALERT_EXCHANGE,
-                                 _CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 
-        prefetch_count = 200
-        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
+        self.rabbitmq.basic_qos(prefetch_count=200)
         self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(self._console_alerts_handler_queue,
                                     self._process_alert, False, False, None)
@@ -84,9 +85,12 @@ class ConsoleAlertsHandler(ChannelHandler):
         try:
             alert_code = alert_json['alert_code']
             alert_code_enum = AlertCode.get_enum_by_value(alert_code['code'])
+            metric_code_enum = MetricCode.get_enum_by_value(
+                alert_json['metric'])
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
-                          alert_json['parent_id'], alert_json['origin_id'])
+                          alert_json['parent_id'], alert_json['origin_id'],
+                          metric_code_enum)
 
             self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:
@@ -94,7 +98,7 @@ class ConsoleAlertsHandler(ChannelHandler):
             self.logger.exception(e)
             processing_error = True
 
-        # If the data is processed, it can be acknowledged.
+        # If the alert is processed, it can be acknowledged.
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         alert_result = RequestStatus.FAILED
@@ -119,9 +123,6 @@ class ConsoleAlertsHandler(ChannelHandler):
             except Exception as e:
                 raise e
 
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
-
     def start(self) -> None:
         self._initialise_rabbitmq()
         while True:
@@ -144,3 +145,11 @@ class ConsoleAlertsHandler(ChannelHandler):
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because with respect to
+        rabbit, the console alerts handler only sends heartbeats. Alerts are
+        sent through the third party channel.
+        """
+        pass

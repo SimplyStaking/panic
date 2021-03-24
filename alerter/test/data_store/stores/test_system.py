@@ -1,34 +1,29 @@
-import copy
 import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
-from queue import Queue
-from typing import Union, Dict
 from unittest import mock
 from unittest.mock import call
 
+import time
 import pika
 import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.data_store.redis import RedisApi
 from src.data_store.mongo.mongo_api import MongoApi
-from src.message_broker.rabbitmq import RabbitMQApi
-
+from src.data_store.redis import RedisApi
 from src.data_store.redis.store_keys import Keys
-
 from src.data_store.stores.system import SystemStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYSTEM_STORE_INPUT_QUEUE,
                                  SYSTEM_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
+                                  ReceivedUnexpectedDataException)
+from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
@@ -62,9 +57,9 @@ class TestSystemStore(unittest.TestCase):
         self.mongo_port = env.DB_PORT
 
         self.mongo = MongoApi(logger=self.dummy_logger.getChild(
-                                  MongoApi.__name__),
-                              db_name=self.mongo_db, host=self.mongo_ip,
-                              port=self.mongo_port)
+            MongoApi.__name__),
+            db_name=self.mongo_db, host=self.mongo_ip,
+            port=self.mongo_port)
 
         self.test_store_name = 'store name'
         self.test_store = SystemStore(self.test_store_name,
@@ -218,7 +213,7 @@ class TestSystemStore(unittest.TestCase):
                     "time": self.last_monitored
                 },
                 "data": {
-                  "went_down_at":  self.last_monitored
+                    "went_down_at": self.last_monitored
                 },
                 "code": 5004
             }
@@ -252,6 +247,7 @@ class TestSystemStore(unittest.TestCase):
         self.test_rabbit_manager = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, str(self.test_store))
@@ -275,7 +271,7 @@ class TestSystemStore(unittest.TestCase):
         self.assertEqual(type(self.mongo), type(self.test_store.mongo))
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-          self) -> None:
+            self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
@@ -315,7 +311,7 @@ class TestSystemStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
-
+            time.sleep(1)
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
                 SYSTEM_STORE_INPUT_QUEUE, False, True, False, False)
@@ -325,9 +321,9 @@ class TestSystemStore(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     @mock.patch.object(RedisApi, "hset_multiple")
     def test_process_redis_store_redis_is_called_correctly(
@@ -337,45 +333,44 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_redis_store(data)
 
         meta_data = data['result']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['result']['data']
 
         call_1 = call(Keys.get_hash_parent(parent_id), {
-                      Keys.get_system_process_cpu_seconds_total(system_id):
-                          str(metrics['process_cpu_seconds_total']),
-                      Keys.get_system_process_memory_usage(system_id):
-                          str(metrics['process_memory_usage']),
-                      Keys.get_system_virtual_memory_usage(system_id):
-                          str(metrics['virtual_memory_usage']),
-                      Keys.get_system_open_file_descriptors(system_id):
-                          str(metrics['open_file_descriptors']),
-                      Keys.get_system_system_cpu_usage(system_id):
-                          str(metrics['system_cpu_usage']),
-                      Keys.get_system_system_ram_usage(system_id):
-                          str(metrics['system_ram_usage']),
-                      Keys.get_system_system_storage_usage(system_id):
-                          str(metrics['system_storage_usage']),
-                      Keys.get_system_network_transmit_bytes_per_second(
-                          system_id):
-                          str(metrics['network_transmit_bytes_per_second']),
-                      Keys.get_system_network_receive_bytes_per_second(
-                          system_id):
-                          str(metrics['network_receive_bytes_per_second']),
-                      Keys.get_system_network_receive_bytes_total(system_id):
-                          str(metrics['network_receive_bytes_total']),
-                      Keys.get_system_network_transmit_bytes_total(system_id):
-                          str(metrics['network_transmit_bytes_total']),
-                      Keys.get_system_disk_io_time_seconds_total(system_id):
-                          str(metrics['disk_io_time_seconds_total']),
-                      Keys.get_system_disk_io_time_seconds_in_interval(
-                          system_id):
-                          str(metrics['disk_io_time_seconds_in_interval']),
-                      Keys.get_system_went_down_at(system_id):
-                          str(metrics['went_down_at']),
-                      Keys.get_system_last_monitored(system_id):
-                          str(meta_data['last_monitored'])})
+            Keys.get_system_process_cpu_seconds_total(system_id):
+                str(metrics['process_cpu_seconds_total']),
+            Keys.get_system_process_memory_usage(system_id):
+                str(metrics['process_memory_usage']),
+            Keys.get_system_virtual_memory_usage(system_id):
+                str(metrics['virtual_memory_usage']),
+            Keys.get_system_open_file_descriptors(system_id):
+                str(metrics['open_file_descriptors']),
+            Keys.get_system_system_cpu_usage(system_id):
+                str(metrics['system_cpu_usage']),
+            Keys.get_system_system_ram_usage(system_id):
+                str(metrics['system_ram_usage']),
+            Keys.get_system_system_storage_usage(system_id):
+                str(metrics['system_storage_usage']),
+            Keys.get_system_network_transmit_bytes_per_second(
+                system_id):
+                str(metrics['network_transmit_bytes_per_second']),
+            Keys.get_system_network_receive_bytes_per_second(
+                system_id):
+                str(metrics['network_receive_bytes_per_second']),
+            Keys.get_system_network_receive_bytes_total(system_id):
+                str(metrics['network_receive_bytes_total']),
+            Keys.get_system_network_transmit_bytes_total(system_id):
+                str(metrics['network_transmit_bytes_total']),
+            Keys.get_system_disk_io_time_seconds_total(system_id):
+                str(metrics['disk_io_time_seconds_total']),
+            Keys.get_system_disk_io_time_seconds_in_interval(
+                system_id):
+                str(metrics['disk_io_time_seconds_in_interval']),
+            Keys.get_system_went_down_at(system_id):
+                str(metrics['went_down_at']),
+            Keys.get_system_last_monitored(system_id):
+                str(meta_data['last_monitored'])})
         mock_hset_multiple.assert_has_calls([call_1])
 
     @mock.patch.object(RedisApi, "hset")
@@ -393,9 +388,9 @@ class TestSystemStore(unittest.TestCase):
                           self.system_data_unexpected)
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     def test_process_redis_store_redis_stores_correctly(
             self, mock_system_data) -> None:
@@ -404,75 +399,81 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_redis_store(data)
 
         meta_data = data['result']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['result']['data']
 
         self.assertEqual(str(metrics['process_cpu_seconds_total']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_process_cpu_seconds_total(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_process_cpu_seconds_total(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['process_memory_usage']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_process_memory_usage(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_process_memory_usage(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['virtual_memory_usage']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_virtual_memory_usage(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_virtual_memory_usage(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['open_file_descriptors']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_open_file_descriptors(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_open_file_descriptors(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['system_cpu_usage']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_system_cpu_usage(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_system_cpu_usage(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['system_ram_usage']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_system_ram_usage(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_system_ram_usage(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['system_storage_usage']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_system_storage_usage(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_system_storage_usage(
+                                             system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['network_transmit_bytes_per_second']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_network_transmit_bytes_per_second(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_network_transmit_bytes_per_second(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_network_receive_bytes_per_second(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_network_receive_bytes_per_second(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_network_receive_bytes_total(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_network_receive_bytes_total(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['network_transmit_bytes_total']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_network_transmit_bytes_total(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_network_transmit_bytes_total(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['disk_io_time_seconds_total']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_disk_io_time_seconds_total(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_disk_io_time_seconds_total(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(str(metrics['disk_io_time_seconds_in_interval']),
-                         self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_disk_io_time_seconds_in_interval(
-                            system_id)).decode("utf-8"))
+                         self.redis.hget(
+                             Keys.get_hash_parent(parent_id),
+                             Keys.get_system_disk_io_time_seconds_in_interval(
+                                 system_id)).decode("utf-8"))
         self.assertEqual(self.none, self.redis.hget(Keys.get_hash_parent(
-                         parent_id), Keys.get_system_went_down_at(
-                            system_id)))
+            parent_id), Keys.get_system_went_down_at(
+            system_id)))
         self.assertEqual(str(meta_data['last_monitored']),
                          self.redis.hget(Keys.get_hash_parent(parent_id),
-                         Keys.get_system_last_monitored(
-                            system_id)).decode("utf-8"))
+                                         Keys.get_system_last_monitored(
+                                             system_id)).decode("utf-8"))
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     @mock.patch("src.data_store.stores.system.SystemStore._process_mongo_store",
                 autospec=True)
@@ -482,7 +483,6 @@ class TestSystemStore(unittest.TestCase):
                 autospec=True)
     def test_process_data_saves_in_redis(self, mock_system_data, mock_send_hb,
                                          mock_ack, mock_process_mongo) -> None:
-        self.rabbitmq.connect()
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -504,71 +504,84 @@ class TestSystemStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['result']['meta_data']
-            system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['result']['data']
 
             self.assertEqual(str(metrics['process_cpu_seconds_total']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_process_cpu_seconds_total(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_process_cpu_seconds_total(
+                                     system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['process_memory_usage']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_process_memory_usage(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_process_memory_usage(
+                                     system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['virtual_memory_usage']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_virtual_memory_usage(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_virtual_memory_usage(
+                                     system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['open_file_descriptors']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_open_file_descriptors(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_open_file_descriptors(
+                                     system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['system_cpu_usage']),
                              self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_system_cpu_usage(
-                                system_id)).decode("utf-8"))
+                                             Keys.get_system_system_cpu_usage(
+                                                 system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['system_ram_usage']),
                              self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_system_ram_usage(
-                                system_id)).decode("utf-8"))
+                                             Keys.get_system_system_ram_usage(
+                                                 system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['system_storage_usage']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_system_storage_usage(
-                                system_id)).decode("utf-8"))
-            self.assertEqual(str(metrics['network_transmit_bytes_per_second']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_network_transmit_bytes_per_second(
-                                system_id)).decode("utf-8"))
-            self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_network_receive_bytes_per_second(
-                                system_id)).decode("utf-8"))
-            self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_network_receive_bytes_total(
-                                system_id)).decode("utf-8"))
-            self.assertEqual(str(metrics['network_transmit_bytes_total']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_network_transmit_bytes_total(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_system_storage_usage(
+                                     system_id)).decode("utf-8"))
+            self.assertEqual(
+                str(metrics['network_transmit_bytes_per_second']),
+                self.redis.hget(
+                    Keys.get_hash_parent(parent_id),
+                    Keys.get_system_network_transmit_bytes_per_second(
+                        system_id)).decode("utf-8"))
+            self.assertEqual(
+                str(metrics['network_receive_bytes_per_second']),
+                self.redis.hget(
+                    Keys.get_hash_parent(parent_id),
+                    Keys.get_system_network_receive_bytes_per_second(
+                        system_id)).decode("utf-8"))
+            self.assertEqual(
+                str(metrics['network_receive_bytes_per_second']),
+                self.redis.hget(Keys.get_hash_parent(parent_id),
+                                Keys.get_system_network_receive_bytes_total(
+                                    system_id)).decode("utf-8"))
+            self.assertEqual(
+                str(metrics['network_transmit_bytes_total']),
+                self.redis.hget(Keys.get_hash_parent(parent_id),
+                                Keys.get_system_network_transmit_bytes_total(
+                                    system_id)).decode("utf-8"))
             self.assertEqual(str(metrics['disk_io_time_seconds_total']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_disk_io_time_seconds_total(
-                                system_id)).decode("utf-8"))
-            self.assertEqual(str(metrics['disk_io_time_seconds_in_interval']),
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_disk_io_time_seconds_in_interval(
-                                system_id)).decode("utf-8"))
+                             self.redis.hget(
+                                 Keys.get_hash_parent(parent_id),
+                                 Keys.get_system_disk_io_time_seconds_total(
+                                     system_id)).decode("utf-8"))
+            self.assertEqual(
+                str(metrics['disk_io_time_seconds_in_interval']),
+                self.redis.hget(
+                    Keys.get_hash_parent(parent_id),
+                    Keys.get_system_disk_io_time_seconds_in_interval(
+                        system_id)).decode("utf-8"))
             self.assertEqual(self.none, self.redis.hget(
-                                Keys.get_hash_parent(parent_id),
-                                Keys.get_system_went_down_at(
-                                    system_id)))
+                Keys.get_hash_parent(parent_id),
+                Keys.get_system_went_down_at(
+                    system_id)))
             self.assertEqual(str(meta_data['last_monitored']),
                              self.redis.hget(Keys.get_hash_parent(parent_id),
-                             Keys.get_system_last_monitored(
-                                system_id)).decode("utf-8"))
+                                             Keys.get_system_last_monitored(
+                                                 system_id)).decode("utf-8"))
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -582,7 +595,6 @@ class TestSystemStore(unittest.TestCase):
                 autospec=True)
     def test_process_data_with_bad_data_does_raises_exceptions(
             self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
-        self.rabbitmq.connect()
         mock_ack.return_value = None
         try:
             self.test_store._initialise_rabbitmq()
@@ -721,9 +733,9 @@ class TestSystemStore(unittest.TestCase):
                           self.system_data_unexpected)
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(MongoApi, "update_one")
@@ -733,13 +745,12 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_mongo_result_store(data['result'])
 
         meta_data = data['result']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['result']['data']
         call_1 = call(
             parent_id,
-            {'doc_type': 'system', 'd':  datetime.now().hour},
+            {'doc_type': 'system', 'd': datetime.now().hour},
             {
                 '$push': {
                     system_id: {
@@ -777,9 +788,9 @@ class TestSystemStore(unittest.TestCase):
         mock_update_one.assert_has_calls([call_1])
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
@@ -815,13 +826,12 @@ class TestSystemStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['result']['meta_data']
-            system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['result']['data']
             call_1 = call(
                 parent_id,
-                {'doc_type': 'system', 'd':  datetime.now().hour},
+                {'doc_type': 'system', 'd': datetime.now().hour},
                 {
                     '$push': {
                         system_id: {
@@ -833,8 +843,10 @@ class TestSystemStore(unittest.TestCase):
                                 metrics['virtual_memory_usage']),
                             'open_file_descriptors': str(
                                 metrics['open_file_descriptors']),
-                            'system_cpu_usage': str(metrics['system_cpu_usage']),
-                            'system_ram_usage': str(metrics['system_ram_usage']),
+                            'system_cpu_usage': str(
+                                metrics['system_cpu_usage']),
+                            'system_ram_usage': str(
+                                metrics['system_ram_usage']),
                             'system_storage_usage': str(
                                 metrics['system_storage_usage']),
                             'network_transmit_bytes_per_second': str(
@@ -869,7 +881,6 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_mongo_error_store(data['error'])
 
         meta_data = data['error']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['error']['data']
@@ -923,7 +934,6 @@ class TestSystemStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['error']['meta_data']
-            system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['error']['data']
@@ -946,9 +956,9 @@ class TestSystemStore(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     def test_process_mongo_store_mongo_stores_correctly(
             self, mock_system_data) -> None:
@@ -957,7 +967,6 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_mongo_store(data)
 
         meta_data = data['result']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['result']['data']
@@ -965,41 +974,41 @@ class TestSystemStore(unittest.TestCase):
         documents = self.mongo.get_all(parent_id)
         document = documents[0]
         expected = [
-                'system',
-                1,
-                str(metrics['process_cpu_seconds_total']),
-                str(metrics['process_memory_usage']),
-                str(metrics['virtual_memory_usage']),
-                str(metrics['open_file_descriptors']),
-                str(metrics['system_cpu_usage']),
-                str(metrics['system_ram_usage']),
-                str(metrics['system_storage_usage']),
-                str(metrics['network_receive_bytes_total']),
-                str(metrics['network_transmit_bytes_total']),
-                str(metrics['disk_io_time_seconds_total']),
-                str(metrics['network_transmit_bytes_per_second']),
-                str(metrics['network_receive_bytes_per_second']),
-                str(metrics['disk_io_time_seconds_in_interval']),
-                str(metrics['went_down_at'])
-            ]
+            'system',
+            1,
+            str(metrics['process_cpu_seconds_total']),
+            str(metrics['process_memory_usage']),
+            str(metrics['virtual_memory_usage']),
+            str(metrics['open_file_descriptors']),
+            str(metrics['system_cpu_usage']),
+            str(metrics['system_ram_usage']),
+            str(metrics['system_storage_usage']),
+            str(metrics['network_receive_bytes_total']),
+            str(metrics['network_transmit_bytes_total']),
+            str(metrics['disk_io_time_seconds_total']),
+            str(metrics['network_transmit_bytes_per_second']),
+            str(metrics['network_receive_bytes_per_second']),
+            str(metrics['disk_io_time_seconds_in_interval']),
+            str(metrics['went_down_at'])
+        ]
         actual = [
-                document['doc_type'],
-                document['n_entries'],
-                document[system_id][0]['process_cpu_seconds_total'],
-                document[system_id][0]['process_memory_usage'],
-                document[system_id][0]['virtual_memory_usage'],
-                document[system_id][0]['open_file_descriptors'],
-                document[system_id][0]['system_cpu_usage'],
-                document[system_id][0]['system_ram_usage'],
-                document[system_id][0]['system_storage_usage'],
-                document[system_id][0]['network_receive_bytes_total'],
-                document[system_id][0]['network_transmit_bytes_total'],
-                document[system_id][0]['disk_io_time_seconds_total'],
-                document[system_id][0]['network_transmit_bytes_per_second'],
-                document[system_id][0]['network_receive_bytes_per_second'],
-                document[system_id][0]['disk_io_time_seconds_in_interval'],
-                document[system_id][0]['went_down_at']
-            ]
+            document['doc_type'],
+            document['n_entries'],
+            document[system_id][0]['process_cpu_seconds_total'],
+            document[system_id][0]['process_memory_usage'],
+            document[system_id][0]['virtual_memory_usage'],
+            document[system_id][0]['open_file_descriptors'],
+            document[system_id][0]['system_cpu_usage'],
+            document[system_id][0]['system_ram_usage'],
+            document[system_id][0]['system_storage_usage'],
+            document[system_id][0]['network_receive_bytes_total'],
+            document[system_id][0]['network_transmit_bytes_total'],
+            document[system_id][0]['disk_io_time_seconds_total'],
+            document[system_id][0]['network_transmit_bytes_per_second'],
+            document[system_id][0]['network_receive_bytes_per_second'],
+            document[system_id][0]['disk_io_time_seconds_in_interval'],
+            document[system_id][0]['went_down_at']
+        ]
 
         self.assertListEqual(expected, actual)
 
@@ -1010,7 +1019,6 @@ class TestSystemStore(unittest.TestCase):
         self.test_store._process_mongo_error_store(data['error'])
 
         meta_data = data['error']['meta_data']
-        system_name = meta_data['system_name']
         system_id = meta_data['system_id']
         parent_id = meta_data['system_parent_id']
         metrics = data['error']['data']
@@ -1018,24 +1026,24 @@ class TestSystemStore(unittest.TestCase):
         documents = self.mongo.get_all(parent_id)
         document = documents[0]
         expected = [
-                'system',
-                1,
-                str(meta_data['time']),
-                str(metrics['went_down_at'])
-            ]
+            'system',
+            1,
+            str(meta_data['time']),
+            str(metrics['went_down_at'])
+        ]
         actual = [
-                document['doc_type'],
-                document['n_entries'],
-                document[system_id][0]['timestamp'],
-                document[system_id][0]['went_down_at']
-            ]
+            document['doc_type'],
+            document['n_entries'],
+            document[system_id][0]['timestamp'],
+            document[system_id][0]['went_down_at']
+        ]
 
         self.assertListEqual(expected, actual)
 
     @parameterized.expand([
-        ("self.system_data_1", ),
-        ("self.system_data_2", ),
-        ("self.system_data_3", ),
+        ("self.system_data_1",),
+        ("self.system_data_2",),
+        ("self.system_data_3",),
     ])
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)
@@ -1069,7 +1077,6 @@ class TestSystemStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['result']['meta_data']
-            system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['result']['data']
@@ -1077,41 +1084,41 @@ class TestSystemStore(unittest.TestCase):
             documents = self.mongo.get_all(parent_id)
             document = documents[0]
             expected = [
-                    'system',
-                    1,
-                    str(metrics['process_cpu_seconds_total']),
-                    str(metrics['process_memory_usage']),
-                    str(metrics['virtual_memory_usage']),
-                    str(metrics['open_file_descriptors']),
-                    str(metrics['system_cpu_usage']),
-                    str(metrics['system_ram_usage']),
-                    str(metrics['system_storage_usage']),
-                    str(metrics['network_receive_bytes_total']),
-                    str(metrics['network_transmit_bytes_total']),
-                    str(metrics['disk_io_time_seconds_total']),
-                    str(metrics['network_transmit_bytes_per_second']),
-                    str(metrics['network_receive_bytes_per_second']),
-                    str(metrics['disk_io_time_seconds_in_interval']),
-                    str(metrics['went_down_at'])
-                ]
+                'system',
+                1,
+                str(metrics['process_cpu_seconds_total']),
+                str(metrics['process_memory_usage']),
+                str(metrics['virtual_memory_usage']),
+                str(metrics['open_file_descriptors']),
+                str(metrics['system_cpu_usage']),
+                str(metrics['system_ram_usage']),
+                str(metrics['system_storage_usage']),
+                str(metrics['network_receive_bytes_total']),
+                str(metrics['network_transmit_bytes_total']),
+                str(metrics['disk_io_time_seconds_total']),
+                str(metrics['network_transmit_bytes_per_second']),
+                str(metrics['network_receive_bytes_per_second']),
+                str(metrics['disk_io_time_seconds_in_interval']),
+                str(metrics['went_down_at'])
+            ]
             actual = [
-                    document['doc_type'],
-                    document['n_entries'],
-                    document[system_id][0]['process_cpu_seconds_total'],
-                    document[system_id][0]['process_memory_usage'],
-                    document[system_id][0]['virtual_memory_usage'],
-                    document[system_id][0]['open_file_descriptors'],
-                    document[system_id][0]['system_cpu_usage'],
-                    document[system_id][0]['system_ram_usage'],
-                    document[system_id][0]['system_storage_usage'],
-                    document[system_id][0]['network_receive_bytes_total'],
-                    document[system_id][0]['network_transmit_bytes_total'],
-                    document[system_id][0]['disk_io_time_seconds_total'],
-                    document[system_id][0]['network_transmit_bytes_per_second'],
-                    document[system_id][0]['network_receive_bytes_per_second'],
-                    document[system_id][0]['disk_io_time_seconds_in_interval'],
-                    document[system_id][0]['went_down_at']
-                ]
+                document['doc_type'],
+                document['n_entries'],
+                document[system_id][0]['process_cpu_seconds_total'],
+                document[system_id][0]['process_memory_usage'],
+                document[system_id][0]['virtual_memory_usage'],
+                document[system_id][0]['open_file_descriptors'],
+                document[system_id][0]['system_cpu_usage'],
+                document[system_id][0]['system_ram_usage'],
+                document[system_id][0]['system_storage_usage'],
+                document[system_id][0]['network_receive_bytes_total'],
+                document[system_id][0]['network_transmit_bytes_total'],
+                document[system_id][0]['disk_io_time_seconds_total'],
+                document[system_id][0]['network_transmit_bytes_per_second'],
+                document[system_id][0]['network_receive_bytes_per_second'],
+                document[system_id][0]['disk_io_time_seconds_in_interval'],
+                document[system_id][0]['went_down_at']
+            ]
 
             self.assertListEqual(expected, actual)
 
@@ -1150,7 +1157,6 @@ class TestSystemStore(unittest.TestCase):
             mock_send_hb.assert_called_once()
 
             meta_data = data['error']['meta_data']
-            system_name = meta_data['system_name']
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['error']['data']
@@ -1158,17 +1164,17 @@ class TestSystemStore(unittest.TestCase):
             documents = self.mongo.get_all(parent_id)
             document = documents[0]
             expected = [
-                    'system',
-                    1,
-                    str(meta_data['time']),
-                    str(metrics['went_down_at'])
-                ]
+                'system',
+                1,
+                str(meta_data['time']),
+                str(metrics['went_down_at'])
+            ]
             actual = [
-                    document['doc_type'],
-                    document['n_entries'],
-                    document[system_id][0]['timestamp'],
-                    document[system_id][0]['went_down_at']
-                ]
+                document['doc_type'],
+                document['n_entries'],
+                document[system_id][0]['timestamp'],
+                document[system_id][0]['went_down_at']
+            ]
 
             self.assertListEqual(expected, actual)
         except Exception as e:
