@@ -12,7 +12,7 @@ export class RedisAPI {
         this.host = host;
         this.port = port;
         this.password = password;
-        this.client = undefined
+        this.client = undefined;
     }
 
     connect() {
@@ -53,7 +53,16 @@ export class RedisAPI {
         return;
     }
 
+    disconnect() {
+        if (this.client) {
+            this.client.quit()
+        }
+    }
+
 }
 
 // TODO: Disconnect, hset, set, get, hget, multiple gets and sets for both h and
 //     : with no h.
+
+// TODO: In the future we might persist a redis connection, thus the retry
+//     : strategy may never terminate. Tomorrow check if this is possible.
