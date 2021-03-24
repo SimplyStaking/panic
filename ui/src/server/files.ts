@@ -1,12 +1,11 @@
-const {readdir} = require('fs').promises;
-const {resolve} = require('path');
+import {Dirent, promises, readFileSync} from "fs";
+import path from 'path';
 import {MissingFile} from "./errors";
-import * as fs from 'fs';
 
 export const readFile = (filePath: string): Buffer => {
     let file: Buffer;
     try {
-        file = fs.readFileSync(filePath);
+        file = readFileSync(filePath);
     } catch (err) {
         if (err.code === 'ENOENT') {
             throw new MissingFile(filePath);
@@ -18,13 +17,13 @@ export const readFile = (filePath: string): Buffer => {
 };
 
 export const getFilesInDir = async (dir: string): Promise<string[]> => {
-    let dirents: fs.Dirent[];
+    let dirents: Dirent[];
     let foundFiles;
     try {
-        dirents = await readdir(dir, {withFileTypes: true});
+        dirents = await promises.readdir(dir, {withFileTypes: true});
         foundFiles = await Promise.all(
-            dirents.map((dirent: fs.Dirent) => {
-                const res: string = resolve(dir, dirent.name);
+            dirents.map((dirent: Dirent) => {
+                const res: string = path.resolve(dir, dirent.name);
                 return dirent.isDirectory() ?
                     module.exports.getFiles(res) : res;
             }),

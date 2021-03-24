@@ -16,3 +16,11 @@ export class MissingFile extends BackendError {
         super(message, code)
     }
 }
+
+export class InvalidEndpoint extends BackendError {
+    constructor(endpoint: string) {
+        let message: string = `'${endpoint}' is an invalid endpoint.`;
+        let code: BackendErrorCode = BackendErrorCode.E_431;
+        super(message, code)
+    }
+}

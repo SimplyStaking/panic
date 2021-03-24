@@ -24,8 +24,10 @@ const constants = require('./server/constants');
 
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
-const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates', 'key.pem'));
-const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates', 'cert.pem'));
+const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates',
+  'key.pem'));
+const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates',
+  'cert.pem'));
 const httpsOptions = {
   key: httpsKey,
   cert: httpsCert,

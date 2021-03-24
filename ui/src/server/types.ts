@@ -22,3 +22,8 @@ export enum BackendErrorCode {
     E_450 = 450,
     E_451 = 451,
 }
+
+export interface HttpsOptions {
+    key: Buffer,
+    cert: Buffer,
+}
