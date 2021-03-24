@@ -64,7 +64,7 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Tests_Dockerfile'
-    image: 'simplyvc/panic_alerter_tests:1.0.0'
+    image: 'simplyvc/panic_alerter_tests:0.1.1'
     volumes:
       - './config:/opt/panic/config'
       - './alerter/logs:/opt/panic/alerter/logs'
