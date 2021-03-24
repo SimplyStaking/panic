@@ -11,6 +11,7 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from multiprocessing import Process
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store, start_config_store)
 from src.data_store.stores.manager import StoreManager
@@ -26,6 +27,7 @@ from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
+from test.utils.utils import infinite_fn
 
 
 class TestStoreManager(unittest.TestCase):
@@ -47,6 +49,10 @@ class TestStoreManager(unittest.TestCase):
         self.test_store_manager = StoreManager(self.dummy_logger,
                                                self.manager_name,
                                                self.rabbitmq)
+
+        # Adding dummy process
+        self.dummy_process = Process(target=infinite_fn, args=())
+        self.dummy_process.daemon = True
 
         connect_to_rabbit(self.rabbitmq)
         connect_to_rabbit(self.test_rabbit_manager)
@@ -79,6 +85,7 @@ class TestStoreManager(unittest.TestCase):
         disconnect_from_rabbit(self.test_rabbit_manager)
 
         self.dummy_logger = None
+        self.dummy_process = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
         self.test_rabbit_manager = None
@@ -527,12 +534,16 @@ class TestStoreManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing, 'Process')
     def test_process_ping_does_not_send_hb_if_processing_fails(
-            self, is_alive_mock) -> None:
+            self, mock_process, mock_start, is_alive_mock) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat. In this test we will
         # check that no heartbeat is sent when mocking a raised exception.
         is_alive_mock.side_effect = self.test_exception
+        mock_start.return_value = None
+        mock_process.side_effect = self.dummy_process
         try:
             self.test_store_manager._initialise_rabbitmq()
             self.test_store_manager._start_stores_processes()
