@@ -1,5 +1,6 @@
 import {readFile} from "./server/files";
 import path from "path"
+import https from "https"
 import {HttpsOptions} from "./server/types";
 import {InvalidEndpoint} from './server/errors'
 import {errorJson} from "./server/utils";
@@ -58,27 +59,16 @@ app.get('/*', (req: express.Request, res: express.Response) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// // ---------------------------------------- Start listen
-//
-// const port = process.env.INSTALLER_PORT || 8000;
-//
-// (async () => {
-//     try {
-//         // Check that installer credentials are in the .env. If not inform the user
-//         // and terminate the server.
-//         checkInstAuthCredentials();
-//         // Load authentication details before listening for requests to avoid
-//         // unexpected behaviour.
-//         await loadAuthenticationToDB();
-//     } catch (err) {
-//         console.log(err);
-//         process.exit(0);
-//     }
-//     // Create Https server
-//     const server = https.createServer(httpsOptions, app);
-//     // Listen for requests
-//     server.listen(port, () => console.log('Listening on %s', port));
-// })().catch((err) => console.log(err));
+// ---------------------------------------- Start listen
+
+const port: number = parseInt(process.env.UI_DASHBOARD_PORT || "9000");
+
+(async () => {
+    // Create Https server
+    const server = https.createServer(httpsOptions, app);
+    // Listen for requests
+    server.listen(port, () => console.log('Listening on %s', port));
+})().catch((err) => console.log(err));
 
 // TODO: Need to add authentication, even to the respective middleware functions
 // TODO: Test multiple invalid routes such as /server/* .. bad route etc

@@ -12,7 +12,7 @@ class BackendError extends Error {
 export class MissingFile extends BackendError {
     constructor(filePath: string) {
         let message: string = `Cannot find ${filePath}.`;
-        let code: BackendErrorCode = BackendErrorCode.E_430;
+        let code: BackendErrorCode = BackendErrorCode.E_530;
         super(message, code)
     }
 }
@@ -20,7 +20,7 @@ export class MissingFile extends BackendError {
 export class InvalidEndpoint extends BackendError {
     constructor(endpoint: string) {
         let message: string = `'${endpoint}' is an invalid endpoint.`;
-        let code: BackendErrorCode = BackendErrorCode.E_431;
+        let code: BackendErrorCode = BackendErrorCode.E_531;
         super(message, code)
     }
 }
