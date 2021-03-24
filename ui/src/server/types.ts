@@ -1,4 +1,4 @@
-export enum BackendErrorCode {
+export enum UIServerErrorCode {
     E_530 = 530,
     E_531 = 531,
     E_532 = 532,

@@ -1,26 +1,45 @@
-import {BackendErrorCode} from './types'
+import {UIServerErrorCode} from './types'
+import {RedisError} from "redis";
 
-class BackendError extends Error {
-    code: BackendErrorCode;
+// Server errors
 
-    constructor(message: string, code: BackendErrorCode) {
+class UIServerError extends Error {
+    code: UIServerErrorCode;
+
+    constructor(message: string, code: UIServerErrorCode) {
         super(message);
         this.code = code;
     }
 }
 
-export class MissingFile extends BackendError {
+export class MissingFile extends UIServerError {
     constructor(filePath: string) {
         let message: string = `Cannot find ${filePath}.`;
-        let code: BackendErrorCode = BackendErrorCode.E_530;
+        let code: UIServerErrorCode = UIServerErrorCode.E_530;
         super(message, code)
     }
 }
 
-export class InvalidEndpoint extends BackendError {
+export class InvalidEndpoint extends UIServerError {
     constructor(endpoint: string) {
         let message: string = `'${endpoint}' is an invalid endpoint.`;
-        let code: BackendErrorCode = BackendErrorCode.E_531;
+        let code: UIServerErrorCode = UIServerErrorCode.E_531;
         super(message, code)
+    }
+}
+
+// Redis Errors
+
+export class RedisConnectionRefused extends RedisError {
+    constructor() {
+        super('The redis server refused the connection.');
+    }
+}
+
+// Other errors
+
+export class MaxRetryTimeExceeded extends Error {
+    constructor() {
+        super('Retry time exceeded.');
     }
 }
