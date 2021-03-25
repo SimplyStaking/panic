@@ -1,14 +1,17 @@
 export interface HttpsOptions {
     key: Buffer,
     cert: Buffer,
+    [key: string]: Buffer
 }
 
 export interface RedisHashes {
     parent: string,
+    [key: string]: string
 }
 
 export interface UniqueKeys {
     mute: string,
+    [key: string]: string
 }
 
 export interface SystemKeys {
@@ -27,23 +30,28 @@ export interface SystemKeys {
     disk_io_time_seconds_in_interval: string,
     last_monitored: string,
     system_went_down_at: string,
+    [key: string]: string
 }
 
 export interface GitHubKeys {
     no_of_releases: string,
     last_monitored: string,
+    [key: string]: string
 }
 
 export interface ComponentKeys {
     heartbeat: string,
+    [key: string]: string
 }
 
 export interface ChainKeys {
     mute_alerts: string,
+    [key: string]: string
 }
 
 export interface ConfigKeys {
     config: string,
+    [key: string]: string
 }
 
 export interface AlertKeys  {
@@ -56,10 +64,12 @@ export interface AlertKeys  {
     invalid_url: string,
     github_release: string,
     cannot_access_github: string,
+    [key: string]: string
 }
 
 export interface BaseChainKeys {
     monitorables_info: string,
+    [key: string]: string
 }
 
 export type RedisKeys =
