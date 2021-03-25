@@ -2,6 +2,12 @@ Change the contents of this file to this:
 
 # Change Log
 
+## 0.1.2
+
+Released on 25th March 2021
+
+- Fixed bug in the web-installer where the BLACKLIST wasn't being exported properly
+
 ## 0.1.1
 
 Released on 24th March 2021
