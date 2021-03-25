@@ -713,9 +713,19 @@ def _initialise_and_declare_config_queues() -> None:
 
 
 if __name__ == '__main__':
-    # First initialise the config queues so that no config is lost if the
-    # individual components
+    # First initialise the config queues so that no config is lost when sending
+    # the configs and the components are not ready yet.
     _initialise_and_declare_config_queues()
+
+    # Start the configs manager so that the configurations are read first. We
+    # need to wait a bit first until the configs are read
+    # TODO: In the future we must implement a way how can we detect that the
+    #     : configs manager has finished reading the configs.
+    config_manager_runner_process = multiprocessing.Process(
+        target=run_config_manager, args=())
+    config_manager_runner_process.start()
+
+    time.sleep(15)
 
     # Start the managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
@@ -753,13 +763,6 @@ if __name__ == '__main__':
     channels_manager_process = multiprocessing.Process(
         target=run_channels_manager, args=())
     channels_manager_process.start()
-
-    # Config manager must be the last to start since it immediately begins by
-    # sending the configs. That being said, all previous processes need to wait
-    # for the config manager too.
-    config_manager_runner_process = multiprocessing.Process(
-        target=run_config_manager, args=())
-    config_manager_runner_process.start()
 
     signal.signal(signal.SIGTERM, on_terminate)
     signal.signal(signal.SIGINT, on_terminate)
