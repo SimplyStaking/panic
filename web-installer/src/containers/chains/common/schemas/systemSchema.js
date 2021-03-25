@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import BLACKLIST from 'constants/constants';
+import { BLACKLIST } from 'constants/constants';
 
 const SystemSchema = (props) => Yup.object().shape({
   name: Yup.string()
