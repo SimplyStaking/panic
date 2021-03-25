@@ -45,8 +45,8 @@ class SystemAlerter(Alerter):
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
-        self._invalid_url = True
-        self._metric_not_found = True
+        self._invalid_url = {}
+        self._metric_not_found = {}
         self._system_initial_downtime_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -55,6 +55,14 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _create_state_for_system(self, system_id: str) -> None:
+
+        # initialise initial metric_not_found and invalid_url
+        if system_id not in self._invalid_url:
+            self._invalid_url[system_id] = True
+
+        if system_id not in self._metric_not_found:
+            self._metric_not_found[system_id] = True
+
         # initialise initial downtime alert sent
         if system_id not in self._system_initial_downtime_alert_sent:
             self._system_initial_downtime_alert_sent[system_id] = False
@@ -225,7 +233,8 @@ class SystemAlerter(Alerter):
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
 
-        if self._invalid_url and int(error_data['code']) != 5009:
+        if self._invalid_url[meta_data['system_id']] and \
+                int(error_data['code']) != 5009:
             alert = ValidUrlAlert(
                 meta_data['system_name'], "Url is valid!",
                 'INFO', meta_data['time'],
@@ -235,9 +244,10 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._invalid_url = False
+            self._invalid_url[meta_data['system_id']] = False
 
-        if self._metric_not_found and int(error_data['code']) != 5003:
+        if self._metric_not_found[meta_data['system_id']] and \
+                int(error_data['code']) != 5003:
             alert = MetricFoundAlert(
                 meta_data['system_name'], "Metrics have been found!",
                 'INFO', meta_data['time'],
@@ -247,7 +257,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._metric_not_found = False
+            self._metric_not_found[meta_data['system_id']] = False
 
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
@@ -258,7 +268,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._metric_not_found = True
+            self._metric_not_found[meta_data['system_id']] = True
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 meta_data['system_name'], error_data['message'],
@@ -268,7 +278,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._invalid_url = True
+            self._invalid_url[meta_data['system_id']] = True
         elif int(error_data['code']) == 5004:
             if str_to_bool(is_down['enabled']):
                 data = error_data['data']
@@ -341,7 +351,7 @@ class SystemAlerter(Alerter):
         ram_use = self.alerts_configs.system_ram_usage
         is_down = self.alerts_configs.system_is_down
 
-        if self._invalid_url:
+        if self._invalid_url[meta_data['system_id']]:
             alert = ValidUrlAlert(
                 meta_data['system_name'], "Url is valid!",
                 'INFO', meta_data['last_monitored'],
@@ -351,8 +361,8 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._invalid_url = False
-        if self._metric_not_found:
+            self._invalid_url[meta_data['system_id']] = False
+        if self._metric_not_found[meta_data['system_id']]:
             alert = MetricFoundAlert(
                 meta_data['system_name'], "Metrics have been found!",
                 'INFO', meta_data['last_monitored'],
@@ -362,7 +372,7 @@ class SystemAlerter(Alerter):
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
-            self._metric_not_found = False
+            self._metric_not_found[meta_data['system_id']] = False
 
         if str_to_bool(is_down['enabled']):
             previous = metrics['went_down_at']['previous']
