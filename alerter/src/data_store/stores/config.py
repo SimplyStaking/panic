@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Dict
 
 import pika.exceptions
+from collections import defaultdict
 
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
@@ -11,7 +12,8 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS,
-                                 GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG)
+                                 GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
+                                 NODES_CONFIG, COSMOS, SUBSTRATE, GLOBAL)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 
@@ -117,82 +119,86 @@ class ConfigStore(Store):
                 self.redis.remove(Keys.get_config(routing_key))
 
     def _process_redis_store_ids(self, routing_key: str, data: Dict) -> None:
-        temp_data = {}
+        temp_data = defaultdict(dict)
         monitored_list = []
         not_monitored_list = []
-        key = ''
+        redis_store_key = ''
+        source_name = ''
+        config_type_key = ''
+        monitor_source_key = ''
         parsed_routing_key = routing_key.split('.')
-        if data:
-            if parsed_routing_key[0] is GENERAL:
-                if parsed_routing_key[1] is REPOS_CONFIG:
-                    # Get a list of all the REPO ids from the config
-                    for _, config_details in data.items():
-                        if bool(config_details['monitor_repo']):
-                            monitored_list.append(config_details['id'])
-                        else:
-                            not_monitored_list.append(config_details['id'])
-                    # Load the currently saved data from REDIS
-                    loaded_data = json.loads(self.redis.get(
-                        Keys.get_chain_info(parsed_routing_key[0])).decode(
-                            'utf-8'))
-                    # These can be overwritten as it's only for general
-                    if loaded_data:
-                        temp_data = loaded_data
-                        temp_data['monitored']['repos'] = monitored_list
-                        temp_data['not_monitored']['repos'] = not_monitored_list
-                    else:
-                        temp_data = {
-                            'general': 'GLOBAL',
-                            'monitored': {
-                                'repos': monitored_list,
-                                'systems': []
-                            },
-                            'not_monitored': {
-                                'repos': not_monitored_list,
-                                'systems': []
-                            }
-                        }
-                    self.redis.set(Keys.get_chain_info(parsed_routing_key[0]),
-                                   json.dumps(temp_data))
-                    print("SUCCESS REPOS")
-                    print(self.redis.get(Keys.get_chain_info(
-                        parsed_routing_key[0])))
-                elif parsed_routing_key[1] is SYSTEMS_CONFIG:
-                    # Get a list of all the System ids from the config
-                    for _, config_details in data.items():
-                        if bool(config_details['monitor_system']):
-                            monitored_list.append(config_details['id'])
-                        else:
-                            not_monitored_list.append(config_details['id'])
-                    # Load the currently saved data from REDIS
-                    loaded_data = json.loads(self.redis.get(
-                        Keys.get_chain_info(parsed_routing_key[0])).decode(
-                            'utf-8'))
-                    # These can be overwritten as it's only for general
-                    if loaded_data:
-                        temp_data = loaded_data
-                        temp_data['monitored']['systems'] = monitored_list
-                        temp_data['not_monitored']['systems'] = \
-                            not_monitored_list
-                    else:
-                        temp_data = {
-                            'general': 'GLOBAL',
-                            'monitored': {
-                                'repos': [],
-                                'systems': monitored_list
-                            },
-                            'not_monitored': {
-                                'repos': [],
-                                'systems': not_monitored_list
-                            }
-                        }
-                    self.redis.set(Keys.get_chain_info(parsed_routing_key[0]),
-                                   json.dumps(temp_data))
-                    print("SUCCESS SYSTEMS")
-                    print(self.redis.get(Keys.get_chain_info(
-                        parsed_routing_key[0])))
-        else:
-            print("BREAK")
 
-    # {regen: id, monitored{ nodes[], repos[] , systems[]},not_monitored:
-    # { nodes: [], repos:{}, systems:{}}
+        # First determine the key that is going to be used for REDIS
+        if parsed_routing_key[0] is GENERAL:
+            redis_store_key = GENERAL
+            source_name = GLOBAL
+            # Determine the configuration that needs to be changed
+            if parsed_routing_key[1] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
+                config_type_key = parsed_routing_key[1].replace("_config",
+                                                                "")
+            else:
+                # If the second part of the parsing key is invalid leave
+                return
+        elif parsed_routing_key[0] is CHAINS:
+            redis_store_key = parsed_routing_key[1]
+            source_name = parsed_routing_key[2]
+            # Determine the configuration that needs to be changed
+            if parsed_routing_key[3] in [REPOS_CONFIG, SYSTEMS_CONFIG,
+                                         NODES_CONFIG]:
+                # Determine the configuration that needs to be changed
+                config_type_key = parsed_routing_key[3].replace("_config",
+                                                                "")
+            else:
+                # If the last part of the routing key is invalid leave
+                return
+        else:
+            return
+
+        # Create the key that is used to determine if the source
+        # should be monitored or not
+        monitor_key = 'monitor_' + config_type_key[:-1]
+
+        # Load the currently saved data from REDIS
+        loaded_data = json.loads(self.redis.get(Keys.get_chain_info(
+            redis_store_key).decode('utf-8')))
+
+        # Checking if we received data and if that data is useful.
+        if data:
+            # Get a list of all the id's for the received data
+            for _, config_details in data.items():
+                if bool(config_details[monitor_key]):
+                    monitored_list.append(config_details['id'])
+                else:
+                    not_monitored_list.append(config_details['id'])
+
+            # If we load data from REDIS we can overwrite it, no need for new
+            # structure
+            if loaded_data:
+                temp_data = loaded_data
+                temp_data[source_name]['monitored'][config_type_key] = \
+                    monitored_list
+                temp_data[source_name]['not_monitored'][config_type_key] = \
+                    not_monitored_list
+            else:
+                temp_data = {
+                    source_name: {
+                        'monitored': {
+                            config_type_key: monitored_list
+                        },
+                        'not_monitored': {
+                            config_type_key: not_monitored_list
+                        }
+                    }
+                }
+            self.redis.set(Keys.get_chain_info(redis_store_key),
+                           json.dumps(dict(temp_data)))
+        else:
+            # Check if the key exists
+            if self.redis.exists(Keys.get_chain_info(redis_store_key)):
+                # Delete the data corresponding to the routing key
+                if loaded_data:
+                    # Since there is data check what needs to be overwritten
+                    
+                else:
+                    # This shouldn't be the case but just incase delete the key
+                    self.redis.remove(Keys.get_chain_info(redis_store_key))
