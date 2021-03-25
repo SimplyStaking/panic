@@ -8,7 +8,7 @@ import {
     ComponentKeys,
     ConfigKeys,
     GitHubKeys,
-    RedisHashes,
+    RedisHashes, RedisKeys,
     SystemKeys,
     UniqueKeys
 } from "./types";
@@ -71,6 +71,27 @@ export const getAlertKeys = (): AlertKeys => ({
 export const getBaseChainKeys = (): BaseChainKeys => ({
     monitorables_info: 'bc1'
 });
+
+const addPrefixToKeys = (keysObject: RedisKeys, prefix: string): RedisKeys => {
+    const newObject: RedisKeys = {...keysObject};
+    Object.keys(keysObject)
+        .forEach((key) => {
+            newObject[key] = `${prefix}${keysObject[key]}`;
+        });
+    return newObject;
+};
+
+const objectt = getBaseChainKeys();
+console.log(addPrefixToKeys(objectt, '_'));
+
+//     addPostfixToDictValues: (dict, postfix) => {
+//     const newDict = {};
+//     Object.keys(dict)
+//         .forEach((key) => {
+//             newDict[key] = `${dict[key]}${postfix}`;
+//         });
+//     return newDict;
+// },
 
 export class RedisAPI {
     host: string;

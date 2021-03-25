@@ -46,7 +46,7 @@ export interface ConfigKeys {
     config: string,
 }
 
-export interface AlertKeys {
+export interface AlertKeys  {
     open_file_descriptors: string,
     system_cpu_usage: string,
     system_storage_usage: string,
@@ -61,3 +61,14 @@ export interface AlertKeys {
 export interface BaseChainKeys {
     monitorables_info: string,
 }
+
+export type RedisKeys =
+    RedisHashes
+    | UniqueKeys
+    | SystemKeys
+    | GitHubKeys
+    | ComponentKeys
+    | ChainKeys
+    | ConfigKeys
+    | AlertKeys
+    | BaseChainKeys;
