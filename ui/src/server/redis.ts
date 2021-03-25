@@ -1,16 +1,27 @@
 import redis, {RetryStrategyOptions} from "redis"
 import {MaxRetryAttemptsExceeded, MaxRetryTimeExceeded,} from "./errors"
 import {MSG_REDIS_CONNECTED, MSG_REDIS_RECONNECTING} from "./msgs";
+import {
+    AlertKeys,
+    BaseChainKeys,
+    ChainKeys,
+    ComponentKeys,
+    ConfigKeys,
+    GitHubKeys,
+    RedisHashes,
+    SystemKeys,
+    UniqueKeys
+} from "./types";
 
-export const getRedisHashes = () => ({
+export const getRedisHashes = (): RedisHashes => ({
     parent: 'hash_p1'
 });
 
-export const getAlerterKeys = () => ({
+export const getUniqueKeys = (): UniqueKeys => ({
     mute: 'a1',
 });
 
-export const getSystemKeys = () => ({
+export const getSystemKeys = (): SystemKeys => ({
     process_cpu_seconds_total: 's1',
     process_memory_usage: 's2',
     virtual_memory_usage: 's3',
@@ -28,24 +39,24 @@ export const getSystemKeys = () => ({
     system_went_down_at: 's15',
 });
 
-export const getGitHubKeys = () => ({
+export const getGitHubKeys = (): GitHubKeys => ({
     no_of_releases: 'gh1',
     last_monitored: 'gh2',
 });
 
-export const getComponentKeys = () => ({
+export const getComponentKeys = (): ComponentKeys => ({
     heartbeat: 'c1'
 });
 
-export const getChainKeys = () => ({
+export const getChainKeys = (): ChainKeys => ({
     mute_alerts: 'ch1'
 });
 
-export const getConfigKeys = () => ({
+export const getConfigKeys = (): ConfigKeys => ({
     config: 'conf1'
 });
 
-export const getAlertKeys = () => ({
+export const getAlertKeys = (): AlertKeys => ({
     open_file_descriptors: 'alert1',
     system_cpu_usage: 'alert2',
     system_storage_usage: 'alert3',
@@ -55,6 +66,10 @@ export const getAlertKeys = () => ({
     invalid_url: 'alert7',
     github_release: 'alert8',
     cannot_access_github: 'alert9',
+});
+
+export const getBaseChainKeys = (): BaseChainKeys => ({
+    monitorables_info: 'bc1'
 });
 
 export class RedisAPI {
