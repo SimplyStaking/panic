@@ -159,8 +159,9 @@ class ConfigStore(Store):
         monitor_key = 'monitor_' + config_type_key[:-1]
 
         # Load the currently saved data from REDIS
-        loaded_data = json.loads(self.redis.get(Keys.get_chain_info(
-            redis_store_key).decode('utf-8')))
+        loaded_data = json.loads(self.redis.get(
+            Keys.get_base_chain_monitorables_info(redis_store_key).decode(
+                'utf-8')))
 
         # Checking if we received data and if that data is useful.
         if data:
@@ -190,15 +191,17 @@ class ConfigStore(Store):
                         }
                     }
                 }
-            self.redis.set(Keys.get_chain_info(redis_store_key),
-                           json.dumps(dict(temp_data)))
+            self.redis.set(Keys.get_base_chain_monitorables_info(
+                redis_store_key), json.dumps(dict(temp_data)))
         else:
             # Check if the key exists
-            if self.redis.exists(Keys.get_chain_info(redis_store_key)):
+            if self.redis.exists(Keys.get_base_chain_monitorables_info(
+                  redis_store_key)):
                 # Delete the data corresponding to the routing key
                 if loaded_data:
                     # Since there is data check what needs to be overwritten
                     
                 else:
                     # This shouldn't be the case but just incase delete the key
-                    self.redis.remove(Keys.get_chain_info(redis_store_key))
+                    self.redis.remove(Keys.get_base_chain_monitorables_info(
+                        redis_store_key))
