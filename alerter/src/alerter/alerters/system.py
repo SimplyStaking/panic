@@ -21,7 +21,6 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.alert import floaty
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
@@ -318,8 +317,8 @@ class SystemAlerter(Alerter):
                         is_down['warning_threshold'], None)
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
-                if not self._system_initial_downtime_alert_sent[
-                    meta_data['system_id']]:
+                if not self._system_initial_downtime_alert_sent[meta_data[
+                    'system_id']]:
                     if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',
@@ -393,7 +392,6 @@ class SystemAlerter(Alerter):
             self._metric_not_found[meta_data['system_id']] = False
 
         if str_to_bool(is_down['enabled']):
-            previous = metrics['went_down_at']['previous']
             critical_limiters = self._system_critical_timed_task_limiters[
                 meta_data['system_id']]
             is_down_critical_limiter = critical_limiters[
@@ -416,10 +414,9 @@ class SystemAlerter(Alerter):
 
         if str_to_bool(open_fd['enabled']):
             current = metrics['open_file_descriptors']['current']
-            previous = metrics['open_file_descriptors']['previous']
             if current is not None:
                 self._classify_alert(
-                    current, floaty(previous), open_fd, meta_data,
+                    current, open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsDecreasedBelowThresholdAlert,
                     data_for_alerting,
@@ -427,38 +424,35 @@ class SystemAlerter(Alerter):
                 )
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
-            previous = metrics['system_storage_usage']['previous']
             if current is not None:
                 self._classify_alert(
-                    current, floaty(previous), storage, meta_data,
+                    current, storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
                     SystemStorageUsageDecreasedBelowThresholdAlert,
                     data_for_alerting, SystemMetricCode.SystemStorageUsage.value
                 )
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
-            previous = metrics['system_cpu_usage']['previous']
             if current is not None:
                 self._classify_alert(
-                    current, floaty(previous), cpu_use, meta_data,
+                    current, cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
                     SystemCPUUsageDecreasedBelowThresholdAlert,
                     data_for_alerting, SystemMetricCode.SystemCPUUsage.value
                 )
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
-            previous = metrics['system_ram_usage']['previous']
             if current is not None:
                 self._classify_alert(
-                    current, floaty(previous), ram_use, meta_data,
+                    current, ram_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
                     data_for_alerting, SystemMetricCode.SystemRAMUsage.value
                 )
 
     def _classify_alert(
-            self, current: float, previous: float, config: Dict,
-            meta_data: Dict, increased_above_threshold_alert:
+            self, current: float, config: Dict, meta_data: Dict,
+            increased_above_threshold_alert:
             Type[IncreasedAboveThresholdSystemAlert],
             decreased_below_threshold_alert:
             Type[DecreasedBelowThresholdSystemAlert], data_for_alerting: List,
