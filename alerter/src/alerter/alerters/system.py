@@ -18,6 +18,7 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
     ValidUrlAlert, MetricFoundAlert)
+from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import floaty
@@ -29,12 +30,6 @@ from src.utils.types import (IncreasedAboveThresholdSystemAlert,
                              DecreasedBelowThresholdSystemAlert, str_to_bool,
                              convert_to_float_if_not_none_and_not_empty_str)
 
-_OPEN_FD_LIMITER_NAME = 'open_file_descriptors'
-_CPU_USE_LIMITER_NAME = 'system_cpu_usage'
-_STORAGE_USE_LIMITER_NAME = 'system_storage_usage'
-_RAM_USE_LIMITER_NAME = 'system_ram_usage'
-_IS_DOWN_LIMITER_NAME = 'system_is_down'
-
 
 class SystemAlerter(Alerter):
     def __init__(self, alerter_name: str,
@@ -45,9 +40,10 @@ class SystemAlerter(Alerter):
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
-        self._warning_sent = {}
         self._invalid_url = {}
         self._metric_not_found = {}
+        self._warning_sent = {}
+        self._critical_sent = {}
         self._system_initial_downtime_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -59,22 +55,30 @@ class SystemAlerter(Alerter):
 
         if system_id not in self._warning_sent:
             self._warning_sent[system_id] = {
-                'open_fd': False,
-                'cpu_use': False,
-                'storage': False,
-                'ram_use': False,
+                SystemMetricCode.OpenFileDescriptors.value: False,
+                SystemMetricCode.SystemCPUUsage.value: False,
+                SystemMetricCode.SystemStorageUsage.value: False,
+                SystemMetricCode.SystemRAMUsage.value: False,
             }
 
-        # initialise initial metric_not_found and invalid_url
+        if system_id not in self._critical_sent:
+            self._critical_sent[system_id] = {
+                SystemMetricCode.OpenFileDescriptors.value: False,
+                SystemMetricCode.SystemCPUUsage.value: False,
+                SystemMetricCode.SystemStorageUsage.value: False,
+                SystemMetricCode.SystemRAMUsage.value: False,
+            }
+
+        # initialise initial downtime alert sent
+        if system_id not in self._system_initial_downtime_alert_sent:
+            self._system_initial_downtime_alert_sent[system_id] = False
+
+        # Initialise initial metric_not_found and invalid_url
         if system_id not in self._invalid_url:
             self._invalid_url[system_id] = True
 
         if system_id not in self._metric_not_found:
             self._metric_not_found[system_id] = True
-
-        # initialise initial downtime alert sent
-        if system_id not in self._system_initial_downtime_alert_sent:
-            self._system_initial_downtime_alert_sent[system_id] = False
 
         # initialise timed task limiters
         if system_id not in self._system_critical_timed_task_limiters:
@@ -109,20 +113,25 @@ class SystemAlerter(Alerter):
                     is_down['critical_repeat'],
                     timedelta.max.total_seconds() - 1)
 
-            system_critical_limiters[_OPEN_FD_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[
+                SystemMetricCode.OpenFileDescriptors.value] = TimedTaskLimiter(
                 timedelta(seconds=float(open_fd_critical_repeat))
             )
-            system_critical_limiters[_CPU_USE_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[
+                SystemMetricCode.SystemCPUUsage.value] = TimedTaskLimiter(
                 timedelta(seconds=float(cpu_use_critical_repeat))
             )
-            system_critical_limiters[_STORAGE_USE_LIMITER_NAME] = \
+            system_critical_limiters[
+                SystemMetricCode.SystemStorageUsage.value] = \
                 TimedTaskLimiter(
                     timedelta(seconds=float(storage_critical_repeat))
                 )
-            system_critical_limiters[_RAM_USE_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[
+                SystemMetricCode.SystemRAMUsage.value] = TimedTaskLimiter(
                 timedelta(seconds=float(ram_use_critical_repeat))
             )
-            system_critical_limiters[_IS_DOWN_LIMITER_NAME] = TimedTaskLimiter(
+            system_critical_limiters[
+                SystemMetricCode.SystemIsDown.value] = TimedTaskLimiter(
                 timedelta(seconds=float(is_down_critical_repeat))
             )
 
@@ -298,7 +307,7 @@ class SystemAlerter(Alerter):
                 critical_limiters = self._system_critical_timed_task_limiters[
                     meta_data['system_id']]
                 is_down_critical_limiter = critical_limiters[
-                    _IS_DOWN_LIMITER_NAME]
+                    SystemMetricCode.SystemIsDown.value]
                 downtime = monitoring_timestamp - current
                 critical_threshold = \
                     convert_to_float_if_not_none_and_not_empty_str(
@@ -309,8 +318,8 @@ class SystemAlerter(Alerter):
                         is_down['warning_threshold'], None)
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
-                if not self._system_initial_downtime_alert_sent[meta_data[
-                        'system_id']]:
+                if not self._system_initial_downtime_alert_sent[
+                    meta_data['system_id']]:
                     if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',
@@ -387,11 +396,12 @@ class SystemAlerter(Alerter):
             previous = metrics['went_down_at']['previous']
             critical_limiters = self._system_critical_timed_task_limiters[
                 meta_data['system_id']]
-            is_down_critical_limiter = critical_limiters[_IS_DOWN_LIMITER_NAME]
+            is_down_critical_limiter = critical_limiters[
+                SystemMetricCode.SystemIsDown.value]
             initial_downtime_alert_sent = \
                 self._system_initial_downtime_alert_sent[meta_data['system_id']]
 
-            if previous is not None and initial_downtime_alert_sent:
+            if initial_downtime_alert_sent:
                 alert = SystemBackUpAgainAlert(
                     meta_data['system_name'], 'INFO',
                     meta_data['last_monitored'], meta_data['system_parent_id'],
@@ -412,7 +422,8 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsDecreasedBelowThresholdAlert,
-                    data_for_alerting, _OPEN_FD_LIMITER_NAME, 'open_fd'
+                    data_for_alerting,
+                    SystemMetricCode.OpenFileDescriptors.value
                 )
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
@@ -422,7 +433,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
                     SystemStorageUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _STORAGE_USE_LIMITER_NAME, 'storage'
+                    data_for_alerting, SystemMetricCode.SystemStorageUsage.value
                 )
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
@@ -432,7 +443,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
                     SystemCPUUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _CPU_USE_LIMITER_NAME, 'cpu_use'
+                    data_for_alerting, SystemMetricCode.SystemCPUUsage.value
                 )
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
@@ -442,7 +453,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), ram_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _RAM_USE_LIMITER_NAME, 'ram_use'
+                    data_for_alerting, SystemMetricCode.SystemRAMUsage.value
                 )
 
     def _classify_alert(
@@ -451,7 +462,7 @@ class SystemAlerter(Alerter):
             Type[IncreasedAboveThresholdSystemAlert],
             decreased_below_threshold_alert:
             Type[DecreasedBelowThresholdSystemAlert], data_for_alerting: List,
-            critical_limiter_name: str, metric_name: str
+            metric_name: str
     ) -> None:
         warning_threshold = convert_to_float_if_not_none_and_not_empty_str(
             config['warning_threshold'], None)
@@ -459,36 +470,38 @@ class SystemAlerter(Alerter):
             config['critical_threshold'], None)
         warning_enabled = str_to_bool(config['warning_enabled'])
         critical_enabled = str_to_bool(config['critical_enabled'])
-        critical_limiters = self._system_critical_timed_task_limiters[
-            meta_data['system_id']]
-        critical_limiter = critical_limiters[critical_limiter_name]
+        critical_limiter = self._system_critical_timed_task_limiters[
+            meta_data['system_id']][metric_name]
+        warning_sent = self._warning_sent[meta_data['system_id']][metric_name]
+        critical_sent = self._critical_sent[meta_data['system_id']][metric_name]
 
-        if warning_enabled and not self._warning_sent[meta_data['system_id']][
-                  metric_name]:
-            if (warning_threshold <= current < critical_threshold):
-                alert = \
-                    increased_above_threshold_alert(
+        if warning_enabled:
+            if not warning_sent:
+                if warning_threshold <= current:
+                    alert = increased_above_threshold_alert(
                         meta_data['system_name'], current, 'WARNING',
                         meta_data['last_monitored'], 'WARNING',
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
+                        meta_data['system_parent_id'], meta_data['system_id']
                     )
-                data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert %s",
-                                  alert.alert_data)
-                self._warning_sent[meta_data['system_id']][metric_name] = True
-            elif current < warning_threshold <= previous:
-                alert = \
-                    decreased_below_threshold_alert(
-                        meta_data['system_name'], current, 'INFO',
-                        meta_data['last_monitored'], 'WARNING',
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
-                data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert %s",
-                                  alert.alert_data)
-                self._warning_sent[meta_data['system_id']][metric_name] = False
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
+                    self._warning_sent[meta_data['system_id']][
+                        metric_name] = True
+            else:
+                if current < warning_threshold:
+                    alert = \
+                        decreased_below_threshold_alert(
+                            meta_data['system_name'], current, 'INFO',
+                            meta_data['last_monitored'], 'WARNING',
+                            meta_data['system_parent_id'],
+                            meta_data['system_id']
+                        )
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
+                    self._warning_sent[meta_data['system_id']][
+                        metric_name] = False
 
         if critical_enabled:
             monitoring_datetime = datetime.fromtimestamp(
@@ -507,8 +520,8 @@ class SystemAlerter(Alerter):
                                   alert.alert_data)
                 critical_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
-                self._warning_sent[meta_data['system_id']][metric_name] = False
-            elif warning_threshold < current < critical_threshold <= previous:
+                self._critical_sent[meta_data['system_id']][metric_name] = True
+            elif critical_sent and current < critical_threshold:
                 alert = \
                     decreased_below_threshold_alert(
                         meta_data['system_name'], current, 'INFO',
@@ -520,7 +533,7 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 critical_limiter.reset()
-                self._warning_sent[meta_data['system_id']][metric_name] = False
+                self._critical_sent[meta_data['system_id']][metric_name] = False
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
