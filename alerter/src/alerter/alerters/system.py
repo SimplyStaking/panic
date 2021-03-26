@@ -45,6 +45,7 @@ class SystemAlerter(Alerter):
 
         self._system_alerts_config = system_alerts_config
         self._queue_used = ''
+        self._warning_sent = {}
         self._invalid_url = {}
         self._metric_not_found = {}
         self._system_initial_downtime_alert_sent = {}
@@ -55,6 +56,15 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _create_state_for_system(self, system_id: str) -> None:
+
+        if system_id not in self._warning_sent:
+            self._warning_sent[system_id] = {
+                'open_fd': False,
+                'cpu_use': False,
+                'storage': False,
+                'ram_use': False,
+            }
+
         # initialise initial metric_not_found and invalid_url
         if system_id not in self._invalid_url:
             self._invalid_url[system_id] = True
@@ -300,7 +310,7 @@ class SystemAlerter(Alerter):
                 warning_enabled = str_to_bool(is_down['warning_enabled'])
 
                 if not self._system_initial_downtime_alert_sent[meta_data[
-                    'system_id']]:
+                        'system_id']]:
                     if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], 'CRITICAL',
@@ -402,7 +412,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), open_fd, meta_data,
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsDecreasedBelowThresholdAlert,
-                    data_for_alerting, _OPEN_FD_LIMITER_NAME
+                    data_for_alerting, _OPEN_FD_LIMITER_NAME, 'open_fd'
                 )
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
@@ -412,7 +422,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), storage, meta_data,
                     SystemStorageUsageIncreasedAboveThresholdAlert,
                     SystemStorageUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _STORAGE_USE_LIMITER_NAME
+                    data_for_alerting, _STORAGE_USE_LIMITER_NAME, 'storage'
                 )
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
@@ -422,7 +432,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), cpu_use, meta_data,
                     SystemCPUUsageIncreasedAboveThresholdAlert,
                     SystemCPUUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _CPU_USE_LIMITER_NAME
+                    data_for_alerting, _CPU_USE_LIMITER_NAME, 'cpu_use'
                 )
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
@@ -432,7 +442,7 @@ class SystemAlerter(Alerter):
                     current, floaty(previous), ram_use, meta_data,
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
-                    data_for_alerting, _RAM_USE_LIMITER_NAME
+                    data_for_alerting, _RAM_USE_LIMITER_NAME, 'ram_use'
                 )
 
     def _classify_alert(
@@ -441,7 +451,7 @@ class SystemAlerter(Alerter):
             Type[IncreasedAboveThresholdSystemAlert],
             decreased_below_threshold_alert:
             Type[DecreasedBelowThresholdSystemAlert], data_for_alerting: List,
-            critical_limiter_name: str
+            critical_limiter_name: str, metric_name: str
     ) -> None:
         warning_threshold = convert_to_float_if_not_none_and_not_empty_str(
             config['warning_threshold'], None)
@@ -453,9 +463,9 @@ class SystemAlerter(Alerter):
             meta_data['system_id']]
         critical_limiter = critical_limiters[critical_limiter_name]
 
-        if warning_enabled and current != previous:
-            if (warning_threshold <= current < critical_threshold) and not \
-                    (warning_threshold <= previous):
+        if warning_enabled and not self._warning_sent[meta_data['system_id']][
+                  metric_name]:
+            if (warning_threshold <= current < critical_threshold):
                 alert = \
                     increased_above_threshold_alert(
                         meta_data['system_name'], current, 'WARNING',
@@ -466,6 +476,7 @@ class SystemAlerter(Alerter):
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = True
             elif current < warning_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
@@ -477,6 +488,7 @@ class SystemAlerter(Alerter):
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = False
 
         if critical_enabled:
             monitoring_datetime = datetime.fromtimestamp(
@@ -495,6 +507,7 @@ class SystemAlerter(Alerter):
                                   alert.alert_data)
                 critical_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
+                self._warning_sent[meta_data['system_id']][metric_name] = False
             elif warning_threshold < current < critical_threshold <= previous:
                 alert = \
                     decreased_below_threshold_alert(
@@ -507,6 +520,7 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 critical_limiter.reset()
+                self._warning_sent[meta_data['system_id']][metric_name] = False
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
