@@ -79,7 +79,7 @@ class GithubAlerter(Alerter):
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
 
-                if meta['repo_id'] in self._cannot_access_github_page:
+                if meta['repo_id'] not in self._cannot_access_github_page:
                     self._cannot_access_github_page[meta['repo_id']] = True
 
                 if self._cannot_access_github_page[meta['repo_id']]:
@@ -110,7 +110,8 @@ class GithubAlerter(Alerter):
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']
 
-                    if meta_data['repo_id'] in self._cannot_access_github_page:
+                    if meta_data['repo_id'] not in \
+                            self._cannot_access_github_page:
                         self._cannot_access_github_page[meta_data['repo_id']] \
                             = True
 

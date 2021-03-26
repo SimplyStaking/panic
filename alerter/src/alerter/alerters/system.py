@@ -55,7 +55,6 @@ class SystemAlerter(Alerter):
         return self._system_alerts_config
 
     def _create_state_for_system(self, system_id: str) -> None:
-
         # initialise initial metric_not_found and invalid_url
         if system_id not in self._invalid_url:
             self._invalid_url[system_id] = True
