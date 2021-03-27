@@ -520,6 +520,7 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 self._warning_sent[meta_data['system_id']][metric_name] = False
+                critical_limiter.reset()
             elif current < critical_threshold <= previous:
                 # We need to use previous here so that we don't get repetitive
                 # alerts if this condition is met.
