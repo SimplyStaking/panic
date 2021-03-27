@@ -43,7 +43,6 @@ class SystemAlerter(Alerter):
         self._invalid_url = {}
         self._metric_not_found = {}
         self._warning_sent = {}
-        self._critical_sent = {}
         self._system_initial_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -63,16 +62,6 @@ class SystemAlerter(Alerter):
         # for a metric
         if system_id not in self._warning_sent:
             self._warning_sent[system_id] = {
-                SystemMetricCode.OpenFileDescriptors.value: False,
-                SystemMetricCode.SystemCPUUsage.value: False,
-                SystemMetricCode.SystemStorageUsage.value: False,
-                SystemMetricCode.SystemRAMUsage.value: False,
-            }
-
-        # This is for alerts were we want to check if a critical alert was sent
-        # for a metric
-        if system_id not in self._critical_sent:
-            self._critical_sent[system_id] = {
                 SystemMetricCode.OpenFileDescriptors.value: False,
                 SystemMetricCode.SystemCPUUsage.value: False,
                 SystemMetricCode.SystemStorageUsage.value: False,
@@ -481,91 +470,117 @@ class SystemAlerter(Alerter):
         critical_limiter = self._system_critical_timed_task_limiters[
             meta_data['system_id']][metric_name]
         warning_sent = self._warning_sent[meta_data['system_id']][metric_name]
-        critical_sent = self._critical_sent[meta_data['system_id']][metric_name]
         monitoring_datetime = datetime.fromtimestamp(
             float(meta_data['last_monitored']))
 
         if warning_enabled and critical_enabled:
+            # If both warning and critical are enabled, we are combining alerts
+            # so that only one alert is received, depending on the current
+            # value.
+
             if (warning_threshold <= current < critical_threshold) and \
                     not warning_sent:
-                pass
+                # We do not use previous here so that an alert is raised if the
+                # alerter is restarted with a different configuration
+
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current, 'WARNING',
+                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = True
             elif (warning_threshold < critical_threshold <= current) and \
-                    not critical_limiter.can_do_task(monitoring_datetime):
-                pass
-            elif current < warning_threshold <= previous:
-                pass
-            elif current < critical_threshold <= previous:
-                pass
-        elif warning_enabled:
-            # TODO: For each separate one do the condition above. But can we
-            #     : separate them? I think we can by using the conditions below
-            #     : and adding warning_enabled to each etc.
-            pass
-        elif critical_enabled:
-            pass
-
-        # TODO: Info should be on their own to check if alert was sent or
-        #     : current less than previous
-
-        if warning_enabled:
-            if not warning_sent:
-                if warning_threshold <= current:
-                    alert = increased_above_threshold_alert(
-                        meta_data['system_name'], current, 'WARNING',
-                        meta_data['last_monitored'], 'WARNING',
-                        meta_data['system_parent_id'], meta_data['system_id']
-                    )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._warning_sent[meta_data['system_id']][
-                        metric_name] = True
-            else:
-                if current < warning_threshold:
-                    alert = \
-                        decreased_below_threshold_alert(
-                            meta_data['system_name'], current, 'INFO',
-                            meta_data['last_monitored'], 'WARNING',
-                            meta_data['system_parent_id'],
-                            meta_data['system_id']
-                        )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._warning_sent[meta_data['system_id']][
-                        metric_name] = False
-
-        if critical_enabled:
-            monitoring_datetime = datetime.fromtimestamp(
-                float(meta_data['last_monitored']))
-            if current >= critical_threshold and \
                     critical_limiter.can_do_task(monitoring_datetime):
-                alert = \
-                    increased_above_threshold_alert(
-                        meta_data['system_name'], current, 'CRITICAL',
-                        meta_data['last_monitored'], 'CRITICAL',
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
+                # We do not use previous here so that an alert is raised if the
+                # alerter is restarted with a different configuration
+
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current, 'CRITICAL',
+                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 critical_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
-                self._critical_sent[meta_data['system_id']][metric_name] = True
-            elif critical_sent and current < critical_threshold:
-                alert = \
-                    decreased_below_threshold_alert(
-                        meta_data['system_name'], current, 'INFO',
-                        meta_data['last_monitored'], 'CRITICAL',
-                        meta_data['system_parent_id'],
-                        meta_data['system_id']
-                    )
+            elif current < warning_threshold <= previous:
+                # We need to use previous here so that we don't get repetitive
+                # alerts if this condition is met.
+
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, 'INFO',
+                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = False
+            elif current < critical_threshold <= previous:
+                # We need to use previous here so that we don't get repetitive
+                # alerts if this condition is met.
+
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, 'INFO',
+                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 critical_limiter.reset()
-                self._critical_sent[meta_data['system_id']][metric_name] = False
+        elif warning_enabled:
+            # This case would be triggered if only warning is enabled.
+
+            if (warning_threshold <= current) and not warning_sent:
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current, 'WARNING',
+                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = True
+            elif current < warning_threshold <= previous:
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, 'INFO',
+                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][metric_name] = False
+        elif critical_enabled:
+            # This case would be triggered if only critical is enabled
+
+            if (critical_threshold <= current) and \
+                    critical_limiter.can_do_task(monitoring_datetime):
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current, 'CRITICAL',
+                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                critical_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+            elif current < critical_threshold <= previous:
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, 'INFO',
+                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                critical_limiter.reset()
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the
