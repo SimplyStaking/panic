@@ -22,7 +22,7 @@ class GithubAlerter(Alerter):
     def __init__(self, alerter_name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
-        self._cannot_access_github_page = True
+        self._cannot_access_github_page = {}
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -79,7 +79,10 @@ class GithubAlerter(Alerter):
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
 
-                if self._cannot_access_github_page:
+                if meta['repo_id'] not in self._cannot_access_github_page:
+                    self._cannot_access_github_page[meta['repo_id']] = True
+
+                if self._cannot_access_github_page[meta['repo_id']]:
                     alert = GitHubPageNowAccessibleAlert(
                         meta['repo_name'], 'INFO',
                         meta['last_monitored'], meta['repo_parent_id'],
@@ -87,7 +90,7 @@ class GithubAlerter(Alerter):
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page = False
+                    self._cannot_access_github_page[meta['repo_id']] = False
 
                 current = data['no_of_releases']['current']
                 previous = data['no_of_releases']['previous']
@@ -106,6 +109,12 @@ class GithubAlerter(Alerter):
             elif 'error' in data_received:
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']
+
+                    if meta_data['repo_id'] not in \
+                            self._cannot_access_github_page:
+                        self._cannot_access_github_page[meta_data['repo_id']] \
+                            = True
+
                     alert = CannotAccessGitHubPageAlert(
                         meta_data['repo_name'], 'ERROR', meta_data['time'],
                         meta_data['repo_parent_id'], meta_data['repo_id']
@@ -113,7 +122,7 @@ class GithubAlerter(Alerter):
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page = True
+                    self._cannot_access_github_page[meta_data['repo_id']] = True
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))

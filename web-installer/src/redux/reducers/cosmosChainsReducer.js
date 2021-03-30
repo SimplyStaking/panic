@@ -490,6 +490,12 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.node.parent_id].id = action.payload.node.parent_id;
       }
+      if (!state[action.payload.node.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.node.parent_id].repositories = [];
+      }
+      if (!state[action.payload.node.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.node.parent_id].kmses = [];
+      }
       if (!state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.node.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
@@ -546,6 +552,12 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.repo.parent_id].repositories = [];
         state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
+      }
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.repo.parent_id].nodes = [];
+      }
+      if (!state[action.payload.repo.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.repo.parent_id].kmses = [];
       }
       if (!state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.repo.parent_id].repeatAlerts = cosmosRepeatAlerts;
@@ -612,6 +624,12 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.kms.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.kms.parent_id].id = action.payload.kms.parent_id;
       }
+      if (!state[action.payload.kms.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.kms.parent_id].repositories = [];
+      }
+      if (!state[action.payload.kms.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.kms.parent_id].nodes = [];
+      }
       if (!state[action.payload.kms.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.kms.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
@@ -673,6 +691,15 @@ function cosmosChainsById(state = {}, action) {
       if (!state.hasOwnProperty(action.payload.parent_id)) {
         state[action.payload.parent_id] = {};
       }
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.parent_id].repositories = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.parent_id].nodes = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.parent_id].kmses = [];
+      }
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
@@ -722,6 +749,15 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.parent_id].repositories = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.parent_id].nodes = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.parent_id].kmses = [];
+      }
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
@@ -766,6 +802,15 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
       }
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.parent_id].repositories = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.parent_id].nodes = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.parent_id].kmses = [];
+      }
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
       }
@@ -809,6 +854,15 @@ function cosmosChainsById(state = {}, action) {
         state[action.payload.parent_id].severityAlerts = {};
         state[action.payload.parent_id].chain_name = action.payload.chain_name;
         state[action.payload.parent_id].id = action.payload.parent_id;
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.parent_id].repositories = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
+        state[action.payload.parent_id].nodes = [];
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
+        state[action.payload.parent_id].kmses = [];
       }
       if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
         state[action.payload.parent_id].repeatAlerts = cosmosRepeatAlerts;
