@@ -18,5 +18,16 @@ export const missingValues = (object: { [id: string]: any }): string[] => {
     return missingValuesList;
 };
 
+export const allElementsInList = (elements: any[], list: any[]): boolean => {
+    const resultList: boolean[] = elements.map((element: any): boolean => {
+        return list.includes(element)
+    });
+    return resultList.every(Boolean);
+};
+
+export const getElementsNotInList = (elements: any[], list: any[]): any[] => {
+    return elements.filter(element => !list.includes(element));
+};
+
 export const SUCCESS_STATUS: number = 200;
 export const ERR_STATUS: number = 400;

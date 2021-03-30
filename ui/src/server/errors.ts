@@ -1,4 +1,6 @@
-// Server errors
+// Errors that may be raised by the server
+
+import {baseChainsRedis} from "./redis";
 
 export enum UIServerErrorCode {
     E_530 = 530,
@@ -50,16 +52,37 @@ export class InvalidEndpoint extends UIServerError {
     }
 }
 
-// Other errors
-
-export class MaxRetryTimeExceeded extends Error {
-    constructor() {
-        super('Retry time exceeded.');
+export class MissingParameters extends UIServerError {
+    constructor(...parameters: string[]) {
+        let message: string = `Missing parameter(s) ${parameters}`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_532;
+        super(message, code)
     }
 }
 
-export class MaxRetryAttemptsExceeded extends Error {
+// Redis related errors
+export class RedisClientNotInitialised extends UIServerError {
     constructor() {
-        super('Maximum re-try attempts reached.');
+        let message: string = `Redis client not initialised.`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_533;
+        super(message, code)
+    }
+}
+
+export class CouldNotRetrieveDataFromRedis extends UIServerError {
+    constructor() {
+        let message: string = "Could not retrieve data from Redis.";
+        let code: UIServerErrorCode = UIServerErrorCode.E_534;
+        super(message, code)
+    }
+}
+
+// Other Errors
+export class InvalidBaseChains extends UIServerError {
+    constructor(...baseChains: any[]) {
+        let message: string = `Invalid base chain(s) ${baseChains}. Valid ` +
+            `values are combinations of ${baseChainsRedis}`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_535;
+        super(message, code)
     }
 }

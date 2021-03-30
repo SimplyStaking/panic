@@ -1,10 +1,5 @@
-import redis, {RetryStrategyOptions} from "redis"
-import {MaxRetryAttemptsExceeded, MaxRetryTimeExceeded,} from "./errors"
-import {
-    MSG_REDIS_CONNECTION_ESTABLISHED,
-    MSG_REDIS_DISCONNECTED,
-    MSG_REDIS_RECONNECTING
-} from "./msgs";
+import redis, {Callback, RetryStrategyOptions} from "redis"
+import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
 import {
     AlertKeys,
     BaseChainKeys,
@@ -17,6 +12,9 @@ import {
     SystemKeys,
     UniqueKeys
 } from "./types";
+import {RedisClientNotInitialised} from "./errors";
+
+export const baseChainsRedis = ['Cosmos', 'Substrate', 'General'];
 
 export const getRedisHashes = (): RedisHashes => ({
     parent: 'hash_p1'
@@ -77,16 +75,17 @@ export const getBaseChainKeys = (): BaseChainKeys => ({
     monitorables_info: 'bc1'
 });
 
-const addPrefixToKeys = (keysObject: RedisKeys, prefix: string): RedisKeys => {
-    const newObject: RedisKeys = {...keysObject};
-    Object.keys(keysObject)
-        .forEach((key) => {
-            newObject[key] = `${prefix}${keysObject[key]}`;
-        });
+export const addPrefixToKeys =
+    (keysObject: RedisKeys, prefix: string): RedisKeys => {
+        const newObject: RedisKeys = {...keysObject};
+        Object.keys(keysObject)
+            .forEach((key) => {
+                newObject[key] = `${prefix}${keysObject[key]}`;
+            });
     return newObject;
 };
 
-const addPostfixToKeys =
+export const addPostfixToKeys =
     (keysObject: RedisKeys, postfix: string): RedisKeys => {
         const newObject: RedisKeys = {...keysObject};
         Object.keys(keysObject)
@@ -96,67 +95,66 @@ const addPostfixToKeys =
         return newObject;
     };
 
-export class RedisAPI {
-    host: string;
-    port: number;
-    db: number;
-    password?: string;
-    client?: redis.RedisClient;
+export class RedisInterface {
+    private readonly host: string;
+    private readonly port: number;
+    private readonly db: number;
+    private readonly password?: string;
+    private _client?: redis.RedisClient;
 
     constructor(host = "localhost", port = 6379, db = 10, password?: string) {
         this.host = host;
         this.port = port;
         this.db = db;
         this.password = password;
-        this.client = undefined;
+        this._client = undefined;
+    }
+
+    get client() {
+        return this._client
     }
 
     connect() {
-        if (this.client && this.client.connected) {
+        if (this._client && this._client.connected) {
             return;
         }
-        this.client = redis.createClient({
+        this._client = redis.createClient({
             host: this.host,
             port: this.port,
             db: this.db,
             password: this.password,
             no_ready_check: true,
-            retry_strategy: (options: RetryStrategyOptions) => {
-                if (options.total_retry_time > 1000 * 60 * 60) {
-                    // End reconnecting after a specific timeout and flush all
-                    // commands with an individual error
-                    return new MaxRetryTimeExceeded();
-                }
-                if (options.attempt > 10) {
-                    // End reconnecting with built in error
-                    return new MaxRetryAttemptsExceeded();
-                }
-                // reconnect after
-                return Math.min(options.attempt * 100, 3000);
-            },
-            connect_timeout: 10000, // 10 * 1000 ms
+            retry_strategy: (_: RetryStrategyOptions) => {
+                return undefined
+            }
         });
-        this.client.on('error', (error) => {
+        this._client.on('error', (error) => {
             console.error(error);
         });
-        this.client.on('reconnecting', () => {
-            console.debug(MSG_REDIS_RECONNECTING);
+        this._client.on('ready', () => {
+            console.log(MSG_REDIS_CONNECTION_ESTABLISHED);
         });
-        this.client.on('ready', () => {
-            console.debug(MSG_REDIS_CONNECTION_ESTABLISHED);
-        });
-        this.client.on('end', () => {
+        this._client.on('end', () => {
             console.error(MSG_REDIS_DISCONNECTED);
         });
         return;
     }
 
     disconnect() {
-        if (this.client) {
-            this.client.quit();
+        if (this._client) {
+            this._client.quit();
+        } else {
+            throw new RedisClientNotInitialised()
+        }
+    }
+
+    mget(keys: string[], callback: Callback<string[]> | undefined):
+        Promise<string[]> | void {
+        if (this._client) {
+            this._client.mget(keys, callback);
+        } else {
+            throw new RedisClientNotInitialised()
         }
     }
 
 }
-
-// TODO: hmget, mget, hmset, hset and execute_multiple_commands_atomically
