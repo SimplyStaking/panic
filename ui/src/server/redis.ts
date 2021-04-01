@@ -1,4 +1,4 @@
-import redis, {Callback, RetryStrategyOptions} from "redis"
+import redis, {RetryStrategyOptions} from "redis"
 import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
 import {
     AlertKeys,
@@ -82,8 +82,8 @@ export const addPrefixToKeys =
             .forEach((key) => {
                 newObject[key] = `${prefix}${keysObject[key]}`;
             });
-    return newObject;
-};
+        return newObject;
+    };
 
 export const addPostfixToKeys =
     (keysObject: RedisKeys, postfix: string): RedisKeys => {
@@ -143,15 +143,6 @@ export class RedisInterface {
     disconnect() {
         if (this._client) {
             this._client.quit();
-        } else {
-            throw new RedisClientNotInitialised()
-        }
-    }
-
-    mget(keys: string[], callback: Callback<string[]> | undefined):
-        Promise<string[]> | void {
-        if (this._client) {
-            this._client.mget(keys, callback);
         } else {
             throw new RedisClientNotInitialised()
         }

@@ -73,10 +73,15 @@ setInterval(() => {
 // This endpoint expects requests with at least one base chain (Cosmos,
 // Substrate, or General) as parameter. If there are multiple chains they should
 // be separated by commas.
+// TODO: Use get with body (i.e. no data parsed with , .. can use array), use
+//     : directly the redis client (to avoid problems with multi since we
+//     : cannot use multiple hashes, so no try catch but check conection and
+//     : reply error if need be. Each step must be looked at, may need to check
+//     : how we do the validation of the base chain also.
 app.get('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
         console.log('Received GET request for %s', req.url);
-        const {baseChains} = req.query;
+        const {baseChains} = req.body;
 
         // Check if some required parameters are missing, if yes notify the
         // client
@@ -119,27 +124,27 @@ app.get('/server/redis/monitorablesInfo',
             });
 
         let result: any = {};
-        try {
-            redisInterface.mget(constructedKeys, (err, values) => {
-                if (err) {
-                    console.error(err);
-                    const retrievalErr = new CouldNotRetrieveDataFromRedis();
-                    res.status(retrievalErr.code).send(errorJson(
-                        retrievalErr.message));
-                    return
-                }
-                parsedBaseChains.forEach(
-                    (baseChain: string, i: number): void => {
-                        result[baseChain] = JSON.parse(values[i])
-                    });
-                res.status(SUCCESS_STATUS).send(resultJson(result));
-            });
-        } catch (err) {
-            // Inform the user of any errors which are raised. This is done only
-            // for the sake of completion.
-            console.error(err);
-            res.status(err.code).send(errorJson(err.message));
-        }
+        // try {
+        //     redisInterface.client.mget(constructedKeys, (err, values) => {
+        //         if (err) {
+        //             console.error(err);
+        //             const retrievalErr = new CouldNotRetrieveDataFromRedis();
+        //             res.status(retrievalErr.code).send(errorJson(
+        //                 retrievalErr.message));
+        //             return
+        //         }
+        //         parsedBaseChains.forEach(
+        //             (baseChain: string, i: number): void => {
+        //                 result[baseChain] = JSON.parse(values[i])
+        //             });
+        //         res.status(SUCCESS_STATUS).send(resultJson(result));
+        //     });
+        // } catch (err) {
+        //     // Inform the user of any errors which are raised. This is done only
+        //     // for the sake of completion.
+        //     console.error(err);
+        //     res.status(err.code).send(errorJson(err.message));
+        // }
     });
 
 // ---------------------------------------- Server defaults
