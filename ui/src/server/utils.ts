@@ -6,12 +6,12 @@ export const errorJson = (error: any) => ({error});
 export const toBool = (boolStr: string): boolean => ['true', 'yes', 'y'].some(
     (element) => boolStr.toLowerCase().includes(element));
 
-// Checks which keys have values which are missing (null, undefined, '') in a
-// given object and returns an array of keys having missing values.
+// Checks which keys have values which are missing (null, undefined, '', []) in
+// a given object and returns an array of keys having missing values.
 export const missingValues = (object: { [id: string]: any }): string[] => {
     let missingValuesList: string[] = [];
     Object.keys(object).forEach((key) => {
-        if (!object[key]) {
+        if (!object[key] || !object[key].length) {
             missingValuesList.push(key);
         }
     });

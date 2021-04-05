@@ -80,8 +80,9 @@ export class CouldNotRetrieveDataFromRedis extends UIServerError {
 // Other Errors
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
-        let message: string = `Invalid base chain(s) ${baseChains}. Valid ` +
-            `values are combinations of ${baseChainsRedis}`;
+        let message: string = `Invalid base chain(s) ${baseChains}. Please ` +
+            'enter a list containing some of these values: ' +
+            `${baseChainsRedis.join(', ')}`;
         let code: UIServerErrorCode = UIServerErrorCode.E_535;
         super(message, code)
     }

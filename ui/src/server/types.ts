@@ -92,3 +92,17 @@ export type RedisKeys =
     | ConfigKeys
     | AlertKeys
     | BaseChainKeys;
+
+interface monitorablesInfoResultData {
+    Cosmos?: Object,
+    Substrate?: Object,
+    General?: Object,
+
+    [key: string]: Object | undefined
+}
+
+export interface monitorablesInfoResult {
+    result: monitorablesInfoResultData
+
+    [key: string]: Object
+}

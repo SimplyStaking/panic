@@ -1,12 +1,18 @@
 import {readFile} from "./server/files";
 import path from "path"
 import https from "https"
-import {BaseChainKeys, HttpsOptions, RedisKeys} from "./server/types";
+import {
+    BaseChainKeys,
+    HttpsOptions,
+    monitorablesInfoResult,
+    RedisKeys
+} from "./server/types";
 import {
     CouldNotRetrieveDataFromRedis,
     InvalidBaseChains,
     InvalidEndpoint,
-    MissingParameters
+    MissingParameters,
+    RedisClientNotInitialised
 } from './server/errors'
 import {
     allElementsInList,
@@ -71,20 +77,14 @@ setInterval(() => {
 // ---------------------------------------- Redis Endpoints
 
 // This endpoint expects requests with at least one base chain (Cosmos,
-// Substrate, or General) as parameter. If there are multiple chains they should
-// be separated by commas.
-// TODO: Use get with body (i.e. no data parsed with , .. can use array), use
-//     : directly the redis client (to avoid problems with multi since we
-//     : cannot use multiple hashes, so no try catch but check conection and
-//     : reply error if need be. Each step must be looked at, may need to check
-//     : how we do the validation of the base chain also.
-app.get('/server/redis/monitorablesInfo',
+// Substrate, or General) in a list inside the json body structure.
+app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
-        console.log('Received GET request for %s', req.url);
+        console.log('Received POST request for %s', req.url);
         const {baseChains} = req.body;
 
         // Check if some required parameters are missing, if yes notify the
-        // client
+        // client.
         const missingParamsList: string[] = missingValues({baseChains});
         if (missingParamsList.length !== 0) {
             const err = new MissingParameters(...missingParamsList);
@@ -92,59 +92,55 @@ app.get('/server/redis/monitorablesInfo',
             return;
         }
 
-        // Check if the passed base chains are in the required format, and are
-        // the expected values
-        let parsedBaseChains: string[];
-        if (typeof baseChains === "string") {
-            parsedBaseChains = baseChains.split(',');
+        // Check if the passed base chains are valid
+        if (Array.isArray(baseChains)) {
+            if (!allElementsInList(baseChains, baseChainsRedis)) {
+                const invalidBaseChains: string[] = getElementsNotInList(
+                    baseChains, baseChainsRedis);
+                const err = new InvalidBaseChains(...invalidBaseChains);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
         } else {
-            // This case is just for the sake of completion to avoid linting
-            // errors
-            const invalidBaseChains: any[] = getElementsNotInList(
-                [baseChains], baseChainsRedis);
+            const invalidBaseChains: any[] = getElementsNotInList([baseChains],
+                baseChainsRedis);
             const err = new InvalidBaseChains(...invalidBaseChains);
             res.status(err.code).send(errorJson(err.message));
             return;
         }
-        if (!allElementsInList(parsedBaseChains, baseChainsRedis)) {
-            const invalidBaseChains: string[] = getElementsNotInList(
-                parsedBaseChains, baseChainsRedis);
-            const err = new InvalidBaseChains(...invalidBaseChains);
-            res.status(err.code).send(errorJson(err.message));
-            return;
-        }
-
         // Construct the redis keys
         const baseChainKeys: BaseChainKeys = getBaseChainKeys();
         const baseChainKeysPostfix: RedisKeys = addPostfixToKeys(
             baseChainKeys, '_');
-        const constructedKeys: string[] = parsedBaseChains.map(
+        const constructedKeys: string[] = baseChains.map(
             (baseChain: string): string => {
                 return baseChainKeysPostfix.monitorables_info + baseChain
             });
 
-        let result: any = {};
-        // try {
-        //     redisInterface.client.mget(constructedKeys, (err, values) => {
-        //         if (err) {
-        //             console.error(err);
-        //             const retrievalErr = new CouldNotRetrieveDataFromRedis();
-        //             res.status(retrievalErr.code).send(errorJson(
-        //                 retrievalErr.message));
-        //             return
-        //         }
-        //         parsedBaseChains.forEach(
-        //             (baseChain: string, i: number): void => {
-        //                 result[baseChain] = JSON.parse(values[i])
-        //             });
-        //         res.status(SUCCESS_STATUS).send(resultJson(result));
-        //     });
-        // } catch (err) {
-        //     // Inform the user of any errors which are raised. This is done only
-        //     // for the sake of completion.
-        //     console.error(err);
-        //     res.status(err.code).send(errorJson(err.message));
-        // }
+        let result: monitorablesInfoResult = resultJson({});
+        if (redisInterface.client) {
+            redisInterface.client.mget(constructedKeys, (err, values) => {
+                if (err) {
+                    console.error(err);
+                    const retrievalErr = new CouldNotRetrieveDataFromRedis();
+                    res.status(retrievalErr.code).send(errorJson(
+                        retrievalErr.message));
+                    return
+                }
+                baseChains.forEach(
+                    (baseChain: string, i: number): void => {
+                        result.result[baseChain] = JSON.parse(values[i])
+                    });
+                res.status(SUCCESS_STATUS).send(result);
+                return;
+            });
+        } else {
+            // This is done just for the case of completion, as it is very
+            // unlikely to occur.
+            const err = new RedisClientNotInitialised();
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
     });
 
 // ---------------------------------------- Server defaults
