@@ -18,7 +18,9 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
     ValidUrlAlert, MetricFoundAlert)
+from src.alerter.alerts.internal_alerts import SystemAlerterStarted
 from src.alerter.metric_code import SystemMetricCode
+from src.alerter.alert_severties import Severity
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import floaty
@@ -43,6 +45,7 @@ class SystemAlerter(Alerter):
         self._invalid_url = {}
         self._metric_not_found = {}
         self._warning_sent = {}
+        self._alerter_started_sent = {}
         self._system_initial_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -50,7 +53,18 @@ class SystemAlerter(Alerter):
     def alerts_configs(self) -> SystemAlertsConfig:
         return self._system_alerts_config
 
-    def _create_state_for_system(self, system_id: str) -> None:
+    def _create_state_for_system(self, system_id: str, parent_id: str) -> None:
+
+        """
+        We do not want to reset the metrics for the entire chain
+        as it will bug out on the front-end as it will flicker. E.G
+        If an system whose config isn't being changed is currently in CRITICAL
+        on an metric it will change from CRITICAL to INFO and after a while
+        back to CRITICAL, it is better for it ot stay CRITICAL.
+        """
+        if system_id not in self._alerter_started_sent:
+            self._alerter_started_sent[system_id] = False
+
         # This is for alerts were we want to check if an initial alert was sent
         # for that metric, irrespective of the severity.
         if system_id not in self._system_initial_alert_sent:
@@ -68,12 +82,18 @@ class SystemAlerter(Alerter):
                 SystemMetricCode.SystemRAMUsage.value: False,
             }
 
-        # Initialise initial metric_not_found and invalid_url
+        """
+        These are used to indicate that the source that was having issues
+        in the form of `Invalid URL` and `Metric Not Found` is no longer
+        having those issues. By sending out the opposite alerts we can overwrite
+        the REDIS metric data that is displayed in the UI. This also informs
+        the user that the issue has been resolved.
+        """
         if system_id not in self._invalid_url:
-            self._invalid_url[system_id] = True
+            self._invalid_url[system_id] = False
 
         if system_id not in self._metric_not_found:
-            self._metric_not_found[system_id] = True
+            self._metric_not_found[system_id] = False
 
         # initialise timed task limiters
         if system_id not in self._system_critical_timed_task_limiters:
@@ -189,13 +209,13 @@ class SystemAlerter(Alerter):
                 if 'result' in data_received:
                     data = data_received['result']['data']
                     meta_data = data_received['result']['meta_data']
-                    system_id = meta_data['system_id']
-                    self._create_state_for_system(system_id)
-
+                    self._create_state_for_system(meta_data['system_id'],
+                                                  meta_data['system_parent_id'])
                     self._process_results(data, meta_data, data_for_alerting)
                 elif 'error' in data_received:
                     self._create_state_for_system(
-                        data_received['error']['meta_data']['system_id'])
+                        data_received['error']['meta_data']['system_id'],
+                        data_received['error']['meta_data']['system_parent_id'])
                     self._process_errors(data_received['error'],
                                          data_for_alerting)
                 else:
@@ -246,11 +266,21 @@ class SystemAlerter(Alerter):
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
 
+        if not self._alerter_started_sent[meta_data['system_id']]:
+            alert = SystemAlerterStarted(
+                meta_data['system_name'], Severity.INTERNAL.value,
+                meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._alerter_started_sent[meta_data['system_id']] = True
+
         if self._invalid_url[meta_data['system_id']] and \
                 int(error_data['code']) != 5009:
             alert = ValidUrlAlert(
                 meta_data['system_name'], "Url is valid!",
-                'INFO', meta_data['time'],
+                Severity.INFO.value, meta_data['time'],
                 meta_data['system_parent_id'],
                 meta_data['system_id']
             )
@@ -263,7 +293,7 @@ class SystemAlerter(Alerter):
                 int(error_data['code']) != 5003:
             alert = MetricFoundAlert(
                 meta_data['system_name'], "Metrics have been found!",
-                'INFO', meta_data['time'],
+                Severity.INFO.value, meta_data['time'],
                 meta_data['system_parent_id'],
                 meta_data['system_id']
             )
@@ -272,10 +302,16 @@ class SystemAlerter(Alerter):
                               alert.alert_data)
             self._metric_not_found[meta_data['system_id']] = False
 
+        """
+        `MetricNotFoundErrorAlert` and `InvalidUrlAlert` do not have delays,
+        they repeat every monitoring round (DEFAULT: 60 seconds). This is done
+        without delays as it's indication that the configuration is wrong.
+        """
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(
                 meta_data['system_name'], error_data['message'],
-                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                Severity.ERROR.value, meta_data['time'],
+                meta_data['system_parent_id'],
                 meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
@@ -285,7 +321,8 @@ class SystemAlerter(Alerter):
         elif int(error_data['code']) == 5009:
             alert = InvalidUrlAlert(
                 meta_data['system_name'], error_data['message'],
-                'ERROR', meta_data['time'], meta_data['system_parent_id'],
+                Severity.ERROR.value, meta_data['time'],
+                meta_data['system_parent_id'],
                 meta_data['system_id']
             )
             data_for_alerting.append(alert.alert_data)
@@ -319,7 +356,7 @@ class SystemAlerter(Alerter):
                 if not initial_downtime_alert_sent:
                     if critical_enabled and critical_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
-                            meta_data['system_name'], 'CRITICAL',
+                            meta_data['system_name'], Severity.CRITICAL.value,
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -332,7 +369,7 @@ class SystemAlerter(Alerter):
                             SystemMetricCode.SystemIsDown.value] = True
                     elif warning_enabled and warning_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
-                            meta_data['system_name'], 'WARNING',
+                            meta_data['system_name'], Severity.WARNING.value,
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -348,7 +385,8 @@ class SystemAlerter(Alerter):
                             is_down_critical_limiter.can_do_task(
                                 monitoring_datetime):
                         alert = SystemStillDownAlert(
-                            meta_data['system_name'], downtime, 'CRITICAL',
+                            meta_data['system_name'], downtime,
+                            Severity.CRITICAL.value,
                             meta_data['time'], meta_data['system_parent_id'],
                             meta_data['system_id']
                         )
@@ -366,10 +404,26 @@ class SystemAlerter(Alerter):
         ram_use = self.alerts_configs.system_ram_usage
         is_down = self.alerts_configs.system_is_down
 
+        """
+        If the internal alert stating that an alerter was started
+        wasn't sent yet, add it to the queue. This alert is used to
+        reset the alert metrics in the data store for erroring alerts
+        """
+        if not self._alerter_started_sent[meta_data['system_id']]:
+            alert = SystemAlerterStarted(
+                meta_data['system_name'], Severity.INTERNAL.value,
+                meta_data['last_monitored'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+
+            data_for_alerting.append(alert.alert_data)
+            self.logger.debug("Successfully classified alert %s",
+                              alert.alert_data)
+            self._alerter_started_sent[meta_data['system_id']] = True
+
         if self._invalid_url[meta_data['system_id']]:
             alert = ValidUrlAlert(
                 meta_data['system_name'], "Url is valid!",
-                'INFO', meta_data['last_monitored'],
+                Severity.INFO.value, meta_data['last_monitored'],
                 meta_data['system_parent_id'],
                 meta_data['system_id']
             )
@@ -380,7 +434,7 @@ class SystemAlerter(Alerter):
         if self._metric_not_found[meta_data['system_id']]:
             alert = MetricFoundAlert(
                 meta_data['system_name'], "Metrics have been found!",
-                'INFO', meta_data['last_monitored'],
+                Severity.INFO.value, meta_data['last_monitored'],
                 meta_data['system_parent_id'],
                 meta_data['system_id']
             )
@@ -400,7 +454,7 @@ class SystemAlerter(Alerter):
 
             if previous is not None or initial_downtime_alert_sent:
                 alert = SystemBackUpAgainAlert(
-                    meta_data['system_name'], 'INFO',
+                    meta_data['system_name'], Severity.INFO.value,
                     meta_data['last_monitored'], meta_data['system_parent_id'],
                     meta_data['system_id']
                 )
@@ -484,8 +538,8 @@ class SystemAlerter(Alerter):
                 # alerter is restarted with a different configuration
 
                 alert = increased_above_threshold_alert(
-                    meta_data['system_name'], current, 'WARNING',
-                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_name'], current, Severity.WARNING.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -498,8 +552,8 @@ class SystemAlerter(Alerter):
                 # alerter is restarted with a different configuration
 
                 alert = increased_above_threshold_alert(
-                    meta_data['system_name'], current, 'CRITICAL',
-                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_name'], current, Severity.CRITICAL.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -512,8 +566,8 @@ class SystemAlerter(Alerter):
                 # alerts if this condition is met.
 
                 alert = decreased_below_threshold_alert(
-                    meta_data['system_name'], current, 'INFO',
-                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -526,8 +580,8 @@ class SystemAlerter(Alerter):
                 # alerts if this condition is met.
 
                 alert = decreased_below_threshold_alert(
-                    meta_data['system_name'], current, 'INFO',
-                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -539,8 +593,8 @@ class SystemAlerter(Alerter):
 
             if (warning_threshold <= current) and not warning_sent:
                 alert = increased_above_threshold_alert(
-                    meta_data['system_name'], current, 'WARNING',
-                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_name'], current, Severity.WARNING.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -549,8 +603,8 @@ class SystemAlerter(Alerter):
                 self._warning_sent[meta_data['system_id']][metric_name] = True
             elif current < warning_threshold <= previous:
                 alert = decreased_below_threshold_alert(
-                    meta_data['system_name'], current, 'INFO',
-                    meta_data['last_monitored'], 'WARNING',
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -563,8 +617,8 @@ class SystemAlerter(Alerter):
             if (critical_threshold <= current) and \
                     critical_limiter.can_do_task(monitoring_datetime):
                 alert = increased_above_threshold_alert(
-                    meta_data['system_name'], current, 'CRITICAL',
-                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_name'], current, Severity.CRITICAL.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)
@@ -574,8 +628,8 @@ class SystemAlerter(Alerter):
                     monitoring_datetime)
             elif current < critical_threshold <= previous:
                 alert = decreased_below_threshold_alert(
-                    meta_data['system_name'], current, 'INFO',
-                    meta_data['last_monitored'], 'CRITICAL',
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
                     meta_data['system_parent_id'], meta_data['system_id']
                 )
                 data_for_alerting.append(alert.alert_data)

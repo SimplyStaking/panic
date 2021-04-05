@@ -8,6 +8,7 @@ import pika.exceptions
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
+from src.alerter.alert_severties import Severity
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE,
@@ -22,6 +23,14 @@ class AlertStore(Store):
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                db_name=self.mongo_db, host=self.mongo_ip,
                                port=self.mongo_port)
+        self.github_metrics = ['github_release', 'cannot_access_github']
+        self.system_metrics = ['open_file_descriptors',
+                               'system_cpu_usage',
+                               'system_storage_usage',
+                               'system_ram_usage',
+                               'system_is_down',
+                               'invalid_url',
+                               'metric_not_found']
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -142,9 +151,39 @@ class AlertStore(Store):
         )
 
     def _process_redis_store(self, alert: Dict) -> None:
-        metric_data = {'severity': alert['severity'],
-                       'message': alert['message']}
-        key = alert['origin_id']
-        self.redis.hset(Keys.get_hash_parent(alert['parent_id']),
-                        eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
-                        json.dumps(metric_data))
+        """
+        If the severity of the alert is internal delete all the
+        metrics with regards to that source. Metrics whose keys do not exist
+        yet are considered to be all informational (no warning/critical/error)
+        alerts are occuring.
+        """
+        if alert['severity'] == Severity.INTERNAL.value:
+            if alert['alert_code']['code'] == 'system_alerter_started':
+                key = alert['origin_id']
+                for metric_name in self.system_metrics:
+                    if self.redis.hexists(
+                        Keys.get_hash_parent([alert['parent_id']]),
+                            eval('Keys.get_alert_{}(key)'.format(metric_name))):
+
+                        self.redis.hremove(
+                            Keys.get_hash_parent([alert['parent_id']]),
+                            eval('Keys.get_alert_{}(key)'.format(metric_name)))
+
+            elif alert['alert_code']['code'] == 'github_alerter_started':
+                key = alert['origin_id']
+                for metric_name in self.github_metrics:
+                    if self.redis.hexists(
+                        Keys.get_hash_parent([alert['parent_id']]),
+                            eval('Keys.get_alert_{}(key)'.format(metric_name))):
+
+                        self.redis.hremove(
+                            Keys.get_hash_parent([alert['parent_id']]),
+                            eval('Keys.get_alert_{}(key)'.format(metric_name)))
+        else:
+            metric_data = {'severity': alert['severity'],
+                           'message': alert['message']}
+            key = alert['origin_id']
+            self.redis.hset(
+                Keys.get_hash_parent(alert['parent_id']),
+                eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                json.dumps(metric_data))
