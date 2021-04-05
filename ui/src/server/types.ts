@@ -1,3 +1,6 @@
+import {allElementsInListHaveTypeString} from "./utils";
+import {type} from "os";
+
 export interface HttpsOptions {
     key: Buffer,
     cert: Buffer,
@@ -105,4 +108,35 @@ export interface monitorablesInfoResult {
     result: monitorablesInfoResultData
 
     [key: string]: Object
+}
+
+interface alertsOverviewChainInput {
+    systems: string[],
+    repos: string[],
+}
+
+export interface alertsOverviewInput {
+    [key: string]: alertsOverviewChainInput
+}
+
+export function isAlertsOverviewInput(object: any): boolean {
+    let isAlertsOverviewInput: boolean = true;
+    if (object.constructor !== Object) {
+        return false;
+    }
+    Object.keys(object).forEach(
+        (key: string, _: number): void => {
+            if (!(object[key] && object[key].constructor === Object)) {
+                isAlertsOverviewInput = false;
+            } else if (!('systems' in object[key] && 'repos' in object[key])) {
+                isAlertsOverviewInput = false;
+            } else if (!(Array.isArray(object[key].systems)
+                && Array.isArray(object[key].repos))) {
+                isAlertsOverviewInput = false;
+            } else if (!(allElementsInListHaveTypeString(object[key].systems)
+                && allElementsInListHaveTypeString(object[key].repos))) {
+                isAlertsOverviewInput = false;
+            }
+        });
+    return isAlertsOverviewInput;
 }

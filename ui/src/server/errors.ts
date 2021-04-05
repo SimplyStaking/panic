@@ -52,9 +52,9 @@ export class InvalidEndpoint extends UIServerError {
     }
 }
 
-export class MissingParameters extends UIServerError {
-    constructor(...parameters: string[]) {
-        let message: string = `Missing parameter(s) ${parameters}`;
+export class MissingKeysInBody extends UIServerError {
+    constructor(...keys: string[]) {
+        let message: string = `Missing key(s) ${keys.join(', ')} in body`;
         let code: UIServerErrorCode = UIServerErrorCode.E_532;
         super(message, code)
     }
@@ -84,6 +84,14 @@ export class InvalidBaseChains extends UIServerError {
             'enter a list containing some of these values: ' +
             `${baseChainsRedis.join(', ')}`;
         let code: UIServerErrorCode = UIServerErrorCode.E_535;
+        super(message, code)
+    }
+}
+
+export class InvalidJsonSchema extends UIServerError {
+    constructor(whichJson: string) {
+        let message: string = `${whichJson} does not obey the required schema`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_536;
         super(message, code)
     }
 }
