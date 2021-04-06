@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ERR_STATUS = exports.SUCCESS_STATUS = exports.allElementsInListHaveTypeString = exports.getElementsNotInList = exports.allElementsInList = exports.missingValues = exports.toBool = exports.errorJson = exports.resultJson = void 0;
+exports.Severities = exports.ERR_STATUS = exports.SUCCESS_STATUS = exports.allElementsInListHaveTypeString = exports.getElementsNotInList = exports.allElementsInList = exports.missingValues = exports.toBool = exports.errorJson = exports.resultJson = void 0;
 const resultJson = (result) => ({ result });
 exports.resultJson = resultJson;
 const errorJson = (error) => ({ error });
@@ -37,3 +37,10 @@ const allElementsInListHaveTypeString = (list) => {
 exports.allElementsInListHaveTypeString = allElementsInListHaveTypeString;
 exports.SUCCESS_STATUS = 200;
 exports.ERR_STATUS = 400;
+var Severities;
+(function (Severities) {
+    Severities["INFO"] = "INFO";
+    Severities["WARNING"] = "WARNING";
+    Severities["CRITICAL"] = "CRITICAL";
+    Severities["ERROR"] = "ERROR";
+})(Severities = exports.Severities || (exports.Severities = {}));

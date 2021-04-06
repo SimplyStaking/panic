@@ -27,6 +27,7 @@ import {
     getElementsNotInList,
     missingValues,
     resultJson,
+    Severities,
     SUCCESS_STATUS
 } from "./server/utils";
 import express from "express";
@@ -39,7 +40,8 @@ import {
     getAlertKeysRepo,
     getBaseChainKeys,
     getRedisHashes,
-    RedisInterface, addPrefixToKeys
+    RedisInterface,
+    addPrefixToKeys
 } from "./server/redis"
 
 // Import certificate files
@@ -239,7 +241,7 @@ app.post('/server/redis/alertsOverview',
                                     "message" in value && "severity" in value) {
                                     // Add array of problems if not initialised
                                     // yet and there is indeed problems.
-                                    if (value.severity !== "INFO" &&
+                                    if (value.severity !== Severities.INFO &&
                                         !result.result[parentId].problems[
                                             monitorableId]) {
                                         result.result[parentId].problems[
@@ -259,17 +261,23 @@ app.post('/server/redis/alertsOverview',
 
                                     // Increase the counter and save the
                                     // problems.
-                                    if (value.severity === "INFO"){
+                                    if (value.severity === Severities.INFO){
                                         result.result[parentId].info += 1;
-                                    } else if (value.severity === "CRITICAL") {
+                                    } else if (
+                                        value.severity === Severities.CRITICAL
+                                    ) {
                                         result.result[parentId].critical += 1;
                                         result.result[parentId].problems[
                                             monitorableId].push(value)
-                                    } else if (value.severity === "WARNING") {
+                                    } else if (
+                                        value.severity === Severities.WARNING
+                                    ) {
                                         result.result[parentId].warning += 1;
                                         result.result[parentId].problems[
                                             monitorableId].push(value)
-                                    } else if (value.severity === "ERROR") {
+                                    } else if (
+                                        value.severity === Severities.ERROR
+                                    ) {
                                         result.result[parentId].error += 1;
                                         result.result[parentId].problems[
                                             monitorableId].push(value)

@@ -186,7 +186,7 @@ app.post('/server/redis/alertsOverview', (req, res) => __awaiter(void 0, void 0,
                             "message" in value && "severity" in value) {
                             // Add array of problems if not initialised
                             // yet and there is indeed problems.
-                            if (value.severity !== "INFO" &&
+                            if (value.severity !== utils_1.Severities.INFO &&
                                 !result.result[parentId].problems[monitorableId]) {
                                 result.result[parentId].problems[monitorableId] = [];
                             }
@@ -198,18 +198,18 @@ app.post('/server/redis/alertsOverview', (req, res) => __awaiter(void 0, void 0,
                             }
                             // Increase the counter and save the
                             // problems.
-                            if (value.severity === "INFO") {
+                            if (value.severity === utils_1.Severities.INFO) {
                                 result.result[parentId].info += 1;
                             }
-                            else if (value.severity === "CRITICAL") {
+                            else if (value.severity === utils_1.Severities.CRITICAL) {
                                 result.result[parentId].critical += 1;
                                 result.result[parentId].problems[monitorableId].push(value);
                             }
-                            else if (value.severity === "WARNING") {
+                            else if (value.severity === utils_1.Severities.WARNING) {
                                 result.result[parentId].warning += 1;
                                 result.result[parentId].problems[monitorableId].push(value);
                             }
-                            else if (value.severity === "ERROR") {
+                            else if (value.severity === utils_1.Severities.ERROR) {
                                 result.result[parentId].error += 1;
                                 result.result[parentId].problems[monitorableId].push(value);
                             }
