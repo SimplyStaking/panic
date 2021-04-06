@@ -237,11 +237,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.info, self.last_monitored, self.parent_id,
                 self.repo_id
             )
-            mock_github_access.assert_called_once_with(
-                self.repo_name, self.info,
-                self.last_monitored, self.parent_id,
-                self.repo_id
-            )
+            mock_github_access.assert_not_called()
             mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -282,7 +278,7 @@ class TestGithubAlerter(unittest.TestCase):
                 json.dumps(self.github_data_received).encode()
             )
             mock_new_github_release.assert_not_called()
-            mock_github_access.assert_called_once()
+            mock_github_access.assert_not_called()
             self.assertEqual(2, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -338,10 +334,7 @@ class TestGithubAlerter(unittest.TestCase):
 
             mock_new_github_release.assert_has_calls([call_1, call_2, call_3,
                                                       call_4, call_5])
-            mock_github_access.assert_called_once_with(
-                self.repo_name, self.info, self.last_monitored,
-                self.parent_id, self.repo_id
-            )
+            mock_github_access.assert_not_called()
             # Call count of basic_publish_confirm is higher than
             # github_release call_count because of the hb and initial
             # validation alerts
@@ -387,7 +380,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.parent_id, self.repo_id
             )
 
-            self.assertEqual(2, mock_basic_publish_confirm.call_count)
+            self.assertEqual(3, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
