@@ -172,14 +172,15 @@ app.post('/server/redis/alertsOverview', (req, res) => __awaiter(void 0, void 0,
                 "critical": 0,
                 "warning": 0,
                 "error": 0,
-                "problems": {}
+                "problems": {},
+                "releases": {},
             };
             for (const [monitorableId, keysList] of Object.entries(monitorableKeysObject)) {
                 redisMulti.hmget(parentHash, keysList, (err, values) => {
                     if (err) {
                         return;
                     }
-                    keysList.forEach((_, i) => {
+                    keysList.forEach((key, i) => {
                         const value = JSON.parse(values[i]);
                         if (value && value.constructor === Object &&
                             "message" in value && "severity" in value) {
@@ -189,6 +190,14 @@ app.post('/server/redis/alertsOverview', (req, res) => __awaiter(void 0, void 0,
                                 !result.result[parentId].problems[monitorableId]) {
                                 result.result[parentId].problems[monitorableId] = [];
                             }
+                            // If the alerter has detected a new release
+                            // add it to the list of releases
+                            const newReleaseKey = redis_1.addPostfixToKeys(alertKeysRepoPostfix, monitorableId).github_release;
+                            if (key === newReleaseKey) {
+                                result.result[parentId].releases[monitorableId] = value;
+                            }
+                            // Increase the counter and save the
+                            // problems.
                             if (value.severity === "INFO") {
                                 result.result[parentId].info += 1;
                             }

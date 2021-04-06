@@ -225,14 +225,15 @@ app.post('/server/redis/alertsOverview',
                     "critical": 0,
                     "warning": 0,
                     "error": 0,
-                    "problems": {}
+                    "problems": {},
+                    "releases": {},
                 };
                 for (const [monitorableId, keysList] of
                     Object.entries(monitorableKeysObject)) {
                     redisMulti.hmget(parentHash, keysList, (err, values) => {
                         if (err) { return }
                         keysList.forEach(
-                            (_: string, i: number): void => {
+                            (key: string, i: number): void => {
                                 const value = JSON.parse(values[i]);
                                 if (value && value.constructor === Object &&
                                     "message" in value && "severity" in value) {
@@ -245,8 +246,21 @@ app.post('/server/redis/alertsOverview',
                                             monitorableId] = []
                                     }
 
+                                    // If the alerter has detected a new release
+                                    // add it to the list of releases
+                                    const newReleaseKey: string =
+                                        addPostfixToKeys(
+                                            alertKeysRepoPostfix,
+                                            monitorableId).github_release;
+                                    if (key === newReleaseKey){
+                                        result.result[parentId].releases[
+                                            monitorableId] = value
+                                    }
+
+                                    // Increase the counter and save the
+                                    // problems.
                                     if (value.severity === "INFO"){
-                                        result.result[parentId].info += 1
+                                        result.result[parentId].info += 1;
                                     } else if (value.severity === "CRITICAL") {
                                         result.result[parentId].critical += 1;
                                         result.result[parentId].problems[

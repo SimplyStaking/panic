@@ -158,6 +158,9 @@ interface AlertsOverviewResultData {
                 severity: string
             }[]
         }
+        releases: {
+            [key: string]: string
+        }
     }
 }
 
