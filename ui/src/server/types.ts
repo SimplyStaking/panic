@@ -1,5 +1,4 @@
 import {allElementsInListHaveTypeString} from "./utils";
-import {type} from "os";
 
 export interface HttpsOptions {
     key: Buffer,
@@ -65,7 +64,7 @@ export interface ConfigKeys {
     [key: string]: string
 }
 
-export interface AlertKeys {
+export interface AlertKeysSystem {
     open_file_descriptors: string,
     system_cpu_usage: string,
     system_storage_usage: string,
@@ -73,6 +72,11 @@ export interface AlertKeys {
     system_is_down: string,
     metric_not_found: string,
     invalid_url: string,
+
+    [key: string]: string
+}
+
+export interface AlertKeysRepo {
     github_release: string,
     cannot_access_github: string,
 
@@ -93,10 +97,11 @@ export type RedisKeys =
     | ComponentKeys
     | ChainKeys
     | ConfigKeys
-    | AlertKeys
+    | AlertKeysSystem
+    | AlertKeysRepo
     | BaseChainKeys;
 
-interface monitorablesInfoResultData {
+interface MonitorablesInfoResultData {
     Cosmos?: Object,
     Substrate?: Object,
     General?: Object,
@@ -104,24 +109,24 @@ interface monitorablesInfoResultData {
     [key: string]: Object | undefined
 }
 
-export interface monitorablesInfoResult {
-    result: monitorablesInfoResultData
+export interface MonitorablesInfoResult {
+    result: MonitorablesInfoResultData
 
     [key: string]: Object
 }
 
-interface alertsOverviewChainInput {
+interface AlertsOverviewChainInput {
     systems: string[],
     repos: string[],
 }
 
-export interface alertsOverviewInput {
-    [key: string]: alertsOverviewChainInput
+export interface AlertsOverviewInput {
+    [key: string]: AlertsOverviewChainInput
 }
 
 export function isAlertsOverviewInput(object: any): boolean {
     let isAlertsOverviewInput: boolean = true;
-    if (object.constructor !== Object) {
+    if (!object || object.constructor !== Object) {
         return false;
     }
     Object.keys(object).forEach(
@@ -139,4 +144,25 @@ export function isAlertsOverviewInput(object: any): boolean {
             }
         });
     return isAlertsOverviewInput;
+}
+
+interface AlertsOverviewResultData {
+    [key: string]: {
+        info: number,
+        warning: number,
+        critical: number,
+        error: number
+        problems: {
+            [key: string]: {
+                msg: string
+                severity: string
+            }[]
+        }
+    }
+}
+
+export interface AlertsOverviewResult {
+    result: AlertsOverviewResultData
+
+    [key: string]: AlertsOverviewResultData
 }

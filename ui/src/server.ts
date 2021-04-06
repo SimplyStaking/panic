@@ -2,13 +2,15 @@ import {readFile} from "./server/files";
 import path from "path"
 import https from "https"
 import {
-    AlertKeys,
+    AlertKeysSystem,
+    AlertKeysRepo,
+    AlertsOverviewInput,
     BaseChainKeys,
     HttpsOptions,
     isAlertsOverviewInput,
-    monitorablesInfoResult,
+    MonitorablesInfoResult,
     RedisHashes,
-    RedisKeys
+    RedisKeys, AlertsOverviewResult
 } from "./server/types";
 import {
     CouldNotRetrieveDataFromRedis,
@@ -33,10 +35,11 @@ import cookieParser from "cookie-parser";
 import {
     addPostfixToKeys,
     baseChainsRedis,
-    getAlertKeys,
+    getAlertKeysSystem,
+    getAlertKeysRepo,
     getBaseChainKeys,
     getRedisHashes,
-    RedisInterface
+    RedisInterface, addPrefixToKeys
 } from "./server/redis"
 
 // Import certificate files
@@ -69,9 +72,10 @@ app.use((err: any, req: express.Request, res: express.Response,
 });
 
 // Connect with Redis
-const redisHost = process.env.REDIS_IP;
+const redisHost = process.env.REDIS_IP || "localhost";
 const redisPort = parseInt(process.env.REDIS_PORT || "6379");
 const redisDB = parseInt(process.env.REDIS_DB || "10");
+const uniqueAlerterIdentifier = process.env.UNIQUE_ALERTER_IDENTIFIER || "";
 const redisInterface = new RedisInterface(redisHost, redisPort, redisDB);
 redisInterface.connect();
 
@@ -117,14 +121,16 @@ app.post('/server/redis/monitorablesInfo',
         }
         // Construct the redis keys
         const baseChainKeys: BaseChainKeys = getBaseChainKeys();
+        const baseChainKeysNamespace: RedisKeys = addPrefixToKeys(
+            baseChainKeys, `${uniqueAlerterIdentifier}:`);
         const baseChainKeysPostfix: RedisKeys = addPostfixToKeys(
-            baseChainKeys, '_');
+            baseChainKeysNamespace, '_');
         const constructedKeys: string[] = baseChains.map(
             (baseChain: string): string => {
                 return baseChainKeysPostfix.monitorables_info + baseChain
             });
 
-        let result: monitorablesInfoResult = resultJson({});
+        let result: MonitorablesInfoResult = resultJson({});
         if (redisInterface.client) {
             redisInterface.client.mget(constructedKeys, (err, values) => {
                 if (err) {
@@ -154,7 +160,7 @@ app.post('/server/redis/monitorablesInfo',
 app.post('/server/redis/alertsOverview',
     async (req: express.Request, res: express.Response) => {
         console.log('Received POST request for %s', req.url);
-        const {parentIds} = req.body;
+        const parentIds: AlertsOverviewInput = req.body.parentIds;
         // Check if some required keys are missing in the body object, if yes
         // notify the client.
         const missingKeysList: string[] = missingValues({parentIds});
@@ -172,61 +178,113 @@ app.post('/server/redis/alertsOverview',
         }
 
         // Construct the redis keys inside a JSON object indexed by parent hash
-        const parentHashKeys: { [key: string]: string[] } = {};
+        // and the system/repo id. We also need a way to map the hash to the
+        // parent id.
+        const parentHashKeys: { [key: string]: {[key: string]: string[]}} = {};
+        const parentHashId: {[key: string]: string} = {};
+
         const redisHashes: RedisHashes = getRedisHashes();
-        const alertKeys: AlertKeys = getAlertKeys();
-        const alertKeysPostfix: RedisKeys = addPostfixToKeys(alertKeys, '_');
-        const redisHashesPostfix: RedisKeys = addPostfixToKeys(redisHashes,
+        const redisHashesNamespace: RedisKeys = addPrefixToKeys(
+            redisHashes, `${uniqueAlerterIdentifier}:`);
+        const redisHashesPostfix: RedisKeys = addPostfixToKeys(
+            redisHashesNamespace, '_');
+        const alertKeysSystem: AlertKeysSystem = getAlertKeysSystem();
+        const alertKeysSystemPostfix: RedisKeys = addPostfixToKeys(
+            alertKeysSystem, '_');
+        const alertKeysRepo: AlertKeysRepo = getAlertKeysRepo();
+        const alertKeysRepoPostfix: RedisKeys = addPostfixToKeys(alertKeysRepo,
             '_');
-        // TODO: Iterate through keys, compute hash, iterate through systems
-        //     : and repos array and add to the list of keys. Note iterating
-        //     : through keys and array is different
-        // parentIds.forEach((parentId: string, i: number): void => {
-        //     keysList = []
-        //     const parentHash: string = redisHashesPostfix.parent + parentId;
-        //     parentIds.systems.forEach((parentId: string, i: number): void => {
-        //
-        //     });
-        //     parentIds.repos.forEach((parentId: string, i: number): void => {
-        //
-        //     });
-        // });
+        for (const [parentId, sourcesObject] of Object.entries(parentIds)) {
+            const parentHash: string = redisHashesPostfix.parent + parentId;
+            parentHashKeys[parentHash] = {};
+            parentHashId[parentHash] = parentId;
+            sourcesObject.systems.forEach((systemId) => {
+                const constructedKeys : RedisKeys = addPostfixToKeys(
+                    alertKeysSystemPostfix, systemId);
+                parentHashKeys[parentHash][systemId] = Object.values(
+                    constructedKeys)
+            });
+            sourcesObject.repos.forEach((repoId) => {
+                const constructedKeys : RedisKeys = addPostfixToKeys(
+                    alertKeysRepoPostfix, repoId);
+                parentHashKeys[parentHash][repoId] = Object.values(
+                    constructedKeys)
+            });
+        }
 
+        let result: AlertsOverviewResult = resultJson({});
+        if (redisInterface.client) {
+            // Using multi() means that all commands are only performed once
+            // exec() is called, and this is done atomically.
+            const redisMulti = redisInterface.client.multi();
+            for (const [parentHash, monitorableKeysObject] of Object.entries(
+                parentHashKeys)) {
+                const parentId : string = parentHashId[parentHash];
+                result.result[parentId] = {
+                    "info": 0,
+                    "critical": 0,
+                    "warning": 0,
+                    "error": 0,
+                    "problems": {}
+                };
+                for (const [monitorableId, keysList] of
+                    Object.entries(monitorableKeysObject)) {
+                    redisMulti.hmget(parentHash, keysList, (err, values) => {
+                        if (err) { return }
+                        keysList.forEach(
+                            (_: string, i: number): void => {
+                                const value = JSON.parse(values[i]);
+                                if (value && value.constructor === Object &&
+                                    "message" in value && "severity" in value) {
+                                    // Add array of problems if not initialised
+                                    // yet and there is indeed problems.
+                                    if (value.severity !== "INFO" &&
+                                        !result.result[parentId].problems[
+                                            monitorableId]) {
+                                        result.result[parentId].problems[
+                                            monitorableId] = []
+                                    }
 
-        // const constructedKeys: string[] = baseChains.map(
-        //     (baseChain: string): string => {
-        //         return baseChainKeysPostfix.monitorables_info + baseChain
-        //     });
-        // TODO: Need to check that parentIds does have parentIds or test
-        //     : whether it works or not (with redis error is good).
-        // TODO: Need to conduct keys before executing them, then get
-        //     : client.multi object and call it a number of time with hget,
-        //     : then call it with execute.
-        //
-        //     let result: monitorablesInfoResult = resultJson({});
-        //     if (redisInterface.client) {
-        //         redisInterface.client.mget(constructedKeys, (err, values) => {
-        //             if (err) {
-        //                 console.error(err);
-        //                 const retrievalErr = new CouldNotRetrieveDataFromRedis();
-        //                 res.status(retrievalErr.code).send(errorJson(
-        //                     retrievalErr.message));
-        //                 return
-        //             }
-        //             baseChains.forEach(
-        //                 (baseChain: string, i: number): void => {
-        //                     result.result[baseChain] = JSON.parse(values[i])
-        //                 });
-        //             res.status(SUCCESS_STATUS).send(result);
-        //             return;
-        //         });
-        //     } else {
-        //         // This is done just for the case of completion, as it is very
-        //         // unlikely to occur.
-        //         const err = new RedisClientNotInitialised();
-        //         res.status(err.code).send(errorJson(err.message));
-        //         return;
-        //     }
+                                    if (value.severity === "INFO"){
+                                        result.result[parentId].info += 1
+                                    } else if (value.severity === "CRITICAL") {
+                                        result.result[parentId].critical += 1;
+                                        result.result[parentId].problems[
+                                            monitorableId].push(value)
+                                    } else if (value.severity === "WARNING") {
+                                        result.result[parentId].warning += 1;
+                                        result.result[parentId].problems[
+                                            monitorableId].push(value)
+                                    } else if (value.severity === "ERROR") {
+                                        result.result[parentId].error += 1;
+                                        result.result[parentId].problems[
+                                            monitorableId].push(value)
+                                    }
+                                } else {
+                                    result.result[parentId].info += 1;
+                                }
+                            });
+                    })
+                }
+            }
+            redisMulti.exec((err, _) => {
+                if (err) {
+                    console.error(err);
+                    const retrievalErr = new CouldNotRetrieveDataFromRedis();
+                    res.status(retrievalErr.code).send(errorJson(
+                        retrievalErr.message));
+                    return
+                }
+                res.status(SUCCESS_STATUS).send(result);
+                return;
+            });
+        } else {
+            // This is done just for the case of completion, as it is very
+            // unlikely to occur.
+            const err = new RedisClientNotInitialised();
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
     });
 
 // ---------------------------------------- Server defaults

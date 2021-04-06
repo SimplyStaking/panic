@@ -1,7 +1,8 @@
 import redis, {RetryStrategyOptions} from "redis"
 import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
 import {
-    AlertKeys,
+    AlertKeysSystem,
+    AlertKeysRepo,
     BaseChainKeys,
     ChainKeys,
     ComponentKeys,
@@ -59,7 +60,7 @@ export const getConfigKeys = (): ConfigKeys => ({
     config: 'conf1'
 });
 
-export const getAlertKeys = (): AlertKeys => ({
+export const getAlertKeysSystem = (): AlertKeysSystem => ({
     open_file_descriptors: 'alert1',
     system_cpu_usage: 'alert2',
     system_storage_usage: 'alert3',
@@ -67,6 +68,9 @@ export const getAlertKeys = (): AlertKeys => ({
     system_is_down: 'alert5',
     metric_not_found: 'alert6',
     invalid_url: 'alert7',
+});
+
+export const getAlertKeysRepo = (): AlertKeysRepo => ({
     github_release: 'alert8',
     cannot_access_github: 'alert9',
 });
