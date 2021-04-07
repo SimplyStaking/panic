@@ -1,7 +1,7 @@
 "use strict";
 // Errors that may be raised by the server
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
+exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.MongoClientNotInitialised = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
 const redis_1 = require("./redis");
 var UIServerErrorCode;
 (function (UIServerErrorCode) {
@@ -75,13 +75,22 @@ class CouldNotRetrieveDataFromRedis extends UIServerError {
     }
 }
 exports.CouldNotRetrieveDataFromRedis = CouldNotRetrieveDataFromRedis;
+// Mongo related errors
+class MongoClientNotInitialised extends UIServerError {
+    constructor() {
+        let message = `Mongo client not initialised.`;
+        let code = UIServerErrorCode.E_535;
+        super(message, code);
+    }
+}
+exports.MongoClientNotInitialised = MongoClientNotInitialised;
 // Other Errors
 class InvalidBaseChains extends UIServerError {
     constructor(...baseChains) {
         let message = `Invalid base chain(s) ${baseChains}. Please ` +
             'enter a list containing some of these values: ' +
             `${redis_1.baseChainsRedis.join(', ')}`;
-        let code = UIServerErrorCode.E_535;
+        let code = UIServerErrorCode.E_536;
         super(message, code);
     }
 }
@@ -89,7 +98,7 @@ exports.InvalidBaseChains = InvalidBaseChains;
 class InvalidJsonSchema extends UIServerError {
     constructor(whichJson) {
         let message = `${whichJson} does not obey the required schema`;
-        let code = UIServerErrorCode.E_536;
+        let code = UIServerErrorCode.E_537;
         super(message, code);
     }
 }

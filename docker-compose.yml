@@ -38,7 +38,10 @@ services:
       - 'REDIS_PORT=${REDIS_PORT}'
       - 'REDIS_DB=${REDIS_DB}'
       - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
-      - 'WAIT_HOSTS=${REDIS_IP}:${REDIS_PORT}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
     build:
       context: './'
       dockerfile: './ui/Dockerfile'
@@ -54,6 +57,7 @@ services:
         ipv4_address: '${UI_DASHBOARD_IP}'
     depends_on:
       - redis
+      - mongo
 
   mongo:
     image: 'mongo'

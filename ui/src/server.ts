@@ -2,15 +2,16 @@ import {readFile} from "./server/files";
 import path from "path"
 import https from "https"
 import {
-    AlertKeysSystem,
     AlertKeysRepo,
+    AlertKeysSystem,
     AlertsOverviewInput,
+    AlertsOverviewResult,
     BaseChainKeys,
     HttpsOptions,
     isAlertsOverviewInput,
     MonitorablesInfoResult,
     RedisHashes,
-    RedisKeys, AlertsOverviewResult
+    RedisKeys
 } from "./server/types";
 import {
     CouldNotRetrieveDataFromRedis,
@@ -35,14 +36,16 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import {
     addPostfixToKeys,
+    addPrefixToKeys,
     baseChainsRedis,
-    getAlertKeysSystem,
     getAlertKeysRepo,
+    getAlertKeysSystem,
     getBaseChainKeys,
     getRedisHashes,
-    RedisInterface,
-    addPrefixToKeys
+    RedisInterface
 } from "./server/redis"
+import {MongoInterface} from "./server/mongo";
+import {MongoClientOptions} from "mongodb";
 
 // Import certificate files
 const httpsKey: Buffer = readFile(path.join(__dirname, '../../', 'certificates',
@@ -85,6 +88,28 @@ redisInterface.connect();
 // re-connect.
 setInterval(() => {
     redisInterface.connect();
+}, 3000);
+
+// Connect with Mongo
+const mongoHost = process.env.DB_IP || "localhost";
+const mongoPort = parseInt(process.env.DB_PORT || "27017");
+const mongoDB = process.env.DB_NAME || "panicdb";
+const mongoOptions: MongoClientOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    socketTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 5000,
+};
+const mongoInterface = new MongoInterface(mongoOptions, mongoHost, mongoPort);
+(async () => {
+    await mongoInterface.connect();
+})();
+
+// Check the mongo connection every 3 seconds. If the connection was dropped,
+// re-connect.
+setInterval(async () => {
+    await mongoInterface.connect();
 }, 3000);
 
 // ---------------------------------------- Redis Endpoints
@@ -182,8 +207,8 @@ app.post('/server/redis/alertsOverview',
         // Construct the redis keys inside a JSON object indexed by parent hash
         // and the system/repo id. We also need a way to map the hash to the
         // parent id.
-        const parentHashKeys: { [key: string]: {[key: string]: string[]}} = {};
-        const parentHashId: {[key: string]: string} = {};
+        const parentHashKeys: { [key: string]: { [key: string]: string[] } } = {};
+        const parentHashId: { [key: string]: string } = {};
 
         const redisHashes: RedisHashes = getRedisHashes();
         const redisHashesNamespace: RedisKeys = addPrefixToKeys(
@@ -201,13 +226,13 @@ app.post('/server/redis/alertsOverview',
             parentHashKeys[parentHash] = {};
             parentHashId[parentHash] = parentId;
             sourcesObject.systems.forEach((systemId) => {
-                const constructedKeys : RedisKeys = addPostfixToKeys(
+                const constructedKeys: RedisKeys = addPostfixToKeys(
                     alertKeysSystemPostfix, systemId);
                 parentHashKeys[parentHash][systemId] = Object.values(
                     constructedKeys)
             });
             sourcesObject.repos.forEach((repoId) => {
-                const constructedKeys : RedisKeys = addPostfixToKeys(
+                const constructedKeys: RedisKeys = addPostfixToKeys(
                     alertKeysRepoPostfix, repoId);
                 parentHashKeys[parentHash][repoId] = Object.values(
                     constructedKeys)
@@ -221,7 +246,7 @@ app.post('/server/redis/alertsOverview',
             const redisMulti = redisInterface.client.multi();
             for (const [parentHash, monitorableKeysObject] of Object.entries(
                 parentHashKeys)) {
-                const parentId : string = parentHashId[parentHash];
+                const parentId: string = parentHashId[parentHash];
                 result.result[parentId] = {
                     "info": 0,
                     "critical": 0,
@@ -233,7 +258,9 @@ app.post('/server/redis/alertsOverview',
                 for (const [monitorableId, keysList] of
                     Object.entries(monitorableKeysObject)) {
                     redisMulti.hmget(parentHash, keysList, (err, values) => {
-                        if (err) { return }
+                        if (err) {
+                            return
+                        }
                         keysList.forEach(
                             (key: string, i: number): void => {
                                 const value = JSON.parse(values[i]);
@@ -254,14 +281,14 @@ app.post('/server/redis/alertsOverview',
                                         addPostfixToKeys(
                                             alertKeysRepoPostfix,
                                             monitorableId).github_release;
-                                    if (key === newReleaseKey){
+                                    if (key === newReleaseKey) {
                                         result.result[parentId].releases[
                                             monitorableId] = value
                                     }
 
                                     // Increase the counter and save the
                                     // problems.
-                                    if (value.severity === Severities.INFO){
+                                    if (value.severity === Severities.INFO) {
                                         result.result[parentId].info += 1;
                                     } else if (
                                         value.severity === Severities.CRITICAL
@@ -333,13 +360,10 @@ app.get('/*', (req: express.Request, res: express.Response) => {
 
 // ---------------------------------------- Start listen
 
-const port: number = parseInt(process.env.UI_DASHBOARD_PORT || "9000");
-
-(async () => {
-    // Create Https server
-    const server = https.createServer(httpsOptions, app);
-    // Listen for requests
-    server.listen(port, () => console.log('Listening on %s', port));
-})().catch((err) => console.log(err));
+const port = parseInt(process.env.UI_DASHBOARD_PORT || "9000");
+// Create Https server
+const server = https.createServer(httpsOptions, app);
+// Listen for requests
+server.listen(port, () => console.log('Listening on %s', port));
 
 // TODO: Need to add authentication, even to the respective middleware functions

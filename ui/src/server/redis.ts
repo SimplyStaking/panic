@@ -106,7 +106,8 @@ export class RedisInterface {
     private readonly password?: string;
     private _client?: redis.RedisClient;
 
-    constructor(host = "localhost", port = 6379, db = 10, password?: string) {
+    constructor(host: string = "localhost", port: number = 6379,
+                db: number = 10, password?: string) {
         this.host = host;
         this.port = port;
         this.db = db;

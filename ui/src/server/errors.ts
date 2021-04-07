@@ -77,13 +77,23 @@ export class CouldNotRetrieveDataFromRedis extends UIServerError {
     }
 }
 
+// Mongo related errors
+export class MongoClientNotInitialised extends UIServerError {
+    constructor() {
+        let message: string = `Mongo client not initialised.`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_535;
+        super(message, code)
+    }
+
+}
+
 // Other Errors
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
         let message: string = `Invalid base chain(s) ${baseChains}. Please ` +
             'enter a list containing some of these values: ' +
             `${baseChainsRedis.join(', ')}`;
-        let code: UIServerErrorCode = UIServerErrorCode.E_535;
+        let code: UIServerErrorCode = UIServerErrorCode.E_536;
         super(message, code)
     }
 }
@@ -91,7 +101,7 @@ export class InvalidBaseChains extends UIServerError {
 export class InvalidJsonSchema extends UIServerError {
     constructor(whichJson: string) {
         let message: string = `${whichJson} does not obey the required schema`;
-        let code: UIServerErrorCode = UIServerErrorCode.E_536;
+        let code: UIServerErrorCode = UIServerErrorCode.E_537;
         super(message, code)
     }
 }

@@ -22,6 +22,7 @@ const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const redis_1 = require("./server/redis");
+const mongo_1 = require("./server/mongo");
 // Import certificate files
 const httpsKey = files_1.readFile(path_1.default.join(__dirname, '../../', 'certificates', 'key.pem'));
 const httpsCert = files_1.readFile(path_1.default.join(__dirname, '../../', 'certificates', 'cert.pem'));
@@ -57,6 +58,26 @@ redisInterface.connect();
 setInterval(() => {
     redisInterface.connect();
 }, 3000);
+// Connect with Mongo
+const mongoHost = process.env.DB_IP || "localhost";
+const mongoPort = parseInt(process.env.DB_PORT || "27017");
+const mongoDB = process.env.DB_NAME || "panicdb";
+const mongoOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    socketTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 5000,
+};
+const mongoInterface = new mongo_1.MongoInterface(mongoOptions, mongoHost, mongoPort);
+(() => __awaiter(void 0, void 0, void 0, function* () {
+    yield mongoInterface.connect();
+}))();
+// Check the mongo connection every 3 seconds. If the connection was dropped,
+// re-connect.
+setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
+    yield mongoInterface.connect();
+}), 3000);
 // ---------------------------------------- Redis Endpoints
 // This endpoint expects a list of base chains (Cosmos, Substrate, or General)
 // inside the body structure.
@@ -259,10 +280,8 @@ app.get('/*', (req, res) => {
 });
 // ---------------------------------------- Start listen
 const port = parseInt(process.env.UI_DASHBOARD_PORT || "9000");
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    // Create Https server
-    const server = https_1.default.createServer(httpsOptions, app);
-    // Listen for requests
-    server.listen(port, () => console.log('Listening on %s', port));
-}))().catch((err) => console.log(err));
+// Create Https server
+const server = https_1.default.createServer(httpsOptions, app);
+// Listen for requests
+server.listen(port, () => console.log('Listening on %s', port));
 // TODO: Need to add authentication, even to the respective middleware functions
