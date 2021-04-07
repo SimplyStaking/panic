@@ -56,11 +56,7 @@ class SystemAlerter(Alerter):
     def _create_state_for_system(self, system_id: str, parent_id: str) -> None:
 
         """
-        We do not want to reset the metrics for the entire chain
-        as it will bug out on the front-end as it will flicker. E.G
-        If an system whose config isn't being changed is currently in CRITICAL
-        on an metric it will change from CRITICAL to INFO and after a while
-        back to CRITICAL, it is better for it ot stay CRITICAL.
+        TODO: Update this to delete the entire chain.
         """
         if system_id not in self._alerter_started_sent:
             self._alerter_started_sent[system_id] = False
