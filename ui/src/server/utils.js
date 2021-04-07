@@ -1,4 +1,5 @@
 "use strict";
+// These functions wrap a result or an error as an object
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Severities = exports.ERR_STATUS = exports.SUCCESS_STATUS = exports.allElementsInListHaveTypeString = exports.getElementsNotInList = exports.allElementsInList = exports.missingValues = exports.toBool = exports.errorJson = exports.resultJson = void 0;
 const resultJson = (result) => ({ result });
@@ -8,12 +9,12 @@ exports.errorJson = errorJson;
 // Transforms a string representing a boolean as a boolean
 const toBool = (boolStr) => ['true', 'yes', 'y'].some((element) => boolStr.toLowerCase().includes(element));
 exports.toBool = toBool;
-// Checks which keys have values which are missing (null, undefined, '') in
+// Checks which keys have values which are missing (null, undefined) in
 // a given object and returns an array of keys having missing values.
 const missingValues = (object) => {
     let missingValuesList = [];
     Object.keys(object).forEach((key) => {
-        if (!object[key]) {
+        if (object[key] == null) {
             missingValuesList.push(key);
         }
     });

@@ -1,7 +1,7 @@
 "use strict";
 // Errors that may be raised by the server
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.MongoClientNotInitialised = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
+exports.InvalidParameterValue = exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.MongoClientNotInitialised = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
 const redis_1 = require("./redis");
 var UIServerErrorCode;
 (function (UIServerErrorCode) {
@@ -103,3 +103,11 @@ class InvalidJsonSchema extends UIServerError {
     }
 }
 exports.InvalidJsonSchema = InvalidJsonSchema;
+class InvalidParameterValue extends UIServerError {
+    constructor(parameter) {
+        let message = `An invalid value was given to ${parameter}`;
+        let code = UIServerErrorCode.E_538;
+        super(message, code);
+    }
+}
+exports.InvalidParameterValue = InvalidParameterValue;

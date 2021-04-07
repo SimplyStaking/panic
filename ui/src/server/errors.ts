@@ -105,3 +105,11 @@ export class InvalidJsonSchema extends UIServerError {
         super(message, code)
     }
 }
+
+export class InvalidParameterValue extends UIServerError {
+    constructor(parameter: string) {
+        let message: string = `An invalid value was given to ${parameter}`;
+        let code: UIServerErrorCode = UIServerErrorCode.E_538;
+        super(message, code)
+    }
+}

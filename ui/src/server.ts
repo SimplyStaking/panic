@@ -18,11 +18,14 @@ import {
     InvalidBaseChains,
     InvalidEndpoint,
     InvalidJsonSchema,
+    InvalidParameterValue,
     MissingKeysInBody,
+    MongoClientNotInitialised,
     RedisClientNotInitialised
 } from './server/errors'
 import {
     allElementsInList,
+    allElementsInListHaveTypeString,
     ERR_STATUS,
     errorJson,
     getElementsNotInList,
@@ -328,12 +331,108 @@ app.post('/server/redis/alertsOverview',
                 return;
             });
         } else {
-            // This is done just for the case of completion, as it is very
+            // This is done just for the sake of completion, as it is very
             // unlikely to occur.
             const err = new RedisClientNotInitialised();
             res.status(err.code).send(errorJson(err.message));
             return;
         }
+    });
+
+// ---------------------------------------- Mongo Endpoints
+
+app.post('/server/mongo/alerts',
+    async (req: express.Request, res: express.Response) => {
+        console.log('Received POST request for %s', req.url);
+        const {
+            chains,
+            severities,
+            sources,
+            minTimestamp,
+            maxTimestamp,
+            noOfAlerts
+        } = req.body;
+
+        // Check that all parameters have been sent
+        const missingKeysList: string[] = missingValues({
+            chains,
+            severities,
+            sources,
+            minTimestamp,
+            maxTimestamp,
+            noOfAlerts
+        });
+        if (missingKeysList.length !== 0) {
+            const err = new MissingKeysInBody(...missingKeysList);
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        // --------------------- Input Validation -------------------
+
+        const arrayBasedStringParams = {chains, severities, sources};
+        for (const [param, value] of Object.entries(arrayBasedStringParams)) {
+            if (!Array.isArray(value) ||
+                !allElementsInListHaveTypeString(value)) {
+                const err = new InvalidParameterValue(`req.body.${param}`);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
+        }
+
+        for (const severity of severities) {
+            if (!(severity in Severities)) {
+                const err = new InvalidParameterValue(
+                    `req.body.severities`);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
+        }
+
+        const positiveFloats = {minTimestamp, maxTimestamp};
+        for (const [param, value] of Object.entries(positiveFloats)) {
+            const parsedFloat = parseFloat(value);
+            if (isNaN(parsedFloat) || parsedFloat < 0) {
+                const err = new InvalidParameterValue(`req.body.${param}`);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
+        }
+        const parsedMinTimestamp = parseFloat(minTimestamp);
+        const parsedMaxTimestamp = parseFloat(maxTimestamp);
+
+        const parsedNoOfAlerts = parseInt(noOfAlerts);
+        if (isNaN(parsedNoOfAlerts) || parsedNoOfAlerts < 0) {
+            const err = new InvalidParameterValue('req.body.noOfAlerts');
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        let query = {
+            limit: parsedNoOfAlerts,
+            sort: {$natural: -1}
+        };
+        let result = resultJson({alerts: []});
+        if (mongoInterface.client) {
+            try {
+                const db = mongoInterface.client.db(mongoDB);
+                // TODO: Iterate through parent_ids, initialise a colleciton
+                //     : interface based on the parent id and get according
+                //     : to query.
+                // const collection = db.collection(collection);
+            } catch (err) {
+
+            }
+        } else {
+            // This is done just for the sake of completion, as it is very
+            // unlikely to occur.
+            const err = new MongoClientNotInitialised();
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        // TODO: When using the integers use the parsed versions
+
     });
 
 // ---------------------------------------- Server defaults
