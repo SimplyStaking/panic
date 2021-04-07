@@ -248,6 +248,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.info = "INFO"
         self.critical = "CRITICAL"
         self.error = "ERROR"
+        self.internal = "INTERNAL"
         self.none = None
         # Process CPU Seconds Total
         self.current_cpu_sec = 42420.88
@@ -503,6 +504,107 @@ class TestSystemAlerter(unittest.TestCase):
             data, meta_data, data_for_alerting)
         try:
             self.assertEqual(4, mock_classify_alert.call_count)
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerterStarted",
+        autospec=True)
+    def test_process_results_sends_internal_alert_on_initial_run(
+            self, mock_alert) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.assertFalse(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
+        self.test_system_alerter._process_results(data, meta_data,
+                                                  data_for_alerting)
+        try:
+            mock_alert.assert_called_once_with(
+                meta_data['system_name'], self.internal,
+                meta_data['last_monitored'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+            self.assertEqual(1, len(data_for_alerting))
+            self.assertTrue(
+              self.test_system_alerter._alerter_started_sent[self.system_id])
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerterStarted",
+        autospec=True)
+    def test_process_results_sends_internal_alert_on_initial_run_only_once(
+            self, mock_alert) -> None:
+        data_for_alerting = []
+        data = self.data_received_initially_no_alert['result']['data']
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.assertFalse(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
+        self.test_system_alerter._process_results(data, meta_data,
+                                                  data_for_alerting)
+        self.test_system_alerter._process_results(data, meta_data,
+                                                  data_for_alerting)
+        try:
+            mock_alert.assert_called_once_with(
+                meta_data['system_name'], self.internal,
+                meta_data['last_monitored'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+            self.assertEqual(1, len(data_for_alerting))
+            self.assertTrue(
+              self.test_system_alerter._alerter_started_sent[self.system_id])
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerterStarted",
+        autospec=True)
+    def test_process_errors_sends_internal_alert_on_initial_run(
+            self, mock_alert) -> None:
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        meta_data = data['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.assertFalse(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert.assert_called_once_with(
+                meta_data['system_name'], self.internal,
+                meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+            self.assertEqual(1, len(data_for_alerting))
+            self.assertTrue(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.system.SystemAlerterStarted",
+        autospec=True)
+    def test_process_errors_sends_internal_alert_on_initial_run_only_once(
+            self, mock_alert) -> None:
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        meta_data = data['meta_data']
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.assertFalse(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert.assert_called_once_with(
+                meta_data['system_name'], self.internal,
+                meta_data['time'], meta_data['system_parent_id'],
+                meta_data['system_id'])
+            self.assertEqual(1, len(data_for_alerting))
+            self.assertTrue(
+                self.test_system_alerter._alerter_started_sent[self.system_id])
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1694,7 +1796,7 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
                 autospec=True)
-    def test_metric_not_found_alert(self, mock_alert) -> None:
+    def test_process_errors_metric_not_found_alert(self, mock_alert) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5003
@@ -1712,8 +1814,85 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch("src.alerter.alerters.system.MetricFoundAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
+                autospec=True)
+    def test_process_error_metric_not_found_alert_metric_found_alert(self,
+        mock_alert_not_found, mock_alert_found) -> None:
+
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        data['code'] = 5003
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_not_found.assert_called_once_with(
+                self.system_name, data['message'], self.error,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data = self.data_received_error_data['error']
+        data['code'] = 600000000 # This code doesn't exist
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_found.assert_called_once_with(
+                self.system_name, "Metrics have been found!", self.info,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(3, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.MetricFoundAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
+                autospec=True)
+    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(self,
+        mock_alert_not_found, mock_alert_found) -> None:
+
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        data['code'] = 5003
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_not_found.assert_called_once_with(
+                self.system_name, data['message'], self.error,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data = self.data_received_initially_no_alert['result']['data']
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._process_results(data, meta_data,
+                                                  data_for_alerting)
+        try:
+            mock_alert_found.assert_called_once_with(
+                self.system_name, "Metrics have been found!", self.info,
+                meta_data['last_monitored'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(3, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
     @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_invalid_url_alert(self, mock_alert) -> None:
+    def test_process_errors_invalid_url_alert(self, mock_alert) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
@@ -1728,6 +1907,76 @@ class TestSystemAlerter(unittest.TestCase):
             )
             # Base alert due to starting the alerting process
             self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
+    def test_process_errors_invalid_url_alert_then_valid_url_alert(self,
+        mock_alert_invalid, mock_alert_valid) -> None:
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        data['code'] = 5009
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_invalid.assert_called_once_with(
+                self.system_name, data['message'], self.error,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+        data = self.data_received_error_data['error']
+        data['code'] = 600000000 # This code doesn't exist
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_valid.assert_called_once_with(
+                self.system_name, "Url is valid!", self.info,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(3, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
+    @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
+    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(self,
+        mock_alert_invalid, mock_alert_valid) -> None:
+        data_for_alerting = []
+        data = self.data_received_error_data['error']
+        data['code'] = 5009
+        self.test_system_alerter._create_state_for_system(self.system_id,
+                                                          self.parent_id)
+        self.test_system_alerter._process_errors(data, data_for_alerting)
+        try:
+            mock_alert_invalid.assert_called_once_with(
+                self.system_name, data['message'], self.error,
+                data['meta_data']['time'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(2, len(data_for_alerting))
+        except AssertionError as e:
+            self.fail("Test failed: {}".format(e))
+
+        data = self.data_received_initially_no_alert['result']['data']
+        meta_data = self.data_received_initially_no_alert['result']['meta_data']
+        self.test_system_alerter._process_results(data, meta_data,
+                                                  data_for_alerting)
+        try:
+            mock_alert_valid.assert_called_once_with(
+                self.system_name, "Url is valid!", self.info,
+                meta_data['last_monitored'], self.parent_id,
+                self.system_id
+            )
+            # Base alert due to starting the alerting process
+            self.assertEqual(3, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 

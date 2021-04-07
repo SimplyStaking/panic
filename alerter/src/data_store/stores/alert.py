@@ -162,22 +162,22 @@ class AlertStore(Store):
                 key = alert['origin_id']
                 for metric_name in self.system_metrics:
                     if self.redis.hexists(
-                        Keys.get_hash_parent([alert['parent_id']]),
+                        Keys.get_hash_parent(alert['parent_id']),
                             eval('Keys.get_alert_{}(key)'.format(metric_name))):
 
                         self.redis.hremove(
-                            Keys.get_hash_parent([alert['parent_id']]),
+                            Keys.get_hash_parent(alert['parent_id']),
                             eval('Keys.get_alert_{}(key)'.format(metric_name)))
 
             elif alert['alert_code']['code'] == 'github_alerter_started':
                 key = alert['origin_id']
                 for metric_name in self.github_metrics:
                     if self.redis.hexists(
-                        Keys.get_hash_parent([alert['parent_id']]),
+                        Keys.get_hash_parent(alert['parent_id']),
                             eval('Keys.get_alert_{}(key)'.format(metric_name))):
 
                         self.redis.hremove(
-                            Keys.get_hash_parent([alert['parent_id']]),
+                            Keys.get_hash_parent(alert['parent_id']),
                             eval('Keys.get_alert_{}(key)'.format(metric_name)))
         else:
             metric_data = {'severity': alert['severity'],

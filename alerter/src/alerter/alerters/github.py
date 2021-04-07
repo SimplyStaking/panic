@@ -71,7 +71,7 @@ class GithubAlerter(Alerter):
             self._cannot_access_github_page[github_id] = False
 
         if github_id not in self._alerter_started_sent:
-            self._alerter_started_sent[github_id] = True
+            self._alerter_started_sent[github_id] = False
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -91,7 +91,7 @@ class GithubAlerter(Alerter):
 
                 self._create_state_for_github(meta['repo_id'])
 
-                if self._alerter_started_sent[meta['repo_id']]:
+                if not self._alerter_started_sent[meta['repo_id']]:
                     alert = GithubAlerterStarted(
                         meta['repo_name'], Severity.INTERNAL.value,
                         meta['last_monitored'], meta['repo_parent_id'],
@@ -129,7 +129,7 @@ class GithubAlerter(Alerter):
             elif 'error' in data_received:
                 """
                 CannotAccessGithubPageAlert repeats constantly on each
-                monitoring round (DEFAULT: 1 hour). This has repeat delay as 
+                monitoring round (DEFAULT: 1 hour). This has repeat delay as
                 it's an indication that the configuration is wrong and should
                 be fixed.
                 """
@@ -138,7 +138,7 @@ class GithubAlerter(Alerter):
 
                     self._create_state_for_github(meta_data['repo_id'])
 
-                    if self._alerter_started_sent[meta_data['repo_id']]:
+                    if not self._alerter_started_sent[meta_data['repo_id']]:
                         alert = GithubAlerterStarted(
                             meta_data['repo_name'], Severity.INTERNAL.value,
                             meta_data['time'], meta_data['repo_parent_id'],

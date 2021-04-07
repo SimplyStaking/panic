@@ -53,6 +53,7 @@ class TestGithubAlerter(unittest.TestCase):
         self.warning = "WARNING"
         self.info = "INFO"
         self.critical = "CRITICAL"
+        self.internal = "INTERNAL"
         self.error = "ERROR"
         self.none = None
 
@@ -118,6 +119,7 @@ class TestGithubAlerter(unittest.TestCase):
                 "message": "error message"
             }
         }
+        self.github_json_error = json.dumps(self.github_data_error).encode()
 
         # Alert used for rabbitMQ testing
         self.alert = NewGitHubReleaseAlert(
@@ -194,6 +196,246 @@ class TestGithubAlerter(unittest.TestCase):
             self.test_github_alerter._initialise_rabbitmq()
             self.rabbitmq.connect()
             self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.github.GithubAlerterStarted",
+        autospec=True)
+    def test_process_data_result_internal_alert_on_initial_run(
+            self, mock_alerter_started, mock_new_github_release,
+            mock_github_access, mock_ack, mock_basic_publish_confirm):
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+        type(mock_alerter_started.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        mock_ack.return_value = self.none
+        try:
+            self.test_github_alerter._initialise_rabbitmq()
+            blocking_channel = self.test_github_alerter.rabbitmq.channel
+
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+
+            self.test_github_alerter._create_state_for_github(self.repo_id)
+            self.assertFalse(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            properties = pika.spec.BasicProperties()
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json
+            )
+
+            self.assertTrue(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            mock_alerter_started.assert_called_once_with(
+                self.repo_name, self.internal, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
+
+            mock_github_access.assert_not_called()
+            mock_basic_publish_confirm.assert_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.github.GithubAlerterStarted",
+        autospec=True)
+    def test_process_data_result_internal_alert_on_initial_run_alerts_only_once(
+            self, mock_alerter_started, mock_new_github_release,
+            mock_github_access, mock_ack, mock_basic_publish_confirm):
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+        type(mock_alerter_started.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        mock_ack.return_value = self.none
+        try:
+            self.test_github_alerter._initialise_rabbitmq()
+            blocking_channel = self.test_github_alerter.rabbitmq.channel
+
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+
+            self.test_github_alerter._create_state_for_github(self.repo_id)
+            self.assertFalse(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            properties = pika.spec.BasicProperties()
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json
+            )
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json
+            )
+
+            self.assertTrue(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            mock_alerter_started.assert_called_once_with(
+                self.repo_name, self.internal, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
+
+            mock_github_access.assert_not_called()
+            mock_basic_publish_confirm.assert_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.github.GithubAlerterStarted",
+        autospec=True)
+    def test_process_data_error_internal_alert_on_initial_run(
+            self, mock_alerter_started, mock_new_github_release,
+            mock_github_access, mock_ack, mock_basic_publish_confirm):
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+        type(mock_alerter_started.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        mock_ack.return_value = self.none
+        try:
+            self.test_github_alerter._initialise_rabbitmq()
+            blocking_channel = self.test_github_alerter.rabbitmq.channel
+
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+
+            self.test_github_alerter._create_state_for_github(self.repo_id)
+            self.assertFalse(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            properties = pika.spec.BasicProperties()
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json_error
+            )
+
+            self.assertTrue(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            mock_alerter_started.assert_called_once_with(
+                self.repo_name, self.internal, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
+
+            mock_github_access.assert_not_called()
+            mock_basic_publish_confirm.assert_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubPageNowAccessibleAlert",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.NewGitHubReleaseAlert",
+                autospec=True)
+    @mock.patch(
+        "src.alerter.alerters.github.GithubAlerterStarted",
+        autospec=True)
+    def test_process_data_error_internal_alert_on_initial_run_alerts_only_once(
+            self, mock_alerter_started, mock_new_github_release,
+            mock_github_access, mock_ack, mock_basic_publish_confirm):
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+        type(mock_alerter_started.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_new_github_release.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        type(mock_github_access.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        mock_ack.return_value = self.none
+        try:
+            self.test_github_alerter._initialise_rabbitmq()
+            blocking_channel = self.test_github_alerter.rabbitmq.channel
+
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+
+            self.test_github_alerter._create_state_for_github(self.repo_id)
+            self.assertFalse(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            properties = pika.spec.BasicProperties()
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json_error
+            )
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                self.github_json_error
+            )
+
+            self.assertTrue(
+                self.test_github_alerter._alerter_started_sent[self.repo_id])
+
+            mock_alerter_started.assert_called_once_with(
+                self.repo_name, self.internal, self.last_monitored,
+                self.parent_id, self.repo_id
+            )
+
+            mock_github_access.assert_not_called()
+            mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

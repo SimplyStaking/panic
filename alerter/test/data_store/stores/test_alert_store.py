@@ -1,6 +1,7 @@
 import json
 import logging
 import unittest
+import copy
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock
@@ -87,8 +88,12 @@ class TestAlertStore(unittest.TestCase):
         self.test_data_str = 'test data'
         self.test_exception = PANICException('test_exception', 1)
 
-        self.parent_id = 'test_parent_id'
+        self.info = 'INFO'
+        self.warning = 'WARNING'
+        self.critical = 'CRITICAL'
+        self.internal = 'INTERNAL'
 
+        self.parent_id = 'test_parent_id'
         self.alert_id = 'test_alert_id'
         self.origin_id = 'test_origin_id'
         self.alert_name = 'test_alert'
@@ -100,6 +105,7 @@ class TestAlertStore(unittest.TestCase):
         self.alert_id_2 = 'test_alert_id_2'
         self.origin_id_2 = 'test_origin_id_2'
         self.alert_name_2 = 'test_alert_2'
+        self.metric_2 = 'system_cpu_usage'
         self.severity_2 = 'critical'
         self.message_2 = 'alert message 2'
         self.value_2 = 'alert_code_2'
@@ -107,6 +113,7 @@ class TestAlertStore(unittest.TestCase):
         self.alert_id_3 = 'test_alert_id_3'
         self.origin_id_3 = 'test_origin_id_3'
         self.alert_name_3 = 'test_alert_3'
+        self.metric_3 = 'system_storage_usage'
         self.severity_3 = 'info'
         self.message_3 = 'alert message 3'
         self.value_3 = 'alert_code_3'
@@ -114,12 +121,13 @@ class TestAlertStore(unittest.TestCase):
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
+        # Normal alerts
         self.alert_data_1 = {
             'parent_id': self.parent_id,
             'origin_id': self.origin_id,
             'alert_code': {
                 'name': self.alert_name,
-                'value': self.value,
+                'code': self.value,
             },
             'severity': self.severity,
             'metric': self.metric,
@@ -131,10 +139,10 @@ class TestAlertStore(unittest.TestCase):
             'origin_id': self.origin_id_2,
             'alert_code': {
                 'name': self.alert_name_2,
-                'value': self.value_2,
+                'code': self.value_2,
             },
             'severity': self.severity_2,
-            'metric': self.metric,
+            'metric': self.metric_2,
             'message': self.message_2,
             'timestamp': self.last_monitored,
         }
@@ -143,13 +151,15 @@ class TestAlertStore(unittest.TestCase):
             'origin_id': self.origin_id_3,
             'alert_code': {
                 'name': self.alert_name_3,
-                'value': self.value_3,
+                'code': self.value_3,
             },
             'severity': self.severity_3,
-            'metric': self.metric,
+            'metric': self.metric_3,
             'message': self.message_3,
             'timestamp': self.last_monitored,
         }
+
+        # Bad data
         self.alert_data_key_error = {
             "result": {
                 "data": {},
@@ -158,6 +168,90 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_data_unexpected = {
             "unexpected": {}
+        }
+
+        # Alerts copied for GITHUB metric values, these are used to test
+        # Metric deletion on startup
+        self.alert_data_github_1 = copy.deepcopy(self.alert_data_1)
+        self.alert_data_github_1['metric'] = 'github_release'
+
+        self.alert_data_github_2 = copy.deepcopy(self.alert_data_2)
+        self.alert_data_github_2['metric'] = 'cannot_access_github'
+
+        # Internal alerts on startup which are used to clear metrics from
+        # REDIS. Note: we only care about alert_code.code and severity for
+        # this alert
+        self.alert_internal_system_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id,
+            'alert_code': {
+                'name': 'system_alerter_started',
+                'code': 'system_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_system_2 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_2,
+            'alert_code': {
+                'name': 'system_alerter_started',
+                'code': 'system_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric_2,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_system_3 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_3,
+            'alert_code': {
+                'name': 'system_alerter_started',
+                'code': 'system_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric_3,
+            'message': self.message_3,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_github_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id,
+            'alert_code': {
+                'name': 'github_alerter_started',
+                'code': 'github_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_github_2 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_2,
+            'alert_code': {
+                'name': 'github_alerter_started',
+                'code': 'github_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_github_3 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_3,
+            'alert_code': {
+                'name': 'github_alerter_started',
+                'code': 'github_alerter_started',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message_3,
+            'timestamp': self.last_monitored,
         }
 
     def tearDown(self) -> None:
@@ -442,7 +536,7 @@ class TestAlertStore(unittest.TestCase):
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(RedisApi, "hset")
-    def test_process_redis_store_calls_redis_correctly(
+    def test_process_redis_store_calls_redis_correctly_storing_metrics(
             self, mock_system_data, mock_hset) -> None:
         data = eval(mock_system_data)
         self.test_store._process_redis_store(data)
@@ -455,6 +549,102 @@ class TestAlertStore(unittest.TestCase):
                       eval('Keys.get_alert_{}(key)'.format(data['metric'])),
                       json.dumps(metric_data))
         mock_hset.assert_has_calls([call_1])
+
+    @parameterized.expand([
+        ("self.alert_internal_system_1",),
+        ("self.alert_internal_system_2",),
+        ("self.alert_internal_system_3",),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RedisApi, "hremove")
+    @mock.patch.object(RedisApi, "hexists")
+    def test_process_redis_store_system_removes_metrics_if_they_exist(
+            self, mock_data, mock_hexists, mocK_hremove) -> None:
+
+        mock_hexists.return_value = True
+        data = eval(mock_data)
+        self.test_store._process_redis_store(data)
+
+        key = data['origin_id']
+        calls = []
+        for metric_name in self.test_store.system_metrics:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
+            calls.append(call_1)
+        mock_hexists.assert_has_calls(calls)
+        mocK_hremove.assert_has_calls(calls)
+
+    @parameterized.expand([
+        ("self.alert_internal_github_1",),
+        ("self.alert_internal_github_2",),
+        ("self.alert_internal_github_3",),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RedisApi, "hremove")
+    @mock.patch.object(RedisApi, "hexists")
+    def test_process_redis_store_github_removes_metrics_if_they_exist(
+            self, mock_data, mock_hexists, mocK_hremove) -> None:
+
+        mock_hexists.return_value = True
+        data = eval(mock_data)
+        self.test_store._process_redis_store(data)
+
+        key = data['origin_id']
+        calls = []
+        for metric_name in self.test_store.github_metrics:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
+            calls.append(call_1)
+        mock_hexists.assert_has_calls(calls)
+        mocK_hremove.assert_has_calls(calls)
+
+    @parameterized.expand([
+        ("self.alert_internal_system_1",),
+        ("self.alert_internal_system_2",),
+        ("self.alert_internal_system_3",),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RedisApi, "hremove")
+    @mock.patch.object(RedisApi, "hexists")
+    def test_process_redis_store_system_do_not_remove_metrics_if_they_do_not_exists(
+            self, mock_data, mock_hexists, mocK_hremove) -> None:
+
+        mock_hexists.return_value = False
+        data = eval(mock_data)
+        self.test_store._process_redis_store(data)
+
+        key = data['origin_id']
+        calls = []
+        for metric_name in self.test_store.system_metrics:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
+            calls.append(call_1)
+        mock_hexists.assert_has_calls(calls)
+        mocK_hremove.assert_not_called()
+
+    @parameterized.expand([
+        ("self.alert_internal_github_1",),
+        ("self.alert_internal_github_2",),
+        ("self.alert_internal_github_3",),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RedisApi, "hremove")
+    @mock.patch.object(RedisApi, "hexists")
+    def test_process_redis_store_github_do_not_remove_metrics_if_they_do_not_exists(
+            self, mock_data, mock_hexists, mocK_hremove) -> None:
+
+        mock_hexists.return_value = False
+        data = eval(mock_data)
+        self.test_store._process_redis_store(data)
+
+        key = data['origin_id']
+        calls = []
+        for metric_name in self.test_store.github_metrics:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
+            calls.append(call_1)
+        mock_hexists.assert_has_calls(calls)
+        mocK_hremove.assert_not_called()
 
     @parameterized.expand([
         ("self.alert_data_1",),
@@ -628,9 +818,89 @@ class TestAlertStore(unittest.TestCase):
         self.assertEqual(expected_data, json.loads(stored_data))
 
     @parameterized.expand([
+        ("self.alert_data_1", "self.alert_internal_system_1",),
+        ("self.alert_data_2", "self.alert_internal_system_2",),
+        ("self.alert_data_3", "self.alert_internal_system_3",),
+    ])
+    def test_process_redis_store_system_redis_stores_and_deletes_correctly(
+            self, mock_system_data, mock_internal_alert) -> None:
+
+        # First store the data
+        system_data = eval(mock_system_data)
+        key = system_data['origin_id']
+        self.test_store._process_redis_store(system_data)
+
+        stored_data = self.redis.hget(
+            Keys.get_hash_parent(system_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(system_data['metric'])))
+
+        expected_data = {'severity': system_data['severity'],
+                         'message': system_data['message']}
+
+        self.assertEqual(expected_data, json.loads(stored_data))
+
+        # Check if the data exists inside REDIS
+        self.assertTrue(self.redis.hexists(
+            Keys.get_hash_parent(system_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
+        ))
+
+        # Send the internal alert to delete the data
+        internal_data = eval(mock_internal_alert)
+        self.test_store._process_redis_store(internal_data)
+
+        # Check if the data is removed from REDIS
+        self.assertFalse(self.redis.hexists(
+            Keys.get_hash_parent(system_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
+        ))
+
+    @parameterized.expand([
+        ("self.alert_data_github_1", "self.alert_internal_github_1",),
+        ("self.alert_data_github_2", "self.alert_internal_github_2",),
+    ])
+    def test_process_redis_store_github_redis_stores_and_deletes_correctly(
+            self, mock_github_data, mock_internal_alert) -> None:
+
+        # First store the data
+        github_data = eval(mock_github_data)
+        key = github_data['origin_id']
+        self.test_store._process_redis_store(github_data)
+
+        stored_data = self.redis.hget(
+            Keys.get_hash_parent(github_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(github_data['metric'])))
+
+        expected_data = {'severity': github_data['severity'],
+                         'message': github_data['message']}
+
+        self.assertEqual(expected_data, json.loads(stored_data))
+
+        # Check if the data exists inside REDIS
+        self.assertTrue(self.redis.hexists(
+            Keys.get_hash_parent(github_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
+        ))
+
+        # Send the internal alert to delete the data
+        internal_data = eval(mock_internal_alert)
+        self.test_store._process_redis_store(internal_data)
+
+        # Check if the data is removed from REDIS
+        self.assertFalse(self.redis.hexists(
+            Keys.get_hash_parent(github_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
+        ))
+
+    @parameterized.expand([
         ("self.alert_data_1",),
         ("self.alert_data_2",),
         ("self.alert_data_3",),
+        ("self.alert_internal_github_1",),
+        ("self.alert_internal_github_2",),
+        ("self.alert_internal_system_1",),
+        ("self.alert_internal_system_2",),
+        ("self.alert_internal_system_3",),
     ])
     @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
                 autospec=True)
