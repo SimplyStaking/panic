@@ -57,6 +57,8 @@ class SystemAlerter(Alerter):
 
         """
         TODO: Update this to delete the entire chain.
+        Question: what happens to metrics if the chain is deleted, no internal
+        alert will be sent. We need to purge all metrics for the chain.
         """
         if system_id not in self._alerter_started_sent:
             self._alerter_started_sent[system_id] = False
