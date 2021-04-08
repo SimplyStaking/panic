@@ -93,9 +93,8 @@ class GithubAlerter(Alerter):
 
                 if not self._alerter_started_sent[meta['repo_id']]:
                     alert = GithubAlerterStarted(
-                        meta['repo_name'], Severity.INTERNAL.value,
-                        meta['last_monitored'], meta['repo_parent_id'],
-                        meta['repo_id'])
+                        meta['repo_name'], meta['last_monitored'],
+                        meta['repo_parent_id'], meta['repo_id'])
                 data_for_alerting.append(alert.alert_data)
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
@@ -140,9 +139,8 @@ class GithubAlerter(Alerter):
 
                     if not self._alerter_started_sent[meta_data['repo_id']]:
                         alert = GithubAlerterStarted(
-                            meta_data['repo_name'], Severity.INTERNAL.value,
-                            meta_data['time'], meta_data['repo_parent_id'],
-                            meta_data['repo_id'])
+                            meta_data['repo_name'], meta_data['time'],
+                            meta_data['repo_parent_id'], meta_data['repo_id'])
                         data_for_alerting.append(alert.alert_data)
                         self.logger.debug("Successfully classified alert %s",
                                           alert.alert_data)

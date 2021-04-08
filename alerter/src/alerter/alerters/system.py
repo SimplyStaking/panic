@@ -266,9 +266,8 @@ class SystemAlerter(Alerter):
 
         if not self._alerter_started_sent[meta_data['system_id']]:
             alert = SystemAlerterStarted(
-                meta_data['system_name'], Severity.INTERNAL.value,
-                meta_data['time'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['time'],
+                meta_data['system_parent_id'], meta_data['system_id'])
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
@@ -409,9 +408,8 @@ class SystemAlerter(Alerter):
         """
         if not self._alerter_started_sent[meta_data['system_id']]:
             alert = SystemAlerterStarted(
-                meta_data['system_name'], Severity.INTERNAL.value,
-                meta_data['last_monitored'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['last_monitored'],
+                meta_data['system_parent_id'], meta_data['system_id'])
 
             data_for_alerting.append(alert.alert_data)
             self.logger.debug("Successfully classified alert %s",

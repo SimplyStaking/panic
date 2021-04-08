@@ -91,7 +91,6 @@ class TestAlertStore(unittest.TestCase):
         self.info = 'INFO'
         self.warning = 'WARNING'
         self.critical = 'CRITICAL'
-        self.internal = 'INTERNAL'
 
         self.parent_id = 'test_parent_id'
         self.alert_id = 'test_alert_id'

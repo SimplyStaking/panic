@@ -248,7 +248,6 @@ class TestSystemAlerter(unittest.TestCase):
         self.info = "INFO"
         self.critical = "CRITICAL"
         self.error = "ERROR"
-        self.internal = "INTERNAL"
         self.none = None
         # Process CPU Seconds Total
         self.current_cpu_sec = 42420.88
@@ -523,9 +522,8 @@ class TestSystemAlerter(unittest.TestCase):
                                                   data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
-                meta_data['system_name'], self.internal,
-                meta_data['last_monitored'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['last_monitored'],
+                meta_data['system_parent_id'], meta_data['system_id'])
             self.assertEqual(1, len(data_for_alerting))
             self.assertTrue(
               self.test_system_alerter._alerter_started_sent[self.system_id])
@@ -550,9 +548,8 @@ class TestSystemAlerter(unittest.TestCase):
                                                   data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
-                meta_data['system_name'], self.internal,
-                meta_data['last_monitored'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['last_monitored'],
+                meta_data['system_parent_id'], meta_data['system_id'])
             self.assertEqual(1, len(data_for_alerting))
             self.assertTrue(
               self.test_system_alerter._alerter_started_sent[self.system_id])
@@ -574,9 +571,8 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
-                meta_data['system_name'], self.internal,
-                meta_data['time'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['time'],
+                meta_data['system_parent_id'], meta_data['system_id'])
             self.assertEqual(1, len(data_for_alerting))
             self.assertTrue(
                 self.test_system_alerter._alerter_started_sent[self.system_id])
@@ -599,9 +595,8 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
-                meta_data['system_name'], self.internal,
-                meta_data['time'], meta_data['system_parent_id'],
-                meta_data['system_id'])
+                meta_data['system_name'], meta_data['time'],
+                meta_data['system_parent_id'], meta_data['system_id'])
             self.assertEqual(1, len(data_for_alerting))
             self.assertTrue(
                 self.test_system_alerter._alerter_started_sent[self.system_id])

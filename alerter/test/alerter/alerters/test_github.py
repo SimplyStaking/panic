@@ -53,7 +53,6 @@ class TestGithubAlerter(unittest.TestCase):
         self.warning = "WARNING"
         self.info = "INFO"
         self.critical = "CRITICAL"
-        self.internal = "INTERNAL"
         self.error = "ERROR"
         self.none = None
 
@@ -247,7 +246,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.test_github_alerter._alerter_started_sent[self.repo_id])
 
             mock_alerter_started.assert_called_once_with(
-                self.repo_name, self.internal, self.last_monitored,
+                self.repo_name, self.last_monitored,
                 self.parent_id, self.repo_id
             )
 
@@ -310,8 +309,8 @@ class TestGithubAlerter(unittest.TestCase):
                 self.test_github_alerter._alerter_started_sent[self.repo_id])
 
             mock_alerter_started.assert_called_once_with(
-                self.repo_name, self.internal, self.last_monitored,
-                self.parent_id, self.repo_id
+                self.repo_name, self.last_monitored, self.parent_id,
+                self.repo_id
             )
 
             mock_github_access.assert_not_called()
@@ -367,8 +366,8 @@ class TestGithubAlerter(unittest.TestCase):
                 self.test_github_alerter._alerter_started_sent[self.repo_id])
 
             mock_alerter_started.assert_called_once_with(
-                self.repo_name, self.internal, self.last_monitored,
-                self.parent_id, self.repo_id
+                self.repo_name, self.last_monitored, self.parent_id,
+                self.repo_id
             )
 
             mock_github_access.assert_not_called()
@@ -430,8 +429,8 @@ class TestGithubAlerter(unittest.TestCase):
                 self.test_github_alerter._alerter_started_sent[self.repo_id])
 
             mock_alerter_started.assert_called_once_with(
-                self.repo_name, self.internal, self.last_monitored,
-                self.parent_id, self.repo_id
+                self.repo_name, self.last_monitored, self.parent_id,
+                self.repo_id
             )
 
             mock_github_access.assert_not_called()

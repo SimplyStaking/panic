@@ -10,6 +10,8 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alerts.internal_alerts import (SystemManagerStarted,
+                                                SystemAlerterStopped)
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
@@ -20,7 +22,8 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_INPUT_QUEUE,
                                  SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN
+                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
+                                 ALERT_EXCHANGE
                                  )
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
@@ -95,12 +98,26 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
+        # Send an internal alert to reset all the REDIS metrics for all chains
+        alert = SystemManagerStarted('System Manager',
+                                     datetime.now().timestamp(),
+                                     'System Manager',
+                                     'System Manager')
+        self._push_latest_data_to_queue_and_send(alert.data)
+
     def _terminate_and_join_chain_alerter_processes(
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
         # process should be terminated
         for parent_id, parent_info in self._parent_id_process_dict.items():
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
+                # Send an internal alert to reset all the REDIS metrics for
+                # this chain
+                alert = SystemAlerterStopped(chain,
+                                             datetime.now().timestamp(),
+                                             parent_id, parent_id)
+                self._push_latest_data_to_queue_and_send(alert.data)
+
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
                 self._parent_id_process_dict[parent_id]['process'].join()
@@ -144,6 +161,7 @@ class SystemAlertersManager(AlertersManager):
 
         try:
             if not bool(sent_configs):
+                # Send an internal alert to clear everything from that chain
                 self._terminate_and_join_chain_alerter_processes(chain)
             else:
                 # Check if all the parent_ids in the received configuration
@@ -266,5 +284,11 @@ class SystemAlertersManager(AlertersManager):
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
-    def _send_data(self, *args) -> None:
-        pass
+    def _push_latest_data_to_queue_and_send(self, alert: List) -> None:
+        self._push_to_queue(
+            data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
+            routing_key='alert_router.system',
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True
+        )
+        self._send_data()

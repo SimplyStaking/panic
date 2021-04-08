@@ -6,12 +6,13 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.publisher_subscriber import PublisherSubscriberComponent
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 
 
-class AlertersManager(PublisherSubscriberComponent):
+class AlertersManager(QueuingPublisherSubscriberComponent):
     def __init__(self, logger: logging.Logger, name: str,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, rabbitmq)

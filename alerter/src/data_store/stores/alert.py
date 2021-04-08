@@ -23,7 +23,6 @@ class AlertStore(Store):
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                db_name=self.mongo_db, host=self.mongo_ip,
                                port=self.mongo_port)
-        self.github_metrics = ['github_release', 'cannot_access_github']
         self.system_metrics = ['open_file_descriptors',
                                'system_cpu_usage',
                                'system_storage_usage',
@@ -31,6 +30,9 @@ class AlertStore(Store):
                                'system_is_down',
                                'invalid_url',
                                'metric_not_found']
+        # We do not want to reset `github_release` for Github metrics as we
+        # will lose the pending upgrades
+        self.github_metrics = ['cannot_access_github']
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -168,7 +170,8 @@ class AlertStore(Store):
                         self.redis.hremove(
                             Keys.get_hash_parent(alert['parent_id']),
                             eval('Keys.get_alert_{}(key)'.format(metric_name)))
-
+            # TODO elif for system_manager_started, system_alerter_stopped
+            # NOTE discuss GITHUB metrics saving/deleting with Dylan
             elif alert['alert_code']['code'] == 'github_alerter_started':
                 key = alert['origin_id']
                 for metric_name in self.github_metrics:
