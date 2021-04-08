@@ -1,7 +1,7 @@
 "use strict";
 // Errors that may be raised by the server
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvalidParameterValue = exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.MongoClientNotInitialised = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
+exports.InvalidParameterValue = exports.InvalidJsonSchema = exports.InvalidBaseChains = exports.CouldNotRetrieveDataFromMongo = exports.MongoClientNotInitialised = exports.CouldNotRetrieveDataFromRedis = exports.RedisClientNotInitialised = exports.MissingKeysInBody = exports.InvalidEndpoint = exports.MissingFile = exports.UIServerErrorCode = void 0;
 const redis_1 = require("./redis");
 var UIServerErrorCode;
 (function (UIServerErrorCode) {
@@ -84,13 +84,21 @@ class MongoClientNotInitialised extends UIServerError {
     }
 }
 exports.MongoClientNotInitialised = MongoClientNotInitialised;
+class CouldNotRetrieveDataFromMongo extends UIServerError {
+    constructor() {
+        let message = "Could not retrieve data from Mongo.";
+        let code = UIServerErrorCode.E_536;
+        super(message, code);
+    }
+}
+exports.CouldNotRetrieveDataFromMongo = CouldNotRetrieveDataFromMongo;
 // Other Errors
 class InvalidBaseChains extends UIServerError {
     constructor(...baseChains) {
         let message = `Invalid base chain(s) ${baseChains}. Please ` +
             'enter a list containing some of these values: ' +
             `${redis_1.baseChainsRedis.join(', ')}`;
-        let code = UIServerErrorCode.E_536;
+        let code = UIServerErrorCode.E_537;
         super(message, code);
     }
 }
@@ -98,7 +106,7 @@ exports.InvalidBaseChains = InvalidBaseChains;
 class InvalidJsonSchema extends UIServerError {
     constructor(whichJson) {
         let message = `${whichJson} does not obey the required schema`;
-        let code = UIServerErrorCode.E_537;
+        let code = UIServerErrorCode.E_538;
         super(message, code);
     }
 }
@@ -106,7 +114,7 @@ exports.InvalidJsonSchema = InvalidJsonSchema;
 class InvalidParameterValue extends UIServerError {
     constructor(parameter) {
         let message = `An invalid value was given to ${parameter}`;
-        let code = UIServerErrorCode.E_538;
+        let code = UIServerErrorCode.E_539;
         super(message, code);
     }
 }

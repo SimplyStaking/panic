@@ -14,6 +14,7 @@ import {
     RedisKeys
 } from "./server/types";
 import {
+    CouldNotRetrieveDataFromMongo,
     CouldNotRetrieveDataFromRedis,
     InvalidBaseChains,
     InvalidEndpoint,
@@ -408,20 +409,43 @@ app.post('/server/mongo/alerts',
             return;
         }
 
-        let query = {
-            limit: parsedNoOfAlerts,
-            sort: {$natural: -1}
-        };
+        /*let query = {
+            // limit: parsedNoOfAlerts,
+            // sort: {$natural: -1},
+            doc_type: "alert"
+        };*/
         let result = resultJson({alerts: []});
         if (mongoInterface.client) {
             try {
                 const db = mongoInterface.client.db(mongoDB);
-                // TODO: Iterate through parent_ids, initialise a colleciton
-                //     : interface based on the parent id and get according
-                //     : to query.
-                // const collection = db.collection(collection);
+                if (chains.length > 0) {
+                    let queryList: any = [];
+                    for (let i = 1; i < chains.length; i++) {
+                        queryList.push({$unionWith: chains[i]})
+                    }
+                    queryList.push(
+                        {$match: {doc_type: "alert"}},
+                        {$unwind:"$alerts"},
+                        {$sort: {"alerts.timestamp": -1, _id: 1}},
+                        {$group:{_id:null, alrts: {$push : "$alerts"} }},
+                        {$project: {_id: 0, alerts: "$alrts"}},
+                    );
+                    const collection = db.collection(chains[0]);
+                    const docs = await collection.aggregate(queryList)
+                        .toArray();
+                    for (const doc of docs) {
+                        result.result.alerts = result.result.alerts.concat(
+                            doc.alerts)
+                    }
+                }
+                res.status(SUCCESS_STATUS).send(result);
+                return;
             } catch (err) {
-
+                console.error(err);
+                const retrievalErr = new CouldNotRetrieveDataFromMongo();
+                res.status(retrievalErr.code).send(errorJson(
+                    retrievalErr.message));
+                return;
             }
         } else {
             // This is done just for the sake of completion, as it is very
@@ -430,9 +454,6 @@ app.post('/server/mongo/alerts',
             res.status(err.code).send(errorJson(err.message));
             return;
         }
-
-        // TODO: When using the integers use the parsed versions
-
     });
 
 // ---------------------------------------- Server defaults

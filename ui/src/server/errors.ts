@@ -87,13 +87,21 @@ export class MongoClientNotInitialised extends UIServerError {
 
 }
 
+export class CouldNotRetrieveDataFromMongo extends UIServerError {
+    constructor() {
+        let message: string = "Could not retrieve data from Mongo.";
+        let code: UIServerErrorCode = UIServerErrorCode.E_536;
+        super(message, code)
+    }
+}
+
 // Other Errors
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
         let message: string = `Invalid base chain(s) ${baseChains}. Please ` +
             'enter a list containing some of these values: ' +
             `${baseChainsRedis.join(', ')}`;
-        let code: UIServerErrorCode = UIServerErrorCode.E_536;
+        let code: UIServerErrorCode = UIServerErrorCode.E_537;
         super(message, code)
     }
 }
@@ -101,7 +109,7 @@ export class InvalidBaseChains extends UIServerError {
 export class InvalidJsonSchema extends UIServerError {
     constructor(whichJson: string) {
         let message: string = `${whichJson} does not obey the required schema`;
-        let code: UIServerErrorCode = UIServerErrorCode.E_537;
+        let code: UIServerErrorCode = UIServerErrorCode.E_538;
         super(message, code)
     }
 }
@@ -109,7 +117,7 @@ export class InvalidJsonSchema extends UIServerError {
 export class InvalidParameterValue extends UIServerError {
     constructor(parameter: string) {
         let message: string = `An invalid value was given to ${parameter}`;
-        let code: UIServerErrorCode = UIServerErrorCode.E_538;
+        let code: UIServerErrorCode = UIServerErrorCode.E_539;
         super(message, code)
     }
 }
