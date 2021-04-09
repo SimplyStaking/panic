@@ -240,7 +240,6 @@ class RedisApi:
     def hremove(self, name: str, *keys):
         return self._safe(self.hremove_unsafe, [name, *keys], None)
 
-    # TODO add unit tests for this function
     def hkeys_unsafe(self, name: str):
         name = self._add_namespace(name)
 
