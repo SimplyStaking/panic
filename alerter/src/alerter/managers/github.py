@@ -1,5 +1,6 @@
 import logging
 import sys
+import copy
 from datetime import datetime
 from multiprocessing import Process
 from types import FrameType
@@ -14,7 +15,10 @@ from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
+                                 ALERT_EXCHANGE)
+from src.alerter.alerts.internal_alerts import (GithubManagerStarted,
+                                                GithubManagerStopped)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -54,6 +58,11 @@ class GithubAlerterManager(AlertersManager):
         # Declare publishing intentions
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
         self.rabbitmq.confirm_delivery()
+        alert = GithubManagerStarted(type(self).__name__,
+                                     datetime.now().timestamp(),
+                                     type(self).__name__,
+                                     type(self).__name__)
+        self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -133,7 +142,6 @@ class GithubAlerterManager(AlertersManager):
                       "closed, and any running github alerters will be "
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
-        self.disconnect_from_rabbit()
 
         for alerter, process in self.alerter_process_dict.items():
             log_and_print("Terminating the process of {}".format(alerter),
@@ -141,6 +149,12 @@ class GithubAlerterManager(AlertersManager):
             process.terminate()
             process.join()
 
+        alert = GithubManagerStopped(type(self).__name__,
+                                     datetime.now().timestamp(),
+                                     type(self).__name__,
+                                     type(self).__name__)
+        self._push_latest_data_to_queue_and_send(alert.alert_data)
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
@@ -150,5 +164,11 @@ class GithubAlerterManager(AlertersManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def _send_data(self, *args) -> None:
-        pass
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+        self._push_to_queue(
+            data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
+            routing_key='alert_router.github',
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True
+        )
+        self._send_data()

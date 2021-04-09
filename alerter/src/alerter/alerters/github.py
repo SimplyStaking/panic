@@ -10,7 +10,6 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert,
                                               GitHubPageNowAccessibleAlert)
-from src.alerter.alerts.internal_alerts import GithubAlerterStarted
 from src.alerter.alert_severties import Severity
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -91,15 +90,6 @@ class GithubAlerter(Alerter):
 
                 self._create_state_for_github(meta['repo_id'])
 
-                if not self._alerter_started_sent[meta['repo_id']]:
-                    alert = GithubAlerterStarted(
-                        meta['repo_name'], meta['last_monitored'],
-                        meta['repo_parent_id'], meta['repo_id'])
-                data_for_alerting.append(alert.alert_data)
-                self.logger.debug("Successfully classified alert %s",
-                                  alert.alert_data)
-                self._alerter_started_sent[meta['repo_id']] = True
-
                 if self._cannot_access_github_page[meta['repo_id']]:
                     alert = GitHubPageNowAccessibleAlert(
                         meta['repo_name'], Severity.INFO.value,
@@ -136,16 +126,6 @@ class GithubAlerter(Alerter):
                     meta_data = data_received['error']['meta_data']
 
                     self._create_state_for_github(meta_data['repo_id'])
-
-                    if not self._alerter_started_sent[meta_data['repo_id']]:
-                        alert = GithubAlerterStarted(
-                            meta_data['repo_name'], meta_data['time'],
-                            meta_data['repo_parent_id'], meta_data['repo_id'])
-                        data_for_alerting.append(alert.alert_data)
-                        self.logger.debug("Successfully classified alert %s",
-                                          alert.alert_data)
-                        self._alerter_started_sent[meta_data['repo_id']] = \
-                            True
 
                     alert = CannotAccessGitHubPageAlert(
                         meta_data['repo_name'], Severity.ERROR.value,

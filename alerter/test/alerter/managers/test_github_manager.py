@@ -105,9 +105,29 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         self.assertEqual(1, mock_start_consuming.call_count)
 
+    @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.managers.github.GithubManagerStarted")
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+    def test_initialise_rabbitmq_creates_github_manager_started_alert(
+            self, mock_push_latest_data_to_queue_and_send,
+            mock_github_started) -> None:
+
+        self.test_manager._initialise_rabbitmq()
+        type(mock_github_started.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+        mock_github_started.assert_called_once_with(
+            type(self.test_manager).__name__,
+            datetime.now().timestamp(),
+            type(self.test_manager).__name__,
+            type(self.test_manager).__name__
+        )
+        mock_push_latest_data_to_queue_and_send.assert_called_once()
+
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(GithubAlerterManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self, mock_process_ping) -> None:
+            self, mock_process_ping,
+            mock_push_latest_data_to_queue_and_send) -> None:
         mock_process_ping.return_value = None
         try:
             self.test_rabbit_manager.connect()
@@ -151,10 +171,13 @@ class TestGithubAlertersManager(unittest.TestCase):
             res = self.test_rabbit_manager.queue_declare(
                 GITHUB_MANAGER_INPUT_QUEUE, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self,
+        mock_push_latest_data_to_queue_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # heartbeat is received
@@ -184,6 +207,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             _, _, body = self.test_rabbit_manager.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -219,6 +243,7 @@ class TestGithubAlertersManager(unittest.TestCase):
         new_entry_process.join()
 
     @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -226,7 +251,7 @@ class TestGithubAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_process_is_alive(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack) -> None:
+            mock_ack, mock_push_latest_data_to_queue_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -275,10 +300,12 @@ class TestGithubAlertersManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -286,7 +313,7 @@ class TestGithubAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_process_is_dead(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack) -> None:
+            mock_ack, mock_push_latest_data_to_queue_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -335,15 +362,18 @@ class TestGithubAlertersManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
-    def test_process_ping_restarts_dead_processes(
-            self, send_hb_mock, mock_create_logger, mock_ack) -> None:
+    def test_process_ping_restarts_dead_processes(self, send_hb_mock,
+        mock_create_logger, mock_ack,
+        mock_push_latest_data_to_queue_and_send) -> None:
         send_hb_mock.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
@@ -384,14 +414,17 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.alerter_process_dict[
                 GITHUB_ALERTER_NAME].terminate()
             self.test_manager.alerter_process_dict[GITHUB_ALERTER_NAME].join()
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
     def test_process_ping_does_not_send_hb_if_processing_fails(
-            self, mock_process, mock_start, is_alive_mock) -> None:
+            self, mock_process, mock_start, is_alive_mock,
+            mock_push_latest_data_to_queue_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat. In this test we will
         # check that no heartbeat is sent when mocking a raised exception.
@@ -433,11 +466,13 @@ class TestGithubAlertersManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-            self) -> None:
+            self, mock_push_latest_data_to_queue_and_send) -> None:
         try:
             self.test_manager._initialise_rabbitmq()
             self.test_manager._start_alerters_processes()
@@ -450,6 +485,7 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -458,9 +494,11 @@ class TestGithubAlertersManager(unittest.TestCase):
          "pika.exceptions.AMQPChannelError"),
         ("self.test_exception", "PANICException"),
     ])
+    @mock.patch("src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
-            self, param_input, param_expected, hb_mock) -> None:
+            self, param_input, param_expected, hb_mock,
+            mock_push_latest_data_to_queue_and_send) -> None:
         hb_mock.side_effect = eval(param_input)
         try:
             self.test_manager._initialise_rabbitmq()
@@ -475,5 +513,6 @@ class TestGithubAlertersManager(unittest.TestCase):
                               self.test_manager._process_ping,
                               blocking_channel,
                               method, properties, body)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))

@@ -506,99 +506,6 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch(
-        "src.alerter.alerters.system.SystemAlerterStarted",
-        autospec=True)
-    def test_process_results_sends_internal_alert_on_initial_run(
-            self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.assertFalse(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                meta_data['system_name'], meta_data['last_monitored'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-            self.assertEqual(1, len(data_for_alerting))
-            self.assertTrue(
-              self.test_system_alerter._alerter_started_sent[self.system_id])
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerterStarted",
-        autospec=True)
-    def test_process_results_sends_internal_alert_on_initial_run_only_once(
-            self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.assertFalse(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                meta_data['system_name'], meta_data['last_monitored'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-            self.assertEqual(1, len(data_for_alerting))
-            self.assertTrue(
-              self.test_system_alerter._alerter_started_sent[self.system_id])
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerterStarted",
-        autospec=True)
-    def test_process_errors_sends_internal_alert_on_initial_run(
-            self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        meta_data = data['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.assertFalse(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                meta_data['system_name'], meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-            self.assertEqual(1, len(data_for_alerting))
-            self.assertTrue(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerterStarted",
-        autospec=True)
-    def test_process_errors_sends_internal_alert_on_initial_run_only_once(
-            self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        meta_data = data['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.assertFalse(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                meta_data['system_name'], meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-            self.assertEqual(1, len(data_for_alerting))
-            self.assertTrue(
-                self.test_system_alerter._alerter_started_sent[self.system_id])
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
@@ -643,8 +550,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ofd_decrease.assert_not_called()
             mock_ofd_increase.assert_not_called()
 
-            # There is one alert for having an internal alert generated
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -693,8 +599,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ofd_decrease.assert_not_called()
             mock_ofd_increase.assert_not_called()
 
-            # There is one alert for having an internal alert generated
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -711,8 +616,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ofd_decrease.assert_not_called()
             mock_ofd_increase.assert_not_called()
 
-            # There is one alert for having an internal alert generated
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -774,8 +678,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ofd_decrease.assert_not_called()
             mock_ofd_increase.assert_not_called()
 
-            # There are extra alerts due to initial start-up internal alerts
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -796,8 +699,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
 
-            # There is an extra internal alert to be sent on initial start up
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -813,8 +715,7 @@ class TestSystemAlerter(unittest.TestCase):
             data, meta_data, data_for_alerting)
         try:
             self.assertEqual(4, mock_classify_alert.call_count)
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -877,8 +778,7 @@ class TestSystemAlerter(unittest.TestCase):
                 eval(mock_severity), meta_data['last_monitored'],
                 eval(mock_severity), self.parent_id, self.system_id
             )
-            # Extra alert occurs due to internal start-up alert
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -938,8 +838,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.warning, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -954,8 +853,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.info, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1012,8 +910,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.warning, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1032,8 +929,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1090,8 +986,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.warning, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1110,8 +1005,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.warning, meta_data['last_monitored'], self.warning,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1178,8 +1072,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
 
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1200,7 +1093,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
 
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1261,8 +1154,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1283,8 +1175,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, self.last_monitored, self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1345,8 +1236,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1367,8 +1257,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1425,8 +1314,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1443,8 +1331,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.critical, meta_data['last_monitored'], self.critical,
                 self.parent_id, self.system_id
             )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1480,7 +1367,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
             # There are extra alerts due to initial start-up alerts
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1512,9 +1399,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_not_called()
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1537,9 +1422,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.system_name, self.warning, data['meta_data']['time'],
                 self.parent_id, self.system_id
             )
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1558,9 +1441,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.system_name, self.critical, data['meta_data']['time'],
                 self.parent_id, self.system_id
             )
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1587,9 +1468,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.system_name, self.warning, past_warning_time,
                 self.parent_id, self.system_id
             )
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1604,9 +1483,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
             mock_system_still_down.assert_not_called()
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1677,9 +1554,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.system_name, self.critical, past_critical_time,
                 self.parent_id, self.system_id
             )
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1693,7 +1568,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.parent_id, self.system_id
             )
             mock_system_still_down.assert_not_called()
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1719,9 +1594,7 @@ class TestSystemAlerter(unittest.TestCase):
                 self.system_name, self.critical, past_critical_time,
                 self.parent_id, self.system_id
             )
-            # Two base alerts due to starting the alerting process
-            # from valid url and metrics found
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1741,7 +1614,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1763,8 +1636,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1786,8 +1658,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1800,8 +1671,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1823,8 +1693,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1838,8 +1707,7 @@ class TestSystemAlerter(unittest.TestCase):
                 meta_data['last_monitored'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1856,8 +1724,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1876,8 +1743,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
         data = self.data_received_error_data['error']
@@ -1889,8 +1755,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1909,8 +1774,7 @@ class TestSystemAlerter(unittest.TestCase):
                 data['meta_data']['time'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(2, len(data_for_alerting))
+            self.assertEqual(1, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1924,8 +1788,7 @@ class TestSystemAlerter(unittest.TestCase):
                 meta_data['last_monitored'], self.parent_id,
                 self.system_id
             )
-            # Base alert due to starting the alerting process
-            self.assertEqual(3, len(data_for_alerting))
+            self.assertEqual(2, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1942,8 +1805,7 @@ class TestSystemAlerter(unittest.TestCase):
             data, meta_data, data_for_alerting)
         try:
             self.assertEqual(4, mock_classify_alert.call_count)
-            # Base alert due to starting the alerting process
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1998,8 +1860,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ofd_decrease.assert_not_called()
             
             eval(mock_param).assert_not_called()
-            # Base alert due to starting the alerting process
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -2016,8 +1877,7 @@ class TestSystemAlerter(unittest.TestCase):
             data, meta_data, data_for_alerting)
         try:
             self.assertEqual(4, mock_classify_alert.call_count)
-            # Base alert due to starting the alerting process
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -2139,8 +1999,7 @@ class TestSystemAlerter(unittest.TestCase):
             data, meta_data, data_for_alerting)
         try:
             self.assertEqual(0, mock_classify_alert.call_count)
-            # Base alert due to starting the alerting process
-            self.assertEqual(1, len(data_for_alerting))
+            self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
@@ -2272,9 +2131,7 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_create_state_for_system.assert_called_with(
-                self.system_id, self.parent_id
-            )
+            mock_create_state_for_system.assert_called_with(self.system_id)
             mock_process_results.assert_called_with(
                 self.data_received_initially_no_alert['result']['data'],
                 self.data_received_initially_no_alert['result']['meta_data'],
@@ -2302,9 +2159,7 @@ class TestSystemAlerter(unittest.TestCase):
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
                                                    properties, body)
-            mock_create_state_for_system.assert_called_with(
-                self.system_id, self.parent_id
-            )
+            mock_create_state_for_system.assert_called_with(self.system_id)
             mock_process_errors.assert_called_with(
                 self.data_received_error_data['error'],
                 []

@@ -124,7 +124,7 @@ class AlertStore(Store):
 
         # Do not save the internal alerts into Mongo as they aren't useful to
         # the user
-        if alert['severity'] == Severity.INTERNAL.value:
+        if alert['severity'] != Severity.INTERNAL.value:
             self.mongo.update_one(
                 alert['parent_id'],
                 {
@@ -188,13 +188,16 @@ class AlertStore(Store):
                                                                     key):
                         self.redis.hremove(chain_hash, key)
 
-            elif alert['alert_code']['code'] == \
-                    InternalAlertCode.GithubManagerStarted.value:
+            elif (alert['alert_code']['code'] ==
+                  InternalAlertCode.GithubManagerStarted.value or
+                  alert['alert_code']['code'] ==
+                  InternalAlertCode.GithubManagerStopped.value):
                 """
-                The `GithubManagerStarted` alert indicates that PANIC has
-                started, or restarted. This means that we cannot be sure if the
-                configurations are the same as the previous run and the Alert
-                Metrics should be cleared for each CHAIN.
+                The `GithubManagerStarted` or `GithubManagerStopped` alert
+                indicates that PANIC has started, or restarted. This means
+                that we cannot be sure if the configurations are the same as
+                the previous run and the Alert Metrics should be cleared for
+                each CHAIN.
                 """
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(

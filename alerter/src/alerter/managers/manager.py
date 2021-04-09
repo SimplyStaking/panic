@@ -55,3 +55,7 @@ class AlertersManager(QueuingPublisherSubscriberComponent):
     @abstractmethod
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         pass
+
+    @abstractmethod
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+        pass

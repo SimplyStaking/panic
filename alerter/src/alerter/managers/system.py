@@ -99,24 +99,27 @@ class SystemAlertersManager(AlertersManager):
         self.rabbitmq.confirm_delivery()
 
         # Send an internal alert to reset all the REDIS metrics for all chains
-        alert = SystemManagerStarted('System Manager',
+        alert = SystemManagerStarted(type(self).__name__,
                                      datetime.now().timestamp(),
-                                     'System Manager',
-                                     'System Manager')
-        self._push_latest_data_to_queue_and_send(alert.data)
+                                     type(self).__name__,
+                                     type(self).__name__)
+        self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _terminate_and_join_chain_alerter_processes(
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
         # process should be terminated
-        for parent_id, parent_info in self._parent_id_process_dict.items():
+        for parent_id, parent_info in list(
+                self._parent_id_process_dict.items()):
+
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
                 # Send an internal alert to reset all the REDIS metrics for
                 # this chain
                 alert = SystemAlerterStopped(chain,
                                              datetime.now().timestamp(),
-                                             parent_id, parent_id)
-                self._push_latest_data_to_queue_and_send(alert.data)
+                                             parent_id,
+                                             type(self).__name__)
+                self._push_latest_data_to_queue_and_send(alert.alert_data)
 
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
@@ -284,7 +287,7 @@ class SystemAlertersManager(AlertersManager):
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
-    def _push_latest_data_to_queue_and_send(self, alert: List) -> None:
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
             routing_key='alert_router.system',
