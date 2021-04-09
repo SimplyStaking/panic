@@ -497,8 +497,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -514,8 +513,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.assertFalse(
                 self.test_system_alerter._alerter_started_sent[self.system_id])
         self.test_system_alerter._process_results(data, meta_data,
@@ -538,8 +536,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.assertFalse(
                 self.test_system_alerter._alerter_started_sent[self.system_id])
         self.test_system_alerter._process_results(data, meta_data,
@@ -564,8 +561,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         meta_data = data['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.assertFalse(
                 self.test_system_alerter._alerter_started_sent[self.system_id])
         self.test_system_alerter._process_errors(data, data_for_alerting)
@@ -587,8 +583,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         meta_data = data['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.assertFalse(
                 self.test_system_alerter._alerter_started_sent[self.system_id])
         self.test_system_alerter._process_errors(data, data_for_alerting)
@@ -635,8 +630,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -686,8 +680,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -705,8 +698,7 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
 
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -769,8 +761,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -789,8 +780,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         data[metric_param]['current'] = self.percent_usage + int(mock_pad)
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -818,8 +808,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_warning_alert['result']['data']
         meta_data = self.data_received_initially_warning_alert['result'][
             'meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -875,8 +864,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + int(mock_pad)
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -937,8 +925,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -958,8 +945,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data[metric_param]['current'] = self.percent_usage + 36
         data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1013,8 +999,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1034,8 +1019,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1093,8 +1077,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1114,8 +1097,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data[metric_param]['current'] = self.percent_usage + 47
         data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1176,8 +1158,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 56
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1204,8 +1185,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data[metric_param]['current'] = self.percent_usage + 50
         data[metric_param]['previous'] = self.percent_usage + 56
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1268,8 +1248,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 56
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1291,8 +1270,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['previous'] = self.percent_usage + 56
         meta_data['last_monitored'] = self.last_monitored + \
             self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1354,8 +1332,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 56
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1377,8 +1354,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 56
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1440,8 +1416,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_initially_no_alert['result']['data']
         data[metric_param]['current'] = self.percent_usage + 57
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1459,8 +1434,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 57
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(data, meta_data,
                                                   data_for_alerting)
         try:
@@ -1480,8 +1454,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_initially_no_alert['result']['data']
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -1493,8 +1466,7 @@ class TestSystemAlerter(unittest.TestCase):
                 autospec=True)
     def test_system_back_up_alert(self, mock_system_back_up) -> None:
         data_for_alerting = []
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._system_initial_alert_sent[
             self.system_id][SystemMetricCode.SystemIsDown.value] = True
         data = self.data_received_initially_no_alert['result']['data']
@@ -1516,8 +1488,7 @@ class TestSystemAlerter(unittest.TestCase):
                 autospec=True)
     def test_system_back_up_timed_task_limiter_reset(self, mock_reset) -> None:
         data_for_alerting = []
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         # Set that the initial downtime alert was sent already
         self.test_system_alerter._system_initial_alert_sent[
             self.system_id][SystemMetricCode.SystemIsDown.value] = True
@@ -1537,8 +1508,7 @@ class TestSystemAlerter(unittest.TestCase):
         self, mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_not_called()
@@ -1560,8 +1530,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
             self.warning_threshold_seconds
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1582,8 +1551,7 @@ class TestSystemAlerter(unittest.TestCase):
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
             self.critical_threshold_seconds
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1611,8 +1579,7 @@ class TestSystemAlerter(unittest.TestCase):
         past_warning_time = self.last_monitored + self.warning_threshold_seconds
         mock_last_time_did_task.return_value = past_warning_time
         data['meta_data']['time'] = past_warning_time
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
         try:
@@ -1628,8 +1595,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['meta_data'][
             'time'] = past_warning_time + self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
         try:
@@ -1659,8 +1625,7 @@ class TestSystemAlerter(unittest.TestCase):
         past_warning_time = self.last_monitored + self.warning_threshold_seconds
         mock_last_time_did_task.return_value = past_warning_time
         data['meta_data']['time'] = past_warning_time
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1674,8 +1639,7 @@ class TestSystemAlerter(unittest.TestCase):
         data['meta_data'][
             'time'] = past_warning_time + self.critical_repeat_seconds
         downtime = int(data['meta_data']['time'] - self.last_monitored)
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1706,8 +1670,7 @@ class TestSystemAlerter(unittest.TestCase):
         past_critical_time = self.last_monitored + self.critical_threshold_seconds
         mock_last_time_did_task.return_value = past_critical_time
         data['meta_data']['time'] = past_critical_time
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1722,8 +1685,7 @@ class TestSystemAlerter(unittest.TestCase):
 
         data['meta_data'][
             'time'] = past_critical_time + self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1750,8 +1712,7 @@ class TestSystemAlerter(unittest.TestCase):
         past_critical_time = self.last_monitored + self.critical_threshold_seconds
         mock_last_time_did_task.return_value = past_critical_time
         data['meta_data']['time'] = past_critical_time
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_system_is_down.assert_called_once_with(
@@ -1767,8 +1728,7 @@ class TestSystemAlerter(unittest.TestCase):
         data['meta_data'][
             'time'] = past_critical_time + self.critical_repeat_seconds
         downtime = int(data['meta_data']['time'] - self.last_monitored)
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(
             data, data_for_alerting)
         try:
@@ -1795,8 +1755,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
@@ -1819,8 +1778,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_not_found.assert_called_once_with(
@@ -1857,8 +1815,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_not_found.assert_called_once_with(
@@ -1891,8 +1848,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert.assert_called_once_with(
@@ -1912,8 +1868,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_invalid.assert_called_once_with(
@@ -1946,8 +1901,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id,
-                                                          self.parent_id)
+        self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_invalid.assert_called_once_with(
@@ -1983,7 +1937,7 @@ class TestSystemAlerter(unittest.TestCase):
         meta_data = self.data_received_initially_warning_alert['result'][
             'meta_data']
         self.test_system_alerter_warnings_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -2034,7 +1988,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['current'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
         self.test_system_alerter_warnings_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_warnings_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -2057,7 +2011,7 @@ class TestSystemAlerter(unittest.TestCase):
         meta_data = self.data_received_initially_warning_alert['result'][
             'meta_data']
         self.test_system_alerter_critical_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -2109,7 +2063,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
         self.test_system_alerter_critical_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_critical_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -2163,7 +2117,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
         self.test_system_alerter_all_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_all_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:
@@ -2180,7 +2134,7 @@ class TestSystemAlerter(unittest.TestCase):
         meta_data = self.data_received_initially_critical_alert['result'][
             'meta_data']
         self.test_system_alerter_all_disabled._create_state_for_system(
-            self.system_id, self.parent_id)
+            self.system_id)
         self.test_system_alerter_all_disabled._process_results(
             data, meta_data, data_for_alerting)
         try:

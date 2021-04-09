@@ -18,7 +18,6 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
     ValidUrlAlert, MetricFoundAlert)
-from src.alerter.alerts.internal_alerts import SystemAlerterStarted
 from src.alerter.metric_code import SystemMetricCode
 from src.alerter.alert_severties import Severity
 from src.configs.system_alerts import SystemAlertsConfig
@@ -45,7 +44,6 @@ class SystemAlerter(Alerter):
         self._invalid_url = {}
         self._metric_not_found = {}
         self._warning_sent = {}
-        self._alerter_started_sent = {}
         self._system_initial_alert_sent = {}
         self._system_critical_timed_task_limiters = {}
 
@@ -53,16 +51,7 @@ class SystemAlerter(Alerter):
     def alerts_configs(self) -> SystemAlertsConfig:
         return self._system_alerts_config
 
-    def _create_state_for_system(self, system_id: str, parent_id: str) -> None:
-
-        """
-        TODO: Update this to delete the entire chain.
-        Question: what happens to metrics if the chain is deleted, no internal
-        alert will be sent. We need to purge all metrics for the chain.
-        """
-        if system_id not in self._alerter_started_sent:
-            self._alerter_started_sent[system_id] = False
-
+    def _create_state_for_system(self, system_id: str) -> None:
         # This is for alerts were we want to check if an initial alert was sent
         # for that metric, irrespective of the severity.
         if system_id not in self._system_initial_alert_sent:
@@ -207,13 +196,11 @@ class SystemAlerter(Alerter):
                 if 'result' in data_received:
                     data = data_received['result']['data']
                     meta_data = data_received['result']['meta_data']
-                    self._create_state_for_system(meta_data['system_id'],
-                                                  meta_data['system_parent_id'])
+                    self._create_state_for_system(meta_data['system_id'])
                     self._process_results(data, meta_data, data_for_alerting)
                 elif 'error' in data_received:
                     self._create_state_for_system(
-                        data_received['error']['meta_data']['system_id'],
-                        data_received['error']['meta_data']['system_parent_id'])
+                        data_received['error']['meta_data']['system_id'])
                     self._process_errors(data_received['error'],
                                          data_for_alerting)
                 else:
@@ -263,15 +250,6 @@ class SystemAlerter(Alerter):
                         data_for_alerting: List) -> None:
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
-
-        if not self._alerter_started_sent[meta_data['system_id']]:
-            alert = SystemAlerterStarted(
-                meta_data['system_name'], meta_data['time'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-            data_for_alerting.append(alert.alert_data)
-            self.logger.debug("Successfully classified alert %s",
-                              alert.alert_data)
-            self._alerter_started_sent[meta_data['system_id']] = True
 
         if self._invalid_url[meta_data['system_id']] and \
                 int(error_data['code']) != 5009:
@@ -400,21 +378,6 @@ class SystemAlerter(Alerter):
         storage = self.alerts_configs.system_storage_usage
         ram_use = self.alerts_configs.system_ram_usage
         is_down = self.alerts_configs.system_is_down
-
-        """
-        If the internal alert stating that an alerter was started
-        wasn't sent yet, add it to the queue. This alert is used to
-        reset the alert metrics in the data store for erroring alerts
-        """
-        if not self._alerter_started_sent[meta_data['system_id']]:
-            alert = SystemAlerterStarted(
-                meta_data['system_name'], meta_data['last_monitored'],
-                meta_data['system_parent_id'], meta_data['system_id'])
-
-            data_for_alerting.append(alert.alert_data)
-            self.logger.debug("Successfully classified alert %s",
-                              alert.alert_data)
-            self._alerter_started_sent[meta_data['system_id']] = True
 
         if self._invalid_url[meta_data['system_id']]:
             alert = ValidUrlAlert(

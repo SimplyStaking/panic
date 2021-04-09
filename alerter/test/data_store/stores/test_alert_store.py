@@ -91,6 +91,7 @@ class TestAlertStore(unittest.TestCase):
         self.info = 'INFO'
         self.warning = 'WARNING'
         self.critical = 'CRITICAL'
+        self.internal = 'INTERNAL'
 
         self.parent_id = 'test_parent_id'
         self.alert_id = 'test_alert_id'
@@ -549,101 +550,101 @@ class TestAlertStore(unittest.TestCase):
                       json.dumps(metric_data))
         mock_hset.assert_has_calls([call_1])
 
-    @parameterized.expand([
-        ("self.alert_internal_system_1",),
-        ("self.alert_internal_system_2",),
-        ("self.alert_internal_system_3",),
-    ])
-    @freeze_time("2012-01-01")
-    @mock.patch.object(RedisApi, "hremove")
-    @mock.patch.object(RedisApi, "hexists")
-    def test_process_redis_store_system_removes_metrics_if_they_exist(
-            self, mock_data, mock_hexists, mocK_hremove) -> None:
+    # @parameterized.expand([
+    #     ("self.alert_internal_system_1",),
+    #     ("self.alert_internal_system_2",),
+    #     ("self.alert_internal_system_3",),
+    # ])
+    # @freeze_time("2012-01-01")
+    # @mock.patch.object(RedisApi, "hremove")
+    # @mock.patch.object(RedisApi, "hexists")
+    # def test_process_redis_store_system_removes_metrics_if_they_exist(
+    #         self, mock_data, mock_hexists, mocK_hremove) -> None:
 
-        mock_hexists.return_value = True
-        data = eval(mock_data)
-        self.test_store._process_redis_store(data)
+    #     mock_hexists.return_value = True
+    #     data = eval(mock_data)
+    #     self.test_store._process_redis_store(data)
 
-        key = data['origin_id']
-        calls = []
-        for metric_name in self.test_store.system_metrics:
-            call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
-            calls.append(call_1)
-        mock_hexists.assert_has_calls(calls)
-        mocK_hremove.assert_has_calls(calls)
+    #     key = data['origin_id']
+    #     calls = []
+    #     for metric_name in self.test_store.system_metrics:
+    #         call_1 = call(Keys.get_hash_parent(data['parent_id']),
+    #                       eval('Keys.get_alert_{}(key)'.format(metric_name)))
+    #         calls.append(call_1)
+    #     mock_hexists.assert_has_calls(calls)
+    #     mocK_hremove.assert_has_calls(calls)
 
-    @parameterized.expand([
-        ("self.alert_internal_github_1",),
-        ("self.alert_internal_github_2",),
-        ("self.alert_internal_github_3",),
-    ])
-    @freeze_time("2012-01-01")
-    @mock.patch.object(RedisApi, "hremove")
-    @mock.patch.object(RedisApi, "hexists")
-    def test_process_redis_store_github_removes_metrics_if_they_exist(
-            self, mock_data, mock_hexists, mocK_hremove) -> None:
+    # @parameterized.expand([
+    #     ("self.alert_internal_github_1",),
+    #     ("self.alert_internal_github_2",),
+    #     ("self.alert_internal_github_3",),
+    # ])
+    # @freeze_time("2012-01-01")
+    # @mock.patch.object(RedisApi, "hremove")
+    # @mock.patch.object(RedisApi, "hexists")
+    # def test_process_redis_store_github_removes_metrics_if_they_exist(
+    #         self, mock_data, mock_hexists, mocK_hremove) -> None:
 
-        mock_hexists.return_value = True
-        data = eval(mock_data)
-        self.test_store._process_redis_store(data)
+    #     mock_hexists.return_value = True
+    #     data = eval(mock_data)
+    #     self.test_store._process_redis_store(data)
 
-        key = data['origin_id']
-        calls = []
-        for metric_name in self.test_store.github_metrics:
-            call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
-            calls.append(call_1)
-        mock_hexists.assert_has_calls(calls)
-        mocK_hremove.assert_has_calls(calls)
+    #     key = data['origin_id']
+    #     calls = []
+    #     for metric_name in self.test_store.github_metrics:
+    #         call_1 = call(Keys.get_hash_parent(data['parent_id']),
+    #                       eval('Keys.get_alert_{}(key)'.format(metric_name)))
+    #         calls.append(call_1)
+    #     mock_hexists.assert_has_calls(calls)
+    #     mocK_hremove.assert_has_calls(calls)
 
-    @parameterized.expand([
-        ("self.alert_internal_system_1",),
-        ("self.alert_internal_system_2",),
-        ("self.alert_internal_system_3",),
-    ])
-    @freeze_time("2012-01-01")
-    @mock.patch.object(RedisApi, "hremove")
-    @mock.patch.object(RedisApi, "hexists")
-    def test_process_redis_store_system_do_not_remove_metrics_if_they_do_not_exists(
-            self, mock_data, mock_hexists, mocK_hremove) -> None:
+    # @parameterized.expand([
+    #     ("self.alert_internal_system_1",),
+    #     ("self.alert_internal_system_2",),
+    #     ("self.alert_internal_system_3",),
+    # ])
+    # @freeze_time("2012-01-01")
+    # @mock.patch.object(RedisApi, "hremove")
+    # @mock.patch.object(RedisApi, "hexists")
+    # def test_process_redis_store_system_do_not_remove_metrics_if_they_do_not_exists(
+    #         self, mock_data, mock_hexists, mocK_hremove) -> None:
 
-        mock_hexists.return_value = False
-        data = eval(mock_data)
-        self.test_store._process_redis_store(data)
+    #     mock_hexists.return_value = False
+    #     data = eval(mock_data)
+    #     self.test_store._process_redis_store(data)
 
-        key = data['origin_id']
-        calls = []
-        for metric_name in self.test_store.system_metrics:
-            call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
-            calls.append(call_1)
-        mock_hexists.assert_has_calls(calls)
-        mocK_hremove.assert_not_called()
+    #     key = data['origin_id']
+    #     calls = []
+    #     for metric_name in self.test_store.system_metrics:
+    #         call_1 = call(Keys.get_hash_parent(data['parent_id']),
+    #                       eval('Keys.get_alert_{}(key)'.format(metric_name)))
+    #         calls.append(call_1)
+    #     mock_hexists.assert_has_calls(calls)
+    #     mocK_hremove.assert_not_called()
 
-    @parameterized.expand([
-        ("self.alert_internal_github_1",),
-        ("self.alert_internal_github_2",),
-        ("self.alert_internal_github_3",),
-    ])
-    @freeze_time("2012-01-01")
-    @mock.patch.object(RedisApi, "hremove")
-    @mock.patch.object(RedisApi, "hexists")
-    def test_process_redis_store_github_do_not_remove_metrics_if_they_do_not_exists(
-            self, mock_data, mock_hexists, mocK_hremove) -> None:
+    # @parameterized.expand([
+    #     ("self.alert_internal_github_1",),
+    #     ("self.alert_internal_github_2",),
+    #     ("self.alert_internal_github_3",),
+    # ])
+    # @freeze_time("2012-01-01")
+    # @mock.patch.object(RedisApi, "hremove")
+    # @mock.patch.object(RedisApi, "hexists")
+    # def test_process_redis_store_github_do_not_remove_metrics_if_they_do_not_exists(
+    #         self, mock_data, mock_hexists, mocK_hremove) -> None:
 
-        mock_hexists.return_value = False
-        data = eval(mock_data)
-        self.test_store._process_redis_store(data)
+    #     mock_hexists.return_value = False
+    #     data = eval(mock_data)
+    #     self.test_store._process_redis_store(data)
 
-        key = data['origin_id']
-        calls = []
-        for metric_name in self.test_store.github_metrics:
-            call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                          eval('Keys.get_alert_{}(key)'.format(metric_name)))
-            calls.append(call_1)
-        mock_hexists.assert_has_calls(calls)
-        mocK_hremove.assert_not_called()
+    #     key = data['origin_id']
+    #     calls = []
+    #     for metric_name in self.test_store.github_metrics:
+    #         call_1 = call(Keys.get_hash_parent(data['parent_id']),
+    #                       eval('Keys.get_alert_{}(key)'.format(metric_name)))
+    #         calls.append(call_1)
+    #     mock_hexists.assert_has_calls(calls)
+    #     mocK_hremove.assert_not_called()
 
     @parameterized.expand([
         ("self.alert_data_1",),
@@ -844,164 +845,185 @@ class TestAlertStore(unittest.TestCase):
             eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
         ))
 
-        # Send the internal alert to delete the data
-        internal_data = eval(mock_internal_alert)
-        self.test_store._process_redis_store(internal_data)
+        parent_hash = Keys.get_hash_parent_raw()
+        chain_hashes_list = self.redis.get_keys_unsafe(
+            '*' + parent_hash + '*')
 
-        # Check if the data is removed from REDIS
-        self.assertFalse(self.redis.hexists(
-            Keys.get_hash_parent(system_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
-        ))
+        # print(chain_hashes_list)
+        # print(self.redis.get_keys(parent_hash))
+        # for keys in self.redis._redis.hscan_iter(chain_hashes_list[0],
+        #                                    match='*alert*'):
+        #     print(keys)
 
-    @parameterized.expand([
-        ("self.alert_data_github_1", "self.alert_internal_github_1",),
-        ("self.alert_data_github_2", "self.alert_internal_github_2",),
-    ])
-    def test_process_redis_store_github_redis_stores_and_deletes_correctly(
-            self, mock_github_data, mock_internal_alert) -> None:
+        # print(self.redis.get_keys(chain_hashes_list[0]))
+        # print(self.redis._redis.hgetall(parent_hash))
+        for chain in chain_hashes_list:
+            for keys in self.redis.hkeys(chain):
+                print(keys)
+                stored_data = self.redis.hget(
+                    chain, keys)
+                print(stored_data)
+        #     print(json.loads(stored_data))
+        # print(chain_hashes_list)
 
-        # First store the data
-        github_data = eval(mock_github_data)
-        key = github_data['origin_id']
-        self.test_store._process_redis_store(github_data)
+        # # Send the internal alert to delete the data
+        # internal_data = eval(mock_internal_alert)
+        # self.test_store._process_redis_store(internal_data)
 
-        stored_data = self.redis.hget(
-            Keys.get_hash_parent(github_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(github_data['metric'])))
+        # # Check if the data is removed from REDIS
+        # self.assertFalse(self.redis.hexists(
+        #     Keys.get_hash_parent(system_data['parent_id']),
+        #     eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
+        # ))
 
-        expected_data = {'severity': github_data['severity'],
-                         'message': github_data['message']}
+    # @parameterized.expand([
+    #     ("self.alert_data_github_1", "self.alert_internal_github_1",),
+    #     ("self.alert_data_github_2", "self.alert_internal_github_2",),
+    # ])
+    # def test_process_redis_store_github_redis_stores_and_deletes_correctly(
+    #         self, mock_github_data, mock_internal_alert) -> None:
 
-        self.assertEqual(expected_data, json.loads(stored_data))
+    #     # First store the data
+    #     github_data = eval(mock_github_data)
+    #     key = github_data['origin_id']
+    #     self.test_store._process_redis_store(github_data)
 
-        # Check if the data exists inside REDIS
-        self.assertTrue(self.redis.hexists(
-            Keys.get_hash_parent(github_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
-        ))
+    #     stored_data = self.redis.hget(
+    #         Keys.get_hash_parent(github_data['parent_id']),
+    #         eval('Keys.get_alert_{}(key)'.format(github_data['metric'])))
 
-        # Send the internal alert to delete the data
-        internal_data = eval(mock_internal_alert)
-        self.test_store._process_redis_store(internal_data)
+    #     expected_data = {'severity': github_data['severity'],
+    #                      'message': github_data['message']}
 
-        # Check if the data is removed from REDIS
-        self.assertFalse(self.redis.hexists(
-            Keys.get_hash_parent(github_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
-        ))
+    #     self.assertEqual(expected_data, json.loads(stored_data))
 
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-        ("self.alert_internal_github_1",),
-        ("self.alert_internal_github_2",),
-        ("self.alert_internal_system_1",),
-        ("self.alert_internal_system_2",),
-        ("self.alert_internal_system_3",),
-    ])
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_redis_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    def test_process_data_results_stores_in_mongo_correctly(
-            self, mock_system_data, mock_send_hb, mock_process_redis_store,
-            mock_ack) -> None:
+    #     # Check if the data exists inside REDIS
+    #     self.assertTrue(self.redis.hexists(
+    #         Keys.get_hash_parent(github_data['parent_id']),
+    #         eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
+    #     ))
 
-        mock_ack.return_value = None
-        try:
-            self.test_store._initialise_rabbitmq()
+    #     # Send the internal alert to delete the data
+    #     internal_data = eval(mock_internal_alert)
+    #     self.test_store._process_redis_store(internal_data)
 
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+    #     # Check if the data is removed from REDIS
+    #     self.assertFalse(self.redis.hexists(
+    #         Keys.get_hash_parent(github_data['parent_id']),
+    #         eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
+    #     ))
 
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
+    # @parameterized.expand([
+    #     ("self.alert_data_1",),
+    #     ("self.alert_data_2",),
+    #     ("self.alert_data_3",),
+    #     ("self.alert_internal_github_1",),
+    #     ("self.alert_internal_github_2",),
+    #     ("self.alert_internal_system_1",),
+    #     ("self.alert_internal_system_2",),
+    #     ("self.alert_internal_system_3",),
+    # ])
+    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+    #             autospec=True)
+    # @mock.patch("src.data_store.stores.alert.AlertStore._process_redis_store",
+    #             autospec=True)
+    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+    #             autospec=True)
+    # def test_process_data_results_stores_in_mongo_correctly(
+    #         self, mock_system_data, mock_send_hb, mock_process_redis_store,
+    #         mock_ack) -> None:
 
-            mock_process_redis_store.assert_called_once()
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
+    #     mock_ack.return_value = None
+    #     try:
+    #         self.test_store._initialise_rabbitmq()
 
-            documents = self.mongo.get_all(data['parent_id'])
-            document = documents[0]
-            expected = [
-                'alert',
-                1,
-                str(data['origin_id']),
-                str(data['alert_code']['name']),
-                str(data['severity']),
-                str(data['message']),
-                str(data['timestamp'])
-            ]
-            actual = [
-                document['doc_type'],
-                document['n_alerts'],
-                document['alerts'][0]['origin'],
-                document['alerts'][0]['alert_name'],
-                document['alerts'][0]['severity'],
-                document['alerts'][0]['message'],
-                document['alerts'][0]['timestamp']
-            ]
+    #         data = eval(mock_system_data)
+    #         blocking_channel = self.test_store.rabbitmq.channel
+    #         method_chains = pika.spec.Basic.Deliver(
+    #             routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
 
-            self.assertListEqual(expected, actual)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+    #         properties = pika.spec.BasicProperties()
+    #         self.test_store._process_data(
+    #             blocking_channel,
+    #             method_chains,
+    #             properties,
+    #             json.dumps(data).encode()
+    #         )
 
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-    ])
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_mongo_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    def test_process_data_results_stores_in_redis_correctly(
-            self, mock_system_data, mock_send_hb, mock_process_mongo_store,
-            mock_ack) -> None:
+    #         mock_process_redis_store.assert_called_once()
+    #         mock_ack.assert_called_once()
+    #         mock_send_hb.assert_called_once()
 
-        mock_ack.return_value = None
-        try:
-            self.test_store._initialise_rabbitmq()
+    #         documents = self.mongo.get_all(data['parent_id'])
+    #         document = documents[0]
+    #         expected = [
+    #             'alert',
+    #             1,
+    #             str(data['origin_id']),
+    #             str(data['alert_code']['name']),
+    #             str(data['severity']),
+    #             str(data['message']),
+    #             str(data['timestamp'])
+    #         ]
+    #         actual = [
+    #             document['doc_type'],
+    #             document['n_alerts'],
+    #             document['alerts'][0]['origin'],
+    #             document['alerts'][0]['alert_name'],
+    #             document['alerts'][0]['severity'],
+    #             document['alerts'][0]['message'],
+    #             document['alerts'][0]['timestamp']
+    #         ]
 
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+    #         self.assertListEqual(expected, actual)
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))
 
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
+    # @parameterized.expand([
+    #     ("self.alert_data_1",),
+    #     ("self.alert_data_2",),
+    #     ("self.alert_data_3",),
+    # ])
+    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+    #             autospec=True)
+    # @mock.patch("src.data_store.stores.alert.AlertStore._process_mongo_store",
+    #             autospec=True)
+    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+    #             autospec=True)
+    # def test_process_data_results_stores_in_redis_correctly(
+    #         self, mock_system_data, mock_send_hb, mock_process_mongo_store,
+    #         mock_ack) -> None:
 
-            mock_process_mongo_store.assert_called_once()
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
+    #     mock_ack.return_value = None
+    #     try:
+    #         self.test_store._initialise_rabbitmq()
 
-            key = data['origin_id']
+    #         data = eval(mock_system_data)
+    #         blocking_channel = self.test_store.rabbitmq.channel
+    #         method_chains = pika.spec.Basic.Deliver(
+    #             routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
 
-            stored_data = self.redis.hget(
-                Keys.get_hash_parent(data['parent_id']),
-                eval('Keys.get_alert_{}(key)'.format(data['metric'])))
+    #         properties = pika.spec.BasicProperties()
+    #         self.test_store._process_data(
+    #             blocking_channel,
+    #             method_chains,
+    #             properties,
+    #             json.dumps(data).encode()
+    #         )
 
-            expected_data = {'severity': data['severity'],
-                             'message': data['message']}
+    #         mock_process_mongo_store.assert_called_once()
+    #         mock_ack.assert_called_once()
+    #         mock_send_hb.assert_called_once()
 
-            self.assertEqual(expected_data, json.loads(stored_data))
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+    #         key = data['origin_id']
+
+    #         stored_data = self.redis.hget(
+    #             Keys.get_hash_parent(data['parent_id']),
+    #             eval('Keys.get_alert_{}(key)'.format(data['metric'])))
+
+    #         expected_data = {'severity': data['severity'],
+    #                          'message': data['message']}
+
+    #         self.assertEqual(expected_data, json.loads(stored_data))
+    #     except Exception as e:
+    #         self.fail("Test failed: {}".format(e))

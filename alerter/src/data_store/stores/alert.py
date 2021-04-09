@@ -9,6 +9,7 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.alerter.alert_severties import Severity
+from src.alerter.alert_code import InternalAlertCode
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE,
@@ -23,16 +24,6 @@ class AlertStore(Store):
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                db_name=self.mongo_db, host=self.mongo_ip,
                                port=self.mongo_port)
-        self.system_metrics = ['open_file_descriptors',
-                               'system_cpu_usage',
-                               'system_storage_usage',
-                               'system_ram_usage',
-                               'system_is_down',
-                               'invalid_url',
-                               'metric_not_found']
-        # We do not want to reset `github_release` for Github metrics as we
-        # will lose the pending upgrades
-        self.github_metrics = ['cannot_access_github']
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -130,58 +121,96 @@ class AlertStore(Store):
         $max is the timestamp of the last alert entered
         $inc increments n_alerts by one each time an alert is added
         """
-        self.mongo.update_one(
-            alert['parent_id'],
-            {
-                'doc_type': 'alert',
-                'n_alerts': {'$lt': 1000}
-            }, {
-                '$push': {
-                    'alerts': {
-                        'origin': alert['origin_id'],
-                        'alert_name': alert['alert_code']['name'],
-                        'severity': alert['severity'],
-                        'message': alert['message'],
-                        'metric': alert['metric'],
-                        'timestamp': str(alert['timestamp']),
-                    }
-                },
-                '$min': {'first': alert['timestamp']},
-                '$max': {'last': alert['timestamp']},
-                '$inc': {'n_alerts': 1},
-            }
-        )
+
+        # Do not save the internal alerts into Mongo as they aren't useful to
+        # the user
+        if alert['severity'] == Severity.INTERNAL.value:
+            self.mongo.update_one(
+                alert['parent_id'],
+                {
+                    'doc_type': 'alert',
+                    'n_alerts': {'$lt': 1000}
+                }, {
+                    '$push': {
+                        'alerts': {
+                            'origin': alert['origin_id'],
+                            'alert_name': alert['alert_code']['name'],
+                            'severity': alert['severity'],
+                            'message': alert['message'],
+                            'metric': alert['metric'],
+                            'timestamp': str(alert['timestamp']),
+                        }
+                    },
+                    '$min': {'first': alert['timestamp']},
+                    '$max': {'last': alert['timestamp']},
+                    '$inc': {'n_alerts': 1},
+                }
+            )
 
     def _process_redis_store(self, alert: Dict) -> None:
-        """
-        If the severity of the alert is internal delete all the
-        metrics with regards to that source. Metrics whose keys do not exist
-        yet are considered to be all informational (no warning/critical/error)
-        alerts are occuring.
-        """
         if alert['severity'] == Severity.INTERNAL.value:
-            if alert['alert_code']['code'] == 'system_alerter_started':
-                key = alert['origin_id']
-                for metric_name in self.system_metrics:
-                    if self.redis.hexists(
-                        Keys.get_hash_parent(alert['parent_id']),
-                            eval('Keys.get_alert_{}(key)'.format(metric_name))):
+            if alert['alert_code']['code'] == \
+                    InternalAlertCode.SystemManagerStarted.value:
+                """
+                The `SystemManagerStarted` alert indicates that PANIC has
+                started, or restarted. This means that we cannot be sure if the
+                configurations are the same as the previous run and the Alert
+                Metrics should be cleared for each CHAIN.
+                """
+                parent_hash = Keys.get_hash_parent_raw()
+                chain_hashes_list = self.redis.get_keys_unsafe(
+                            '*' + parent_hash + '*')
 
-                        self.redis.hremove(
-                            Keys.get_hash_parent(alert['parent_id']),
-                            eval('Keys.get_alert_{}(key)'.format(metric_name)))
-            # TODO elif for system_manager_started, system_alerter_stopped
-            # NOTE discuss GITHUB metrics saving/deleting with Dylan
-            elif alert['alert_code']['code'] == 'github_alerter_started':
-                key = alert['origin_id']
-                for metric_name in self.github_metrics:
-                    if self.redis.hexists(
-                        Keys.get_hash_parent(alert['parent_id']),
-                            eval('Keys.get_alert_{}(key)'.format(metric_name))):
+                # Go through all the chains that are in REDIS
+                for chain in chain_hashes_list:
+                    # For each chain we need to load all the keys and only
+                    # delete the ones that match the pattern `alert_system*`
+                    # REDIS doesn't support this natively
+                    for key in self.redis.hkeys(chain):
+                        # We only want to delete alert keys
+                        if 'alert_system' in key and self.redis.hexists(chain,
+                                                                        key):
+                            self.redis.hremove(chain, key)
 
-                        self.redis.hremove(
-                            Keys.get_hash_parent(alert['parent_id']),
-                            eval('Keys.get_alert_{}(key)'.format(metric_name)))
+            elif alert['alert_code']['code'] == \
+                    InternalAlertCode.SystemAlerterStopped.value:
+                """
+                This internal alert is sent whenever a System Alerter is
+                terminated due to change in configuration or shut down signal.
+                """
+                # For each chain we need to load all the keys and only
+                # delete the ones that match the pattern `alert_system*`
+                # REDIS doesn't support this natively
+                chain_hash = Keys.get_hash_parent(alert['parent_id'])
+                for key in self.redis.hkeys(chain_hash):
+                    # We only want to delete alert keys
+                    if 'alert_system' in key and self.redis.hexists(chain_hash,
+                                                                    key):
+                        self.redis.hremove(chain_hash, key)
+
+            elif alert['alert_code']['code'] == \
+                    InternalAlertCode.GithubManagerStarted.value:
+                """
+                The `GithubManagerStarted` alert indicates that PANIC has
+                started, or restarted. This means that we cannot be sure if the
+                configurations are the same as the previous run and the Alert
+                Metrics should be cleared for each CHAIN.
+                """
+                parent_hash = Keys.get_hash_parent_raw()
+                chain_hashes_list = self.redis.get_keys_unsafe(
+                            '*' + parent_hash + '*')
+
+                # Go through all the chains that are in REDIS
+                for chain in chain_hashes_list:
+                    # For each chain we need to load all the keys and only
+                    # delete the ones that match the pattern `alert_github1*`
+                    # REDIS doesn't support this natively
+                    for key in self.redis.hkeys(chain):
+                        # We only want to delete alert_github2 which
+                        # corresponds to the metric `cannot_access_github`
+                        if 'alert_github2' in key and self.redis.hexists(chain,
+                                                                         key):
+                            self.redis.hremove(chain, key)
         else:
             metric_data = {'severity': alert['severity'],
                            'message': alert['message']}

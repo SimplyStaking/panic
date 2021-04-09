@@ -7,4 +7,4 @@ class InternalMetricCode(MetricCode):
     SystemAlerterStopped = 'system_alerter_stopped'
     GithubManagerStarted = 'github_manager_started'
     GithubAlerterStarted = 'github_alerter_started'
-    GithubAlerterStopped = 'github_alerter_stopped'
+    GithubManagerStopped = 'github_manager_stopped'

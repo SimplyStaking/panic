@@ -16,18 +16,6 @@ class SystemManagerStarted(Alert):
             InternalMetricCode.SystemManagerStarted)
 
 
-# Alert that is sent to clear all metrics for one chain from Redis
-# when it's started
-class SystemAlerterStarted(Alert):
-    def __init__(self, origin_name: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            InternalAlertCode.SystemAlerterStarted,
-            "Alerter: {} has started.".format(origin_name),
-            Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.SystemAlerterStarted)
-
-
 # Alert that is sent to clear all metrics for one chain from Redis when it
 # stops
 class SystemAlerterStopped(Alert):
@@ -52,25 +40,13 @@ class GithubManagerStarted(Alert):
             InternalMetricCode.GithubManagerStarted)
 
 
-# Alert that is sent to clear all metrics for chain from Redis when the alerter
-# starts
-class GithubAlerterStarted(Alert):
-    def __init__(self, origin_name: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            InternalAlertCode.GithubAlerterStarted,
-            "Alerter: {} has started.".format(origin_name),
-            severity, timestamp, parent_id, origin_id,
-            InternalAlertCode.GithubAlerterStarted)
-
-
-# Alert that is sent to clear all metrics for one chain from Redis when it
-# stops
-class GithubAlerterStopped(Alert):
+# Alert that is sent to clear all metrics for all chains from Redis when the
+# Manager stops
+class GithubManagerStopped(Alert):
     def __init__(self, origin_name: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
-            InternalAlertCode.GithubAlerterStopped,
+            InternalAlertCode.GithubManagerStopped,
             "Alerter: {} has stopped.".format(origin_name),
             Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.GithubAlerterStopped)
+            InternalMetricCode.GithubManagerStopped)
