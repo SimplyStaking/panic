@@ -425,7 +425,7 @@ class TestAlertStore(unittest.TestCase):
                         'severity': data['severity'],
                         'metric': data['metric'],
                         'message': data['message'],
-                        'timestamp': str(data['timestamp']),
+                        'timestamp': data['timestamp'],
                     }
                 },
                 '$min': {'first': data['timestamp']},
@@ -507,7 +507,7 @@ class TestAlertStore(unittest.TestCase):
                             'severity': data['severity'],
                             'metric': data['metric'],
                             'message': data['message'],
-                            'timestamp': str(data['timestamp']),
+                            'timestamp': data['timestamp'],
                         }
                     },
                     '$min': {'first': data['timestamp']},
@@ -590,7 +590,7 @@ class TestAlertStore(unittest.TestCase):
             str(data['severity']),
             str(data['metric']),
             str(data['message']),
-            str(data['timestamp'])
+            data['timestamp']
         ]
         actual = [
             document['doc_type'],
@@ -672,7 +672,7 @@ class TestAlertStore(unittest.TestCase):
                 str(data['alert_code']['name']),
                 str(data['severity']),
                 str(data['message']),
-                str(data['timestamp'])
+                data['timestamp']
             ]
             actual = [
                 document['doc_type'],

@@ -132,7 +132,7 @@ class AlertStore(Store):
                         'severity': alert['severity'],
                         'message': alert['message'],
                         'metric': alert['metric'],
-                        'timestamp': str(alert['timestamp']),
+                        'timestamp': alert['timestamp'],
                     }
                 },
                 '$min': {'first': alert['timestamp']},

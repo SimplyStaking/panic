@@ -779,7 +779,7 @@ class TestSystemStore(unittest.TestCase):
                         'disk_io_time_seconds_in_interval': str(
                             metrics['disk_io_time_seconds_in_interval']),
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['last_monitored']),
+                        'timestamp': meta_data['last_monitored'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -862,7 +862,7 @@ class TestSystemStore(unittest.TestCase):
                             'disk_io_time_seconds_in_interval': str(
                                 metrics['disk_io_time_seconds_in_interval']),
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['last_monitored']),
+                            'timestamp': meta_data['last_monitored'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -892,7 +892,7 @@ class TestSystemStore(unittest.TestCase):
                 '$push': {
                     system_id: {
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['time']),
+                        'timestamp': meta_data['time'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -945,7 +945,7 @@ class TestSystemStore(unittest.TestCase):
                     '$push': {
                         system_id: {
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['time']),
+                            'timestamp': meta_data['time'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -1028,7 +1028,7 @@ class TestSystemStore(unittest.TestCase):
         expected = [
             'system',
             1,
-            str(meta_data['time']),
+            meta_data['time'],
             str(metrics['went_down_at'])
         ]
         actual = [
@@ -1166,7 +1166,7 @@ class TestSystemStore(unittest.TestCase):
             expected = [
                 'system',
                 1,
-                str(meta_data['time']),
+                meta_data['time'],
                 str(metrics['went_down_at'])
             ]
             actual = [
