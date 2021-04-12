@@ -1,8 +1,8 @@
 import redis, {RetryStrategyOptions} from "redis"
 import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
 import {
-    AlertKeysSystem,
     AlertKeysRepo,
+    AlertKeysSystem,
     BaseChainKeys,
     ChainKeys,
     ComponentKeys,

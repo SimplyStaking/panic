@@ -308,16 +308,11 @@ app.post('/server/mongo/alerts', (req, res) => __awaiter(void 0, void 0, void 0,
     const parsedMinTimestamp = parseFloat(minTimestamp);
     const parsedMaxTimestamp = parseFloat(maxTimestamp);
     const parsedNoOfAlerts = parseInt(noOfAlerts);
-    if (isNaN(parsedNoOfAlerts) || parsedNoOfAlerts < 0) {
+    if (isNaN(parsedNoOfAlerts) || parsedNoOfAlerts <= 0) {
         const err = new errors_1.InvalidParameterValue('req.body.noOfAlerts');
         res.status(err.code).send(utils_1.errorJson(err.message));
         return;
     }
-    /*let query = {
-        // limit: parsedNoOfAlerts,
-        // sort: {$natural: -1},
-        doc_type: "alert"
-    };*/
     let result = utils_1.resultJson({ alerts: [] });
     if (mongoInterface.client) {
         try {
@@ -327,7 +322,16 @@ app.post('/server/mongo/alerts', (req, res) => __awaiter(void 0, void 0, void 0,
                 for (let i = 1; i < chains.length; i++) {
                     queryList.push({ $unionWith: chains[i] });
                 }
-                queryList.push({ $match: { doc_type: "alert" } }, { $unwind: "$alerts" }, { $sort: { "alerts.timestamp": -1, _id: 1 } }, { $group: { _id: null, alrts: { $push: "$alerts" } } }, { $project: { _id: 0, alerts: "$alrts" } });
+                queryList.push({ $match: { doc_type: "alert" } }, { $unwind: "$alerts" }, {
+                    $match: {
+                        "alerts.severity": { $in: severities },
+                        "alerts.origin": { $in: sources },
+                        "alerts.timestamp": {
+                            "$gte": parsedMinTimestamp,
+                            "$lte": parsedMaxTimestamp
+                        }
+                    }
+                }, { $sort: { "alerts.timestamp": -1, _id: 1 } }, { $limit: parsedNoOfAlerts }, { $group: { _id: null, alrts: { $push: "$alerts" } } }, { $project: { _id: 0, alerts: "$alrts" } });
                 const collection = db.collection(chains[0]);
                 const docs = yield collection.aggregate(queryList)
                     .toArray();
@@ -335,6 +339,7 @@ app.post('/server/mongo/alerts', (req, res) => __awaiter(void 0, void 0, void 0,
                     result.result.alerts = result.result.alerts.concat(doc.alerts);
                 }
             }
+            console.log(result.result.alerts.length);
             res.status(utils_1.SUCCESS_STATUS).send(result);
             return;
         }

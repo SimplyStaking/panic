@@ -403,17 +403,12 @@ app.post('/server/mongo/alerts',
         const parsedMaxTimestamp = parseFloat(maxTimestamp);
 
         const parsedNoOfAlerts = parseInt(noOfAlerts);
-        if (isNaN(parsedNoOfAlerts) || parsedNoOfAlerts < 0) {
+        if (isNaN(parsedNoOfAlerts) || parsedNoOfAlerts <= 0) {
             const err = new InvalidParameterValue('req.body.noOfAlerts');
             res.status(err.code).send(errorJson(err.message));
             return;
         }
 
-        /*let query = {
-            // limit: parsedNoOfAlerts,
-            // sort: {$natural: -1},
-            doc_type: "alert"
-        };*/
         let result = resultJson({alerts: []});
         if (mongoInterface.client) {
             try {
@@ -425,9 +420,20 @@ app.post('/server/mongo/alerts',
                     }
                     queryList.push(
                         {$match: {doc_type: "alert"}},
-                        {$unwind:"$alerts"},
+                        {$unwind: "$alerts"},
+                        {
+                            $match: {
+                                "alerts.severity": {$in: severities},
+                                "alerts.origin": {$in: sources},
+                                "alerts.timestamp": {
+                                    "$gte": parsedMinTimestamp,
+                                    "$lte": parsedMaxTimestamp
+                                }
+                            }
+                        },
                         {$sort: {"alerts.timestamp": -1, _id: 1}},
-                        {$group:{_id:null, alrts: {$push : "$alerts"} }},
+                        {$limit: parsedNoOfAlerts},
+                        {$group: {_id: null, alrts: {$push: "$alerts"}}},
                         {$project: {_id: 0, alerts: "$alrts"}},
                     );
                     const collection = db.collection(chains[0]);
@@ -438,6 +444,7 @@ app.post('/server/mongo/alerts',
                             doc.alerts)
                     }
                 }
+                console.log(result.result.alerts.length);
                 res.status(SUCCESS_STATUS).send(result);
                 return;
             } catch (err) {
