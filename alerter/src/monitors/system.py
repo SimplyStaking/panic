@@ -49,7 +49,7 @@ class SystemMonitor(Monitor):
         return self._system_config
 
     @property
-    def metrics_to_monitor(self) -> List:
+    def metrics_to_monitor(self) -> List[str]:
         return self._metrics_to_monitor
 
     def _display_data(self, data: Dict) -> str:
