@@ -178,7 +178,7 @@ class AlertStore(Store):
                 This internal alert is sent whenever a System Alerter is
                 terminated due to change in configuration or shut down signal.
                 """
-                # For each chain we need to load all the keys and only
+                # For the specified chain we need to load all the keys and only
                 # delete the ones that match the pattern `alert_system*`
                 # REDIS doesn't support this natively
                 chain_hash = Keys.get_hash_parent(alert['parent_id'])
@@ -206,7 +206,7 @@ class AlertStore(Store):
                 # Go through all the chains that are in REDIS
                 for chain in chain_hashes_list:
                     # For each chain we need to load all the keys and only
-                    # delete the ones that match the pattern `alert_github1*`
+                    # delete the ones that match the pattern `alert_github2*`
                     # REDIS doesn't support this natively
                     for key in self.redis.hkeys(chain):
                         # We only want to delete alert_github2 which
@@ -215,6 +215,8 @@ class AlertStore(Store):
                                                                          key):
                             self.redis.hremove(chain, key)
         else:
+            # If the alert is not of severity Internal, the metric needs to be
+            # stored in REDIS
             metric_data = {'severity': alert['severity'],
                            'message': alert['message']}
             key = alert['origin_id']

@@ -71,9 +71,9 @@ class SystemAlerter(Alerter):
 
         """
         These are used to indicate that the source that was having issues
-        in the form of `Invalid URL` and `Metric Not Found` is no longer
+        in the form of `Invalid URL` or `Metric Not Found` is no longer
         having those issues. By sending out the opposite alerts we can overwrite
-        the REDIS metric data that is displayed in the UI. This also informs
+        the REDIS metric data which is displayed in the UI. This also informs
         the user that the issue has been resolved.
         """
         if system_id not in self._invalid_url:
@@ -278,9 +278,9 @@ class SystemAlerter(Alerter):
             self._metric_not_found[meta_data['system_id']] = False
 
         """
-        `MetricNotFoundErrorAlert` and `InvalidUrlAlert` do not have delays,
-        they repeat every monitoring round (DEFAULT: 60 seconds). This is done
-        without delays as it's indication that the configuration is wrong.
+        `MetricNotFoundErrorAlert` and `InvalidUrlAlert` repeat every
+        monitoring round (DEFAULT: 60 seconds). This is done without delays as
+        it's indication that the configuration is wrong.
         """
         if int(error_data['code']) == 5003:
             alert = MetricNotFoundErrorAlert(

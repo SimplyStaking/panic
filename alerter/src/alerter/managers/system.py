@@ -98,7 +98,8 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
-        # Send an internal alert to reset all the REDIS metrics for all chains
+        # Send an internal alert to reset system alert REDIS metrics for all
+        # chains.
         alert = SystemManagerStarted(type(self).__name__,
                                      datetime.now().timestamp(),
                                      type(self).__name__,

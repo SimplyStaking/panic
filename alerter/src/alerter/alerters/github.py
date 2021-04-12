@@ -24,7 +24,6 @@ class GithubAlerter(Alerter):
                  rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
         self._cannot_access_github_page = {}
-        self._alerter_started_sent = {}
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -68,9 +67,6 @@ class GithubAlerter(Alerter):
     def _create_state_for_github(self, github_id: str) -> None:
         if github_id not in self._cannot_access_github_page:
             self._cannot_access_github_page[github_id] = False
-
-        if github_id not in self._alerter_started_sent:
-            self._alerter_started_sent[github_id] = False
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -118,7 +114,7 @@ class GithubAlerter(Alerter):
             elif 'error' in data_received:
                 """
                 CannotAccessGithubPageAlert repeats constantly on each
-                monitoring round (DEFAULT: 1 hour). This has repeat delay as
+                monitoring round (DEFAULT: 1 hour). This has repeat timer as
                 it's an indication that the configuration is wrong and should
                 be fixed.
                 """
