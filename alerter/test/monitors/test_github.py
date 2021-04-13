@@ -84,7 +84,7 @@ class TestGitHubMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
             self.test_monitor.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
 
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)

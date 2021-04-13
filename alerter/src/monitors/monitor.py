@@ -44,7 +44,7 @@ class Monitor(PublisherComponent, ABC):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False,
                                        True, False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
