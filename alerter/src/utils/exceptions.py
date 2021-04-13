@@ -118,3 +118,19 @@ class BlankCredentialException(PANICException):
                 ",".join(blank_credentials)
             )
         super().__init__(message, code)
+
+
+class NoMonitoringSourceGivenException(PANICException):
+    def __init__(self, monitorable_name: str) -> None:
+        code = 5014
+        message = "No source has been given to the monitor monitoring " \
+                  "{}".format(monitorable_name)
+        super().__init__(message, code)
+
+
+class NodeIsDownException(PANICException):
+
+    def __init__(self, node_name) -> None:
+        message = "Node {} is unreachable".format(node_name)
+        code = 5015
+        super().__init__(message, code)

@@ -15,10 +15,12 @@ class RequestStatus(Enum):
     FAILED = False
 
 
-def get_json(endpoint: str, logger: logging.Logger, params=None):
+def get_json(endpoint: str, logger: logging.Logger, params=None,
+             verify: bool = True):
     if params is None:
         params = {}
-    get_ret = requests.get(url=endpoint, params=params, timeout=15)
+    get_ret = requests.get(url=endpoint, params=params, timeout=15,
+                           verify=verify)
     logger.debug("get_json: get_ret: %s", get_ret)
     return json.loads(get_ret.content.decode('UTF-8'))
 

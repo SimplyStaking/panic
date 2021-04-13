@@ -5,12 +5,15 @@ from types import FrameType
 from typing import Dict, Optional
 
 import pika.exceptions
+import urllib3
 
 from src.abstract.publisher import PublisherComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Monitor(PublisherComponent, ABC):

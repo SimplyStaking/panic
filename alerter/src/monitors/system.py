@@ -73,7 +73,8 @@ class SystemMonitor(Monitor):
 
     def _get_data(self) -> Dict:
         return get_prometheus_metrics_data(self.system_config.node_exporter_url,
-                                           self.metrics_to_monitor, self.logger)
+                                           self.metrics_to_monitor, self.logger,
+                                           verify=False)
 
     def _process_error(self, error: PANICException) -> Dict:
         processed_data = {
