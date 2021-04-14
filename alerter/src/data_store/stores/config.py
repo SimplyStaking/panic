@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List, Union
 
 import pika.exceptions
 from collections import defaultdict
@@ -22,6 +22,39 @@ class ConfigStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
+        """
+        This configuration object is useful as when COSMOS and SUBSTRATE nodes
+        are added, they will have multiple monitorable sources and not just
+        systems, therefore by storing them in a list and iterating through
+        the dictionaries it is easier to bundle up the list of monitorable
+        data.
+        """ 
+        self.helper_configuration = {
+            REPOS_CONFIG: [{
+                "id": 'id',
+                "name_key": 'repo_name',
+                "monitor_key": 'monitor_repo',
+                "config_key": 'repos'
+            }],
+            SYSTEMS_CONFIG: [{
+                "id": 'id',
+                "name_key": 'name',
+                "monitor_key": 'monitor_system',
+                "config_key": 'systems'
+            }],
+            COSMOS: [{
+                "id": 'id',
+                "name_key": 'name',
+                "monitor_key": 'monitor_system',
+                "config_key": 'systems'
+            }],
+            SUBSTRATE: [{
+                "id": 'id',
+                "name_key": 'name',
+                "monitor_key": 'monitor_system',
+                "config_key": 'systems'
+            }]
+        }
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -81,7 +114,8 @@ class ConfigStore(Store):
         processing_error = False
         try:
             self._process_redis_store(method.routing_key, config_data)
-            self._process_redis_store_ids(method.routing_key, config_data)
+            self._process_redis_store_chain_monitorables(method.routing_key,
+                                                         config_data)
         except ReceivedUnexpectedDataException as e:
             self.logger.error("Error when processing %s", config_data)
             self.logger.exception(e)
@@ -118,90 +152,138 @@ class ConfigStore(Store):
             if self.redis.exists(Keys.get_config(routing_key)):
                 self.redis.remove(Keys.get_config(routing_key))
 
-    def _process_redis_store_ids(self, routing_key: str, data: Dict) -> None:
-        temp_data = defaultdict(dict)
-        monitored_list = []
-        not_monitored_list = []
-        redis_store_key = ''
-        source_name = ''
-        config_type_key = ''
-        monitor_source_key = ''
-        parsed_routing_key = routing_key.split('.')
+    def _process_redis_store_chain_monitorables(self, routing_key: str,
+                                                received_config: Dict) -> None:
 
-        # First determine the key that is going to be used for REDIS
-        if parsed_routing_key[0] is GENERAL:
-            redis_store_key = GENERAL
-            source_name = GLOBAL
-            # Determine the configuration that needs to be changed
-            if parsed_routing_key[1] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
-                config_type_key = parsed_routing_key[1].replace("_config",
-                                                                "")
-            else:
-                # If the second part of the parsing key is invalid leave
-                return
-        elif parsed_routing_key[0] is CHAINS:
-            redis_store_key = parsed_routing_key[1]
-            source_name = parsed_routing_key[2]
-            # Determine the configuration that needs to be changed
-            if parsed_routing_key[3] in [REPOS_CONFIG, SYSTEMS_CONFIG,
-                                         NODES_CONFIG]:
-                # Determine the configuration that needs to be changed
-                config_type_key = parsed_routing_key[3].replace("_config",
-                                                                "")
-            else:
-                # If the last part of the routing key is invalid leave
-                return
-        else:
+        # Assign it to defaultdict so it's able to set nested keys at once
+        data_for_store = defaultdict(dict)
+
+        # Helper function to extract data from the routing key
+        redis_store_key, source_name, config_type_key = \
+            self._process_routing_key(routing_key)
+
+        # If after processing the routing key there was a missing value
+        # do not processed with the storage of chain_monitorables
+        if '' in [redis_store_key, source_name, config_type_key]:
             return
 
-        # Create the key that is used to determine if the source
-        # should be monitored or not
-        monitor_key = 'monitor_' + config_type_key[:-1]
-
-        # Load the currently saved data from REDIS
-        loaded_data = json.loads(self.redis.get(
-            Keys.get_base_chain_monitorables_info(redis_store_key).decode(
-                'utf-8')))
+        # Load the currently saved data from REDIS if it exists
+        if self.redis.exists(
+                Keys.get_base_chain_monitorables_info(redis_store_key)):
+            data_for_store = json.loads(self.redis.get(
+                Keys.get_base_chain_monitorables_info(redis_store_key)).decode(
+                    'utf-8'))
+        else:
+            data_for_store = {}
 
         # Checking if we received data and if that data is useful.
-        if data:
-            # Get a list of all the id's for the received data
-            for _, config_details in data.items():
-                if bool(config_details[monitor_key]):
-                    monitored_list.append(config_details['id'])
-                else:
-                    not_monitored_list.append(config_details['id'])
+        if received_config:
+            data_for_store = self._sort_monitorable_configs(received_config,
+                                                            config_type_key,
+                                                            data_for_store,
+                                                            source_name)
 
-            # If we load data from REDIS we can overwrite it, no need for new
-            # structure
-            if loaded_data:
-                temp_data = loaded_data
-                temp_data[source_name]['monitored'][config_type_key] = \
-                    monitored_list
-                temp_data[source_name]['not_monitored'][config_type_key] = \
-                    not_monitored_list
-            else:
-                temp_data = {
-                    source_name: {
-                        'monitored': {
-                            config_type_key: monitored_list
-                        },
-                        'not_monitored': {
-                            config_type_key: not_monitored_list
-                        }
-                    }
-                }
             self.redis.set(Keys.get_base_chain_monitorables_info(
-                redis_store_key), json.dumps(dict(temp_data)))
+                redis_store_key), json.dumps(dict(data_for_store)))
         else:
             # Check if the key exists
             if self.redis.exists(Keys.get_base_chain_monitorables_info(
-                  redis_store_key)):
+                    redis_store_key)):
+
                 # Delete the data corresponding to the routing key
-                if loaded_data:
-                    # Since there is data check what needs to be overwritten
-                    
+                if data_for_store:
+                    current_helper_config = \
+                        self.helper_configuration[config_type_key]
+
+                    for helper_keys in current_helper_config:
+                        del data_for_store[source_name]['monitored'][
+                            helper_keys['config_key']]
+                        del data_for_store[source_name]['not_monitored'][
+                            helper_keys['config_key']]
+
+                    # If the monitored and not_monitored are empty then remove
+                    # the chain from REDIS
+                    if len(data_for_store[source_name]['monitored']) == 0 \
+                        and len(data_for_store[source_name][
+                            'not_monitored']) == 0:
+                        self.redis.remove(
+                            Keys.get_base_chain_monitorables_info(
+                                redis_store_key))
                 else:
                     # This shouldn't be the case but just incase delete the key
                     self.redis.remove(Keys.get_base_chain_monitorables_info(
                         redis_store_key))
+
+    def _process_routing_key(self, routing_key: str) -> Union[str, str, str]:
+        """
+        The following values need to be determined from the routing_key:
+        `redis_store_key`: is the identifiable base chain e.g GENERAl, COSMOS,
+        SUBSTRATE.
+        `source_name`: Name of the chain that is built on top of the base chain
+        such as regen, moonbeam ...etc.
+        `config_type_key`: The configuration type received the ones that are
+        needed for this process are SYSTEMS, NODES, REPOS. If anything else
+        is received it should be ignored.
+        """
+        redis_store_key = ''
+        source_name = ''
+        config_type_key = ''
+
+        parsed_routing_key = routing_key.split('.')
+
+        if parsed_routing_key[0] == GENERAL:
+            redis_store_key = GENERAL
+            source_name = GLOBAL
+            # Determine the configuration that needs to be changed
+            if parsed_routing_key[1] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
+                config_type_key = parsed_routing_key[1]
+        elif parsed_routing_key[0] == CHAINS:
+            redis_store_key = parsed_routing_key[1]
+            source_name = parsed_routing_key[2]
+            if parsed_routing_key[3] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
+                config_type_key = parsed_routing_key[3]
+            elif parsed_routing_key[3] == NODES_CONFIG:
+                config_type_key = parsed_routing_key[1]
+
+        return redis_store_key, source_name, config_type_key
+
+    def _sort_monitorable_configs(self, received_config: Dict,
+                                  config_type_key: str, data_for_store: Dict,
+                                  source_name: str
+                                  ) -> Dict:
+        monitored_list = []
+        not_monitored_list = []
+        current_helper_config = self.helper_configuration[config_type_key]
+
+        for helper_keys in current_helper_config:
+            # Get a list of all the id's for the received data
+            for _, config_details in received_config.items():
+                if bool(config_details[helper_keys['monitor_key']]):
+                    monitored_list.append({
+                        config_details[helper_keys['id']]:
+                        config_details[helper_keys['name_key']]})
+                else:
+                    not_monitored_list.append({
+                        config_details[helper_keys['id']]:
+                        config_details[helper_keys['name_key']]})
+
+            # If we load data from REDIS we can overwrite it, no need for new
+            # structure
+            if data_for_store:
+                data_for_store[source_name]['monitored'][
+                    helper_keys['config_key']] = monitored_list
+                data_for_store[source_name]['not_monitored'][
+                    helper_keys['config_key']] = not_monitored_list
+            else:
+                data_for_store = {
+                    source_name: {
+                        'monitored': {
+                            helper_keys['config_key']: monitored_list
+                        },
+                        'not_monitored': {
+                            helper_keys['config_key']: not_monitored_list
+                        }
+                    }
+                }
+
+        return data_for_store
