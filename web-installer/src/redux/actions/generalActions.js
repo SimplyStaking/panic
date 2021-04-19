@@ -23,6 +23,10 @@ import {
   LOAD_THRESHOLD_ALERTS_GENERAL,
   LOAD_SYSTEM_GENERAL,
   LOAD_SYSTEM,
+  ADD_DOCKER,
+  LOAD_DOCKER,
+  REMOVE_DOCKER,
+  LOAD_DOCKER_GENERAL,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -56,6 +60,32 @@ export function loadRepository(payload) {
 export function removeRepository(payload) {
   return {
     type: REMOVE_REPOSITORY,
+    payload,
+  };
+}
+
+export function addDocker(payload) {
+  return {
+    type: ADD_DOCKER,
+    payload: {
+      id: `docker_${uuidv4()}`,
+      parent_id: payload.parent_id,
+      name: payload.name,
+      monitor_docker: payload.monitor_docker,
+    },
+  };
+}
+
+export function loadDocker(payload) {
+  return {
+    type: LOAD_DOCKER,
+    payload,
+  };
+}
+
+export function removeDocker(payload) {
+  return {
+    type: REMOVE_DOCKER,
     payload,
   };
 }
@@ -194,6 +224,13 @@ export function removeOpsGenieChannel(payload) {
 export function loadReposGeneral(payload) {
   return {
     type: LOAD_REPOSITORY_GENERAL,
+    payload,
+  };
+}
+
+export function loadDockerGeneral(payload) {
+  return {
+    type: LOAD_DOCKER_GENERAL,
     payload,
   };
 }

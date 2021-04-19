@@ -13,6 +13,7 @@ import {
   LOAD_TIMEWINDOW_ALERTS_COSMOS,
   LOAD_THRESHOLD_ALERTS_COSMOS,
   LOAD_SEVERITY_ALERTS_COSMOS,
+  LOAD_DOCKER_COSMOS,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -108,6 +109,13 @@ export function loadConfigCosmos(payload) {
 export function loadReposCosmos(payload) {
   return {
     type: LOAD_REPOSITORY_COSMOS,
+    payload,
+  };
+}
+
+export function loadDockerCosmos(payload) {
+  return {
+    type: LOAD_DOCKER_COSMOS,
     payload,
   };
 }

@@ -12,6 +12,7 @@ import {
   LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
   LOAD_THRESHOLD_ALERTS_SUBSTRATE,
   LOAD_SEVERITY_ALERTS_SUBSTRATE,
+  LOAD_DOCKER_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -108,6 +109,13 @@ export function loadConfigSubstrate(payload) {
 export function loadReposSubstrate(payload) {
   return {
     type: LOAD_REPOSITORY_SUBSTRATE,
+    payload,
+  };
+}
+
+export function loadDockerSubstrate(payload) {
+  return {
+    type: LOAD_DOCKER_SUBSTRATE,
     payload,
   };
 }
