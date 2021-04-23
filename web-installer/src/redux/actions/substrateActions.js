@@ -6,13 +6,10 @@ import {
   RESET_CHAIN_SUBSTRATE,
   UPDATE_CHAIN_NAME_SUBSTRATE,
   REMOVE_CHAIN_SUBSTRATE,
-  LOAD_NODE_SUBSTRATE,
-  LOAD_REPOSITORY_SUBSTRATE,
   LOAD_REPEAT_ALERTS_SUBSTRATE,
   LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
   LOAD_THRESHOLD_ALERTS_SUBSTRATE,
   LOAD_SEVERITY_ALERTS_SUBSTRATE,
-  LOAD_DOCKER_SUBSTRATE,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -65,10 +62,18 @@ export function resetCurrentChainIdSubstrate() {
 // Action to add a substrate node to a configuration, payload is intercepted,
 // and a unique id is generated for it.
 export function addNodeSubstrate(payload) {
+  // Generate a unique id for the repository
+  let id = `node_${uuidv4()}`;
+
+  // If an ID already exists in the payload use it
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
   return {
     type: ADD_NODE_SUBSTRATE,
     payload: {
-      id: `node_${uuidv4()}`,
+      id,
       parent_id: payload.parent_id,
       name: payload.name,
       node_ws_url: payload.node_ws_url,
@@ -88,13 +93,6 @@ export function addNodeSubstrate(payload) {
   };
 }
 
-export function loadNodeSubstrate(payload) {
-  return {
-    type: LOAD_NODE_SUBSTRATE,
-    payload,
-  };
-}
-
 // Action to remove a substrate node from the current configuration
 export function removeNodeSubstrate(payload) {
   return {
@@ -106,20 +104,6 @@ export function removeNodeSubstrate(payload) {
 export function loadConfigSubstrate(payload) {
   return {
     type: LOAD_CONFIG_SUBSTRATE,
-    payload,
-  };
-}
-
-export function loadReposSubstrate(payload) {
-  return {
-    type: LOAD_REPOSITORY_SUBSTRATE,
-    payload,
-  };
-}
-
-export function loadDockerSubstrate(payload) {
-  return {
-    type: LOAD_DOCKER_SUBSTRATE,
     payload,
   };
 }

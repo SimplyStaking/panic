@@ -7,6 +7,7 @@ import {
   EmailsReducer,
   PagerDutyReducer,
   OpsGenieReducer,
+  SlacksReducer,
 } from './channelsReducer';
 import {
   SubstrateNodesReducer,
@@ -34,6 +35,7 @@ export default combineReducers({
   ChangePageReducer,
   ChangeStepReducer,
   TelegramsReducer,
+  SlacksReducer,
   TwiliosReducer,
   EmailsReducer,
   PagerDutyReducer,

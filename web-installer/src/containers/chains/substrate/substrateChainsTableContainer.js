@@ -22,6 +22,7 @@ const mapStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
   config: state.SubstrateChainsReducer,
 });
 

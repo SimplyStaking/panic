@@ -22,7 +22,7 @@ const mapStateToProps = (state) => ({
   pagerduties: state.PagerDutyReducer,
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
-
+  slacks: state.SlacksReducer,
   // General data related to
   repositories: state.RepositoryReducer,
   // kmses: state.KmsReducer,

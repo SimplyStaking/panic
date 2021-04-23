@@ -1,14 +1,14 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import TelegramForm from 'components/channels/forms/telegramForm';
-import TelegramTable from 'components/channels/tables/telegramTable';
-import { addTelegram, removeTelegram } from 'redux/actions/channelActions';
+import SlackForm from 'components/channels/forms/slackForm';
+import SlackTable from 'components/channels/tables/slackTable';
+import { addSlack, removeSlack } from 'redux/actions/channelActions';
 import TelegramSchema from './schemas/telegramSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
-    bot_token: '',
+    token: '',
     chat_id: '',
   }),
   mapPropsToValues: () => ({
