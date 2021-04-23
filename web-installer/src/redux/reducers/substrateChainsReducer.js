@@ -603,6 +603,7 @@ function substrateChainsById(state = {}, action) {
           chain_name: action.payload.chain_name,
           nodes: [],
           repositories: [],
+          dockers: [],
           repeatAlerts: substrateRepeatAlerts,
           timeWindowAlerts: substrateTimeWindowAlerts,
           thresholdAlerts: substrateThresholdAlerts,
@@ -681,8 +682,8 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.node.parent_id].repositories = [];
+      if (state[action.payload.parent_id].repositories.includes(action.payload.id)) {
+        return state;
       }
       return {
         ...state,

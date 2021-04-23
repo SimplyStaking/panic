@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import RepositoriesForm from 'components/chains/common/forms/repositoriesForm';
 import RepositoriesTable from 'components/chains/common/tables/repositoriesTable';
 import { addRepository, removeRepository } from 'redux/actions/generalActions';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
@@ -55,7 +55,7 @@ function mapDispatchToPropsRemove(dispatch) {
 // General redux data that will be used to control the repo form and populate
 // the repository table.
 const mapGeneralStateToProps = (state) => ({
-  currentChain: GLOBAL,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,

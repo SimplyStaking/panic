@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 
 const DockerSchema = (props) => Yup.object().shape({
-  repo_name: Yup.string()
+  name: Yup.string()
     .test('unique-docker-name', 'Name already exists.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
@@ -29,7 +29,7 @@ const DockerSchema = (props) => Yup.object().shape({
         }
       }
       for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
-        if (dockerConfig.byId[dockerConfig.allIds[i]].repo_name === value) {
+        if (dockerConfig.byId[dockerConfig.allIds[i]].name === value) {
           return false;
         }
       }

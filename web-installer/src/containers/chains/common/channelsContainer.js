@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import ChannelsTable from 'components/chains/common/tables/channelsTable';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import {
   addTelegramChannel,
   removeTelegramChannel,
@@ -109,7 +109,7 @@ const mapGeneralStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
-  currentChain: GLOBAL,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   data: GeneralData,
 });

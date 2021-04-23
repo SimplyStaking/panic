@@ -26,6 +26,7 @@ import {
   LOAD_TIMEWINDOW_ALERTS_COSMOS,
   LOAD_THRESHOLD_ALERTS_COSMOS,
   LOAD_SEVERITY_ALERTS_COSMOS,
+  ADD_DOCKER,
 } from 'redux/actions/types';
 
 const cosmosRepeatAlerts = {
@@ -454,6 +455,7 @@ function cosmosChainsById(state = {}, action) {
           nodes: [],
           kmses: [],
           repositories: [],
+          dockers: [],
           repeatAlerts: cosmosRepeatAlerts,
           timeWindowAlerts: cosmosTimeWindowAlerts,
           thresholdAlerts: cosmosThresholdAlerts,
@@ -534,8 +536,8 @@ function cosmosChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.parent_id].repositories = [];
+      if (state[action.payload.parent_id].repositories.includes(action.payload.id)) {
+        return state;
       }
       return {
         ...state,
@@ -597,6 +599,22 @@ function cosmosChainsById(state = {}, action) {
           repositories: state[action.payload.parent_id].repositories.filter(
             (config) => config !== action.payload.id,
           ),
+        },
+      };
+    case ADD_DOCKER:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parent_id] === undefined) {
+        return state;
+      }
+      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
+        state[action.payload.parent_id].repositories = [];
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
         },
       };
     case ADD_KMS:

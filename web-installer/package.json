@@ -17,6 +17,7 @@
     "classnames": "^2.2.6",
     "configparser": "^0.3.6",
     "cookie-parser": "^1.4.5",
+    "dns": "^0.2.2",
     "dotenv": "latest",
     "express": "^4.17.1",
     "formik": "^2.1.5",

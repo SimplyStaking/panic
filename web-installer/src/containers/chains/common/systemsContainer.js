@@ -4,7 +4,7 @@ import SystemForm from 'components/chains/common/forms/systemForm';
 import SystemTable from 'components/chains/common/tables/systemTable';
 import { addSystem, removeSystem } from 'redux/actions/generalActions';
 import { changeStep, changePage } from 'redux/actions/pageActions';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import SystemSchema from './schemas/systemSchema';
 
 // Form validation, check if the system name is unique and if the exporter
@@ -23,7 +23,7 @@ const Form = withFormik({
   handleSubmit: (values, { resetForm, props }) => {
     const { saveSystemDetails } = props;
     const payload = {
-      parent_id: GLOBAL,
+      parent_id: GENERAL,
       name: values.name,
       exporter_url: values.exporter_url,
       monitor_system: values.monitor_system,
@@ -34,7 +34,7 @@ const Form = withFormik({
 })(SystemForm);
 
 const mapStateToProps = (state) => ({
-  currentChain: GLOBAL,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,

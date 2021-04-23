@@ -9,11 +9,16 @@ import {
   RepositoriesSubstrateTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
+  DockerSubstrateFormContainer,
+  DockerSubstrateTableContainer,
+} from 'containers/chains/common/dockerContainer';
+import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 
@@ -42,6 +47,13 @@ function getStep(stepName) {
         <div>
           <RepositoriesSubstrateFormContainer />
           <RepositoriesSubstrateTableContainer />
+        </div>
+      );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerSubstrateFormContainer />
+          <DockerSubstrateTableContainer />
         </div>
       );
     default:

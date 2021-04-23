@@ -12,10 +12,15 @@ import {
   RepositoriesGeneralTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
+  DockerGeneralFormContainer,
+  DockerGeneralTableContainer,
+} from 'containers/chains/common/dockerContainer';
+import {
   ALERTS_STEP,
   CHANNELS_STEP,
   REPOSITORIES_STEP,
   SYSTEMS_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 
 const mapStateToProps = (state) => ({
@@ -41,6 +46,13 @@ function getStep(stepName) {
         <div>
           <RepositoriesGeneralFormContainer />
           <RepositoriesGeneralTableContainer />
+        </div>
+      );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerGeneralFormContainer />
+          <DockerGeneralTableContainer />
         </div>
       );
     default:

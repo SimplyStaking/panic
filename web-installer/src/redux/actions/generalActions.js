@@ -39,10 +39,18 @@ export function updatePeriodic(payload) {
 }
 
 export function addRepository(payload) {
+  // Generate a unique id for the repository
+  let id = `repo_${uuidv4()}`;
+
+  // If an ID already exists in the payload use it
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
   return {
     type: ADD_REPOSITORY,
     payload: {
-      id: `repo_${uuidv4()}`,
+      id,
       parent_id: payload.parent_id,
       repo_name: payload.repo_name,
       monitor_repo: payload.monitor_repo,

@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
 import { SaveConfigButton } from 'utils/buttons';
 import { sendConfig, deleteConfigs } from 'utils/data';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
@@ -26,7 +26,7 @@ const mapStateToProps = (state) => ({
   // General data related to
   repositories: state.RepositoryReducer,
   // kmses: state.KmsReducer,
-  general: state.GeneralReducer.byId[GLOBAL],
+  general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
   // periodic: state.PeriodicReducer,
 });
@@ -355,7 +355,7 @@ class SaveConfig extends Component {
       thresholdAlertsConfig[id] = {};
       thresholdAlertsConfig[id].name = general.thresholdAlerts.byId[id].identifier;
       thresholdAlertsConfig[id].enabled = general.thresholdAlerts.byId[id].enabled;
-      thresholdAlertsConfig[id].parent_id = 'GLOBAL';
+      thresholdAlertsConfig[id].parent_id = 'GENERAL';
       thresholdAlertsConfig[id].critical_threshold = general.thresholdAlerts.byId[id].critical.threshold;
       thresholdAlertsConfig[id].critical_repeat = general.thresholdAlerts.byId[id].critical.repeat;
       thresholdAlertsConfig[id].critical_enabled = general.thresholdAlerts.byId[id].critical.enabled;

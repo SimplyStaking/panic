@@ -31,6 +31,10 @@ function pingRepo(url) {
   return fetchData(url);
 }
 
+function pingDocker(repository) {
+  return sendData('/server/dockerhub/repository', {}, { repository });
+}
+
 function getConfigPaths() {
   return fetchData('/server/paths', {}, {});
 }
@@ -100,4 +104,5 @@ export {
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
   deleteAccount, getConfigPaths, getConfig, loadAccounts, deleteConfigs,
+  pingDocker,
 };

@@ -10,7 +10,7 @@ import { resetCurrentChainIdSubstrate } from 'redux/actions/substrateActions';
 import { changePage, changeStep } from 'redux/actions/pageActions';
 import AlertsTable from 'components/chains/common/tables/alertsTable';
 import GeneralAlertsTable from 'components/chains/common/tables/generalAlertsTable';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import GeneralData from 'data/general';
@@ -76,7 +76,7 @@ const AlertsSubstrateTableContainer = connect(
 
 // General redux data that will be used to control the alerts table.
 const mapGeneralStateToProps = (state) => ({
-  currentChain: GLOBAL,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   data: GeneralData,
 });

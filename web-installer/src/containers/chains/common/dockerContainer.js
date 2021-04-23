@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import DockerForm from 'components/chains/common/forms/dockerForm';
 import DockerTable from 'components/chains/common/tables/dockerTable';
 import { addDocker, removeDocker } from 'redux/actions/generalActions';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
@@ -55,12 +55,12 @@ function mapDispatchToPropsRemove(dispatch) {
 // General redux data that will be used to control the repo form and populate
 // the docker table.
 const mapGeneralStateToProps = (state) => ({
-  currentChain: GLOBAL,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
-  reposConfig: state.ReposReducer,
+  reposConfig: state.RepositoryReducer,
   dockerConfig: state.DockerReducer,
   data: GeneralData,
 });
@@ -87,7 +87,7 @@ const mapCosmosStateToProps = (state) => ({
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
-  reposConfig: state.ReposReducer,
+  reposConfig: state.RepositoryReducer,
   dockerConfig: state.DockerReducer,
   data: CosmosData,
 });
@@ -114,7 +114,7 @@ const mapSubstrateStateToProps = (state) => ({
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
-  reposConfig: state.ReposReducer,
+  reposConfig: state.RepositoryReducer,
   dockerConfig: state.DockerReducer,
   data: SubstrateData,
 });

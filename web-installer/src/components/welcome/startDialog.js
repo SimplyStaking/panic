@@ -52,6 +52,7 @@ const StartDialog = ({
         disabled={Object.keys(errors).length !== 0}
         setAuthentication={setAuthentication}
       />
+      <LoadConfig handleClose={handleClose} />
       <Dialog
         open={open}
         onClose={handleClose}

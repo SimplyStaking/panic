@@ -17,6 +17,7 @@ import {
   pingNodeExporter,
   saveAccount,
   deleteAccount,
+  pingDocker,
 } from './data';
 import sleep from './time';
 
@@ -197,6 +198,33 @@ function PingRepoButton({ disabled, repo }) {
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
       Test Repo
+    </Button>
+  );
+}
+
+function PingDockerHubButton({ disabled, name }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with repo ${name}`, 5000);
+      await pingDocker(name);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with repo ${name}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not connect with repo ${name}. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test Docker
     </Button>
   );
 }
@@ -483,6 +511,11 @@ PingRepoButton.propTypes = forbidExtraProps({
   repo: PropTypes.string.isRequired,
 });
 
+PingDockerHubButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
 PingPrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrl: PropTypes.string.isRequired,
@@ -527,4 +560,5 @@ export {
   DeleteAccount,
   StartNewButton,
   BackButton,
+  PingDockerHubButton,
 };

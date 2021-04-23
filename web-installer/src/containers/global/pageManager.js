@@ -31,7 +31,7 @@ const mapStateToProps = (state) => ({
 function getPage(pageName) {
   switch (pageName) {
     case WELCOME_PAGE:
-      return <ChannelsPage />;
+      return <WelcomePage />;
     case CHANNELS_PAGE:
       return <ChannelsPage />;
     case CHAINS_PAGE:
@@ -60,7 +60,7 @@ class PageManager extends Component {
   // This is used to refresh the JWT token
   componentDidMount() {
     this.refreshToken();
-    this.dataTimer = setInterval(this.refreshToken.bind(this), 100000);
+    this.dataTimer = setInterval(this.refreshToken.bind(this), 10000);
   }
 
   componentWillUnmount() {

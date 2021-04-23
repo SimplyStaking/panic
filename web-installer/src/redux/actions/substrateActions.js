@@ -22,10 +22,14 @@ const { v4: uuidv4 } = require('uuid');
 // When creating a new chain, we must add empty lists as we need to initialise
 // the key/value pairs beforehand.
 export function addChainSubstrate(payload) {
+  let id = `chain_name_${uuidv4()}`;
+  if ('id' in payload) {
+    id = payload.id;
+  }
   return {
     type: ADD_CHAIN_SUBSTRATE,
     payload: {
-      id: `chain_name_${uuidv4()}`,
+      id,
       chain_name: payload.chain_name,
     },
   };

@@ -13,12 +13,17 @@ import {
   RepositoriesCosmosTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
+  DockerCosmosFormContainer,
+  DockerCosmosTableContainer,
+} from 'containers/chains/common/dockerContainer';
+import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
   KMS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 
@@ -54,6 +59,13 @@ function getStep(stepName) {
         <div>
           <RepositoriesCosmosFormContainer />
           <RepositoriesCosmosTableContainer />
+        </div>
+      );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerCosmosFormContainer />
+          <DockerCosmosTableContainer />
         </div>
       );
     default:

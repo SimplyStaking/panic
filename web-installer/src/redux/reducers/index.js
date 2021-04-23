@@ -21,6 +21,7 @@ import {
 } from './cosmosChainsReducer';
 import {
   RepositoryReducer,
+  DockerReducer,
   SystemsReducer,
   PeriodicReducer,
   KmsReducer,
@@ -44,6 +45,7 @@ export default combineReducers({
   SubstrateChainsReducer,
   CurrentSubstrateChain,
   RepositoryReducer,
+  DockerReducer,
   SystemsReducer,
   PeriodicReducer,
   GeneralReducer,

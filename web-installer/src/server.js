@@ -123,7 +123,7 @@ async function loadAuthenticationToDB() {
       await collection.updateOne({ username }, newDoc);
     }
   } catch (err) {
-    // If an error is raised throw a MongoError
+    // If an error is raised throw a MongoError-
     throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
@@ -536,7 +536,7 @@ app.post('/server/database/drop', verify, async (req, res) => {
 
 // This endpoint is used to a list of paths inside the configuration
 // folder
-app.get('/server/paths', verify, async (req, res) => {
+app.get('/server/paths', async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const configPath = path.join(__dirname, '../../', 'config');
   try {
@@ -561,7 +561,7 @@ app.get('/server/paths', verify, async (req, res) => {
 
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
-app.get('/server/config', verify, async (req, res) => {
+app.get('/server/config', async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const {
     configType, fileName, chainName, baseChain,
@@ -769,7 +769,6 @@ app.post('/server/email/test', verify, async (req, res) => {
         }
         : undefined,
   });
-
   // If transporter valid, create and send test email
   transport.verify((err, _) => {
     if (err) {
@@ -894,7 +893,7 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
 
 // ---------------------------------------- Cosmos
 
-app.post('/server/cosmos/tendermint', async (req, res) => {
+app.post('/server/cosmos/tendermint', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { tendermintRpcUrl } = req.body;
 
@@ -936,7 +935,7 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     });
 });
 
-app.post('/server/cosmos/prometheus', async (req, res) => {
+app.post('/server/cosmos/prometheus', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { prometheusUrl } = req.body;
 
@@ -981,7 +980,7 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
 
 // ---------------------------------------- System (Node Exporter)
 
-app.post('/server/system/exporter', async (req, res) => {
+app.post('/server/system/exporter', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { exporterUrl } = req.body;
 
@@ -1005,6 +1004,54 @@ app.post('/server/system/exporter', async (req, res) => {
   axios
     .get(exporterUrl, { params: {} })
     .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred node exporter is not installed
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+// ---------------------------------------- DockerHub Repository
+
+app.post('/server/dockerhub/repository', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { repository } = req.body;
+
+  const missingParamsList = utils.missingValues({ repository });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  axios
+    .get(`https://registry.hub.docker.com/v2/repositories/${repository}`, {
+      params: {},
+    })
+    .then((response) => {
+      // We must verify if the response is something we expect from this request
+      if ('name' in response.data && 'user' in response.data) {
+        const msg = new msgs.MessagePong();
+        res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+      } else {
+        const err = new errors.BadParameters(
+          repository,
+          'https://registry.hub.docker.com/v2/repositories/',
+        );
+        console.error(err);
+        res.status(err.code).send(utils.errorJson(err.message));
+      }
       const msg = new msgs.MessagePong();
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })
