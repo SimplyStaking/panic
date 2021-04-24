@@ -35,6 +35,8 @@ const Form = withFormik({
       error: values.error,
       alerts: values.alerts,
       commands: values.commands,
+      parent_ids: [],
+      parent_names: [],
     };
     saveTelegramDetails(payload);
     resetForm();

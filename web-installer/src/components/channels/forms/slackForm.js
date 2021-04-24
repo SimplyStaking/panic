@@ -15,11 +15,11 @@ import Button from 'components/material_ui/CustomButtons/Button';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
-import { SendTestTelegramButton } from 'utils/buttons';
+import { SendTestSlackButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/channels';
 
-const TelegramForm = ({
+const SlackForm = ({
   errors,
   values,
   handleSubmit,
@@ -30,7 +30,7 @@ const TelegramForm = ({
     <div>
       <Typography variant="subtitle1" gutterBottom className="greyBackground">
         <Box m={2} p={3}>
-          <p>{Data.telegram.description}</p>
+          <p>{Data.slack.description}</p>
         </Box>
       </Typography>
       <Divider />
@@ -38,7 +38,7 @@ const TelegramForm = ({
         <Box p={3}>
           <Grid container spacing={3} justify="center" alignItems="center">
             <Grid item xs={2}>
-              <Typography> Bot Name </Typography>
+              <Typography> Name </Typography>
             </Grid>
             <Grid item xs={9}>
               <TextField
@@ -46,7 +46,7 @@ const TelegramForm = ({
                 value={values.channel_name}
                 type="text"
                 name="channel_name"
-                placeholder={Data.telegram.channel_namePlaceholder}
+                placeholder={Data.slack.channel_namePlaceholder}
                 helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
                 autoComplete="off"
@@ -56,23 +56,23 @@ const TelegramForm = ({
             <Grid item xs={1}>
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.name} placement="left">
+                  <Tooltip title={Data.slack.name} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
               </Grid>
             </Grid>
             <Grid item xs={2}>
-              <Typography> Bot Token </Typography>
+              <Typography> Token </Typography>
             </Grid>
             <Grid item xs={9}>
               <TextField
-                error={errors.bot_token}
-                value={values.bot_token}
+                error={errors.token}
+                value={values.token}
                 type="text"
-                name="bot_token"
-                placeholder={Data.telegram.botTokenPlaceholder}
-                helperText={errors.bot_token ? errors.bot_token : ''}
+                name="token"
+                placeholder={Data.slack.tokenPlaceholder}
+                helperText={errors.token ? errors.token : ''}
                 onChange={handleChange}
                 autoComplete="off"
                 fullWidth
@@ -81,32 +81,7 @@ const TelegramForm = ({
             <Grid item xs={1}>
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.token} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Chat ID </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
-                error={errors.chat_id}
-                value={values.chat_id}
-                type="text"
-                name="chat_id"
-                placeholder={Data.telegram.chatIdPlaceholder}
-                helperText={errors.chat_id ? errors.chat_id : ''}
-                onChange={handleChange}
-                autoComplete="off"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.chat_id} placement="left">
+                  <Tooltip title={Data.slack.token} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
@@ -168,7 +143,7 @@ const TelegramForm = ({
             <Grid item xs={1}>
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.severities} placement="left">
+                  <Tooltip title={Data.slack.severities} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
@@ -180,7 +155,7 @@ const TelegramForm = ({
             <Grid item xs={1}>
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.commands} placement="left">
+                  <Tooltip title={Data.slack.commands} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
@@ -194,7 +169,7 @@ const TelegramForm = ({
                     onClick={() => {
                       setFieldValue('commands', !values.commands);
                     }}
-                    name="telegramCommands"
+                    name="slackCommands"
                     color="primary"
                   />
                   )}
@@ -207,7 +182,7 @@ const TelegramForm = ({
             <Grid item xs={1}>
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.alerts} placement="left">
+                  <Tooltip title={Data.slack.alerts} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
@@ -221,7 +196,7 @@ const TelegramForm = ({
                     onClick={() => {
                       setFieldValue('alerts', !values.alerts);
                     }}
-                    name="telegramAlerts"
+                    name="slackAlerts"
                     color="primary"
                   />
                   )}
@@ -236,10 +211,10 @@ const TelegramForm = ({
                 alignItems="center"
               >
                 <Box px={2}>
-                  <SendTestTelegramButton
+                  <SendTestSlackButton
                     disabled={Object.keys(errors).length !== 0}
-                    botChatID={values.chat_id}
-                    botToken={values.bot_token}
+                    chatID={values.chat_id}
+                    token={values.token}
                   />
                   <Button
                     color="primary"
@@ -259,17 +234,17 @@ const TelegramForm = ({
   </MuiThemeProvider>
 );
 
-TelegramForm.propTypes = forbidExtraProps({
+SlackForm.propTypes = forbidExtraProps({
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
-    bot_token: PropTypes.string,
     chat_id: PropTypes.string,
+    token: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
-    bot_token: PropTypes.string.isRequired,
     chat_id: PropTypes.string.isRequired,
+    token: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,
@@ -281,4 +256,4 @@ TelegramForm.propTypes = forbidExtraProps({
   setFieldValue: PropTypes.func.isRequired,
 });
 
-export default TelegramForm;
+export default SlackForm;

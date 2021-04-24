@@ -8,13 +8,13 @@ import TelegramSchema from './schemas/telegramSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
-    token: '',
     chat_id: '',
+    token: '',
   }),
   mapPropsToValues: () => ({
     channel_name: '',
-    bot_token: '',
     chat_id: '',
+    token: '',
     info: false,
     warning: false,
     critical: false,
@@ -27,7 +27,7 @@ const Form = withFormik({
     const { saveTelegramDetails } = props;
     const payload = {
       channel_name: values.channel_name,
-      bot_token: values.bot_token,
+      token: values.token,
       chat_id: values.chat_id,
       info: values.info,
       warning: values.warning,
@@ -35,11 +35,13 @@ const Form = withFormik({
       error: values.error,
       alerts: values.alerts,
       commands: values.commands,
+      parent_ids: [],
+      parent_names: [],
     };
     saveTelegramDetails(payload);
     resetForm();
   },
-})(TelegramForm);
+})(SlackForm);
 
 const mapStateToProps = (state) => ({
   emails: state.EmailsReducer,
@@ -52,24 +54,24 @@ const mapStateToProps = (state) => ({
 
 function mapDispatchToProps(dispatch) {
   return {
-    saveTelegramDetails: (details) => dispatch(addTelegram(details)),
+    saveSlackDetails: (details) => dispatch(addSlack(details)),
   };
 }
 
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeTelegramDetails: (details) => dispatch(removeTelegram(details)),
+    removeSlackDetails: (details) => dispatch(removeSlack(details)),
   };
 }
 
-const TelegramFormContainer = connect(
+const SlackFormContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(Form);
 
-const TelegramTableContainer = connect(
+const SlackTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
-)(TelegramTable);
+)(SlackTable);
 
-export { TelegramFormContainer, TelegramTableContainer };
+export { SlackFormContainer, SlackTableContainer };

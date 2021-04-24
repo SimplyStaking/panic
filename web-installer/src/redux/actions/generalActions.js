@@ -21,6 +21,8 @@ import {
   ADD_DOCKER,
   LOAD_DOCKER,
   REMOVE_DOCKER,
+  ADD_SLACK_CHANNEL,
+  REMOVE_SLACK_CHANNEL,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -194,6 +196,20 @@ export function addEmailChannel(payload) {
 export function removeEmailChannel(payload) {
   return {
     type: REMOVE_EMAIL_CHANNEL,
+    payload,
+  };
+}
+
+export function addSlackChannel(payload) {
+  return {
+    type: ADD_SLACK_CHANNEL,
+    payload,
+  };
+}
+
+export function removeSlackChannel(payload) {
+  return {
+    type: REMOVE_SLACK_CHANNEL,
     payload,
   };
 }

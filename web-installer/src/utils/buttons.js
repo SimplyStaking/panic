@@ -21,6 +21,8 @@ import {
 } from './data';
 import sleep from './time';
 
+const { WebClient, LogLevel } = require('@slack/web-api');
+
 // Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
   disabled, to, smtp, from, user, pass, port,
@@ -142,7 +144,54 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestAlertButton({ disabled, botChatID, botToken }) {
+function SendTestSlackButton({ disabled, token, chatID }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(
+        'Sending test alert. Make sure to check the chat corresponding with '
+          + `chat id ${chatID}`,
+        5000,
+      );
+
+      // WebClient insantiates a client that can call API methods
+      // When using Bolt, you can use either `app.client` or the `client`
+      // passed to listeners.
+      const client = new WebClient(token, {
+        // LogLevel can be imported and used to make debugging simpler
+        logLevel: LogLevel.DEBUG,
+      });
+
+      // Call the chat.postMessage method using the built-in WebClient
+      const result = await client.chat.postMessage({
+        // The token you used to initialize your app
+        token,
+        channel: chatID,
+        text: '*Test Alert*',
+        // You could also use a blocks[] array to send richer content
+      });
+
+      // Print result, which includes information about the message (like TS)
+      console.log(result);
+      ToastsStore.success('Test alert sent successfully', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code that
+        // falls out of the range of 2xx
+        ToastsStore.error(`Could not send test alert. Error: ${e.response.data.description}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not send test alert. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function SendTestTelegramButton({ disabled, botChatID, botToken }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
@@ -477,10 +526,16 @@ TestCallButton.propTypes = forbidExtraProps({
   twilioPhoneNumbersToDialValid: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
 });
 
-SendTestAlertButton.propTypes = forbidExtraProps({
+SendTestTelegramButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   botToken: PropTypes.string.isRequired,
   botChatID: PropTypes.string.isRequired,
+});
+
+SendTestSlackButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  token: PropTypes.string.isRequired,
+  chatID: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({
@@ -544,8 +599,9 @@ DeleteAccount.propTypes = forbidExtraProps({
 });
 
 export {
-  SendTestAlertButton,
+  SendTestTelegramButton,
   TestCallButton,
+  SendTestSlackButton,
   SendTestEmailButton,
   SendTestPagerDutyButton,
   SendTestOpsGenieButton,

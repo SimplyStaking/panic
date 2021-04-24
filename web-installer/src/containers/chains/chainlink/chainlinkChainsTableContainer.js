@@ -1,12 +1,13 @@
 import { connect } from 'react-redux';
-import SubstrateChainsTable from 'components/chains/substrate/tables/substrateChainsTable';
+import ChainlinkChainsTable from 'components/chains/chainlink/tables/chainlinkChainsTable';
 import {
-  removeChainSubstrate,
-  loadConfigSubstrate,
-  removeNodeSubstrate,
-} from 'redux/actions/substrateActions';
+  removeChainChainlink,
+  loadConfigChainlink,
+  removeNodeChainlink,
+} from 'redux/actions/chainlinkActions';
 import {
   removeRepository,
+  removeKms,
   removeTelegramChannel,
   removeTwilioChannel,
   removeEmailChannel,
@@ -16,7 +17,7 @@ import {
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
-// We will need the configured state of the substrate nodes
+// We will need the configured state of the chainlink nodes
 const mapStateToProps = (state) => ({
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
@@ -24,7 +25,7 @@ const mapStateToProps = (state) => ({
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
   slacks: state.SlacksReducer,
-  config: state.SubstrateChainsReducer,
+  config: state.ChainlinkChainsReducer,
 });
 
 // Functions required are to change page, remove the chain details
@@ -32,10 +33,11 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     pageChanger: (page) => dispatch(changePage(page)),
-    removeChainDetails: (details) => dispatch(removeChainSubstrate(details)),
-    removeNodeDetails: (details) => dispatch(removeNodeSubstrate(details)),
+    removeChainDetails: (details) => dispatch(removeChainChainlink(details)),
+    removeNodeDetails: (details) => dispatch(removeNodeChainlink(details)),
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
-    loadConfigDetails: (details) => dispatch(loadConfigSubstrate(details)),
+    removeKmsDetails: (details) => dispatch(removeKms(details)),
+    loadConfigDetails: (details) => dispatch(loadConfigChainlink(details)),
     removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
     removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
     removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
@@ -45,9 +47,9 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-const SubstrateChainsTableContainer = connect(
+const ChainlinkChainsTableContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
-)(SubstrateChainsTable);
+)(ChainlinkChainsTable);
 
-export default SubstrateChainsTableContainer;
+export default ChainlinkChainsTableContainer;

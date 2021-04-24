@@ -6,10 +6,15 @@ import TwilioIcon from 'assets/icons/twilio.svg';
 import EmailIcon from 'assets/icons/email.svg';
 import PagerDuty from 'assets/icons/pagerduty.svg';
 import OpsGenie from 'assets/icons/opsGenie.svg';
+import Slack from 'assets/icons/slack.svg';
 import {
   TelegramFormContainer,
   TelegramTableContainer,
 } from 'containers/channels/telegramContainer';
+import {
+  SlackFormContainer,
+  SlackTableContainer,
+} from 'containers/channels/slackContainer';
 import {
   TwilioFormContainer,
   TwilioTableContainer,
@@ -35,6 +40,7 @@ import {
   EMAIL,
   PAGERDUTY,
   OPSGENIE,
+  SLACK,
 } from 'constants/constants';
 import Data from 'data/channels';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
@@ -99,6 +105,12 @@ function ChannelsPage() {
                       name={OPSGENIE}
                       form={<OpsGenieFormContainer />}
                       table={<OpsGenieTableContainer />}
+                    />
+                    <FormAccordion
+                      icon={Slack}
+                      name={SLACK}
+                      form={<SlackFormContainer />}
+                      table={<SlackTableContainer />}
                     />
                   </div>
                 </Grid>

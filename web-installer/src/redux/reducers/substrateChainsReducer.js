@@ -715,29 +715,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_REPEAT_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.parent_id].repositories = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.parent_id].nodes = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -765,29 +742,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_TIMEWINDOW_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.parent_id].repositories = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.parent_id].nodes = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -815,29 +769,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_THRESHOLD_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.parent_id].repositories = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.parent_id].nodes = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -865,29 +796,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_SEVERITY_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.parent_id].repositories = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.parent_id].nodes = [];
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {

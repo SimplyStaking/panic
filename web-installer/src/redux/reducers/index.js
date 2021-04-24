@@ -18,8 +18,12 @@ import {
   CosmosNodesReducer,
   CosmosChainsReducer,
   CurrentCosmosChain,
-// eslint-disable-next-line import/named
 } from './cosmosChainsReducer';
+import {
+  ChainlinkNodesReducer,
+  ChainlinkChainsReducer,
+  CurrentChainlinkChain,
+} from './chainlinkChainsReducer';
 import {
   RepositoryReducer,
   DockerReducer,
@@ -54,4 +58,7 @@ export default combineReducers({
   KmsReducer,
   UsersReducer,
   LoginReducer,
+  ChainlinkNodesReducer,
+  ChainlinkChainsReducer,
+  CurrentChainlinkChain,
 });
