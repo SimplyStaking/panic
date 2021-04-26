@@ -41,6 +41,7 @@ class ChainlinkNodeMonitor(Monitor):
                                     'tx_manager_num_gas_bumps_total',
                                     'tx_manager_gas_bump_exceeds_limit_total',
                                     'unconfirmed_transactions',
+                                    'eth_balance',
                                     'run_status_update_total',
                                     ]
         self._last_source_used = node_config.node_prometheus_urls[0]
@@ -68,7 +69,7 @@ class ChainlinkNodeMonitor(Monitor):
                "process_start_time_seconds={}, " \
                "tx_manager_num_gas_bumps_total={}, " \
                "tx_manager_gas_bump_exceeds_limit_total={}, " \
-               "unconfirmed_transactions={}, " \
+               "unconfirmed_transactions={}, ethereum_addresses={}," \
                "run_status_update_total_errors={}" \
                "".format(data['head_tracker_current_head'],
                          data['head_tracker_heads_in_queue'],
@@ -80,6 +81,7 @@ class ChainlinkNodeMonitor(Monitor):
                          data['tx_manager_num_gas_bumps_total'],
                          data['tx_manager_gas_bump_exceeds_limit_total'],
                          data['unconfirmed_transactions'],
+                         data['ethereum_addresses'],
                          data['run_status_update_total_errors'])
 
     def _get_data(self) -> Dict:
@@ -123,6 +125,7 @@ class ChainlinkNodeMonitor(Monitor):
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
+                    'source_used': self.last_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
@@ -152,12 +155,22 @@ class ChainlinkNodeMonitor(Monitor):
             }
         }
 
-        one_value_metrics = self.metrics_to_monitor[:-1]
+        one_value_metrics = self.metrics_to_monitor[:-2]
         # Add each one value metric and its value to the processed data
         for metric in one_value_metrics:
             value = data_copy[metric]
             self.logger.debug("%s %s: %s", self.node_config, metric, value)
             processed_data['result']['data'][metric] = value
+
+        # Add the ethereum balance of all addresses to the processed data
+        processed_data['result']['data']['ethereum_addresses'] = {}
+        ethereum_addresses_dict = processed_data['result']['data'][
+            'ethereum_addresses']
+        for eth_address in self.node_config.ethereum_addresses:
+            for _, data_subset in enumerate(data_copy['eth_balance']):
+                if json.loads(data_subset)['account'] == eth_address:
+                    ethereum_addresses_dict[eth_address] = data_copy[
+                        'eth_balance'][data_subset]
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0
@@ -235,3 +248,11 @@ class ChainlinkNodeMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
+
+
+# node_config = ChainlinkNodeConfig('test', 'test', 'test', True,
+#                                   ['https://172.16.152.160:1002/metrics'],
+#                                   ["0xaDb83Abbf7A8987AfB76DB33Ed2855A07f5497C7"])
+# monitor = ChainlinkNodeMonitor('test_monitor', node_config,
+#                                logging.getLogger('Dummy'), 10, None)
+# print(monitor._process_retrieved_data(monitor._get_data()))

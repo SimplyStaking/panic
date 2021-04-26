@@ -3,12 +3,14 @@ from typing import List
 
 class ChainlinkNodeConfig:
     def __init__(self, node_id: str, parent_id: str, node_name: str,
-                 monitor_node: bool, node_prometheus_urls: List[str]) -> None:
+                 monitor_node: bool, node_prometheus_urls: List[str],
+                 ethereum_addresses: List[str]) -> None:
         self._node_id = node_id
         self._parent_id = parent_id
         self._node_name = node_name
         self._monitor_node = monitor_node
         self._node_prometheus_urls = node_prometheus_urls
+        self._ethereum_addresses = ethereum_addresses
 
     def __str__(self) -> str:
         return self.node_name
@@ -33,6 +35,10 @@ class ChainlinkNodeConfig:
     def node_prometheus_urls(self) -> List[str]:
         return self._node_prometheus_urls
 
+    @property
+    def ethereum_addresses(self) -> List[str]:
+        return self._ethereum_addresses
+
     def set_node_id(self, node_id: str) -> None:
         self._node_id = node_id
 
@@ -47,3 +53,6 @@ class ChainlinkNodeConfig:
 
     def set_node_prometheus_urls(self, node_prometheus_urls: List[str]) -> None:
         self._node_prometheus_urls = node_prometheus_urls
+
+    def set_ethereum_addresses(self, ethereum_addresses: List[str]) -> None:
+        self._ethereum_addresses = ethereum_addresses
