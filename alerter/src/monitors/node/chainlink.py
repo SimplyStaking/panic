@@ -71,7 +71,7 @@ class ChainlinkNodeMonitor(Monitor):
                "process_start_time_seconds={}, " \
                "tx_manager_num_gas_bumps_total={}, " \
                "tx_manager_gas_bump_exceeds_limit_total={}, " \
-               "unconfirmed_transactions={}, gas_updater_set_gas_price={} " \
+               "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
                "ethereum_balances={}, run_status_update_total_errors={}" \
                "".format(data['head_tracker_current_head'],
                          data['head_tracker_heads_in_queue'],
@@ -119,6 +119,11 @@ class ChainlinkNodeMonitor(Monitor):
                     "Could not connect with %s. Will try to obtain "
                     "the metrics from another backup source.",
                     self.last_source_used)
+            except Exception as e:
+                # We need to set the last_source_used because in this case the
+                # node is online, but something bad happened.
+                self._last_source_used = source
+                raise e
 
         raise NodeIsDownException(self.node_config.node_name)
 
@@ -128,7 +133,7 @@ class ChainlinkNodeMonitor(Monitor):
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
-                    'source_used': self.last_source_used,
+                    'last_source_used': self.last_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
@@ -149,7 +154,7 @@ class ChainlinkNodeMonitor(Monitor):
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
-                    'source_used': self.last_source_used,
+                    'last_source_used': self.last_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
