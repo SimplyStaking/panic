@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime
 from http.client import IncompleteRead
-from typing import List, Dict
+from typing import Dict
 
 import pika
 from requests.exceptions import (ConnectionError as ReqConnectionError,
@@ -31,19 +31,21 @@ class ChainlinkNodeMonitor(Monitor):
 
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._node_config = node_config
-        self._metrics_to_monitor = ['head_tracker_current_head',
-                                    'head_tracker_heads_in_queue',
-                                    'head_tracker_heads_received_total',
-                                    'head_tracker_num_heads_dropped_total',
-                                    'job_subscriber_subscriptions',
-                                    'max_unconfirmed_blocks',
-                                    'process_start_time_seconds',
-                                    'tx_manager_num_gas_bumps_total',
-                                    'tx_manager_gas_bump_exceeds_limit_total',
-                                    'unconfirmed_transactions',
-                                    'eth_balance',
-                                    'run_status_update_total',
-                                    ]
+        self._metrics_to_monitor = {
+            'head_tracker_current_head': 'strict',
+            'head_tracker_heads_in_queue': 'strict',
+            'head_tracker_heads_received_total': 'strict',
+            'head_tracker_num_heads_dropped_total': 'strict',
+            'job_subscriber_subscriptions': 'strict',
+            'max_unconfirmed_blocks': 'strict',
+            'process_start_time_seconds': 'strict',
+            'tx_manager_num_gas_bumps_total': 'strict',
+            'tx_manager_gas_bump_exceeds_limit_total': 'strict',
+            'unconfirmed_transactions': 'strict',
+            'gas_updater_set_gas_price': 'optional',
+            'eth_balance': 'strict',
+            'run_status_update_total': 'strict',
+        }
         self._last_source_used = node_config.node_prometheus_urls[0]
 
     @property
@@ -51,7 +53,7 @@ class ChainlinkNodeMonitor(Monitor):
         return self._node_config
 
     @property
-    def metrics_to_monitor(self) -> List[str]:
+    def metrics_to_monitor(self) -> Dict[str, str]:
         return self._metrics_to_monitor
 
     @property
@@ -69,8 +71,8 @@ class ChainlinkNodeMonitor(Monitor):
                "process_start_time_seconds={}, " \
                "tx_manager_num_gas_bumps_total={}, " \
                "tx_manager_gas_bump_exceeds_limit_total={}, " \
-               "unconfirmed_transactions={}, ethereum_addresses={}," \
-               "run_status_update_total_errors={}" \
+               "unconfirmed_transactions={}, gas_updater_set_gas_price={} " \
+               "ethereum_balances={}, run_status_update_total_errors={}" \
                "".format(data['head_tracker_current_head'],
                          data['head_tracker_heads_in_queue'],
                          data['head_tracker_heads_received_total'],
@@ -81,7 +83,8 @@ class ChainlinkNodeMonitor(Monitor):
                          data['tx_manager_num_gas_bumps_total'],
                          data['tx_manager_gas_bump_exceeds_limit_total'],
                          data['unconfirmed_transactions'],
-                         data['ethereum_addresses'],
+                         data['gas_updater_set_gas_price'],
+                         data['ethereum_balances'],
                          data['run_status_update_total_errors'])
 
     def _get_data(self) -> Dict:
@@ -155,21 +158,43 @@ class ChainlinkNodeMonitor(Monitor):
             }
         }
 
-        one_value_metrics = self.metrics_to_monitor[:-2]
+        multiple_value_metrics = {
+            'gas_updater_set_gas_price',
+            'eth_balance',
+            'run_status_update_total'
+        }
+        one_value_metrics = {
+            key for key in data_copy if key not in multiple_value_metrics
+        }
         # Add each one value metric and its value to the processed data
         for metric in one_value_metrics:
             value = data_copy[metric]
             self.logger.debug("%s %s: %s", self.node_config, metric, value)
             processed_data['result']['data'][metric] = value
 
+        # Add gas_updater_set_gas_price info to the processed data
+        processed_data['result']['data']['gas_updater_set_gas_price'] = {}
+        set_gas_price_dict = processed_data['result']['data'][
+            'gas_updater_set_gas_price']
+        if data_copy['gas_updater_set_gas_price'] is not None:
+            for _, data_subset in enumerate(
+                    data_copy['gas_updater_set_gas_price']):
+                if "percentile" in json.loads(data_subset):
+                    set_gas_price_dict["percentile"] = json.loads(data_subset)[
+                        "percentile"]
+                    set_gas_price_dict["price"] = data_copy[
+                        'gas_updater_set_gas_price'][data_subset]
+        else:
+            processed_data['result']['data']['gas_updater_set_gas_price'] = None
+
         # Add the ethereum balance of all addresses to the processed data
-        processed_data['result']['data']['ethereum_addresses'] = {}
-        ethereum_addresses_dict = processed_data['result']['data'][
-            'ethereum_addresses']
+        processed_data['result']['data']['ethereum_balances'] = {}
+        ethereum_balances_dict = processed_data['result']['data'][
+            'ethereum_balances']
         for eth_address in self.node_config.ethereum_addresses:
             for _, data_subset in enumerate(data_copy['eth_balance']):
                 if json.loads(data_subset)['account'] == eth_address:
-                    ethereum_addresses_dict[eth_address] = data_copy[
+                    ethereum_balances_dict[eth_address] = data_copy[
                         'eth_balance'][data_subset]
 
         # Add the number of error job runs to the processed data
@@ -248,11 +273,3 @@ class ChainlinkNodeMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
-
-
-# node_config = ChainlinkNodeConfig('test', 'test', 'test', True,
-#                                   ['https://172.16.152.160:1002/metrics'],
-#                                   ["0xaDb83Abbf7A8987AfB76DB33Ed2855A07f5497C7"])
-# monitor = ChainlinkNodeMonitor('test_monitor', node_config,
-#                                logging.getLogger('Dummy'), 10, None)
-# print(monitor._process_retrieved_data(monitor._get_data()))
