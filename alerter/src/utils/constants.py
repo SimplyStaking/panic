@@ -15,6 +15,7 @@ GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'github_monitors_manager_configs_queue'
 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_monitors_manager_configs_queue'
+NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = 'node_monitors_manager_configs_queue'
 
 # Routing keys and queue names
 GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
@@ -52,6 +53,10 @@ TCH_INPUT_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+
+NODE_MON_MAN_INPUT_QUEUE = 'node_monitors_manager_ping_queue'
+NODE_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+NODE_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
 
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10
@@ -138,6 +143,7 @@ LOG_CHANNEL_ID = 'LOG'
 SYSTEM_ALERTER_NAME_TEMPLATE = 'System alerter ({})'
 GITHUB_MONITOR_NAME_TEMPLATE = 'GitHub monitor ({})'
 SYSTEM_MONITOR_NAME_TEMPLATE = 'System monitor ({})'
+NODE_MONITOR_NAME_TEMPLATE = 'Node monitor ({})'
 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE = 'Telegram Alerts Handler ({})'
 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE = 'Telegram Commands Handler ({})'
 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE = 'Twilio Alerts Handler ({})'

@@ -49,6 +49,7 @@ GITHUB_RELEASES_TEMPLATE = os.environ['GITHUB_RELEASES_TEMPLATE']
 # Monitoring periods
 SYSTEM_MONITOR_PERIOD_SECONDS = int(os.environ['SYSTEM_MONITOR_PERIOD_SECONDS'])
 GITHUB_MONITOR_PERIOD_SECONDS = int(os.environ['GITHUB_MONITOR_PERIOD_SECONDS'])
+NODE_MONITOR_PERIOD_SECONDS = int(os.environ['NODE_MONITOR_PERIOD_SECONDS'])
 # These define how often a monitor runs an iteration of its monitoring loop
 
 # Publishers limits

@@ -183,12 +183,15 @@ class GitHubMonitorsManager(MonitorsManager):
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
                     del correct_repos_configs[config_id]
-                    log_and_print("Killed the monitor of {} "
-                                  .format(config_id), self.logger)
+                    old_repo_name = modified_configs[config_id]['name']
+
+                    if not old_repo_name.endswith('/'):
+                        old_repo_name = old_repo_name + '/'
+
+                    log_and_print("Killed the monitor of {} ".format(
+                        old_repo_name), self.logger)
                     continue
 
-                log_and_print("Restarting the monitor of {} with latest "
-                              "configuration".format(config_id), self.logger)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
                 correct_repos_configs[config_id] = config
@@ -198,6 +201,10 @@ class GitHubMonitorsManager(MonitorsManager):
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 repo_name = config['repo_name']
+
+                if not repo_name.endswith('/'):
+                    repo_name = repo_name + '/'
+
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()

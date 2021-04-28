@@ -174,12 +174,9 @@ class SystemMonitorsManager(MonitorsManager):
                 if not monitor_system:
                     del self.config_process_dict[config_id]
                     del correct_systems_configs[config_id]
-                    log_and_print("Killed the monitor of {} "
-                                  .format(config_id), self.logger)
+                    log_and_print("Killed the monitor of {} ".format(
+                        modified_configs[config_id]['name']), self.logger)
                     continue
-
-                log_and_print("Restarting the monitor of {} with latest "
-                              "configuration".format(config_id), self.logger)
 
                 self._create_and_start_monitor_process(system_config, config_id,
                                                        chain)
