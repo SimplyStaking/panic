@@ -15,8 +15,8 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.monitors.starters import start_node_monitor
-from src.utils.configs import get_newly_added_configs, get_modified_configs, \
-    get_removed_configs
+from src.utils.configs import (get_newly_added_configs, get_modified_configs,
+                               get_removed_configs)
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  NODE_MON_MAN_INPUT_QUEUE,
                                  NODE_MON_MAN_INPUT_ROUTING_KEY,
