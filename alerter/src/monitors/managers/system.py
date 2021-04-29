@@ -178,6 +178,10 @@ class SystemMonitorsManager(MonitorsManager):
                         modified_configs[config_id]['name']), self.logger)
                     continue
 
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        modified_configs[config_id]['name']), self.logger)
                 self._create_and_start_monitor_process(system_config, config_id,
                                                        chain)
                 correct_systems_configs[config_id] = config

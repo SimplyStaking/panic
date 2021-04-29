@@ -145,7 +145,7 @@ class NodeMonitorsManager(MonitorsManager):
                                                     current_configs)
             for config_id in modified_configs:
                 # Get the latest updates
-                config = new_configs[config_id]
+                config = sent_configs[config_id]
                 node_id = config['id']
                 parent_id = config['parent_id']
                 node_name = config['name']
@@ -168,6 +168,10 @@ class NodeMonitorsManager(MonitorsManager):
                     log_and_print("Killed the monitor of {} ".format(
                         modified_configs[config_id]['name']), self.logger)
                     continue
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        modified_configs[config_id]['name']), self.logger)
 
                 self._create_and_start_monitor_process(node_config, config_id,
                                                        ChainlinkNodeMonitor)
@@ -212,7 +216,7 @@ class NodeMonitorsManager(MonitorsManager):
             current_configs = {}
 
         updated_configs = {}
-        if method.routing_key == 'chains.chainlink.*.nodes_config':
+        if parsed_routing_key[1].lower() == 'chainlink':
             updated_configs = self._process_chainlink_node_configs(
                 sent_configs, current_configs)
 
