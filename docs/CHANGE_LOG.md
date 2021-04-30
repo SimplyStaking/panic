@@ -2,6 +2,10 @@ Change the contents of this file to this:
 
 # Change Log
 
+## Unreleased
+
+- Added the ChainlinkNodeMonitor and its tests.
+
 ## 0.1.2
 
 Released on 25th March 2021
