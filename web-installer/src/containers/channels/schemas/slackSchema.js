@@ -15,7 +15,7 @@ import * as Yup from 'yup';
 */
 const SlackSchema = (props) => Yup.object().shape({
   channel_name: Yup.string()
-    .test('unique-bot-name', 'Bot Name is not unique.', (value) => {
+    .test('unique-bot-name', 'Slack Bot Name is not unique.', (value) => {
       const {
         emails, opsGenies, pagerDuties, telegrams, twilios, slacks,
       } = props;
@@ -51,11 +51,9 @@ const SlackSchema = (props) => Yup.object().shape({
       }
       return true;
     })
-    .required('Name is required.'),
+    .required('Slack Bot Name is required.'),
   token: Yup.string().required('Token is required.'),
-  chat_id: Yup.number()
-    .typeError('Channel ID must be numeric.')
-    .required('Channel ID number is required.'),
+  chat_name: Yup.string().required('Chat name is required.'),
 });
 
 export default SlackSchema;

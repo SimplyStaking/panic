@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -75,7 +74,7 @@ const TwilioTable = ({ twilios, removeTwilioDetails }) => {
   );
 };
 
-TwilioTable.propTypes = forbidExtraProps({
+TwilioTable.propTypes = {
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -88,6 +87,6 @@ TwilioTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
-});
+};
 
 export default TwilioTable;

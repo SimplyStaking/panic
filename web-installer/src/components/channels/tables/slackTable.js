@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -28,7 +27,7 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
             <TableRow>
               <TableCell align="center">Slack Name</TableCell>
               <TableCell align="center">Token</TableCell>
-              <TableCell align="center">Chat ID</TableCell>
+              <TableCell align="center">Chat Name</TableCell>
               <TableCell align="center">Info</TableCell>
               <TableCell align="center">Warning</TableCell>
               <TableCell align="center">Critical</TableCell>
@@ -48,7 +47,7 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
                   {slacks.byId[slack].token}
                 </TableCell>
                 <TableCell align="center">
-                  {slacks.byId[slack].chat_id}
+                  {slacks.byId[slack].chat_name}
                 </TableCell>
                 <TableCell align="center">
                   {slacks.byId[slack].info ? (
@@ -110,13 +109,13 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
   );
 };
 
-SlackTable.propTypes = forbidExtraProps({
+SlackTable.propTypes = {
   slacks: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       channel_name: PropTypes.string,
       token: PropTypes.string,
-      chat_id: PropTypes.string,
+      chat_name: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,
@@ -127,6 +126,6 @@ SlackTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeSlackDetails: PropTypes.func.isRequired,
-});
+};
 
 export default SlackTable;

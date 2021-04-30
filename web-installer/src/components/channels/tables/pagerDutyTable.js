@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -91,7 +90,7 @@ const PagerDutyTable = ({ pagerDuties, removePagerDutyDetails }) => {
   );
 };
 
-PagerDutyTable.propTypes = forbidExtraProps({
+PagerDutyTable.propTypes = {
   pagerDuties: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -106,6 +105,6 @@ PagerDutyTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
-});
+};
 
 export default PagerDutyTable;

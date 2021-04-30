@@ -144,16 +144,16 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestSlackButton({ disabled, token, chatID }) {
+function SendTestSlackButton({ disabled, token, chatName }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
-        'Sending test alert. Make sure to check the chat corresponding with '
-          + `chat id ${chatID}`,
+        'Sending test alert. Make sure to check the slack channel corresponding'
+        + ` with chat name: ${chatName}`,
         5000,
       );
 
-      // WebClient insantiates a client that can call API methods
+      // WebClient instantiates a client that can call API methods
       // When using Bolt, you can use either `app.client` or the `client`
       // passed to listeners.
       const client = new WebClient(token, {
@@ -161,17 +161,23 @@ function SendTestSlackButton({ disabled, token, chatID }) {
         logLevel: LogLevel.DEBUG,
       });
 
-      // Call the chat.postMessage method using the built-in WebClient
-      const result = await client.chat.postMessage({
-        // The token you used to initialize your app
-        token,
-        channel: chatID,
-        text: '*Test Alert*',
-        // You could also use a blocks[] array to send richer content
+      // Return the conversation ID of the channel name
+      // Call the conversations.list method using the built-in WebClient
+      let result = await client.conversations.list({ token });
+      let conversationId;
+      Object.values(result.channels).forEach((value) => {
+        if (value.name === chatName) {
+          conversationId = value.id;
+        }
       });
 
-      // Print result, which includes information about the message (like TS)
-      console.log(result);
+      // Call the chat.postMessage method using the built-in WebClient
+      result = await client.chat.postMessage({
+        token,
+        channel: conversationId,
+        text: '*Test Alert*',
+      });
+
       ToastsStore.success('Test alert sent successfully', 5000);
     } catch (e) {
       if (e.response) {
@@ -535,7 +541,7 @@ SendTestTelegramButton.propTypes = forbidExtraProps({
 SendTestSlackButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   token: PropTypes.string.isRequired,
-  chatID: PropTypes.string.isRequired,
+  chatName: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({

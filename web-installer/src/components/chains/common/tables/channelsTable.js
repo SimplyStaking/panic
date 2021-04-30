@@ -31,6 +31,7 @@ const ChannelsTable = ({
   emails,
   pagerduties,
   twilios,
+  slacks,
   addTelegramDetails,
   removeTelegramDetails,
   addTwilioDetails,
@@ -41,6 +42,8 @@ const ChannelsTable = ({
   removePagerDutyDetails,
   addOpsGenieDetails,
   removeOpsGenieDetails,
+  addSlackDetails,
+  removeSlackDetails,
   createPayload,
 }) => {
   const currentConfig = config.byId[currentChain];
@@ -66,6 +69,7 @@ const ChannelsTable = ({
           && opsgenies.allIds.length === 0
           && emails.allIds.length === 0
           && pagerduties.allIds.length === 0
+          && slacks.allIds.length === 0
           && twilios.allIds.length === 0 && (
             <GridContainer justify="center">
               <GridItem xs={12} sm={12} md={8}>
@@ -108,6 +112,50 @@ const ChannelsTable = ({
                               />
                             )}
                             label={telegrams.byId[id].channel_name}
+                            labelPlacement="start"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          </Grid>
+        )}
+        {slacks.allIds.length !== 0 && (
+          <Grid item xs={4}>
+            <Paper className={classes.paper}>
+              <TableContainer>
+                <Table className="table" aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center">Slack</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {slacks.allIds.map((id) => (
+                      <TableRow key={id}>
+                        <TableCell key={id} align="center">
+                          <FormControlLabel
+                            control={(
+                              <Checkbox
+                                checked={slacks.byId[id].parent_ids.includes(
+                                  currentChain,
+                                )}
+                                onClick={() => {
+                                  createPayload(
+                                    slacks.byId[id],
+                                    currentConfig,
+                                    addSlackDetails,
+                                    removeSlackDetails,
+                                  );
+                                }}
+                                name="slacks"
+                                color="primary"
+                              />
+                            )}
+                            label={slacks.byId[id].channel_name}
                             labelPlacement="start"
                           />
                         </TableCell>
@@ -330,6 +378,13 @@ ChannelsTable.propTypes = forbidExtraProps({
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   twilios: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -369,6 +424,8 @@ ChannelsTable.propTypes = forbidExtraProps({
   }).isRequired,
   addTelegramDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
+  addSlackDetails: PropTypes.func.isRequired,
+  removeSlackDetails: PropTypes.func.isRequired,
   addTwilioDetails: PropTypes.func.isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
   addEmailDetails: PropTypes.func.isRequired,

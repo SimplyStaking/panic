@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -110,7 +109,7 @@ const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
   );
 };
 
-TelegramTable.propTypes = forbidExtraProps({
+TelegramTable.propTypes = {
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -127,6 +126,6 @@ TelegramTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
-});
+};
 
 export default TelegramTable;

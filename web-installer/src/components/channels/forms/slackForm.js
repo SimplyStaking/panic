@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -46,7 +45,7 @@ const SlackForm = ({
                 value={values.channel_name}
                 type="text"
                 name="channel_name"
-                placeholder={Data.slack.channel_namePlaceholder}
+                placeholder={Data.slack.channelNamePlaceholder}
                 helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
                 autoComplete="off"
@@ -82,6 +81,31 @@ const SlackForm = ({
               <Grid container justify="center">
                 <MuiThemeProvider theme={theme}>
                   <Tooltip title={Data.slack.token} placement="left">
+                    <InfoIcon />
+                  </Tooltip>
+                </MuiThemeProvider>
+              </Grid>
+            </Grid>
+            <Grid item xs={2}>
+              <Typography> Chat Name </Typography>
+            </Grid>
+            <Grid item xs={9}>
+              <TextField
+                error={errors.chat_name}
+                value={values.chat_name}
+                type="text"
+                name="chat_name"
+                placeholder={Data.slack.chatNamePlaceholder}
+                helperText={errors.chat_name ? errors.chat_name : ''}
+                onChange={handleChange}
+                autoComplete="off"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={1}>
+              <Grid container justify="center">
+                <MuiThemeProvider theme={theme}>
+                  <Tooltip title={Data.slack.chatName} placement="left">
                     <InfoIcon />
                   </Tooltip>
                 </MuiThemeProvider>
@@ -150,7 +174,7 @@ const SlackForm = ({
               </Grid>
             </Grid>
             <Grid item xs={2}>
-              <Typography> Telegram Commands </Typography>
+              <Typography> Slack Commands </Typography>
             </Grid>
             <Grid item xs={1}>
               <Grid container justify="center">
@@ -177,7 +201,7 @@ const SlackForm = ({
               />
             </Grid>
             <Grid item xs={2}>
-              <Typography> Telegram Alerts </Typography>
+              <Typography> Slack Alerts </Typography>
             </Grid>
             <Grid item xs={1}>
               <Grid container justify="center">
@@ -213,7 +237,7 @@ const SlackForm = ({
                 <Box px={2}>
                   <SendTestSlackButton
                     disabled={Object.keys(errors).length !== 0}
-                    chatID={values.chat_id}
+                    chatName={values.chat_name}
                     token={values.token}
                   />
                   <Button
@@ -234,16 +258,16 @@ const SlackForm = ({
   </MuiThemeProvider>
 );
 
-SlackForm.propTypes = forbidExtraProps({
+SlackForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
-    chat_id: PropTypes.string,
+    chat_name: PropTypes.string,
     token: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
-    chat_id: PropTypes.string.isRequired,
+    chat_name: PropTypes.string.isRequired,
     token: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
@@ -254,6 +278,6 @@ SlackForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-});
+};
 
 export default SlackForm;

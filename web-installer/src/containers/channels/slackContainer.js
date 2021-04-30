@@ -3,17 +3,17 @@ import { connect } from 'react-redux';
 import SlackForm from 'components/channels/forms/slackForm';
 import SlackTable from 'components/channels/tables/slackTable';
 import { addSlack, removeSlack } from 'redux/actions/channelActions';
-import TelegramSchema from './schemas/telegramSchema';
+import SlackSchema from './schemas/slackSchema';
 
 const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
-    chat_id: '',
+    chat_name: '',
     token: '',
   }),
   mapPropsToValues: () => ({
     channel_name: '',
-    chat_id: '',
+    chat_name: '',
     token: '',
     info: false,
     warning: false,
@@ -22,13 +22,13 @@ const Form = withFormik({
     alerts: true,
     commands: true,
   }),
-  validationSchema: (props) => TelegramSchema(props),
+  validationSchema: (props) => SlackSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveTelegramDetails } = props;
+    const { saveSlackDetails } = props;
     const payload = {
       channel_name: values.channel_name,
       token: values.token,
-      chat_id: values.chat_id,
+      chat_name: values.chat_name,
       info: values.info,
       warning: values.warning,
       critical: values.critical,
@@ -38,7 +38,7 @@ const Form = withFormik({
       parent_ids: [],
       parent_names: [],
     };
-    saveTelegramDetails(payload);
+    saveSlackDetails(payload);
     resetForm();
   },
 })(SlackForm);

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -95,7 +94,7 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
   );
 };
 
-EmailTable.propTypes = forbidExtraProps({
+EmailTable.propTypes = {
   emails: PropTypes.shape({
     byId: PropTypes.shape({
       channel_name: PropTypes.string,
@@ -113,6 +112,6 @@ EmailTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeEmailDetails: PropTypes.func.isRequired,
-});
+};
 
 export default EmailTable;

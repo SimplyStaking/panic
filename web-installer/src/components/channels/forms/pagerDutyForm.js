@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -206,7 +205,7 @@ const PagerDutyForm = ({
   </MuiThemeProvider>
 );
 
-PagerDutyForm.propTypes = forbidExtraProps({
+PagerDutyForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
     api_token: PropTypes.string,
@@ -223,6 +222,6 @@ PagerDutyForm.propTypes = forbidExtraProps({
     error: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
-});
+};
 
 export default PagerDutyForm;

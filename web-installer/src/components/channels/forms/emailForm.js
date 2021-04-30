@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -313,7 +312,7 @@ const EmailForm = ({
   );
 };
 
-EmailForm.propTypes = forbidExtraProps({
+EmailForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
     smtp: PropTypes.string,
@@ -337,6 +336,6 @@ EmailForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-});
+};
 
 export default EmailForm;

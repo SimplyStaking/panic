@@ -26,7 +26,7 @@ function ChainlinkSetupPage() {
           <GridContainer>
             <GridItem>
               <div className={classes.brand}>
-                <h1 className={classes.title}>{Data.cosmos.title}</h1>
+                <h1 className={classes.title}>{Data.chainlink.title}</h1>
               </div>
             </GridItem>
           </GridContainer>

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField, Box, Typography, Grid, Tooltip,
 } from '@material-ui/core';
@@ -216,7 +215,7 @@ const TwilioForm = ({
   );
 };
 
-TwilioForm.propTypes = forbidExtraProps({
+TwilioForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
     account_sid: PropTypes.string,
@@ -235,6 +234,6 @@ TwilioForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-});
+};
 
 export default TwilioForm;

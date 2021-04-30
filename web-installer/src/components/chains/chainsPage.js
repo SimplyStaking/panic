@@ -3,8 +3,10 @@ import { Grid } from '@material-ui/core';
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
 import CosmosChainsTableContainer from 'containers/chains/cosmos/cosmosChainsTableContainer';
 import SubstrateChainsTableContainer from 'containers/chains/substrate/substrateChainsTableContainer';
+import ChainlinkChainsTableContainer from 'containers/chains/chainlink/chainlinkChainsTableContainer';
 import CosmosIcon from 'assets/icons/cosmos.png';
 import SubstrateIcon from 'assets/icons/substrate.png';
+import ChainlinkIcon from 'assets/icons/chainlink.png';
 import {
   CHANNELS_PAGE,
   NEXT,
@@ -18,6 +20,8 @@ import {
   OTHER,
   OTHER_SETUP_PAGE,
   CONFIGURE,
+  CHAINLINK,
+  CHAINLINK_SETUP_PAGE,
 } from 'constants/constants';
 import Data from 'data/chains';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
@@ -80,6 +84,17 @@ function Chains() {
                         />
                       )}
                       table={<SubstrateChainsTableContainer />}
+                    />
+                    <ChainAccordion
+                      icon={ChainlinkIcon}
+                      name={CHAINLINK}
+                      button={(
+                        <NavigationButtonContainer
+                          text={NEW}
+                          navigation={CHAINLINK_SETUP_PAGE}
+                        />
+                      )}
+                      table={<ChainlinkChainsTableContainer />}
                     />
                     <ChainAccordion
                       icon={SystemIcon}

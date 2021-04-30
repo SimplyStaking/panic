@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   TextField,
   Box,
@@ -46,7 +45,7 @@ const TelegramForm = ({
                 value={values.channel_name}
                 type="text"
                 name="channel_name"
-                placeholder={Data.telegram.channel_namePlaceholder}
+                placeholder={Data.telegram.channelNamePlaceholder}
                 helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
                 autoComplete="off"
@@ -259,7 +258,7 @@ const TelegramForm = ({
   </MuiThemeProvider>
 );
 
-TelegramForm.propTypes = forbidExtraProps({
+TelegramForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
     bot_token: PropTypes.string,
@@ -279,6 +278,6 @@ TelegramForm.propTypes = forbidExtraProps({
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
-});
+};
 
 export default TelegramForm;

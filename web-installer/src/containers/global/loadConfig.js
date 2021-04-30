@@ -1,7 +1,5 @@
-/* eslint-disable no-multi-assign */
-/* eslint-disable max-len */
-/* eslint-disable no-await-in-loop */
 /* eslint-disable camelcase */
+/* eslint-disable no-await-in-loop */
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -98,8 +96,12 @@ function mapDispatchToProps(dispatch) {
     loadThresholdAlertsCosmosDetails: (details) => dispatch(loadThresholdAlertsCosmos(details)),
     loadSeverityAlertsCosmosDetails: (details) => dispatch(loadSeverityAlertsCosmos(details)),
     loadRepeatAlertsSubstrateDetails: (details) => dispatch(loadRepeatAlertsSubstrate(details)),
-    loadTimeWindowAlertsSubstrateDetails: (details) => dispatch(loadTimeWindowAlertsSubstrate(details)),
-    loadThresholdAlertsSubstrateDetails: (details) => dispatch(loadThresholdAlertsSubstrate(details)),
+    loadTimeWindowAlertsSubstrateDetails: (details) => dispatch(
+      loadTimeWindowAlertsSubstrate(details),
+    ),
+    loadThresholdAlertsSubstrateDetails: (details) => dispatch(
+      loadThresholdAlertsSubstrate(details),
+    ),
     loadSeverityAlertsSubstrateDetails: (details) => dispatch(loadSeverityAlertsSubstrate(details)),
   };
 }
@@ -108,7 +110,9 @@ function mapDispatchToProps(dispatch) {
 function CreateChain(config, chainName, chainState, addChain) {
   const singleConfig = config[Object.keys(config)[0]];
 
-  if (!(singleConfig.parent_id in chainState.byId) && !(chainState.allIds.includes(singleConfig.parent_id))) {
+  if (
+    !(singleConfig.parent_id in chainState.byId)
+    && !(chainState.allIds.includes(singleConfig.parent_id))) {
     addChain({ id: singleConfig.parent_id, chain_name: chainName });
   }
 }
@@ -301,15 +305,44 @@ class LoadConfig extends Component {
                   severityAlerts.byId[key].enabled = value.enabled === 'true';
                 }
               });
-              loadRepeatAlertsCosmosDetails({ chain_name: filePath[3], parent_id, alerts: repeatAlerts });
-              loadTimeWindowAlertsCosmosDetails({ chain_name: filePath[3], parent_id, alerts: timeWindowAlerts });
-              loadThresholdAlertsCosmosDetails({ chain_name: filePath[3], parent_id, alerts: thresholdAlerts });
-              loadSeverityAlertsCosmosDetails({ chain_name: filePath[3], parent_id, alerts: severityAlerts });
+              loadRepeatAlertsCosmosDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: repeatAlerts,
+                },
+              );
+              loadTimeWindowAlertsCosmosDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: timeWindowAlerts,
+                },
+              );
+              loadThresholdAlertsCosmosDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: thresholdAlerts,
+                },
+              );
+              loadSeverityAlertsCosmosDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: severityAlerts,
+                },
+              );
             }
           } else if (filePath[2] === 'substrate') {
             if (filePath[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], substrateChains, addChainSubstrateDetails);
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                substrateChains,
+                addChainSubstrateDetails,
+              );
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_repo = payload.monitor_repo === 'true';
@@ -317,7 +350,12 @@ class LoadConfig extends Component {
               });
             } else if (filePath[4] === 'dockers_config.ini') {
               config = await getConfig('chain', 'dockers_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], substrateChains, addChainSubstrateDetails);
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                substrateChains,
+                addChainSubstrateDetails,
+              );
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
@@ -325,7 +363,12 @@ class LoadConfig extends Component {
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], substrateChains, addChainSubstrateDetails);
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                substrateChains,
+                addChainSubstrateDetails,
+              );
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
                 node.is_archive_node = node.is_archive_node === 'true';
@@ -341,7 +384,12 @@ class LoadConfig extends Component {
                 filePath[3],
                 'substrate',
               );
-              CreateChain(config.data.result, filePath[3], substrateChains, addChainSubstrateDetails);
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                substrateChains,
+                addChainSubstrateDetails,
+              );
               // Create copies of alerts, if there are missing alerts in the
               // configuration file we'll just use the pre-done alerts.
               const repeatAlerts = JSON.parse(JSON.stringify(substrateRepeatAlerts));
@@ -400,10 +448,34 @@ class LoadConfig extends Component {
                   severityAlerts.byId[key].enabled = value.enabled === 'true';
                 }
               });
-              loadRepeatAlertsSubstrateDetails({ chain_name: filePath[3], parent_id, alerts: repeatAlerts });
-              loadTimeWindowAlertsSubstrateDetails({ chain_name: filePath[3], parent_id, alerts: timeWindowAlerts });
-              loadThresholdAlertsSubstrateDetails({ chain_name: filePath[3], parent_id, alerts: thresholdAlerts });
-              loadSeverityAlertsSubstrateDetails({ chain_name: filePath[3], parent_id, alerts: severityAlerts });
+              loadRepeatAlertsSubstrateDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: repeatAlerts,
+                },
+              );
+              loadTimeWindowAlertsSubstrateDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: timeWindowAlerts,
+                },
+              );
+              loadThresholdAlertsSubstrateDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: thresholdAlerts,
+                },
+              );
+              loadSeverityAlertsSubstrateDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: severityAlerts,
+                },
+              );
             }
           }
         } else if (filePath[1] === 'channels') {
@@ -437,7 +509,7 @@ class LoadConfig extends Component {
               payload.warning = payload.warning === 'true';
               payload.critical = payload.critical === 'true';
               payload.error = payload.error === 'true';
-              payload.eu = payload.eu = 'true';
+              payload.eu = payload.eu === 'true';
               if (payload.parent_ids.length === 0) {
                 payload.parent_ids = [];
                 payload.parent_names = [];
@@ -490,12 +562,11 @@ class LoadConfig extends Component {
               if (payload.twilio_phone_numbers_to_dial_valid.length === 0) {
                 payload.twilio_phone_numbers_to_dial_valid = [];
               } else {
+                // eslint-disable-next-line max-len
                 payload.twilio_phone_numbers_to_dial_valid = payload.twilio_phone_numbers_to_dial_valid.split(
                   ',',
                 );
               }
-              console.log(payload);
-              console.log(payload.parent_ids.length);
               if (payload.parent_ids.length === 0) {
                 payload.parent_ids = [];
                 payload.parent_names = [];
@@ -503,14 +574,12 @@ class LoadConfig extends Component {
                 payload.parent_ids = payload.parent_ids.split(',');
                 payload.parent_names = payload.parent_names.split(',');
               }
-              console.log(payload);
               addTwilioDetails(payload);
             });
           }
         }
       }
     } catch (err) {
-      console.log(err);
       ToastsStore.error(
         'An Error occurred your configuration may be corrupted.',
         5000,

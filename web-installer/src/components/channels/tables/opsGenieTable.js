@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -83,7 +82,7 @@ const OpsGenieTable = ({ opsGenies, removeOpsGenieDetails }) => {
   );
 };
 
-OpsGenieTable.propTypes = forbidExtraProps({
+OpsGenieTable.propTypes = {
   opsGenies: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -98,6 +97,6 @@ OpsGenieTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
-});
+};
 
 export default OpsGenieTable;
