@@ -25,7 +25,8 @@ from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
                                  GITHUB_ALERTER_MANAGER_NAME,
                                  DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
                                  CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
-                                 HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME)
+                                 HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME,
+                                 NODE_MONITORS_MANAGER_NAME)
 
 
 class TelegramCommandHandlers(CommandHandler):
@@ -291,6 +292,8 @@ class TelegramCommandHandlers(CommandHandler):
             SYSTEM_MONITORS_MANAGER_NAME)
         key_gh_mon_man_hb = Keys.get_component_heartbeat(
             GITHUB_MONITORS_MANAGER_NAME)
+        key_node_mon_man_hb = Keys.get_component_heartbeat(
+            NODE_MONITORS_MANAGER_NAME)
         key_data_trans_man_hb = Keys.get_component_heartbeat(
             DATA_TRANSFORMERS_MANAGER_NAME)
         key_sys_alerters_man_hb = Keys.get_component_heartbeat(
@@ -320,6 +323,15 @@ class TelegramCommandHandlers(CommandHandler):
         else:
             status += "- *{}*: {} - No heartbeats yet.\n" \
                 .format(escape_markdown(GITHUB_MONITORS_MANAGER_NAME),
+                        self._get_running_icon(False))
+
+        if self.redis.exists_unsafe(key_node_mon_man_hb):
+            node_mon_man_hb = json.loads(
+                self.redis.get_unsafe(key_node_mon_man_hb).decode())
+            status += self._get_manager_component_hb_status(node_mon_man_hb)
+        else:
+            status += "- *{}*: {} - No heartbeats yet.\n" \
+                .format(escape_markdown(NODE_MONITORS_MANAGER_NAME),
                         self._get_running_icon(False))
 
         if self.redis.exists_unsafe(key_data_trans_man_hb):
