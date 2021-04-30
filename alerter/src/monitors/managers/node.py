@@ -168,6 +168,7 @@ class NodeMonitorsManager(MonitorsManager):
                     log_and_print("Killed the monitor of {} ".format(
                         modified_configs[config_id]['name']), self.logger)
                     continue
+
                 log_and_print(
                     "The configuration for {} was modified. A new monitor with "
                     "the latest configuration will be started.".format(
