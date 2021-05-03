@@ -72,7 +72,7 @@ class TestSystemStore(unittest.TestCase):
         connect_to_rabbit(self.rabbitmq)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False,
                                        True, False, False)
         self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE, False, True,
                                     False, False)

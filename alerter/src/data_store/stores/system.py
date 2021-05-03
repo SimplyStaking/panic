@@ -41,7 +41,7 @@ class SystemStore(Store):
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='direct',
+                                       exchange_type='topic',
                                        passive=False, durable=True,
                                        auto_delete=False, internal=False)
         self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE, passive=False,

@@ -62,7 +62,7 @@ class TestAlertRouter(unittest.TestCase):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic", False,
                                        True,
                                        False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "direct", False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, "topic", False, True,
                                        False, False)
         self.rabbitmq.queue_declare(ALERT_ROUTER_CONFIGS_QUEUE_NAME, False,
                                     True, False, False)

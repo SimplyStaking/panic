@@ -11,16 +11,17 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
-from src.data_transformers.manager import (DataTransformersManager,
-                                           DT_MAN_INPUT_QUEUE,
-                                           DT_MAN_INPUT_ROUTING_KEY)
+from src.data_transformers.manager import DataTransformersManager
 from src.data_transformers.starters import (start_system_data_transformer,
                                             start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
+                                 DT_MAN_HEARTBEAT_QUEUE_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
-                                 HEALTH_CHECK_EXCHANGE)
+                                 HEALTH_CHECK_EXCHANGE,
+                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import infinite_fn
 
@@ -70,14 +71,14 @@ class TestDataTransformersManager(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_declare(
-                DT_MAN_INPUT_QUEUE, False, True, False, False)
+                DT_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
 
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(DT_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(DT_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(DT_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(DT_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
         except Exception as e:
@@ -116,7 +117,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # To make sure that the exchange and queue have not already been
             # declared
             self.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(DT_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(DT_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.rabbitmq.disconnect()
 
@@ -140,14 +141,14 @@ class TestDataTransformersManager(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=DT_MAN_INPUT_ROUTING_KEY,
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_manager.rabbitmq.queue_declare(
-                DT_MAN_INPUT_QUEUE, False, True, False, False)
+                DT_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -176,7 +177,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -475,7 +476,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -521,7 +522,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -565,7 +566,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -610,7 +611,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -649,7 +650,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -687,7 +688,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -723,7 +724,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -751,7 +752,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -770,7 +771,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -790,7 +791,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -810,7 +811,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=DT_MAN_INPUT_ROUTING_KEY)
+                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 

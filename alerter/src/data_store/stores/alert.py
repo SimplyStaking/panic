@@ -34,7 +34,7 @@ class AlertStore(Store):
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='direct', passive=False,
+                                       exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, passive=False,

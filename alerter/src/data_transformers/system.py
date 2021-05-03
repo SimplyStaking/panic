@@ -14,14 +14,14 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants import (ALERT_EXCHANGE, STORE_EXCHANGE,
-                                 RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+                                 RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYSTEM_DT_INPUT_QUEUE_NAME,
+                                 SYSTEM_RAW_DATA_ROUTING_KEY,
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import convert_to_float_if_not_none
-
-SYSTEM_DT_INPUT_QUEUE = 'system_data_transformer_raw_data_queue'
-SYSTEM_DT_INPUT_ROUTING_KEY = 'system'
 
 
 class SystemDataTransformer(DataTransformer):
@@ -41,27 +41,29 @@ class SystemDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE_NAME, False, True,
+                                    False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         SYSTEM_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(SYSTEM_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 SYSTEM_DT_INPUT_ROUTING_KEY)
+                         "key '%s'", SYSTEM_DT_INPUT_QUEUE_NAME,
+                         RAW_DATA_EXCHANGE,
+                         SYSTEM_RAW_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYSTEM_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
+                                 SYSTEM_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(SYSTEM_DT_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(SYSTEM_DT_INPUT_QUEUE_NAME,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
@@ -510,13 +512,16 @@ class SystemDataTransformer(DataTransformer):
             else 'error'
         meta_data = transformed_data[response_index_key]['meta_data']
         system_parent_id = meta_data['system_parent_id']
-        alerting_routing_key = 'alerter.system' + '.{}'.format(system_parent_id)
+        alerting_routing_key = \
+            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
+                system_parent_id)
 
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
                             alerting_routing_key,
                             pika.BasicProperties(delivery_mode=2), True)
 
-        self._push_to_queue(data_for_saving, STORE_EXCHANGE, 'system',
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
+                            alerting_routing_key,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _process_raw_data(self, ch: BlockingChannel,

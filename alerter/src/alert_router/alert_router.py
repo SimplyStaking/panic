@@ -93,7 +93,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         # Declare store exchange just in case it hasn't been declared
         # yet
         self._rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                        exchange_type='direct', passive=False,
+                                        exchange_type='topic', passive=False,
                                         durable=True, auto_delete=False,
                                         internal=False)
 

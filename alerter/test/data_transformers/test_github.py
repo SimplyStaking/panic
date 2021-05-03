@@ -14,14 +14,16 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
-from src.data_transformers.github import (GitHubDataTransformer,
-                                          GITHUB_DT_INPUT_QUEUE,
-                                          GITHUB_DT_INPUT_ROUTING_KEY)
+from src.data_transformers.github import GitHubDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.utils import env
 from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_DT_INPUT_QUEUE_NAME,
+                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                 GITHUB_RAW_DATA_ROUTING_KEY,
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -218,11 +220,11 @@ class TestGitHubDataTransformer(unittest.TestCase):
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_data_transformer.rabbitmq.queue_declare(
-                GITHUB_DT_INPUT_QUEUE, False, True, False, False)
+                GITHUB_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                STORE_EXCHANGE, 'direct', False, True, False, False)
+                STORE_EXCHANGE, 'topic', False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
                 ALERT_EXCHANGE, 'topic', False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
@@ -231,11 +233,11 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)
             self.test_data_transformer.rabbitmq.queue_purge(
-                GITHUB_DT_INPUT_QUEUE)
+                GITHUB_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.queue_delete(
                 self.test_rabbit_queue_name)
             self.test_data_transformer.rabbitmq.queue_delete(
-                GITHUB_DT_INPUT_QUEUE)
+                GITHUB_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_data_transformer.rabbitmq.exchange_delete(
@@ -302,7 +304,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             # declared
             self.rabbitmq.connect()
             self.test_data_transformer.rabbitmq.queue_delete(
-                GITHUB_DT_INPUT_QUEUE)
+                GITHUB_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_data_transformer.rabbitmq.exchange_delete(
@@ -349,14 +351,14 @@ class TestGitHubDataTransformer(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_data_transformer.rabbitmq.basic_publish_confirm(
                 exchange=RAW_DATA_EXCHANGE,
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY,
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_data_transformer.rabbitmq.queue_declare(
-                GITHUB_DT_INPUT_QUEUE, False, True, False, False)
+                GITHUB_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -379,7 +381,8 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_data_transformer.rabbitmq.queue_bind(
                 queue=self.test_rabbit_queue_name,
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker')
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_data_transformer._send_heartbeat(self.test_heartbeat)
 
@@ -630,14 +633,14 @@ class TestGitHubDataTransformer(unittest.TestCase):
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alerter.github',
+            'routing_key': GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
             'data': eval(data_for_alerting),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
-            'routing_key': 'github',
+            'routing_key': GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
             'data': eval(data_for_saving),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
@@ -669,7 +672,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -722,7 +725,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -752,7 +755,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps({'result': self.invalid_transformed_data})
             body_error = json.dumps({'error': self.invalid_transformed_data})
             properties = pika.spec.BasicProperties()
@@ -788,7 +791,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -851,7 +854,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -916,7 +919,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -954,7 +957,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             data_result = copy.deepcopy(self.raw_data_example_result)
             del data_result['result']['meta_data']
             data_error = copy.deepcopy(self.raw_data_example_error)
@@ -1002,7 +1005,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1058,7 +1061,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1105,7 +1108,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -1134,7 +1137,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             data_result = copy.deepcopy(self.raw_data_example_result)
             del data_result['result']['meta_data']
             data_error = copy.deepcopy(self.raw_data_example_error)
@@ -1173,7 +1176,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1208,7 +1211,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1242,7 +1245,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1282,7 +1285,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1324,7 +1327,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1365,7 +1368,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1401,7 +1404,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1437,7 +1440,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1472,7 +1475,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1509,7 +1512,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1544,7 +1547,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1581,7 +1584,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1615,7 +1618,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1651,7 +1654,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1685,7 +1688,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
@@ -1719,7 +1722,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_DT_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_error)
             properties = pika.spec.BasicProperties()
