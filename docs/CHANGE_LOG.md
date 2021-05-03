@@ -4,7 +4,7 @@ Change the contents of this file to this:
 
 ## Unreleased
 
-- Added the ChainlinkNodeMonitor and its tests.
+- Added the ChainlinkNodeMonitor, NodeMonitorsManager and their tests.
 
 ## 0.1.2
 
