@@ -189,15 +189,20 @@ class TestAlertStore(unittest.TestCase):
         self.alert_data_github_2 = copy.deepcopy(self.alert_data_2)
         self.alert_data_github_2['metric'] = 'cannot_access_github'
 
-        # Internal alerts on startup which are used to clear metrics from
-        # REDIS. Note: we only care about alert_code.code and severity for
-        # this alert
+        """
+        Internal alerts on startup which are used to clear metrics from
+        REDIS. Note: we only care about alert_code.code and severity for
+        this alert.
+
+        internal_alert_1 = ComponentReset: reset data for one chain
+        internal_alert_2 = ComponentResetAll: reset data for all chains
+        """
         self.alert_internal_system_1 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id,
+            'origin_id': 'SystemAlertersManager',
             'alert_code': {
-                'name': 'system_manager_started',
-                'code': 'system_manager_started',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -206,10 +211,10 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_system_2 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id_2,
+            'origin_id': 'SystemAlertersManager',
             'alert_code': {
-                'name': 'system_alerter_stopped',
-                'code': 'system_alerter_stopped',
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
             },
             'severity': self.internal,
             'metric': self.metric_2,
@@ -218,10 +223,10 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_system_3 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id_3,
+            'origin_id': 'SystemAlertersManager',
             'alert_code': {
-                'name': 'system_manager_started',
-                'code': 'system_manager_started',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric_3,
@@ -230,10 +235,10 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_1 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id,
+            'origin_id': 'GithubAlerterManager',
             'alert_code': {
-                'name': 'github_manager_started',
-                'code': 'github_manager_started',
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -242,10 +247,10 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_2 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id_2,
+            'origin_id': 'GithubAlerterManager',
             'alert_code': {
-                'name': 'github_manager_started',
-                'code': 'github_manager_started',
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -254,10 +259,10 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_3 = {
             'parent_id': self.parent_id,
-            'origin_id': self.origin_id_3,
+            'origin_id': 'GithubAlerterManager',
             'alert_code': {
-                'name': 'github_manager_stopped',
-                'code': 'github_manager_stopped',
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -904,6 +909,12 @@ class TestAlertStore(unittest.TestCase):
         key = system_data['origin_id']
         self.test_store._process_redis_store(system_data)
 
+        # Check if the data exists inside REDIS
+        self.assertTrue(self.redis.hexists(
+            Keys.get_hash_parent(system_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
+        ))
+
         stored_data = self.redis.hget(
             Keys.get_hash_parent(system_data['parent_id']),
             eval('Keys.get_alert_{}(key)'.format(system_data['metric'])))
@@ -912,12 +923,6 @@ class TestAlertStore(unittest.TestCase):
                          'message': system_data['message']}
 
         self.assertEqual(expected_data, json.loads(stored_data))
-
-        # Check if the data exists inside REDIS
-        self.assertTrue(self.redis.hexists(
-            Keys.get_hash_parent(system_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(system_data['metric']))
-        ))
 
         # Send the internal alert to delete the data
         internal_data = eval(mock_internal_alert)
@@ -941,6 +946,12 @@ class TestAlertStore(unittest.TestCase):
         key = github_data['origin_id']
         self.test_store._process_redis_store(github_data)
 
+        # Check if the data exists inside REDIS
+        self.assertTrue(self.redis.hexists(
+            Keys.get_hash_parent(github_data['parent_id']),
+            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
+        ))
+
         stored_data = self.redis.hget(
             Keys.get_hash_parent(github_data['parent_id']),
             eval('Keys.get_alert_{}(key)'.format(github_data['metric'])))
@@ -949,12 +960,6 @@ class TestAlertStore(unittest.TestCase):
                          'message': github_data['message']}
 
         self.assertEqual(expected_data, json.loads(stored_data))
-
-        # Check if the data exists inside REDIS
-        self.assertTrue(self.redis.hexists(
-            Keys.get_hash_parent(github_data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(github_data['metric']))
-        ))
 
         # Send the internal alert to delete the data
         internal_data = eval(mock_internal_alert)

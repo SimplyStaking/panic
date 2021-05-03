@@ -558,62 +558,62 @@ class SystemAlerter(Alerter):
                                   alert.alert_data)
                 self._critical_sent[meta_data['system_id']][metric_name] = False
                 critical_limiter.reset()
-            elif warning_enabled:
-                # This case would be triggered if only warning is enabled.
+        elif warning_enabled:
+            # This case would be triggered if only warning is enabled.
 
-                if (warning_threshold <= current) and not warning_sent:
-                    alert = increased_above_threshold_alert(
-                        meta_data['system_name'], current,
-                        Severity.WARNING.value,
-                        meta_data['last_monitored'], Severity.WARNING.value,
-                        meta_data['system_parent_id'], meta_data['system_id']
-                    )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._warning_sent[meta_data['system_id']][
-                        metric_name] = True
-                elif current < warning_threshold and warning_sent:
-                    alert = decreased_below_threshold_alert(
-                        meta_data['system_name'], current, Severity.INFO.value,
-                        meta_data['last_monitored'], Severity.WARNING.value,
-                        meta_data['system_parent_id'], meta_data['system_id']
-                    )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._warning_sent[meta_data['system_id']][
-                        metric_name] = False
-            elif critical_enabled:
-                # This case would be triggered if only critical is enabled
+            if (warning_threshold <= current) and not warning_sent:
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current,
+                    Severity.WARNING.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][
+                    metric_name] = True
+            elif current < warning_threshold and warning_sent:
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.WARNING.value,
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._warning_sent[meta_data['system_id']][
+                    metric_name] = False
+        elif critical_enabled:
+            # This case would be triggered if only critical is enabled
 
-                if (critical_threshold <= current) and \
-                        critical_limiter.can_do_task(monitoring_datetime):
-                    alert = increased_above_threshold_alert(
-                        meta_data['system_name'], current,
-                        Severity.CRITICAL.value,
-                        meta_data['last_monitored'], Severity.CRITICAL.value,
-                        meta_data['system_parent_id'], meta_data['system_id']
-                    )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    critical_limiter.set_last_time_that_did_task(
-                        monitoring_datetime)
-                    self._critical_sent[meta_data['system_id']][
-                        metric_name] = True
-                elif current < critical_threshold and critical_sent:
-                    alert = decreased_below_threshold_alert(
-                        meta_data['system_name'], current, Severity.INFO.value,
-                        meta_data['last_monitored'], Severity.CRITICAL.value,
-                        meta_data['system_parent_id'], meta_data['system_id']
-                    )
-                    data_for_alerting.append(alert.alert_data)
-                    self.logger.debug("Successfully classified alert %s",
-                                      alert.alert_data)
-                    self._critical_sent[meta_data['system_id']][
-                        metric_name] = False
-                    critical_limiter.reset()
+            if (critical_threshold <= current) and \
+                    critical_limiter.can_do_task(monitoring_datetime):
+                alert = increased_above_threshold_alert(
+                    meta_data['system_name'], current,
+                    Severity.CRITICAL.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                critical_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+                self._critical_sent[meta_data['system_id']][
+                    metric_name] = True
+            elif current < critical_threshold and critical_sent:
+                alert = decreased_below_threshold_alert(
+                    meta_data['system_name'], current, Severity.INFO.value,
+                    meta_data['last_monitored'], Severity.CRITICAL.value,
+                    meta_data['system_parent_id'], meta_data['system_id']
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.logger.debug("Successfully classified alert %s",
+                                  alert.alert_data)
+                self._critical_sent[meta_data['system_id']][
+                    metric_name] = False
+                critical_limiter.reset()
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the

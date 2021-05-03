@@ -3,50 +3,33 @@ from src.alerter.alerts.alert import Alert
 from src.alerter.metric_code import InternalMetricCode
 from src.alerter.alert_severities import Severity
 
+"""
+These internal alerts are used to send data from the alerter to the data store
+to notify the data store what needs to be changed in REDIS.
 
-# Alert that is sent on Manager start to clear all metrics for all chains from
-# Redis
-class SystemManagerStarted(Alert):
+ComponentReset is used to reset metrics for one chain, this is used when
+an individual alerter starts/stops
+
+ComponentResetAll is used to reset metrics for all chains, this is used when
+an alerter manager is started.
+"""
+
+
+class ComponentReset(Alert):
     def __init__(self, origin_name: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
-            InternalAlertCode.SystemManagerStarted,
-            "Manager: {} has started.".format(origin_name),
+            InternalAlertCode.ComponentReset,
+            "Component: {} has been reset for one chain.".format(origin_name),
             Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.SystemManagerStarted)
+            InternalMetricCode.ComponentReset)
 
 
-# Alert that is sent to clear all metrics for one chain from Redis when it
-# stops
-class SystemAlerterStopped(Alert):
+class ComponentResetAll(Alert):
     def __init__(self, origin_name: str, timestamp: float,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
-            InternalAlertCode.SystemAlerterStopped,
-            "Alerter: {} has stopped.".format(origin_name),
+            InternalAlertCode.ComponentResetAll,
+            "Component: {} has been reset for all chains.".format(origin_name),
             Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.SystemAlerterStopped)
-
-
-# Alert that is sent on Manager start to clear all metrics for all chains from
-# Redis
-class GithubManagerStarted(Alert):
-    def __init__(self, origin_name: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            InternalAlertCode.GithubManagerStarted,
-            "Manager: {} has started.".format(origin_name),
-            Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.GithubManagerStarted)
-
-
-# Alert that is sent to clear all metrics for all chains from Redis when the
-# Manager stops
-class GithubManagerStopped(Alert):
-    def __init__(self, origin_name: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            InternalAlertCode.GithubManagerStopped,
-            "Alerter: {} has stopped.".format(origin_name),
-            Severity.INTERNAL.value, timestamp, parent_id, origin_id,
-            InternalMetricCode.GithubManagerStopped)
+            InternalMetricCode.ComponentResetAll)

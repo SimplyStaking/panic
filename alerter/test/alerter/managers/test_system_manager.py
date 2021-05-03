@@ -304,34 +304,16 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_start_consuming.assert_called_once()
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.managers.system.SystemManagerStarted")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
-    def test_initialise_rabbitmq_creates_system_manager_started_alert(
-            self, mock_push_latest_data_to_queue_and_send,
-            mock_system_started) -> None:
-
-        self.test_manager._initialise_rabbitmq()
-        type(mock_system_started.return_value).alert_data = \
-            mock.PropertyMock(return_value={})
-        mock_system_started.assert_called_once_with(
-            type(self.test_manager).__name__,
-            datetime.now().timestamp(),
-            type(self.test_manager).__name__,
-            type(self.test_manager).__name__
-        )
-        mock_push_latest_data_to_queue_and_send.assert_called_once()
-
-    @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing, 'Process')
-    @mock.patch("src.alerter.managers.system.SystemAlerterStopped")
+    @mock.patch("src.alerter.managers.system.ComponentReset")
     @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_terminate_and_join_chain_alerter_processes_creates_alert(
             self, mock_push_latest_data_to_queue_and_send,
-            mock_system_stopped, mock_process, mock_join,
+            mock_component_reset, mock_process, mock_join,
             mock_terminate) -> None:
-        type(mock_system_stopped.return_value).alert_data = \
+        type(mock_component_reset.return_value).alert_data = \
             mock.PropertyMock(return_value={})
 
         # Setting it as Data as we don't need to use it
@@ -343,7 +325,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.test_manager._terminate_and_join_chain_alerter_processes(
             "chain_name")
 
-        mock_system_stopped.assert_called_once_with(
+        mock_component_reset.assert_called_once_with(
             "chain_name",
             datetime.now().timestamp(),
             self.parent_id_1,
@@ -351,11 +333,9 @@ class TestSystemAlertersManager(unittest.TestCase):
         )
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(SystemAlertersManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self, mock_process_ping,
-            mock_push_latest_data_to_queue_and_send) -> None:
+            self, mock_process_ping) -> None:
         mock_process_ping.return_value = None
         try:
             # To make sure that there is no connection/channel already
@@ -412,13 +392,10 @@ class TestSystemAlertersManager(unittest.TestCase):
                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
                 False)
             self.assertEqual(0, res.method.message_count)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
-    def test_send_heartbeat_sends_a_heartbeat_correctly(
-        self, mock_push_latest_data_to_queue_and_send) -> None:
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # heartbeat is received
@@ -450,7 +427,6 @@ class TestSystemAlertersManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1128,7 +1104,6 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1136,7 +1111,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack, mock_push_latest_data_to_queue_and_send) -> None:
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1203,12 +1178,10 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1216,7 +1189,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack, mock_push_latest_data_to_queue_and_send) -> None:
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1282,12 +1255,10 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1295,7 +1266,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack, mock_push_latest_data_to_queue_and_send) -> None:
+            mock_ack) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1362,7 +1333,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1487,13 +1457,11 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
     def test_process_ping_does_not_send_hb_if_processing_fails(
-            self, mock_process, mock_start, is_alive_mock,
-            mock_push_latest_data_to_queue_and_send) -> None:
+            self, mock_process, mock_start, is_alive_mock) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat. In this test we will
         # check that no heartbeat is sent when mocking a raised exception.
@@ -1536,13 +1504,11 @@ class TestSystemAlertersManager(unittest.TestCase):
                 auto_delete=False, passive=True
             )
             self.assertEqual(0, res.method.message_count)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-            self, mock_push_latest_data_to_queue_and_send) -> None:
+            self) -> None:
         try:
             self.test_manager._initialise_rabbitmq()
 
@@ -1554,14 +1520,12 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(SystemAlertersManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_amqp_connection_err_on_connection_err(
-            self, hb_mock, mock_push_latest_data_to_queue_and_send) -> None:
+            self, hb_mock) -> None:
         hb_mock.side_effect = pika.exceptions.AMQPConnectionError('test')
         try:
             self.test_manager._initialise_rabbitmq()
@@ -1575,14 +1539,12 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(SystemAlertersManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_amqp_chan_err_on_chan_err(
-            self, hb_mock, mock_push_latest_data_to_queue_and_send) -> None:
+            self, hb_mock) -> None:
         hb_mock.side_effect = pika.exceptions.AMQPChannelError('test')
         try:
             self.test_manager._initialise_rabbitmq()
@@ -1596,14 +1558,12 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_manager._process_ping, blocking_channel,
                               method, properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(SystemAlertersManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exception_on_unexpected_exception(
-            self, hb_mock, mock_push_latest_data_to_queue_and_send) -> None:
+            self, hb_mock) -> None:
         hb_mock.side_effect = self.test_exception
         try:
             self.test_manager._initialise_rabbitmq()
@@ -1616,6 +1576,5 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             self.assertRaises(PANICException, self.test_manager._process_ping,
                               blocking_channel, method, properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
         except Exception as e:
             self.fail("Test failed: {}".format(e))

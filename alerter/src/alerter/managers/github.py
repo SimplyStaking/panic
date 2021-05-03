@@ -17,8 +17,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GITHUB_MANAGER_INPUT_QUEUE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
                                  ALERT_EXCHANGE)
-from src.alerter.alerts.internal_alerts import (GithubManagerStarted,
-                                                GithubManagerStopped)
+from src.alerter.alerts.internal_alerts import (ComponentReset)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -58,11 +57,6 @@ class GithubAlerterManager(AlertersManager):
         # Declare publishing intentions
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
         self.rabbitmq.confirm_delivery()
-        alert = GithubManagerStarted(type(self).__name__,
-                                     datetime.now().timestamp(),
-                                     type(self).__name__,
-                                     type(self).__name__)
-        self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -105,9 +99,11 @@ class GithubAlerterManager(AlertersManager):
             raise e
 
     def _start_alerters_processes(self) -> None:
-        # Start the system data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
+        """
+        Start the system data transformer in a separate process if it is not
+        yet started or it is not alive. This must be done in case of a
+        restart of the manager.
+        """
         if GITHUB_ALERTER_NAME not in self.alerter_process_dict or \
                 not self.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive():
             log_and_print("Attempting to start the {}.".format(
@@ -118,6 +114,16 @@ class GithubAlerterManager(AlertersManager):
             github_alerter_process.start()
             self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
                 github_alerter_process
+
+            """
+            We must clear out all the metrics which are found in REDIS,
+            sending this alert to the data store will achieve this.
+            """
+            alert = ComponentReset(type(self).__name__,
+                                   datetime.now().timestamp(),
+                                   type(self).__name__,
+                                   type(self).__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
@@ -148,12 +154,12 @@ class GithubAlerterManager(AlertersManager):
                           self.logger)
             process.terminate()
             process.join()
+            alert = ComponentReset(type(self).__name__,
+                                   datetime.now().timestamp(),
+                                   type(self).__name__,
+                                   type(self).__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
-        alert = GithubManagerStopped(type(self).__name__,
-                                     datetime.now().timestamp(),
-                                     type(self).__name__,
-                                     type(self).__name__)
-        self._push_latest_data_to_queue_and_send(alert.alert_data)
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

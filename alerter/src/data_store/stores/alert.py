@@ -149,10 +149,12 @@ class AlertStore(Store):
 
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
-            if alert['alert_code']['code'] == \
-                    InternalAlertCode.SystemManagerStarted.value:
+            if (alert['alert_code']['code'] ==
+                InternalAlertCode.ComponentResetAll.value and
+                    alert['origin_id'] == 'SystemAlertersManager'):
+
                 """
-                The `SystemManagerStarted` alert indicates that PANIC has
+                The `ComponentResetAll` alert indicates that PANIC has
                 started, or restarted. This means that we cannot be sure if the
                 configurations are the same as the previous run and the Alert
                 Metrics should be cleared for each CHAIN.
@@ -172,10 +174,12 @@ class AlertStore(Store):
                                                                         key):
                             self.redis.hremove(chain, key)
 
-            elif alert['alert_code']['code'] == \
-                    InternalAlertCode.SystemAlerterStopped.value:
+            elif (alert['alert_code']['code'] ==
+                  InternalAlertCode.ComponentReset.value and
+                  alert['origin_id'] == 'SystemAlertersManager'):
+
                 """
-                This internal alert is sent whenever a System Alerter is
+                This internal alert is sent whenever an Alerter is
                 terminated due to change in configuration or shut down signal.
                 """
                 # For the specified chain we need to load all the keys and only
@@ -189,11 +193,10 @@ class AlertStore(Store):
                         self.redis.hremove(chain_hash, key)
 
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.GithubManagerStarted.value or
-                  alert['alert_code']['code'] ==
-                  InternalAlertCode.GithubManagerStopped.value):
+                  InternalAlertCode.ComponentReset.value and
+                  alert['origin_id'] == 'GithubAlerterManager'):
                 """
-                The `GithubManagerStarted` or `GithubManagerStopped` alert
+                The `ComponentReset` alert for the `GithubAlerterManager`
                 indicates that PANIC has started, or restarted. This means
                 that we cannot be sure if the configurations are the same as
                 the previous run and the Alert Metrics should be cleared for

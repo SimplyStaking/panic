@@ -10,8 +10,8 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.alerter.alerts.internal_alerts import (SystemManagerStarted,
-                                                SystemAlerterStopped)
+from src.alerter.alerts.internal_alerts import (ComponentResetAll,
+                                                ComponentReset)
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
@@ -98,14 +98,6 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
-        # Send an internal alert to reset system alert REDIS metrics for all
-        # chains.
-        alert = SystemManagerStarted(type(self).__name__,
-                                     datetime.now().timestamp(),
-                                     type(self).__name__,
-                                     type(self).__name__)
-        self._push_latest_data_to_queue_and_send(alert.alert_data)
-
     def _terminate_and_join_chain_alerter_processes(
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
@@ -116,10 +108,10 @@ class SystemAlertersManager(AlertersManager):
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
                 # Send an internal alert to reset all the REDIS metrics for
                 # this chain
-                alert = SystemAlerterStopped(chain,
-                                             datetime.now().timestamp(),
-                                             parent_id,
-                                             type(self).__name__)
+                alert = ComponentReset(chain,
+                                       datetime.now().timestamp(),
+                                       parent_id,
+                                       type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
 
                 # Terminate the process and join it
@@ -258,6 +250,13 @@ class SystemAlertersManager(AlertersManager):
         while True:
             try:
                 self._listen_for_data()
+                # Send an internal alert to reset system alert REDIS metrics
+                # for all chains.
+                alert = ComponentResetAll(type(self).__name__,
+                                          datetime.now().timestamp(),
+                                          type(self).__name__,
+                                          type(self).__name__)
+                self._push_latest_data_to_queue_and_send(alert.alert_data)
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
