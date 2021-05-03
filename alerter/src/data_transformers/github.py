@@ -14,14 +14,13 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 GITHUB_DT_INPUT_QUEUE,
+                                 GITHUB_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import (convert_to_float_if_not_none,
                              convert_to_int_if_not_none)
-
-GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
-GITHUB_DT_INPUT_ROUTING_KEY = 'github'
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -46,9 +45,9 @@ class GitHubDataTransformer(DataTransformer):
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         GITHUB_DT_INPUT_ROUTING_KEY)
+                         GITHUB_RAW_DATA_ROUTING_KEY)
         self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 GITHUB_DT_INPUT_ROUTING_KEY)
+                                 GITHUB_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)

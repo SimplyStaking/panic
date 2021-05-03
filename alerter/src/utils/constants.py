@@ -5,17 +5,40 @@ STORE_EXCHANGE = 'store'
 ALERT_EXCHANGE = 'alert'
 HEALTH_CHECK_EXCHANGE = 'health_check'
 
+# Queues
+CONFIGS_MANAGER_HEARTBEAT_QUEUE = "config_heartbeat_queue"
+GH_MON_MAN_HEARTBEAT_QUEUE_NAME = 'github_monitors_manager_heartbeat_queue'
+GH_MON_MAN_CONFIGS_QUEUE_NAME = 'github_monitors_manager_configs_queue'
+SYS_MON_MAN_HEARTBEAT_QUEUE_NAME = 'system_monitors_manager_heartbeat_queue'
+SYS_MON_MAN_CONFIGS_QUEUE_NAME = 'system_monitors_manager_configs_queue'
+NODE_MON_MAN_CONFIGS_QUEUE_NAME = 'node_monitors_manager_configs_queue'
+NODE_MON_MAN_HEARTBEAT_QUEUE_NAME = 'node_monitors_manager_heartbeat_queue'
+GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_input_queue'
+ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
+ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
+ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
+
+# Routing Keys
+SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
+CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
+GITHUB_RAW_DATA_ROUTING_KEY = 'github'
+GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
+GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.repos_config'
+SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.systems_config'
+SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.systems_config'
+NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
+GH_TRANS_DATA_ROUTING_KEY = 'trans.github'
+ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
+ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert_router.*'
+HEARTBEAT_INPUT_ROUTING_KEY = 'ping'
+HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
+HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
+
 # Queues that need to be declared in the run_alerter to avoid configs being sent
 # while a component has not started yet. Basically these are all config queues.
-ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_alerters_manager_configs_queue'
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
-GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
-    'github_monitors_manager_configs_queue'
-SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
-    'system_monitors_manager_configs_queue'
-NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = 'node_monitors_manager_configs_queue'
 
 # Routing keys and queue names
 GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
@@ -53,10 +76,6 @@ TCH_INPUT_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
-
-NODE_MON_MAN_INPUT_QUEUE = 'node_monitors_manager_ping_queue'
-NODE_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-NODE_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
 
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10

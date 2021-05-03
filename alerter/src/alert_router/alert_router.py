@@ -20,15 +20,15 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (
     CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-    ALERT_ROUTER_CONFIGS_QUEUE_NAME
-)
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME,
+    ALERT_ROUTER_CONFIGS_ROUTING_KEY, ALERT_ROUTER_INPUT_QUEUE_NAME,
+    ALERT_ROUTER_INPUT_ROUTING_KEY, ALERT_ROUTER_HEARTBEAT_QUEUE_NAME,
+    HEARTBEAT_ROUTING_KEY)
 from src.utils.exceptions import (
     MessageWasNotDeliveredException, MissingKeyInConfigException
 )
 from src.utils.logging import log_and_print
 
-_ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
-_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 _ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
@@ -73,7 +73,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
 
         self._declare_exchange_and_bind_queue(
             ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
-            'channels.*'
+            ALERT_ROUTER_CONFIGS_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
             queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
@@ -81,11 +81,11 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
-            'alert_router.*'
+            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
+            ALERT_ROUTER_INPUT_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
-            queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
+            queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
             on_message_callback=self._process_alert, auto_ack=False,
             exclusive=False, consumer_tag=None
         )
@@ -98,12 +98,13 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
                                         internal=False)
 
         self._declare_exchange_and_bind_queue(
-            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic', 'ping'
+            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic',
+            HEARTBEAT_ROUTING_KEY
         )
 
         self._logger.debug("Declaring consuming intentions")
-        self._rabbitmq.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
-                                     True, False, None)
+        self._rabbitmq.basic_consume(ALERT_ROUTER_HEARTBEAT_QUEUE_NAME,
+                                     self._process_ping, True, False, None)
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
                                          exchange_name: str, exchange_type: str,

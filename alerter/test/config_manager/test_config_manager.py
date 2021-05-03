@@ -18,10 +18,10 @@ from watchdog.events import (
 from watchdog.observers.polling import PollingObserver
 
 from src.config_manager import ConfigsManager
-from src.config_manager.config_manager import CONFIG_PING_QUEUE
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 CONFIGS_MANAGER_HEARTBEAT_QUEUE)
 from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
@@ -53,7 +53,7 @@ class TestConfigsManager(unittest.TestCase):
         # flush and consume all from rabbit queues and exchanges
         connect_to_rabbit(self.rabbitmq)
 
-        queues = [CONFIG_PING_QUEUE]
+        queues = [CONFIGS_MANAGER_HEARTBEAT_QUEUE]
         for queue in queues:
             delete_queue_if_exists(self.rabbitmq, queue)
 
@@ -76,7 +76,7 @@ class TestConfigsManager(unittest.TestCase):
         )
 
     @parameterized.expand([
-        (CONFIG_PING_QUEUE,),
+        (CONFIGS_MANAGER_HEARTBEAT_QUEUE,),
     ])
     @mock.patch.object(RabbitMQApi, "confirm_delivery")
     @mock.patch.object(RabbitMQApi, "basic_consume")

@@ -23,10 +23,11 @@ from src.monitors.starters import start_node_monitor
 from src.utils import env
 from src.utils.constants import (NODE_MONITOR_NAME_TEMPLATE,
                                  HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 NODE_MON_MAN_INPUT_QUEUE,
-                                 NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 NODE_MON_MAN_INPUT_ROUTING_KEY,
-                                 NODE_MON_MAN_ROUTING_KEY_CHAINS)
+                                 NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                 NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, disconnect_from_rabbit,
@@ -174,9 +175,9 @@ class TestNodeMonitorsManager(unittest.TestCase):
         connect_to_rabbit(self.test_manager.rabbitmq)
         delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               NODE_MON_MAN_INPUT_QUEUE)
+                               NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+                               NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         delete_exchange_if_exists(self.test_manager.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
         delete_exchange_if_exists(self.test_manager.rabbitmq, CONFIG_EXCHANGE)
@@ -232,9 +233,9 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # To make sure that the exchanges and queues have not already been
         # declared
         self.rabbitmq.connect()
-        self.test_manager.rabbitmq.queue_delete(NODE_MON_MAN_INPUT_QUEUE)
         self.test_manager.rabbitmq.queue_delete(
-            NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+            NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.test_manager.rabbitmq.queue_delete(NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
         self.rabbitmq.disconnect()
@@ -259,24 +260,22 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # this point.
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY,
-            body=self.test_data_str, is_body_dict=False,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY, body=self.test_data_str,
+            is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
-            routing_key=NODE_MON_MAN_ROUTING_KEY_CHAINS,
+            routing_key=NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
 
         # Re-declare queue to get the number of messages
         res = self.test_manager.rabbitmq.queue_declare(
-            NODE_MON_MAN_INPUT_QUEUE, False, True, False, False)
+            NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
         self.assertEqual(0, res.method.message_count)
         res = self.test_manager.rabbitmq.queue_declare(
-            NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
-            False)
+            NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
         self.assertEqual(0, res.method.message_count)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
@@ -295,7 +294,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_manager.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.manager')
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
         self.test_manager._send_heartbeat(self.test_heartbeat)
 
         # By re-declaring the queue again we can get the number of messages
@@ -713,7 +712,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -761,7 +760,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -792,7 +791,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -811,7 +810,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -834,7 +833,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=NODE_MON_MAN_INPUT_ROUTING_KEY)
+            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
