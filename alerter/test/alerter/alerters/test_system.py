@@ -1061,11 +1061,6 @@ class TestSystemAlerter(unittest.TestCase):
             mock_cpu_usage_decrease.assert_not_called()
             mock_ofd_decrease.assert_not_called()
 
-            call_1 = call(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id)
-
             eval(mock_param).assert_called_once_with(
                 self.system_name, data[metric_param]['current'],
                 self.critical, meta_data['last_monitored'], self.critical,

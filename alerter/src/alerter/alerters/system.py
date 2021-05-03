@@ -492,7 +492,7 @@ class SystemAlerter(Alerter):
             # value.
 
             if (warning_threshold <= current < critical_threshold) and \
-                    not warning_sent and current >= previous:
+                    not warning_sent:
                 # We do not use previous here so that an alert is raised if the
                 # alerter is restarted with a different configuration
 
@@ -550,8 +550,7 @@ class SystemAlerter(Alerter):
         elif warning_enabled:
             # This case would be triggered if only warning is enabled.
 
-            if (warning_threshold <= current) and not warning_sent and \
-                    current >= previous:
+            if (warning_threshold <= current) and not warning_sent:
                 alert = increased_above_threshold_alert(
                     meta_data['system_name'], current, Severity.WARNING.value,
                     meta_data['last_monitored'], Severity.WARNING.value,
