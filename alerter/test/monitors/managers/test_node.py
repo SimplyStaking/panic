@@ -25,7 +25,7 @@ from src.utils.constants import (NODE_MONITOR_NAME_TEMPLATE,
                                  HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                  NODE_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
@@ -260,7 +260,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # this point.
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY, body=self.test_data_str,
+            routing_key=PING_ROUTING_KEY, body=self.test_data_str,
             is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
@@ -711,8 +711,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # process_ping function
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
-        method = pika.spec.Basic.Deliver(
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -759,8 +758,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # process_ping function
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
-        method = pika.spec.Basic.Deliver(
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -790,8 +788,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # process_ping function
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
-        method = pika.spec.Basic.Deliver(
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -809,8 +806,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # are no consumers of the heartbeat.
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
-        method = pika.spec.Basic.Deliver(
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 
@@ -832,8 +828,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         mock_send_hb.side_effect = exception_instance
         self.test_manager._initialise_rabbitmq()
         blocking_channel = self.test_manager.rabbitmq.channel
-        method = pika.spec.Basic.Deliver(
-            routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
         body = 'ping'
         properties = pika.spec.BasicProperties()
 

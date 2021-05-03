@@ -19,7 +19,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                  GITHUB_MONITOR_NAME_TEMPLATE,
                                  GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
 from src.utils.exceptions import MessageWasNotDeliveredException
@@ -51,10 +51,9 @@ class GitHubMonitorsManager(MonitorsManager):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                         HEALTH_CHECK_EXCHANGE, HEARTBEAT_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.rabbitmq.queue_bind(GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
         self.rabbitmq.basic_consume(GH_MON_MAN_HEARTBEAT_QUEUE_NAME,

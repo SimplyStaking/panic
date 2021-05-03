@@ -23,8 +23,7 @@ from src.utils.constants import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
                                  HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 GITHUB_MONITOR_NAME_TEMPLATE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 GITHUB_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn
@@ -228,8 +227,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(

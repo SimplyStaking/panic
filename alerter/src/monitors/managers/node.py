@@ -19,8 +19,7 @@ from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
-                                 CONFIG_EXCHANGE,
+                                 PING_ROUTING_KEY, CONFIG_EXCHANGE,
                                  NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  NODE_MONITOR_NAME_TEMPLATE)
@@ -54,10 +53,9 @@ class NodeMonitorsManager(MonitorsManager):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                         HEALTH_CHECK_EXCHANGE, HEARTBEAT_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.rabbitmq.queue_bind(NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
         self.rabbitmq.basic_consume(NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,

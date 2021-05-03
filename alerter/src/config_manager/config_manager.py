@@ -23,7 +23,7 @@ from src.utils import routing_key
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  RE_INITIALISE_SLEEPING_PERIOD,
                                  CONFIGS_MANAGER_HEARTBEAT_QUEUE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitialisedException)
@@ -124,7 +124,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
                     "routing key '%s", CONFIGS_MANAGER_HEARTBEAT_QUEUE,
-                    HEALTH_CHECK_EXCHANGE, HEARTBEAT_INPUT_ROUTING_KEY)
+                    HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
 
                 self._heartbeat_rabbit.queue_declare(
                     CONFIGS_MANAGER_HEARTBEAT_QUEUE, False, True, False, False)
@@ -133,7 +133,7 @@ class ConfigsManager(PublisherSubscriberComponent):
 
                 self._heartbeat_rabbit.queue_bind(
                     CONFIGS_MANAGER_HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                    HEARTBEAT_INPUT_ROUTING_KEY)
+                    PING_ROUTING_KEY)
                 self._logger.debug("Bound queue '%s' to exchange '%s'",
                                    CONFIGS_MANAGER_HEARTBEAT_QUEUE,
                                    HEALTH_CHECK_EXCHANGE)

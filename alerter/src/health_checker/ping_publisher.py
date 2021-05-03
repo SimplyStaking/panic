@@ -11,7 +11,7 @@ import pika.exceptions
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -66,10 +66,9 @@ class PingPublisher:
 
     def ping(self) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='ping', body='ping',
-            is_body_dict=False,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key=PING_ROUTING_KEY,
+            body='ping', is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", HEALTH_CHECK_EXCHANGE)
 
     def start(self) -> None:

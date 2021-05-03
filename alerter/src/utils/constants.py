@@ -19,6 +19,7 @@ DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
+HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
@@ -33,7 +34,8 @@ GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert_router.*'
-HEARTBEAT_INPUT_ROUTING_KEY = 'ping'
+PING_ROUTING_KEY = 'ping'
+HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
 

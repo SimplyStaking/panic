@@ -21,7 +21,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  SYSTEM_MONITOR_NAME_TEMPLATE,
                                  SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
@@ -232,8 +232,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(

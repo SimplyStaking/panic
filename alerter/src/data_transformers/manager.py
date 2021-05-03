@@ -17,7 +17,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  SYSTEM_DATA_TRANSFORMER_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  DT_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -54,12 +54,11 @@ class DataTransformersManager(PublisherSubscriberComponent):
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", DT_MAN_HEARTBEAT_QUEUE_NAME,
-                         HEALTH_CHECK_EXCHANGE, HEARTBEAT_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.rabbitmq.queue_bind(DT_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          HEARTBEAT_INPUT_ROUTING_KEY)
+                          PING_ROUTING_KEY)
         self.rabbitmq.basic_consume(DT_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 

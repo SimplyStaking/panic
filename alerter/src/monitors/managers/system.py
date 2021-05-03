@@ -19,8 +19,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 SYSTEM_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -51,12 +50,11 @@ class SystemMonitorsManager(MonitorsManager):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                         HEALTH_CHECK_EXCHANGE, HEARTBEAT_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.rabbitmq.queue_bind(SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          HEARTBEAT_INPUT_ROUTING_KEY)
+                          PING_ROUTING_KEY)
         self.rabbitmq.basic_consume(SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 

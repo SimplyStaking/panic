@@ -20,7 +20,7 @@ from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
                                  DT_MAN_HEARTBEAT_QUEUE_NAME,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import infinite_fn
@@ -141,8 +141,8 @@ class TestDataTransformersManager(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
@@ -475,8 +475,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -521,8 +520,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -565,8 +563,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -610,8 +607,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -649,8 +645,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -687,8 +682,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -723,8 +717,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -751,8 +744,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -770,8 +762,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -790,8 +781,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -810,8 +800,7 @@ class TestDataTransformersManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_INPUT_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
