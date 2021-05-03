@@ -19,7 +19,7 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
     ValidUrlAlert, MetricFoundAlert)
 from src.alerter.metric_code import SystemMetricCode
-from src.alerter.alert_severties import Severity
+from src.alerter.alert_severities import Severity
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.alert import floaty

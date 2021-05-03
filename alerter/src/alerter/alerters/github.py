@@ -10,7 +10,7 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert,
                                               GitHubPageNowAccessibleAlert)
-from src.alerter.alert_severties import Severity
+from src.alerter.alert_severities import Severity
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GITHUB_ALERTER_INPUT_QUEUE,

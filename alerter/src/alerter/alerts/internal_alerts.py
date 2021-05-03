@@ -1,7 +1,7 @@
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alerts.alert import Alert
 from src.alerter.metric_code import InternalMetricCode
-from src.alerter.alert_severties import Severity
+from src.alerter.alert_severities import Severity
 
 
 # Alert that is sent on Manager start to clear all metrics for all chains from
