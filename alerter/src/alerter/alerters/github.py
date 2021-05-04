@@ -14,7 +14,8 @@ from src.alerter.alert_severities import Severity
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GITHUB_ALERTER_INPUT_QUEUE_NAME,
-                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                 GITHUB_ALERT_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 
@@ -176,7 +177,7 @@ class GithubAlerter(Alerter):
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
-                'routing_key': 'alert_router.github',
+                'routing_key': GITHUB_ALERT_ROUTING_KEY,
                 'data': copy.deepcopy(alert),
                 'properties': pika.BasicProperties(delivery_mode=2),
                 'mandatory': True})
