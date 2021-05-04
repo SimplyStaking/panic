@@ -10,15 +10,18 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
-from unittest.mock import call
 
 from src.alerter.alerters.system import SystemAlerter
-from src.alerter.metric_code import SystemMetricCode
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
+from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
+                                 SYSTEM_ALERT_ROUTING_KEY,
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -44,12 +47,15 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_name = 'test_system'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.test_routing_key = 'test_alert_router.system'
-        self.queue_used = "system_alerter_queue_" + self.parent_id
+        self.test_output_routing_key = 'test_alert.system'
+        self.queue_used = SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE.format(
+            self.parent_id)
         self.target_queue_used = "alert_router_queue"
-        self.routing_key = "alerter.system." + self.parent_id
-        self.bad_routing_key = "alerter.system.not_real"
-        self.alert_router_routing_key = 'alert_router.system'
+        self.input_routing_key = \
+            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(self.parent_id)
+        self.bad_output_routing_key = "alert.system.not_real"
+        self.output_routing_key = SYSTEM_ALERT_ROUTING_KEY.format(
+            self.parent_id)
         self.heartbeat_queue = 'heartbeat queue'
 
         self.heartbeat_test = {
@@ -117,7 +123,7 @@ class TestSystemAlerter(unittest.TestCase):
         )
 
         """
-        ############# Alerts config warning alerts disabled ######################
+        ############# Alerts config warning alerts disabled ####################
         """
 
         self.base_config['warning_enabled'] = str(
@@ -158,7 +164,7 @@ class TestSystemAlerter(unittest.TestCase):
         )
 
         """
-        ############# Alerts config critical alerts disabled ######################
+        ############# Alerts config critical alerts disabled ###################
         """
         self.base_config['warning_enabled'] = self.warning_enabled
         self.base_config['critical_enabled'] = str(
@@ -628,10 +634,10 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
         ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
         ('system_storage_usage', 'mock_storage_usage_increase', '46',
-            'self.warning'),
+         'self.warning'),
         ('system_storage_usage', 'mock_storage_usage_increase', '56',
-            'self.critical'),
-        ])
+         'self.critical'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -657,7 +663,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_no_increase_or_decrease_alerts_then_warning_or_critical_alert(
-        self, metric_param, mock_param, mock_pad, mock_severity,
+            self, metric_param, mock_param, mock_pad, mock_severity,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -727,10 +733,10 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
         ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
         ('system_storage_usage', 'mock_storage_usage_increase', '46',
-            'self.warning'),
+         'self.warning'),
         ('system_storage_usage', 'mock_storage_usage_increase', '56',
-            'self.critical'),
-        ])
+         'self.critical'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -756,7 +762,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_alerts_above_warning_and_critical_threshold(
-        self, metric_param, mock_param, mock_pad, mock_severity,
+            self, metric_param, mock_param, mock_pad, mock_severity,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -785,12 +791,12 @@ class TestSystemAlerter(unittest.TestCase):
     @parameterized.expand([
         ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
         ('system_cpu_usage', 'mock_cpu_usage_increase',
-            'mock_cpu_usage_decrease'),
+         'mock_cpu_usage_decrease'),
         ('system_ram_usage', 'mock_ram_usage_increase',
-            'mock_ram_usage_decrease'),
+         'mock_ram_usage_decrease'),
         ('system_storage_usage', 'mock_storage_usage_increase',
-            'mock_storage_usage_decrease'),
-        ])
+         'mock_storage_usage_decrease'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -816,7 +822,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_info_alert_on_decrease(
-        self, metric_param, mock_param, mock_param_2,
+            self, metric_param, mock_param, mock_param_2,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -862,7 +868,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -888,7 +894,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_critical_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -938,7 +944,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -964,7 +970,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alerts_then_increase_in_warning_no_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1012,12 +1018,12 @@ class TestSystemAlerter(unittest.TestCase):
     @parameterized.expand([
         ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
         ('system_cpu_usage', 'mock_cpu_usage_increase',
-            'mock_cpu_usage_decrease'),
+         'mock_cpu_usage_decrease'),
         ('system_ram_usage', 'mock_ram_usage_increase',
-            'mock_ram_usage_decrease'),
+         'mock_ram_usage_decrease'),
         ('system_storage_usage', 'mock_storage_usage_increase',
-            'mock_storage_usage_decrease'),
-        ])
+         'mock_storage_usage_decrease'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1043,7 +1049,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
-        self, metric_param, mock_param, mock_param_2,
+            self, metric_param, mock_param, mock_param_2,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1097,7 +1103,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1126,7 +1132,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_no_alerts_before_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1156,7 +1162,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['current'] = self.percent_usage + 58
         data[metric_param]['previous'] = self.percent_usage + 56
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds - 1
+                                      self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1179,7 +1185,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1208,7 +1214,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1236,7 +1242,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds
+                                      self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1261,7 +1267,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1290,7 +1296,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1314,7 +1320,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds
+                                      self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1387,7 +1393,7 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
                 autospec=True)
     def test_system_went_down_at_no_alert_below_warning_threshold(
-        self, mock_system_is_down) -> None:
+            self, mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1409,7 +1415,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
-            self.warning_threshold_seconds
+                                    self.warning_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
@@ -1428,7 +1434,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
-            self.critical_threshold_seconds
+                                    self.critical_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
@@ -1640,7 +1646,8 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
                 autospec=True)
     def test_process_error_metric_not_found_alert_metric_found_alert(self,
-        mock_alert_not_found, mock_alert_found) -> None:
+                                                                     mock_alert_not_found,
+                                                                     mock_alert_found) -> None:
 
         data_for_alerting = []
         data = self.data_received_error_data['error']
@@ -1658,7 +1665,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         data = self.data_received_error_data['error']
-        data['code'] = 600000000 # This code doesn't exist
+        data['code'] = 600000000  # This code doesn't exist
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_found.assert_called_once_with(
@@ -1674,8 +1681,9 @@ class TestSystemAlerter(unittest.TestCase):
                 autospec=True)
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
                 autospec=True)
-    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(self,
-        mock_alert_not_found, mock_alert_found) -> None:
+    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(
+            self,
+            mock_alert_not_found, mock_alert_found) -> None:
 
         data_for_alerting = []
         data = self.data_received_error_data['error']
@@ -1726,7 +1734,8 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
     def test_process_errors_invalid_url_alert_then_valid_url_alert(self,
-        mock_alert_invalid, mock_alert_valid) -> None:
+                                                                   mock_alert_invalid,
+                                                                   mock_alert_valid) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
@@ -1742,7 +1751,7 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
         data = self.data_received_error_data['error']
-        data['code'] = 600000000 # This code doesn't exist
+        data['code'] = 600000000  # This code doesn't exist
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_valid.assert_called_once_with(
@@ -1756,8 +1765,9 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(self,
-        mock_alert_invalid, mock_alert_valid) -> None:
+    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(
+            self,
+            mock_alert_invalid, mock_alert_valid) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
@@ -1809,7 +1819,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1835,7 +1845,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_warning_alerts_disabled_increase_above_warning_threshold_no_alerts_occur(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1853,7 +1863,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ram_usage_decrease.assert_not_called()
             mock_cpu_usage_decrease.assert_not_called()
             mock_ofd_decrease.assert_not_called()
-            
+
             eval(mock_param).assert_not_called()
             self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
@@ -1881,7 +1891,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1907,7 +1917,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_disabled_increase_above_critical_threshold_warning_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1935,7 +1945,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1961,7 +1971,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_and_warning_alerts_disabled_increase_above_critical_threshold_no_alerts(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1979,7 +1989,6 @@ class TestSystemAlerter(unittest.TestCase):
             eval(mock_param).assert_not_called()
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
-
 
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_all_alerts_disabled_metric_above_critical_threshold_and_warning_threshold(
@@ -2034,11 +2043,11 @@ class TestSystemAlerter(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_system_alerter.rabbitmq.queue_bind(
                 queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
-                routing_key=self.alert_router_routing_key)
+                routing_key=self.output_routing_key)
 
             self.test_system_alerter.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=self.alert_router_routing_key,
+                routing_key=self.output_routing_key,
                 body=self.alert.alert_data, is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
@@ -2082,7 +2091,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_system_alerter.rabbitmq.queue_bind(
                 queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_system_alerter._send_heartbeat(self.heartbeat_test)
 
             res = self.test_system_alerter.rabbitmq.queue_declare(
@@ -2121,7 +2130,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2149,7 +2158,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2180,7 +2189,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2211,7 +2220,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2243,7 +2252,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2270,7 +2279,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2296,7 +2305,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2322,7 +2331,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2343,7 +2352,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2367,7 +2376,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2389,7 +2398,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_initially_no_alert['result']['data']
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
@@ -2414,7 +2423,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_error_data['error']['meta_data']
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
@@ -2443,7 +2452,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2470,7 +2479,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2489,7 +2498,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2509,7 +2518,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2528,7 +2537,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_initially_no_alert['result']['data']
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
@@ -2548,7 +2557,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_error_data['error']['meta_data']
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()

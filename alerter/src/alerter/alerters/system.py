@@ -24,7 +24,8 @@ from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
-                                 SYSTEM_ALERT_ROUTING_KEY)
+                                 SYSTEM_ALERT_ROUTING_KEY,
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
@@ -166,7 +167,7 @@ class SystemAlerter(Alerter):
         self.rabbitmq.queue_declare(self._queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        routing_key = 'transformed_data.system.{}'.format(
+        routing_key = SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
             self.alerts_configs.parent_id)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", self._queue_used, ALERT_EXCHANGE,
