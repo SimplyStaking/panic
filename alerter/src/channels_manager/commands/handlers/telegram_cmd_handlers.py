@@ -17,7 +17,7 @@ from src.channels_manager.commands.handlers.handler import CommandHandler
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.alert import Severity
+from src.alerter.alert_severities import Severity
 from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
                                  GITHUB_MONITORS_MANAGER_NAME,
                                  DATA_TRANSFORMERS_MANAGER_NAME,
@@ -605,7 +605,9 @@ class TelegramCommandHandlers(CommandHandler):
         chain_names = \
             [chain_name for _, chain_name in associated_chains.items()]
 
-        panic_severities = [severity.value for severity in Severity]
+        # The Internal Severity isn't something the user should care about.
+        panic_severities = [severity.value for severity in Severity
+                            if Severity.INTERNAL.value != severity.value]
         if not inputted_severities:
             # If no severities were passed as arguments, the user wants to mute
             # all severities.
@@ -692,7 +694,10 @@ class TelegramCommandHandlers(CommandHandler):
         unrecognized_severities = []
         recognized_severities = []
 
-        panic_severities = [severity.value for severity in Severity]
+        # The Internal Severity isn't something the user should care about.
+        panic_severities = [severity.value for severity in Severity
+                            if Severity.INTERNAL.value != severity.value]
+
         if not inputted_severities:
             # If no severities were passed as arguments, the user wants to mute
             # all severities for all chains.

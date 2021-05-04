@@ -103,7 +103,7 @@ class SystemRAMUsageIncreasedAboveThresholdAlert(Alert):
                  origin_id: str) -> None:
         super().__init__(
             SystemAlertCode.SystemRAMUsageIncreasedAboveThresholdAlert,
-            "{} system RAM usage INCREASED above {} Threshold. Current value:"
+            "{} system RAM usage INCREASED above {} Threshold. Current value: "
             "{}%.".format(origin_name, threshold, new_value), severity,
             timestamp, parent_id, origin_id, SystemMetricCode.SystemRAMUsage)
 
