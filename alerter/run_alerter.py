@@ -24,7 +24,7 @@ from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
 from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_QUEUE_NAME,
@@ -44,7 +44,9 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -634,23 +636,27 @@ def _initialise_and_declare_config_queues() -> None:
 
             # System Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                    False, True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
 
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
