@@ -249,6 +249,7 @@ class SystemAlertersManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
+                self._listen_for_data()
                 # Send an internal alert to reset system alert REDIS metrics
                 # for all chains.
                 alert = ComponentResetAll(type(self).__name__,
@@ -256,7 +257,6 @@ class SystemAlertersManager(AlertersManager):
                                           type(self).__name__,
                                           type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
-                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
