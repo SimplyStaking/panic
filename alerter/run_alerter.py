@@ -46,7 +46,8 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                 ALERT_ROUTER_CONFIGS_ROUTING_KEY)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -629,10 +630,12 @@ def _initialise_and_declare_config_queues() -> None:
                                    False, False)
             log_and_print("Binding queue '{}' to '{}' exchange with routing "
                           "key {}.".format(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                           CONFIG_EXCHANGE, 'channels.*'),
+                                           CONFIG_EXCHANGE,
+                                           ALERT_ROUTER_CONFIGS_ROUTING_KEY),
                           dummy_logger)
             rabbitmq.queue_bind(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                ALERT_ROUTER_CONFIGS_ROUTING_KEY)
 
             # System Alerters Manager queues
             log_and_print("Creating queue '{}'".format(

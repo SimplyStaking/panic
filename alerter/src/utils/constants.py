@@ -25,7 +25,7 @@ SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = 'github_alerters_manager_heartbeat_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
-ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
+ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
 # Routing Keys
@@ -44,7 +44,11 @@ GITHUB_ALERT_ROUTING_KEY = 'alert.github'
 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
-ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert_router.*'
+ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.*'
+ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
+CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE = 'channel.{}'
+CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
+LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
 PING_ROUTING_KEY = 'ping'
 HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
@@ -59,7 +63,6 @@ DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
 DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
 
 ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
-ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
 
 GITHUB_STORE_INPUT_QUEUE = 'github_store_queue'
 GITHUB_STORE_INPUT_ROUTING_KEY = 'github'
@@ -69,10 +72,6 @@ SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
 
 STORE_CONFIGS_QUEUE_NAME = 'store_configs_queue'
 STORE_CONFIGS_ROUTING_KEY_CHAINS = '#'
-
-CONSOLE_HANDLER_INPUT_ROUTING_KEY = 'channel.console'
-
-LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
 
 TCH_INPUT_ROUTING_KEY = 'ping'
 

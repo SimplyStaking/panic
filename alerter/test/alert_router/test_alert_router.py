@@ -12,17 +12,19 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.alert_router.alert_router import (
-    AlertRouter, _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME
-)
+from src.alert_router.alert_router import AlertRouter
 from src.alerter.alerts.alert import Alert
 from src.alerter.metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (
-    CONFIG_EXCHANGE, ALERT_EXCHANGE, STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-    ALERT_ROUTER_CONFIGS_QUEUE_NAME
+    CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME, ALERT_ROUTER_INPUT_QUEUE_NAME,
+    ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE,
+    CONSOLE_HANDLER_INPUT_ROUTING_KEY, LOG_HANDLER_INPUT_ROUTING_KEY,
+    ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
 )
 from src.utils.exceptions import MissingKeyInConfigException
 from test.utils.utils import (
@@ -60,22 +62,21 @@ class TestAlertRouter(unittest.TestCase):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
                                        False, False)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, "topic", False,
-                                       True,
-                                       False, False)
+                                       True, False, False)
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, "topic", False, True,
                                        False, False)
         self.rabbitmq.queue_declare(ALERT_ROUTER_CONFIGS_QUEUE_NAME, False,
                                     True, False, False)
-        self.rabbitmq.queue_declare(_ALERT_ROUTER_INPUT_QUEUE_NAME, False, True,
+        self.rabbitmq.queue_declare(ALERT_ROUTER_INPUT_QUEUE_NAME, False, True,
                                     False, False)
-        self.rabbitmq.queue_declare(_HEARTBEAT_QUEUE_NAME, False, True, False,
-                                    False)
+        self.rabbitmq.queue_declare(ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
 
         self._redis = RedisApi(self._redis_logger, self._redis_db,
                                self._redis_ip, self._redis_port)
 
         self.CONFIG_ROUTING_KEY = "channels.test"
-        self.ALERT_ROUTER_ROUTING_KEY = "alert_router.test"
+        self.ALERT_ROUTER_INPUT_ROUTING_KEY = "alert.test"
         self.TEST_CHANNEL_CONFIG_FILE = {
             'test_123': {
                 'id': "test_123",
@@ -110,7 +111,8 @@ class TestAlertRouter(unittest.TestCase):
         # flush and consume all from rabbit queues and exchanges
         self.rabbitmq.connect()
         queues = [ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                  _ALERT_ROUTER_INPUT_QUEUE_NAME, _HEARTBEAT_QUEUE_NAME]
+                  ALERT_ROUTER_INPUT_QUEUE_NAME,
+                  ALERT_ROUTER_HEARTBEAT_QUEUE_NAME]
         for queue in queues:
             self.rabbitmq.queue_purge(queue)
             self.rabbitmq.queue_delete(queue)
@@ -138,8 +140,8 @@ class TestAlertRouter(unittest.TestCase):
 
     @parameterized.expand([
         (ALERT_ROUTER_CONFIGS_QUEUE_NAME,),
-        (_ALERT_ROUTER_INPUT_QUEUE_NAME,),
-        (_HEARTBEAT_QUEUE_NAME,)
+        (ALERT_ROUTER_INPUT_QUEUE_NAME,),
+        (ALERT_ROUTER_HEARTBEAT_QUEUE_NAME,)
     ])
     @mock.patch.object(RabbitMQApi, "confirm_delivery")
     @mock.patch.object(RabbitMQApi, "basic_consume")
@@ -332,7 +334,7 @@ class TestAlertRouter(unittest.TestCase):
         mock_ack.return_value = None
         mock_extract_config.side_effect = [
             self.TEST_CHANNEL_CONFIG['test_123'],
-            MissingKeyInConfigException("critical", "channel.test_123")
+            MissingKeyInConfigException("critical", "channels.test_123")
         ]
 
         try:
@@ -473,7 +475,7 @@ class TestAlertRouter(unittest.TestCase):
             }
         }
 
-        second_routing_key = "channel.test2"
+        second_routing_key = "channels.test2"
 
         mock_ack.return_value = None
         mock_extract_config.side_effect = [
@@ -613,7 +615,7 @@ class TestAlertRouter(unittest.TestCase):
                  'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
-                "channel.test_123",
+                "channels.test_123",
                 {'id': "test_123", 'info': False, 'warning': False,
                  'critical': False, 'error': False, 'parent_ids': ["GENERAL"],
                  }
@@ -621,14 +623,14 @@ class TestAlertRouter(unittest.TestCase):
                 {'id': "test_123", 'channel_name': "test_channel",
                  'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.test_123",
+                "channels.test_123",
                 {'id': "test_123", 'info': True, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
         ), (
                 {'id': "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.twilio_123",
+                "channels.twilio_123",
                 {'id': "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
@@ -637,7 +639,7 @@ class TestAlertRouter(unittest.TestCase):
                  'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.twilio_123",
+                "channels.twilio_123",
                 {'id': "twilio_123", 'info': False, 'warning': False,
                  'critical': True, 'error': False, 'parent_ids': ["GENERAL"],
                  }
@@ -678,22 +680,22 @@ class TestAlertRouter(unittest.TestCase):
                  'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,",
                  'parent_names': ""},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'channel_name': "test_channel",
                  'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no", 'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "twilio_123", 'channel_name': "test_channel",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.twilio_123"
+                "channels.twilio_123"
         ), (
                 {'id': "twilio_123", 'channel_name': "test_channel",
                  'info': "on", 'warning': "off", 'critical': "yes",
                  'error': "no",
                  'parent_ids': "GENERAL,", 'parent_names': ""},
-                "channel.twilio_123"
+                "channels.twilio_123"
         )
     ])
     def test_validate_config_fields_existence_valid(
@@ -712,33 +714,33 @@ class TestAlertRouter(unittest.TestCase):
         (
                 {'info': "false", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'warning': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'info': "false", 'critical': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'info': "false", 'warning': "false",
                  'error': "false", 'parent_ids': "GENERAL,"},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'parent_ids': "GENERAL,"},
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'id': "test_123", 'info': "false", 'warning': "false",
                  'critical': "false", 'error': "false", },
-                "channel.test_123"
+                "channels.test_123"
         ), (
                 {'channel_name': "test_channel", 'parent_ids': "GENERAL,"},
-                "channel.twilio_123"
+                "channels.twilio_123"
         ), (
                 {'id': "twilio_123", 'channel_name': "test_channel"},
-                "channel.twilio_123"
+                "channels.twilio_123"
         )
     ])
     def test_validate_config_fields_existance_fail(
@@ -810,7 +812,7 @@ class TestAlertRouter(unittest.TestCase):
             # non-existing chain and general paths to make sure that all routes
             # work as expected.
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=self.ALERT_ROUTER_ROUTING_KEY
+                routing_key=self.ALERT_ROUTER_INPUT_ROUTING_KEY
             )
 
             properties = pika.spec.BasicProperties()
@@ -847,20 +849,23 @@ class TestAlertRouter(unittest.TestCase):
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_channel,
-                ALERT_EXCHANGE, "channel.test_234", mandatory=False
+                ALERT_EXCHANGE,
+                CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE.format("test_234"),
+                mandatory=False
             )
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_console,
-                ALERT_EXCHANGE, "channel.console", mandatory=True
+                ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY,
+                mandatory=True
             )
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
-                "channel.log", mandatory=True
+                LOG_HANDLER_INPUT_ROUTING_KEY, mandatory=True
             )
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, copy.deepcopy(alert.alert_data),
-                STORE_EXCHANGE, "alert", mandatory=True
+                STORE_EXCHANGE, ALERT_STORE_INPUT_ROUTING_KEY, mandatory=True
             )
 
             self.assertEqual(4, mock_push_to_queue.call_count)
@@ -917,7 +922,7 @@ class TestAlertRouter(unittest.TestCase):
             # non-existing chain and general paths to make sure that all routes
             # work as expected.
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=self.ALERT_ROUTER_ROUTING_KEY
+                routing_key=self.ALERT_ROUTER_INPUT_ROUTING_KEY
             )
 
             properties = pika.spec.BasicProperties()
@@ -949,16 +954,17 @@ class TestAlertRouter(unittest.TestCase):
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_console,
-                ALERT_EXCHANGE, "channel.console", mandatory=True
+                ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY,
+                mandatory=True
             )
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
-                "channel.log", mandatory=True
+                LOG_HANDLER_INPUT_ROUTING_KEY, mandatory=True
             )
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, copy.deepcopy(alert.alert_data),
-                STORE_EXCHANGE, "alert", mandatory=True
+                STORE_EXCHANGE, ALERT_STORE_INPUT_ROUTING_KEY, mandatory=True
             )
 
             self.assertEqual(3, mock_push_to_queue.call_count)
@@ -1008,7 +1014,7 @@ class TestAlertRouter(unittest.TestCase):
             # non-existing chain and general paths to make sure that all routes
             # work as expected.
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=self.ALERT_ROUTER_ROUTING_KEY
+                routing_key=self.ALERT_ROUTER_INPUT_ROUTING_KEY
             )
 
             properties = pika.spec.BasicProperties()
@@ -1040,16 +1046,17 @@ class TestAlertRouter(unittest.TestCase):
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_console,
-                ALERT_EXCHANGE, "channel.console", mandatory=True
+                ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY,
+                mandatory=True
             )
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
-                "channel.log", mandatory=True
+                LOG_HANDLER_INPUT_ROUTING_KEY, mandatory=True
             )
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, copy.deepcopy(alert.alert_data),
-                STORE_EXCHANGE, "alert", mandatory=True
+                STORE_EXCHANGE, ALERT_STORE_INPUT_ROUTING_KEY, mandatory=True
             )
 
             self.assertEqual(3, mock_push_to_queue.call_count)
@@ -1097,7 +1104,7 @@ class TestAlertRouter(unittest.TestCase):
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=self.ALERT_ROUTER_ROUTING_KEY
+                routing_key=self.ALERT_ROUTER_INPUT_ROUTING_KEY
             )
 
             properties = pika.spec.BasicProperties()
@@ -1129,16 +1136,17 @@ class TestAlertRouter(unittest.TestCase):
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_console,
-                ALERT_EXCHANGE, "channel.console", mandatory=True
+                ALERT_EXCHANGE, CONSOLE_HANDLER_INPUT_ROUTING_KEY,
+                mandatory=True
             )
 
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, expected_output_log, ALERT_EXCHANGE,
-                "channel.log", mandatory=True
+                LOG_HANDLER_INPUT_ROUTING_KEY, mandatory=True
             )
             mock_push_to_queue.assert_any_call(
                 self._test_alert_router, copy.deepcopy(alert.alert_data),
-                STORE_EXCHANGE, "alert", mandatory=True
+                STORE_EXCHANGE, ALERT_STORE_INPUT_ROUTING_KEY, mandatory=True
             )
 
             self.assertEqual(3, mock_push_to_queue.call_count)
@@ -1175,7 +1183,7 @@ class TestAlertRouter(unittest.TestCase):
             blocking_channel = self._test_alert_router._rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=self.ALERT_ROUTER_ROUTING_KEY
+                routing_key=self.ALERT_ROUTER_INPUT_ROUTING_KEY
             )
 
             properties = pika.spec.BasicProperties()
@@ -1228,13 +1236,13 @@ class TestAlertRouter(unittest.TestCase):
             self.assertEqual(0, queue_res.method.message_count)
 
             self.rabbitmq.queue_bind(HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                     "heartbeat.*")
+                                     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self._test_alert_router._initialise_rabbitmq()
 
             blocking_channel = self._test_alert_router._rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key="ping"
+                routing_key=PING_ROUTING_KEY
             )
             properties = pika.spec.BasicProperties()
 
