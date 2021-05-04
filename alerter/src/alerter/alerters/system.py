@@ -21,7 +21,9 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
+                                 SYSTEM_ALERT_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
@@ -145,13 +147,14 @@ class SystemAlerter(Alerter):
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self._queue_used = "system_alerter_queue_" + \
-                           self.alerts_configs.parent_id
+        self._queue_used = SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE.format(
+            self.alerts_configs.parent_id)
         self.logger.info("Creating queue '%s'", self._queue_used)
         self.rabbitmq.queue_declare(self._queue_used, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        routing_key = "alerter.system." + self.alerts_configs.parent_id
+        routing_key = 'transformed_data.system.{}'.format(
+            self.alerts_configs.parent_id)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", self._queue_used, ALERT_EXCHANGE,
                          routing_key)
@@ -165,8 +168,7 @@ class SystemAlerter(Alerter):
         self.logger.debug("Declaring consuming intentions")
         self.rabbitmq.basic_consume(queue=self._queue_used,
                                     on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False,
+                                    auto_ack=False, exclusive=False,
                                     consumer_tag=None)
 
         # Set producing configuration
@@ -538,7 +540,7 @@ class SystemAlerter(Alerter):
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
-                'routing_key': 'alert_router.system',
+                'routing_key': SYSTEM_ALERT_ROUTING_KEY,
                 'data': copy.deepcopy(alert),
                 'properties': pika.BasicProperties(delivery_mode=2),
                 'mandatory': True})

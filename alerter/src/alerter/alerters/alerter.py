@@ -9,7 +9,8 @@ import pika.exceptions
 from src.abstract.publisher_subscriber import (
     QueuingPublisherSubscriberComponent)
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -42,9 +43,10 @@ class Alerter(QueuingPublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 
