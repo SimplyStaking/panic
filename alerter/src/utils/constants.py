@@ -18,6 +18,10 @@ SYSTEM_DT_INPUT_QUEUE_NAME = 'system_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
+SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
+    'system_alerters_manager_heartbeat_queue'
+SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
+    'system_alerters_manager_configs_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
@@ -36,6 +40,8 @@ GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
 GITHUB_ALERT_ROUTING_KEY = 'alert.github'
+SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert_router.*'
 PING_ROUTING_KEY = 'ping'
@@ -45,19 +51,12 @@ HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
 
 # Queues that need to be declared in the run_alerter to avoid configs being sent
 # while a component has not started yet. Basically these are all config queues.
-SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
-    'system_alerters_manager_configs_queue'
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 
 # Routing keys and queue names
 
 GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
 GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
-
-SYS_ALERTERS_MAN_INPUT_QUEUE = 'system_alerters_manager_ping_queue'
-SYS_ALERTERS_MAN_INPUT_ROUTING_KEY = 'ping'
-SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
-SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN = 'general.alerts_config'
 
 DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
 DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'

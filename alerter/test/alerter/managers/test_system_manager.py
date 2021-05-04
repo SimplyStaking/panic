@@ -19,12 +19,12 @@ from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
-                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+                                 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 PING_ROUTING_KEY,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -230,7 +230,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         }
         self.chain_example_new = 'Substrate Polkadot'
         self.chains_routing_key = 'chains.Substrate.Polkadot.alerts_config'
-        self.general_routing_key = SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN
+        self.general_routing_key = SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN
         self.test_exception = PANICException('test_exception', 1)
         self.systems_alerts_configs = {}
 
@@ -244,22 +244,23 @@ class TestSystemAlertersManager(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_declare(
-                queue=SYS_ALERTERS_MAN_INPUT_QUEUE, durable=True,
+                queue=SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_declare(
-                queue=SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, durable=True,
+                queue=SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+                SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_purge(
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
             self.test_manager.rabbitmq.queue_delete(
-                SYS_ALERTERS_MAN_INPUT_QUEUE)
+                SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
@@ -362,34 +363,35 @@ class TestSystemAlertersManager(unittest.TestCase):
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
             # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence there
-            # is no other queue binded with the same routing key to any exchange at
-            # this point.
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.test_manager.rabbitmq.basic_publish_confirm(
+                exchange=CONFIG_EXCHANGE,
+                routing_key=self.chains_routing_key,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=CONFIG_EXCHANGE,
-                routing_key=SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
+                routing_key=SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_manager.rabbitmq.queue_declare(
-                SYS_ALERTERS_MAN_INPUT_QUEUE, False, True, False, False)
+                SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
+                False)
             self.assertEqual(0, res.method.message_count)
             res = self.test_manager.rabbitmq.queue_declare(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
                 False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
@@ -412,7 +414,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -1143,7 +1145,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1152,7 +1155,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1221,7 +1224,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1230,7 +1234,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1298,7 +1302,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1307,7 +1312,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1387,7 +1392,8 @@ class TestSystemAlertersManager(unittest.TestCase):
                                  self.parent_id_2]['process'].is_alive())
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
@@ -1439,7 +1445,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method,
@@ -1483,7 +1490,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1493,7 +1501,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
 
@@ -1514,7 +1522,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1532,7 +1541,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1551,7 +1561,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1570,7 +1581,8 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
