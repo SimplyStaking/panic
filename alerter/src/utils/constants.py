@@ -17,6 +17,7 @@ GITHUB_DT_INPUT_QUEUE_NAME = 'github_data_transformer_input_queue'
 SYSTEM_DT_INPUT_QUEUE_NAME = 'system_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
+GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
@@ -48,8 +49,6 @@ SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 
 # Routing keys and queue names
-GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
-GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'
 
 GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
 GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
