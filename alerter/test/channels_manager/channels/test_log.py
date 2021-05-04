@@ -8,7 +8,7 @@ from parameterized import parameterized
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.channels.log import LogChannel
-from src.utils.alert import Severity
+from src.alerter.alert_severities import Severity
 from src.utils.data import RequestStatus
 from test.utils.utils import assert_not_called_with
 

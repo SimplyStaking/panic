@@ -303,6 +303,36 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
+    @freeze_time("2012-01-01")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing, 'Process')
+    @mock.patch("src.alerter.managers.system.ComponentReset")
+    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
+    def test_terminate_and_join_chain_alerter_processes_creates_alert(
+            self, mock_push_latest_data_to_queue_and_send,
+            mock_component_reset, mock_process, mock_join,
+            mock_terminate) -> None:
+        type(mock_component_reset.return_value).alert_data = \
+            mock.PropertyMock(return_value={})
+
+        # Setting it as Data as we don't need to use it
+        self.test_manager._systems_alerts_configs[self.parent_id_1] = "data"
+        self.test_manager._parent_id_process_dict[self.parent_id_1] = \
+            {"chain": "chain_name",
+             "process": mock_process}
+
+        self.test_manager._terminate_and_join_chain_alerter_processes(
+            "chain_name")
+
+        mock_component_reset.assert_called_once_with(
+            "chain_name",
+            datetime.now().timestamp(),
+            self.parent_id_1,
+            type(self.test_manager).__name__
+        )
+        mock_push_latest_data_to_queue_and_send.assert_called_once()
+
     @mock.patch.object(SystemAlertersManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
             self, mock_process_ping) -> None:
