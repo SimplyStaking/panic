@@ -155,9 +155,6 @@ class ConfigStore(Store):
     def _process_redis_store_chain_monitorables(self, routing_key: str,
                                                 received_config: Dict) -> None:
 
-        # Assign it to defaultdict so it's able to set nested keys
-        data_for_store = defaultdict(dict)
-
         # Helper function to extract data from the routing key
         redis_store_key, source_name, config_type_key = \
             self._process_routing_key(routing_key)
@@ -175,6 +172,12 @@ class ConfigStore(Store):
                     'utf-8'))
         else:
             data_for_store = {}
+
+        """
+        Convert data_for_store into a 2 level depth defaultdict, which allows
+        for two keys to be set at once.
+        """
+        data_for_store = defaultdict(lambda: defaultdict(dict), data_for_store)
 
         # Checking if we received data and if that data is useful.
         if received_config:
@@ -275,7 +278,6 @@ class ConfigStore(Store):
                     not_monitored_list.append({
                         config_details[helper_keys['id']]:
                         config_details[helper_keys['name_key']]})
-
             # If we load data from REDIS we can overwrite it, no need for new
             # structure
             if data_for_store:

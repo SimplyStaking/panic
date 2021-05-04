@@ -16,7 +16,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GITHUB_MANAGER_INPUT_QUEUE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 ALERT_EXCHANGE)
+                                 ALERT_EXCHANGE,
+                                 ALERT_ROUTER_GITHUB_ROUTING_KEY)
 from src.alerter.alerts.internal_alerts import (ComponentReset)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -34,6 +35,13 @@ class GithubAlerterManager(AlertersManager):
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
+
+        # Declare exchange to send data to
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
@@ -173,7 +181,7 @@ class GithubAlerterManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key='alert_router.github',
+            routing_key=ALERT_ROUTER_GITHUB_ROUTING_KEY,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True
         )

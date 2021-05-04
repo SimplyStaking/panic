@@ -20,7 +20,8 @@ from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_MANAGER_INPUT_QUEUE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 GITHUB_ALERTER_NAME)
+                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE,
+                                 ALERT_ROUTER_GITHUB_ROUTING_KEY)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -64,6 +65,10 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
+            self.test_monitor.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_monitor.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, 'topic', False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -78,6 +83,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
             self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
@@ -149,7 +155,13 @@ class TestGithubAlertersManager(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
-
+            self.test_manager.rabbitmq.basic_publish_confirm(
+                exchange=ALERT_EXCHANGE,
+                routing_key=ALERT_ROUTER_GITHUB_ROUTING_KEY,
+                body=self.test_data_str, is_body_dict=False,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=False
+            )
             # Re-declare queue to get the number of messages
             res = self.test_rabbit_manager.queue_declare(
                 GITHUB_MANAGER_INPUT_QUEUE, False, True, False, False)

@@ -22,7 +22,8 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 ALERT_ROUTER_SYSTEM_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
@@ -624,7 +625,7 @@ class SystemAlerter(Alerter):
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
-                'routing_key': 'alert_router.system',
+                'routing_key': ALERT_ROUTER_SYSTEM_ROUTING_KEY,
                 'data': copy.deepcopy(alert),
                 'properties': pika.BasicProperties(delivery_mode=2),
                 'mandatory': True})

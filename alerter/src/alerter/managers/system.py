@@ -23,7 +23,8 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
-                                 ALERT_EXCHANGE
+                                 ALERT_EXCHANGE,
+                                 ALERT_ROUTER_SYSTEM_ROUTING_KEY,
                                  )
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
@@ -49,6 +50,12 @@ class SystemAlertersManager(AlertersManager):
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
+        # Declare exchange to send data to
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
@@ -249,7 +256,6 @@ class SystemAlertersManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
-                self._listen_for_data()
                 # Send an internal alert to reset system alert REDIS metrics
                 # for all chains.
                 alert = ComponentResetAll(type(self).__name__,
@@ -257,6 +263,7 @@ class SystemAlertersManager(AlertersManager):
                                           type(self).__name__,
                                           type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
@@ -290,7 +297,7 @@ class SystemAlertersManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key='alert_router.system',
+            routing_key=ALERT_ROUTER_SYSTEM_ROUTING_KEY,
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True
         )
