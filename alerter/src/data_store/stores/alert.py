@@ -186,7 +186,7 @@ class AlertStore(Store):
                 terminated due to change in configuration or shut down signal.
                 """
 
-                self.logger.debug("Resetting system metrics for chain %s ",
+                self.logger.debug("Resetting system metrics for chain %s.",
                                   alert['parent_id'])
 
                 """
@@ -212,7 +212,7 @@ class AlertStore(Store):
                 each CHAIN.
                 """
 
-                self.logger.debug("Resetting GitHub metrics for all chains")
+                self.logger.debug("Resetting GitHub metrics for all chains.")
 
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
