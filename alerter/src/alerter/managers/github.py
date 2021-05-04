@@ -1,6 +1,6 @@
+import copy
 import logging
 import sys
-import copy
 from datetime import datetime
 from multiprocessing import Process
 from types import FrameType
@@ -11,13 +11,13 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.alerts.internal_alerts import ComponentReset
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
-                                 GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 ALERT_EXCHANGE)
-from src.alerter.alerts.internal_alerts import (ComponentReset)
+                                 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 PING_ROUTING_KEY, ALERT_EXCHANGE,
+                                 GITHUB_ALERT_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -39,19 +39,18 @@ class GithubAlerterManager(AlertersManager):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_MANAGER_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", GITHUB_MANAGER_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         GITHUB_MANAGER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_MANAGER_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+                         "key '%s'", GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.info("Declaring consuming intentions on '%s'",
-                         GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(GITHUB_MANAGER_INPUT_QUEUE,
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -173,8 +172,7 @@ class GithubAlerterManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key='alert_router.github',
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True
+            routing_key=GITHUB_ALERT_ROUTING_KEY,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         self._send_data()

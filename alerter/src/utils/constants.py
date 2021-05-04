@@ -22,6 +22,7 @@ SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_alerters_manager_configs_queue'
+GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = 'github_alerters_manager_heartbeat_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
@@ -54,10 +55,6 @@ HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 
 # Routing keys and queue names
-
-GITHUB_MANAGER_INPUT_QUEUE = 'github_alerter_manager_queue'
-GITHUB_MANAGER_INPUT_ROUTING_KEY = 'ping'
-
 DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
 DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
 
