@@ -143,7 +143,7 @@ class ConfigStore(Store):
 
     def _process_redis_store(self, routing_key: str, data: Dict) -> None:
         if data:
-            # Store all the config under the routing_key
+            # Store all the configuration under the routing_key
             self.logger.debug("Saving for %s the data=%s.", routing_key, data)
             self.redis.set(Keys.get_config(routing_key), json.dumps(data))
         else:
@@ -155,7 +155,7 @@ class ConfigStore(Store):
     def _process_redis_store_chain_monitorables(self, routing_key: str,
                                                 received_config: Dict) -> None:
 
-        # Assign it to defaultdict so it's able to set nested keys at once
+        # Assign it to defaultdict so it's able to set nested keys
         data_for_store = defaultdict(dict)
 
         # Helper function to extract data from the routing key
@@ -163,7 +163,7 @@ class ConfigStore(Store):
             self._process_routing_key(routing_key)
 
         # If after processing the routing key there was a missing value
-        # do not processed with the storage of chain_monitorables
+        # do not proceed with the storage of chain_monitorables
         if '' in [redis_store_key, source_name, config_type_key]:
             return
 
@@ -251,6 +251,15 @@ class ConfigStore(Store):
                                   config_type_key: str, data_for_store: Dict,
                                   source_name: str
                                   ) -> Dict:
+        """
+        Using the received configuration together with the data which is
+        retrieved from REDIS, a list of monitored and non_monitored sources
+        are constructed. Choosing whether a source is monitored or not
+        we go by the key `monitor_key`. To streamline this process we use
+        `self.helper_configuration` which known store keys in the configs
+        so that we have a generic sorting function instead of an if statement
+        sort.
+        """
         monitored_list = []
         not_monitored_list = []
         current_helper_config = self.helper_configuration[config_type_key]
