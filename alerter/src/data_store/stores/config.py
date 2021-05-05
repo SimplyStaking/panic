@@ -9,8 +9,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 STORE_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_ROUTING_KEY_CHAINS)
+                                 CONFIGS_STORE_INPUT_QUEUE_NAME,
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 
@@ -26,9 +26,9 @@ class ConfigStore(Store):
         store as well as appropriately communicate with it.
 
         Creates a config exchange of type `topic`
-        Declares a queue named `store_configs_queue` and binds it to the config
-        exchange with a routing key `#` meaning anything
-        coming from the config manager will be accepted here
+        Declares a queue named `configs_store_input_queue` and binds it to the
+        config exchange with a routing key `#` meaning anything coming from the
+        config manager will be accepted here
 
         The HEALTH_CHECK_EXCHANGE is also declared so that whenever a successful
         store round occurs, a heartbeat is sent
@@ -37,15 +37,15 @@ class ConfigStore(Store):
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", STORE_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME, False, True,
+        self.logger.info("Creating queue '%s'", CONFIGS_STORE_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", STORE_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, STORE_CONFIGS_ROUTING_KEY_CHAINS)
-        self.rabbitmq.queue_bind(queue=STORE_CONFIGS_QUEUE_NAME,
+                         "key '%s'", CONFIGS_STORE_INPUT_QUEUE_NAME,
+                         CONFIG_EXCHANGE, CONFIGS_STORE_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(queue=CONFIGS_STORE_INPUT_QUEUE_NAME,
                                  exchange=CONFIG_EXCHANGE,
-                                 routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
+                                 routing_key=CONFIGS_STORE_INPUT_ROUTING_KEY)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
@@ -53,10 +53,10 @@ class ConfigStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self.rabbitmq.basic_consume(queue=STORE_CONFIGS_QUEUE_NAME,
+        self.rabbitmq.basic_consume(queue=CONFIGS_STORE_INPUT_QUEUE_NAME,
                                     on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False, consumer_tag=None)
+                                    auto_ack=False, exclusive=False,
+                                    consumer_tag=None)
         self.rabbitmq.start_consuming()
 
     def _process_data(self,

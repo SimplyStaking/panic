@@ -26,6 +26,10 @@ GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = 'github_alerters_manager_heartbeat_queue'
 ALERT_ROUTER_CONFIGS_QUEUE_NAME = 'alert_router_configs_queue'
 ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
 ALERT_ROUTER_HEARTBEAT_QUEUE_NAME = 'alert_router_heartbeat_queue'
+ALERT_STORE_INPUT_QUEUE_NAME = 'alert_store_input_queue'
+CONFIGS_STORE_INPUT_QUEUE_NAME = 'configs_store_input_queue'
+GITHUB_STORE_INPUT_QUEUE_NAME = 'github_store_input_queue'
+SYSTEM_STORE_INPUT_QUEUE_NAME = 'system_store_input_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
 # Routing Keys
@@ -46,6 +50,8 @@ SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.*'
 ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
+CONFIGS_STORE_INPUT_ROUTING_KEY = '#'
+SYSTEM_STORE_INPUT_ROUTING_KEY = 'transformed_data.system.*'
 CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE = 'channel.{}'
 CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
 LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
@@ -61,17 +67,6 @@ CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 # Routing keys and queue names
 DATA_STORE_MAN_INPUT_QUEUE = 'data_stores_manager_queue'
 DATA_STORE_MAN_INPUT_ROUTING_KEY = 'ping'
-
-ALERT_STORE_INPUT_QUEUE = 'alert_store_queue'
-
-GITHUB_STORE_INPUT_QUEUE = 'github_store_queue'
-GITHUB_STORE_INPUT_ROUTING_KEY = 'github'
-
-SYSTEM_STORE_INPUT_QUEUE = 'system_store_queue'
-SYSTEM_STORE_INPUT_ROUTING_KEY = 'system'
-
-STORE_CONFIGS_QUEUE_NAME = 'store_configs_queue'
-STORE_CONFIGS_ROUTING_KEY_CHAINS = '#'
 
 TCH_INPUT_ROUTING_KEY = 'ping'
 

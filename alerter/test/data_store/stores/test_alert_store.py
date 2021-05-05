@@ -12,6 +12,8 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.alerter.managers.github import GithubAlerterManager
+from src.alerter.managers.system import SystemAlertersManager
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
@@ -19,7 +21,8 @@ from src.data_store.stores.alert import AlertStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE,
+                                 ALERT_STORE_INPUT_QUEUE_NAME,
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (PANICException)
 from test.utils.utils import (connect_to_rabbit,
@@ -64,7 +67,7 @@ class TestAlertStore(unittest.TestCase):
                                      self.dummy_logger,
                                      self.rabbitmq)
 
-        self.routing_key = 'heartbeat.worker'
+        self.heartbeat_routing_key = HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
@@ -72,10 +75,9 @@ class TestAlertStore(unittest.TestCase):
                                        True, False, False)
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, False, True,
+        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
-        self.rabbitmq.queue_bind(ALERT_STORE_INPUT_QUEUE,
-                                 STORE_EXCHANGE,
+        self.rabbitmq.queue_bind(ALERT_STORE_INPUT_QUEUE_NAME, STORE_EXCHANGE,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
 
         connect_to_rabbit(self.test_rabbit_manager)
@@ -83,7 +85,7 @@ class TestAlertStore(unittest.TestCase):
                                                True, False, False)
         self.test_rabbit_manager.queue_bind(self.test_queue_name,
                                             HEALTH_CHECK_EXCHANGE,
-                                            self.routing_key)
+                                            self.heartbeat_routing_key)
 
         self.test_data_str = 'test data'
         self.test_exception = PANICException('test_exception', 1)
@@ -199,7 +201,7 @@ class TestAlertStore(unittest.TestCase):
         """
         self.alert_internal_system_1 = {
             'parent_id': self.parent_id,
-            'origin_id': 'SystemAlertersManager',
+            'origin_id': SystemAlertersManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_2',
                 'code': 'internal_alert_2',
@@ -211,7 +213,7 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_system_2 = {
             'parent_id': self.parent_id,
-            'origin_id': 'SystemAlertersManager',
+            'origin_id': SystemAlertersManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_1',
                 'code': 'internal_alert_1',
@@ -223,7 +225,7 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_system_3 = {
             'parent_id': self.parent_id,
-            'origin_id': 'SystemAlertersManager',
+            'origin_id': SystemAlertersManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_2',
                 'code': 'internal_alert_2',
@@ -235,7 +237,7 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_1 = {
             'parent_id': self.parent_id,
-            'origin_id': 'GithubAlerterManager',
+            'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_1',
                 'code': 'internal_alert_1',
@@ -247,7 +249,7 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_2 = {
             'parent_id': self.parent_id,
-            'origin_id': 'GithubAlerterManager',
+            'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_1',
                 'code': 'internal_alert_1',
@@ -259,7 +261,7 @@ class TestAlertStore(unittest.TestCase):
         }
         self.alert_internal_github_3 = {
             'parent_id': self.parent_id,
-            'origin_id': 'GithubAlerterManager',
+            'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
                 'name': 'internal_alert_1',
                 'code': 'internal_alert_1',
@@ -272,7 +274,7 @@ class TestAlertStore(unittest.TestCase):
 
     def tearDown(self) -> None:
         connect_to_rabbit(self.rabbitmq)
-        delete_queue_if_exists(self.rabbitmq, ALERT_STORE_INPUT_QUEUE)
+        delete_queue_if_exists(self.rabbitmq, ALERT_STORE_INPUT_QUEUE_NAME)
         delete_exchange_if_exists(self.rabbitmq, STORE_EXCHANGE)
         delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
         disconnect_from_rabbit(self.rabbitmq)
@@ -287,8 +289,10 @@ class TestAlertStore(unittest.TestCase):
         self.test_rabbit_manager = None
         self.redis.delete_all_unsafe()
         self.redis = None
+        self.test_store._redis = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store._mongo = None
         self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
@@ -317,7 +321,7 @@ class TestAlertStore(unittest.TestCase):
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
-            self.rabbitmq.queue_delete(ALERT_STORE_INPUT_QUEUE)
+            self.rabbitmq.queue_delete(ALERT_STORE_INPUT_QUEUE_NAME)
             self.test_rabbit_manager.queue_delete(self.test_queue_name)
             self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.rabbitmq.exchange_delete(STORE_EXCHANGE)
@@ -343,8 +347,9 @@ class TestAlertStore(unittest.TestCase):
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-                body=self.test_data_str, is_body_dict=False,
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.heartbeat_routing_key, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
 
@@ -359,7 +364,7 @@ class TestAlertStore(unittest.TestCase):
 
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
-                ALERT_STORE_INPUT_QUEUE, False, True, False, False)
+                ALERT_STORE_INPUT_QUEUE_NAME, False, True, False, False)
 
             self.assertEqual(1, res.method.message_count)
         except Exception as e:
@@ -423,7 +428,7 @@ class TestAlertStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
@@ -476,7 +481,7 @@ class TestAlertStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(

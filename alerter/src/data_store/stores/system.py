@@ -10,7 +10,7 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYSTEM_STORE_INPUT_QUEUE,
+                                 SYSTEM_STORE_INPUT_QUEUE_NAME,
                                  SYSTEM_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
@@ -30,24 +30,24 @@ class SystemStore(Store):
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates a store exchange of type `direct`
-        Declares a queue named `system_store_queue` and binds it to the store
-        exchange with a routing key `transformer.system.*` meaning anything
-        coming from the transformer with regards to a system will be received
-        here.
+        Creates a store exchange of type `topic`
+        Declares a queue named `system_store_input_queue` and binds it to the
+        store exchange with a routing key `transformed_data.system.*` meaning
+        anything coming from the transformer with regards to a system will be
+        received here.
 
         The HEALTH_CHECK_EXCHANGE is also declared so that whenever a
         successful store round occurs, a heartbeat is sent
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='topic',
-                                       passive=False, durable=True,
-                                       auto_delete=False, internal=False)
-        self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE, passive=False,
-                                    durable=True, exclusive=False,
-                                    auto_delete=False)
-        self.rabbitmq.queue_bind(queue=SYSTEM_STORE_INPUT_QUEUE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
+        self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE_NAME,
+                                    passive=False, durable=True,
+                                    exclusive=False, auto_delete=False)
+        self.rabbitmq.queue_bind(queue=SYSTEM_STORE_INPUT_QUEUE_NAME,
                                  exchange=STORE_EXCHANGE,
                                  routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
 
@@ -59,7 +59,7 @@ class SystemStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self.rabbitmq.basic_consume(queue=SYSTEM_STORE_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=SYSTEM_STORE_INPUT_QUEUE_NAME,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)

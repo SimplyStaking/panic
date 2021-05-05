@@ -5,14 +5,16 @@ from typing import Dict
 
 import pika.exceptions
 
+from src.alerter.alert_code import InternalAlertCode
+from src.alerter.alert_severities import Severity
+from src.alerter.managers.github import GithubAlerterManager
+from src.alerter.managers.system import SystemAlertersManager
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.alerter.alert_severities import Severity
-from src.alerter.alert_code import InternalAlertCode
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE,
+                                 ALERT_STORE_INPUT_QUEUE_NAME,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
@@ -30,7 +32,7 @@ class AlertStore(Store):
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates a store exchange of type `direct`
+        Creates a store exchange of type `topic`
         Declares a queue named `alerts_store_queue` and binds it to the store
         exchange with a routing key `alert`.
         """
@@ -39,10 +41,10 @@ class AlertStore(Store):
                                        exchange_type='topic', passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, passive=False,
+        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                  exchange=STORE_EXCHANGE,
                                  routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
 
@@ -54,7 +56,7 @@ class AlertStore(Store):
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)
@@ -150,8 +152,8 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                InternalAlertCode.ComponentResetAll.value and
-                    alert['origin_id'] == 'SystemAlertersManager'):
+                    InternalAlertCode.ComponentResetAll.value and
+                    alert['origin_id'] == SystemAlertersManager.__name__):
 
                 """
                 The `ComponentResetAll` alert indicates that PANIC has
@@ -161,7 +163,7 @@ class AlertStore(Store):
                 """
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
-                            '*' + parent_hash + '*')
+                    '*' + parent_hash + '*')
 
                 # Go through all the chains that are in REDIS
                 for chain in chain_hashes_list:
@@ -176,7 +178,7 @@ class AlertStore(Store):
 
             elif (alert['alert_code']['code'] ==
                   InternalAlertCode.ComponentReset.value and
-                  alert['origin_id'] == 'SystemAlertersManager'):
+                  alert['origin_id'] == SystemAlertersManager.__name__):
 
                 """
                 This internal alert is sent whenever an Alerter is
@@ -194,7 +196,7 @@ class AlertStore(Store):
 
             elif (alert['alert_code']['code'] ==
                   InternalAlertCode.ComponentReset.value and
-                  alert['origin_id'] == 'GithubAlerterManager'):
+                  alert['origin_id'] == GithubAlerterManager.__name__):
                 """
                 The `ComponentReset` alert for the `GithubAlerterManager`
                 indicates that PANIC has started, or restarted. This means
@@ -204,7 +206,7 @@ class AlertStore(Store):
                 """
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
-                            '*' + parent_hash + '*')
+                    '*' + parent_hash + '*')
 
                 # Go through all the chains that are in REDIS
                 for chain in chain_hashes_list:

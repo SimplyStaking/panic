@@ -17,14 +17,13 @@ from src.data_store.stores.github import GithubStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_STORE_INPUT_QUEUE,
-                                 GITHUB_STORE_INPUT_ROUTING_KEY)
+                                 GITHUB_STORE_INPUT_QUEUE_NAME,
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException)
-from test.utils.utils import (connect_to_rabbit,
-                              disconnect_from_rabbit,
-                              delete_exchange_if_exists,
-                              delete_queue_if_exists)
+from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
+                              delete_exchange_if_exists, delete_queue_if_exists)
 
 
 class TestGithubStore(unittest.TestCase):
@@ -59,7 +58,7 @@ class TestGithubStore(unittest.TestCase):
                                       self.dummy_logger,
                                       self.rabbitmq)
 
-        self.routing_key = 'heartbeat.worker'
+        self.heartbeat_routing_key = HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
@@ -67,18 +66,17 @@ class TestGithubStore(unittest.TestCase):
                                        True, False, False)
         self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.rabbitmq.queue_declare(GITHUB_STORE_INPUT_QUEUE, False, True,
+        self.rabbitmq.queue_declare(GITHUB_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
-        self.rabbitmq.queue_bind(GITHUB_STORE_INPUT_QUEUE,
-                                 STORE_EXCHANGE,
-                                 GITHUB_STORE_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GITHUB_STORE_INPUT_QUEUE_NAME, STORE_EXCHANGE,
+                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
         connect_to_rabbit(self.test_rabbit_manager)
         self.test_rabbit_manager.queue_declare(self.test_queue_name, False,
                                                True, False, False)
         self.test_rabbit_manager.queue_bind(self.test_queue_name,
                                             HEALTH_CHECK_EXCHANGE,
-                                            self.routing_key)
+                                            self.heartbeat_routing_key)
 
         self.test_data_str = 'test data'
         self.test_exception = PANICException('test_exception', 1)
@@ -174,7 +172,7 @@ class TestGithubStore(unittest.TestCase):
 
     def tearDown(self) -> None:
         connect_to_rabbit(self.rabbitmq)
-        delete_queue_if_exists(self.rabbitmq, GITHUB_STORE_INPUT_QUEUE)
+        delete_queue_if_exists(self.rabbitmq, GITHUB_STORE_INPUT_QUEUE_NAME)
         delete_exchange_if_exists(self.rabbitmq, STORE_EXCHANGE)
         delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
         disconnect_from_rabbit(self.rabbitmq)
@@ -188,7 +186,9 @@ class TestGithubStore(unittest.TestCase):
         self.dummy_logger = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
+        self.test_store._redis = None
         self.test_rabbit_manager = None
+        self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, str(self.test_store))
@@ -232,30 +232,31 @@ class TestGithubStore(unittest.TestCase):
             # Check whether the producing exchanges have been created by
             # using passive=True. If this check fails an exception is raised
             # automatically.
-            self.test_store.rabbitmq.exchange_declare(
-                STORE_EXCHANGE, passive=True)
-            self.test_store.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, passive=True)
+            self.test_store.rabbitmq.exchange_declare(STORE_EXCHANGE,
+                                                      passive=True)
+            self.test_store.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE,
+                                                      passive=True)
 
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-                body=self.test_data_str, is_body_dict=False,
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.heartbeat_routing_key, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
                 exchange=STORE_EXCHANGE,
-                routing_key=GITHUB_STORE_INPUT_ROUTING_KEY,
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
 
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
-                GITHUB_STORE_INPUT_QUEUE, False, True, False, False)
+                GITHUB_STORE_INPUT_QUEUE_NAME, False, True, False, False)
 
             self.assertEqual(1, res.method.message_count)
         except Exception as e:
@@ -345,7 +346,7 @@ class TestGithubStore(unittest.TestCase):
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_STORE_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
@@ -392,7 +393,7 @@ class TestGithubStore(unittest.TestCase):
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_STORE_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
@@ -432,11 +433,11 @@ class TestGithubStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_STORE_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
@@ -484,11 +485,11 @@ class TestGithubStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_STORE_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
