@@ -31,6 +31,8 @@ CONFIGS_STORE_INPUT_QUEUE_NAME = 'configs_store_input_queue'
 GITHUB_STORE_INPUT_QUEUE_NAME = 'github_store_input_queue'
 SYSTEM_STORE_INPUT_QUEUE_NAME = 'system_store_input_queue'
 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME = 'data_stores_manager_heartbeat_queue'
+CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE = '{}_alerts_handler_input_queue'
+CHAN_CMDS_HAN_HB_QUEUE_NAME_TEMPLATE = '{}_commands_handler_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
 # Routing Keys
@@ -66,8 +68,6 @@ HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 
 # Routing keys and queue names
-TCH_INPUT_ROUTING_KEY = 'ping'
-
 CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
