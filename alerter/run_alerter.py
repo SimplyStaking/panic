@@ -28,7 +28,7 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_QUEUE_NAME,
+                                 CONFIGS_STORE_INPUT_QUEUE_NAME,
                                  RE_INITIALISE_SLEEPING_PERIOD,
                                  RESTART_SLEEPING_PERIOD,
                                  SYSTEM_ALERTERS_MANAGER_NAME,
@@ -47,7 +47,8 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 ALERT_ROUTER_CONFIGS_ROUTING_KEY)
+                                 ALERT_ROUTER_CONFIGS_ROUTING_KEY,
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -733,16 +734,16 @@ def _initialise_and_declare_config_queues() -> None:
 
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
-                STORE_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                CONFIGS_STORE_INPUT_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(STORE_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, '#'),
-                dummy_logger)
-            rabbitmq.queue_bind(STORE_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, '#')
+                "key {}.".format(CONFIGS_STORE_INPUT_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY), dummy_logger)
+            rabbitmq.queue_bind(CONFIGS_STORE_INPUT_QUEUE_NAME, CONFIG_EXCHANGE,
+                                CONFIGS_STORE_INPUT_ROUTING_KEY)
 
             ret = rabbitmq.disconnect()
             if ret == -1:

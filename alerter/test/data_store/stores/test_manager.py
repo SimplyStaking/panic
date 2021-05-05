@@ -19,14 +19,13 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 DATA_STORE_MAN_INPUT_QUEUE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY,
+                                 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                 PING_ROUTING_KEY,
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
                                  CONFIG_STORE_NAME)
 from src.utils.exceptions import (PANICException)
-from test.utils.utils import (connect_to_rabbit,
-                              disconnect_from_rabbit,
-                              delete_exchange_if_exists,
-                              delete_queue_if_exists)
+from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
+                              delete_exchange_if_exists, delete_queue_if_exists)
 from test.utils.utils import infinite_fn
 
 
@@ -44,7 +43,7 @@ class TestStoreManager(unittest.TestCase):
             connection_check_time_interval=self.connection_check_time_interval)
 
         self.manager_name = 'test_store_manager'
-        self.routing_key = 'heartbeat.manager'
+        self.heartbeat_routing_key = HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY
         self.test_queue_name = 'test queue'
         self.test_store_manager = StoreManager(self.dummy_logger,
                                                self.manager_name,
@@ -58,13 +57,12 @@ class TestStoreManager(unittest.TestCase):
         connect_to_rabbit(self.test_rabbit_manager)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.rabbitmq.queue_declare(DATA_STORE_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.rabbitmq.queue_declare(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.test_rabbit_manager.queue_declare(self.test_queue_name, False,
                                                True, False, False)
-        self.rabbitmq.queue_bind(DATA_STORE_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
 
         self.test_data_str = 'test data'
         self.test_heartbeat = {
@@ -76,7 +74,8 @@ class TestStoreManager(unittest.TestCase):
 
     def tearDown(self) -> None:
         connect_to_rabbit(self.rabbitmq)
-        delete_queue_if_exists(self.rabbitmq, DATA_STORE_MAN_INPUT_QUEUE)
+        delete_queue_if_exists(self.rabbitmq,
+                               DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)
         delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
         disconnect_from_rabbit(self.rabbitmq)
 
@@ -129,13 +128,14 @@ class TestStoreManager(unittest.TestCase):
                 self.test_queue_name, False, True, False, False)
             self.test_rabbit_manager.queue_bind(
                 self.test_queue_name, HEALTH_CHECK_EXCHANGE,
-                self.routing_key)
+                self.heartbeat_routing_key)
 
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store_manager.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-                body=self.test_data_str, is_body_dict=False,
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.heartbeat_routing_key, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
 
@@ -160,7 +160,7 @@ class TestStoreManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_store_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
             self.test_store_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -295,8 +295,8 @@ class TestStoreManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key=self.routing_key)
-            body = 'ping'
+            method_hb = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+            body = b'ping'
             res = self.test_rabbit_manager.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -304,7 +304,7 @@ class TestStoreManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
             self.test_store_manager._process_ping(blocking_channel, method_hb,
                                                   properties, body)
 
@@ -392,8 +392,8 @@ class TestStoreManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key=self.routing_key)
-            body = 'ping'
+            method_hb = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+            body = b'ping'
             res = self.test_rabbit_manager.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -401,7 +401,7 @@ class TestStoreManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
             self.test_store_manager._process_ping(blocking_channel, method_hb,
                                                   properties, body)
 
@@ -496,8 +496,8 @@ class TestStoreManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key=self.routing_key)
-            body = 'ping'
+            method_hb = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+            body = b'ping'
             self.test_store_manager._process_ping(blocking_channel, method_hb,
                                                   properties, body)
 
@@ -554,9 +554,9 @@ class TestStoreManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key=self.routing_key)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
-            body = 'ping'
+            body = b'ping'
             res = self.test_rabbit_manager.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -564,7 +564,7 @@ class TestStoreManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
             self.test_store_manager._process_ping(blocking_channel, method,
                                                   properties, body)
 
@@ -589,9 +589,9 @@ class TestStoreManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
-            body = 'ping'
+            body = b'ping'
 
             self.test_store_manager._process_ping(blocking_channel, method,
                                                   properties, body)
@@ -614,9 +614,9 @@ class TestStoreManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_store_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key=self.routing_key)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
-            body = 'ping'
+            body = b'ping'
 
             self.assertRaises(eval(param_expected),
                               self.test_store_manager._process_ping,
