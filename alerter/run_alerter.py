@@ -48,7 +48,8 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  ALERT_ROUTER_CONFIGS_ROUTING_KEY,
-                                 CONFIGS_STORE_INPUT_ROUTING_KEY)
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY,
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -599,8 +600,6 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
 
 def _initialise_and_declare_config_queues() -> None:
-    # TODO: This can be refactored by storing the queue configurations in
-    #     : constant.py so that it is easier to maintain.
     dummy_logger = logging.getLogger('Dummy')
 
     while True:
@@ -670,10 +669,12 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'channels.*'),
+                                 CONFIG_EXCHANGE,
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY),
                 dummy_logger)
             rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 
             # GitHub Monitors Manager queues
             log_and_print("Creating queue '{}'".format(

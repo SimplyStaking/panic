@@ -33,6 +33,8 @@ SYSTEM_STORE_INPUT_QUEUE_NAME = 'system_store_input_queue'
 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME = 'data_stores_manager_heartbeat_queue'
 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE = '{}_alerts_handler_input_queue'
 CHAN_CMDS_HAN_HB_QUEUE_NAME_TEMPLATE = '{}_commands_handler_heartbeat_queue'
+CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
+CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME = 'channels_manager_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
 # Routing Keys
@@ -58,19 +60,11 @@ SYSTEM_STORE_INPUT_ROUTING_KEY = 'transformed_data.system.*'
 CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE = 'channel.{}'
 CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
 LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
+CHANNELS_MANAGER_CONFIGS_ROUTING_KEY = 'channels.*'
 PING_ROUTING_KEY = 'ping'
 HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
-
-# Queues that need to be declared in the run_alerter to avoid configs being sent
-# while a component has not started yet. Basically these are all config queues.
-CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
-
-# Routing keys and queue names
-CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
-CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
-CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
 
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10

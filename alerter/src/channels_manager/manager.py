@@ -21,7 +21,6 @@ from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                  TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
                                  TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -32,9 +31,11 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  LOG_ALERTS_HANDLER_NAME_TEMPLATE,
                                  CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
                                  LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
-                                 CHANNELS_MANAGER_INPUT_QUEUE,
-                                 CHANNELS_MANAGER_HB_ROUTING_KEY,
-                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                 PING_ROUTING_KEY,
+                                 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
@@ -72,19 +73,18 @@ class ChannelsManager(PublisherSubscriberComponent):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(CHANNELS_MANAGER_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                                    False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", CHANNELS_MANAGER_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         CHANNELS_MANAGER_HB_ROUTING_KEY)
-        self.rabbitmq.queue_bind(CHANNELS_MANAGER_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 CHANNELS_MANAGER_HB_ROUTING_KEY)
+                         "'%s'", CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          CHANNELS_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(CHANNELS_MANAGER_INPUT_QUEUE,
+                          CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
@@ -96,10 +96,10 @@ class ChannelsManager(PublisherSubscriberComponent):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                         CONFIG_EXCHANGE, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on %s",
                           CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -114,9 +114,10 @@ class ChannelsManager(PublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 
