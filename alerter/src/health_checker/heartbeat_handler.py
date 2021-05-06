@@ -69,7 +69,7 @@ class HeartbeatHandler:
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", )
+        self.logger.info("Creating queue '%s'", HB_HANDLER_HEARTBEAT_QUEUE_NAME)
         self.rabbitmq.queue_declare(HB_HANDLER_HEARTBEAT_QUEUE_NAME, False,
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
