@@ -1,8 +1,8 @@
 import logging
 
+from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.channel import Channel
-from src.alerter.alert_severities import Severity
 from src.utils.data import RequestStatus
 
 
