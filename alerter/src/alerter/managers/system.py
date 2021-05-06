@@ -163,8 +163,14 @@ class SystemAlertersManager(AlertersManager):
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
-            # Send an internal alert to clear everything from that chain
+            """
+            Send an internal alert to clear everything from that chain
+            The process for the received config is also terminated as it
+            indicates that a configuration is removed or changed.
+            """
             self._terminate_and_join_chain_alerter_processes(chain)
+            # Checking if we received a configuration, therefore we start the
+            # process again
             if bool(sent_configs):
                 # Check if all the parent_ids in the received configuration
                 # are the same
