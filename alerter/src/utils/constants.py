@@ -6,7 +6,7 @@ ALERT_EXCHANGE = 'alert'
 HEALTH_CHECK_EXCHANGE = 'health_check'
 
 # Queues
-CONFIGS_MANAGER_HEARTBEAT_QUEUE = "config_heartbeat_queue"
+CONFIGS_MANAGER_HEARTBEAT_QUEUE = "configs_manager_heartbeat_queue"
 GH_MON_MAN_HEARTBEAT_QUEUE_NAME = 'github_monitors_manager_heartbeat_queue'
 GH_MON_MAN_CONFIGS_QUEUE_NAME = 'github_monitors_manager_configs_queue'
 SYS_MON_MAN_HEARTBEAT_QUEUE_NAME = 'system_monitors_manager_heartbeat_queue'
