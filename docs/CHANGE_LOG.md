@@ -5,6 +5,8 @@ Change the contents of this file to this:
 ## Unreleased
 
 - Added the ChainlinkNodeMonitor, NodeMonitorsManager and their tests.
+- Refactored RabbitMQ queues and routing keys.
+- SystemMonitorsManager now parses systems belonging to chains from the `system_config.ini`. Same schema as `GENERAL` is expected.
 
 ## 0.1.3 [DRAFT]
 
