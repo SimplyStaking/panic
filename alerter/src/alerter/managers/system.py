@@ -163,10 +163,9 @@ class SystemAlertersManager(AlertersManager):
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
-            if not bool(sent_configs):
-                # Send an internal alert to clear everything from that chain
-                self._terminate_and_join_chain_alerter_processes(chain)
-            else:
+            # Send an internal alert to clear everything from that chain
+            self._terminate_and_join_chain_alerter_processes(chain)
+            if bool(sent_configs):
                 # Check if all the parent_ids in the received configuration
                 # are the same
                 parent_id = sent_configs['1']['parent_id']
@@ -186,15 +185,6 @@ class SystemAlertersManager(AlertersManager):
                     system_ram_usage=filtered['system_ram_usage'],
                     system_is_down=filtered['system_is_down'],
                 )
-                if parent_id in self.systems_alerts_configs:
-                    previous_process = \
-                        self.parent_id_process_dict[parent_id]['process']
-                    previous_process.terminate()
-                    previous_process.join()
-
-                    log_and_print("Restarting the system alerter of {} with "
-                                  "latest configuration".format(chain),
-                                  self.logger)
 
                 self._create_and_start_alerter_process(
                     system_alerts_config, parent_id, chain)

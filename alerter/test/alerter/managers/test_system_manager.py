@@ -951,8 +951,11 @@ class TestSystemAlertersManager(unittest.TestCase):
 
         self.test_manager._systems_alerts_configs[self.parent_id_1] = \
             self.system_alerts_config
+        self.test_manager._systems_alerts_configs[self.parent_id_2] = \
+            self.system_alerts_config_2
         self.test_manager._parent_id_process_dict = \
             self.config_process_dict_example
+
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -982,6 +985,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 system_storage_usage=self.system_storage_usage,
                 system_ram_usage=self.system_ram_usage,
                 system_is_down=self.system_is_down)
+
             mock_system_alerters_config_2 = mock_system_alerters_config(
                 parent_id=self.parent_id_2,
                 open_file_descriptors=self.open_file_descriptors_2,
