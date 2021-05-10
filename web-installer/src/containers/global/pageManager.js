@@ -33,7 +33,7 @@ const mapStateToProps = (state) => ({
 function getPage(pageName) {
   switch (pageName) {
     case WELCOME_PAGE:
-      return <ChannelsPage />;
+      return <ChainsPage />;
     case CHANNELS_PAGE:
       return <ChannelsPage />;
     case CHAINS_PAGE:

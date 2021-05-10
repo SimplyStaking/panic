@@ -1,11 +1,12 @@
 import * as Yup from 'yup';
+import { BLACKLIST } from 'constants/constants';
 
-const NodeSchema = (props) => Yup.object().shape({
+const ChainlinkNodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-node-name', 'Node name is not unique.', (value) => {
       const {
         cosmosNodesConfig, substrateNodesConfig, systemConfig, reposConfig,
-        chainlinkNodesConfig,
+        chainlinkNodesConfig, dockerConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -33,9 +34,26 @@ const NodeSchema = (props) => Yup.object().shape({
           return false;
         }
       }
+      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
+        if (dockerConfig.byId[dockerConfig.allIds[i]].repo_name === value) {
+          return false;
+        }
+      }
       return true;
     })
     .required('Node name is required.'),
+  prometheus_url: Yup.array()
+    .of(Yup.string().test(
+      'localhost',
+      '127.0.0.1 is not allowed for security reasons.',
+      (value) => {
+        if (BLACKLIST.find((a) => value.includes(a))) {
+          return false;
+        }
+        return true;
+      },
+    ))
+    .required('Prometheus URL is required.'),
 });
 
-export default NodeSchema;
+export default ChainlinkNodeSchema;

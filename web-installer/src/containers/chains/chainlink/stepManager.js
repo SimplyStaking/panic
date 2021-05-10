@@ -1,31 +1,27 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AlertsCosmosTableContainer } from 'containers/chains/common/alertsContainer';
-import { CosmosChainFormContainer } from 'containers/chains/common/chainContainer';
-import { ChannelsCosmosTableContainer } from 'containers/chains/common/channelsContainer';
+import { AlertsChainlinkTableContainer } from 'containers/chains/common/alertsContainer';
+import { ChainlinkChainFormContainer } from 'containers/chains/common/chainContainer';
+import { ChannelsChainlinkTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  KmsCosmosFormContainer,
-  KmsCosmosTableContainer,
-} from 'containers/chains/common/kmsContainer';
-import {
-  RepositoriesCosmosFormContainer,
-  RepositoriesCosmosTableContainer,
+  RepositoriesChainlinkFormContainer,
+  RepositoriesChainlinkTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  DockerCosmosFormContainer,
-  DockerCosmosTableContainer,
+  DockerChainlinkFormContainer,
+  DockerChainlinkTableContainer,
 } from 'containers/chains/common/dockerContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
-  KMS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
   DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
+import { SystemChainlinkFormContainer, SystemChainlinkTableContainer } from '../common/systemsContainer';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
@@ -35,41 +31,36 @@ const mapStateToProps = (state) => ({
 function getStep(stepName) {
   switch (stepName) {
     case ALERTS_STEP:
-      return <AlertsCosmosTableContainer />;
+      return <AlertsChainlinkTableContainer />;
     case CHAINS_STEP:
-      return <CosmosChainFormContainer />;
+      return <ChainlinkChainFormContainer />;
     case CHANNELS_STEP:
-      return <ChannelsCosmosTableContainer />;
-    case KMS_STEP:
-      return (
-        <div>
-          <KmsCosmosFormContainer />
-          <KmsCosmosTableContainer />
-        </div>
-      );
+      return <ChannelsChainlinkTableContainer />;
     case NODES_STEP:
       return (
         <div>
           <NodesFormContainer />
           <NodesTableContainer />
+          <SystemChainlinkFormContainer />
+          <SystemChainlinkTableContainer />
         </div>
       );
     case REPOSITORIES_STEP:
       return (
         <div>
-          <RepositoriesCosmosFormContainer />
-          <RepositoriesCosmosTableContainer />
+          <RepositoriesChainlinkFormContainer />
+          <RepositoriesChainlinkTableContainer />
         </div>
       );
     case DOCKER_STEP:
       return (
         <div>
-          <DockerCosmosFormContainer />
-          <DockerCosmosTableContainer />
+          <DockerChainlinkFormContainer />
+          <DockerChainlinkTableContainer />
         </div>
       );
     default:
-      return <CosmosChainFormContainer />;
+      return <ChainlinkChainFormContainer />;
   }
 }
 

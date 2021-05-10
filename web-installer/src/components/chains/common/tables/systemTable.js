@@ -14,14 +14,17 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
-import { GENERAL } from 'constants/constants';
 
-const SystemTable = ({ config, systemConfig, removeSystemDetails }) => {
-  const currentConfig = config.byId[GENERAL];
-
-  if (currentConfig.systems.length === 0) {
+const SystemTable = ({
+  currentChain,
+  config,
+  systemConfig,
+  removeSystemDetails,
+}) => {
+  if (config.byId[currentChain].systems.length === 0) {
     return <div />;
   }
+
   return (
     <TableContainer component={Paper}>
       <Table className="table" aria-label="systems table" style={{ marginBottom: '150px' }}>
@@ -34,7 +37,7 @@ const SystemTable = ({ config, systemConfig, removeSystemDetails }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {currentConfig.systems.map((id) => (
+          {config.byId[currentChain].systems.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">{systemConfig.byId[id].name}</TableCell>
               <TableCell align="center">
@@ -52,7 +55,7 @@ const SystemTable = ({ config, systemConfig, removeSystemDetails }) => {
                   onClick={() => {
                     removeSystemDetails({
                       id: systemConfig.byId[id].id,
-                      parent_id: GENERAL,
+                      parent_id: currentChain,
                     });
                   }}
                 >
@@ -84,6 +87,7 @@ SystemTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeSystemDetails: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
 });
 
 export default SystemTable;

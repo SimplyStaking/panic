@@ -13,14 +13,11 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import {
-  NEXT, BACK, REPOSITORIES_STEP, CHAINS_PAGE,
-} from 'constants/constants';
+import { NEXT, BACK, GENERAL } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import NavigationButton from 'components/global/navigationButton';
 import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
-import Data from 'data/system';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
@@ -33,7 +30,8 @@ import GridItem from 'components/material_ui/Grid/GridItem';
  */
 
 const SystemForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue, pageChanger,
+  errors, values, handleSubmit, handleChange, setFieldValue, data, pageChanger,
+  currentChain,
 }) => {
   const classes = useStyles();
 
@@ -50,13 +48,13 @@ const SystemForm = ({
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>{Data.title}</h1>
+              <h1 className={classes.title}>{data.systemForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
         <Typography variant="subtitle1" gutterBottom className="greyBackground">
           <Box m={2} p={3}>
-            <p>{Data.description}</p>
+            <p>{data.systemForm.description}</p>
           </Box>
         </Typography>
         <Divider />
@@ -72,10 +70,9 @@ const SystemForm = ({
                   value={values.name}
                   type="text"
                   name="name"
-                  placeholder={Data.name_holder}
+                  placeholder={data.systemForm.nameHolder}
                   helperText={errors.name ? errors.name : ''}
                   onChange={handleChange}
-                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
                 />
@@ -83,7 +80,7 @@ const SystemForm = ({
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.name} placement="left">
+                    <Tooltip title={data.systemForm.name} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -98,10 +95,9 @@ const SystemForm = ({
                   value={values.exporter_url}
                   type="text"
                   name="exporter_url"
-                  placeholder={Data.exporter_url_holder}
+                  placeholder={data.systemForm.exporterUrlHolder}
                   helperText={errors.exporter_url ? errors.exporter_url : ''}
                   onChange={handleChange}
-                  inputProps={{ min: 0, style: { textAlign: 'right' } }}
                   autoComplete="off"
                   fullWidth
                 />
@@ -109,7 +105,7 @@ const SystemForm = ({
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.exporter_url} placement="left">
+                    <Tooltip title={data.systemForm.exporterUrl} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -136,7 +132,7 @@ const SystemForm = ({
               <Grid item xs={1}>
                 <Grid container justify="center">
                   <MuiThemeProvider theme={theme}>
-                    <Tooltip title={Data.monitor_system} placement="left">
+                    <Tooltip title={data.systemForm.monitorSystem} placement="left">
                       <InfoIcon />
                     </Tooltip>
                   </MuiThemeProvider>
@@ -168,12 +164,24 @@ const SystemForm = ({
               <Grid item xs={4} />
               <Grid item xs={2}>
                 <Box px={2}>
-                  <NavigationButton
-                    disabled={false}
-                    nextPage={nextPage}
-                    buttonText={BACK}
-                    navigation={CHAINS_PAGE}
-                  />
+                  {
+                  currentChain === GENERAL
+                    ? (
+                      <NavigationButton
+                        disabled={false}
+                        nextPage={nextPage}
+                        buttonText={BACK}
+                        navigation={data.systemForm.backStep}
+                      />
+                    )
+                    : (
+                      <StepButtonContainer
+                        disabled={false}
+                        text={BACK}
+                        navigation={data.systemForm.backStep}
+                      />
+                    )
+                    }
                 </Box>
               </Grid>
               <Grid item xs={2}>
@@ -181,7 +189,7 @@ const SystemForm = ({
                   <StepButtonContainer
                     disabled={false}
                     text={NEXT}
-                    navigation={REPOSITORIES_STEP}
+                    navigation={data.systemForm.nextStep}
                   />
                 </Box>
               </Grid>
@@ -209,6 +217,22 @@ SystemForm.propTypes = forbidExtraProps({
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
+  currentChain: PropTypes.string.isRequired,
+  data: PropTypes.shape({
+    systemForm: PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      nameHolder: PropTypes.string.isRequired,
+      nameTip: PropTypes.string.isRequired,
+      monitorTip: PropTypes.string.isRequired,
+      exporterUrlHolder: PropTypes.string.isRequired,
+      exporterUrl: PropTypes.string.isRequired,
+      monitorSystem: PropTypes.string.isRequired,
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 });
 
 export default SystemForm;

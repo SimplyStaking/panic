@@ -1,6 +1,6 @@
 import React from 'react';
 import StepManager from 'containers/chains/chainlink/stepManager';
-import Data from 'data/cosmos';
+import Data from 'data/chainlink';
 import Parallax from 'components/material_ui/Parallax/Parallax';
 import GridItem from 'components/material_ui/Grid/GridItem';
 import GridContainer from 'components/material_ui/Grid/GridContainer';

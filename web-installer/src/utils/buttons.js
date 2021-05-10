@@ -14,6 +14,7 @@ import {
   sendTestOpsGenie,
   pingTendermint,
   pingCosmosPrometheus,
+  pingChainlinkPrometheus,
   pingNodeExporter,
   saveAccount,
   deleteAccount,
@@ -411,6 +412,38 @@ function PingPrometheus({ disabled, prometheusUrl }) {
   );
 }
 
+function PingChainlinkPrometheus({ disabled, prometheusUrl }) {
+  const onClick = async () => {
+    prometheusUrl.forEach(async (url) => {
+      try {
+        ToastsStore.info(`Connecting with Prometheus URL ${url}`, 5000);
+        await pingChainlinkPrometheus(url);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${url}. Error: ${e.response.data.message}`,
+            5000,
+          );
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${url}. Error: ${e.message}`,
+            5000,
+          );
+        }
+      }
+    });
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
 function PingNodeExporter({ disabled, exporterUrl }) {
   const onClick = async () => {
     try {
@@ -577,6 +610,11 @@ PingDockerHubButton.propTypes = forbidExtraProps({
   name: PropTypes.string.isRequired,
 });
 
+PingChainlinkPrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrl: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+});
+
 PingPrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrl: PropTypes.string.isRequired,
@@ -615,6 +653,7 @@ export {
   PingRepoButton,
   PingTendermint,
   PingPrometheus,
+  PingChainlinkPrometheus,
   PingNodeExporter,
   SaveConfigButton,
   LoadConfigButton,

@@ -5,9 +5,14 @@ const DockerSchema = (props) => Yup.object().shape({
     .test('unique-docker-name', 'Name already exists.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        dockerConfig,
+        dockerConfig, chainlinkNodesConfig,
       } = props;
 
+      for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
+        if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       for (let i = 0; i < substrateNodesConfig.allIds.length; i += 1) {
         if (substrateNodesConfig.byId[substrateNodesConfig.allIds[i]].name === value) {
           return false;

@@ -7,6 +7,7 @@ import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import ChainlinkData from 'data/chainlink';
 import DockerSchema from './schemas/dockerSchema';
 
 // This performs docker validation, by checking if the docker is already
@@ -104,6 +105,34 @@ const DockerCosmosTableContainer = connect(
   mapDispatchToPropsRemove,
 )(DockerTable);
 
+// ------------------------- Chainlink Based Chain Data -----------------
+
+// Chainlink redux data that will be used to control the repo form and populate
+// the docker table.
+const mapChainlinkStateToProps = (state) => ({
+  currentChain: state.CurrentChainlinkChain,
+  config: state.ChainlinkChainsReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
+  systemConfig: state.SystemsReducer,
+  reposConfig: state.RepositoryReducer,
+  dockerConfig: state.DockerReducer,
+  data: ChainlinkData,
+});
+
+// Combine chainlink state and dispatch functions to the docker form
+const DockerChainlinkFormContainer = connect(
+  mapChainlinkStateToProps,
+  mapDispatchToProps,
+)(Form);
+
+// Combine chainlink state and dispatch functions to the docker table
+const DockerChainlinkTableContainer = connect(
+  mapChainlinkStateToProps,
+  mapDispatchToPropsRemove,
+)(DockerTable);
+
 // ------------------------- Substrate Based Chain Data -----------------
 
 // Substrate redux data that will be used to control the repo form and populate
@@ -138,4 +167,6 @@ export {
   DockerCosmosTableContainer,
   DockerSubstrateFormContainer,
   DockerSubstrateTableContainer,
+  DockerChainlinkFormContainer,
+  DockerChainlinkTableContainer,
 };

@@ -9,11 +9,13 @@ import {
   TableHead,
   TableRow,
   Button,
+  List,
+  ListItem,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
+import CancelIcon from '@material-ui/icons/Cancel';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
-import CancelIcon from '@material-ui/icons/Cancel';
 
 /*
  * Contains the data of all the nodes of the current chain process. Has the
@@ -21,7 +23,7 @@ import CancelIcon from '@material-ui/icons/Cancel';
  */
 const NodesTable = ({
   chainConfig,
-  cosmosNodesConfig,
+  chainlinkNodesConfig,
   currentChain,
   removeNodeDetails,
 }) => {
@@ -31,18 +33,13 @@ const NodesTable = ({
 
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="cosmos nodes table" style={{ marginBottom: '150px' }}>
+      <Table className="table" aria-label="chainlink nodes table" style={{ marginBottom: '150px' }}>
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Tendermint</TableCell>
-            <TableCell align="center">Cosmos Rest Server</TableCell>
-            <TableCell align="center">Prometheus</TableCell>
-            <TableCell align="center">Node Exporter</TableCell>
-            <TableCell align="center">Validator</TableCell>
-            <TableCell align="center">Monitor</TableCell>
-            <TableCell align="center">Archive</TableCell>
-            <TableCell align="center">Data Source</TableCell>
+            <TableCell align="center">Prometheus URLs</TableCell>
+            <TableCell align="center">Monitor Prometheus URLs</TableCell>
+            <TableCell align="center">Monitor Node</TableCell>
             <TableCell align="center">Delete</TableCell>
           </TableRow>
         </TableHead>
@@ -50,52 +47,27 @@ const NodesTable = ({
           {chainConfig.byId[currentChain].nodes.map((id) => (
             <TableRow key={id}>
               <TableCell align="center">
-                {cosmosNodesConfig.byId[id].name}
+                {chainlinkNodesConfig.byId[id].name}
               </TableCell>
               <TableCell align="center">
-                {cosmosNodesConfig.byId[id].tendermint_rpc_url}
+                <div style={{ maxHeight: 70, overflow: 'auto' }}>
+                  <List>
+                    {chainlinkNodesConfig.byId[id].prometheus_url.map((url) => (
+                      <ListItem key={url}>{url}</ListItem>
+                    ))}
+                  </List>
+                </div>
               </TableCell>
               <TableCell align="center">
-                {cosmosNodesConfig.byId[id].cosmos_rpc_url}
+                {chainlinkNodesConfig.byId[id].monitor_prometheus ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
-                {cosmosNodesConfig.byId[id].prometheus_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].exporter_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].is_validator ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].monitor_node ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].is_archive_node ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].use_as_data_source ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
+                {chainlinkNodesConfig.byId[id].monitor_node ? <CheckIcon /> : <ClearIcon />}
               </TableCell>
               <TableCell align="center">
                 <Button
                   onClick={() => {
-                    removeNodeDetails(cosmosNodesConfig.byId[id]);
+                    removeNodeDetails(chainlinkNodesConfig.byId[id]);
                   }}
                 >
                   <CancelIcon />
@@ -116,19 +88,14 @@ NodesTable.propTypes = forbidExtraProps({
       nodes: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
-  cosmosNodesConfig: PropTypes.shape({
+  chainlinkNodesConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
       name: PropTypes.string,
-      tendermint_rpc_url: PropTypes.string,
-      cosmos_rpc_url: PropTypes.string,
       prometheus_url: PropTypes.string,
-      exporter_url: PropTypes.string,
-      is_validator: PropTypes.bool,
+      monitor_prometheus: PropTypes.bool,
       monitor_node: PropTypes.bool,
-      is_archive_node: PropTypes.bool,
-      use_as_data_source: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,

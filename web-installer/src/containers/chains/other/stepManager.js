@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import { AlertsGeneralTableContainer } from 'containers/chains/common/alertsContainer';
 import { ChannelsGeneralTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  SystemFormContainer,
-  SystemTableContainer,
+  SystemGeneralFormContainer,
+  SystemGeneralTableContainer,
 } from 'containers/chains/common/systemsContainer';
 import {
   RepositoriesGeneralFormContainer,
@@ -37,8 +37,8 @@ function getStep(stepName) {
     case SYSTEMS_STEP:
       return (
         <div>
-          <SystemFormContainer />
-          <SystemTableContainer />
+          <SystemGeneralFormContainer />
+          <SystemGeneralTableContainer />
         </div>
       );
     case REPOSITORIES_STEP:
@@ -58,8 +58,8 @@ function getStep(stepName) {
     default:
       return (
         <div>
-          <SystemFormContainer />
-          <SystemTableContainer />
+          <SystemGeneralFormContainer />
+          <SystemGeneralTableContainer />
         </div>
       );
   }

@@ -22,6 +22,8 @@ import {
   LOAD_SEVERITY_ALERTS_CHAINLINK,
   ADD_DOCKER,
   REMOVE_DOCKER,
+  ADD_SYSTEM,
+  REMOVE_SYSTEM,
 } from 'redux/actions/types';
 
 const chainlinkRepeatAlerts = {
@@ -123,8 +125,46 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
+    6: {
+      name: 'Latest block height processed by node',
+      identifier: 'head_tracker_current_head',
+      description: 'Keeps track of blocks processed by the node, alerts '
+      + 'if no change over time.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 120,
+        enabled: true,
+      },
+      critical: {
+        threshold: 180,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    7: {
+      name: 'ETH blocks in queue to be processed by chainlink node',
+      identifier: 'head_tracker_heads_in_queue',
+      description: 'Keeps track of blocks in queue to be processed by the node,'
+      + ' alerts if there is a backlog of blocks..',
+      adornment: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 4,
+        enabled: false,
+      },
+      critical: {
+        threshold: 5,
+        repeat: 300,
+        enabled: true,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['1', '2', '3', '4', '5'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7'],
 };
 
 const chainlinkTimeWindowAlerts = {
@@ -185,6 +225,7 @@ function chainlinkChainsById(state = {}, action) {
           nodes: [],
           repositories: [],
           dockers: [],
+          systems: [],
           repeatAlerts: chainlinkRepeatAlerts,
           timeWindowAlerts: chainlinkTimeWindowAlerts,
           thresholdAlerts: chainlinkThresholdAlerts,
@@ -280,6 +321,37 @@ function chainlinkChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           dockers: state[action.payload.parent_id].dockers.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_SYSTEM:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parent_id] === undefined) {
+        return state;
+      }
+      if (state[action.payload.parent_id].systems.includes(action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          systems: state[action.payload.parent_id].systems.concat(action.payload.id),
+        },
+      };
+    case REMOVE_SYSTEM:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parent_id] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          systems: state[action.payload.parent_id].systems.filter(
             (config) => config !== action.payload.id,
           ),
         },

@@ -18,6 +18,11 @@ function pingCosmosPrometheus(prometheusUrl) {
     { prometheusUrl });
 }
 
+function pingChainlinkPrometheus(prometheusUrl) {
+  return sendData('/server/chainlink/prometheus', {},
+    { prometheusUrl });
+}
+
 function pingNodeExporter(exporterUrl) {
   return sendData('/server/system/exporter', {},
     { exporterUrl });
@@ -104,5 +109,5 @@ export {
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
   deleteAccount, getConfigPaths, getConfig, loadAccounts, deleteConfigs,
-  pingDocker,
+  pingDocker, pingChainlinkPrometheus,
 };

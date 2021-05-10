@@ -6,12 +6,14 @@ import {
   updateSeverityAlert,
 } from 'redux/actions/alertActions';
 import { resetCurrentChainIdCosmos } from 'redux/actions/cosmosActions';
+import { resetCurrentChainIdChainlink } from 'redux/actions/chainlinkActions';
 import { resetCurrentChainIdSubstrate } from 'redux/actions/substrateActions';
 import { changePage, changeStep } from 'redux/actions/pageActions';
 import AlertsTable from 'components/chains/common/tables/alertsTable';
 import GeneralAlertsTable from 'components/chains/common/tables/generalAlertsTable';
 import { GENERAL } from 'constants/constants';
 import CosmosData from 'data/cosmos';
+import ChainlinkData from 'data/chainlink';
 import SubstrateData from 'data/substrate';
 import GeneralData from 'data/general';
 
@@ -41,6 +43,34 @@ function mapCosmosDispatchToProps(dispatch) {
 const AlertsCosmosTableContainer = connect(
   mapCosmosStateToProps,
   mapCosmosDispatchToProps,
+)(AlertsTable);
+
+// ------------------------- Chainlink Based Chain Data --------------------
+
+// Chainlink redux data that will be used to control the alerts table.
+const mapChainlinkStateToProps = (state) => ({
+  currentChain: state.CurrentChainlinkChain,
+  config: state.ChainlinkChainsReducer,
+  data: ChainlinkData,
+});
+
+// Functions to be used in the Chainlink Alerts table to save the alert's details
+function mapChainlinkDispatchToProps(dispatch) {
+  return {
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
+    clearChainId: () => dispatch(resetCurrentChainIdChainlink()),
+    updateRepeatAlertDetails: (details) => dispatch(updateRepeatAlert(details)),
+    updateTimeWindowAlertDetails: (details) => dispatch(updateTimeWindowAlert(details)),
+    updateThresholdAlertDetails: (details) => dispatch(updateThresholdAlert(details)),
+    updateSeverityAlertDetails: (details) => dispatch(updateSeverityAlert(details)),
+  };
+}
+
+// Combine chainlink state and dispatch functions to the alerts table
+const AlertsChainlinkTableContainer = connect(
+  mapChainlinkStateToProps,
+  mapChainlinkDispatchToProps,
 )(AlertsTable);
 
 // ------------------------- Substrate Based Chain Data --------------------
@@ -101,6 +131,7 @@ const AlertsGeneralTableContainer = connect(
 
 export {
   AlertsCosmosTableContainer,
+  AlertsChainlinkTableContainer,
   AlertsSubstrateTableContainer,
   AlertsGeneralTableContainer,
 };

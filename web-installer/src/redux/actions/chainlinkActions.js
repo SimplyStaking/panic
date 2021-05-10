@@ -72,18 +72,9 @@ export function addNodeChainlink(payload) {
       id,
       parent_id: payload.parent_id,
       name: payload.name,
-      tendermint_rpc_url: payload.tendermint_rpc_url,
-      monitor_tendermint: payload.monitor_tendermint,
-      chainlink_rpc_url: payload.chainlink_rpc_url,
-      monitor_rpc: payload.monitor_rpc,
       prometheus_url: payload.prometheus_url,
       monitor_prometheus: payload.monitor_prometheus,
-      exporter_url: payload.exporter_url,
-      monitor_system: payload.monitor_system,
-      is_validator: payload.is_validator,
       monitor_node: payload.monitor_node,
-      is_archive_node: payload.is_archive_node,
-      use_as_data_source: payload.use_as_data_source,
     },
   };
 }

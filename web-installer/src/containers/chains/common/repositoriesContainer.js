@@ -7,6 +7,7 @@ import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import ChainlinkData from 'data/chainlink';
 import RepositorySchema from './schemas/repositorySchema';
 
 // This performs repository validation, by checking if the repository is already
@@ -57,6 +58,7 @@ function mapDispatchToPropsRemove(dispatch) {
 const mapGeneralStateToProps = (state) => ({
   currentChain: GENERAL,
   config: state.GeneralReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
@@ -83,6 +85,7 @@ const RepositoriesGeneralTableContainer = connect(
 const mapCosmosStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   config: state.CosmosChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
@@ -102,6 +105,33 @@ const RepositoriesCosmosTableContainer = connect(
   mapDispatchToPropsRemove,
 )(RepositoriesTable);
 
+// ------------------------- Chainlink Based Chain Data -----------------
+
+// Chainlink redux data that will be used to control the repo form and populate
+// the repository table.
+const mapChainlinkStateToProps = (state) => ({
+  currentChain: state.CurrentChainlinkChain,
+  config: state.ChainlinkChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
+  substrateNodesConfig: state.SubstrateNodesReducer,
+  cosmosNodesConfig: state.CosmosNodesReducer,
+  systemConfig: state.SystemsReducer,
+  reposConfig: state.RepositoryReducer,
+  data: ChainlinkData,
+});
+
+// Combine chainlink state and dispatch functions to the repositories form
+const RepositoriesChainlinkFormContainer = connect(
+  mapChainlinkStateToProps,
+  mapDispatchToProps,
+)(Form);
+
+// Combine chainlink state and dispatch functions to the repositories table
+const RepositoriesChainlinkTableContainer = connect(
+  mapChainlinkStateToProps,
+  mapDispatchToPropsRemove,
+)(RepositoriesTable);
+
 // ------------------------- Substrate Based Chain Data -----------------
 
 // Substrate redux data that will be used to control the repo form and populate
@@ -109,6 +139,7 @@ const RepositoriesCosmosTableContainer = connect(
 const mapSubstrateStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   config: state.SubstrateChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
@@ -135,4 +166,6 @@ export {
   RepositoriesCosmosTableContainer,
   RepositoriesSubstrateFormContainer,
   RepositoriesSubstrateTableContainer,
+  RepositoriesChainlinkFormContainer,
+  RepositoriesChainlinkTableContainer,
 };

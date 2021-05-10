@@ -13,21 +13,20 @@ import {
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
-import { COSMOS_SETUP_PAGE } from 'constants/constants';
+import { CHAINLINK_SETUP_PAGE } from 'constants/constants';
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
  * Has functionality to load a chains configuration as well as clear all data
  * setup for a chain.
  */
-const CosmosChainsTable = ({
+const ChainlinkChainsTable = ({
   config,
   loadConfigDetails,
   pageChanger,
   removeChainDetails,
   removeNodeDetails,
   removeRepositoryDetails,
-  removeKmsDetails,
   removeOpsGenieDetails,
   removePagerDutyDetails,
   removeEmailDetails,
@@ -151,11 +150,6 @@ const CosmosChainsTable = ({
       removeRepositoryDetails(payload);
     }
 
-    // Clear all the configured kmses from state
-    for (let i = 0; i < currentConfig.kmses.length; i += 1) {
-      payload.id = currentConfig.kmses[i];
-      removeKmsDetails(payload);
-    }
     // Finally clear the chain from the configuration
     payload.id = chainID;
     removeChainDetails(payload);
@@ -166,7 +160,7 @@ const CosmosChainsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="cosmos chains table">
+      <Table className="table" aria-label="chainlink chains table">
         <TableHead>
           <TableRow>
             <TableCell align="center">Name</TableCell>
@@ -182,7 +176,7 @@ const CosmosChainsTable = ({
                 <Box px={2}>
                   <Button
                     onClick={() => {
-                      loadConfiguration(COSMOS_SETUP_PAGE, id);
+                      loadConfiguration(CHAINLINK_SETUP_PAGE, id);
                     }}
                   >
                     Load Chain
@@ -206,7 +200,7 @@ const CosmosChainsTable = ({
   );
 };
 
-CosmosChainsTable.propTypes = forbidExtraProps({
+ChainlinkChainsTable.propTypes = forbidExtraProps({
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -254,7 +248,6 @@ CosmosChainsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
-  removeKmsDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
   removeEmailDetails: PropTypes.func.isRequired,
@@ -262,4 +255,4 @@ CosmosChainsTable.propTypes = forbidExtraProps({
   removeTelegramDetails: PropTypes.func.isRequired,
 });
 
-export default CosmosChainsTable;
+export default ChainlinkChainsTable;
