@@ -89,12 +89,12 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def _create_and_start_monitor_process(self, repo_config: RepoConfig,
                                           config_id: str, chain: str) -> None:
+        log_and_print("Creating a new process for the monitor of {}"
+                      .format(repo_config.repo_name), self.logger)
         process = multiprocessing.Process(target=start_github_monitor,
                                           args=(repo_config,))
         # Kill children if parent is killed
         process.daemon = True
-        log_and_print("Creating a new process for the monitor of {}"
-                      .format(repo_config.repo_name), self.logger)
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
@@ -178,15 +178,15 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
 
+                old_repo_name = modified_configs[config_id]['name']
+                if not old_repo_name.endswith('/'):
+                    old_repo_name = old_repo_name + '/'
+
                 # If we should not monitor the repo, delete the previous
                 # process from the repo and move to the next config
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
                     del correct_repos_configs[config_id]
-                    old_repo_name = modified_configs[config_id]['name']
-
-                    if not old_repo_name.endswith('/'):
-                        old_repo_name = old_repo_name + '/'
 
                     log_and_print("Killed the monitor of {} ".format(
                         old_repo_name), self.logger)
@@ -195,7 +195,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 log_and_print(
                     "The configuration for {} was modified. A new monitor with "
                     "the latest configuration will be started.".format(
-                        modified_configs[config_id]['repo_name']), self.logger)
+                        old_repo_name), self.logger)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
                 correct_repos_configs[config_id] = config

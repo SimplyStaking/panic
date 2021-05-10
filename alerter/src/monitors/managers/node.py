@@ -87,12 +87,12 @@ class NodeMonitorsManager(MonitorsManager):
     def _create_and_start_monitor_process(
             self, node_config: NodeConfig, config_id: str,
             monitor_type: Type[Monitor]) -> None:
+        log_and_print("Creating a new process for the monitor of {}".format(
+            node_config.node_name), self.logger)
         process = multiprocessing.Process(target=start_node_monitor,
                                           args=(node_config, monitor_type))
         # Kill children if parent is killed
         process.daemon = True
-        log_and_print("Creating a new process for the monitor of {}".format(
-            node_config.node_name), self.logger)
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \

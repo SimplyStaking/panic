@@ -26,6 +26,12 @@ class ChainlinkNodeMonitor(Monitor):
     def __init__(self, monitor_name: str, node_config: ChainlinkNodeConfig,
                  logger: logging.Logger, monitor_period: int,
                  rabbitmq: RabbitMQApi) -> None:
+
+        # TODO: Currently there is no point in monitoring a chainlink node
+        #     : without monitoring its prometheus url. However, when adding
+        #     : new sources we need to check for both 'monitor_node' and
+        #     : 'monitor_<source>'. This should be done both here and in the
+        #     : NodeMonitorsManager.
         if len(node_config.node_prometheus_urls) == 0:
             raise NoMonitoringSourceGivenException(node_config.node_name)
 
@@ -91,7 +97,7 @@ class ChainlinkNodeMonitor(Monitor):
         """
         This method will try to get all the metrics from the chainlink node
         which is online. It first tries to get the metrics from the last source
-        used, if it fails, it tries to get the data from the back-up nodes.
+        used, if it fails, it tries to get the data from another node.
         If it can't connect with any node, it will raise a NodeIsDownException.
         If it connected with a node, and the node raised another error, it will
         raise that error because it means that the correct node was selected but
@@ -104,7 +110,7 @@ class ChainlinkNodeMonitor(Monitor):
                                                self.logger, verify=False)
         except (ReqConnectionError, ReadTimeout):
             self.logger.debug("Could not connect with %s. Will try to obtain "
-                              "the metrics from another backup source.",
+                              "the metrics from another source.",
                               self.last_source_used)
 
         for source in self.node_config.node_prometheus_urls:
@@ -117,7 +123,7 @@ class ChainlinkNodeMonitor(Monitor):
             except (ReqConnectionError, ReadTimeout):
                 self.logger.debug(
                     "Could not connect with %s. Will try to obtain "
-                    "the metrics from another backup source.",
+                    "the metrics from another source.",
                     self.last_source_used)
             except Exception as e:
                 # We need to set the last_source_used because in this case the
@@ -225,30 +231,27 @@ class ChainlinkNodeMonitor(Monitor):
     def _monitor(self) -> None:
         data_retrieval_exception = None
         data = None
-        data_retrieval_failed = False
+        data_retrieval_failed = True
         try:
             data = self._get_data()
+            data_retrieval_failed = False
         except NodeIsDownException as e:
-            data_retrieval_failed = True
             data_retrieval_exception = e
             self.logger.error("Metrics could not be obtained from any source.")
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.last_source_used)
             self.logger.error("Error when retrieving data from %s",
                               self.last_source_used)
             self.logger.exception(data_retrieval_exception)
         except (InvalidURL, InvalidSchema, MissingSchema):
-            data_retrieval_failed = True
             data_retrieval_exception = InvalidUrlException(
                 self.last_source_used)
             self.logger.error("Error when retrieving data from %s",
                               self.last_source_used)
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
-            data_retrieval_failed = True
             data_retrieval_exception = e
             self.logger.error("Error when retrieving data from %s",
                               self.last_source_used)

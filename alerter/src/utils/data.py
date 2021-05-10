@@ -53,7 +53,7 @@ def get_prometheus_metrics_data(endpoint: str,
     """
     response = {}
     if len(requested_metrics) == 0:
-        raise NoMetricsGivenException("No metrics given when requesting"
+        raise NoMetricsGivenException("No metrics given when requesting "
                                       "prometheus data from " + endpoint)
 
     metrics = get_prometheus(endpoint, logger, verify)
