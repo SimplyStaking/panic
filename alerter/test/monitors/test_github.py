@@ -158,8 +158,8 @@ class TestGitHubMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_error.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, True,
-                                        self.test_exception)
+        self.test_monitor._process_data(True, [self.test_exception],
+                                        [self.test_data_dict])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
@@ -173,7 +173,7 @@ class TestGitHubMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_retrieved_data.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, False, None)
+        self.test_monitor._process_data(False, [], [self.test_data_dict])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called

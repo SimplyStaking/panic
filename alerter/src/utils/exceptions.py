@@ -120,11 +120,11 @@ class BlankCredentialException(PANICException):
         super().__init__(message, code)
 
 
-class NoMonitoringSourceGivenException(PANICException):
-    def __init__(self, monitorable_name: str) -> None:
+class EnabledSourceIsEmptyException(PANICException):
+    def __init__(self, source: str, monitorable_name: str) -> None:
         code = 5014
-        message = "No source has been given to the monitor monitoring " \
-                  "{}".format(monitorable_name)
+        message = "Enabled source {} is empty for node {}".format(
+            source, monitorable_name)
         super().__init__(message, code)
 
 

@@ -270,8 +270,9 @@ class SystemMonitor(Monitor):
             self.logger.exception(data_retrieval_exception)
 
         try:
-            processed_data = self._process_data(data, data_retrieval_failed,
-                                                data_retrieval_exception)
+            processed_data = self._process_data(data_retrieval_failed,
+                                                [data_retrieval_exception],
+                                                [data])
         except Exception as error:
             self.logger.error("Error when processing data obtained from %s",
                               self.system_config.node_exporter_url)
