@@ -128,15 +128,17 @@ class ChainlinkNodeMonitor(Monitor):
         raise NodeIsDownException(self.node_config.node_name)
 
     def _get_data(self) -> Dict:
-        retrieval_info = {'prometheus': {
-            'data': {},
-            'data_retrieval_failed': True,
-            'data_retrieval_exception': None,
-            'get_function': self._get_prometheus_data,
-            'processing_function': 'self._process_retrieved_prometheus_data',
-            'last_source_used_var': 'self._last_prometheus_source_used',
-            'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
-        }}
+        retrieval_info = {
+            'prometheus': {
+                'data': {},
+                'data_retrieval_failed': True,
+                'data_retrieval_exception': None,
+                'get_function': self._get_prometheus_data,
+                'processing_function': self._process_retrieved_prometheus_data,
+                'last_source_used_var': 'self._last_prometheus_source_used',
+                'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
+            }
+        }
         for source, info in retrieval_info.items():
             if eval(info['monitoring_enabled_var']):
                 try:
@@ -186,8 +188,7 @@ class ChainlinkNodeMonitor(Monitor):
 
         return processed_data
 
-    def _process_retrieved_prometheus_data(self, data: Dict,
-                                           last_source_used: str) -> Dict:
+    def _process_retrieved_prometheus_data(self, data: Dict) -> Dict:
         data_copy = copy.deepcopy(data)
 
         # Add some meta-data to the processed data
@@ -196,7 +197,7 @@ class ChainlinkNodeMonitor(Monitor):
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
-                    'last_source_used': last_source_used,
+                    'last_source_used': self.last_prometheus_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
@@ -274,31 +275,34 @@ class ChainlinkNodeMonitor(Monitor):
         retrieval_info = self._get_data()
         processed_data = {}
         for source, info in retrieval_info.items():
-            try:
-                processed_data[source] = self._process_data(
-                    info['data_retrieval_failed'],
-                    [info['data_retrieval_exception'],
-                     info[eval('last_source_used_var')]],
-                    [info['data'], info[eval('last_source_used_var')]],
+            if eval(info['monitoring_enabled_var']):
+                try:
+                    processed_data[source] = self._process_data(
+                        info['data_retrieval_failed'],
+                        [info['data_retrieval_exception'],
+                         eval(info['last_source_used_var'])],
+                        [info['processing_function'], [info['data']], source],
                 )
-            except Exception as error:
-                self.logger.error("Error when processing data obtained from %s",
-                                  info[eval('last_source_used_var')])
-                self.logger.exception(error)
-                # Do not send data if we experienced processing errors
-                return
+                except Exception as error:
+                    self.logger.error(
+                        "Error when processing data obtained from %s",
+                        eval(info['last_source_used_var']))
+                    self.logger.exception(error)
+                    # Do not send data if we experienced processing errors
+                    return
 
         self._send_data(processed_data)
 
         data_retrieval_failed_list = [
             info['data_retrieval_failed']
             for _, info in retrieval_info.items()
+            if eval(info['monitoring_enabled_var'])
         ]
         all_processed_data = dict({data['result']['data'].items()
                                    for _, data in processed_data.items()})
-        if not any(data_retrieval_failed_list):
-            # Only output the gathered data if there was no error in the entire
-            # retrieval and processing process
+        if data_retrieval_failed_list and not any(data_retrieval_failed_list):
+            # Only output the gathered data if at least one retrieval occurred
+            # and there was no error in the entire retrieval process
             self.logger.info(self._display_data(all_processed_data))
 
         # Send a heartbeat only if the entire round was successful

@@ -1,5 +1,5 @@
 from json import JSONDecodeError
-from typing import List
+from typing import List, Any
 
 
 class PANICException(Exception):
@@ -7,6 +7,9 @@ class PANICException(Exception):
         self.message = message
         self.code = code
         super().__init__(self.message, self.code)
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
 
 class ConnectionNotInitialisedException(PANICException):

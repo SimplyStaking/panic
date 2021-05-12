@@ -28,7 +28,8 @@ from src.utils.exceptions import (PANICException,
                                   DataReadingException, InvalidUrlException,
                                   MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+                              delete_exchange_if_exists, disconnect_from_rabbit,
+                              dummy_function)
 
 
 class TestChainlinkNodeMonitor(unittest.TestCase):
@@ -78,7 +79,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'eth_balance': 'strict',
             'run_status_update_total': 'strict',
         }
-        self.retrieved_metrics_example = {
+        self.retrieved_prometheus_data_example = {
             'eth_balance': {'{"account": "eth_add_1"}': 26.043292035081947},
             'gas_updater_set_gas_price': {
                 '{"percentile": "20%"}': 5000000000.0
@@ -133,11 +134,11 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'tx_manager_num_gas_bumps_total': 2031.0,
             'unconfirmed_transactions': 1.0
         }
-        self.retrieved_metrics_example_optionals_none = copy.deepcopy(
-            self.retrieved_metrics_example)
-        self.retrieved_metrics_example_optionals_none[
+        self.retrieved_prometheus_data_example_optionals_none = copy.deepcopy(
+            self.retrieved_prometheus_data_example)
+        self.retrieved_prometheus_data_example_optionals_none[
             'gas_updater_set_gas_price'] = None
-        self.processed_data_metrics_example = {
+        self.processed_prometheus_data_example = {
             'head_tracker_current_head': 6924314.0,
             'head_tracker_heads_in_queue': 0.0,
             'head_tracker_heads_received_total': 26392.0,
@@ -155,9 +156,9 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'ethereum_balances': {'eth_add_1': 26.043292035081947},
             'run_status_update_total_errors': 8
         }
-        self.processed_data_metrics_example_optionals_none = copy.deepcopy(
-            self.processed_data_metrics_example)
-        self.processed_data_metrics_example_optionals_none[
+        self.processed_prometheus_data_example_optionals_none = copy.deepcopy(
+            self.processed_prometheus_data_example)
+        self.processed_prometheus_data_example_optionals_none[
             'gas_updater_set_gas_price'] = None
         self.test_exception = PANICException('test_exception', 1)
         self.node_config = ChainlinkNodeConfig(
@@ -168,6 +169,52 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.monitor_name, self.node_config, self.dummy_logger,
             self.monitoring_period, self.rabbitmq
         )
+
+        # The dicts below will make more sense when more source types are added
+        self.received_retrieval_info_all_source_types_enabled = {
+            'prometheus': {
+                'data': self.retrieved_prometheus_data_example,
+                'data_retrieval_failed': False,
+                'data_retrieval_exception': None,
+                'get_function': self.test_monitor._get_prometheus_data,
+                'processing_function':
+                    self.test_monitor._process_retrieved_prometheus_data,
+                'last_source_used_var': 'self._last_prometheus_source_used',
+                'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
+            }
+            # When more sources are added this should contain source types with
+            # successfully obtained data.
+        }
+        self.received_retrieval_info_prometheus_disabled = {
+            'prometheus': {
+                'data': {},
+                'data_retrieval_failed': True,
+                'data_retrieval_exception': None,
+                'get_function': self.test_monitor._get_prometheus_data,
+                'processing_function':
+                    self.test_monitor._process_retrieved_prometheus_data,
+                'last_source_used_var': 'self._last_prometheus_source_used',
+                'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
+            }
+            # When more sources are added this should contain source types with
+            # successfully obtained data.
+        }
+        self.received_retrieval_info_all_source_types_enabled_err = {
+            'prometheus': {
+                'data': {},
+                'data_retrieval_failed': True,
+                'data_retrieval_exception': None,
+                'get_function': self.test_monitor._get_prometheus_data,
+                'processing_function':
+                    self.test_monitor._process_retrieved_prometheus_data,
+                'last_source_used_var': 'self._last_prometheus_source_used',
+                'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
+            }
+            # When more sources are added this should contain source types with
+            # successfully obtained data.
+        }
+        # TODO: When more sources are added we can add
+        #  self.received_retrieval_info_prometheus_disabled_err
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -343,33 +390,35 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
             "ethereum_balances={}, run_status_update_total_errors={}" \
             "".format(
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'head_tracker_current_head'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'head_tracker_heads_in_queue'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'head_tracker_heads_received_total'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'head_tracker_num_heads_dropped_total'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'job_subscriber_subscriptions'],
-                self.processed_data_metrics_example['max_unconfirmed_blocks'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
+                    'max_unconfirmed_blocks'],
+                self.processed_prometheus_data_example[
                     'process_start_time_seconds'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'tx_manager_num_gas_bumps_total'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
                     'tx_manager_gas_bump_exceeds_limit_total'],
-                self.processed_data_metrics_example['unconfirmed_transactions'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example[
+                    'unconfirmed_transactions'],
+                self.processed_prometheus_data_example[
                     'gas_updater_set_gas_price'],
-                self.processed_data_metrics_example['ethereum_balances'],
-                self.processed_data_metrics_example[
+                self.processed_prometheus_data_example['ethereum_balances'],
+                self.processed_prometheus_data_example[
                     'run_status_update_total_errors']
             )
 
         actual_output = self.test_monitor._display_data(
-            self.processed_data_metrics_example)
+            self.processed_prometheus_data_example)
         self.assertEqual(expected_output, actual_output)
 
         # Test when optionals are None
@@ -384,43 +433,43 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
             "ethereum_balances={}, run_status_update_total_errors={}" \
             "".format(
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_current_head'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_in_queue'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_received_total'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_num_heads_dropped_total'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'job_subscriber_subscriptions'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'max_unconfirmed_blocks'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'process_start_time_seconds'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'tx_manager_num_gas_bumps_total'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'tx_manager_gas_bump_exceeds_limit_total'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'unconfirmed_transactions'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'gas_updater_set_gas_price'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'ethereum_balances'],
-                self.processed_data_metrics_example_optionals_none[
+                self.processed_prometheus_data_example_optionals_none[
                     'run_status_update_total_errors']
             )
 
         actual_output = self.test_monitor._display_data(
-            self.processed_data_metrics_example_optionals_none)
+            self.processed_prometheus_data_example_optionals_none)
         self.assertEqual(expected_output, actual_output)
 
     @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
     def test_get_prom_data_first_attempts_retrieval_using_last_prom_source_used(
             self, mock_get_prometheus_metrics_data) -> None:
         mock_get_prometheus_metrics_data.return_value = \
-            self.processed_data_metrics_example
+            self.processed_prometheus_data_example
 
         old_last_prometheus_source_used = \
             self.test_monitor.last_prometheus_source_used
@@ -428,13 +477,13 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         mock_get_prometheus_metrics_data.assert_called_once_with(
             old_last_prometheus_source_used, self.prometheus_metrics,
             self.dummy_logger, verify=False)
-        self.assertEqual(self.processed_data_metrics_example, actual_output)
+        self.assertEqual(self.processed_prometheus_data_example, actual_output)
 
     @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
     def test_get_prom_data_does_not_change_last_prom_sourced_used_if_online(
             self, mock_get_prometheus_metrics_data) -> None:
         mock_get_prometheus_metrics_data.return_value = \
-            self.processed_data_metrics_example
+            self.processed_prometheus_data_example
 
         old_last_prometheus_source_used = \
             self.test_monitor.last_prometheus_source_used
@@ -502,7 +551,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         # In this case we are setting the final source to be online
         mock_get_prometheus_metrics_data.side_effect = [
             exception_instance, exception_instance, exception_instance,
-            self.processed_data_metrics_example]
+            self.processed_prometheus_data_example]
 
         old_last_prometheus_source_used = \
             self.test_monitor.last_prometheus_source_used
@@ -522,7 +571,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 self.prometheus_metrics, self.dummy_logger, verify=False))
 
         self.assertEqual(expected_calls, actual_calls)
-        self.assertEqual(self.processed_data_metrics_example, actual_output)
+        self.assertEqual(self.processed_prometheus_data_example, actual_output)
 
     @parameterized.expand([
         (ReadTimeout('test'),),
@@ -534,7 +583,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         # In this case we are setting the final source to be online
         mock_get_prometheus_metrics_data.side_effect = [
             exception_instance, exception_instance, exception_instance,
-            self.processed_data_metrics_example]
+            self.processed_prometheus_data_example]
         self.test_monitor._get_prometheus_data()
         self.assertEqual(self.test_monitor.node_config.node_prometheus_urls[-1],
                          self.test_monitor.last_prometheus_source_used)
@@ -574,159 +623,261 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             call(self.test_monitor.node_config._node_prometheus_urls[1],
                  self.prometheus_metrics, self.dummy_logger, verify=False)],
             actual_calls)
-    #
-    # @parameterized.expand([
-    #     (IncompleteRead, IncompleteRead('test'),),
-    #     (ChunkedEncodingError, ChunkedEncodingError('test'),),
-    #     (ProtocolError, ProtocolError('test'),),
-    #     (InvalidURL, InvalidURL('test'),),
-    #     (InvalidSchema, InvalidSchema('test'),),
-    #     (MissingSchema, MissingSchema('test'),),
-    #     (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_changes_last_source_used_if_online_source_errors(
-    #         self, exception_class, exception_instance,
-    #         mock_get_prometheus_metrics_data) -> None:
-    #     # Here we will assume that the last source used was deemed as offline
-    #     # as we have already tested when it is online in a previous test. We
-    #     # will also assume that the second node is online but it errors.
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         ReqConnectionError('test'), ReqConnectionError('test'),
-    #         exception_instance]
-    #
-    #     try:
-    #         self.test_monitor._get_data()
-    #     except exception_class:
-    #         pass
-    #     self.assertEqual(self.test_monitor.node_config.node_prometheus_urls[1],
-    #                      self.test_monitor.last_source_used)
-    #
-    # @parameterized.expand([
-    #     (ReadTimeout('test'),),
-    #     (ReqConnectionError('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_raises_NodeIsDownException_if_all_nodes_down(
-    #         self, exception_instance, mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         exception_instance, exception_instance, exception_instance,
-    #         exception_instance]
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     self.assertRaises(NodeIsDownException, self.test_monitor._get_data)
-    #     actual_calls = mock_get_prometheus_metrics_data.call_args_list
-    #     self.assertEqual(4, len(actual_calls))
-    #
-    #     # In this case there are two calls to
-    #     # self.test_monitor.node_config._node_prometheus_urls[0] because
-    #     # initially this url was also the last source used.
-    #     expected_calls = [call(old_last_source_used, self.metrics_to_monitor,
-    #                            self.dummy_logger, verify=False)]
-    #     for i in range(0, len(self.node_prometheus_urls)):
-    #         expected_calls.append(call(
-    #             self.test_monitor.node_config.node_prometheus_urls[i],
-    #             self.metrics_to_monitor, self.dummy_logger, verify=False))
-    #
-    #     self.assertEqual(expected_calls, actual_calls)
-    #
-    # @parameterized.expand([
-    #     (ReadTimeout('test'),),
-    #     (ReqConnectionError('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_does_not_change_last_source_used_if_all_nodes_down(
-    #         self, exception_instance, mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         exception_instance, exception_instance, exception_instance,
-    #         exception_instance]
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     try:
-    #         self.test_monitor._get_data()
-    #     except NodeIsDownException:
-    #         pass
-    #     self.assertEqual(old_last_source_used,
-    #                      self.test_monitor.last_source_used)
-    #
-    # @freeze_time("2012-01-01")
-    # def test_process_error_returns_expected_data(self) -> None:
-    #     expected_output = {
-    #         'error': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'last_source_used': self.test_monitor.last_source_used,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'message': self.test_exception.message,
-    #             'code': self.test_exception.code,
-    #         }
-    #     }
-    #     actual_output = self.test_monitor._process_error(self.test_exception)
-    #     self.assertEqual(actual_output, expected_output)
-    #
-    # @parameterized.expand([
-    #     ("self.processed_data_example", "self.retrieved_metrics_example"),
-    #     ("self.processed_data_example_optionals_none",
-    #      "self.retrieved_metrics_example_optionals_none"),
-    # ])
-    # @freeze_time("2012-01-01")
-    # def test_process_retrieved_data_returns_expected_data(
-    #         self, expected_data_output, retrieved_data) -> None:
-    #     expected_output = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'last_source_used': self.test_monitor.last_source_used,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': eval(expected_data_output),
-    #         }
-    #     }
-    #
-    #     actual_output = self.test_monitor._process_retrieved_data(
-    #         eval(retrieved_data))
-    #     self.assertEqual(expected_output, actual_output)
-    #
-    # def test_send_data_sends_data_correctly(self) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_data, and checks that the
-    #     # data is received
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #
-    #     self.test_monitor._send_data(self.processed_data_example)
-    #
-    #     # By re-declaring the queue again we can get the number of messages
-    #     # in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     self.assertEqual(1, res.method.message_count)
-    #
-    #     # Check that the message received is actually the processed data
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(self.processed_data_example, json.loads(body))
+
+    @parameterized.expand([
+        (IncompleteRead, IncompleteRead('test'),),
+        (ChunkedEncodingError, ChunkedEncodingError('test'),),
+        (ProtocolError, ProtocolError('test'),),
+        (InvalidURL, InvalidURL('test'),),
+        (InvalidSchema, InvalidSchema('test'),),
+        (MissingSchema, MissingSchema('test'),),
+        (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_changes_last_prom_source_used_if_online_source_errs(
+            self, exception_class, exception_instance,
+            mock_get_prometheus_metrics_data) -> None:
+        # Here we will assume that the last prometheus source used was deemed as
+        # offline as we have already tested when it is online in a previous
+        # test. We will also assume that the second source is online but it
+        # errors.
+        mock_get_prometheus_metrics_data.side_effect = [
+            ReqConnectionError('test'), ReqConnectionError('test'),
+            exception_instance]
+
+        try:
+            self.test_monitor._get_prometheus_data()
+        except exception_class:
+            pass
+        self.assertEqual(self.test_monitor.node_config.node_prometheus_urls[1],
+                         self.test_monitor.last_prometheus_source_used)
+
+    @parameterized.expand([
+        (ReadTimeout('test'),),
+        (ReqConnectionError('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_raises_NodeIsDownException_if_all_prom_sources_down(
+            self, exception_instance, mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.side_effect = [
+            exception_instance, exception_instance, exception_instance,
+            exception_instance]
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        self.assertRaises(NodeIsDownException,
+                          self.test_monitor._get_prometheus_data)
+        actual_calls = mock_get_prometheus_metrics_data.call_args_list
+        self.assertEqual(4, len(actual_calls))
+
+        # In this case there are two calls to
+        # self.test_monitor.node_config._node_prometheus_urls[0] because
+        # initially this url was also the last prometheus source used.
+        expected_calls = [call(old_last_prometheus_source_used,
+                               self.prometheus_metrics, self.dummy_logger,
+                               verify=False)]
+        for i in range(0, len(self.node_prometheus_urls)):
+            expected_calls.append(call(
+                self.test_monitor.node_config.node_prometheus_urls[i],
+                self.prometheus_metrics, self.dummy_logger, verify=False))
+
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        (ReadTimeout('test'),),
+        (ReqConnectionError('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_does_not_change_last_prom_source_used_if_all_down(
+            self, exception_instance, mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.side_effect = [
+            exception_instance, exception_instance, exception_instance,
+            exception_instance]
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        try:
+            self.test_monitor._get_prometheus_data()
+        except NodeIsDownException:
+            pass
+        self.assertEqual(old_last_prometheus_source_used,
+                         self.test_monitor.last_prometheus_source_used)
+
+    @parameterized.expand([
+        ('self.received_retrieval_info_prometheus_disabled', [], False,),
+        ('self.received_retrieval_info_all_source_types_enabled',
+         ['self.retrieved_prometheus_data_example'], True,),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_data_return_if_no_errors_raised(
+            self, expected_return, retrieved_prometheus_data,
+            monitor_prometheus, mock_get_prometheus_metrics_data) -> None:
+        get_prometheus_metrics_data_return = list(map(
+            eval, retrieved_prometheus_data))
+        mock_get_prometheus_metrics_data.side_effect = \
+            get_prometheus_metrics_data_return
+        self.test_monitor._node_config._monitor_prometheus = monitor_prometheus
+
+        actual_ret = self.test_monitor._get_data()
+        expected_ret = eval(expected_return)
+        self.assertEqual(expected_ret, actual_ret)
+
+    @parameterized.expand([
+        ("IncompleteRead('test')",
+         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("ChunkedEncodingError('test')",
+         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("ProtocolError('test')",
+         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("InvalidURL('test')",
+         "InvalidUrlException(self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("InvalidSchema('test')",
+         "InvalidUrlException(self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("MissingSchema('test')",
+         "InvalidUrlException(self.test_monitor.last_prometheus_source_used)",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ("MetricNotFoundException('test_metric', 'test_endpoint')",
+         "MetricNotFoundException('test_metric', 'test_endpoint')",
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+        ('NodeIsDownException(self.node_name)',
+         'NodeIsDownException(self.node_name)',
+         'self.received_retrieval_info_all_source_types_enabled_err', True,
+         'prometheus'),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_data_return_if_recognised_error_raised(
+            self, raised_err, returned_err, expected_return, monitor_prometheus,
+            errored_source_type, mock_get_prometheus_metrics_data) -> None:
+        # This test will be expanded when adding more source types to cater for
+        # when monitor_prometheus is False
+        mock_get_prometheus_metrics_data.side_effect = \
+            eval(raised_err) if errored_source_type == "prometheus" else None
+        self.test_monitor._node_config._monitor_prometheus = monitor_prometheus
+
+        actual_ret = self.test_monitor._get_data()
+        expected_ret = eval(expected_return)
+        expected_ret[errored_source_type][
+            'data_retrieval_exception'] = eval(returned_err)
+        self.assertEqual(expected_ret, actual_ret)
+
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_data_raises_unrecognised_error_if_raised(
+            self, mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.side_effect = self.test_exception
+        self.assertRaises(PANICException, self.test_monitor._get_data)
+
+    @parameterized.expand([
+        ("self.test_monitor.last_prometheus_source_used",),
+    ])
+    @freeze_time("2012-01-01")
+    def test_process_error_returns_expected_data(self,
+                                                 last_source_used) -> None:
+        # We will add more parameters to this test as the source types increase
+        expected_output = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'node_name': self.test_monitor.node_config.node_name,
+                    'last_source_used': eval(last_source_used),
+                    'node_id': self.test_monitor.node_config.node_id,
+                    'node_parent_id': self.test_monitor.node_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
+            }
+        }
+        actual_output = self.test_monitor._process_error(self.test_exception,
+                                                         eval(last_source_used))
+        self.assertEqual(actual_output, expected_output)
+
+    @parameterized.expand([
+        ("self.processed_prometheus_data_example",
+         "self.retrieved_prometheus_data_example"),
+        ("self.processed_prometheus_data_example_optionals_none",
+         "self.retrieved_prometheus_data_example_optionals_none"),
+    ])
+    @freeze_time("2012-01-01")
+    def test_process_retrieved_prometheus_data_returns_expected_data(
+            self, expected_data_output, retrieved_data) -> None:
+        expected_output = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'node_name': self.test_monitor.node_config.node_name,
+                    'last_source_used':
+                        self.test_monitor.last_prometheus_source_used,
+                    'node_id': self.test_monitor.node_config.node_id,
+                    'node_parent_id': self.test_monitor.node_config.parent_id,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': eval(expected_data_output),
+            }
+        }
+
+        actual_output = self.test_monitor._process_retrieved_prometheus_data(
+            eval(retrieved_data))
+        self.assertEqual(expected_output, actual_output)
+
+    @parameterized.expand([
+        ("prometheus",),
+        ("rpc",),
+    ])
+    def test_process_retrieved_data_returns_the_correct_dict(
+            self, source_type) -> None:
+        test_args = ['arg1', 'arg2', 'arg3']
+        actual_ret = self.test_monitor._process_retrieved_data(
+            dummy_function, test_args, source_type)
+        expected_ret = {
+            source_type: dummy_function(*test_args)
+        }
+        self.assertEqual(expected_ret, actual_ret)
+
+    def test_send_data_sends_data_correctly(self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_data, and checks that the
+        # data is received
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+
+        self.test_monitor._send_data(self.processed_prometheus_data_example)
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
+        self.assertEqual(self.processed_prometheus_data_example,
+                         json.loads(body))
     #
     # @freeze_time("2012-01-01")
     # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
