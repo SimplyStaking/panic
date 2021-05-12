@@ -60,7 +60,8 @@ class ChainlinkNodeMonitor(Monitor):
 
     def _display_data(self, data: Dict) -> str:
         # This function assumes that all data has been obtained and processed
-        # successfully by the monitor
+        # successfully by the monitor. Also this function should be given the
+        # data dict only
         return "head_tracker_current_head={}, " \
                "head_tracker_heads_in_queue={}, " \
                "head_tracker_heads_received_total={}, " \

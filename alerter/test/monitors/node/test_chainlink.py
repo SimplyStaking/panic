@@ -232,329 +232,348 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             EnabledSourceIsEmptyException, ChainlinkNodeMonitor,
             self.monitor_name, node_config, self.dummy_logger,
             self.monitoring_period, self.rabbitmq)
-    #
-    # def test_initialise_rabbitmq_initialises_everything_as_expected(
-    #         self) -> None:
-    #     # To make sure that there is no connection/channel already
-    #     # established
-    #     self.assertIsNone(self.rabbitmq.connection)
-    #     self.assertIsNone(self.rabbitmq.channel)
-    #
-    #     # To make sure that the exchanges have not already been declared
-    #     connect_to_rabbit(self.rabbitmq)
-    #     self.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
-    #     self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-    #     disconnect_from_rabbit(self.rabbitmq)
-    #
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Perform checks that the connection has been opened, marked as open
-    #     # and that the delivery confirmation variable is set.
-    #     self.assertTrue(self.test_monitor.rabbitmq.is_connected)
-    #     self.assertTrue(self.test_monitor.rabbitmq.connection.is_open)
-    #     self.assertTrue(
-    #         self.test_monitor.rabbitmq.channel._delivery_confirmation)
-    #
-    #     # Check whether the exchange has been creating by sending messages
-    #     # to it. If this fails an exception is raised hence the test fails.
-    #     self.test_monitor.rabbitmq.basic_publish_confirm(
-    #         exchange=RAW_DATA_EXCHANGE, routing_key=self.routing_key,
-    #         body=self.test_data_str, is_body_dict=False,
-    #         properties=pika.BasicProperties(delivery_mode=2),
-    #         mandatory=False)
-    #     self.test_monitor.rabbitmq.basic_publish_confirm(
-    #         exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-    #         body=self.test_data_str, is_body_dict=False,
-    #         properties=pika.BasicProperties(delivery_mode=2),
-    #         mandatory=False)
-    #
-    # @mock.patch.object(ChainlinkNodeMonitor, "_process_retrieved_data")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_process_error")
-    # def test_process_data_calls_process_error_on_retrieval_error(
-    #         self, mock_process_error, mock_process_retrieved_data) -> None:
-    #     # Do not test the processing of data for now
-    #     mock_process_error.return_value = self.test_data_dict
-    #
-    #     self.test_monitor._process_data(self.test_data_dict, True,
-    #                                     self.test_exception)
-    #
-    #     # Test passes if _process_error is called once and
-    #     # process_retrieved_data is not called
-    #     self.assertEqual(1, mock_process_error.call_count)
-    #     self.assertEqual(0, mock_process_retrieved_data.call_count)
-    #
-    # @mock.patch.object(ChainlinkNodeMonitor, "_process_retrieved_data")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_process_error")
-    # def test_process_data_calls_process_retrieved_data_on_retrieval_success(
-    #         self, mock_process_error, mock_process_retrieved_data) -> None:
-    #     # Do not test the processing of data for now
-    #     mock_process_retrieved_data.return_value = self.test_data_dict
-    #
-    #     self.test_monitor._process_data(self.test_data_dict, False, None)
-    #
-    #     # Test passes if _process_error is called once and
-    #     # process_retrieved_data is not called
-    #     self.assertEqual(0, mock_process_error.call_count)
-    #     self.assertEqual(1, mock_process_retrieved_data.call_count)
-    #
-    # def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_heartbeat, and checks that the
-    #     # heartbeat is received
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #     self.test_monitor._send_heartbeat(self.test_heartbeat)
-    #
-    #     # By re-declaring the queue again we can get the number of messages
-    #     # in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     self.assertEqual(1, res.method.message_count)
-    #
-    #     # Check that the message received is actually the HB
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(self.test_heartbeat, json.loads(body))
-    #
-    # def test_display_data_returns_the_correct_string(self) -> None:
-    #     # Test when optionals are not None
-    #     expected_output = \
-    #         "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
-    #         "head_tracker_heads_received_total={}, " \
-    #         "head_tracker_num_heads_dropped_total={}, " \
-    #         "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
-    #         "process_start_time_seconds={}, " \
-    #         "tx_manager_num_gas_bumps_total={}, " \
-    #         "tx_manager_gas_bump_exceeds_limit_total={}, " \
-    #         "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-    #         "ethereum_balances={}, run_status_update_total_errors={}" \
-    #         "".format(
-    #             self.processed_data_example['head_tracker_current_head'],
-    #             self.processed_data_example['head_tracker_heads_in_queue'],
-    #             self.processed_data_example[
-    #                 'head_tracker_heads_received_total'],
-    #             self.processed_data_example[
-    #                 'head_tracker_num_heads_dropped_total'],
-    #             self.processed_data_example['job_subscriber_subscriptions'],
-    #             self.processed_data_example['max_unconfirmed_blocks'],
-    #             self.processed_data_example['process_start_time_seconds'],
-    #             self.processed_data_example['tx_manager_num_gas_bumps_total'],
-    #             self.processed_data_example[
-    #                 'tx_manager_gas_bump_exceeds_limit_total'],
-    #             self.processed_data_example['unconfirmed_transactions'],
-    #             self.processed_data_example['gas_updater_set_gas_price'],
-    #             self.processed_data_example['ethereum_balances'],
-    #             self.processed_data_example['run_status_update_total_errors']
-    #         )
-    #
-    #     actual_output = self.test_monitor._display_data(
-    #         self.processed_data_example)
-    #     self.assertEqual(expected_output, actual_output)
-    #
-    #     # Test when optionals are None
-    #     expected_output = \
-    #         "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
-    #         "head_tracker_heads_received_total={}, " \
-    #         "head_tracker_num_heads_dropped_total={}, " \
-    #         "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
-    #         "process_start_time_seconds={}, " \
-    #         "tx_manager_num_gas_bumps_total={}, " \
-    #         "tx_manager_gas_bump_exceeds_limit_total={}, " \
-    #         "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-    #         "ethereum_balances={}, run_status_update_total_errors={}" \
-    #         "".format(
-    #             self.processed_data_example_optionals_none[
-    #                 'head_tracker_current_head'],
-    #             self.processed_data_example_optionals_none[
-    #                 'head_tracker_heads_in_queue'],
-    #             self.processed_data_example_optionals_none[
-    #                 'head_tracker_heads_received_total'],
-    #             self.processed_data_example_optionals_none[
-    #                 'head_tracker_num_heads_dropped_total'],
-    #             self.processed_data_example_optionals_none[
-    #                 'job_subscriber_subscriptions'],
-    #             self.processed_data_example_optionals_none[
-    #                 'max_unconfirmed_blocks'],
-    #             self.processed_data_example_optionals_none[
-    #                 'process_start_time_seconds'],
-    #             self.processed_data_example_optionals_none[
-    #                 'tx_manager_num_gas_bumps_total'],
-    #             self.processed_data_example_optionals_none[
-    #                 'tx_manager_gas_bump_exceeds_limit_total'],
-    #             self.processed_data_example_optionals_none[
-    #                 'unconfirmed_transactions'],
-    #             self.processed_data_example_optionals_none[
-    #                 'gas_updater_set_gas_price'],
-    #             self.processed_data_example_optionals_none['ethereum_balances'],
-    #             self.processed_data_example_optionals_none[
-    #                 'run_status_update_total_errors']
-    #         )
-    #
-    #     actual_output = self.test_monitor._display_data(
-    #         self.processed_data_example_optionals_none)
-    #     self.assertEqual(expected_output, actual_output)
-    #
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_first_attempts_to_get_metrics_from_last_source_used(
-    #         self, mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.return_value = \
-    #         self.processed_data_example
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     actual_output = self.test_monitor._get_data()
-    #     mock_get_prometheus_metrics_data.assert_called_once_with(
-    #         old_last_source_used, self.metrics_to_monitor,
-    #         self.dummy_logger, verify=False)
-    #     self.assertEqual(self.processed_data_example, actual_output)
-    #
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_does_not_change_last_sourced_used_if_online(
-    #         self, mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.return_value = \
-    #         self.processed_data_example
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     self.test_monitor._get_data()
-    #     self.assertEqual(old_last_source_used,
-    #                      self.test_monitor.last_source_used)
-    #
-    # @parameterized.expand([
-    #     (IncompleteRead, IncompleteRead('test'),),
-    #     (ChunkedEncodingError, ChunkedEncodingError('test'),),
-    #     (ProtocolError, ProtocolError('test'),),
-    #     (InvalidURL, InvalidURL('test'),),
-    #     (InvalidSchema, InvalidSchema('test'),),
-    #     (MissingSchema, MissingSchema('test'),),
-    #     (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_raises_non_connection_err_if_last_source_used_on_and_errs(
-    #         self, exception_class, exception_instance,
-    #         mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.side_effect = exception_instance
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     self.assertRaises(exception_class, self.test_monitor._get_data)
-    #     mock_get_prometheus_metrics_data.assert_called_once_with(
-    #         old_last_source_used, self.metrics_to_monitor, self.dummy_logger,
-    #         verify=False)
-    #
-    # @parameterized.expand([
-    #     (IncompleteRead, IncompleteRead('test'),),
-    #     (ChunkedEncodingError, ChunkedEncodingError('test'),),
-    #     (ProtocolError, ProtocolError('test'),),
-    #     (InvalidURL, InvalidURL('test'),),
-    #     (InvalidSchema, InvalidSchema('test'),),
-    #     (MissingSchema, MissingSchema('test'),),
-    #     (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_does_not_change_last_source_used_if_online_and_it_errors(
-    #         self, exception_class, exception_instance,
-    #         mock_get_prometheus_metrics_data) -> None:
-    #     mock_get_prometheus_metrics_data.side_effect = exception_instance
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     try:
-    #         self.test_monitor._get_data()
-    #     except exception_class:
-    #         pass
-    #     self.assertEqual(old_last_source_used,
-    #                      self.test_monitor.last_source_used)
-    #
-    # @parameterized.expand([
-    #     (ReadTimeout('test'),),
-    #     (ReqConnectionError('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_gets_metrics_from_online_node_if_last_source_used_offline(
-    #         self, exception_instance, mock_get_prometheus_metrics_data) -> None:
-    #     # In this case we are setting the last node to be online
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         exception_instance, exception_instance, exception_instance,
-    #         self.processed_data_example]
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     actual_output = self.test_monitor._get_data()
-    #     actual_calls = mock_get_prometheus_metrics_data.call_args_list
-    #     self.assertEqual(4, len(actual_calls))
-    #
-    #     # In this case there are two calls to
-    #     # self.test_monitor.node_config._node_prometheus_urls[0] because
-    #     # initially this url was also the last source used.
-    #     expected_calls = [call(old_last_source_used, self.metrics_to_monitor,
-    #                            self.dummy_logger, verify=False)]
-    #     for i in range(0, len(self.node_prometheus_urls)):
-    #         expected_calls.append(call(
-    #             self.test_monitor.node_config.node_prometheus_urls[i],
-    #             self.metrics_to_monitor, self.dummy_logger, verify=False))
-    #
-    #     self.assertEqual(expected_calls, actual_calls)
-    #     self.assertEqual(self.processed_data_example, actual_output)
-    #
-    # @parameterized.expand([
-    #     (ReadTimeout('test'),),
-    #     (ReqConnectionError('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_changes_last_source_if_last_source_off_and_other_node_on(
-    #         self, exception_instance, mock_get_prometheus_metrics_data) -> None:
-    #     # In this case we are setting the last node to be online
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         exception_instance, exception_instance, exception_instance,
-    #         self.processed_data_example]
-    #     self.test_monitor._get_data()
-    #     self.assertEqual(self.test_monitor.node_config.node_prometheus_urls[-1],
-    #                      self.test_monitor.last_source_used)
-    #
-    # @parameterized.expand([
-    #     (IncompleteRead, IncompleteRead('test'),),
-    #     (ChunkedEncodingError, ChunkedEncodingError('test'),),
-    #     (ProtocolError, ProtocolError('test'),),
-    #     (InvalidURL, InvalidURL('test'),),
-    #     (InvalidSchema, InvalidSchema('test'),),
-    #     (MissingSchema, MissingSchema('test'),),
-    #     (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
-    # def test_get_data_raises_non_connection_err_if_online_source_errors(
-    #         self, exception_class, exception_instance,
-    #         mock_get_prometheus_metrics_data) -> None:
-    #     # Here we will assume that the last source used was deemed as offline
-    #     # as we have already tested when it is online in a previous test. We
-    #     # will also assume that the second node is online but it errors.
-    #     mock_get_prometheus_metrics_data.side_effect = [
-    #         ReqConnectionError('test'), ReqConnectionError('test'),
-    #         exception_instance]
-    #
-    #     old_last_source_used = self.test_monitor.last_source_used
-    #     self.assertRaises(exception_class, self.test_monitor._get_data)
-    #     actual_calls = mock_get_prometheus_metrics_data.call_args_list
-    #     self.assertEqual(3, len(actual_calls))
-    #     self.assertEqual([
-    #         call(old_last_source_used, self.metrics_to_monitor,
-    #              self.dummy_logger, verify=False),
-    #         call(self.test_monitor.node_config._node_prometheus_urls[0],
-    #              self.metrics_to_monitor, self.dummy_logger, verify=False),
-    #         call(self.test_monitor.node_config._node_prometheus_urls[1],
-    #              self.metrics_to_monitor, self.dummy_logger, verify=False)],
-    #         actual_calls)
+
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
+            self) -> None:
+        # To make sure that there is no connection/channel already
+        # established
+        self.assertIsNone(self.rabbitmq.connection)
+        self.assertIsNone(self.rabbitmq.channel)
+
+        # To make sure that the exchanges have not already been declared
+        connect_to_rabbit(self.rabbitmq)
+        self.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+        self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+        disconnect_from_rabbit(self.rabbitmq)
+
+        self.test_monitor._initialise_rabbitmq()
+
+        # Perform checks that the connection has been opened, marked as open
+        # and that the delivery confirmation variable is set.
+        self.assertTrue(self.test_monitor.rabbitmq.is_connected)
+        self.assertTrue(self.test_monitor.rabbitmq.connection.is_open)
+        self.assertTrue(
+            self.test_monitor.rabbitmq.channel._delivery_confirmation)
+
+        # Check whether the exchange has been creating by sending messages
+        # to it. If this fails an exception is raised hence the test fails.
+        self.test_monitor.rabbitmq.basic_publish_confirm(
+            exchange=RAW_DATA_EXCHANGE, routing_key=self.routing_key,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=False)
+        self.test_monitor.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=False)
+
+    @mock.patch.object(ChainlinkNodeMonitor, "_process_retrieved_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_process_error")
+    def test_process_data_calls_process_error_on_retrieval_error(
+            self, mock_process_error, mock_process_retrieved_data) -> None:
+        # Do not test the processing of data for now
+        mock_process_error.return_value = self.test_data_dict
+
+        self.test_monitor._process_data(True, [self.test_exception],
+                                        [self.test_data_dict])
+
+        # Test passes if _process_error is called once and
+        # process_retrieved_data is not called
+        self.assertEqual(1, mock_process_error.call_count)
+        self.assertEqual(0, mock_process_retrieved_data.call_count)
+
+    @mock.patch.object(ChainlinkNodeMonitor, "_process_retrieved_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_process_error")
+    def test_process_data_calls_process_retrieved_data_on_retrieval_success(
+            self, mock_process_error, mock_process_retrieved_data) -> None:
+        # Do not test the processing of data for now
+        mock_process_retrieved_data.return_value = self.test_data_dict
+
+        self.test_monitor._process_data(False, [self.test_exception],
+                                        [self.test_data_dict])
+
+        # Test passes if _process_error is not called and process_retrieved_data
+        # is called once
+        self.assertEqual(0, mock_process_error.call_count)
+        self.assertEqual(1, mock_process_retrieved_data.call_count)
+
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat, and checks that the
+        # heartbeat is received
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+        self.test_monitor._send_heartbeat(self.test_heartbeat)
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the HB
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(self.test_heartbeat, json.loads(body))
+
+    def test_display_data_returns_the_correct_string(self) -> None:
+        # Test when optionals are not None
+        expected_output = \
+            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_heads_received_total={}, " \
+            "head_tracker_num_heads_dropped_total={}, " \
+            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "process_start_time_seconds={}, " \
+            "tx_manager_num_gas_bumps_total={}, " \
+            "tx_manager_gas_bump_exceeds_limit_total={}, " \
+            "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
+            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "".format(
+                self.processed_data_metrics_example[
+                    'head_tracker_current_head'],
+                self.processed_data_metrics_example[
+                    'head_tracker_heads_in_queue'],
+                self.processed_data_metrics_example[
+                    'head_tracker_heads_received_total'],
+                self.processed_data_metrics_example[
+                    'head_tracker_num_heads_dropped_total'],
+                self.processed_data_metrics_example[
+                    'job_subscriber_subscriptions'],
+                self.processed_data_metrics_example['max_unconfirmed_blocks'],
+                self.processed_data_metrics_example[
+                    'process_start_time_seconds'],
+                self.processed_data_metrics_example[
+                    'tx_manager_num_gas_bumps_total'],
+                self.processed_data_metrics_example[
+                    'tx_manager_gas_bump_exceeds_limit_total'],
+                self.processed_data_metrics_example['unconfirmed_transactions'],
+                self.processed_data_metrics_example[
+                    'gas_updater_set_gas_price'],
+                self.processed_data_metrics_example['ethereum_balances'],
+                self.processed_data_metrics_example[
+                    'run_status_update_total_errors']
+            )
+
+        actual_output = self.test_monitor._display_data(
+            self.processed_data_metrics_example)
+        self.assertEqual(expected_output, actual_output)
+
+        # Test when optionals are None
+        expected_output = \
+            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_heads_received_total={}, " \
+            "head_tracker_num_heads_dropped_total={}, " \
+            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "process_start_time_seconds={}, " \
+            "tx_manager_num_gas_bumps_total={}, " \
+            "tx_manager_gas_bump_exceeds_limit_total={}, " \
+            "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
+            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "".format(
+                self.processed_data_metrics_example_optionals_none[
+                    'head_tracker_current_head'],
+                self.processed_data_metrics_example_optionals_none[
+                    'head_tracker_heads_in_queue'],
+                self.processed_data_metrics_example_optionals_none[
+                    'head_tracker_heads_received_total'],
+                self.processed_data_metrics_example_optionals_none[
+                    'head_tracker_num_heads_dropped_total'],
+                self.processed_data_metrics_example_optionals_none[
+                    'job_subscriber_subscriptions'],
+                self.processed_data_metrics_example_optionals_none[
+                    'max_unconfirmed_blocks'],
+                self.processed_data_metrics_example_optionals_none[
+                    'process_start_time_seconds'],
+                self.processed_data_metrics_example_optionals_none[
+                    'tx_manager_num_gas_bumps_total'],
+                self.processed_data_metrics_example_optionals_none[
+                    'tx_manager_gas_bump_exceeds_limit_total'],
+                self.processed_data_metrics_example_optionals_none[
+                    'unconfirmed_transactions'],
+                self.processed_data_metrics_example_optionals_none[
+                    'gas_updater_set_gas_price'],
+                self.processed_data_metrics_example_optionals_none[
+                    'ethereum_balances'],
+                self.processed_data_metrics_example_optionals_none[
+                    'run_status_update_total_errors']
+            )
+
+        actual_output = self.test_monitor._display_data(
+            self.processed_data_metrics_example_optionals_none)
+        self.assertEqual(expected_output, actual_output)
+
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_first_attempts_retrieval_using_last_prom_source_used(
+            self, mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.return_value = \
+            self.processed_data_metrics_example
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        actual_output = self.test_monitor._get_prometheus_data()
+        mock_get_prometheus_metrics_data.assert_called_once_with(
+            old_last_prometheus_source_used, self.prometheus_metrics,
+            self.dummy_logger, verify=False)
+        self.assertEqual(self.processed_data_metrics_example, actual_output)
+
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_does_not_change_last_prom_sourced_used_if_online(
+            self, mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.return_value = \
+            self.processed_data_metrics_example
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        self.test_monitor._get_prometheus_data()
+        self.assertEqual(old_last_prometheus_source_used,
+                         self.test_monitor.last_prometheus_source_used)
+
+    @parameterized.expand([
+        (IncompleteRead, IncompleteRead('test'),),
+        (ChunkedEncodingError, ChunkedEncodingError('test'),),
+        (ProtocolError, ProtocolError('test'),),
+        (InvalidURL, InvalidURL('test'),),
+        (InvalidSchema, InvalidSchema('test'),),
+        (MissingSchema, MissingSchema('test'),),
+        (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_raises_non_conn_err_if_last_source_used_on_and_errs(
+            self, exception_class, exception_instance,
+            mock_get_prometheus_metrics_data) -> None:
+        mock_get_prometheus_metrics_data.side_effect = exception_instance
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        self.assertRaises(exception_class,
+                          self.test_monitor._get_prometheus_data)
+        mock_get_prometheus_metrics_data.assert_called_once_with(
+            old_last_prometheus_source_used, self.prometheus_metrics,
+            self.dummy_logger, verify=False)
+
+    @parameterized.expand([
+        (IncompleteRead, IncompleteRead('test'),),
+        (ChunkedEncodingError, ChunkedEncodingError('test'),),
+        (ProtocolError, ProtocolError('test'),),
+        (InvalidURL, InvalidURL('test'),),
+        (InvalidSchema, InvalidSchema('test'),),
+        (MissingSchema, MissingSchema('test'),),
+        (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_no_change_last_source_used_if_online_and_it_errors(
+            self, exception_class, exception_instance,
+            mock_get_prometheus_metrics_data) -> None:
+        # Here we are assuming that the error is not connection related
+        mock_get_prometheus_metrics_data.side_effect = exception_instance
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        try:
+            self.test_monitor._get_data()
+        except exception_class:
+            pass
+        self.assertEqual(old_last_prometheus_source_used,
+                         self.test_monitor.last_prometheus_source_used)
+
+    @parameterized.expand([
+        (ReadTimeout('test'),),
+        (ReqConnectionError('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_gets_data_from_online_source_if_last_source_used_off(
+            self, exception_instance, mock_get_prometheus_metrics_data) -> None:
+        # In this case we are setting the final source to be online
+        mock_get_prometheus_metrics_data.side_effect = [
+            exception_instance, exception_instance, exception_instance,
+            self.processed_data_metrics_example]
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        actual_output = self.test_monitor._get_prometheus_data()
+        actual_calls = mock_get_prometheus_metrics_data.call_args_list
+        self.assertEqual(4, len(actual_calls))
+
+        # In this case there are two calls to
+        # self.test_monitor.node_config._node_prometheus_urls[0] because
+        # initially this url was also the last prometheus source used.
+        expected_calls = [call(old_last_prometheus_source_used,
+                               self.prometheus_metrics, self.dummy_logger,
+                               verify=False)]
+        for i in range(0, len(self.node_prometheus_urls)):
+            expected_calls.append(call(
+                self.test_monitor.node_config.node_prometheus_urls[i],
+                self.prometheus_metrics, self.dummy_logger, verify=False))
+
+        self.assertEqual(expected_calls, actual_calls)
+        self.assertEqual(self.processed_data_metrics_example, actual_output)
+
+    @parameterized.expand([
+        (ReadTimeout('test'),),
+        (ReqConnectionError('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_changes_last_source_if_last_source_off_other_node_on(
+            self, exception_instance, mock_get_prometheus_metrics_data) -> None:
+        # In this case we are setting the final source to be online
+        mock_get_prometheus_metrics_data.side_effect = [
+            exception_instance, exception_instance, exception_instance,
+            self.processed_data_metrics_example]
+        self.test_monitor._get_prometheus_data()
+        self.assertEqual(self.test_monitor.node_config.node_prometheus_urls[-1],
+                         self.test_monitor.last_prometheus_source_used)
+
+    @parameterized.expand([
+        (IncompleteRead, IncompleteRead('test'),),
+        (ChunkedEncodingError, ChunkedEncodingError('test'),),
+        (ProtocolError, ProtocolError('test'),),
+        (InvalidURL, InvalidURL('test'),),
+        (InvalidSchema, InvalidSchema('test'),),
+        (MissingSchema, MissingSchema('test'),),
+        (MetricNotFoundException, MetricNotFoundException('test', 'test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch("src.monitors.node.chainlink.get_prometheus_metrics_data")
+    def test_get_prom_data_raises_non_connection_err_if_online_source_errors(
+            self, exception_class, exception_instance,
+            mock_get_prometheus_metrics_data) -> None:
+        # Here we will assume that the last prometheus source used was deemed as
+        # offline as we have already tested the online case in a previous test.
+        # We will also assume that the second source is online but it errors.
+        mock_get_prometheus_metrics_data.side_effect = [
+            ReqConnectionError('test'), ReqConnectionError('test'),
+            exception_instance]
+
+        old_last_prometheus_source_used = \
+            self.test_monitor.last_prometheus_source_used
+        self.assertRaises(exception_class,
+                          self.test_monitor._get_prometheus_data)
+        actual_calls = mock_get_prometheus_metrics_data.call_args_list
+        self.assertEqual(3, len(actual_calls))
+        self.assertEqual([
+            call(old_last_prometheus_source_used, self.prometheus_metrics,
+                 self.dummy_logger, verify=False),
+            call(self.test_monitor.node_config._node_prometheus_urls[0],
+                 self.prometheus_metrics, self.dummy_logger, verify=False),
+            call(self.test_monitor.node_config._node_prometheus_urls[1],
+                 self.prometheus_metrics, self.dummy_logger, verify=False)],
+            actual_calls)
     #
     # @parameterized.expand([
     #     (IncompleteRead, IncompleteRead('test'),),
