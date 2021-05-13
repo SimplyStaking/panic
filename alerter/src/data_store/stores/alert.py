@@ -5,11 +5,11 @@ from typing import Dict
 
 import pika.exceptions
 
+from src.alerter.alert_code import InternalAlertCode
+from src.alerter.alert_severities import Severity
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
-from src.alerter.alert_severities import Severity
-from src.alerter.alert_code import InternalAlertCode
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE,
@@ -150,7 +150,7 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                InternalAlertCode.ComponentResetAll.value and
+                    InternalAlertCode.ComponentResetAll.value and
                     alert['origin_id'] == 'SystemAlertersManager'):
 
                 """
@@ -161,7 +161,7 @@ class AlertStore(Store):
                 """
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
-                            '*' + parent_hash + '*')
+                    '*' + parent_hash + '*')
 
                 # Go through all the chains that are in REDIS
                 for chain in chain_hashes_list:
@@ -204,7 +204,7 @@ class AlertStore(Store):
                 """
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
-                            '*' + parent_hash + '*')
+                    '*' + parent_hash + '*')
 
                 # Go through all the chains that are in REDIS
                 for chain in chain_hashes_list:

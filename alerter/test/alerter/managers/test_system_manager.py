@@ -308,7 +308,8 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing, 'Process')
     @mock.patch("src.alerter.managers.system.ComponentReset")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
+    @mock.patch(
+        "src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_terminate_and_join_chain_alerter_processes_creates_alert(
             self, mock_push_latest_data_to_queue_and_send,
             mock_component_reset, mock_process, mock_join,
