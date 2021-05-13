@@ -2,9 +2,11 @@ import copy
 import json
 import logging
 import unittest
+from collections import ChainMap
 from datetime import datetime
 from datetime import timedelta
 from http.client import IncompleteRead
+from typing import Dict
 from unittest import mock
 from unittest.mock import call
 
@@ -29,7 +31,7 @@ from src.utils.exceptions import (PANICException,
                                   MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit,
-                              dummy_function)
+                              assert_not_called_with)
 
 
 class TestChainlinkNodeMonitor(unittest.TestCase):
@@ -377,7 +379,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.test_queue_name)
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
-    def test_display_data_returns_the_correct_string(self) -> None:
+    def test_display_data_returns_the_correct_string_if_all_metrics_present(
+            self) -> None:
         # Test when optionals are not None
         expected_output = \
             "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
@@ -457,6 +460,98 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                     'gas_updater_set_gas_price'],
                 self.processed_prometheus_data_example_optionals_none[
                     'ethereum_balances'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'run_status_update_total_errors']
+            )
+
+        actual_output = self.test_monitor._display_data(
+            self.processed_prometheus_data_example_optionals_none)
+        self.assertEqual(expected_output, actual_output)
+
+    def test_display_data_returns_the_correct_string_if_not_all_metrics_present(
+            self) -> None:
+        # Test when optionals are not None
+        del self.processed_prometheus_data_example['head_tracker_current_head']
+        del self.processed_prometheus_data_example['ethereum_balances']
+        expected_output = \
+            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_heads_received_total={}, " \
+            "head_tracker_num_heads_dropped_total={}, " \
+            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "process_start_time_seconds={}, " \
+            "tx_manager_num_gas_bumps_total={}, " \
+            "tx_manager_gas_bump_exceeds_limit_total={}, " \
+            "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
+            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "".format(
+                "Disabled",
+                self.processed_prometheus_data_example[
+                    'head_tracker_heads_in_queue'],
+                self.processed_prometheus_data_example[
+                    'head_tracker_heads_received_total'],
+                self.processed_prometheus_data_example[
+                    'head_tracker_num_heads_dropped_total'],
+                self.processed_prometheus_data_example[
+                    'job_subscriber_subscriptions'],
+                self.processed_prometheus_data_example[
+                    'max_unconfirmed_blocks'],
+                self.processed_prometheus_data_example[
+                    'process_start_time_seconds'],
+                self.processed_prometheus_data_example[
+                    'tx_manager_num_gas_bumps_total'],
+                self.processed_prometheus_data_example[
+                    'tx_manager_gas_bump_exceeds_limit_total'],
+                self.processed_prometheus_data_example[
+                    'unconfirmed_transactions'],
+                self.processed_prometheus_data_example[
+                    'gas_updater_set_gas_price'],
+                "Disabled",
+                self.processed_prometheus_data_example[
+                    'run_status_update_total_errors']
+            )
+
+        actual_output = self.test_monitor._display_data(
+            self.processed_prometheus_data_example)
+        self.assertEqual(expected_output, actual_output)
+
+        # Test when optionals are None
+        del self.processed_prometheus_data_example_optionals_none[
+            'head_tracker_current_head']
+        del self.processed_prometheus_data_example_optionals_none[
+            'ethereum_balances']
+        expected_output = \
+            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_heads_received_total={}, " \
+            "head_tracker_num_heads_dropped_total={}, " \
+            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "process_start_time_seconds={}, " \
+            "tx_manager_num_gas_bumps_total={}, " \
+            "tx_manager_gas_bump_exceeds_limit_total={}, " \
+            "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
+            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "".format(
+                "Disabled",
+                self.processed_prometheus_data_example_optionals_none[
+                    'head_tracker_heads_in_queue'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'head_tracker_heads_received_total'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'head_tracker_num_heads_dropped_total'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'job_subscriber_subscriptions'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'max_unconfirmed_blocks'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'process_start_time_seconds'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'tx_manager_num_gas_bumps_total'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'tx_manager_gas_bump_exceeds_limit_total'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'unconfirmed_transactions'],
+                self.processed_prometheus_data_example_optionals_none[
+                    'gas_updater_set_gas_price'],
+                "Disabled",
                 self.processed_prometheus_data_example_optionals_none[
                     'run_status_update_total_errors']
             )
@@ -832,18 +927,12 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             eval(retrieved_data))
         self.assertEqual(expected_output, actual_output)
 
-    @parameterized.expand([
-        ("prometheus",),
-        ("rpc",),
-    ])
-    def test_process_retrieved_data_returns_the_correct_dict(
-            self, source_type) -> None:
-        test_args = ['arg1', 'arg2', 'arg3']
+    def test_process_retrieved_data_returns_the_correct_dict(self) -> None:
+        def test_fn(x: Dict): return x
+
         actual_ret = self.test_monitor._process_retrieved_data(
-            dummy_function, test_args, source_type)
-        expected_ret = {
-            source_type: dummy_function(*test_args)
-        }
+            test_fn, self.test_data_dict)
+        expected_ret = test_fn(self.test_data_dict)
         self.assertEqual(expected_ret, actual_ret)
 
     def test_send_data_sends_data_correctly(self) -> None:
@@ -878,392 +967,473 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
         self.assertEqual(self.processed_prometheus_data_example,
                          json.loads(body))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
-    #         self, mock_get_data) -> None:
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'last_source_used': self.test_monitor.last_source_used,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.processed_data_example,
-    #         }
-    #     }
-    #     expected_output_hb = {
-    #         'component_name': self.test_monitor.monitor_name,
-    #         'is_alive': True,
-    #         'timestamp': datetime(2012, 1, 1).timestamp()
-    #     }
-    #
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #
-    #     self.test_monitor._monitor()
-    #
-    #     # By re-declaring the queue again we can get the number of messages
-    #     # in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     # There must be 2 messages in the queue, the heartbeat and the
-    #     # processed data
-    #     self.assertEqual(2, res.method.message_count)
-    #
-    #     # Check that the message received is actually the processed data
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(expected_output_data, json.loads(body))
-    #
-    #     # Check that the message received is actually the HB
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(expected_output_hb, json.loads(body))
-    #
-    # @mock.patch.object(ChainlinkNodeMonitor, "_process_data")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
-    #         self, mock_get_data, mock_process_data) -> None:
-    #     mock_process_data.side_effect = self.test_exception
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #
-    #     self.test_monitor._monitor()
-    #
-    #     # By re-declaring the queue again we can get the number of messages
-    #     # in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     # There must be 0 messages in the queue.
-    #     self.assertEqual(0, res.method.message_count)
-    #
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
-    #         self, mock_get_data) -> None:
-    #     mock_get_data.side_effect = self.test_exception
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #
-    #     self.assertRaises(PANICException, self.test_monitor._monitor)
-    #
-    #     # By re-declaring the queue again we can get the number of messages
-    #     # in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     # There must be 0 messages in the queue.
-    #     self.assertEqual(0, res.method.message_count)
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_sends_exception_data_and_hb_on_expected_exceptions(
-    #         self, mock_get_data) -> None:
-    #     errors_exceptions_dict = {
-    #         NodeIsDownException(self.test_monitor.node_config.node_name):
-    #             NodeIsDownException(self.test_monitor.node_config.node_name),
-    #         IncompleteRead('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.last_source_used),
-    #         ChunkedEncodingError('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.last_source_used),
-    #         ProtocolError('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.last_source_used),
-    #         InvalidURL('test'): InvalidUrlException(
-    #             self.test_monitor.last_source_used),
-    #         InvalidSchema('test'): InvalidUrlException(
-    #             self.test_monitor.last_source_used),
-    #         MissingSchema('test'): InvalidUrlException(
-    #             self.test_monitor.last_source_used),
-    #         MetricNotFoundException('test_metric', 'test_endpoint'):
-    #             MetricNotFoundException('test_metric', 'test_endpoint')
-    #     }
-    #     self.test_monitor._initialise_rabbitmq()
-    #     for error, data_ret_exception in errors_exceptions_dict.items():
-    #         mock_get_data.side_effect = error
-    #         expected_output_data = {
-    #             'error': {
-    #                 'meta_data': {
-    #                     'monitor_name': self.test_monitor.monitor_name,
-    #                     'node_name': self.test_monitor.node_config.node_name,
-    #                     'last_source_used': self.test_monitor.last_source_used,
-    #                     'node_id': self.test_monitor.node_config.node_id,
-    #                     'node_parent_id':
-    #                         self.test_monitor.node_config.parent_id,
-    #                     'time': datetime(2012, 1, 1).timestamp()
-    #                 },
-    #                 'message': data_ret_exception.message,
-    #                 'code': data_ret_exception.code,
-    #             }
-    #         }
-    #         expected_output_hb = {
-    #             'component_name': self.test_monitor.monitor_name,
-    #             'is_alive': True,
-    #             'timestamp': datetime(2012, 1, 1).timestamp()
-    #         }
-    #         # Delete the queue before to avoid messages in the queue on
-    #         # error.
-    #         self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #         res = self.test_monitor.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_monitor.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #             routing_key='node.chainlink')
-    #         self.test_monitor.rabbitmq.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key='heartbeat.worker')
-    #
-    #         self.test_monitor._monitor()
-    #
-    #         # By re-declaring the queue again we can get the number of
-    #         # messages in the queue.
-    #         res = self.test_monitor.rabbitmq.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         # There must be 2 messages in the queue, the heartbeat and the
-    #         # processed data
-    #         self.assertEqual(2, res.method.message_count)
-    #
-    #         # Check that the message received is actually the processed data
-    #         _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #             self.test_queue_name)
-    #         self.assertEqual(expected_output_data, json.loads(body))
-    #
-    #         # Check that the message received is actually the HB
-    #         _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #             self.test_queue_name)
-    #         self.assertEqual(expected_output_hb, json.loads(body))
-    #
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_raises_msg_not_delivered_exception_if_data_not_routed(
-    #         self, mock_get_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     self.test_monitor._initialise_rabbitmq()
-    #     self.assertRaises(MessageWasNotDeliveredException,
-    #                       self.test_monitor._monitor)
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_raises_msg_not_del_except_if_hb_not_routed_and_sends_data(
-    #         self, mock_get_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'last_source_used': self.test_monitor.last_source_used,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.processed_data_example,
-    #         }
-    #     }
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #
-    #     self.assertRaises(MessageWasNotDeliveredException,
-    #                       self.test_monitor._monitor)
-    #
-    #     # By re-declaring the queue again we can get the number of
-    #     # messages in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     # There must be 1 message in the queue, the processed data
-    #     self.assertEqual(1, res.method.message_count)
-    #
-    #     # Check that the message received is actually the processed data
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(expected_output_data, json.loads(body))
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_raises_error_if_raised_by_send_data(
-    #         self, exception_class, exception_instance, mock_get_data,
-    #         mock_send_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_data.side_effect = exception_instance
-    #     self.test_monitor._initialise_rabbitmq()
-    #     self.assertRaises(exception_class, self.test_monitor._monitor)
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_raises_error_if_raised_by_send_hb_and_sends_data(
-    #         self, exception_class, exception_instance, mock_get_data,
-    #         mock_send_hb) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_hb.side_effect = exception_instance
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'last_source_used': self.test_monitor.last_source_used,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.processed_data_example,
-    #         }
-    #     }
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #
-    #     self.assertRaises(exception_class, self.test_monitor._monitor)
-    #
-    #     # By re-declaring the queue again we can get the number of
-    #     # messages in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     # There must be 1 message in the queue, the processed data
-    #     self.assertEqual(1, res.method.message_count)
-    #
-    #     # Check that the message received is actually the processed data
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(
-    #         self.test_queue_name)
-    #     self.assertEqual(expected_output_data, json.loads(body))
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (MessageWasNotDeliveredException,
-    #      MessageWasNotDeliveredException('test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
-    # @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
-    # def test_monitor_does_not_send_hb_and_data_if_send_data_fails(
-    #         self, exception_class, exception_instance, mock_get_data,
-    #         mock_send_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_data.side_effect = exception_instance
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     self.test_monitor.rabbitmq.queue_delete(
-    #         self.test_queue_name)
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name,
-    #         exchange=HEALTH_CHECK_EXCHANGE,
-    #         routing_key='heartbeat.worker')
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key='node.chainlink')
-    #
-    #     try:
-    #         self.test_monitor._monitor()
-    #     except exception_class:
-    #         pass
-    #
-    #     # By re-declaring the queue again we can get the number of
-    #     # messages in the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True,
-    #         exclusive=False, auto_delete=False, passive=True
-    #     )
-    #     # There must be no messages in the queue.
-    #     self.assertEqual(0, res.method.message_count)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
+            self, mock_get_data) -> None:
+        # Here we are assuming that all sources are enabled.
+        expected_output_data = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor.monitor_name,
+                        'node_name': self.test_monitor.node_config.node_name,
+                        'last_source_used':
+                            self.test_monitor.last_prometheus_source_used,
+                        'node_id': self.test_monitor.node_config.node_id,
+                        'node_parent_id':
+                            self.test_monitor.node_config.parent_id,
+                        'time': datetime(2012, 1, 1).timestamp()
+                    },
+                    'data': self.processed_prometheus_data_example,
+                }
+            }
+        }
+        expected_output_hb = {
+            'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime(2012, 1, 1).timestamp()
+        }
+
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+
+        self.test_monitor._monitor()
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 2 messages in the queue, the heartbeat and the
+        # processed data
+        self.assertEqual(2, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_data, json.loads(body))
+
+        # Check that the message received is actually the HB
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_hb, json.loads(body))
+
+    @parameterized.expand([
+        (False, ['prometheus'],)
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_sends_empty_dict_for_disabled_source(
+            self, monitor_prometheus, disabled_sources, mock_get_data) -> None:
+        # Once more sources are added this test will make more sense.
+        self.test_monitor.node_config._monitor_prometheus = monitor_prometheus
+        expected_output_data = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor.monitor_name,
+                        'node_name': self.test_monitor.node_config.node_name,
+                        'last_source_used':
+                            self.test_monitor.last_prometheus_source_used,
+                        'node_id': self.test_monitor.node_config.node_id,
+                        'node_parent_id':
+                            self.test_monitor.node_config.parent_id,
+                        'time': datetime(2012, 1, 1).timestamp()
+                    },
+                    'data': self.processed_prometheus_data_example,
+                }
+            }
+        }
+        for disabled_source in disabled_sources:
+            expected_output_data[disabled_source] = {}
+        expected_output_hb = {
+            'component_name': self.test_monitor.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime(2012, 1, 1).timestamp()
+        }
+
+        # We can get all data since that won't effect how _monitor() works
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+
+        self.test_monitor._monitor()
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 2 messages in the queue, the heartbeat and the
+        # processed data
+        self.assertEqual(2, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_data, json.loads(body))
+
+        # Check that the message received is actually the HB
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_hb, json.loads(body))
+
+    @parameterized.expand([
+        (['self.test_exception'],)
+    ])
+    @mock.patch.object(ChainlinkNodeMonitor, "_process_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
+            self, process_data_side_effect, mock_get_data,
+            mock_process_data) -> None:
+        # This test will be expanded further once more sources are added. We
+        # can eventually test for when example the first source is processed
+        # correctly but the second fails.
+        process_data_side_effect_eval = list(map(
+            eval, process_data_side_effect))
+        mock_process_data.side_effect = process_data_side_effect_eval
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+
+        self.test_monitor._monitor()
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 0 messages in the queue.
+        self.assertEqual(0, res.method.message_count)
+
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
+            self, mock_get_data) -> None:
+        mock_get_data.side_effect = self.test_exception
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+
+        self.assertRaises(PANICException, self.test_monitor._monitor)
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 0 messages in the queue.
+        self.assertEqual(0, res.method.message_count)
+
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_raises_msg_not_delivered_exception_if_data_not_routed(
+            self, mock_get_data) -> None:
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        self.test_monitor._initialise_rabbitmq()
+        self.assertRaises(MessageWasNotDeliveredException,
+                          self.test_monitor._monitor)
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (InvalidUrlException, InvalidUrlException('test'),),
+        (DataReadingException, DataReadingException('test', 'test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_raises_error_if_raised_by_send_data(
+            self, exception_class, exception_instance, mock_get_data,
+            mock_send_data) -> None:
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        mock_send_data.side_effect = exception_instance
+        self.test_monitor._initialise_rabbitmq()
+        self.assertRaises(exception_class, self.test_monitor._monitor)
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (MessageWasNotDeliveredException,
+         MessageWasNotDeliveredException('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_does_not_send_hb_and_data_if_send_data_fails(
+            self, exception_class, exception_instance, mock_get_data,
+            mock_send_data) -> None:
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        mock_send_data.side_effect = exception_instance
+        self.test_monitor._initialise_rabbitmq()
+
+        self.test_monitor.rabbitmq.queue_delete(
+            self.test_queue_name)
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name,
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+
+        try:
+            self.test_monitor._monitor()
+        except exception_class:
+            pass
+
+        # By re-declaring the queue again we can get the number of
+        # messages in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True,
+            exclusive=False, auto_delete=False, passive=True
+        )
+        # There must be no messages in the queue.
+        self.assertEqual(0, res.method.message_count)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_raises_msg_not_del_except_if_hb_not_routed_and_sends_data(
+            self, mock_get_data) -> None:
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        expected_output_data = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor.monitor_name,
+                        'node_name': self.test_monitor.node_config.node_name,
+                        'last_source_used':
+                            self.test_monitor.last_prometheus_source_used,
+                        'node_id': self.test_monitor.node_config.node_id,
+                        'node_parent_id':
+                            self.test_monitor.node_config.parent_id,
+                        'time': datetime(2012, 1, 1).timestamp()
+                    },
+                    'data': self.processed_prometheus_data_example,
+                }
+            }
+        }
+        self.test_monitor._initialise_rabbitmq()
+
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+
+        self.assertRaises(MessageWasNotDeliveredException,
+                          self.test_monitor._monitor)
+
+        # By re-declaring the queue again we can get the number of
+        # messages in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 1 message in the queue, the processed data
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_data, json.loads(body))
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_raises_error_if_raised_by_send_hb_and_sends_data(
+            self, exception_class, exception_instance, mock_get_data,
+            mock_send_hb) -> None:
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+        expected_output_data = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor.monitor_name,
+                        'node_name': self.test_monitor.node_config.node_name,
+                        'last_source_used':
+                            self.test_monitor.last_prometheus_source_used,
+                        'node_id': self.test_monitor.node_config.node_id,
+                        'node_parent_id':
+                            self.test_monitor.node_config.parent_id,
+                        'time': datetime(2012, 1, 1).timestamp()
+                    },
+                    'data': self.processed_prometheus_data_example,
+                }
+            }
+        }
+        mock_send_hb.side_effect = exception_instance
+
+        self.test_monitor._initialise_rabbitmq()
+
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key='heartbeat.worker')
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key='node.chainlink')
+
+        self.assertRaises(exception_class, self.test_monitor._monitor)
+
+        # By re-declaring the queue again we can get the number of
+        # messages in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        # There must be 1 message in the queue, the processed data
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output_data, json.loads(body))
+
+    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_logs_data_if_all_sources_enabled_and_no_retrieval_error(
+            self, mock_get_data, mock_send_data, mock_send_hb,
+            mock_log) -> None:
+        mock_send_data.return_value = None
+        mock_send_hb.return_value = None
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+
+        self.test_monitor._monitor()
+
+        mock_log.assert_called_with(self.test_monitor._display_data(
+            self.processed_prometheus_data_example))
+
+    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_does_not_log_if_no_retrieval_performed(
+            self, mock_get_data, mock_send_data, mock_send_hb,
+            mock_log) -> None:
+        # This needs to be updated as we increase the number of sources
+        mock_send_data.return_value = None
+        mock_send_hb.return_value = None
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled
+
+        self.test_monitor.node_config._monitor_prometheus = False
+        processed_data = dict(ChainMap(
+            *[self.processed_prometheus_data_example]))
+
+        self.test_monitor._monitor()
+        assert_not_called_with(mock_log,
+                               self.test_monitor._display_data(processed_data))
+
+    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
+    def test_monitor_does_not_log_if_retrieval_error(
+            self, mock_get_data, mock_send_data, mock_send_hb,
+            mock_log) -> None:
+        # This needs to be updated as we increase the number of sources
+        mock_send_data.return_value = None
+        mock_send_hb.return_value = None
+        mock_get_data.return_value = \
+            self.received_retrieval_info_all_source_types_enabled_err
+        processed_data = {}
+
+        self.test_monitor._monitor()
+        assert_not_called_with(mock_log,
+                               self.test_monitor._display_data(processed_data))
+
+    # TODO: When more sources are added we need to test for when some sources
+    #     : are enabled and some disabled
