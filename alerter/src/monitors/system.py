@@ -241,40 +241,38 @@ class SystemMonitor(Monitor):
     def _monitor(self) -> None:
         data_retrieval_exception = None
         data = None
-        data_retrieval_failed = False
+        data_retrieval_failed = True
         try:
             data = self._get_data()
+            data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
-            data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
                 self.system_config.system_name)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (InvalidURL, InvalidSchema, MissingSchema):
-            data_retrieval_failed = True
             data_retrieval_exception = InvalidUrlException(
                 self.system_config.node_exporter_url)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
-            data_retrieval_failed = True
             data_retrieval_exception = e
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
 
         try:
-            processed_data = self._process_data(data, data_retrieval_failed,
-                                                data_retrieval_exception)
+            processed_data = self._process_data(data_retrieval_failed,
+                                                [data_retrieval_exception],
+                                                [data])
         except Exception as error:
             self.logger.error("Error when processing data obtained from %s",
                               self.system_config.node_exporter_url)

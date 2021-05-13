@@ -86,12 +86,12 @@ class NodeMonitorsManager(MonitorsManager):
     def _create_and_start_monitor_process(
             self, node_config: NodeConfig, config_id: str,
             monitor_type: Type[Monitor]) -> None:
+        log_and_print("Creating a new process for the monitor of {}".format(
+            node_config.node_name), self.logger)
         process = multiprocessing.Process(target=start_node_monitor,
                                           args=(node_config, monitor_type))
         # Kill children if parent is killed
         process.daemon = True
-        log_and_print("Creating a new process for the monitor of {}".format(
-            node_config.node_name), self.logger)
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
@@ -128,14 +128,19 @@ class NodeMonitorsManager(MonitorsManager):
                 node_prometheus_urls = config['node_prometheus_urls'].split(',')
                 ethereum_addresses = config['ethereum_addresses'].split(',')
                 monitor_node = str_to_bool(config['monitor_node'])
+                monitor_prometheus = str_to_bool(config['monitor_prometheus'])
 
-                # If we should not monitor the node, move to the next config
-                if not monitor_node:
+                # Check if all `monitor_<source>` are false. If this is the case
+                # or `monitor_node` is disabled do not start a monitor and move
+                # to the next config.
+                sources_enabled = [monitor_prometheus]
+                if not monitor_node or not any(sources_enabled):
                     continue
 
                 node_config = ChainlinkNodeConfig(
                     node_id, parent_id, node_name, monitor_node,
-                    node_prometheus_urls, ethereum_addresses)
+                    monitor_prometheus, node_prometheus_urls,
+                    ethereum_addresses)
                 self._create_and_start_monitor_process(node_config, config_id,
                                                        ChainlinkNodeMonitor)
                 correct_nodes_configs[config_id] = config
@@ -151,17 +156,22 @@ class NodeMonitorsManager(MonitorsManager):
                 node_prometheus_urls = config['node_prometheus_urls'].split(',')
                 ethereum_addresses = config['ethereum_addresses'].split(',')
                 monitor_node = str_to_bool(config['monitor_node'])
+                monitor_prometheus = str_to_bool(config['monitor_prometheus'])
+                sources_enabled = [monitor_prometheus]
                 node_config = ChainlinkNodeConfig(
                     node_id, parent_id, node_name, monitor_node,
-                    node_prometheus_urls, ethereum_addresses)
+                    monitor_prometheus, node_prometheus_urls,
+                    ethereum_addresses)
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()
                 previous_process.join()
 
-                # If we should not monitor the node, delete the previous process
-                # from the system and move to the next config
-                if not monitor_node:
+                # Check if all `monitor_<source>` are false. If this is the case
+                # or `monitor_node` is disabled do not restart a monitor, but
+                # delete the previous process from the system and move to the
+                # next config.
+                if not monitor_node or not any(sources_enabled):
                     del self.config_process_dict[config_id]
                     del correct_nodes_configs[config_id]
                     log_and_print("Killed the monitor of {} ".format(

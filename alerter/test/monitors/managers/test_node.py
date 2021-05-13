@@ -36,6 +36,7 @@ from test.utils.utils import (infinite_fn, connect_to_rabbit,
 
 class TestNodeMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
+        # Some dummy data
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -51,32 +52,39 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
+        self.test_exception = PANICException('test_exception', 1)
+
+        # Some dummy processes
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True
         self.dummy_process2 = Process(target=infinite_fn, args=())
         self.dummy_process2.daemon = True
         self.dummy_process3 = Process(target=infinite_fn, args=())
         self.dummy_process3.daemon = True
+
+        # Some dummy node configs
         self.node_id_1 = 'config_id1'
         self.parent_id_1 = 'chain_1'
         self.node_name_1 = 'node_1'
         self.monitor_node_1 = True
+        self.monitor_prometheus_1 = True
         self.node_prometheus_urls_1 = ['url1', 'url2', 'url3']
         self.ethereum_addresses_1 = ['eth_add_1', 'eth_add_2', 'eth_add_3']
         self.node_config_1 = ChainlinkNodeConfig(
             self.node_id_1, self.parent_id_1, self.node_name_1,
-            self.monitor_node_1, self.node_prometheus_urls_1,
-            self.ethereum_addresses_1)
+            self.monitor_node_1, self.monitor_prometheus_1,
+            self.node_prometheus_urls_1, self.ethereum_addresses_1)
         self.node_id_2 = 'config_id2'
         self.parent_id_2 = 'chain_2'
         self.node_name_2 = 'node_2'
         self.monitor_node_2 = True
+        self.monitor_prometheus_2 = True
         self.node_prometheus_urls_2 = ['url4', 'url5', 'url6']
         self.ethereum_addresses_2 = ['eth_add_4', 'eth_add_5', 'eth_add_6']
         self.node_config_2 = ChainlinkNodeConfig(
             self.node_id_2, self.parent_id_2, self.node_name_2,
-            self.monitor_node_2, self.node_prometheus_urls_2,
-            self.ethereum_addresses_2)
+            self.monitor_node_2, self.monitor_prometheus_2,
+            self.node_prometheus_urls_2, self.ethereum_addresses_2)
         self.node_id_3 = 'config_id3'
         self.parent_id_3 = 'chain_3'
         self.node_name_3 = 'node_3'
@@ -84,6 +92,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.node_config_3 = NodeConfig(
             self.node_id_3, self.parent_id_3, self.node_name_3,
             self.monitor_node_3)
+
+        # Some config_process_dict, node_configs and sent_configs examples
         self.config_process_dict_example = {
             'config_id1': {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
@@ -117,6 +127,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                         ','.join(self.node_prometheus_urls_1),
                     'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                     'monitor_node': str(self.monitor_node_1),
+                    'monitor_prometheus': str(self.monitor_prometheus_1)
                 },
                 'config_id2': {
                     'id': self.node_id_2,
@@ -126,6 +137,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                         ','.join(self.node_prometheus_urls_2),
                     'ethereum_addresses': ','.join(self.ethereum_addresses_2),
                     'monitor_node': str(self.monitor_node_2),
+                    'monitor_prometheus': str(self.monitor_prometheus_2)
                 }
             },
             'Substrate Kusama': {
@@ -145,6 +157,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
                 'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
+                'monitor_prometheus': str(self.monitor_prometheus_1)
             },
             'config_id2': {
                 'id': self.node_id_2,
@@ -153,6 +166,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
                 'ethereum_addresses': ','.join(self.ethereum_addresses_2),
                 'monitor_node': str(self.monitor_node_2),
+                'monitor_prometheus': str(self.monitor_prometheus_2)
             }
         }
         self.sent_configs_example_kusama = {
@@ -163,12 +177,15 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'monitor_node': str(self.monitor_node_3),
             }
         }
+
+        # Test manager object
         self.test_manager = NodeMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
+
+        # Some test routing keys
         self.chainlink_routing_key = \
             'chains.Chainlink.Binance Smart Chain.nodes_config'
         self.kusama_routing_key = 'chains.Substrate.Kusama.nodes_config'
-        self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -367,12 +384,20 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.assertEqual(start_node_monitor, new_entry_process._target)
         mock_start.assert_called_once()
 
+    @parameterized.expand([
+        ("True", "False"),
+        ("False", "True"),
+        ("False", "False"),
+    ])
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
     def test_process_chainlink_node_configs_starts_monitors_for_new_configs(
-            self, startup_mock) -> None:
+            self, third_conf_monitor_node, third_conf_monitor_prometheus,
+            startup_mock) -> None:
         # We will check whether _create_and_start_monitor_process is called
-        # correctly on each newly added configuration if `monitor_node = True`.
-        # We will be also testing that if `monitor_node = False` no new monitor
+        # correctly on each newly added configuration if
+        # `monitor_node and monitor_<any_source> = True`.
+        # We will be also testing that if
+        # `monitor_node or monitor_<all_sources> = False` no new monitor
         # is created. We will perform this test for both when the state is empty
         # and non-empty
         startup_mock.return_value = None
@@ -385,7 +410,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'name': self.node_name_3,
             'node_prometheus_urls': 'url7,url8,url9',
             'ethereum_addresses': 'eth_add_1,eth_add_2,eth_add_3',
-            'monitor_node': "False",
+            'monitor_node': third_conf_monitor_node,
+            'monitor_prometheus': third_conf_monitor_prometheus
         }
         self.test_manager._process_chainlink_node_configs(sent_configs, {})
         expected_calls = [
@@ -405,6 +431,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
                 'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
+                'monitor_prometheus': str(self.monitor_prometheus_1)
             }
         }
         self.test_manager._process_chainlink_node_configs(sent_configs,
@@ -415,9 +442,15 @@ class TestNodeMonitorsManager(unittest.TestCase):
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(1, startup_mock.call_count)
 
+    @parameterized.expand([
+        ("True", "False"),
+        ("False", "True"),
+        ("False", "False"),
+    ])
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
     def test_process_chainlink_node_configs_return_if_valid_new_configurations(
-            self, startup_mock) -> None:
+            self, third_conf_monitor_node, third_conf_monitor_prometheus,
+            startup_mock) -> None:
         # In this test we will assume that all added configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
@@ -433,7 +466,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'name': self.node_name_3,
             'node_prometheus_urls': 'url7,url8,url9',
             'ethereum_addresses': 'eth_add_1,eth_add_2,eth_add_3',
-            'monitor_node': "False",
+            'monitor_node': third_conf_monitor_node,
+            'monitor_prometheus': third_conf_monitor_prometheus
         }
         actual_return = self.test_manager._process_chainlink_node_configs(
             sent_configs, {})
@@ -450,6 +484,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
                 'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
+                'monitor_prometheus': str(self.monitor_prometheus_1)
             }
         }
         actual_return = self.test_manager._process_chainlink_node_configs(
@@ -458,14 +493,20 @@ class TestNodeMonitorsManager(unittest.TestCase):
         del expected_return['config_id3']
         self.assertEqual(expected_return, actual_return)
 
+    @parameterized.expand([
+        ("True", "False"),
+        ("False", "True"),
+        ("False", "False"),
+    ])
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
     def test_process_chainlink_node_configs_restarts_monitors_for_edited_confs(
-            self, startup_mock, mock_terminate, mock_join) -> None:
+            self, deleted_conf_monitor_node, deleted_conf_monitor_prometheus,
+            startup_mock, mock_terminate, mock_join) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed and started with the latest configuration as long
-        # as `monitor_node=True`.
+        # as `monitor_node and monitor_<any_source>=True`.
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
@@ -475,14 +516,16 @@ class TestNodeMonitorsManager(unittest.TestCase):
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
 
-        # Assume that for config_id1, monitor_node has been set to False
+        # Assume that config_id1, will be the configuration whose monitors will
+        # be killed but not started.
         sent_configs['config_id1'] = {
             'id': self.node_id_1,
             'parent_id': self.parent_id_1,
             'name': self.node_name_1,
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
             'ethereum_addresses': ','.join(self.ethereum_addresses_1),
-            'monitor_node': "False",
+            'monitor_node': deleted_conf_monitor_node,
+            'monitor_prometheus': deleted_conf_monitor_prometheus
         }
         # Assume that for config_id2 the name of the node was changed
         sent_configs['config_id2'] = {
@@ -492,6 +535,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
             'ethereum_addresses': ','.join(self.ethereum_addresses_2),
             'monitor_node': str(self.monitor_node_2),
+            'monitor_prometheus': str(self.monitor_prometheus_2)
         }
 
         self.test_manager._process_chainlink_node_configs(
@@ -499,8 +543,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
             self.nodes_configs_example['Chainlink Binance Smart Chain'])
         modified_node_2_config = ChainlinkNodeConfig(
             self.node_id_2, self.parent_id_2, 'changed_node_name',
-            self.monitor_node_2, self.node_prometheus_urls_2,
-            self.ethereum_addresses_2)
+            self.monitor_node_2, self.monitor_prometheus_2,
+            self.node_prometheus_urls_2, self.ethereum_addresses_2)
         startup_mock.assert_called_once_with(modified_node_2_config,
                                              self.node_id_2,
                                              ChainlinkNodeMonitor)
@@ -509,11 +553,17 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.assertTrue('config_id2' in self.test_manager.config_process_dict)
         self.assertFalse('config_id1' in self.test_manager.config_process_dict)
 
+    @parameterized.expand([
+        ("True", "False"),
+        ("False", "True"),
+        ("False", "False"),
+    ])
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
     def test_process_chainlink_node_configs_return_if_valid_edited_confs(
-            self, startup_mock, mock_terminate, mock_join) -> None:
+            self, deleted_conf_monitor_node, deleted_conf_monitor_prometheus,
+            startup_mock, mock_terminate, mock_join) -> None:
         # In this test we will assume that all edited configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
@@ -526,14 +576,16 @@ class TestNodeMonitorsManager(unittest.TestCase):
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
 
-        # Assume that for config_id1, monitor_node has been set to False
+        # Assume config_id1 will be the config whose monitor will be killed and
+        # not restarted.
         sent_configs['config_id1'] = {
             'id': self.node_id_1,
             'parent_id': self.parent_id_1,
             'name': self.node_name_1,
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
             'ethereum_addresses': ','.join(self.ethereum_addresses_1),
-            'monitor_node': "False",
+            'monitor_node': deleted_conf_monitor_node,
+            'monitor_prometheus': deleted_conf_monitor_prometheus
         }
         # Assume that for config_id2 the name of the node was changed
         sent_configs['config_id2'] = {
@@ -543,6 +595,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
             'ethereum_addresses': ','.join(self.ethereum_addresses_2),
             'monitor_node': str(self.monitor_node_2),
+            'monitor_prometheus': str(self.monitor_prometheus_2)
         }
 
         actual_return = self.test_manager._process_chainlink_node_configs(
@@ -622,6 +675,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
             'ethereum_addresses': ','.join(self.ethereum_addresses_1),
             'monitor_node': str(self.monitor_node_1),
+            'monitor_prometheus': str(self.monitor_prometheus_1)
         }
 
         # Must create a connection so that the blocking channel is passed

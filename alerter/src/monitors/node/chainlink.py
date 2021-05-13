@@ -1,9 +1,10 @@
 import copy
 import json
 import logging
+from collections import ChainMap, defaultdict
 from datetime import datetime
 from http.client import IncompleteRead
-from typing import Dict
+from typing import Dict, Callable
 
 import pika
 from requests.exceptions import (ConnectionError as ReqConnectionError,
@@ -17,8 +18,7 @@ from src.monitors.monitor import Monitor
 from src.utils.constants import (RAW_DATA_EXCHANGE,
                                  CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_prometheus_metrics_data
-from src.utils.exceptions import (NoMonitoringSourceGivenException,
-                                  NodeIsDownException, PANICException,
+from src.utils.exceptions import (NodeIsDownException, PANICException,
                                   DataReadingException, InvalidUrlException,
                                   MetricNotFoundException)
 
@@ -27,12 +27,11 @@ class ChainlinkNodeMonitor(Monitor):
     def __init__(self, monitor_name: str, node_config: ChainlinkNodeConfig,
                  logger: logging.Logger, monitor_period: int,
                  rabbitmq: RabbitMQApi) -> None:
-        if len(node_config.node_prometheus_urls) == 0:
-            raise NoMonitoringSourceGivenException(node_config.node_name)
+        node_config.enabled_sources_non_empty()
 
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._node_config = node_config
-        self._metrics_to_monitor = {
+        self._prometheus_metrics = {
             'head_tracker_current_head': 'strict',
             'head_tracker_heads_in_queue': 'strict',
             'head_tracker_heads_received_total': 'strict',
@@ -47,94 +46,144 @@ class ChainlinkNodeMonitor(Monitor):
             'eth_balance': 'strict',
             'run_status_update_total': 'strict',
         }
-        self._last_source_used = node_config.node_prometheus_urls[0]
+        self._last_prometheus_source_used = node_config.node_prometheus_urls[0]
 
     @property
     def node_config(self) -> ChainlinkNodeConfig:
         return self._node_config
 
     @property
-    def metrics_to_monitor(self) -> Dict[str, str]:
-        return self._metrics_to_monitor
+    def prometheus_metrics(self) -> Dict[str, str]:
+        return self._prometheus_metrics
 
     @property
-    def last_source_used(self) -> str:
-        return self._last_source_used
+    def last_prometheus_source_used(self) -> str:
+        return self._last_prometheus_source_used
 
     def _display_data(self, data: Dict) -> str:
-        # This function assumes that the data has been obtained and processed
-        # successfully by the monitor
-        return "head_tracker_current_head={}, " \
-               "head_tracker_heads_in_queue={}, " \
-               "head_tracker_heads_received_total={}, " \
-               "head_tracker_num_heads_dropped_total={}, " \
-               "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
-               "process_start_time_seconds={}, " \
-               "tx_manager_num_gas_bumps_total={}, " \
-               "tx_manager_gas_bump_exceeds_limit_total={}, " \
-               "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-               "ethereum_balances={}, run_status_update_total_errors={}" \
-               "".format(data['head_tracker_current_head'],
-                         data['head_tracker_heads_in_queue'],
-                         data['head_tracker_heads_received_total'],
-                         data['head_tracker_num_heads_dropped_total'],
-                         data['job_subscriber_subscriptions'],
-                         data['max_unconfirmed_blocks'],
-                         data['process_start_time_seconds'],
-                         data['tx_manager_num_gas_bumps_total'],
-                         data['tx_manager_gas_bump_exceeds_limit_total'],
-                         data['unconfirmed_transactions'],
-                         data['gas_updater_set_gas_price'],
-                         data['ethereum_balances'],
-                         data['run_status_update_total_errors'])
+        # This function attempts to display all metric values. If a particular
+        # source is disabled, then that metric will not appear in the data, so
+        # by default 'Disabled' is outputted
+        data_defaultdict = defaultdict(lambda: 'Disabled')
+        for metric, value in data.items():
+            data_defaultdict[metric] = value
 
-    def _get_data(self) -> Dict:
+        return (
+            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, "
+            "head_tracker_heads_received_total={}, "
+            "head_tracker_num_heads_dropped_total={}, "
+            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, "
+            "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
+            "tx_manager_gas_bump_exceeds_limit_total={}, "
+            "unconfirmed_transactions={}, gas_updater_set_gas_price={}, "
+            "ethereum_balances={}, run_status_update_total_errors={}"
+            "".format(
+                data_defaultdict['head_tracker_current_head'],
+                data_defaultdict['head_tracker_heads_in_queue'],
+                data_defaultdict['head_tracker_heads_received_total'],
+                data_defaultdict['head_tracker_num_heads_dropped_total'],
+                data_defaultdict['job_subscriber_subscriptions'],
+                data_defaultdict['max_unconfirmed_blocks'],
+                data_defaultdict['process_start_time_seconds'],
+                data_defaultdict['tx_manager_num_gas_bumps_total'],
+                data_defaultdict['tx_manager_gas_bump_exceeds_limit_total'],
+                data_defaultdict['unconfirmed_transactions'],
+                data_defaultdict['gas_updater_set_gas_price'],
+                data_defaultdict['ethereum_balances'],
+                data_defaultdict['run_status_update_total_errors'])
+        )
+
+    def _get_prometheus_data(self) -> Dict:
         """
-        This method will try to get all the metrics from the chainlink node
-        which is online. It first tries to get the metrics from the last source
-        used, if it fails, it tries to get the data from the back-up nodes.
-        If it can't connect with any node, it will raise a NodeIsDownException.
-        If it connected with a node, and the node raised another error, it will
-        raise that error because it means that the correct node was selected but
-        another issue was found.
+        This method will try to get all prometheus metrics from the reachable
+        source. It first tries to get the metrics from the last prometheus
+        source used, if it fails, it tries to get the data from another source.
+        If it can't connect with any source, it will raise a
+        NodeIsDownException.
+        If it connected with a source, and the source raised another error, it
+        will raise that error because it means that the correct source was
+        selected but another issue was found.
         :return: A Dict containing all the metric values.
         """
         try:
-            return get_prometheus_metrics_data(self.last_source_used,
-                                               self.metrics_to_monitor,
+            return get_prometheus_metrics_data(self.last_prometheus_source_used,
+                                               self.prometheus_metrics,
                                                self.logger, verify=False)
         except (ReqConnectionError, ReadTimeout):
             self.logger.debug("Could not connect with %s. Will try to obtain "
-                              "the metrics from another backup source.",
-                              self.last_source_used)
+                              "the metrics from another source.",
+                              self.last_prometheus_source_used)
 
         for source in self.node_config.node_prometheus_urls:
             try:
                 data = get_prometheus_metrics_data(source,
-                                                   self.metrics_to_monitor,
+                                                   self.prometheus_metrics,
                                                    self.logger, verify=False)
-                self._last_source_used = source
+                self._last_prometheus_source_used = source
                 return data
             except (ReqConnectionError, ReadTimeout):
                 self.logger.debug(
                     "Could not connect with %s. Will try to obtain "
-                    "the metrics from another backup source.",
-                    self.last_source_used)
+                    "the metrics from another source.",
+                    self.last_prometheus_source_used)
             except Exception as e:
-                # We need to set the last_source_used because in this case the
-                # node is online, but something bad happened.
-                self._last_source_used = source
+                # We need to set the last_prometheus_source_used because in this
+                # case the node is online, but something bad happened.
+                self._last_prometheus_source_used = source
                 raise e
 
         raise NodeIsDownException(self.node_config.node_name)
 
-    def _process_error(self, error: PANICException) -> Dict:
+    def _get_data(self) -> Dict:
+        retrieval_info = {
+            'prometheus': {
+                'data': {},
+                'data_retrieval_failed': True,
+                'data_retrieval_exception': None,
+                'get_function': self._get_prometheus_data,
+                'processing_function': self._process_retrieved_prometheus_data,
+                'last_source_used_var': 'self._last_prometheus_source_used',
+                'monitoring_enabled_var': 'self.node_config._monitor_prometheus'
+            }
+        }
+        for source, info in retrieval_info.items():
+            if eval(info['monitoring_enabled_var']):
+                try:
+                    info['data'] = info['get_function']()
+                    info['data_retrieval_failed'] = False
+                except NodeIsDownException as e:
+                    info['data_retrieval_exception'] = e
+                    self.logger.error(
+                        "Metrics could not be obtained from any {} "
+                        "source.".format(source))
+                    self.logger.exception(info['data_retrieval_exception'])
+                except (IncompleteRead, ChunkedEncodingError, ProtocolError):
+                    info['data_retrieval_exception'] = DataReadingException(
+                        self.monitor_name, eval(info['last_source_used_var']))
+                    self.logger.error("Error when retrieving data from %s",
+                                      eval(info['last_source_used_var']))
+                    self.logger.exception(info['data_retrieval_exception'])
+                except (InvalidURL, InvalidSchema, MissingSchema):
+                    info['data_retrieval_exception'] = InvalidUrlException(
+                        eval(info['last_source_used_var']))
+                    self.logger.error("Error when retrieving data from %s",
+                                      eval(info['last_source_used_var']))
+                    self.logger.exception(info['data_retrieval_exception'])
+                except MetricNotFoundException as e:
+                    info['data_retrieval_exception'] = e
+                    self.logger.error("Error when retrieving data from %s",
+                                      eval(info['last_source_used_var']))
+                    self.logger.exception(info['data_retrieval_exception'])
+        return retrieval_info
+
+    def _process_error(self, error: PANICException,
+                       last_source_used: str) -> Dict:
         processed_data = {
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
-                    'last_source_used': self.last_source_used,
+                    'last_source_used': last_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
@@ -146,7 +195,7 @@ class ChainlinkNodeMonitor(Monitor):
 
         return processed_data
 
-    def _process_retrieved_data(self, data: Dict) -> Dict:
+    def _process_retrieved_prometheus_data(self, data: Dict) -> Dict:
         data_copy = copy.deepcopy(data)
 
         # Add some meta-data to the processed data
@@ -155,7 +204,7 @@ class ChainlinkNodeMonitor(Monitor):
                 'meta_data': {
                     'monitor_name': self.monitor_name,
                     'node_name': self.node_config.node_name,
-                    'last_source_used': self.last_source_used,
+                    'last_source_used': self.last_prometheus_source_used,
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp()
@@ -216,6 +265,10 @@ class ChainlinkNodeMonitor(Monitor):
 
         return processed_data
 
+    def _process_retrieved_data(self, processing_fn: Callable,
+                                data: Dict) -> Dict:
+        return processing_fn(data)
+
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
@@ -225,53 +278,50 @@ class ChainlinkNodeMonitor(Monitor):
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
-        data_retrieval_exception = None
-        data = None
-        data_retrieval_failed = False
-        try:
-            data = self._get_data()
-        except NodeIsDownException as e:
-            data_retrieval_failed = True
-            data_retrieval_exception = e
-            self.logger.error("Metrics could not be obtained from any source.")
-            self.logger.exception(data_retrieval_exception)
-        except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            data_retrieval_failed = True
-            data_retrieval_exception = DataReadingException(
-                self.monitor_name, self.last_source_used)
-            self.logger.error("Error when retrieving data from %s",
-                              self.last_source_used)
-            self.logger.exception(data_retrieval_exception)
-        except (InvalidURL, InvalidSchema, MissingSchema):
-            data_retrieval_failed = True
-            data_retrieval_exception = InvalidUrlException(
-                self.last_source_used)
-            self.logger.error("Error when retrieving data from %s",
-                              self.last_source_used)
-            self.logger.exception(data_retrieval_exception)
-        except MetricNotFoundException as e:
-            data_retrieval_failed = True
-            data_retrieval_exception = e
-            self.logger.error("Error when retrieving data from %s",
-                              self.last_source_used)
-            self.logger.exception(data_retrieval_exception)
-
-        try:
-            processed_data = self._process_data(data, data_retrieval_failed,
-                                                data_retrieval_exception)
-        except Exception as error:
-            self.logger.error("Error when processing data obtained from %s",
-                              self.last_source_used)
-            self.logger.exception(error)
-            # Do not send data if we experienced processing errors
-            return
+        retrieval_info = self._get_data()
+        processed_data = {}
+        for source, info in retrieval_info.items():
+            if eval(info['monitoring_enabled_var']):
+                try:
+                    processed_data[source] = self._process_data(
+                        info['data_retrieval_failed'],
+                        [info['data_retrieval_exception'],
+                         eval(info['last_source_used_var'])],
+                        [info['processing_function'], info['data']],
+                    )
+                except Exception as error:
+                    self.logger.error(
+                        "Error when processing data obtained from %s",
+                        eval(info['last_source_used_var']))
+                    self.logger.exception(error)
+                    # Do not send data if we experienced processing errors
+                    return
+            else:
+                processed_data[source] = {}
 
         self._send_data(processed_data)
 
-        if not data_retrieval_failed:
-            # Only output the gathered data if there was no error
-            self.logger.info(self._display_data(
-                processed_data['result']['data']))
+        # Can't use list comprehension due to eval loosing self.
+        data_retrieval_failed_list = []
+        for _, info in retrieval_info.items():
+            if eval(info['monitoring_enabled_var']):
+                data_retrieval_failed_list.append(info['data_retrieval_failed'])
+
+        # ChainMap combines multiple dicts into 1. Note if there are same keys
+        # in different dicts, the first occurrence is used. This should never
+        # happen in our case.
+        all_processed_data = dict(ChainMap(
+            *[
+                data['result']['data']
+                for _, data in processed_data.items()
+                if 'result' in data
+            ]
+        ))
+
+        # Only output the gathered data if at least one retrieval occurred
+        # and there was no error in the entire retrieval process
+        if data_retrieval_failed_list and not any(data_retrieval_failed_list):
+            self.logger.info(self._display_data(all_processed_data))
 
         # Send a heartbeat only if the entire round was successful
         heartbeat = {

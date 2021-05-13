@@ -288,114 +288,36 @@ class TelegramCommandHandlers(CommandHandler):
 
         status = ''
 
-        key_sys_mon_man_hb = Keys.get_component_heartbeat(
-            SYSTEM_MONITORS_MANAGER_NAME)
-        key_gh_mon_man_hb = Keys.get_component_heartbeat(
-            GITHUB_MONITORS_MANAGER_NAME)
-        key_node_mon_man_hb = Keys.get_component_heartbeat(
-            NODE_MONITORS_MANAGER_NAME)
-        key_data_trans_man_hb = Keys.get_component_heartbeat(
-            DATA_TRANSFORMERS_MANAGER_NAME)
-        key_sys_alerters_man_hb = Keys.get_component_heartbeat(
-            SYSTEM_ALERTERS_MANAGER_NAME)
-        key_gh_alerter_man_hb = Keys.get_component_heartbeat(
-            GITHUB_ALERTER_MANAGER_NAME)
-        key_store_man_hb = Keys.get_component_heartbeat(DATA_STORE_MANAGER_NAME)
-        key_alert_router_hb = Keys.get_component_heartbeat(ALERT_ROUTER_NAME)
-        key_config_manager_hb = Keys.get_component_heartbeat(
-            CONFIGS_MANAGER_NAME)
-        key_channels_manager_hb = Keys.get_component_heartbeat(
-            CHANNELS_MANAGER_NAME)
+        configs = [
+            (SYSTEM_MONITORS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (GITHUB_MONITORS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (NODE_MONITORS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (DATA_TRANSFORMERS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (SYSTEM_ALERTERS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (GITHUB_ALERTER_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (DATA_STORE_MANAGER_NAME, "self._get_manager_component_hb_status"),
+            (ALERT_ROUTER_NAME, "self._get_worker_component_hb_status"),
+            (CONFIGS_MANAGER_NAME, "self._get_worker_component_hb_status"),
+            (CHANNELS_MANAGER_NAME, "self._get_manager_component_hb_status"),
+        ]
 
-        if self.redis.exists_unsafe(key_sys_mon_man_hb):
-            sys_mon_man_hb = json.loads(
-                self.redis.get_unsafe(key_sys_mon_man_hb).decode())
-            status += self._get_manager_component_hb_status(sys_mon_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(SYSTEM_MONITORS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_gh_mon_man_hb):
-            gh_mon_man_hb = json.loads(
-                self.redis.get_unsafe(key_gh_mon_man_hb).decode())
-            status += self._get_manager_component_hb_status(gh_mon_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(GITHUB_MONITORS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_node_mon_man_hb):
-            node_mon_man_hb = json.loads(
-                self.redis.get_unsafe(key_node_mon_man_hb).decode())
-            status += self._get_manager_component_hb_status(node_mon_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(NODE_MONITORS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_data_trans_man_hb):
-            data_trans_man_hb = json.loads(
-                self.redis.get_unsafe(key_data_trans_man_hb).decode())
-            status += self._get_manager_component_hb_status(data_trans_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(DATA_TRANSFORMERS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_sys_alerters_man_hb):
-            sys_alerters_man_hb = json.loads(
-                self.redis.get_unsafe(key_sys_alerters_man_hb).decode())
-            status += self._get_manager_component_hb_status(sys_alerters_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(SYSTEM_ALERTERS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_gh_alerter_man_hb):
-            gh_alerter_man_hb = json.loads(
-                self.redis.get_unsafe(key_gh_alerter_man_hb).decode())
-            status += self._get_manager_component_hb_status(gh_alerter_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(GITHUB_ALERTER_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_store_man_hb):
-            store_man_hb = json.loads(
-                self.redis.get_unsafe(key_store_man_hb).decode())
-            status += self._get_manager_component_hb_status(store_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(DATA_STORE_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_alert_router_hb):
-            alert_router_hb = json.loads(
-                self.redis.get_unsafe(key_alert_router_hb).decode())
-            status += self._get_worker_component_hb_status(alert_router_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(ALERT_ROUTER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_config_manager_hb):
-            config_manager_hb = json.loads(
-                self.redis.get_unsafe(key_config_manager_hb).decode())
-            status += self._get_worker_component_hb_status(config_manager_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(CONFIGS_MANAGER_NAME),
-                        self._get_running_icon(False))
-
-        if self.redis.exists_unsafe(key_channels_manager_hb):
-            channels_man_hb = json.loads(
-                self.redis.get_unsafe(key_channels_manager_hb).decode())
-            status += self._get_manager_component_hb_status(channels_man_hb)
-        else:
-            status += "- *{}*: {} - No heartbeats yet.\n" \
-                .format(escape_markdown(CHANNELS_MANAGER_NAME),
-                        self._get_running_icon(False))
+        for config in configs:
+            component_hb_key = Keys.get_component_heartbeat(
+                config[0])
+            if self.redis.exists_unsafe(component_hb_key):
+                component_hb = json.loads(
+                    self.redis.get_unsafe(component_hb_key).decode())
+                status += eval(config[1])(component_hb)
+            else:
+                status += "- *{}*: {} - No heartbeats yet.\n" \
+                    .format(escape_markdown(config[0]),
+                            self._get_running_icon(False))
 
         # Just say that PANIC's components are ok if there are no issues.
         if status == '':

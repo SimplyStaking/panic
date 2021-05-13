@@ -88,12 +88,12 @@ class SystemMonitorsManager(MonitorsManager):
 
     def _create_and_start_monitor_process(self, system_config: SystemConfig,
                                           config_id: str, chain: str) -> None:
+        log_and_print("Creating a new process for the monitor of {}"
+                      .format(system_config.system_name), self.logger)
         process = multiprocessing.Process(target=start_system_monitor,
                                           args=(system_config,))
         # Kill children if parent is killed
         process.daemon = True
-        log_and_print("Creating a new process for the monitor of {}"
-                      .format(system_config.system_name), self.logger)
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \

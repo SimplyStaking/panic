@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class NodeConfig:
     def __init__(self, node_id: str, parent_id: str, node_name: str,
                  monitor_node: bool) -> None:
@@ -9,7 +12,7 @@ class NodeConfig:
     def __str__(self) -> str:
         return self.node_name
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return self.__dict__ == other.__dict__
 
     @property
