@@ -35,6 +35,7 @@ from test.utils.utils import (infinite_fn, connect_to_rabbit,
 
 class TestNodeMonitorsManager(unittest.TestCase):
     def setUp(self) -> None:
+        # Some dummy data
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -50,12 +51,17 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
+        self.test_exception = PANICException('test_exception', 1)
+
+        # Some dummy processes
         self.dummy_process1 = Process(target=infinite_fn, args=())
         self.dummy_process1.daemon = True
         self.dummy_process2 = Process(target=infinite_fn, args=())
         self.dummy_process2.daemon = True
         self.dummy_process3 = Process(target=infinite_fn, args=())
         self.dummy_process3.daemon = True
+
+        # Some dummy node configs
         self.node_id_1 = 'config_id1'
         self.parent_id_1 = 'chain_1'
         self.node_name_1 = 'node_1'
@@ -85,6 +91,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.node_config_3 = NodeConfig(
             self.node_id_3, self.parent_id_3, self.node_name_3,
             self.monitor_node_3)
+
+        # Some config_process_dict, node_configs and sent_configs examples
         self.config_process_dict_example = {
             'config_id1': {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
@@ -168,12 +176,15 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'monitor_node': str(self.monitor_node_3),
             }
         }
+
+        # Test manager object
         self.test_manager = NodeMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
+
+        # Some test routing keys
         self.chainlink_routing_key = \
             'chains.Chainlink.Binance Smart Chain.nodes_config'
         self.kusama_routing_key = 'chains.Substrate.Kusama.nodes_config'
-        self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
