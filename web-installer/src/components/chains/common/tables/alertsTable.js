@@ -428,7 +428,7 @@ const AlertsTable = ({
                               }
                               type="text"
                               name="time_window_Warning"
-                              label="Repeat"
+                              label="Time Window"
                               placeholder="60"
                               onChange={(event) => {
                                 updateTimeWindowAlertDetails({
@@ -556,6 +556,9 @@ const AlertsTable = ({
                                       time_window:
                                         TimeWindowAlerts.byId[id].critical
                                           .time_window,
+                                      repeat:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .repeat,
                                       enabled:
                                         TimeWindowAlerts.byId[id].critical
                                           .enabled,
@@ -586,8 +589,8 @@ const AlertsTable = ({
                                 TimeWindowAlerts.byId[id].critical.time_window
                               }
                               type="text"
-                              name="time_window_Critical"
-                              label="Repeat"
+                              name="time_window_Critical_tw"
+                              label="Time Window"
                               placeholder="60"
                               onChange={(event) => {
                                 updateTimeWindowAlertDetails({
@@ -610,6 +613,63 @@ const AlertsTable = ({
                                         TimeWindowAlerts.byId[id].critical
                                           .threshold,
                                       time_window: event.target.value,
+                                      repeat:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .repeat,
+                                      enabled:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .enabled,
+                                    },
+                                    enabled: TimeWindowAlerts.byId[id].enabled,
+                                  },
+                                });
+                              }}
+                              autoComplete="off"
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    {TimeWindowAlerts.byId[id].adornment_time}
+                                  </InputAdornment>
+                                ),
+                                min: 0,
+                                style: { textAlign: 'right' },
+                              }}
+                              fullWidth
+                            />
+                          </Grid>
+                          <Grid container>
+                            <TextField
+                              value={
+                                TimeWindowAlerts.byId[id].critical.repeat
+                              }
+                              type="text"
+                              name="repeatCritical"
+                              label="Repeat"
+                              placeholder="60"
+                              onChange={(event) => {
+                                updateTimeWindowAlertDetails({
+                                  id,
+                                  parent_id: currentChain,
+                                  alert: {
+                                    name: TimeWindowAlerts.byId[id].name,
+                                    identifier:
+                                      TimeWindowAlerts.byId[id].identifier,
+                                    description:
+                                      TimeWindowAlerts.byId[id].description,
+                                    adornment_threshold:
+                                      TimeWindowAlerts.byId[id]
+                                        .adornment_threshold,
+                                    adornment_time:
+                                      TimeWindowAlerts.byId[id].adornment_time,
+                                    warning: TimeWindowAlerts.byId[id].warning,
+                                    critical: {
+                                      threshold:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .threshold,
+                                      time_window:
+                                        TimeWindowAlerts.byId[id].critical
+                                          .time_window,
+                                      repeat: event.target.value,
                                       enabled:
                                         TimeWindowAlerts.byId[id].critical
                                           .enabled,

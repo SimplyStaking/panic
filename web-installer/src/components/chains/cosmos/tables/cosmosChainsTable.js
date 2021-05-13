@@ -28,6 +28,8 @@ const CosmosChainsTable = ({
   removeNodeDetails,
   removeRepositoryDetails,
   removeKmsDetails,
+  removeSlackDetails,
+  removeDockerDetails,
   removeOpsGenieDetails,
   removePagerDutyDetails,
   removeEmailDetails,
@@ -38,6 +40,7 @@ const CosmosChainsTable = ({
   emails,
   pagerduties,
   opsgenies,
+  slacks,
 }) => {
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -55,7 +58,9 @@ const CosmosChainsTable = ({
     let emailPayload = {};
     let opsGeniePayload = {};
     let pagerDutyPayload = {};
+    let slackPayload = {};
     let index = 0;
+
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
       telegramPayload = JSON.parse(
         JSON.stringify(telegrams.byId[telegrams.allIds[i]]),
@@ -137,6 +142,29 @@ const CosmosChainsTable = ({
         }
         removePagerDutyDetails(pagerDutyPayload);
       }
+    }
+
+    for (let i = 0; i < slacks.allIds.length; i += 1) {
+      slackPayload = JSON.parse(
+        JSON.stringify(slacks.byId[slacks.allIds[i]]),
+      );
+      if (slackPayload.parent_ids.includes(chainID)) {
+        index = slackPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          slackPayload.parent_ids.splice(index, 1);
+        }
+        index = slackPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          slackPayload.parent_names.splice(index, 1);
+        }
+        removeSlackDetails(slackPayload);
+      }
+    }
+
+    // Clear all the configured dockers from state
+    for (let i = 0; i < currentConfig.dockers.length; i += 1) {
+      payload.id = currentConfig.dockers[i];
+      removeDockerDetails(payload);
     }
 
     // Clear all the configured nodes from state
@@ -249,6 +277,13 @@ CosmosChainsTable.propTypes = forbidExtraProps({
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeChainDetails: PropTypes.func.isRequired,
   loadConfigDetails: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
@@ -260,6 +295,8 @@ CosmosChainsTable.propTypes = forbidExtraProps({
   removeEmailDetails: PropTypes.func.isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
+  removeSlackDetails: PropTypes.func.isRequired,
+  removeDockerDetails: PropTypes.func.isRequired,
 });
 
 export default CosmosChainsTable;

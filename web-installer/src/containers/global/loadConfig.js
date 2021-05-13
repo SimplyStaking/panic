@@ -46,6 +46,12 @@ import {
   cosmosSeverityAlerts,
 } from 'redux/reducers/cosmosChainsReducer';
 import {
+  chainlinkRepeatAlerts,
+  chainlinkThresholdAlerts,
+  chainlinkTimeWindowAlerts,
+  chainlinkSeverityAlerts,
+} from 'redux/reducers/chainlinkChainsReducer';
+import {
   substrateRepeatAlerts,
   substrateThresholdAlerts,
   substrateTimeWindowAlerts,
@@ -130,15 +136,19 @@ class LoadConfig extends Component {
       addTwilioDetails,
       addPagerDutyDetails,
       addOpsGenieDetails,
+      addSlackDetails,
       addDockerDetails,
       addSystemDetails,
       addRepositoryDetails,
       addChainCosmosDetails,
       addChainSubstrateDetails,
+      addChainChainlinkDetails,
       cosmosChains,
       addNodeCosmosDetails,
       substrateChains,
       addNodeSubstrateDetails,
+      chainlinkChains,
+      addNodeChainlinkDetails,
       loadThresholdAlertsGeneralDetails,
       loadRepeatAlertsCosmosDetails,
       loadTimeWindowAlertsCosmosDetails,
@@ -148,6 +158,10 @@ class LoadConfig extends Component {
       loadTimeWindowAlertsSubstrateDetails,
       loadThresholdAlertsSubstrateDetails,
       loadSeverityAlertsSubstrateDetails,
+      loadRepeatAlertsChainlinkDetails,
+      loadTimeWindowAlertsChainlinkDetails,
+      loadThresholdAlertsChainlinkDetails,
+      loadSeverityAlertsChainlinkDetails,
     } = this.props;
 
     ToastsStore.info('Attempting to Load Configuration.', 5000);
@@ -294,6 +308,7 @@ class LoadConfig extends Component {
                   const critical = {
                     threshold: value.critical_threshold,
                     time_window: value.critical_time_window,
+                    repeat: value.critical_repeat,
                     enabled: value.critical_enabled === 'true',
                   };
                   timeWindowAlerts.byId[key].warning = warning;
@@ -437,6 +452,7 @@ class LoadConfig extends Component {
                   const critical = {
                     threshold: value.critical_threshold,
                     time_window: value.critical_time_window,
+                    repeat: value.critical_repeat,
                     enabled: value.critical_enabled === 'true',
                   };
                   timeWindowAlerts.byId[key].warning = warning;
@@ -470,6 +486,161 @@ class LoadConfig extends Component {
                 },
               );
               loadSeverityAlertsSubstrateDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: severityAlerts,
+                },
+              );
+            }
+          } else if (filePath[2] === 'chainlink') {
+            if (filePath[4] === 'repos_config.ini') {
+              config = await getConfig('chain', 'repos_config.ini', filePath[3], 'chainlink');
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                chainlinkChains,
+                addChainChainlinkDetails,
+              );
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.monitor_repo = payload.monitor_repo === 'true';
+                addRepositoryDetails(payload);
+              });
+            } else if (filePath[4] === 'dockers_config.ini') {
+              config = await getConfig('chain', 'dockers_config.ini', filePath[3], 'chainlink');
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                chainlinkChains,
+                addChainChainlinkDetails,
+              );
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.monitor_docker = payload.monitor_docker === 'true';
+                addDockerDetails(payload);
+              });
+            } else if (filePath[4] === 'nodes_config.ini') {
+              config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'chainlink');
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                chainlinkChains,
+                addChainChainlinkDetails,
+              );
+              Object.values(config.data.result).forEach((value) => {
+                const node = JSON.parse(JSON.stringify(value));
+                node.monitor_prometheus = node.monitor_prometheus === 'true';
+                node.monitor_node = node.monitor_node === 'true';
+                addNodeChainlinkDetails(node);
+              });
+            } else if (filePath[4] === 'chainlink_config.ini') {
+              config = await getConfig('chain', 'systems_config.ini', filePath[3], 'chainlink');
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                chainlinkChains,
+                addChainChainlinkDetails,
+              );
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.monitor_system = payload.monitor_system === 'true';
+                addSystemDetails(payload);
+              });
+            } else if (filePath[4] === 'alerts_config.ini') {
+              config = await getConfig(
+                'chain',
+                'alerts_config.ini',
+                filePath[3],
+                'chainlink',
+              );
+              CreateChain(
+                config.data.result,
+                filePath[3],
+                chainlinkChains,
+                addChainChainlinkDetails,
+              );
+              // Create copies of alerts, if there are missing alerts in the
+              // configuration file we'll just use the pre-done alerts.
+              const repeatAlerts = JSON.parse(JSON.stringify(chainlinkRepeatAlerts));
+              const thresholdAlerts = JSON.parse(JSON.stringify(chainlinkThresholdAlerts));
+              const timeWindowAlerts = JSON.parse(JSON.stringify(chainlinkTimeWindowAlerts));
+              const severityAlerts = JSON.parse(JSON.stringify(chainlinkSeverityAlerts));
+              let parent_id;
+              Object.entries(config.data.result).forEach((entry) => {
+                const [key, value] = entry;
+                parent_id = value.parent_id;
+                if (key in repeatAlerts.byId) {
+                  repeatAlerts.byId[key].parent_id = value.parent_id;
+                  const warning = {
+                    repeat: value.warning_repeat,
+                    enabled: value.warning_enabled === 'true',
+                  };
+                  const critical = {
+                    repeat: value.critical_repeat,
+                    enabled: value.critical_enabled === 'true',
+                  };
+                  repeatAlerts.byId[key].warning = warning;
+                  repeatAlerts.byId[key].critical = critical;
+                  repeatAlerts.byId[key].enabled = value.enabled === 'true';
+                } else if (key in thresholdAlerts.byId) {
+                  thresholdAlerts.byId[key].parent_id = value.parent_id;
+                  const warning = {
+                    threshold: value.warning_threshold,
+                    enabled: value.warning_enabled === 'true',
+                  };
+                  const critical = {
+                    threshold: value.critical_threshold,
+                    repeat: value.critical_repeat,
+                    enabled: value.critical_enabled === 'true',
+                  };
+                  thresholdAlerts.byId[key].warning = warning;
+                  thresholdAlerts.byId[key].critical = critical;
+                  thresholdAlerts.byId[key].enabled = value.enabled === 'true';
+                } else if (key in timeWindowAlerts.byId) {
+                  timeWindowAlerts.byId[key].parent_id = value.parent_id;
+                  const warning = {
+                    threshold: value.warning_threshold,
+                    time_window: value.warning_time_window,
+                    enabled: value.warning_enabled === 'true',
+                  };
+                  const critical = {
+                    threshold: value.critical_threshold,
+                    time_window: value.critical_time_window,
+                    repeat: value.critical_repeat,
+                    enabled: value.critical_enabled === 'true',
+                  };
+                  timeWindowAlerts.byId[key].warning = warning;
+                  timeWindowAlerts.byId[key].critical = critical;
+                  timeWindowAlerts.byId[key].enabled = value.enabled === 'true';
+                } else if (key in severityAlerts.byId) {
+                  severityAlerts.byId[key].parent_id = value.parent_id;
+                  severityAlerts.byId[key].severity = value.severity;
+                  severityAlerts.byId[key].enabled = value.enabled === 'true';
+                }
+              });
+              loadRepeatAlertsChainlinkDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: repeatAlerts,
+                },
+              );
+              loadTimeWindowAlertsChainlinkDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: timeWindowAlerts,
+                },
+              );
+              loadThresholdAlertsChainlinkDetails(
+                {
+                  chain_name: filePath[3],
+                  parent_id,
+                  alerts: thresholdAlerts,
+                },
+              );
+              loadSeverityAlertsChainlinkDetails(
                 {
                   chain_name: filePath[3],
                   parent_id,
@@ -576,6 +747,25 @@ class LoadConfig extends Component {
               }
               addTwilioDetails(payload);
             });
+          } else if (filePath[2] === 'slack_config.ini') {
+            config = await getConfig('channel', 'slack_config.ini', '', '');
+            Object.values(config.data.result).forEach((value) => {
+              const payload = JSON.parse(JSON.stringify(value));
+              payload.info = payload.info === 'true';
+              payload.warning = payload.warning === 'true';
+              payload.critical = payload.critical === 'true';
+              payload.error = payload.error === 'true';
+              payload.alerts = payload.alerts === 'true';
+              payload.commands = payload.commands === 'true';
+              if (payload.parent_ids.length === 0) {
+                payload.parent_ids = [];
+                payload.parent_names = [];
+              } else {
+                payload.parent_ids = payload.parent_ids.split(',');
+                payload.parent_names = payload.parent_names.split(',');
+              }
+              addSlackDetails(payload);
+            });
           }
         }
       }
@@ -598,6 +788,7 @@ LoadConfig.propTypes = {
   addTwilioDetails: PropTypes.func.isRequired,
   addPagerDutyDetails: PropTypes.func.isRequired,
   addOpsGenieDetails: PropTypes.func.isRequired,
+  addSlackDetails: PropTypes.func.isRequired,
   addSystemDetails: PropTypes.func.isRequired,
   addDockerDetails: PropTypes.func.isRequired,
   addRepositoryDetails: PropTypes.func.isRequired,
@@ -605,6 +796,8 @@ LoadConfig.propTypes = {
   addNodeCosmosDetails: PropTypes.func.isRequired,
   addChainSubstrateDetails: PropTypes.func.isRequired,
   addNodeSubstrateDetails: PropTypes.func.isRequired,
+  addChainChainlinkDetails: PropTypes.func.isRequired,
+  addNodeChainlinkDetails: PropTypes.func.isRequired,
   loadThresholdAlertsGeneralDetails: PropTypes.func.isRequired,
   loadRepeatAlertsCosmosDetails: PropTypes.func.isRequired,
   loadTimeWindowAlertsCosmosDetails: PropTypes.func.isRequired,
@@ -614,6 +807,10 @@ LoadConfig.propTypes = {
   loadTimeWindowAlertsSubstrateDetails: PropTypes.func.isRequired,
   loadThresholdAlertsSubstrateDetails: PropTypes.func.isRequired,
   loadSeverityAlertsSubstrateDetails: PropTypes.func.isRequired,
+  loadRepeatAlertsChainlinkDetails: PropTypes.func.isRequired,
+  loadTimeWindowAlertsChainlinkDetails: PropTypes.func.isRequired,
+  loadThresholdAlertsChainlinkDetails: PropTypes.func.isRequired,
+  loadSeverityAlertsChainlinkDetails: PropTypes.func.isRequired,
   cosmosChains: PropTypes.shape({
     byId: PropTypes.shape({
       repeatAlerts: PropTypes.shape({
@@ -644,6 +841,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             timewindow: PropTypes.number,
+            repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -659,6 +857,7 @@ LoadConfig.propTypes = {
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -706,6 +905,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             timewindow: PropTypes.number,
+            repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -721,6 +921,71 @@ LoadConfig.propTypes = {
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      severityAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          severity: PropTypes.string,
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+    }).isRequired,
+    allIds: [],
+  }).isRequired,
+  chainlinkChains: PropTypes.shape({
+    byId: PropTypes.shape({
+      repeatAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      timeWindowAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      thresholdAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,

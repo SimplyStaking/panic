@@ -271,6 +271,7 @@ const cosmosTimeWindowAlerts = {
       critical: {
         threshold: 100,
         time_window: 3600,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,

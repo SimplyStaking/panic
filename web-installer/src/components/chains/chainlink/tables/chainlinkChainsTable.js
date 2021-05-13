@@ -32,11 +32,15 @@ const ChainlinkChainsTable = ({
   removeEmailDetails,
   removeTwilioDetails,
   removeTelegramDetails,
+  removeSlackDetails,
+  removeDockerDetails,
+  removeSystemDetails,
   telegrams,
   twilios,
   emails,
   pagerduties,
   opsgenies,
+  slacks,
 }) => {
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -54,7 +58,9 @@ const ChainlinkChainsTable = ({
     let emailPayload = {};
     let opsGeniePayload = {};
     let pagerDutyPayload = {};
+    let slackPayload = {};
     let index = 0;
+
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
       telegramPayload = JSON.parse(
         JSON.stringify(telegrams.byId[telegrams.allIds[i]]),
@@ -69,6 +75,23 @@ const ChainlinkChainsTable = ({
           telegramPayload.parent_names.splice(index, 1);
         }
         removeTelegramDetails(telegramPayload);
+      }
+    }
+
+    for (let i = 0; i < slacks.allIds.length; i += 1) {
+      slackPayload = JSON.parse(
+        JSON.stringify(slacks.byId[slacks.allIds[i]]),
+      );
+      if (slackPayload.parent_ids.includes(chainID)) {
+        index = slackPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          slackPayload.parent_ids.splice(index, 1);
+        }
+        index = slackPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          slackPayload.parent_names.splice(index, 1);
+        }
+        removeSlackDetails(slackPayload);
       }
     }
 
@@ -148,6 +171,18 @@ const ChainlinkChainsTable = ({
     for (let i = 0; i < currentConfig.repositories.length; i += 1) {
       payload.id = currentConfig.repositories[i];
       removeRepositoryDetails(payload);
+    }
+
+    // Clear all the configured dockers from state
+    for (let i = 0; i < currentConfig.dockers.length; i += 1) {
+      payload.id = currentConfig.dockers[i];
+      removeDockerDetails(payload);
+    }
+
+    // Clear all the configured systems from state
+    for (let i = 0; i < currentConfig.systems.length; i += 1) {
+      payload.id = currentConfig.systems[i];
+      removeSystemDetails(payload);
     }
 
     // Finally clear the chain from the configuration
@@ -236,6 +271,13 @@ ChainlinkChainsTable.propTypes = forbidExtraProps({
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   config: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -247,12 +289,15 @@ ChainlinkChainsTable.propTypes = forbidExtraProps({
   loadConfigDetails: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
+  removeSystemDetails: PropTypes.func.isRequired,
+  removeDockerDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
   removeEmailDetails: PropTypes.func.isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
+  removeSlackDetails: PropTypes.func.isRequired,
 });
 
 export default ChainlinkChainsTable;

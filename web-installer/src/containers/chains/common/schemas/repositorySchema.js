@@ -5,7 +5,7 @@ const RepositorySchema = (props) => Yup.object().shape({
     .test('unique-repository-name', 'Name already exists.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        chainlinkNodesConfig,
+        chainlinkNodesConfig, dockerConfig,
       } = props;
 
       for (let i = 0; i < substrateNodesConfig.allIds.length; i += 1) {
@@ -33,7 +33,11 @@ const RepositorySchema = (props) => Yup.object().shape({
           return false;
         }
       }
-
+      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
+        if (dockerConfig.byId[dockerConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       return true;
     })
     .required('Repository name is required.'),

@@ -98,6 +98,7 @@ const substrateTimeWindowAlerts = {
       critical: {
         threshold: 60,
         time_window: 3600,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
@@ -117,6 +118,7 @@ const substrateTimeWindowAlerts = {
       critical: {
         threshold: 60,
         time_window: 3600,
+        repeat: 300,
         enabled: true,
       },
       enabled: true,
