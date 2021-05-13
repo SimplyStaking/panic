@@ -22,7 +22,8 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYSTEM_MONITOR_NAME_TEMPLATE,
                                  SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                  PING_ROUTING_KEY,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException
@@ -227,9 +228,9 @@ class TestSystemMonitorsManager(unittest.TestCase):
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
             # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence there
-            # is no other queue binded with the same routing key to any exchange at
-            # this point.
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=PING_ROUTING_KEY, body=self.test_data_str,

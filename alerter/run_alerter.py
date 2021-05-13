@@ -43,7 +43,8 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                                  GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
@@ -705,10 +706,18 @@ def _initialise_and_declare_config_queues() -> None:
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS),
                 dummy_logger)
             rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
-                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES),
+                dummy_logger)
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,

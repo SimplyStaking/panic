@@ -18,7 +18,8 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
                                  SYSTEM_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -26,6 +27,7 @@ from src.utils.types import str_to_bool
 
 
 class SystemMonitorsManager(MonitorsManager):
+    BASE_CHAINS_WITH_SEPARATE_SYS_CONF = ['chainlink']
 
     def __init__(self, logger: logging.Logger, manager_name: str,
                  rabbitmq: RabbitMQApi) -> None:
@@ -67,10 +69,17 @@ class SystemMonitorsManager(MonitorsManager):
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
         self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
@@ -119,7 +128,21 @@ class SystemMonitorsManager(MonitorsManager):
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            base_chain = parsed_routing_key[1]
+            specific_chain = parsed_routing_key[2]
+            config_type = parsed_routing_key[3]
+            chain = base_chain + ' ' + specific_chain
+
+            # TODO: Reminder, when we merge !42 change nodes_config to one of
+            #     : the constants in utils/constants. Also we can refactor all
+            #     : general instances found here and in other modules.
+            # For such chains the nodes_config.ini file has no system confs,
+            # therefore ignore the contents and acknowledge the message.
+            if base_chain.lower() in self.BASE_CHAINS_WITH_SEPARATE_SYS_CONF \
+                    and config_type.lower() == 'nodes_config':
+                self.rabbitmq.basic_ack(method.delivery_tag, False)
+                return
+
             if chain in self.systems_configs:
                 current_configs = self.systems_configs[chain]
             else:
