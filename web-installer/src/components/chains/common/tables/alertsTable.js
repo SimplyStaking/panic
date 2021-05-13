@@ -1010,92 +1010,99 @@ const AlertsTable = ({
             </Table>
           </TableContainer>
         </Box>
-        <div className={classes.subsection}>
-          <GridContainer justify="center">
-            <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>{Data.subtitle_2}</h1>
-            </GridItem>
-          </GridContainer>
-        </div>
-        <Box py={4}>
-          <TableContainer component={Paper}>
-            <Table aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell align="center">Alert</TableCell>
-                  <TableCell align="center">Severity</TableCell>
-                  <TableCell align="center">Enabled</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {SeverityAlerts.allIds.map((id) => (
-                  <TableRow key={id}>
-                    <TableCell align="center">
-                      <h4>
-                        <b>{SeverityAlerts.byId[id].name}</b>
-                      </h4>
-                      <p>{SeverityAlerts.byId[id].description}</p>
-                    </TableCell>
-                    <TableCell align="center">
-                      <FormControl>
-                        <Select
-                          labelId="severity"
-                          id="severity-selection"
-                          value={SeverityAlerts.byId[id].severity}
-                          onChange={(event) => {
-                            updateSeverityAlertDetails({
-                              id,
-                              parent_id: currentChain,
-                              alert: {
-                                name: SeverityAlerts.byId[id].name,
-                                identifier: SeverityAlerts.byId[id].identifier,
-                                description:
-                                  SeverityAlerts.byId[id].description,
-                                severity: event.target.value,
-                                enabled: SeverityAlerts.byId[id].enabled,
-                              },
-                            });
-                          }}
-                        >
-                          <MenuItem value="INFO">Info</MenuItem>
-                          <MenuItem value="WARNING">Warning</MenuItem>
-                          <MenuItem value="CRITICAL">Critical</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell align="center">
-                      <FormControlLabel
-                        control={(
-                          <Checkbox
-                            checked={SeverityAlerts.byId[id].enabled}
-                            onClick={() => {
-                              updateSeverityAlertDetails({
-                                id,
-                                parent_id: currentChain,
-                                alert: {
-                                  name: SeverityAlerts.byId[id].name,
-                                  identifier:
-                                    SeverityAlerts.byId[id].identifier,
-                                  description:
-                                    SeverityAlerts.byId[id].description,
-                                  severity: SeverityAlerts.byId[id].severity,
-                                  enabled: !SeverityAlerts.byId[id].enabled,
-                                },
-                              });
-                            }}
-                            name="enabled"
-                            color="primary"
-                          />
-                        )}
-                        label=""
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+        {
+          SeverityAlerts.allIds.length === 0 ? <div />
+            : (
+              <div>
+                <div className={classes.subsection}>
+                  <GridContainer justify="center">
+                    <GridItem xs={12} sm={12} md={8}>
+                      <h1 className={classes.title}>{Data.subtitle_2}</h1>
+                    </GridItem>
+                  </GridContainer>
+                </div>
+                <Box py={4}>
+                  <TableContainer component={Paper}>
+                    <Table aria-label="simple table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell align="center">Alert</TableCell>
+                          <TableCell align="center">Severity</TableCell>
+                          <TableCell align="center">Enabled</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {SeverityAlerts.allIds.map((id) => (
+                          <TableRow key={id}>
+                            <TableCell align="center">
+                              <h4>
+                                <b>{SeverityAlerts.byId[id].name}</b>
+                              </h4>
+                              <p>{SeverityAlerts.byId[id].description}</p>
+                            </TableCell>
+                            <TableCell align="center">
+                              <FormControl>
+                                <Select
+                                  labelId="severity"
+                                  id="severity-selection"
+                                  value={SeverityAlerts.byId[id].severity}
+                                  onChange={(event) => {
+                                    updateSeverityAlertDetails({
+                                      id,
+                                      parent_id: currentChain,
+                                      alert: {
+                                        name: SeverityAlerts.byId[id].name,
+                                        identifier: SeverityAlerts.byId[id].identifier,
+                                        description:
+                                          SeverityAlerts.byId[id].description,
+                                        severity: event.target.value,
+                                        enabled: SeverityAlerts.byId[id].enabled,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  <MenuItem value="INFO">Info</MenuItem>
+                                  <MenuItem value="WARNING">Warning</MenuItem>
+                                  <MenuItem value="CRITICAL">Critical</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </TableCell>
+                            <TableCell align="center">
+                              <FormControlLabel
+                                control={(
+                                  <Checkbox
+                                    checked={SeverityAlerts.byId[id].enabled}
+                                    onClick={() => {
+                                      updateSeverityAlertDetails({
+                                        id,
+                                        parent_id: currentChain,
+                                        alert: {
+                                          name: SeverityAlerts.byId[id].name,
+                                          identifier:
+                                            SeverityAlerts.byId[id].identifier,
+                                          description:
+                                            SeverityAlerts.byId[id].description,
+                                          severity: SeverityAlerts.byId[id].severity,
+                                          enabled: !SeverityAlerts.byId[id].enabled,
+                                        },
+                                      });
+                                    }}
+                                    name="enabled"
+                                    color="primary"
+                                  />
+                                )}
+                                label=""
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              </div>
+            )
+        }
         <Grid container spacing={2}>
           <Grid item xs={12} />
           <br />

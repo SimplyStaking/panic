@@ -63,6 +63,7 @@ const mapGeneralStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
+  dockerConfig: state.DockerReducer,
   data: GeneralData,
 });
 
@@ -90,6 +91,7 @@ const mapCosmosStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
+  dockerConfig: state.DockerReducer,
   data: CosmosData,
 });
 
@@ -117,6 +119,7 @@ const mapChainlinkStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
+  dockerConfig: state.DockerReducer,
   data: ChainlinkData,
 });
 
@@ -144,6 +147,7 @@ const mapSubstrateStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
+  dockerConfig: state.DockerReducer,
   data: SubstrateData,
 });
 

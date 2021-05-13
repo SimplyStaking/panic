@@ -21,12 +21,14 @@ async function CheckForConfigs() {
         res[2] === 'periodic_config.ini'
         || res[2] === 'repos_config.ini'
         || res[2] === 'systems_config.ini'
+        || res[2] === 'docker_config.ini'
         || res[2] === 'alerts_config.ini'
         || res[2] === 'email_config.ini'
         || res[2] === 'opsgenie_config.ini'
         || res[2] === 'pagerduty_config.ini'
         || res[2] === 'telegram_config.ini'
         || res[2] === 'twilio_config.ini'
+        || res[2] === 'slack_config.ini'
       ) {
         return true;
       }
@@ -37,6 +39,8 @@ async function CheckForConfigs() {
         || res[4] === 'repos_config.ini'
         || res[4] === 'kms_config.ini'
         || res[4] === 'alerts_config.ini'
+        || res[4] === 'systems_config.ini'
+        || res[4] === 'docker_config.ini'
       ) {
         return true;
       }

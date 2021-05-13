@@ -94,8 +94,8 @@ const mapChainlinkStateToProps = (state) => ({
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
   slacks: state.SlacksReducer,
-  currentChain: state.CurrentCosmosChain,
-  config: state.CosmosChainsReducer,
+  currentChain: state.CurrentChainlinkChain,
+  config: state.ChainlinkChainsReducer,
   data: ChainlinkData,
 });
 

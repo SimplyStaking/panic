@@ -58,6 +58,7 @@ function mapDispatchToPropsRemove(dispatch) {
 const mapGeneralStateToProps = (state) => ({
   currentChain: GENERAL,
   config: state.GeneralReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
@@ -85,6 +86,7 @@ const DockerGeneralTableContainer = connect(
 const mapCosmosStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   config: state.CosmosChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
@@ -142,6 +144,7 @@ const mapSubstrateStateToProps = (state) => ({
   config: state.SubstrateChainsReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
   dockerConfig: state.DockerReducer,
