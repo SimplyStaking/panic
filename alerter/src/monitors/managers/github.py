@@ -178,7 +178,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
 
-                old_repo_name = modified_configs[config_id]['name']
+                old_repo_name = modified_configs[config_id]['repo_name']
                 if not old_repo_name.endswith('/'):
                     old_repo_name = old_repo_name + '/'
 

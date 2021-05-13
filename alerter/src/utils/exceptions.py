@@ -11,6 +11,9 @@ class PANICException(Exception):
     def __eq__(self, other: Any) -> bool:
         return self.__dict__ == other.__dict__
 
+    def __hash__(self):
+        return hash((self.message, self.code))
+
 
 class ConnectionNotInitialisedException(PANICException):
     def __init__(self, component):
