@@ -1245,10 +1245,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name,
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 
         try:
             self.test_monitor._monitor()
