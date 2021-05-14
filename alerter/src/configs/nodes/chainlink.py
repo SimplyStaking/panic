@@ -39,7 +39,7 @@ class ChainlinkNodeConfig(NodeConfig):
     def enabled_sources_non_empty(self) -> bool:
         """
         This function will go through all the chainlink nodes' data sources. If
-        some of them are enabled and empty this will raise a n
+        some of them are enabled and empty this will raise an
         EnabledSourceIsEmptyException.
         :return: True if all enabled sources are non-empty
                  raises EnabledSourceIsEmptyException otherwise
