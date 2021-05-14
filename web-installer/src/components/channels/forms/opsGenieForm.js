@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField,
   Box,
   Typography,
   FormControlLabel,
   Checkbox,
   Grid,
   Tooltip,
+  InputAdornment,
 } from '@material-ui/core';
 import Button from 'components/material_ui/CustomButtons/Button';
 import Divider from '@material-ui/core/Divider';
@@ -15,61 +15,92 @@ import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { SendTestOpsGenieButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
+import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
 
 const OpsGenieForm = ({
   errors, values, handleSubmit, handleChange,
 }) => (
   <MuiThemeProvider theme={defaultTheme}>
-    <div>
-      <Typography variant="subtitle1" gutterBottom className="greyBackground">
-        <Box m={2} p={3}>
-          <p>{Data.opsGenie.description}</p>
+    <div className="greyBackground">
+      <Typography variant="subtitle1" gutterBottom>
+        <Box m={2} pt={3} px={3}>
+          <p
+            style={{
+              fontWeight: '350',
+              fontSize: '1.2rem',
+            }}
+          >
+            {Data.opsGenie.description}
+          </p>
         </Box>
       </Typography>
       <Divider />
       <form onSubmit={handleSubmit} className="root">
-        <Box p={3}>
+        <Box m={2} p={3}>
           <Grid container spacing={3} justify="center" alignItems="center">
-            <Grid item xs={2}>
-              <Typography> Configuration Name </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
+            <Grid item xs={12}>
+              <CssTextField
+                id="channel-name-outlined-full-width"
                 error={errors.channel_name}
                 value={values.channel_name}
+                label="Configuration Name"
                 type="text"
+                style={{ margin: 8 }}
                 name="channel_name"
-                placeholder="ops-genie-1"
+                placeholder={Data.opsGenie.channelNamePlaceholder}
                 helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
-                autoComplete="off"
                 fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.opsGenie.name} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.opsGenie.name} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> API Token </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
+            <Grid item xs={12}>
+              <CssTextField
+                id="api-token-name-outlined-full-width"
                 error={errors.api_token}
                 value={values.api_token}
+                label="API Token"
                 type="text"
+                style={{ margin: 8 }}
                 name="api_token"
-                placeholder="0a9sjd09j1md00d10md19mda2a"
-                helperText={errors.api_token ? errors.api_token : ''}
+                placeholder={Data.opsGenie.apiTokenPlaceholder}
+                helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
-                autoComplete="off"
                 fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.opsGenie.token} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
             <Grid item xs={1}>

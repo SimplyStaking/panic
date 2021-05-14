@@ -13,34 +13,13 @@ import {
   InputAdornment,
 } from '@material-ui/core';
 import Button from 'components/material_ui/CustomButtons/Button';
-import { MuiThemeProvider, withStyles } from '@material-ui/core/styles';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
 import { SendTestTelegramButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
+import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
-
-const CssTextField = withStyles({
-  root: {
-    '& label.Mui-focused': {
-      color: '#000000',
-    },
-    '& .MuiInput-underline:after': {
-      borderBottomColor: '#363946',
-    },
-    '& .MuiOutlinedInput-root': {
-      '& fieldset': {
-        borderColor: '#363946',
-      },
-      '&:hover fieldset': {
-        borderColor: '#363946',
-      },
-      '&.Mui-focused fieldset': {
-        borderColor: '#363946',
-      },
-    },
-  },
-})(TextField);
 
 const TelegramForm = ({
   errors, values, handleSubmit, handleChange, setFieldValue,
