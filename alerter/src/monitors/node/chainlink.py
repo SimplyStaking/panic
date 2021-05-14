@@ -299,7 +299,7 @@ class ChainlinkNodeMonitor(Monitor):
 
         self._send_data(processed_data)
 
-        # Can't use list comprehension due to eval loosing self.
+        # Can't use list comprehension due to eval losing self.
         data_retrieval_failed_list = []
         for _, info in retrieval_info.items():
             if eval(info['monitoring_enabled_var']):
