@@ -2,6 +2,10 @@
   background: #F8F8FB;
 }
 
+.background-blue{
+  background-color: #263089;
+}
+
 .root{
   display: flex;
   flex-wrap: wrap;

@@ -529,7 +529,7 @@ function LoginButton({
     }
   };
   return (
-    <Button color="primary" size="lg" disabled={disabled} onClick={onClick}>
+    <Button color="primary" size="lg" disabled={disabled} onClick={onClick} fullWidth>
       Get started
     </Button>
   );

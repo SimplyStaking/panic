@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -9,172 +10,231 @@ import {
   Switch,
   Grid,
   Tooltip,
+  InputAdornment,
 } from '@material-ui/core';
 import Button from 'components/material_ui/CustomButtons/Button';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, withStyles } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import Divider from '@material-ui/core/Divider';
 import { SendTestTelegramButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Data from 'data/channels';
 
+const CssTextField = withStyles({
+  root: {
+    '& label.Mui-focused': {
+      color: '#000000',
+    },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#363946',
+    },
+    '& .MuiOutlinedInput-root': {
+      '& fieldset': {
+        borderColor: '#363946',
+      },
+      '&:hover fieldset': {
+        borderColor: '#363946',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#363946',
+      },
+    },
+  },
+})(TextField);
+
 const TelegramForm = ({
-  errors,
-  values,
-  handleSubmit,
-  handleChange,
-  setFieldValue,
+  errors, values, handleSubmit, handleChange, setFieldValue,
 }) => (
   <MuiThemeProvider theme={defaultTheme}>
-    <div>
+    <div className="greyBackground">
       <Typography variant="subtitle1" gutterBottom className="greyBackground">
-        <Box m={2} p={3}>
-          <p>{Data.telegram.description}</p>
+        <Box m={2} pt={3} px={3}>
+          <p
+            style={{
+              fontWeight: '350',
+              fontSize: '1.2rem',
+            }}
+          >
+            {Data.telegram.description}
+          </p>
         </Box>
       </Typography>
       <Divider />
       <form onSubmit={handleSubmit} className="root">
-        <Box p={3}>
-          <Grid container spacing={3} justify="center" alignItems="center">
-            <Grid item xs={2}>
-              <Typography> Bot Name </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
+        <Box m={2} p={3}>
+          <Grid container spacing={1} justify="center" alignItems="center">
+            <Grid item xs={12}>
+              <CssTextField
+                id="channel-name-outlined-full-width"
                 error={errors.channel_name}
                 value={values.channel_name}
+                label="Bot Name"
                 type="text"
+                style={{ margin: 8 }}
                 name="channel_name"
                 placeholder={Data.telegram.channelNamePlaceholder}
                 helperText={errors.channel_name ? errors.channel_name : ''}
                 onChange={handleChange}
-                autoComplete="off"
                 fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.telegram.name} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.name} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Bot Token </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
+            <Grid item xs={12}>
+              <CssTextField
+                id="bot-token-outlined-full-width"
                 error={errors.bot_token}
                 value={values.bot_token}
+                label="Bot Token"
                 type="text"
+                style={{ margin: 8 }}
                 name="bot_token"
                 placeholder={Data.telegram.botTokenPlaceholder}
                 helperText={errors.bot_token ? errors.bot_token : ''}
                 onChange={handleChange}
-                autoComplete="off"
                 fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.telegram.token} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.token} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Chat ID </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <TextField
+            <Grid item xs={12}>
+              <CssTextField
+                id="chat-id-outlined-full-width"
                 error={errors.chat_id}
                 value={values.chat_id}
+                label="Chat ID"
                 type="text"
+                style={{ margin: 8 }}
                 name="chat_id"
                 placeholder={Data.telegram.chatIdPlaceholder}
                 helperText={errors.chat_id ? errors.chat_id : ''}
                 onChange={handleChange}
-                autoComplete="off"
                 fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.telegram.chat_id} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.chat_id} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
+            <Grid container spacing={1} justify="center" alignItems="center">
+              <Grid item xs={2}>
+                <Box pl={2}>
+                  <Typography variant="subtitle1">
+                    Severities
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={9}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.info}
+                      onChange={handleChange}
+                      name="info"
+                      color="primary"
+                    />
+                  )}
+                  label="Info"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.warning}
+                      onChange={handleChange}
+                      name="warning"
+                      color="primary"
+                    />
+                  )}
+                  label="Warning"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.critical}
+                      onChange={handleChange}
+                      name="critical"
+                      color="primary"
+                    />
+                  )}
+                  label="Critical"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.error}
+                      onChange={handleChange}
+                      name="error"
+                      color="primary"
+                    />
+                  )}
+                  label="Error"
+                  labelPlacement="start"
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Grid container justify="flex-end">
+                  <Box pr={1}>
+                    <MuiThemeProvider theme={theme}>
+                      <Tooltip title={Data.telegram.severities} placement="left">
+                        <InfoIcon />
+                      </Tooltip>
+                    </MuiThemeProvider>
+                  </Box>
+                </Grid>
               </Grid>
             </Grid>
             <Grid item xs={2}>
-              <Typography> Severities </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.info}
-                    onChange={handleChange}
-                    name="info"
-                    color="primary"
-                  />
-                  )}
-                label="Info"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.warning}
-                    onChange={handleChange}
-                    name="warning"
-                    color="primary"
-                  />
-                  )}
-                label="Warning"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.critical}
-                    onChange={handleChange}
-                    name="critical"
-                    color="primary"
-                  />
-                  )}
-                label="Critical"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.error}
-                    onChange={handleChange}
-                    name="error"
-                    color="primary"
-                  />
-                  )}
-                label="Error"
-                labelPlacement="start"
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.telegram.severities} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
-              </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Telegram Commands </Typography>
+              <Box pl={1.5}>
+                <Typography>
+                  Telegram Commands
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={1}>
               <Grid container justify="center">
@@ -196,7 +256,7 @@ const TelegramForm = ({
                     name="telegramCommands"
                     color="primary"
                   />
-                  )}
+                )}
                 label=""
               />
             </Grid>
@@ -223,18 +283,13 @@ const TelegramForm = ({
                     name="telegramAlerts"
                     color="primary"
                   />
-                  )}
+                )}
                 label=""
               />
             </Grid>
             <Grid item xs={4}>
-              <Grid
-                container
-                direction="row"
-                justify="flex-end"
-                alignItems="center"
-              >
-                <Box px={2}>
+              <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Box pr={0}>
                   <SendTestTelegramButton
                     disabled={Object.keys(errors).length !== 0}
                     botChatID={values.chat_id}
