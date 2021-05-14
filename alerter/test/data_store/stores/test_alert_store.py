@@ -1,7 +1,7 @@
+import copy
 import json
 import logging
 import unittest
-import copy
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock

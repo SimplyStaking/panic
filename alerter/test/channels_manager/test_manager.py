@@ -488,13 +488,13 @@ class TestChannelsManager(unittest.TestCase):
 
             # Check whether the exchanges and queues have been creating by
             # sending messages with the same routing keys as for the queues. We
-            # will also check if the size of the queues are 0 to confirm that
+            # will also check if the size of the queues is 0 to confirm that
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
-            # created, then either an exception will be thrown or the queue size
-            # would be 1. Note when deleting the exchanges in the beginning we
-            # also released every binding, hence there is no other queue binded
-            # with the same routing key to any exchange at this point.
+            # created, then an exception will be thrown. Note when deleting the
+            # exchanges in the beginning we also released every binding, hence there
+            # is no other queue binded with the same routing key to any exchange at
+            # this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY,

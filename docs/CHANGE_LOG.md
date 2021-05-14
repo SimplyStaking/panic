@@ -2,15 +2,14 @@ Change the contents of this file to this:
 
 # Change Log
 
-## 0.1.3 [DRAFT]
+## Unreleased
 
-Released on _
-
-- Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization
-- Updated Alerter to fix bugs with regards to metric changes in thresholds
-- Added Internal Alerts on startup originating from the Alerter, which are used to reset all metrics for that chain
-- Added functionality to cater for new Internal Alert in Data Store
-- Added Tests for new Internal Alerts in System/Github Alerter and Alert Store
+- Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
+- Updated Alerter to fix bugs with regards to metric changes in thresholds.
+- Added Internal Alerts on startup originating from the Alerter, which are used to reset all metrics for that chain.
+- Added functionality to cater for new Internal Alert in Data Store.
+- Added Tests for new Internal Alerts in System/Github Alerter and Alert Store.
+- Added the ChainlinkNodeMonitor and ChainlinkNodeMonitorsManager and their tests.
 
 ## 0.1.2
 
