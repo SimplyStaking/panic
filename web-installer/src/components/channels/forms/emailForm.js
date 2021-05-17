@@ -180,7 +180,6 @@ const EmailForm = ({
                   options={[]}
                   onChange={updateToEmails}
                   value={values.emails_to}
-                  position="bottom"
                   renderInput={(params) => (
                     <CssTextField
                       // eslint-disable-next-line react/jsx-props-no-spreading

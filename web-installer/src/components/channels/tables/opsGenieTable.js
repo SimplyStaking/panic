@@ -3,82 +3,86 @@ import PropTypes from 'prop-types';
 import {
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
   Button,
+  Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 const OpsGenieTable = ({ opsGenies, removeOpsGenieDetails }) => {
   if (opsGenies.allIds.length === 0) {
     return <div />;
   }
   return (
-    <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="opsgenies table">
-        <TableHead>
-          <TableRow>
-            <TableCell align="center">Name</TableCell>
-            <TableCell align="center">API Token</TableCell>
-            <TableCell align="center">EU</TableCell>
-            <TableCell align="center">Info</TableCell>
-            <TableCell align="center">Warning</TableCell>
-            <TableCell align="center">Critical</TableCell>
-            <TableCell align="center">Error</TableCell>
-            <TableCell align="center">Delete</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Object.keys(opsGenies.byId).map((opsgenie) => (
-            <TableRow key={opsGenies.byId[opsgenie].id}>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].channel_name}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].api_token}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].eu ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].warning ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].critical ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {opsGenies.byId[opsgenie].error ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
-                <Button
-                  onClick={() => {
-                    removeOpsGenieDetails(opsGenies.byId[opsgenie]);
-                  }}
-                >
-                  <CancelIcon />
-                </Button>
-              </TableCell>
+    <Box pt={8}>
+      <TableContainer component={Paper}>
+        <Table className="greyBackground" aria-label="opsgenie-table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell align="center">Name</StyledTableCell>
+              <StyledTableCell align="center">API Token</StyledTableCell>
+              <StyledTableCell align="center">EU</StyledTableCell>
+              <StyledTableCell align="center">Info</StyledTableCell>
+              <StyledTableCell align="center">Warning</StyledTableCell>
+              <StyledTableCell align="center">Critical</StyledTableCell>
+              <StyledTableCell align="center">Error</StyledTableCell>
+              <StyledTableCell align="center">Delete</StyledTableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {Object.keys(opsGenies.byId).map((opsgenie) => (
+              <StyledTableRow key={opsGenies.byId[opsgenie].id}>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].channel_name}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].api_token}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].eu ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].info ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].warning ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].critical ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {opsGenies.byId[opsgenie].error ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Button
+                    onClick={() => {
+                      removeOpsGenieDetails(opsGenies.byId[opsgenie]);
+                    }}
+                  >
+                    <CancelIcon />
+                  </Button>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

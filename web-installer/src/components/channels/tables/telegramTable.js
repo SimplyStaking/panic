@@ -23,7 +23,7 @@ const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
   return (
     <Box pt={8}>
       <TableContainer component={Paper}>
-        <Table className="greyBackground" aria-label="simple table">
+        <Table className="greyBackground" aria-label="telegram-table">
           <TableHead>
             <TableRow>
               <StyledTableCell> Telegram Name </StyledTableCell>

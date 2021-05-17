@@ -3,90 +3,94 @@ import PropTypes from 'prop-types';
 import {
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
   Button,
+  Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 const PagerDutyTable = ({ pagerDuties, removePagerDutyDetails }) => {
   if (pagerDuties.allIds.length === 0) {
     return <div />;
   }
   return (
-    <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="pagerduties table">
-        <TableHead>
-          <TableRow>
-            <TableCell align="center">PagerDuty Name</TableCell>
-            <TableCell align="center">API Token</TableCell>
-            <TableCell align="center">Integration Key</TableCell>
-            <TableCell align="center">Info</TableCell>
-            <TableCell align="center">Warning</TableCell>
-            <TableCell align="center">Critical</TableCell>
-            <TableCell align="center">Error</TableCell>
-            <TableCell align="center">Delete</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Object.keys(pagerDuties.byId).map((pagerDuty) => (
-            <TableRow key={pagerDuties.byId[pagerDuty].id}>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].channel_name}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].api_token}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].integration_key}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].info ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].warning ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].critical ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {pagerDuties.byId[pagerDuty].error ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                <Button
-                  onClick={() => {
-                    removePagerDutyDetails(pagerDuties.byId[pagerDuty]);
-                  }}
-                >
-                  <CancelIcon />
-                </Button>
-              </TableCell>
+    <Box pt={8}>
+      <TableContainer component={Paper}>
+        <Table className="greyBackground" aria-label="pagerduty table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell align="center">PagerDuty Name</StyledTableCell>
+              <StyledTableCell align="center">API Token</StyledTableCell>
+              <StyledTableCell align="center">Integration Key</StyledTableCell>
+              <StyledTableCell align="center">Info</StyledTableCell>
+              <StyledTableCell align="center">Warning</StyledTableCell>
+              <StyledTableCell align="center">Critical</StyledTableCell>
+              <StyledTableCell align="center">Error</StyledTableCell>
+              <StyledTableCell align="center">Delete</StyledTableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {Object.keys(pagerDuties.byId).map((pagerDuty) => (
+              <StyledTableRow key={pagerDuties.byId[pagerDuty].id}>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].channel_name}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].api_token}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].integration_key}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].info ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].warning ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].critical ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {pagerDuties.byId[pagerDuty].error ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Button
+                    onClick={() => {
+                      removePagerDutyDetails(pagerDuties.byId[pagerDuty]);
+                    }}
+                  >
+                    <CancelIcon />
+                  </Button>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

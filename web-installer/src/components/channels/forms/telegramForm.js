@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
+// 349653M
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField,
   Box,
   Checkbox,
   FormControlLabel,
@@ -26,7 +26,7 @@ const TelegramForm = ({
 }) => (
   <MuiThemeProvider theme={defaultTheme}>
     <div className="greyBackground">
-      <Typography variant="subtitle1" gutterBottom className="greyBackground">
+      <Typography variant="subtitle1" gutterBottom>
         <Box m={2} pt={3} px={3}>
           <p
             style={{
@@ -268,21 +268,19 @@ const TelegramForm = ({
             </Grid>
             <Grid item xs={4}>
               <Grid container direction="row" justify="flex-end" alignItems="center">
-                <Box pr={0}>
-                  <SendTestTelegramButton
-                    disabled={Object.keys(errors).length !== 0}
-                    botChatID={values.chat_id}
-                    botToken={values.bot_token}
-                  />
-                  <Button
-                    color="primary"
-                    size="md"
-                    disabled={Object.keys(errors).length !== 0}
-                    type="submit"
-                  >
-                    Add
-                  </Button>
-                </Box>
+                <SendTestTelegramButton
+                  disabled={Object.keys(errors).length !== 0}
+                  botChatID={values.chat_id}
+                  botToken={values.bot_token}
+                />
+                <Button
+                  color="primary"
+                  size="md"
+                  disabled={Object.keys(errors).length !== 0}
+                  type="submit"
+                >
+                  Add
+                </Button>
               </Grid>
             </Grid>
           </Grid>

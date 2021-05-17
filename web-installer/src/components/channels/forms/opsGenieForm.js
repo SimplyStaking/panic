@@ -38,7 +38,7 @@ const OpsGenieForm = ({
       <Divider />
       <form onSubmit={handleSubmit} className="root">
         <Box m={2} p={3}>
-          <Grid container spacing={3} justify="center" alignItems="center">
+          <Grid container spacing={1} justify="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
@@ -103,112 +103,113 @@ const OpsGenieForm = ({
                 }}
               />
             </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.opsGenie.token} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
+            <Grid container spacing={1} justify="center" alignItems="center">
+              <Grid item xs={2}>
+                <Box pl={2}>
+                  <Typography variant="subtitle1">
+                    Severities
+                  </Typography>
+                </Box>
               </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> EU </Typography>
-            </Grid>
-            <Grid item xs={1}>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.eu}
-                    onChange={handleChange}
-                    name="eu"
-                    color="primary"
-                  />
+              <Grid item xs={9}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.info}
+                      onChange={handleChange}
+                      name="info"
+                      color="primary"
+                    />
                   )}
-                label=""
-              />
-            </Grid>
-            <Grid item xs={8} />
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.opsGenie.eu} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
+                  label="Info"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.warning}
+                      onChange={handleChange}
+                      name="warning"
+                      color="primary"
+                    />
+                  )}
+                  label="Warning"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.critical}
+                      onChange={handleChange}
+                      name="critical"
+                      color="primary"
+                    />
+                  )}
+                  label="Critical"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.error}
+                      onChange={handleChange}
+                      name="error"
+                      color="primary"
+                    />
+                  )}
+                  label="Error"
+                  labelPlacement="start"
+                />
               </Grid>
-            </Grid>
-            <Grid item xs={2}>
-              <Typography> Severities </Typography>
-            </Grid>
-            <Grid item xs={9}>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.info}
-                    onChange={handleChange}
-                    name="info"
-                    color="primary"
-                  />
-                  )}
-                label="Info"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.warning}
-                    onChange={handleChange}
-                    name="warning"
-                    color="primary"
-                  />
-                  )}
-                label="Warning"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.critical}
-                    onChange={handleChange}
-                    name="critical"
-                    color="primary"
-                  />
-                  )}
-                label="Critical"
-                labelPlacement="start"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={values.error}
-                    onChange={handleChange}
-                    name="error"
-                    color="primary"
-                  />
-                  )}
-                label="Error"
-                labelPlacement="start"
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <Grid container justify="center">
-                <MuiThemeProvider theme={theme}>
-                  <Tooltip title={Data.opsGenie.severities} placement="left">
-                    <InfoIcon />
-                  </Tooltip>
-                </MuiThemeProvider>
+              <Grid item xs={1}>
+                <Grid container justify="flex-end">
+                  <Box pr={1}>
+                    <MuiThemeProvider theme={theme}>
+                      <Tooltip title={Data.opsGenie.severities} placement="left">
+                        <InfoIcon />
+                      </Tooltip>
+                    </MuiThemeProvider>
+                  </Box>
+                </Grid>
               </Grid>
-            </Grid>
-            <Grid item xs={8} />
-            <Grid item xs={4}>
-              <Grid
-                container
-                direction="row"
-                justify="flex-end"
-                alignItems="center"
-              >
-                <Box px={2}>
+              <Grid item xs={2}>
+                <Box pl={2}>
+                  <Typography variant="subtitle1">
+                    European Region
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={1}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={values.eu}
+                      onChange={handleChange}
+                      name="eu"
+                      color="primary"
+                    />
+                    )}
+                  label="EU"
+                  labelPlacement="start"
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Grid container justify="center">
+                  <MuiThemeProvider theme={theme}>
+                    <Tooltip title={Data.opsGenie.eu} placement="left">
+                      <InfoIcon />
+                    </Tooltip>
+                  </MuiThemeProvider>
+                </Grid>
+              </Grid>
+              <Grid item xs={4} />
+              <Grid item xs={4}>
+                <Grid
+                  container
+                  direction="row"
+                  justify="flex-end"
+                  alignItems="center"
+                >
                   <SendTestOpsGenieButton
                     disabled={Object.keys(errors).length !== 0}
                     apiKey={values.api_token}
@@ -222,7 +223,7 @@ const OpsGenieForm = ({
                   >
                     Add
                   </Button>
-                </Box>
+                </Grid>
               </Grid>
             </Grid>
           </Grid>
