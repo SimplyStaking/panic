@@ -1,17 +1,21 @@
 from enum import Enum
 from typing import Union, Any
 
-from src.alerter.alerts.system_alerts import \
-    OpenFileDescriptorsIncreasedAboveThresholdAlert, \
-    SystemCPUUsageIncreasedAboveThresholdAlert, \
-    SystemRAMUsageIncreasedAboveThresholdAlert, \
-    SystemStorageUsageIncreasedAboveThresholdAlert, \
-    OpenFileDescriptorsDecreasedBelowThresholdAlert, \
-    SystemCPUUsageDecreasedBelowThresholdAlert, \
-    SystemRAMUsageDecreasedBelowThresholdAlert, \
-    SystemStorageUsageDecreasedBelowThresholdAlert
+from src.alerter.alerts.system_alerts import (
+    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemStorageUsageIncreasedAboveThresholdAlert,
+    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+    SystemCPUUsageDecreasedBelowThresholdAlert,
+    SystemRAMUsageDecreasedBelowThresholdAlert,
+    SystemStorageUsageDecreasedBelowThresholdAlert)
+from src.monitorables.nodes.node import Node
+from src.monitorables.repo import GitHubRepo
+from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
+Monitorable = Union[System, GitHubRepo, Node]
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,

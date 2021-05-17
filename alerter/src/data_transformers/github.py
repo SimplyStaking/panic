@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -12,7 +12,6 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
 from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
                                  ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GITHUB_DT_INPUT_QUEUE_NAME,
@@ -21,7 +20,7 @@ from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import (convert_to_float_if_not_none,
-                             convert_to_int_if_not_none)
+                             convert_to_int_if_not_none, Monitorable)
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -72,8 +71,7 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def load_state(self, repo: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
+    def load_state(self, repo: Monitorable) -> Monitorable:
         # If Redis is down, the data passed as default will be stored as
         # the repo state.
 

@@ -2,12 +2,7 @@ from typing import Optional
 
 
 class GitHubRepo:
-    # There is no setter for repo_id as it is what identifies a repository.
-    # Setters for parent_id and repo_name were given just in case these are
-    # changed from the config
-
     def __init__(self, repo_name: str, repo_id: str, parent_id: str) -> None:
-        # Repo identifiers
         self._repo_name = repo_name
         self._repo_id = repo_id
         self._parent_id = parent_id

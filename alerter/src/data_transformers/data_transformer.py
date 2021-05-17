@@ -17,6 +17,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+from src.utils.types import Monitorable
 
 
 class DataTransformer(QueuingPublisherSubscriberComponent):
@@ -45,8 +46,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         return self._state
 
     @abstractmethod
-    def load_state(self, monitorable: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
+    def load_state(self, monitorable: Monitorable) -> Monitorable:
         pass
 
     def _listen_for_data(self) -> None:
