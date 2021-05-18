@@ -235,3 +235,8 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             last_monitored, went_down_at)
 
         return system
+
+
+# TODO: We need to check which metrics are reset whenever a switch of nodes
+#     : happen. This is important because it may effect the state of the alerter
+# TODO: Do previous for last_source_used in meta-data
