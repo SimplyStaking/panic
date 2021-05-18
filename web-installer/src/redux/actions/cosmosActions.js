@@ -66,6 +66,7 @@ export function addNodeCosmos(payload) {
   if ('id' in payload) {
     id = payload.id;
   }
+  console.log(payload);
   return {
     type: ADD_NODE_COSMOS,
     payload: {

@@ -85,6 +85,10 @@ const channelStyle = {
   inputIconsColor: {
     color: '#495057',
   },
+  media: {
+    maxWidth: '100%',
+    height: '100%',
+  },
 };
 
 export default makeStyles(channelStyle);

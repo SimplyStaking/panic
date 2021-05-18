@@ -4,7 +4,6 @@ import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
@@ -14,6 +13,8 @@ import {
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
 import { CHAINLINK_SETUP_PAGE } from 'constants/constants';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
@@ -195,19 +196,19 @@ const ChainlinkChainsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="chainlink chains table">
+      <Table className="table" aria-label="chainlink-chains-table">
         <TableHead>
           <TableRow>
-            <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Manage</TableCell>
-            <TableCell align="center">Delete</TableCell>
+            <StyledTableCell align="center">Name</StyledTableCell>
+            <StyledTableCell align="center">Edit/View Config</StyledTableCell>
+            <StyledTableCell align="center">Delete</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {config.allIds.map((id) => (
-            <TableRow key={id}>
-              <TableCell align="center">{config.byId[id].chain_name}</TableCell>
-              <TableCell align="center">
+            <StyledTableRow key={id}>
+              <StyledTableCell align="center">{config.byId[id].chain_name}</StyledTableCell>
+              <StyledTableCell align="center">
                 <Box px={2}>
                   <Button
                     onClick={() => {
@@ -217,8 +218,8 @@ const ChainlinkChainsTable = ({
                     Load Chain
                   </Button>
                 </Box>
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Button
                   onClick={() => {
                     clearAllChainDetails(id);
@@ -226,8 +227,8 @@ const ChainlinkChainsTable = ({
                 >
                   <CancelIcon />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </StyledTableCell>
+            </StyledTableRow>
           ))}
         </TableBody>
       </Table>

@@ -439,6 +439,9 @@ const CosmosNodesReducer = combineReducers({
 function cosmosChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_COSMOS:
+      if (state[action.payload.id] !== undefined) {
+        return state;
+      }
       return {
         ...state,
         [action.payload.id]: {

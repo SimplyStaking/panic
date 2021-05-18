@@ -1,12 +1,16 @@
 import * as Yup from 'yup';
-import { BLACKLIST } from 'constants/constants';
+import Web3 from 'web3';
 
 const ChainlinkNodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-node-name', 'Node name is not unique.', (value) => {
       const {
-        cosmosNodesConfig, substrateNodesConfig, systemConfig, reposConfig,
-        chainlinkNodesConfig, dockerConfig,
+        cosmosNodesConfig,
+        substrateNodesConfig,
+        systemConfig,
+        reposConfig,
+        chainlinkNodesConfig,
+        dockerConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -42,18 +46,14 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Node name is required.'),
-  prometheus_url: Yup.array()
-    .of(Yup.string().test(
-      'localhost',
-      '127.0.0.1 is not allowed for security reasons.',
-      (value) => {
-        if (BLACKLIST.find((a) => value.includes(a))) {
-          return false;
+  ethereum_address: Yup.array()
+    .of(Yup.string()
+      .test('ethereum-address-validation', 'One or more provided addresses are not valid!.', (value) => {
+        if (Web3.utils.isAddress(value)) {
+          return true;
         }
-        return true;
-      },
-    ))
-    .required('Prometheus URL is required.'),
+        return false;
+      })),
 });
 
 export default ChainlinkNodeSchema;

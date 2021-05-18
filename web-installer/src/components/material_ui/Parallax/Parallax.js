@@ -47,6 +47,8 @@ export default function Parallax(props) {
       style={{
         ...style,
         backgroundImage: `url(${image})`,
+        backgroundSize: 'cover',
+        minHeight: '1rem',
         transform,
       }}
     >

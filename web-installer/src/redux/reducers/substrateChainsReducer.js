@@ -590,6 +590,9 @@ const SubstrateNodesReducer = combineReducers({
 function substrateChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_SUBSTRATE:
+      if (state[action.payload.id] !== undefined) {
+        return state;
+      }
       return {
         ...state,
         [action.payload.id]: {

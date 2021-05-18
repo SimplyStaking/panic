@@ -45,6 +45,8 @@ function mapDispatchToPropsSave(dispatch) {
 
 function mapDispatchToPropsRemove(dispatch) {
   return {
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
     removeSystemDetails: (details) => dispatch(removeSystem(details)),
   };
 }
@@ -63,17 +65,9 @@ const mapGeneralStateToProps = (state) => ({
   data: GeneralData,
 });
 
-function mapDispatchToProps(dispatch) {
-  return {
-    stepChanger: (step) => dispatch(changeStep(step)),
-    pageChanger: (page) => dispatch(changePage(page)),
-    saveSystemDetails: (details) => dispatch(addSystem(details)),
-  };
-}
-
 const SystemGeneralFormContainer = connect(
   mapGeneralStateToProps,
-  mapDispatchToProps,
+  mapDispatchToPropsSave,
 )(Form);
 
 const SystemGeneralTableContainer = connect(

@@ -28,8 +28,8 @@ const Form = withFormik({
     stash_address: '',
     is_validator: false,
     monitor_node: true,
-    is_archive_node: true,
-    use_as_data_source: true,
+    is_archive_node: false,
+    use_as_data_source: false,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {

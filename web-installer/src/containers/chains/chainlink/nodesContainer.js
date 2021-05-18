@@ -11,10 +11,12 @@ import ChainlinkNodeSchema from './chainlinkNodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
+    ethereum_address: '',
   }),
   mapPropsToValues: () => ({
     name: '',
     prometheus_url: [],
+    ethereum_address: [],
     monitor_prometheus: false,
     monitor_node: true,
   }),
@@ -25,6 +27,7 @@ const Form = withFormik({
       parent_id: currentChain,
       name: values.name,
       prometheus_url: values.prometheus_url,
+      ethereum_address: values.ethereum_address,
       monitor_prometheus: values.monitor_prometheus,
       monitor_node: values.monitor_node,
     };

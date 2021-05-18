@@ -1,8 +1,8 @@
 export default {
   chains: {
-    title: "Chain's Setup",
+    title: 'Chain Setup',
     subtitle_1: 'Everything you need to know about Chains.',
-    subtitle_2: 'Setup the chains now!',
+    subtitle_2: 'Chains Configuration',
     what_title: 'What are Chains?',
     supported_title: 'Supported Chains',
     how_title: 'How are they setup?',

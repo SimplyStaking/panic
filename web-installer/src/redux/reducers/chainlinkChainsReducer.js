@@ -393,6 +393,9 @@ const ChainlinkNodesReducer = combineReducers({
 function chainlinkChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_CHAINLINK:
+      if (state[action.payload.id] !== undefined) {
+        return state;
+      }
       return {
         ...state,
         [action.payload.id]: {

@@ -2,110 +2,133 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
+  Table, TableBody, TableContainer, TableHead, TableRow, Button, Box,
+  Grid,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
+import { NEXT, BACK } from 'constants/constants';
+import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 
 /*
  * Contains the data of all the nodes of the current chain process. Has the
  * functionality to delete node data from redux.
  */
 const NodesTable = ({
-  chainConfig,
-  cosmosNodesConfig,
-  currentChain,
-  removeNodeDetails,
+  chainConfig, cosmosNodesConfig, currentChain, removeNodeDetails, data,
 }) => {
   if (chainConfig.byId[currentChain].nodes.length === 0) {
-    return <div />;
+    return (
+      <div>
+        <Box py={4}>
+          <Grid container spacing={3} justify="center" alignItems="center">
+            <Grid item xs={4} />
+            <Grid item xs={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={BACK}
+                navigation={data.nodeForm.backStep}
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <StepButtonContainer
+                disabled={false}
+                text={NEXT}
+                navigation={data.nodeForm.nextStep}
+              />
+            </Grid>
+            <Grid item xs={4} />
+          </Grid>
+        </Box>
+      </div>
+    );
   }
 
   return (
-    <TableContainer component={Paper}>
-      <Table className="table" aria-label="cosmos nodes table" style={{ marginBottom: '150px' }}>
-        <TableHead>
-          <TableRow>
-            <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Tendermint</TableCell>
-            <TableCell align="center">Cosmos Rest Server</TableCell>
-            <TableCell align="center">Prometheus</TableCell>
-            <TableCell align="center">Node Exporter</TableCell>
-            <TableCell align="center">Validator</TableCell>
-            <TableCell align="center">Monitor</TableCell>
-            <TableCell align="center">Archive</TableCell>
-            <TableCell align="center">Data Source</TableCell>
-            <TableCell align="center">Delete</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {chainConfig.byId[currentChain].nodes.map((id) => (
-            <TableRow key={id}>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].name}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].tendermint_rpc_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].cosmos_rpc_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].prometheus_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].exporter_url}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].is_validator ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].monitor_node ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].is_archive_node ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                {cosmosNodesConfig.byId[id].use_as_data_source ? (
-                  <CheckIcon />
-                ) : (
-                  <ClearIcon />
-                )}
-              </TableCell>
-              <TableCell align="center">
-                <Button
-                  onClick={() => {
-                    removeNodeDetails(cosmosNodesConfig.byId[id]);
-                  }}
-                >
-                  <CancelIcon />
-                </Button>
-              </TableCell>
+    <Box pt={5}>
+      <TableContainer component={Paper}>
+        <Table className="table" aria-label="cosmos-nodes-table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell align="center">Name</StyledTableCell>
+              <StyledTableCell align="center">Tendermint</StyledTableCell>
+              <StyledTableCell align="center">Cosmos Rest Server</StyledTableCell>
+              <StyledTableCell align="center">Prometheus</StyledTableCell>
+              <StyledTableCell align="center">Node Exporter</StyledTableCell>
+              <StyledTableCell align="center">Validator</StyledTableCell>
+              <StyledTableCell align="center">Monitor</StyledTableCell>
+              <StyledTableCell align="center">Archive</StyledTableCell>
+              <StyledTableCell align="center">Data Source</StyledTableCell>
+              <StyledTableCell align="center">Delete</StyledTableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {chainConfig.byId[currentChain].nodes.map((id) => (
+              <StyledTableRow key={id}>
+                <StyledTableCell align="center">{cosmosNodesConfig.byId[id].name}</StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].tendermint_rpc_url}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].cosmos_rpc_url}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].prometheus_url}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].exporter_url}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].is_validator ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].monitor_node ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].is_archive_node ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].use_as_data_source ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Button
+                    onClick={() => {
+                      removeNodeDetails(cosmosNodesConfig.byId[id]);
+                    }}
+                  >
+                    <CancelIcon />
+                  </Button>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Box py={4}>
+        <Grid container spacing={3} justify="center" alignItems="center">
+          <Grid item xs={4} />
+          <Grid item xs={2}>
+            <StepButtonContainer
+              disabled={false}
+              text={BACK}
+              navigation={data.nodeForm.backStep}
+            />
+          </Grid>
+          <Grid item xs={2}>
+            <StepButtonContainer
+              disabled={false}
+              text={NEXT}
+              navigation={data.nodeForm.nextStep}
+            />
+          </Grid>
+          <Grid item xs={4} />
+        </Grid>
+      </Box>
+    </Box>
   );
 };
 
@@ -134,6 +157,12 @@ NodesTable.propTypes = forbidExtraProps({
   }).isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
+  data: PropTypes.shape({
+    nodeForm: PropTypes.shape({
+      backStep: PropTypes.string.isRequired,
+      nextStep: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 });
 
 export default NodesTable;

@@ -37,47 +37,54 @@ function UsersPage() {
         <Card>
           <CardBody>
             <div className={classes.container}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                className="greyBackground"
-              >
-                <Box m={2} p={3}>
-                  <p>{Data.description}</p>
-                </Box>
-              </Typography>
-              <Divider />
-              <Grid container spacing={0}>
-                <Grid item xs={12}>
-                  <Box p={2} className="flex_root">
-                    <Box
-                      p={3}
-                      borderRadius="borderRadius"
-                      borderColor="grey.300"
+              <div className="greyBackground">
+                <Typography variant="subtitle1" gutterBottom>
+                  <Box m={2} pt={3} px={3}>
+                    <p
+                      style={{
+                        fontWeight: '350',
+                        fontSize: '1.2rem',
+                      }}
                     >
-                      <UsersFormContainer />
-                      <br />
-                      <br />
-                      <UsersTableContainer />
-                    </Box>
+                      {Data.description}
+                    </p>
                   </Box>
+                </Typography>
+                <Divider />
+                <Box m={2} p={3}>
+                  <Grid container spacing={1} justify="center" alignItems="center">
+                    <Grid item xs={12}>
+                      <Box p={2} className="flex_root">
+                        <Box
+                          p={3}
+                          borderRadius="borderRadius"
+                          borderColor="grey.300"
+                        >
+                          <UsersFormContainer />
+                          <br />
+                          <br />
+                          <UsersTableContainer />
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </div>
+              <Box py={5}>
+                <Grid container spacing={3} justify="center" alignItems="center">
+                  <Grid item xs={4} />
+                  <Grid item xs={2}>
+                    <NavigationButtonContainer
+                      text={BACK}
+                      navigation={CHAINS_PAGE}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <EndDialog />
+                  </Grid>
+                  <Grid item xs={4} />
                 </Grid>
-                <Grid item xs={12} />
-                <br />
-                <br />
-                <Grid item xs={4} />
-                <Grid item xs={2}>
-                  <NavigationButtonContainer
-                    text={BACK}
-                    navigation={CHAINS_PAGE}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <EndDialog />
-                </Grid>
-                <Grid item xs={4} />
-                <Grid item xs={12} />
-              </Grid>
+              </Box>
             </div>
           </CardBody>
         </Card>

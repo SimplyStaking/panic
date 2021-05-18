@@ -1,19 +1,11 @@
-/* eslint-disable react/require-default-props */
 /* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable react/require-default-props */
 /* eslint-disable react/forbid-prop-types */
-/* eslint-disable no-unused-vars */
 import React from 'react';
 import {
   Grid, AppBar, Tabs, Tab, Typography, Box,
 } from '@material-ui/core';
 import PropTypes from 'prop-types';
-import FormAccordion from 'components/global/formAccordion';
-import TelegramIcon from 'assets/icons/telegram.svg';
-import TwilioIcon from 'assets/icons/twilio.svg';
-import EmailIcon from 'assets/icons/email.svg';
-import PagerDuty from 'assets/icons/pagerduty.svg';
-import OpsGenie from 'assets/icons/opsGenie.svg';
-import Slack from 'assets/icons/slack.svg';
 import {
   TelegramFormContainer,
   TelegramTableContainer,
@@ -30,16 +22,7 @@ import {
   OpsGenieTableContainer,
 } from 'containers/channels/opsGenieContainer';
 import NavigationButtonContainer from 'containers/global/navigationButtonContainer';
-import {
-  CHAINS_PAGE,
-  NEXT,
-  TELEGRAM,
-  TWILIO,
-  EMAIL,
-  PAGERDUTY,
-  OPSGENIE,
-  SLACK,
-} from 'constants/constants';
+import { CHAINS_PAGE, NEXT } from 'constants/constants';
 import Data from 'data/channels';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
@@ -87,6 +70,7 @@ function a11yProps(index) {
 
 function ChannelsPage() {
   const classes = useStyles();
+  // Internal state to keep track of clicked tabs
   const [value, setValue] = React.useState(0);
 
   const handleChange = (event, newValue) => {
@@ -186,42 +170,6 @@ function ChannelsPage() {
                       <SlackFormContainer />
                       <SlackTableContainer />
                     </TabPanel>
-                    {/* <FormAccordion
-                      icon={TelegramIcon}
-                      name={TELEGRAM}
-                      form={<TelegramFormContainer />}
-                      table={<TelegramTableContainer />}
-                    />
-                    <FormAccordion
-                      icon={TwilioIcon}
-                      name={TWILIO}
-                      form={<TwilioFormContainer />}
-                      table={<TwilioTableContainer />}
-                    />
-                    <FormAccordion
-                      icon={EmailIcon}
-                      name={EMAIL}
-                      form={<EmailFormContainer />}
-                      table={<EmailTableContainer />}
-                    />
-                    <FormAccordion
-                      icon={PagerDuty}
-                      name={PAGERDUTY}
-                      form={<PagerDutyFormContainer />}
-                      table={<PagerDutyTableContainer />}
-                    />
-                    <FormAccordion
-                      icon={OpsGenie}
-                      name={OPSGENIE}
-                      form={<OpsGenieFormContainer />}
-                      table={<OpsGenieTableContainer />}
-                    />
-                    <FormAccordion
-                      icon={Slack}
-                      name={SLACK}
-                      form={<SlackFormContainer />}
-                      table={<SlackTableContainer />}
-                    /> */}
                   </div>
                 </Grid>
                 <Grid item xs={12} />

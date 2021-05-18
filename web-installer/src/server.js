@@ -565,7 +565,7 @@ app.get('/server/paths', async (req, res) => {
 
 // This endpoint returns the configs. It infers the config path automatically
 // from the parameters.
-app.get('/server/config', async (req, res) => {
+app.get('/server/config', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const {
     configType, fileName, chainName, baseChain,

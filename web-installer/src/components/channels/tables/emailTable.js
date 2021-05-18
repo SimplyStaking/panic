@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import {
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
@@ -15,6 +14,8 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 const EmailTable = ({ emails, removeEmailDetails }) => {
   if (emails.allIds.length === 0) {
@@ -25,32 +26,32 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
       <Table className="greyBackground" aria-label="emails table">
         <TableHead>
           <TableRow>
-            <TableCell align="center">Email Name</TableCell>
-            <TableCell align="center">SMTP</TableCell>
-            <TableCell align="center">Port</TableCell>
-            <TableCell align="center">Email From</TableCell>
-            <TableCell align="center">Email To</TableCell>
-            <TableCell align="center">Username</TableCell>
-            <TableCell align="center">Password</TableCell>
-            <TableCell align="center">Info</TableCell>
-            <TableCell align="center">Warning</TableCell>
-            <TableCell align="center">Critical</TableCell>
-            <TableCell align="center">Error</TableCell>
-            <TableCell align="center">Delete</TableCell>
+            <StyledTableCell align="center">Email Name</StyledTableCell>
+            <StyledTableCell align="center">SMTP</StyledTableCell>
+            <StyledTableCell align="center">Port</StyledTableCell>
+            <StyledTableCell align="center">Email From</StyledTableCell>
+            <StyledTableCell align="center">Email To</StyledTableCell>
+            <StyledTableCell align="center">Username</StyledTableCell>
+            <StyledTableCell align="center">Password</StyledTableCell>
+            <StyledTableCell align="center">Info</StyledTableCell>
+            <StyledTableCell align="center">Warning</StyledTableCell>
+            <StyledTableCell align="center">Critical</StyledTableCell>
+            <StyledTableCell align="center">Error</StyledTableCell>
+            <StyledTableCell align="center">Delete</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {Object.keys(emails.byId).map((email) => (
-            <TableRow key={emails.byId[email].id}>
-              <TableCell align="center">
+            <StyledTableRow key={emails.byId[email].id}>
+              <StyledTableCell align="center">
                 {emails.byId[email].channel_name}
-              </TableCell>
-              <TableCell align="center">{emails.byId[email].smtp}</TableCell>
-              <TableCell align="center">{emails.byId[email].port}</TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">{emails.byId[email].smtp}</StyledTableCell>
+              <StyledTableCell align="center">{emails.byId[email].port}</StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].email_from}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <div style={{ maxHeight: 70, overflow: 'auto' }}>
                   <List>
                     {emails.byId[email].emails_to.map((to) => (
@@ -58,26 +59,26 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
                     ))}
                   </List>
                 </div>
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].username}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].password}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].warning ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].critical ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Button
                   onClick={() => {
                     removeEmailDetails(emails.byId[email]);
@@ -85,8 +86,8 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
                 >
                   <CancelIcon />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </StyledTableCell>
+            </StyledTableRow>
           ))}
         </TableBody>
       </Table>

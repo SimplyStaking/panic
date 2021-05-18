@@ -28,13 +28,12 @@ const mapStateToProps = (state) => ({
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
   slacks: state.SlacksReducer,
+
   // General data related to
   repositories: state.RepositoryReducer,
-  // kmses: state.KmsReducer,
   general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
   docker: state.DockerReducer,
-  // periodic: state.PeriodicReducer,
 });
 
 class SaveConfig extends Component {
@@ -56,14 +55,12 @@ class SaveConfig extends Component {
       chainlinkChains,
       chainlinkNodes,
       repositories,
-      // kmses,
       substrateChains,
       substrateNodes,
       general,
       systems,
       docker,
       closeOnSave,
-      // periodic,
     } = this.props;
 
     await deleteConfigs();
@@ -537,14 +534,12 @@ class SaveConfig extends Component {
     for (let k = 0; k < general.repositories.length; k += 1) {
       generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
     }
-
     await sendConfig('general', 'repos_config.ini', '', '', generalRepos);
 
     const generalDocker = {};
     for (let k = 0; k < general.dockers.length; k += 1) {
       generalDocker[general.dockers[k]] = docker.byId[general.dockers[k]];
     }
-
     await sendConfig('general', 'docker_config.ini', '', '', generalDocker);
 
     // Redo the structure of these alerts to be able to save them in the .ini

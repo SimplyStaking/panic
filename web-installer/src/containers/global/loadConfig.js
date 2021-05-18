@@ -13,6 +13,7 @@ import {
   addEmail,
   addPagerDuty,
   addOpsGenie,
+  addSlack,
 } from 'redux/actions/channelActions';
 import {
   addDocker,
@@ -37,6 +38,14 @@ import {
   loadSeverityAlertsSubstrate,
 } from 'redux/actions/substrateActions';
 import {
+  addNodeChainlink,
+  addChainChainlink,
+  loadRepeatAlertsChainlink,
+  loadTimeWindowAlertsChainlink,
+  loadThresholdAlertsChainlink,
+  loadSeverityAlertsChainlink,
+} from 'redux/actions/chainlinkActions';
+import {
   generalThresholdAlerts,
 } from 'redux/reducers/generalReducer';
 import {
@@ -57,14 +66,20 @@ import {
   substrateTimeWindowAlerts,
   substrateSeverityAlerts,
 } from 'redux/reducers/substrateChainsReducer';
+
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
   // Cosmos related data
   cosmosChains: state.CosmosChainsReducer,
   cosmosNodes: state.CosmosNodesReducer,
 
+  // substrate related data
   substrateChains: state.SubstrateChainsReducer,
   substrateNodes: state.SubstrateNodesReducer,
+
+  // Chainlink related data
+  chainlinkChains: state.ChainlinkChainsReducer,
+  chainlinkNodes: state.ChainlinkNodesReducer,
 
   // Channels related data
   emails: state.EmailsReducer,
@@ -86,16 +101,19 @@ function mapDispatchToProps(dispatch) {
   return {
     addEmailDetails: (details) => dispatch(addEmail(details)),
     addTelegramDetails: (details) => dispatch(addTelegram(details)),
+    addSlackDetails: (details) => dispatch(addSlack(details)),
     addTwilioDetails: (details) => dispatch(addTwilio(details)),
     addPagerDutyDetails: (details) => dispatch(addPagerDuty(details)),
     addOpsGenieDetails: (details) => dispatch(addOpsGenie(details)),
     addChainCosmosDetails: (details) => dispatch(addChainCosmos(details)),
     addNodeCosmosDetails: (details) => dispatch(addNodeCosmos(details)),
     addChainSubstrateDetails: (details) => dispatch(addChainSubstrate(details)),
+    addNodeSubstrateDetails: (details) => dispatch(addNodeSubstrate(details)),
+    addChainChainlinkDetails: (details) => dispatch(addChainChainlink(details)),
+    addNodeChainlinkDetails: (details) => dispatch(addNodeChainlink(details)),
     addSystemDetails: (details) => dispatch(addSystem(details)),
     addDockerDetails: (details) => dispatch(addDocker(details)),
     addRepositoryDetails: (details) => dispatch(addRepository(details)),
-    addNodeSubstrateDetails: (details) => dispatch(addNodeSubstrate(details)),
     loadThresholdAlertsGeneralDetails: (details) => dispatch(loadThresholdAlertsGeneral(details)),
     loadRepeatAlertsCosmosDetails: (details) => dispatch(loadRepeatAlertsCosmos(details)),
     loadTimeWindowAlertsCosmosDetails: (details) => dispatch(loadTimeWindowAlertsCosmos(details)),
@@ -109,24 +127,34 @@ function mapDispatchToProps(dispatch) {
       loadThresholdAlertsSubstrate(details),
     ),
     loadSeverityAlertsSubstrateDetails: (details) => dispatch(loadSeverityAlertsSubstrate(details)),
+    loadRepeatAlertsChainlinkDetails: (details) => dispatch(loadRepeatAlertsChainlink(details)),
+    loadTimeWindowAlertsChainlinkDetails: (details) => dispatch(
+      loadTimeWindowAlertsChainlink(details),
+    ),
+    loadThresholdAlertsChainlinkDetails: (details) => dispatch(
+      loadThresholdAlertsChainlink(details),
+    ),
+    loadSeverityAlertsChainlinkDetails: (details) => dispatch(loadSeverityAlertsChainlink(details)),
   };
 }
 
 // Checking if the current chain has been setup and if not set it up
-function CreateChain(config, chainName, chainState, addChain) {
+function CreateChain(config, chainName, addChain) {
   const singleConfig = config[Object.keys(config)[0]];
-
-  if (
-    !(singleConfig.parent_id in chainState.byId)
-    && !(chainState.allIds.includes(singleConfig.parent_id))) {
-    addChain({ id: singleConfig.parent_id, chain_name: chainName });
-  }
+  addChain({ id: singleConfig.parent_id, chain_name: chainName });
 }
 
 class LoadConfig extends Component {
   constructor(props) {
     super(props);
     this.loadConfigs = this.loadConfigs.bind(this);
+    this.onClick = this.onClick.bind(this);
+  }
+
+  onClick() {
+    const { handleClose } = this.props;
+    this.loadConfigs();
+    handleClose();
   }
 
   async loadConfigs() {
@@ -143,11 +171,8 @@ class LoadConfig extends Component {
       addChainCosmosDetails,
       addChainSubstrateDetails,
       addChainChainlinkDetails,
-      cosmosChains,
       addNodeCosmosDetails,
-      substrateChains,
       addNodeSubstrateDetails,
-      chainlinkChains,
       addNodeChainlinkDetails,
       loadThresholdAlertsGeneralDetails,
       loadRepeatAlertsCosmosDetails,
@@ -187,8 +212,8 @@ class LoadConfig extends Component {
               payload.monitor_system = payload.monitor_system === 'true';
               addSystemDetails(payload);
             });
-          } else if (filePath[2] === 'dockers_config.ini') {
-            config = await getConfig('general', 'dockers_config.ini', '', '');
+          } else if (filePath[2] === 'docker_config.ini') {
+            config = await getConfig('general', 'docker_config.ini', '', '');
             Object.values(config.data.result).forEach((value) => {
               const payload = JSON.parse(JSON.stringify(value));
               payload.monitor_docker = payload.monitor_docker === 'true';
@@ -228,15 +253,15 @@ class LoadConfig extends Component {
           if (filePath[2] === 'cosmos') {
             if (filePath[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], cosmosChains, addChainCosmosDetails);
+              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'dockers_config.ini') {
-              config = await getConfig('chain', 'dockers_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], cosmosChains, addChainCosmosDetails);
+            } else if (filePath[4] === 'docker_config.ini') {
+              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'cosmos');
+              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
@@ -244,9 +269,13 @@ class LoadConfig extends Component {
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], cosmosChains, addChainCosmosDetails);
+              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
+                node.monitor_tendermint = node.monitor_tendermint === 'true';
+                node.monitor_rpc = node.monitor_rpc === 'true';
+                node.monitor_prometheus = node.monitor_prometheus === 'true';
+                node.monitor_system = node.monitor_system === 'true';
                 node.is_archive_node = node.is_archive_node === 'true';
                 node.is_validator = node.is_validator === 'true';
                 node.monitor_node = node.monitor_node === 'true';
@@ -260,7 +289,7 @@ class LoadConfig extends Component {
                 filePath[3],
                 'cosmos',
               );
-              CreateChain(config.data.result, filePath[3], cosmosChains, addChainCosmosDetails);
+              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               // Create copies of alerts, if there are missing alerts in the
               // configuration file we'll just use the pre-done alerts.
               const repeatAlerts = JSON.parse(JSON.stringify(cosmosRepeatAlerts));
@@ -352,25 +381,15 @@ class LoadConfig extends Component {
           } else if (filePath[2] === 'substrate') {
             if (filePath[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', filePath[3], 'substrate');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                substrateChains,
-                addChainSubstrateDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'dockers_config.ini') {
-              config = await getConfig('chain', 'dockers_config.ini', filePath[3], 'substrate');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                substrateChains,
-                addChainSubstrateDetails,
-              );
+            } else if (filePath[4] === 'docker_config.ini') {
+              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'substrate');
+              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
@@ -378,12 +397,7 @@ class LoadConfig extends Component {
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'substrate');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                substrateChains,
-                addChainSubstrateDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
                 node.is_archive_node = node.is_archive_node === 'true';
@@ -399,12 +413,7 @@ class LoadConfig extends Component {
                 filePath[3],
                 'substrate',
               );
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                substrateChains,
-                addChainSubstrateDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               // Create copies of alerts, if there are missing alerts in the
               // configuration file we'll just use the pre-done alerts.
               const repeatAlerts = JSON.parse(JSON.stringify(substrateRepeatAlerts));
@@ -496,25 +505,15 @@ class LoadConfig extends Component {
           } else if (filePath[2] === 'chainlink') {
             if (filePath[4] === 'repos_config.ini') {
               config = await getConfig('chain', 'repos_config.ini', filePath[3], 'chainlink');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                chainlinkChains,
-                addChainChainlinkDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'dockers_config.ini') {
-              config = await getConfig('chain', 'dockers_config.ini', filePath[3], 'chainlink');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                chainlinkChains,
-                addChainChainlinkDetails,
-              );
+            } else if (filePath[4] === 'docker_config.ini') {
+              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'chainlink');
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
@@ -522,26 +521,26 @@ class LoadConfig extends Component {
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'chainlink');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                chainlinkChains,
-                addChainChainlinkDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
+                if (node.prometheus_url.length === 0) {
+                  node.prometheus_url = [];
+                } else {
+                  node.prometheus_url = node.prometheus_url.split(',');
+                }
+                if (node.ethereum_address.length === 0) {
+                  node.ethereum_address = [];
+                } else {
+                  node.ethereum_address = node.ethereum_address.split(',');
+                }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
                 addNodeChainlinkDetails(node);
               });
-            } else if (filePath[4] === 'chainlink_config.ini') {
+            } else if (filePath[4] === 'systems_config.ini') {
               config = await getConfig('chain', 'systems_config.ini', filePath[3], 'chainlink');
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                chainlinkChains,
-                addChainChainlinkDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_system = payload.monitor_system === 'true';
@@ -554,12 +553,7 @@ class LoadConfig extends Component {
                 filePath[3],
                 'chainlink',
               );
-              CreateChain(
-                config.data.result,
-                filePath[3],
-                chainlinkChains,
-                addChainChainlinkDetails,
-              );
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               // Create copies of alerts, if there are missing alerts in the
               // configuration file we'll just use the pre-done alerts.
               const repeatAlerts = JSON.parse(JSON.stringify(chainlinkRepeatAlerts));
@@ -778,11 +772,12 @@ class LoadConfig extends Component {
   }
 
   render() {
-    return <LoadConfigButton onClick={this.loadConfigs} />;
+    return <LoadConfigButton onClick={this.onClick} />;
   }
 }
 
 LoadConfig.propTypes = {
+  handleClose: PropTypes.func.isRequired,
   addEmailDetails: PropTypes.func.isRequired,
   addTelegramDetails: PropTypes.func.isRequired,
   addTwilioDetails: PropTypes.func.isRequired,

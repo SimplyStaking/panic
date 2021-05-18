@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { TextField, Typography, Grid } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import { AddAccount } from 'utils/buttons';
+import CssTextField from 'assets/jss/custom-jss/CssTextField';
 
 const UsersForm = ({
   errors, values, handleSubmit, handleChange, saveUserDetails,
@@ -10,38 +11,46 @@ const UsersForm = ({
   <div>
     <form onSubmit={handleSubmit} className="root">
       <Grid container spacing={3} justify="center" alignItems="center">
-        <Grid item xs={2}>
-          <Typography> Username </Typography>
-        </Grid>
-        <Grid item xs={10}>
-          <TextField
+        <Grid item xs={12}>
+          <CssTextField
+            id="user-name-outlined-full-width"
             error={errors.username}
             value={values.username}
+            label="Username"
             type="text"
+            style={{ margin: 8 }}
             name="username"
-            placeholder="panic_user_main"
+            placeholder="PANIC Admin"
             helperText={errors.username ? errors.username : ''}
             onChange={handleChange}
-            inputProps={{ min: 0, style: { textAlign: 'right' } }}
-            autoComplete="off"
             fullWidth
+            margin="normal"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="outlined"
+            autoComplete="off"
           />
         </Grid>
-        <Grid item xs={2}>
-          <Typography> Password </Typography>
-        </Grid>
-        <Grid item xs={10}>
-          <TextField
+        <Grid item xs={12}>
+          <CssTextField
+            id="user-name-outlined-full-width"
             error={errors.password}
             value={values.password}
-            type="password"
+            label="Password"
+            type="text"
+            style={{ margin: 8 }}
             name="password"
             placeholder="*****************"
             helperText={errors.password ? errors.password : ''}
             onChange={handleChange}
-            inputProps={{ min: 0, style: { textAlign: 'right' } }}
-            autoComplete="off"
             fullWidth
+            margin="normal"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="outlined"
+            autoComplete="off"
           />
         </Grid>
         <Grid item xs={8} />

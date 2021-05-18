@@ -477,7 +477,7 @@ function PingNodeExporter({ disabled, exporterUrl }) {
 
 function SaveConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Finish
     </Button>
   );
@@ -485,7 +485,7 @@ function SaveConfigButton({ onClick }) {
 
 function BackButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Back
     </Button>
   );
@@ -493,7 +493,7 @@ function BackButton({ onClick }) {
 
 function StartNewButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Start New
     </Button>
   );
@@ -501,7 +501,7 @@ function StartNewButton({ onClick }) {
 
 function LoadConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Load Config
     </Button>
   );
