@@ -2,13 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Box,
+  Table, TableBody, TableContainer, TableHead, TableRow, Button,
+  Box, Typography,
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
@@ -195,7 +190,11 @@ const SubstrateChainsTable = ({
         <TableBody>
           {config.allIds.map((id) => (
             <StyledTableRow key={id}>
-              <StyledTableCell align="center">{config.byId[id].chain_name}</StyledTableCell>
+              <StyledTableCell align="center">
+                <Typography variant="h6" style={{ fontWeight: '450' }}>
+                  {config.byId[id].chain_name}
+                </Typography>
+              </StyledTableCell>
               <StyledTableCell align="center">
                 <Box px={2}>
                   <Button

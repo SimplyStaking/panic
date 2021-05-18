@@ -13,8 +13,6 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-// import { NEXT, BACK } from 'constants/constants';
-// import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 import { PingNodeExporter } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
@@ -188,6 +186,7 @@ const NodesForm = ({
                       )}
                       label="Monitor"
                       labelPlacement="start"
+                      disabled
                     />
                   </Grid>
                 </Grid>
@@ -242,6 +241,7 @@ const NodesForm = ({
                       )}
                       label="Monitor"
                       labelPlacement="start"
+                      disabled
                     />
                   </Grid>
                 </Grid>
@@ -465,28 +465,6 @@ const NodesForm = ({
                     </Button>
                   </Grid>
                 </Grid>
-                {/* <Grid item xs={12} style={{ marginBottom: '150px' }} />
-                <Grid item xs={4} />
-                <Grid item xs={2}>
-                  <Box px={2}>
-                    <StepButtonContainer
-                      disabled={false}
-                      text={BACK}
-                      navigation={data.nodeForm.backStep}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={2}>
-                  <Box px={2}>
-                    <StepButtonContainer
-                      disabled={false}
-                      text={NEXT}
-                      navigation={data.nodeForm.nextStep}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={4} />
-                <Grid item xs={12} /> */}
               </Grid>
             </form>
           </Box>

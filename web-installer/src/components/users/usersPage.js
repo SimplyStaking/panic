@@ -61,15 +61,13 @@ function UsersPage() {
                           borderColor="grey.300"
                         >
                           <UsersFormContainer />
-                          <br />
-                          <br />
-                          <UsersTableContainer />
                         </Box>
                       </Box>
                     </Grid>
                   </Grid>
                 </Box>
               </div>
+              <UsersTableContainer />
               <Box py={5}>
                 <Grid container spacing={3} justify="center" alignItems="center">
                   <Grid item xs={4} />

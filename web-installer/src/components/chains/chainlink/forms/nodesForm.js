@@ -2,12 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Typography,
-  Box,
-  Grid,
-  Switch,
-  FormControlLabel,
-  Tooltip,
+  Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
   InputAdornment,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
@@ -111,13 +106,11 @@ const NodesForm = ({
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...params}
                         id="prometheus-url-outlined-full-width"
-                        error={errors.prometheus_url}
                         label="Prometheus URL"
                         type="text"
                         style={{ margin: 8 }}
                         name="prometheus_url"
                         placeholder={data.nodeForm.prometheusHolder}
-                        helperText={errors.prometheus_url ? errors.prometheus_url : ''}
                         fullWidth
                         margin="normal"
                         InputLabelProps={{

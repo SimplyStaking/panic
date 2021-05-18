@@ -2,13 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Box,
+  Table, TableBody, TableContainer, TableHead, TableRow, Button,
+  Box, Typography,
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
@@ -63,9 +58,7 @@ const CosmosChainsTable = ({
     let index = 0;
 
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
-      telegramPayload = JSON.parse(
-        JSON.stringify(telegrams.byId[telegrams.allIds[i]]),
-      );
+      telegramPayload = JSON.parse(JSON.stringify(telegrams.byId[telegrams.allIds[i]]));
       if (telegramPayload.parent_ids.includes(chainID)) {
         index = telegramPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -80,9 +73,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < twilios.allIds.length; i += 1) {
-      twilioPayload = JSON.parse(
-        JSON.stringify(twilios.byId[twilios.allIds[i]]),
-      );
+      twilioPayload = JSON.parse(JSON.stringify(twilios.byId[twilios.allIds[i]]));
       if (twilioPayload.parent_ids.includes(chainID)) {
         index = twilioPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -112,9 +103,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < opsgenies.allIds.length; i += 1) {
-      opsGeniePayload = JSON.parse(
-        JSON.stringify(opsgenies.byId[opsgenies.allIds[i]]),
-      );
+      opsGeniePayload = JSON.parse(JSON.stringify(opsgenies.byId[opsgenies.allIds[i]]));
       if (opsGeniePayload.parent_ids.includes(chainID)) {
         index = opsGeniePayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -129,9 +118,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < pagerduties.allIds.length; i += 1) {
-      pagerDutyPayload = JSON.parse(
-        JSON.stringify(pagerduties.byId[pagerduties.allIds[i]]),
-      );
+      pagerDutyPayload = JSON.parse(JSON.stringify(pagerduties.byId[pagerduties.allIds[i]]));
       if (pagerDutyPayload.parent_ids.includes(chainID)) {
         index = pagerDutyPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -146,9 +133,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < slacks.allIds.length; i += 1) {
-      slackPayload = JSON.parse(
-        JSON.stringify(slacks.byId[slacks.allIds[i]]),
-      );
+      slackPayload = JSON.parse(JSON.stringify(slacks.byId[slacks.allIds[i]]));
       if (slackPayload.parent_ids.includes(chainID)) {
         index = slackPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -206,7 +191,11 @@ const CosmosChainsTable = ({
         <TableBody>
           {config.allIds.map((id) => (
             <StyledTableRow key={id}>
-              <StyledTableCell align="center">{config.byId[id].chain_name}</StyledTableCell>
+              <StyledTableCell align="center">
+                <Typography variant="h6" style={{ fontWeight: '450' }}>
+                  {config.byId[id].chain_name}
+                </Typography>
+              </StyledTableCell>
               <StyledTableCell align="center">
                 <Box px={2}>
                   <Button

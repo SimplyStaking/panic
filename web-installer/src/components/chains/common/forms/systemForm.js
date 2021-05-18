@@ -101,7 +101,7 @@ const SystemForm = ({
                     style={{ margin: 8 }}
                     name="exporter_url"
                     placeholder={data.systemForm.exporterUrlHolder}
-                    helperText={errors.name ? errors.name : ''}
+                    helperText={errors.exporter_url ? errors.exporter_url : ''}
                     onChange={handleChange}
                     fullWidth
                     margin="normal"
