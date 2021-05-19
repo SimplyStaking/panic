@@ -9,6 +9,7 @@ import {
   Button,
   List,
   ListItem,
+  Box,
 } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
@@ -22,76 +23,70 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
     return <div />;
   }
   return (
-    <TableContainer component={Paper}>
-      <Table className="greyBackground" aria-label="emails table">
-        <TableHead>
-          <TableRow>
-            <StyledTableCell align="center">Email Name</StyledTableCell>
-            <StyledTableCell align="center">SMTP</StyledTableCell>
-            <StyledTableCell align="center">Port</StyledTableCell>
-            <StyledTableCell align="center">Email From</StyledTableCell>
-            <StyledTableCell align="center">Email To</StyledTableCell>
-            <StyledTableCell align="center">Username</StyledTableCell>
-            <StyledTableCell align="center">Password</StyledTableCell>
-            <StyledTableCell align="center">Info</StyledTableCell>
-            <StyledTableCell align="center">Warning</StyledTableCell>
-            <StyledTableCell align="center">Critical</StyledTableCell>
-            <StyledTableCell align="center">Error</StyledTableCell>
-            <StyledTableCell align="center">Delete</StyledTableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Object.keys(emails.byId).map((email) => (
-            <StyledTableRow key={emails.byId[email].id}>
-              <StyledTableCell align="center">
-                {emails.byId[email].channel_name}
-              </StyledTableCell>
-              <StyledTableCell align="center">{emails.byId[email].smtp}</StyledTableCell>
-              <StyledTableCell align="center">{emails.byId[email].port}</StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].email_from}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                <div style={{ maxHeight: 70, overflow: 'auto' }}>
-                  <List>
-                    {emails.byId[email].emails_to.map((to) => (
-                      <ListItem key={to}>{to}</ListItem>
-                    ))}
-                  </List>
-                </div>
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].username}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].password}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].warning ? <CheckIcon /> : <ClearIcon />}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].critical ? <CheckIcon /> : <ClearIcon />}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
-              </StyledTableCell>
-              <StyledTableCell align="center">
-                <Button
-                  onClick={() => {
-                    removeEmailDetails(emails.byId[email]);
-                  }}
-                >
-                  <CancelIcon />
-                </Button>
-              </StyledTableCell>
-            </StyledTableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <Box pt={8}>
+      <TableContainer component={Paper}>
+        <Table className="greyBackground" aria-label="emails table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell align="center">Email Name</StyledTableCell>
+              <StyledTableCell align="center">SMTP</StyledTableCell>
+              <StyledTableCell align="center">Port</StyledTableCell>
+              <StyledTableCell align="center">Email From</StyledTableCell>
+              <StyledTableCell align="center">Email To</StyledTableCell>
+              <StyledTableCell align="center">Username</StyledTableCell>
+              <StyledTableCell align="center">Password</StyledTableCell>
+              <StyledTableCell align="center">Info</StyledTableCell>
+              <StyledTableCell align="center">Warning</StyledTableCell>
+              <StyledTableCell align="center">Critical</StyledTableCell>
+              <StyledTableCell align="center">Error</StyledTableCell>
+              <StyledTableCell align="center">Delete</StyledTableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Object.keys(emails.byId).map((email) => (
+              <StyledTableRow key={emails.byId[email].id}>
+                <StyledTableCell align="center">{emails.byId[email].channel_name}</StyledTableCell>
+                <StyledTableCell align="center">{emails.byId[email].smtp}</StyledTableCell>
+                <StyledTableCell align="center">{emails.byId[email].port}</StyledTableCell>
+                <StyledTableCell align="center">{emails.byId[email].email_from}</StyledTableCell>
+                <StyledTableCell align="center">
+                  <div style={{ maxHeight: 70, overflow: 'auto' }}>
+                    <List>
+                      {emails.byId[email].emails_to.map((to) => (
+                        <ListItem key={to}>{to}</ListItem>
+                      ))}
+                    </List>
+                  </div>
+                </StyledTableCell>
+                <StyledTableCell align="center">{emails.byId[email].username}</StyledTableCell>
+                <StyledTableCell align="center">{emails.byId[email].password}</StyledTableCell>
+                <StyledTableCell align="center">
+                  {emails.byId[email].info ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {emails.byId[email].warning ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {emails.byId[email].critical ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {emails.byId[email].error ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Button
+                    onClick={() => {
+                      removeEmailDetails(emails.byId[email]);
+                    }}
+                  >
+                    <CancelIcon />
+                  </Button>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

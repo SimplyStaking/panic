@@ -27,11 +27,6 @@ export const PAGERDUTY = 'PagerDuty';
 export const OPSGENIE = 'OpsGenie';
 export const SLACK = 'Slack';
 
-// Used for chain names
-export const COSMOS = 'Cosmos';
-export const SUBSTRATE = 'Substrate';
-export const CHAINLINK = 'Chainlink';
-
 // Used as Step Names in Multi-Step Chain Setup Form
 export const ALERTS_STEP = 'ALERTS_STEP';
 export const CHAINS_STEP = 'CHAINS_STEP';

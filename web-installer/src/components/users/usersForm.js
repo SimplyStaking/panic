@@ -34,7 +34,7 @@ const UsersForm = ({
         </Grid>
         <Grid item xs={12}>
           <CssTextField
-            id="user-name-outlined-full-width"
+            id="password-name-outlined-full-width"
             error={errors.password}
             value={values.password}
             label="Password"
