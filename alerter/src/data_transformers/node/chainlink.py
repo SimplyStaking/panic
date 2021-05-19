@@ -240,3 +240,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 # TODO: We need to check which metrics are reset whenever a switch of nodes
 #     : happen. This is important because it may effect the state of the alerter
 # TODO: Do previous for last_source_used in meta-data
+# TODO: Get last usage from last element in list to plot data according to
+#     : timestamp
+# TODO: In redis store entire dicts
+# TODO: current_gas_price store as it is
+# TODO: For current_gas_price we still need to update state if
+#     : current_gas_price = None all of a sudden. We Can just send none or send
+#     : the dict immediately.

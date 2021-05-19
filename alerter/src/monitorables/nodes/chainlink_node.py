@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, Dict, Union, List
 
 from src.monitorables.nodes.node import Node
+from src.utils.exceptions import InvalidDictSchemaException
 
 
 class ChainlinkNode(Node):
@@ -30,17 +31,6 @@ class ChainlinkNode(Node):
         # Some meta-data
         self._last_prometheus_source_used = None
         self._last_monitored_prometheus = None
-
-        # TODO: In redis store entire dicts
-        # TODO: current_gas_price store as it is
-        # TODO: For eth_balance also store this dict:
-        #     : { balance: Z, average_usage_hour: U, historical_usage_hour: [{timestamp: X, usage: Y}] }
-        #     : Intervals of 5 mins. When balance comes, store it in balance .. calculate difference
-        #     : from old and store in historical usage. Note that on top-up we set the data to zero
-        #     : not to negative, or do not set any data.
-        # TODO: Set methods must be done according to how we are going to store
-        #     : the data as dicts. For eth balance we need to do one for the
-        #     : balance and one for the usage.
 
     @property
     def is_down(self) -> bool:
@@ -102,18 +92,6 @@ class ChainlinkNode(Node):
     def eth_balance_info(self) \
             -> Dict[str, Dict[str, Union[float, List[Dict[str, float]]]]]:
         return self._eth_balance_info
-
-    def get_eth_balance(self, eth_address: str) -> Optional[float]:
-        if eth_address in self._eth_balance_info:
-            return self._eth_balance_info[eth_address]['balance']
-        else:
-            return None
-
-    def get_average_usage_hour(self, eth_address: str) -> Optional[float]:
-        if eth_address in self._eth_balance_info:
-            return self._eth_balance_info[eth_address]['average_usage_hour']
-        else:
-            return None
 
     @property
     def get_last_prometheus_source_used(self) -> Optional[str]:
@@ -180,11 +158,26 @@ class ChainlinkNode(Node):
 
     def set_current_gas_price_info(self, new_percentile: Optional[float],
                                    new_price: Optional[float]) -> None:
+        """
+        This method sets the current_gas_price_info dict based on the new
+        percentile and price. This is done in this way to protect the Dict
+        schema.
+        :param new_percentile: The new percentile to be stored
+        :param new_price: The new gas to be stored
+        :return: None
+        """
         self._current_gas_price_info['percentile'] = new_percentile
         self._current_gas_price_info['price'] = new_price
 
     @staticmethod
     def _new_eth_balance_info_valid(new_eth_balance_info: Dict) -> bool:
+        """
+        This method checks that the new eth_balance_info dict obeys the required
+        schema.
+        :param new_eth_balance_info: The dict to check
+        :return: True if the dict obeys the required schema
+               : False otherwise
+        """
         if new_eth_balance_info == {}:
             return True
 
@@ -192,15 +185,15 @@ class ChainlinkNode(Node):
                 and isinstance(new_eth_balance_info['balance'], float)):
             return False
 
-        if not ('average_usage_hour' in new_eth_balance_info
-                and isinstance(new_eth_balance_info['average_usage_hour'],
+        if not ('total_usage_last_hour' in new_eth_balance_info
+                and isinstance(new_eth_balance_info['total_usage_last_hour'],
                                float)):
             return False
 
-        if 'historical_usage_hour' in new_eth_balance_info and isinstance(
-                new_eth_balance_info['historical_usage_hour'], List):
+        if 'historical_usage_last_hour' in new_eth_balance_info and isinstance(
+                new_eth_balance_info['historical_usage_last_hour'], List):
             for historical_data in \
-                    new_eth_balance_info['historical_usage_hour']:
+                    new_eth_balance_info['historical_usage_last_hour']:
                 if not isinstance(historical_data, Dict):
                     return False
 
@@ -222,10 +215,62 @@ class ChainlinkNode(Node):
         if self._new_eth_balance_info_valid(new_eth_balance_info):
             self._eth_balance_info = new_eth_balance_info
         else:
-            pass
+            raise InvalidDictSchemaException('new_eth_balance_info')
 
-        # TODO: Check if valid dict. If yes set it if not raise an error.
-        pass
+    def update_eth_balance(self, eth_address: str, new_balance: float,
+                           timestamp: float) -> None:
+        """
+        This method updates the balance of an eth address as follows:
+        1. If eth_address is not in self._eth_balance_info, a new entry is
+           creates for that eth_address
+        2. If eth_address is in self._eth_balance_info
+           i.   Store the new balance
+           ii.  If a balance top-up occurred, add a 0 historical usage as latest
+                usage. Otherwise calculate the latest usage and store it.
+           iii. Delete data entries which were stored more than 1 hour ago
+            iv. Update the usage in the past hour
+        :param eth_address: The Ethereum address in question
+        :param new_balance: The new balance to store
+        :param timestamp: The timestamp of when the new_balance was obtained
+        :return: None
+        """
+        if eth_address in self._eth_balance_info:
+            old_balance = self._eth_balance_info[eth_address]['balance']
+            self._eth_balance_info[eth_address]['balance'] = new_balance
+
+            if new_balance > old_balance:
+                self._eth_balance_info[eth_address][
+                    'historical_usage_last_hour'].append(
+                    {'timestamp': timestamp, 'usage': 0.0})
+            else:
+                new_usage = old_balance - new_balance
+                self._eth_balance_info[eth_address][
+                    'historical_usage_last_hour'].append(
+                    {'timestamp': timestamp, 'usage': new_usage})
+
+            historical_usage_last_hour = self._eth_balance_info[eth_address][
+                'historical_usage_last_hour']
+            old_historical_usage_last_hour = historical_usage_last_hour.copy()
+            for index, data in enumerate(old_historical_usage_last_hour):
+                if timestamp - data['timestamp'] > 3600:
+                    del historical_usage_last_hour[index]
+                else:
+                    break
+
+            new_total_usage_last_hour = sum(
+                [datum['usage'] for datum in historical_usage_last_hour])
+            self._eth_balance_info[eth_address][
+                'total_usage_last_hour'] = new_total_usage_last_hour
+        else:
+            new_entry = {
+                'balance': new_balance, 'total_usage_last_hour': 0.0,
+                'historical_usage_last_hour': [
+                    {
+                        'timestamp': timestamp, 'usage': 0.0
+                    }
+                ]
+            }
+            self._eth_balance_info[eth_address] = new_entry
 
     def last_prometheus_source_used(
             self, new_last_prometheus_source_used: Optional[str]) -> None:
@@ -241,3 +286,25 @@ class ChainlinkNode(Node):
         :return: None
         """
         pass
+
+# self._went_down_at = None
+#         self._current_height = None
+#         self._eth_blocks_in_queue = None
+#         self._total_block_headers_received = None
+#         self._total_block_headers_dropped = None
+#         self._no_of_active_jobs = None
+#         self._max_pending_tx_delay = None
+#         self._process_start_time_seconds = None
+#         self._total_tx_gas_bumps = None
+#         self._total_gas_bumps_exceeds_limit = None
+#         self._no_of_unconfirmed_txs = None
+#         self._total_errored_job_runs = None
+#         self._current_gas_price_info = {
+#             'percentile': None,
+#             'price': None,
+#         }
+#         self._eth_balance_info = {}
+#
+#         # Some meta-data
+#         self._last_prometheus_source_used = None
+#         self._last_monitored_prometheus = None
