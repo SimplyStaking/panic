@@ -11,7 +11,6 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
-from src.alerter.alerts.internal_alerts import (ComponentReset)
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
