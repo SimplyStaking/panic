@@ -257,7 +257,8 @@ class TestSystemAlertersManager(unittest.TestCase):
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(SYS_ALERTERS_MAN_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(
+                SYS_ALERTERS_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -643,11 +644,13 @@ class TestSystemAlertersManager(unittest.TestCase):
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(SystemAlertersManager,
+                   "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_stores_modified_configs_to_be_alerted_on_correctly(
-            self, mock_join, mock_terminate, mock_start, mock_ack,
+            self, mock_join, mock_terminate, mock_start, mock_push, mock_ack,
             mock_system_alerts_config) -> None:
 
         mock_ack.return_value = None
@@ -807,9 +810,9 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_1]['process'].is_alive())
+                self.parent_id_1]['process'].is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_2]['process'].is_alive())
+                self.parent_id_2]['process'].is_alive())
 
             # Give some time till the process starts
             time.sleep(1)
@@ -846,10 +849,10 @@ class TestSystemAlertersManager(unittest.TestCase):
             # started.
             self.assertFalse(parent_id_1_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_1]['process'].is_alive())
+                self.parent_id_1]['process'].is_alive())
             self.assertFalse(parent_id_2_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_2]['process'].is_alive())
+                self.parent_id_2]['process'].is_alive())
 
             # Clean before finishing
             self.test_manager.parent_id_process_dict[self.parent_id_1][
@@ -896,9 +899,9 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_1]['process'].is_alive())
+                self.parent_id_1]['process'].is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                                self.parent_id_2]['process'].is_alive())
+                self.parent_id_2]['process'].is_alive())
 
             # Give some time till the process starts
             time.sleep(1)
@@ -938,11 +941,13 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
+    @mock.patch.object(SystemAlertersManager,
                        "_create_and_start_alerter_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_alerter_with_the_correct_conf(
-            self, mock_terminate, mock_join, startup_mock, mock_ack,
+            self, mock_terminate, mock_join, startup_mock, mock_push, mock_ack,
             mock_system_alerters_config) -> None:
 
         mock_ack.return_value = None
@@ -1009,14 +1014,17 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mock_system_alerters_config_1, self.parent_id_1,
                 self.chain_1
             )
+            mock_push.assert_called_once()
 
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties,
                                                body_updated_configs_general)
+
             startup_mock.assert_called_with(
                 mock_system_alerters_config_2, self.parent_id_2,
                 self.chain_2
             )
+            self.assertEqual(2, mock_push.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1160,7 +1168,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1188,7 +1197,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                         'component_name'],
+                        'component_name'],
                      self.test_manager.parent_id_process_dict[self.parent_id_2][
                          'component_name']],
                 'dead_processes': [],
@@ -1238,7 +1247,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1266,9 +1276,9 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                         'component_name']],
+                        'component_name']],
                 'dead_processes': [self.test_manager.parent_id_process_dict[
-                                       self.parent_id_2]['component_name']],
+                    self.parent_id_2]['component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
@@ -1315,7 +1325,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key='heartbeat.manager')
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1344,7 +1355,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'running_processes': [],
                 'dead_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                         'component_name'],
+                        'component_name'],
                      self.test_manager.parent_id_process_dict[self.parent_id_2][
                          'component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
@@ -1399,12 +1410,13 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_manager.parent_id_process_dict[
-                                 self.parent_id_1]['process'].is_alive())
+                self.parent_id_1]['process'].is_alive())
             self.assertFalse(self.test_manager.parent_id_process_dict[
-                                 self.parent_id_2]['process'].is_alive())
+                self.parent_id_2]['process'].is_alive())
 
             # initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key='heartbeat.manager')
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)

@@ -14,7 +14,8 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS,
                                  GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
                                  NODES_CONFIG, COSMOS_NODE_CONFIG,
-                                 SUBSTRATE_NODE_CONFIG, GLOBAL)
+                                 SUBSTRATE_NODE_CONFIG, GLOBAL,
+                                 MONITORABLES_PARSING_HELPER)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import str_to_bool
@@ -24,39 +25,6 @@ class ConfigStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
-        """
-        This configuration object is useful as when COSMOS and SUBSTRATE nodes
-        are added, they will have multiple monitorable sources and not just
-        systems, therefore by storing them in a list and iterating through
-        the dictionaries it is easier to bundle up the list of monitorable
-        data.
-        """
-        self.helper_configuration = {
-            REPOS_CONFIG: [{
-                "id": 'id',
-                "name_key": 'repo_name',
-                "monitor_key": 'monitor_repo',
-                "config_key": 'repos'
-            }],
-            SYSTEMS_CONFIG: [{
-                "id": 'id',
-                "name_key": 'name',
-                "monitor_key": 'monitor_system',
-                "config_key": 'systems'
-            }],
-            COSMOS_NODE_CONFIG: [{
-                "id": 'id',
-                "name_key": 'name',
-                "monitor_key": 'monitor_system',
-                "config_key": 'systems'
-            }],
-            SUBSTRATE_NODE_CONFIG: [{
-                "id": 'id',
-                "name_key": 'name',
-                "monitor_key": 'monitor_system',
-                "config_key": 'systems'
-            }]
-        }
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -199,7 +167,7 @@ class ConfigStore(Store):
                 # Delete the data corresponding to the routing key
                 if data_for_store:
                     current_helper_config = \
-                        self.helper_configuration[config_type_key]
+                       MONITORABLES_PARSING_HELPER[config_type_key]
 
                     for helper_keys in current_helper_config:
                         del data_for_store[source_chain_name]['monitored'][
@@ -278,7 +246,7 @@ class ConfigStore(Store):
         """
         monitored_list = []
         not_monitored_list = []
-        current_helper_config = self.helper_configuration[config_type_key]
+        current_helper_config = MONITORABLES_PARSING_HELPER[config_type_key]
 
         for helper_keys in current_helper_config:
             # Get a list of all the id's for the received data
