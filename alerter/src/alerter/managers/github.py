@@ -1,3 +1,4 @@
+import copy
 import logging
 import sys
 from datetime import datetime
@@ -14,7 +15,9 @@ from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
+                                 ALERT_EXCHANGE)
+from src.alerter.alerts.internal_alerts import ComponentResetAllChains
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -52,6 +55,12 @@ class GithubAlerterManager(AlertersManager):
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
         self.rabbitmq.confirm_delivery()
 
@@ -96,9 +105,11 @@ class GithubAlerterManager(AlertersManager):
             raise e
 
     def _start_alerters_processes(self) -> None:
-        # Start the system data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
+        """
+        Start the system data transformer in a separate process if it is not
+        yet started or it is not alive. This must be done in case of a
+        restart of the manager.
+        """
         if GITHUB_ALERTER_NAME not in self.alerter_process_dict or \
                 not self.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive():
             log_and_print("Attempting to start the {}.".format(
@@ -109,6 +120,16 @@ class GithubAlerterManager(AlertersManager):
             github_alerter_process.start()
             self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
                 github_alerter_process
+
+            """
+            We must clear out all the metrics which are found in REDIS,
+            sending this alert to the data store will achieve this.
+            """
+            alert = ComponentResetAllChains(type(self).__name__,
+                                            datetime.now().timestamp(),
+                                            type(self).__name__,
+                                            type(self).__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
@@ -133,14 +154,19 @@ class GithubAlerterManager(AlertersManager):
                       "closed, and any running github alerters will be "
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
-        self.disconnect_from_rabbit()
 
         for alerter, process in self.alerter_process_dict.items():
             log_and_print("Terminating the process of {}".format(alerter),
                           self.logger)
             process.terminate()
             process.join()
+            alert = ComponentResetAllChains(type(self).__name__,
+                                            datetime.now().timestamp(),
+                                            type(self).__name__,
+                                            type(self).__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
@@ -150,5 +176,11 @@ class GithubAlerterManager(AlertersManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def _send_data(self, *args) -> None:
-        pass
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+        self._push_to_queue(
+            data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
+            routing_key='alert_router.github',
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True
+        )
+        self._send_data()

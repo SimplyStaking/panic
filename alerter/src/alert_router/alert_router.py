@@ -1,7 +1,7 @@
 import json
 import sys
-from configparser import ConfigParser, NoOptionError, NoSectionError, \
-    SectionProxy
+from configparser import (ConfigParser, NoOptionError, NoSectionError,
+                          SectionProxy)
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger

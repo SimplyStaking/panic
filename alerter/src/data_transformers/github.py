@@ -39,7 +39,7 @@ class GitHubDataTransformer(DataTransformer):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE)
         self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE, False, True, False,

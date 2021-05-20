@@ -15,6 +15,7 @@ GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'github_monitors_manager_configs_queue'
 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_monitors_manager_configs_queue'
+NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = 'node_monitors_manager_configs_queue'
 
 # Routing keys and queue names
 GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
@@ -52,6 +53,10 @@ TCH_INPUT_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_INPUT_QUEUE = 'channels_manager_ping_queue'
 CHANNELS_MANAGER_HB_ROUTING_KEY = 'ping'
 CHANNELS_MANAGER_CONFIG_ROUTING_KEY = 'channels.*'
+
+NODE_MON_MAN_INPUT_QUEUE = 'node_monitors_manager_ping_queue'
+NODE_MON_MAN_INPUT_ROUTING_KEY = 'ping'
+NODE_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
 
 # Sleep periods
 RESTART_SLEEPING_PERIOD = 10
@@ -120,6 +125,7 @@ SYSTEM_DATA_TRANSFORMER_NAME = 'System Data Transformer'
 GITHUB_DATA_TRANSFORMER_NAME = 'GitHub Data Transformer'
 SYSTEM_MONITORS_MANAGER_NAME = 'System Monitors Manager'
 GITHUB_MONITORS_MANAGER_NAME = 'GitHub Monitors Manager'
+NODE_MONITORS_MANAGER_NAME = 'Node Monitors Manager'
 DATA_TRANSFORMERS_MANAGER_NAME = 'Data Transformers Manager'
 SYSTEM_ALERTERS_MANAGER_NAME = 'System Alerters Manager'
 GITHUB_ALERTER_MANAGER_NAME = 'GitHub Alerter Manager'
@@ -138,6 +144,7 @@ LOG_CHANNEL_ID = 'LOG'
 SYSTEM_ALERTER_NAME_TEMPLATE = 'System alerter ({})'
 GITHUB_MONITOR_NAME_TEMPLATE = 'GitHub monitor ({})'
 SYSTEM_MONITOR_NAME_TEMPLATE = 'System monitor ({})'
+NODE_MONITOR_NAME_TEMPLATE = 'Node monitor ({})'
 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE = 'Telegram Alerts Handler ({})'
 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE = 'Telegram Commands Handler ({})'
 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE = 'Twilio Alerts Handler ({})'
@@ -146,3 +153,56 @@ EMAIL_ALERTS_HANDLER_NAME_TEMPLATE = 'Email Alerts Handler ({})'
 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE = 'Opsgenie Alerts Handler ({})'
 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE = 'Console Alerts Handler ({})'
 LOG_ALERTS_HANDLER_NAME_TEMPLATE = 'Log Alerts Handler ({})'
+
+# CONFIG Folder Identifiers
+GENERAL = 'general'
+CHAINS = 'chains'
+CHANNELS = 'channels'
+GLOBAL = 'global'
+COSMOS_NODE_CONFIG = 'cosmos_nodes_config'
+SUBSTRATE_NODE_CONFIG = 'substrate_nodes_config'
+NODES_CONFIG = 'nodes_config'
+REPOS_CONFIG = 'repos_config'
+SYSTEMS_CONFIG = 'systems_config'
+ALERTS_CONFIG = 'alerts_config'
+TELEGRAM_CONFIG = 'telegram_config'
+EMAIL_CONFIG = 'email_config'
+OPSGENIE_CONFIG = 'opsgenie_config'
+PAGERDUTY_CONFIG = 'pagerduty_config'
+TWILIO_CONFIG = 'twilio_config'
+
+
+# Helpers to assist with routing key parsing
+"""
+This configuration object is useful as when COSMOS and SUBSTRATE nodes
+are added, they will have multiple monitorable sources and not just
+systems, therefore by storing them in a list and iterating through
+the dictionaries it is easier to bundle up the list of monitorable
+data.
+"""
+MONITORABLES_PARSING_HELPER = {
+    REPOS_CONFIG: [{
+        "id": 'id',
+        "name_key": 'repo_name',
+        "monitor_key": 'monitor_repo',
+        "config_key": 'repos'
+    }],
+    SYSTEMS_CONFIG: [{
+        "id": 'id',
+        "name_key": 'name',
+        "monitor_key": 'monitor_system',
+        "config_key": 'systems'
+    }],
+    COSMOS_NODE_CONFIG: [{
+        "id": 'id',
+        "name_key": 'name',
+        "monitor_key": 'monitor_system',
+        "config_key": 'systems'
+    }],
+    SUBSTRATE_NODE_CONFIG: [{
+        "id": 'id',
+        "name_key": 'name',
+        "monitor_key": 'monitor_system',
+        "config_key": 'systems'
+    }]
+}

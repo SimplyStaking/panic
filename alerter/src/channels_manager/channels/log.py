@@ -1,8 +1,8 @@
 import logging
 
+from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.channel import Channel
-from src.utils.alert import Severity
 from src.utils.data import RequestStatus
 
 
@@ -37,6 +37,10 @@ class LogChannel(Channel):
                 self._alerts_logger.error(msg)
                 self.logger.info("Sent %s to alert logs.",
                                  alert.alert_code.name)
+                return RequestStatus.SUCCESS
+            elif alert_severity == Severity.INTERNAL.value:
+                # We do not want to log internal alerts as it's not useful to
+                # the user
                 return RequestStatus.SUCCESS
             else:
                 self.logger.error("Alert has invalid severity %s",

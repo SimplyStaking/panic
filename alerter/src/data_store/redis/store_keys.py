@@ -34,16 +34,21 @@ _key_chain_mute_alerts = 'ch1'
 # confx_<config_type>
 _key_config = 'conf1'
 
-# alertX_<origin_id>
-_key_alert_open_file_descriptors = 'alert1'
-_key_alert_system_cpu_usage = 'alert2'
-_key_alert_system_storage_usage = 'alert3'
-_key_alert_system_ram_usage = 'alert4'
-_key_alert_system_is_down = 'alert5'
-_key_alert_metric_not_found = 'alert6'
-_key_alert_invalid_url = 'alert7'
-_key_alert_github_release = 'alert8'
-_key_alert_cannot_access_github = 'alert9'
+# bcX_<base_chain>
+_key_base_chain_monitorables_info = 'bc1'
+
+# alert_systemX_<origin_id>
+_key_alert_open_file_descriptors = 'alert_system1'
+_key_alert_system_cpu_usage = 'alert_system2'
+_key_alert_system_storage_usage = 'alert_system3'
+_key_alert_system_ram_usage = 'alert_system4'
+_key_alert_system_is_down = 'alert_system5'
+_key_alert_metric_not_found = 'alert_system6'
+_key_alert_invalid_url = 'alert_system7'
+
+# alert_githubX_<origin_id>
+_key_alert_github_release = 'alert_github1'
+_key_alert_cannot_access_github = 'alert_github2'
 
 
 class Keys:
@@ -187,3 +192,7 @@ class Keys:
     @staticmethod
     def get_alert_cannot_access_github(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id
+
+    @staticmethod
+    def get_base_chain_monitorables_info(base_chain: str) -> str:
+        return Keys._as_prefix(_key_base_chain_monitorables_info) + base_chain

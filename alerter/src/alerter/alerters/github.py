@@ -6,6 +6,7 @@ from typing import List
 
 import pika.exceptions
 
+from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert,
@@ -63,6 +64,10 @@ class GithubAlerter(Alerter):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
+    def _create_state_for_github(self, github_id: str) -> None:
+        if github_id not in self._cannot_access_github_page:
+            self._cannot_access_github_page[github_id] = False
+
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
                       method: pika.spec.Basic.Deliver,
@@ -79,12 +84,11 @@ class GithubAlerter(Alerter):
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
 
-                if meta['repo_id'] not in self._cannot_access_github_page:
-                    self._cannot_access_github_page[meta['repo_id']] = True
+                self._create_state_for_github(meta['repo_id'])
 
                 if self._cannot_access_github_page[meta['repo_id']]:
                     alert = GitHubPageNowAccessibleAlert(
-                        meta['repo_name'], 'INFO',
+                        meta['repo_name'], Severity.INFO.value,
                         meta['last_monitored'], meta['repo_parent_id'],
                         meta['repo_id'])
                     data_for_alerting.append(alert.alert_data)
@@ -99,7 +103,8 @@ class GithubAlerter(Alerter):
                         alert = NewGitHubReleaseAlert(
                             meta['repo_name'],
                             data['releases'][str(i)]['release_name'],
-                            data['releases'][str(i)]['tag_name'], 'INFO',
+                            data['releases'][str(i)]['tag_name'],
+                            Severity.INFO.value,
                             meta['last_monitored'], meta['repo_parent_id'],
                             meta['repo_id']
                         )
@@ -107,17 +112,21 @@ class GithubAlerter(Alerter):
                         self.logger.debug("Successfully classified alert %s",
                                           alert.alert_data)
             elif 'error' in data_received:
+                """
+                CannotAccessGithubPageAlert repeats constantly on each
+                monitoring round (DEFAULT: 1 hour). This has repeat timer as
+                it's an indication that the configuration is wrong and should
+                be fixed.
+                """
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']
 
-                    if meta_data['repo_id'] not in \
-                            self._cannot_access_github_page:
-                        self._cannot_access_github_page[meta_data['repo_id']] \
-                            = True
+                    self._create_state_for_github(meta_data['repo_id'])
 
                     alert = CannotAccessGitHubPageAlert(
-                        meta_data['repo_name'], 'ERROR', meta_data['time'],
-                        meta_data['repo_parent_id'], meta_data['repo_id']
+                        meta_data['repo_name'], Severity.ERROR.value,
+                        meta_data['time'], meta_data['repo_parent_id'],
+                        meta_data['repo_id']
                     )
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
