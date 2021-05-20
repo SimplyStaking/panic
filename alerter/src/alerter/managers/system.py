@@ -124,9 +124,9 @@ class SystemAlertersManager(AlertersManager):
                 # Send an internal alert to reset all the REDIS metrics for
                 # this chain
                 alert = ComponentResetChains(chain,
-                                       datetime.now().timestamp(),
-                                       parent_id,
-                                       type(self).__name__)
+                                             datetime.now().timestamp(),
+                                             parent_id,
+                                             type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _create_and_start_alerter_process(
@@ -255,9 +255,9 @@ class SystemAlertersManager(AlertersManager):
                 # Send an internal alert to reset system alert REDIS metrics
                 # for all chains.
                 alert = ComponentResetAllChains(type(self).__name__,
-                                          datetime.now().timestamp(),
-                                          type(self).__name__,
-                                          type(self).__name__)
+                                                datetime.now().timestamp(),
+                                                type(self).__name__,
+                                                type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
                 # `listen_for_data()` is called after the initial alert is sent
                 # as it's a blocking function.

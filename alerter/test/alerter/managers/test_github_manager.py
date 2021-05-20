@@ -64,9 +64,9 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
-            self.test_monitor.rabbitmq.exchange_declare(
+            self.test_manager.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
-            self.test_monitor.rabbitmq.exchange_declare(
+            self.test_manager.rabbitmq.exchange_declare(
                 ALERT_EXCHANGE, 'topic', False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(

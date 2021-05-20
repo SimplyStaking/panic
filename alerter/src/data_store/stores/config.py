@@ -13,9 +13,11 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS,
                                  GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
-                                 NODES_CONFIG, COSMOS, SUBSTRATE, GLOBAL)
+                                 NODES_CONFIG, COSMOS_NODE_CONFIG,
+                                 SUBSTRATE_NODE_CONFIG, GLOBAL)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
+from src.utils.types import str_to_bool
 
 
 class ConfigStore(Store):
@@ -42,13 +44,13 @@ class ConfigStore(Store):
                 "monitor_key": 'monitor_system',
                 "config_key": 'systems'
             }],
-            COSMOS: [{
+            COSMOS_NODE_CONFIG: [{
                 "id": 'id',
                 "name_key": 'name',
                 "monitor_key": 'monitor_system',
                 "config_key": 'systems'
             }],
-            SUBSTRATE: [{
+            SUBSTRATE_NODE_CONFIG: [{
                 "id": 'id',
                 "name_key": 'name',
                 "monitor_key": 'monitor_system',
@@ -207,9 +209,9 @@ class ConfigStore(Store):
 
                     # If the monitored and not_monitored are empty then remove
                     # the chain from REDIS
-                    if len(data_for_store[source_chain_name]['monitored']) == 0 \
-                        and len(data_for_store[source_chain_name][
-                            'not_monitored']) == 0:
+                    if (len(data_for_store[source_chain_name]['monitored']) ==
+                        0 and len(data_for_store[source_chain_name][
+                            'not_monitored']) == 0):
                         self.redis.remove(
                             Keys.get_base_chain_monitorables_info(
                                 redis_store_key))
@@ -223,9 +225,10 @@ class ConfigStore(Store):
         The following values need to be determined from the routing_key:
         `redis_store_key`: is the identifiable base chain e.g GENERAl, COSMOS,
         SUBSTRATE.
-        `source_chain_name`: Name of the chain that is built on top of the base chain
+        `source_chain_name`: Name of the chain that is built on top of the base
+        chain
         such as regen, moonbeam ...etc.
-        `config_type_key`: The configuration type received the ones that are
+        `config_type_key`: The configuration type received, the ones that are
         needed for this process are SYSTEMS, NODES, REPOS. If anything else
         is received it should be ignored.
         """
@@ -233,23 +236,32 @@ class ConfigStore(Store):
         source_chain_name = ''
         config_type_key = ''
 
-        parsed_routing_key = routing_key.split('.')
+        try:
+            parsed_routing_key = routing_key.split('.')
 
-        if parsed_routing_key[0] == GENERAL:
-            redis_store_key = GENERAL
-            source_chain_name = GLOBAL
-            # Determine the configuration that needs to be changed
-            if parsed_routing_key[1] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
-                config_type_key = parsed_routing_key[1]
-        elif parsed_routing_key[0] == CHAINS:
-            redis_store_key = parsed_routing_key[1]
-            source_chain_name = parsed_routing_key[2]
-            if parsed_routing_key[3] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
-                config_type_key = parsed_routing_key[3]
-            elif parsed_routing_key[3] == NODES_CONFIG:
-                config_type_key = parsed_routing_key[1]
+            if parsed_routing_key[0].lower() == GENERAL.lower():
+                redis_store_key = GENERAL
+                source_chain_name = GLOBAL
+                # Determine the configuration that needs to be changed
+                if parsed_routing_key[1].lower() in [REPOS_CONFIG.lower(),
+                                                     SYSTEMS_CONFIG.lower()]:
+                    config_type_key = parsed_routing_key[1]
+            elif parsed_routing_key[0].lower() == CHAINS.lower():
+                redis_store_key = parsed_routing_key[1]
+                source_chain_name = parsed_routing_key[2]
+                if parsed_routing_key[3] in [REPOS_CONFIG.lower(),
+                                             SYSTEMS_CONFIG.lower()]:
+                    config_type_key = parsed_routing_key[3]
+                elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
+                    config_type_key = parsed_routing_key[1] + \
+                        '_' + NODES_CONFIG.lower()
+        except KeyError as ke:
+            self._logger.error("Failed to process routing_key %s",
+                               routing_key)
+            self._logger.exception(ke)
 
-        return redis_store_key, source_chain_name, config_type_key
+        return (redis_store_key.lower(), source_chain_name.lower(),
+                config_type_key.lower())
 
     def _sort_monitorable_configs(self, received_config: Dict,
                                   config_type_key: str, data_for_store: Dict,
@@ -271,7 +283,7 @@ class ConfigStore(Store):
         for helper_keys in current_helper_config:
             # Get a list of all the id's for the received data
             for _, config_details in received_config.items():
-                if bool(config_details[helper_keys['monitor_key']]):
+                if str_to_bool(config_details[helper_keys['monitor_key']]):
                     monitored_list.append({
                         config_details[helper_keys['id']]:
                         config_details[helper_keys['name_key']]})

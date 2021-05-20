@@ -239,7 +239,9 @@ class TestSystemAlertersManager(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         try:
             self.test_manager.rabbitmq.connect()
-            self.test_monitor.rabbitmq.exchange_declare(
+            self.test_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_manager.rabbitmq.exchange_declare(
                 ALERT_EXCHANGE, 'topic', False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(
