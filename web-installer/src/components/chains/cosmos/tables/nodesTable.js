@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table, TableBody, TableContainer, TableHead, TableRow, Button, Box,
   Grid,
@@ -132,7 +131,7 @@ const NodesTable = ({
   );
 };
 
-NodesTable.propTypes = forbidExtraProps({
+NodesTable.propTypes = {
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -163,6 +162,6 @@ NodesTable.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default NodesTable;

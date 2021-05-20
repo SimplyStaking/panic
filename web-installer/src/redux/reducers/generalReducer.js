@@ -6,8 +6,6 @@ import {
   ADD_SYSTEM,
   REMOVE_REPOSITORY,
   REMOVE_SYSTEM,
-  ADD_KMS,
-  REMOVE_KMS,
   UPDATE_THRESHOLD_ALERT,
   LOAD_THRESHOLD_ALERTS_GENERAL,
   ADD_DOCKER,
@@ -411,45 +409,9 @@ const SystemsReducer = combineReducers({
   allIds: allSystems,
 });
 
-// Reducers to add and remove kms configurations from global state
-function kmsesById(state = {}, action) {
-  switch (action.type) {
-    case ADD_KMS:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case REMOVE_KMS:
-      return _.omit(state, action.payload.id);
-    default:
-      return state;
-  }
-}
-
-// Reducers to add and remove from list of all kmses
-function allKmses(state = [], action) {
-  switch (action.type) {
-    case ADD_KMS:
-      if (state.includes(action.payload.id)) {
-        return state;
-      }
-      return state.concat(action.payload.id);
-    case REMOVE_KMS:
-      return state.filter((config) => config !== action.payload.id);
-    default:
-      return state;
-  }
-}
-
-const KmsReducer = combineReducers({
-  byId: kmsesById,
-  allIds: allKmses,
-});
-
 export {
   RepositoryReducer,
   SystemsReducer,
-  KmsReducer,
   PeriodicReducer,
   GeneralReducer,
   generalThresholdAlerts,

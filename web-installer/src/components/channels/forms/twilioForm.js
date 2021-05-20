@@ -46,7 +46,7 @@ const TwilioForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="channel-name-outlined-full-width"
-                  error={errors.channel_name}
+                  error={!!(errors.channel_name)}
                   value={values.channel_name}
                   label="Configuration Name"
                   type="text"
@@ -78,7 +78,7 @@ const TwilioForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="account-sid-outlined-full-width"
-                  error={errors.account_sid}
+                  error={!!(errors.account_sid)}
                   value={values.account_sid}
                   label="Account SID"
                   type="text"
@@ -110,7 +110,7 @@ const TwilioForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="authentication-token-outlined-full-width"
-                  error={errors.auth_token}
+                  error={!!(errors.auth_token)}
                   value={values.auth_token}
                   label="Authentication Token"
                   type="text"
@@ -142,7 +142,7 @@ const TwilioForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="twilio-phone-number-outlined-full-width"
-                  error={errors.twilio_phone_no}
+                  error={!!(errors.twilio_phone_no)}
                   value={values.twilio_phone_no}
                   label="Twilio Phone Number"
                   type="text"
@@ -183,7 +183,7 @@ const TwilioForm = ({
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
                       id="twilio-phone-numbers-to-dial-outlined-full-width"
-                      error={errors.twilio_phone_numbers_to_dial_valid}
+                      error={!!(errors.twilio_phone_numbers_to_dial_valid)}
                       value={values.twilio_phone_numbers_to_dial_valid}
                       label="Phone numbers for Twilio to dial"
                       type="text"

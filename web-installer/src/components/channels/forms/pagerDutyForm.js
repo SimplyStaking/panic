@@ -42,7 +42,7 @@ const PagerDutyForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
-                error={errors.channel_name}
+                error={!!(errors.channel_name)}
                 value={values.channel_name}
                 label="Configuration Name"
                 type="text"
@@ -74,7 +74,7 @@ const PagerDutyForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="api-token-outlined-full-width"
-                error={errors.api_token}
+                error={!!(errors.api_token)}
                 value={values.api_token}
                 label="API Token"
                 type="text"
@@ -106,7 +106,7 @@ const PagerDutyForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="integration-key-outlined-full-width"
-                error={errors.integration_key}
+                error={!!(errors.integration_key)}
                 value={values.integration_key}
                 label="Integration Key"
                 type="text"

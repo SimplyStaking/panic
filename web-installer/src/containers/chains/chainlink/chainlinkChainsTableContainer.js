@@ -7,13 +7,14 @@ import {
 } from 'redux/actions/chainlinkActions';
 import {
   removeRepository,
-  removeKms,
   removeTelegramChannel,
   removeTwilioChannel,
   removeEmailChannel,
   removePagerDutyChannel,
   removeOpsGenieChannel,
   removeSlackChannel,
+  removeDocker,
+  removeSystem,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
@@ -36,7 +37,6 @@ function mapDispatchToProps(dispatch) {
     removeChainDetails: (details) => dispatch(removeChainChainlink(details)),
     removeNodeDetails: (details) => dispatch(removeNodeChainlink(details)),
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
-    removeKmsDetails: (details) => dispatch(removeKms(details)),
     loadConfigDetails: (details) => dispatch(loadConfigChainlink(details)),
     removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
     removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
@@ -44,6 +44,8 @@ function mapDispatchToProps(dispatch) {
     removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
     removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
     removeSlackDetails: (details) => dispatch(removeSlackChannel(details)),
+    removeDockerDetails: (details) => dispatch(removeDocker(details)),
+    removeSystemDetails: (details) => dispatch(removeSystem(details)),
   };
 }
 

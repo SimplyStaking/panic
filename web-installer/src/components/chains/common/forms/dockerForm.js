@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip, Divider,
   InputAdornment,
@@ -56,7 +55,7 @@ const DockerForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="docker-name-outlined-full-width"
-                    error={errors.name}
+                    error={!!(errors.name)}
                     value={values.name}
                     label="DockerHub Repository Name"
                     type="text"
@@ -129,30 +128,6 @@ const DockerForm = ({
                     </Box>
                   </Grid>
                 </Grid>
-                {/* <Grid item xs={12} />
-                <br />
-                <br />
-                <Grid item xs={4} />
-                <Grid item xs={2}>
-                  <Box px={2}>
-                    <StepButtonContainer
-                      disabled={false}
-                      text={BACK}
-                      navigation={data.dockerForm.backStep}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={2}>
-                  <Box px={2}>
-                    <StepButtonContainer
-                      disabled={false}
-                      text={NEXT}
-                      navigation={data.dockerForm.nextStep}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={4} />
-                <Grid item xs={12} /> */}
               </Grid>
             </form>
           </Box>
@@ -162,7 +137,7 @@ const DockerForm = ({
   );
 };
 
-DockerForm.propTypes = forbidExtraProps({
+DockerForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
   }).isRequired,
@@ -184,6 +159,6 @@ DockerForm.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default DockerForm;

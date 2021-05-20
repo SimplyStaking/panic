@@ -21,7 +21,6 @@ const CHANNELS_CONFIGS_LOCATION = path.join('../config', 'channels');
 const USER_CONFIG_NODES = 'nodes_config.ini';
 const USER_CONFIG_REPOS = 'repos_config.ini';
 const USER_CONFIG_DOCKER = 'docker_config.ini';
-const USER_CONFIG_KMS = 'kms_config.ini';
 const USER_CONFIG_CHANNELS = 'channels_config.ini';
 const USER_CONFIG_ALERTS = 'alerts_config.ini';
 const USER_CONFIG_REPEAT_ALERTS = 'repeat_alerts_config.ini';
@@ -31,7 +30,7 @@ const USER_CONFIG_SEVERTY_ALERTS = 'severity_alerts_config.ini';
 const USER_CONFIG_SYSTEMS = 'systems_config.ini';
 const USER_CONFIG_PERIODIC = 'periodic_config.ini';
 const ALL_CHAINS_CONFIG_FILES = [
-  USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_KMS, USER_CONFIG_CHANNELS,
+  USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_CHANNELS,
   USER_CONFIG_ALERTS, USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
   USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS, USER_CONFIG_DOCKER,
   USER_CONFIG_SYSTEMS,

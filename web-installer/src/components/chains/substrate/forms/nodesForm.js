@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Typography,
   Box,
@@ -56,7 +55,7 @@ const NodesForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="chain-name-outlined-full-width"
-                    error={errors.name}
+                    error={!!(errors.name)}
                     value={values.name}
                     label="Node name"
                     type="text"
@@ -253,7 +252,7 @@ const NodesForm = ({
                 <Grid item xs={8}>
                   <CssTextField
                     id="node-exporter-outlined-full-width"
-                    error={errors.exporter_url}
+                    error={!!(errors.exporter_url)}
                     value={values.exporter_url}
                     label="Node Exporter URL"
                     type="text"
@@ -474,7 +473,7 @@ const NodesForm = ({
   );
 };
 
-NodesForm.propTypes = forbidExtraProps({
+NodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
     exporter_url: PropTypes.string,
@@ -522,6 +521,6 @@ NodesForm.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default NodesForm;

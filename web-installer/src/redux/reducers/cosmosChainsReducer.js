@@ -12,8 +12,6 @@ import {
   RESET_CHAIN_COSMOS,
   ADD_REPOSITORY,
   REMOVE_REPOSITORY,
-  ADD_KMS,
-  REMOVE_KMS,
   UPDATE_REPEAT_ALERT,
   UPDATE_TIMEWINDOW_ALERT,
   UPDATE_THRESHOLD_ALERT,
@@ -448,7 +446,6 @@ function cosmosChainsById(state = {}, action) {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
-          kmses: [],
           repositories: [],
           dockers: [],
           repeatAlerts: cosmosRepeatAlerts,
@@ -546,37 +543,6 @@ function cosmosChainsById(state = {}, action) {
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
           dockers: state[action.payload.parent_id].dockers.filter(
-            (config) => config !== action.payload.id,
-          ),
-        },
-      };
-    case ADD_KMS:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('kmses')) {
-        state[action.payload.parent_id].kmses = [];
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          kmses: state[action.payload.parent_id].kmses.concat(action.payload.id),
-        },
-      };
-    case REMOVE_KMS:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (state[action.payload.parent_id] === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [action.payload.parent_id]: {
-          ...state[action.payload.parent_id],
-          kmses: state[action.payload.parent_id].kmses.filter(
             (config) => config !== action.payload.id,
           ),
         },

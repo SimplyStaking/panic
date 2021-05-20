@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table, TableBody, TableContainer, TableHead, TableRow, FormControlLabel,
   Checkbox, Typography, Grid, Box,
@@ -136,7 +135,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="threshold-warning-outlined-full-width"
+                            id={('threshold-warning-outlined-full-width-'.concat(id))}
                             value={ThresholdAlerts.byId[id].warning.threshold}
                             label="Threshold"
                             type="text"
@@ -231,7 +230,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="threshold-critical-threshold-outlined-full-width"
+                            id={('threshold-critical-threshold-outlined-full-width-'.concat(id))}
                             value={
                               ThresholdAlerts.byId[id].critical.threshold
                             }
@@ -287,7 +286,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="threshold-critical-repeat-outlined-full-width"
+                            id={('threshold-critical-repeat-outlined-full-width-'.concat(id))}
                             value={ThresholdAlerts.byId[id].critical.repeat}
                             label="Repeat"
                             type="text"
@@ -410,7 +409,7 @@ const AlertsTable = ({
   );
 };
 
-AlertsTable.propTypes = forbidExtraProps({
+AlertsTable.propTypes = {
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
   config: PropTypes.shape({
@@ -450,6 +449,6 @@ AlertsTable.propTypes = forbidExtraProps({
   }).isRequired,
   updateThresholdAlertDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-});
+};
 
 export default AlertsTable;

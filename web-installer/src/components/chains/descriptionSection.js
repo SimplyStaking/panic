@@ -34,7 +34,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={HelpIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -51,7 +51,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={ComputerIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -68,7 +68,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={SettingsIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>

@@ -5,10 +5,6 @@ import { AlertsCosmosTableContainer } from 'containers/chains/common/alertsConta
 import { CosmosChainFormContainer } from 'containers/chains/common/chainContainer';
 import { ChannelsCosmosTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  KmsCosmosFormContainer,
-  KmsCosmosTableContainer,
-} from 'containers/chains/common/kmsContainer';
-import {
   RepositoriesCosmosFormContainer,
   RepositoriesCosmosTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
@@ -20,7 +16,6 @@ import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
-  KMS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
   DOCKER_STEP,
@@ -40,13 +35,6 @@ function getStep(stepName) {
       return <CosmosChainFormContainer />;
     case CHANNELS_STEP:
       return <ChannelsCosmosTableContainer />;
-    case KMS_STEP:
-      return (
-        <div>
-          <KmsCosmosFormContainer />
-          <KmsCosmosTableContainer />
-        </div>
-      );
     case NODES_STEP:
       return (
         <div>

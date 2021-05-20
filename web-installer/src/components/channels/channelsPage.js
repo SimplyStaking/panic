@@ -3,7 +3,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import {
-  Grid, AppBar, Tabs, Tab, Typography, Box,
+  Grid, AppBar, Tabs, Tab, Box,
 } from '@material-ui/core';
 import PropTypes from 'prop-types';
 import {
@@ -48,7 +48,7 @@ function TabPanel(props) {
     >
       {value === index && (
         <Box p={3}>
-          <Typography>{children}</Typography>
+          {children}
         </Box>
       )}
     </div>

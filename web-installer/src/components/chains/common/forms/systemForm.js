@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
   InputAdornment,
@@ -62,7 +61,7 @@ const SystemForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="system-name-outlined-full-width"
-                    error={errors.name}
+                    error={!!(errors.name)}
                     value={values.name}
                     label="System Name"
                     type="text"
@@ -82,7 +81,7 @@ const SystemForm = ({
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.systemForm.name} placement="left">
+                            <Tooltip title={data.systemForm.nameTip} placement="left">
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
@@ -94,7 +93,7 @@ const SystemForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="node-exporter-url-outlined-full-width"
-                    error={errors.exporter_url}
+                    error={!!(errors.exporter_url)}
                     value={values.exporter_url}
                     label="Node Exporter URL"
                     type="text"
@@ -174,7 +173,7 @@ const SystemForm = ({
   );
 };
 
-SystemForm.propTypes = forbidExtraProps({
+SystemForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
     exporter_url: PropTypes.string,
@@ -191,7 +190,6 @@ SystemForm.propTypes = forbidExtraProps({
     systemForm: PropTypes.shape({
       title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
       monitorTip: PropTypes.string.isRequired,
@@ -202,6 +200,6 @@ SystemForm.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default SystemForm;

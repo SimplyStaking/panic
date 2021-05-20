@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -62,7 +61,7 @@ const NodesTable = ({
                 <StyledTableCell align="center">
                   <div style={{ maxHeight: 70, overflow: 'auto' }}>
                     <List>
-                      {chainlinkNodesConfig.byId[id].ethereum_address.map((address) => (
+                      {chainlinkNodesConfig.byId[id].node_address.map((address) => (
                         <ListItem key={address}>{address}</ListItem>
                       ))}
                     </List>
@@ -92,7 +91,7 @@ const NodesTable = ({
   );
 };
 
-NodesTable.propTypes = forbidExtraProps({
+NodesTable.propTypes = {
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -105,7 +104,7 @@ NodesTable.propTypes = forbidExtraProps({
       parent_id: PropTypes.string,
       name: PropTypes.string,
       prometheus_url: PropTypes.string,
-      ethereum_address: PropTypes.string,
+      node_address: PropTypes.string,
       monitor_prometheus: PropTypes.bool,
       monitor_node: PropTypes.bool,
     }).isRequired,
@@ -113,6 +112,6 @@ NodesTable.propTypes = forbidExtraProps({
   }).isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
-});
+};
 
 export default NodesTable;

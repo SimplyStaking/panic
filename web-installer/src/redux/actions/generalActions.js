@@ -4,8 +4,6 @@ import {
   ADD_SYSTEM,
   REMOVE_REPOSITORY,
   REMOVE_SYSTEM,
-  ADD_KMS,
-  REMOVE_KMS,
   UPDATE_THRESHOLD_ALERT,
   ADD_TELEGRAM_CHANNEL,
   REMOVE_TELEGRAM_CHANNEL,
@@ -119,34 +117,6 @@ export function addSystem(payload) {
 export function removeSystem(payload) {
   return {
     type: REMOVE_SYSTEM,
-    payload,
-  };
-}
-
-export function addKms(payload) {
-  // Generate a unique id for the repository
-  let id = `kms_${uuidv4()}`;
-
-  // If an ID already exists in the payload use it
-  if ('id' in payload) {
-    id = payload.id;
-  }
-
-  return {
-    type: ADD_KMS,
-    payload: {
-      id,
-      parent_id: payload.parent_id,
-      kms_name: payload.kms_name,
-      exporter_url: payload.exporter_url,
-      monitor_kms: payload.monitor_kms,
-    },
-  };
-}
-
-export function removeKms(payload) {
-  return {
-    type: REMOVE_KMS,
     payload,
   };
 }

@@ -48,7 +48,7 @@ const EmailForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="channel-name-outlined-full-width"
-                  error={errors.channel_name}
+                  error={!!(errors.channel_name)}
                   value={values.channel_name}
                   label="Configuration Name"
                   type="text"
@@ -80,7 +80,7 @@ const EmailForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="smpt-outlined-full-width"
-                  error={errors.smtp}
+                  error={!!(errors.smtp)}
                   value={values.smtp}
                   label="SMTP"
                   type="text"
@@ -112,7 +112,7 @@ const EmailForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="port-outlined-full-width"
-                  error={errors.port}
+                  error={!!(errors.port)}
                   value={values.port}
                   label="Port"
                   type="text"
@@ -144,7 +144,7 @@ const EmailForm = ({
               <Grid item xs={12}>
                 <CssTextField
                   id="email-from-outlined-full-width"
-                  error={errors.email_from}
+                  error={!!(errors.email_from)}
                   value={values.email_from}
                   label="Email From"
                   type="text"
@@ -185,7 +185,7 @@ const EmailForm = ({
                       // eslint-disable-next-line react/jsx-props-no-spreading
                       {...params}
                       id="emails-to-outlined-full-width"
-                      error={errors.emails_to}
+                      error={!!(errors.emails_to)}
                       value={values.emails_to}
                       label="Emails To"
                       type="text"

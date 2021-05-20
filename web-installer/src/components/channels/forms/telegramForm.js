@@ -45,7 +45,7 @@ const TelegramForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
-                error={errors.channel_name}
+                error={!!(errors.channel_name)}
                 value={values.channel_name}
                 label="Bot Name"
                 type="text"
@@ -77,7 +77,7 @@ const TelegramForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="bot-token-outlined-full-width"
-                error={errors.bot_token}
+                error={!!(errors.bot_token)}
                 value={values.bot_token}
                 label="Bot Token"
                 type="text"
@@ -109,7 +109,7 @@ const TelegramForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="chat-id-outlined-full-width"
-                error={errors.chat_id}
+                error={!!(errors.chat_id)}
                 value={values.chat_id}
                 label="Chat ID"
                 type="text"

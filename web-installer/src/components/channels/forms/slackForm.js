@@ -43,7 +43,7 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
-                error={errors.channel_name}
+                error={!!(errors.channel_name)}
                 value={values.channel_name}
                 label="Channel Name"
                 type="text"
@@ -75,7 +75,7 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="token-outlined-full-width"
-                error={errors.token}
+                error={!!(errors.token)}
                 value={values.token}
                 label="Token"
                 type="text"
@@ -107,7 +107,7 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="slack-chat-name-outlined-full-width"
-                error={errors.chat_name}
+                error={!!(errors.chat_name)}
                 value={values.chat_name}
                 label="Chat Name"
                 type="text"

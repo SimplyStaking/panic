@@ -27,7 +27,7 @@ export default function InfoArea(props) {
       </div>
       <div className={classes.descriptionWrapper}>
         <h4 className={classes.title}>{title}</h4>
-        <p className={classes.description}>{description}</p>
+        <div className={classes.description}>{description}</div>
       </div>
     </div>
   );
@@ -39,7 +39,8 @@ InfoArea.defaultProps = {
 
 InfoArea.propTypes = {
   title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
+  // eslint-disable-next-line react/forbid-prop-types
+  description: PropTypes.object.isRequired,
   iconColor: PropTypes.oneOf([
     'primary',
     'warning',
@@ -48,6 +49,7 @@ InfoArea.propTypes = {
     'info',
     'rose',
     'gray',
+    '#000000',
   ]),
   vertical: PropTypes.bool.isRequired,
 };

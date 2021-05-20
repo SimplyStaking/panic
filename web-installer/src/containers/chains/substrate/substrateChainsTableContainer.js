@@ -13,6 +13,7 @@ import {
   removePagerDutyChannel,
   removeOpsGenieChannel,
   removeSlackChannel,
+  removeDocker,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
@@ -42,6 +43,7 @@ function mapDispatchToProps(dispatch) {
     removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
     removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
     removeSlackDetails: (details) => dispatch(removeSlackChannel(details)),
+    removeDockerDetails: (details) => dispatch(removeDocker(details)),
   };
 }
 

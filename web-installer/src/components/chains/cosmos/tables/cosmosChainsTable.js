@@ -23,7 +23,6 @@ const CosmosChainsTable = ({
   removeChainDetails,
   removeNodeDetails,
   removeRepositoryDetails,
-  removeKmsDetails,
   removeSlackDetails,
   removeDockerDetails,
   removeOpsGenieDetails,
@@ -164,12 +163,6 @@ const CosmosChainsTable = ({
       payload.id = currentConfig.repositories[i];
       removeRepositoryDetails(payload);
     }
-
-    // Clear all the configured kmses from state
-    for (let i = 0; i < currentConfig.kmses.length; i += 1) {
-      payload.id = currentConfig.kmses[i];
-      removeKmsDetails(payload);
-    }
     // Finally clear the chain from the configuration
     payload.id = chainID;
     removeChainDetails(payload);
@@ -280,7 +273,6 @@ CosmosChainsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
-  removeKmsDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
   removeEmailDetails: PropTypes.func.isRequired,

@@ -277,32 +277,13 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
-    14: {
-      name: 'Hours till Ethereum Balance is 0',
-      identifier: 'eth_balance_hours_remaining',
-      description: 'Alerts when Ethereum Balance is closing to 0 based on usage.',
-      adornment: 'Hour/s',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 6,
-        enabled: true,
-      },
-      critical: {
-        threshold: 1,
-        repeat: 300,
-        enabled: true,
-      },
-      enabled: true,
-    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
-    '14'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    15: {
+    14: {
       name: 'Dropped block headers',
       identifier: 'head_tracker_num_heads_dropped_total',
       description: 'Amount of block headers dropped over a time period. Note:  '
@@ -325,7 +306,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    16: {
+    15: {
       name: 'Run status update total',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error in a time period.',
@@ -346,7 +327,7 @@ const chainlinkTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['15', '16'],
+  allIds: ['14', '15'],
 };
 
 const chainlinkSeverityAlerts = {

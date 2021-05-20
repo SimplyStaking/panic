@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table, TableBody, TableContainer, TableHead, TableRow, FormControlLabel,
   Checkbox, Typography, Grid, Box, MenuItem, Select, FormControl,
@@ -147,7 +146,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="repeat-warning-outlined-full-width"
+                            id={('repeat-warning-outlined-full-width-'.concat(id))}
                             value={RepeatAlerts.byId[id].warning.repeat}
                             label="Repeat"
                             type="text"
@@ -234,7 +233,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="repeat-critical-outlined-full-width"
+                            id={('repeat-critical-outlined-full-width-'.concat(id))}
                             value={RepeatAlerts.byId[id].critical.repeat}
                             label="Repeat"
                             type="text"
@@ -371,7 +370,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="time-window-warning-threshold-outlined-full-width"
+                            id={('time-window-warning-threshold-outlined-full-width-'.concat(id))}
                             value={
                               TimeWindowAlerts.byId[id].warning.threshold
                             }
@@ -430,7 +429,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="time-window-warning-time-window-outlined-full-width"
+                            id={('time-window-warning-time-window-outlined-full-width-'.concat(id))}
                             value={
                               TimeWindowAlerts.byId[id].warning.time_window
                             }
@@ -540,7 +539,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="time-window-critical-threshold-outlined-full-width"
+                            id={('time-window-critical-threshold-outlined-full-width-'.concat(id))}
                             value={
                               TimeWindowAlerts.byId[id].critical.threshold
                             }
@@ -600,7 +599,7 @@ const AlertsTable = ({
                           />
                           <Grid item>
                             <CssTextField
-                              id="time-window-critical-time-window-outlined-full-width"
+                              id={('time-window-critical-time-window-outlined-full-width-'.concat(id))}
                               value={
                                 TimeWindowAlerts.byId[id].critical.time_window
                               }
@@ -661,7 +660,7 @@ const AlertsTable = ({
                           </Grid>
                           <Grid item>
                             <CssTextField
-                              id="time-window-critical-repeat-outlined-full-width"
+                              id={('time-window-critical-repeat-outlined-full-width-'.concat(id))}
                               value={
                                 TimeWindowAlerts.byId[id].critical.repeat
                               }
@@ -811,7 +810,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="threshold-warning-threshold-outlined-full-width"
+                            id={('threshold-warning-threshold-outlined-full-width-'.concat(id))}
                             value={ThresholdAlerts.byId[id].warning.threshold}
                             label="Threshold"
                             type="text"
@@ -907,7 +906,7 @@ const AlertsTable = ({
                         </Grid>
                         <Grid item>
                           <CssTextField
-                            id="threshold-critical-threshold-outlined-full-width"
+                            id={('threshold-critical-threshold-outlined-full-width-'.concat(id))}
                             value={
                               ThresholdAlerts.byId[id].critical.threshold
                             }
@@ -963,7 +962,7 @@ const AlertsTable = ({
                           />
                           <Grid item>
                             <CssTextField
-                              id="threshold-critical-repeat-outlined-full-width"
+                              id={('threshold-critical-repeat-outlined-full-width-'.concat(id))}
                               value={ThresholdAlerts.byId[id].critical.repeat}
                               label="Repeat"
                               type="text"
@@ -1089,7 +1088,7 @@ const AlertsTable = ({
                               <FormControl>
                                 <Select
                                   labelId="severity"
-                                  id="severity-selection"
+                                  id={('severity-selection-'.concat(id))}
                                   value={SeverityAlerts.byId[id].severity}
                                   onChange={(event) => {
                                     updateSeverityAlertDetails({
@@ -1180,7 +1179,7 @@ const AlertsTable = ({
   );
 };
 
-AlertsTable.propTypes = forbidExtraProps({
+AlertsTable.propTypes = {
   pageChanger: PropTypes.func.isRequired,
   stepChanger: PropTypes.func.isRequired,
   config: PropTypes.shape({
@@ -1267,6 +1266,6 @@ AlertsTable.propTypes = forbidExtraProps({
   updateTimeWindowAlertDetails: PropTypes.func.isRequired,
   updateThresholdAlertDetails: PropTypes.func.isRequired,
   updateSeverityAlertDetails: PropTypes.func.isRequired,
-});
+};
 
 export default AlertsTable;

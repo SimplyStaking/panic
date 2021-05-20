@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Grid,
   FormControlLabel,
@@ -372,7 +371,7 @@ const ChannelsTable = ({
   );
 };
 
-ChannelsTable.propTypes = forbidExtraProps({
+ChannelsTable.propTypes = {
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -447,6 +446,6 @@ ChannelsTable.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default ChannelsTable;

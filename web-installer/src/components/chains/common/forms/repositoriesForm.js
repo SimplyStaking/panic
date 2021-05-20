@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip, Divider,
   InputAdornment,
@@ -56,7 +55,7 @@ const RepositoriesForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="repo-name-outlined-full-width"
-                    error={errors.repo_name}
+                    error={!!(errors.repo_name)}
                     value={values.repo_name}
                     label="Repository Name"
                     type="text"
@@ -136,7 +135,7 @@ const RepositoriesForm = ({
   );
 };
 
-RepositoriesForm.propTypes = forbidExtraProps({
+RepositoriesForm.propTypes = {
   errors: PropTypes.shape({
     repo_name: PropTypes.string,
   }).isRequired,
@@ -156,6 +155,6 @@ RepositoriesForm.propTypes = forbidExtraProps({
       monitorTip: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default RepositoriesForm;

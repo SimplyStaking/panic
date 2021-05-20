@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -108,7 +107,7 @@ const DockerTable = ({
   );
 };
 
-DockerTable.propTypes = forbidExtraProps({
+DockerTable.propTypes = {
   config: PropTypes.shape({
     byId: PropTypes.shape({
       dockers: PropTypes.arrayOf(PropTypes.string),
@@ -131,6 +130,6 @@ DockerTable.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default DockerTable;

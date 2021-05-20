@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -139,7 +138,7 @@ const NodesTable = ({
   );
 };
 
-NodesTable.propTypes = forbidExtraProps({
+NodesTable.propTypes = {
   chainConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -150,7 +149,7 @@ NodesTable.propTypes = forbidExtraProps({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      name: PropTypes.string.isRequired,
+      name: PropTypes.string,
       node_ws_url: PropTypes.string,
       telemetry_url: PropTypes.string,
       prometheus_url: PropTypes.string,
@@ -171,6 +170,6 @@ NodesTable.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default NodesTable;

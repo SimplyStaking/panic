@@ -15,7 +15,7 @@ import {
   COSMOS_SETUP_PAGE,
   SUBSTRATE_SETUP_PAGE,
   USERS_PAGE,
-  OTHER_SETUP_PAGE,
+  GENERAL_SETUP_PAGE,
   CHAINLINK_SETUP_PAGE,
 } from 'constants/constants';
 import Data from 'data/chains';
@@ -123,7 +123,7 @@ function Chains() {
                     button={(
                       <NavigationButtonContainer
                         text="Configure General Source of data you want monitored"
-                        navigation={OTHER_SETUP_PAGE}
+                        navigation={GENERAL_SETUP_PAGE}
                       />
                     )}
                     table={<div />}

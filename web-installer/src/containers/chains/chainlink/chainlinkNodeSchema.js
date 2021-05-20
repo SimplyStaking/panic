@@ -46,7 +46,7 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Node name is required.'),
-  ethereum_address: Yup.array()
+  node_address: Yup.array()
     .of(Yup.string()
       .test('ethereum-address-validation', 'One or more provided addresses are not valid!.', (value) => {
         if (Web3.utils.isAddress(value)) {

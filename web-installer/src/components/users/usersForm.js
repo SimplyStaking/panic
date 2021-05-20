@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import { Grid } from '@material-ui/core';
 import { AddAccount } from 'utils/buttons';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
@@ -14,7 +13,7 @@ const UsersForm = ({
         <Grid item xs={12}>
           <CssTextField
             id="user-name-outlined-full-width"
-            error={errors.username}
+            error={!!(errors.username)}
             value={values.username}
             label="Username"
             type="text"
@@ -35,7 +34,7 @@ const UsersForm = ({
         <Grid item xs={12}>
           <CssTextField
             id="password-name-outlined-full-width"
-            error={errors.password}
+            error={!!(errors.password)}
             value={values.password}
             label="Password"
             type="password"
@@ -74,7 +73,7 @@ const UsersForm = ({
   </div>
 );
 
-UsersForm.propTypes = forbidExtraProps({
+UsersForm.propTypes = {
   errors: PropTypes.shape({
     username: PropTypes.string,
     password: PropTypes.string,
@@ -86,6 +85,6 @@ UsersForm.propTypes = forbidExtraProps({
     password: PropTypes.string.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
-});
+};
 
 export default UsersForm;

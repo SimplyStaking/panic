@@ -28,6 +28,7 @@ import {
   loadTimeWindowAlertsCosmos,
   loadThresholdAlertsCosmos,
   loadSeverityAlertsCosmos,
+  resetCurrentChainIdCosmos,
 } from 'redux/actions/cosmosActions';
 import {
   addNodeSubstrate,
@@ -36,6 +37,7 @@ import {
   loadTimeWindowAlertsSubstrate,
   loadThresholdAlertsSubstrate,
   loadSeverityAlertsSubstrate,
+  resetCurrentChainIdSubstrate,
 } from 'redux/actions/substrateActions';
 import {
   addNodeChainlink,
@@ -44,6 +46,7 @@ import {
   loadTimeWindowAlertsChainlink,
   loadThresholdAlertsChainlink,
   loadSeverityAlertsChainlink,
+  resetCurrentChainIdChainlink,
 } from 'redux/actions/chainlinkActions';
 import {
   generalThresholdAlerts,
@@ -91,7 +94,6 @@ const mapStateToProps = (state) => ({
 
   // General data related to
   repositories: state.RepositoryReducer,
-  kmses: state.KmsReducer,
   general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
   periodic: state.PeriodicReducer,
@@ -107,10 +109,13 @@ function mapDispatchToProps(dispatch) {
     addOpsGenieDetails: (details) => dispatch(addOpsGenie(details)),
     addChainCosmosDetails: (details) => dispatch(addChainCosmos(details)),
     addNodeCosmosDetails: (details) => dispatch(addNodeCosmos(details)),
+    clearChainIdCosmos: () => dispatch(resetCurrentChainIdCosmos()),
     addChainSubstrateDetails: (details) => dispatch(addChainSubstrate(details)),
     addNodeSubstrateDetails: (details) => dispatch(addNodeSubstrate(details)),
+    clearChainIdSubstrate: () => dispatch(resetCurrentChainIdSubstrate()),
     addChainChainlinkDetails: (details) => dispatch(addChainChainlink(details)),
     addNodeChainlinkDetails: (details) => dispatch(addNodeChainlink(details)),
+    clearChainIdChainlink: () => dispatch(resetCurrentChainIdChainlink()),
     addSystemDetails: (details) => dispatch(addSystem(details)),
     addDockerDetails: (details) => dispatch(addDocker(details)),
     addRepositoryDetails: (details) => dispatch(addRepository(details)),
@@ -187,6 +192,9 @@ class LoadConfig extends Component {
       loadTimeWindowAlertsChainlinkDetails,
       loadThresholdAlertsChainlinkDetails,
       loadSeverityAlertsChainlinkDetails,
+      clearChainIdChainlink,
+      clearChainIdSubstrate,
+      clearChainIdCosmos,
     } = this.props;
 
     ToastsStore.info('Attempting to Load Configuration.', 5000);
@@ -529,10 +537,10 @@ class LoadConfig extends Component {
                 } else {
                   node.prometheus_url = node.prometheus_url.split(',');
                 }
-                if (node.ethereum_address.length === 0) {
-                  node.ethereum_address = [];
+                if (node.node_address.length === 0) {
+                  node.node_address = [];
                 } else {
-                  node.ethereum_address = node.ethereum_address.split(',');
+                  node.node_address = node.node_address.split(',');
                 }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
@@ -761,6 +769,11 @@ class LoadConfig extends Component {
               addSlackDetails(payload);
             });
           }
+          // RESET the current chain for all types so when creating a new you
+          // chain config you do not attempt to load an old one.
+          clearChainIdChainlink();
+          clearChainIdSubstrate();
+          clearChainIdCosmos();
         }
       }
     } catch (err) {
@@ -777,6 +790,9 @@ class LoadConfig extends Component {
 }
 
 LoadConfig.propTypes = {
+  clearChainIdChainlink: PropTypes.func.isRequired,
+  clearChainIdSubstrate: PropTypes.func.isRequired,
+  clearChainIdCosmos: PropTypes.func.isRequired,
   handleClose: PropTypes.func.isRequired,
   addEmailDetails: PropTypes.func.isRequired,
   addTelegramDetails: PropTypes.func.isRequired,

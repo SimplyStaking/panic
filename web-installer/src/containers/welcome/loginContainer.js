@@ -37,7 +37,6 @@ async function CheckForConfigs() {
       if (
         res[4] === 'nodes_config.ini'
         || res[4] === 'repos_config.ini'
-        || res[4] === 'kms_config.ini'
         || res[4] === 'alerts_config.ini'
         || res[4] === 'systems_config.ini'
         || res[4] === 'docker_config.ini'

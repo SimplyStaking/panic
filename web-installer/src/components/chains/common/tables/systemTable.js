@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
@@ -144,7 +143,7 @@ const SystemTable = ({
   );
 };
 
-SystemTable.propTypes = forbidExtraProps({
+SystemTable.propTypes = {
   config: PropTypes.shape({
     byId: PropTypes.shape({
       systems: PropTypes.arrayOf(PropTypes.string),
@@ -169,6 +168,6 @@ SystemTable.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default SystemTable;

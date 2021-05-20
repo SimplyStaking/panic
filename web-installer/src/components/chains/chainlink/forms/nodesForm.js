@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
   InputAdornment,
@@ -32,7 +31,7 @@ const NodesForm = ({
   };
 
   const updateEthereumAddress = (event, ethereumAddress) => {
-    setFieldValue('ethereum_address', ethereumAddress);
+    setFieldValue('node_address', ethereumAddress);
   };
 
   return (
@@ -65,7 +64,7 @@ const NodesForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="chain-name-outlined-full-width"
-                    error={errors.name}
+                    error={!!(errors.name)}
                     value={values.name}
                     label="Node name"
                     type="text"
@@ -154,19 +153,19 @@ const NodesForm = ({
                     freeSolo
                     options={[]}
                     onChange={updateEthereumAddress}
-                    value={values.ethereum_address}
+                    value={values.node_address}
                     renderInput={(params) => (
                       <CssTextField
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...params}
-                        id="ethereum-based-url-outlined-full-width"
-                        error={errors.ethereum_address}
-                        label="Ethereum-based addresses"
+                        id="node-based-url-outlined-full-width"
+                        error={!!(errors.node_address)}
+                        label="Node addresses"
                         type="text"
                         style={{ margin: 8 }}
-                        name="ethereum_address"
+                        name="node_address"
                         placeholder={data.nodeForm.ethereumAddressHolder}
-                        helperText={errors.ethereum_address ? errors.ethereum_address : ''}
+                        helperText={errors.node_address ? errors.node_address : ''}
                         fullWidth
                         margin="normal"
                         InputLabelProps={{
@@ -240,17 +239,17 @@ const NodesForm = ({
   );
 };
 
-NodesForm.propTypes = forbidExtraProps({
+NodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
     prometheus_url: PropTypes.string,
-    ethereum_address: PropTypes.string,
+    node_address: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
     prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    ethereum_address: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+    node_address: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,
@@ -270,6 +269,6 @@ NodesForm.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default NodesForm;

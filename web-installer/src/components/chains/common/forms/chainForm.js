@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import {
   Typography, Box, Grid, Tooltip, Divider, InputAdornment,
@@ -93,7 +92,7 @@ const ChainNameForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="channel-name-outlined-full-width"
-                    error={errors.chain_name}
+                    error={!!(errors.chain_name)}
                     value={values.chain_name}
                     label="Chain Name"
                     type="text"
@@ -157,7 +156,7 @@ const ChainNameForm = ({
   );
 };
 
-ChainNameForm.propTypes = forbidExtraProps({
+ChainNameForm.propTypes = {
   errors: PropTypes.shape({
     chain_name: PropTypes.string,
   }).isRequired,
@@ -181,6 +180,6 @@ ChainNameForm.propTypes = forbidExtraProps({
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
-});
+};
 
 export default ChainNameForm;

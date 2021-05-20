@@ -29,7 +29,6 @@ import {
   DockerReducer,
   SystemsReducer,
   PeriodicReducer,
-  KmsReducer,
   GeneralReducer,
 } from './generalReducer';
 import UsersReducer from './usersReducer';
@@ -55,7 +54,6 @@ export default combineReducers({
   SystemsReducer,
   PeriodicReducer,
   GeneralReducer,
-  KmsReducer,
   UsersReducer,
   LoginReducer,
   ChainlinkNodesReducer,
