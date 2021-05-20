@@ -4,6 +4,7 @@ import multiprocessing
 import time
 import unittest
 from datetime import timedelta, datetime
+from multiprocessing import Process
 from unittest import mock
 
 import pika
@@ -11,7 +12,6 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from multiprocessing import Process
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store, start_config_store)
 from src.data_store.stores.manager import StoreManager

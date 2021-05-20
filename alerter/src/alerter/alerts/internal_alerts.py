@@ -1,7 +1,7 @@
 from src.alerter.alert_code import InternalAlertCode
+from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
 from src.alerter.metric_code import InternalMetricCode
-from src.alerter.alert_severities import Severity
 
 """
 These internal alerts are used to send data from the alerter to the data store

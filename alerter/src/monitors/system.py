@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime
 from http.client import IncompleteRead
-from typing import List, Dict
+from typing import Dict
 
 import pika
 import pika.exceptions
@@ -28,28 +28,29 @@ class SystemMonitor(Monitor):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._system_config = system_config
-        self._metrics_to_monitor = ['process_cpu_seconds_total',
-                                    'go_memstats_alloc_bytes',
-                                    'go_memstats_alloc_bytes_total',
-                                    'process_virtual_memory_bytes',
-                                    'process_max_fds',
-                                    'process_open_fds',
-                                    'node_cpu_seconds_total',
-                                    'node_filesystem_avail_bytes',
-                                    'node_filesystem_size_bytes',
-                                    'node_memory_MemTotal_bytes',
-                                    'node_memory_MemAvailable_bytes',
-                                    'node_network_transmit_bytes_total',
-                                    'node_network_receive_bytes_total',
-                                    'node_disk_io_time_seconds_total'
-                                    ]
+        self._metrics_to_monitor = {
+            'process_cpu_seconds_total': 'strict',
+            'go_memstats_alloc_bytes': 'strict',
+            'go_memstats_alloc_bytes_total': 'strict',
+            'process_virtual_memory_bytes': 'strict',
+            'process_max_fds': 'strict',
+            'process_open_fds': 'strict',
+            'node_cpu_seconds_total': 'strict',
+            'node_filesystem_avail_bytes': 'strict',
+            'node_filesystem_size_bytes': 'strict',
+            'node_memory_MemTotal_bytes': 'strict',
+            'node_memory_MemAvailable_bytes': 'strict',
+            'node_network_transmit_bytes_total': 'strict',
+            'node_network_receive_bytes_total': 'strict',
+            'node_disk_io_time_seconds_total': 'strict'
+        }
 
     @property
     def system_config(self) -> SystemConfig:
         return self._system_config
 
     @property
-    def metrics_to_monitor(self) -> List:
+    def metrics_to_monitor(self) -> Dict[str, str]:
         return self._metrics_to_monitor
 
     def _display_data(self, data: Dict) -> str:
@@ -73,7 +74,8 @@ class SystemMonitor(Monitor):
 
     def _get_data(self) -> Dict:
         return get_prometheus_metrics_data(self.system_config.node_exporter_url,
-                                           self.metrics_to_monitor, self.logger)
+                                           self.metrics_to_monitor, self.logger,
+                                           verify=False)
 
     def _process_error(self, error: PANICException) -> Dict:
         processed_data = {
@@ -239,40 +241,38 @@ class SystemMonitor(Monitor):
     def _monitor(self) -> None:
         data_retrieval_exception = None
         data = None
-        data_retrieval_failed = False
+        data_retrieval_failed = True
         try:
             data = self._get_data()
+            data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
-            data_retrieval_failed = True
             data_retrieval_exception = SystemIsDownException(
                 self.system_config.system_name)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.system_config.system_name)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except (InvalidURL, InvalidSchema, MissingSchema):
-            data_retrieval_failed = True
             data_retrieval_exception = InvalidUrlException(
                 self.system_config.node_exporter_url)
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
         except MetricNotFoundException as e:
-            data_retrieval_failed = True
             data_retrieval_exception = e
             self.logger.error("Error when retrieving data from %s",
                               self.system_config.node_exporter_url)
             self.logger.exception(data_retrieval_exception)
 
         try:
-            processed_data = self._process_data(data, data_retrieval_failed,
-                                                data_retrieval_exception)
+            processed_data = self._process_data(data_retrieval_failed,
+                                                [data_retrieval_exception],
+                                                [data])
         except Exception as error:
             self.logger.error("Error when processing data obtained from %s",
                               self.system_config.node_exporter_url)

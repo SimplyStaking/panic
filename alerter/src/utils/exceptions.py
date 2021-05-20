@@ -1,5 +1,5 @@
 from json import JSONDecodeError
-from typing import List
+from typing import List, Any
 
 
 class PANICException(Exception):
@@ -7,6 +7,12 @@ class PANICException(Exception):
         self.message = message
         self.code = code
         super().__init__(self.message, self.code)
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
+
+    def __hash__(self):
+        return hash((self.message, self.code))
 
 
 class ConnectionNotInitialisedException(PANICException):
@@ -117,4 +123,20 @@ class BlankCredentialException(PANICException):
             "Tried to initiate a connection with a blank or NoneType {}".format(
                 ",".join(blank_credentials)
             )
+        super().__init__(message, code)
+
+
+class EnabledSourceIsEmptyException(PANICException):
+    def __init__(self, source: str, monitorable_name: str) -> None:
+        code = 5014
+        message = "Enabled source {} is empty for node {}".format(
+            source, monitorable_name)
+        super().__init__(message, code)
+
+
+class NodeIsDownException(PANICException):
+
+    def __init__(self, node_name) -> None:
+        message = "Node {} is unreachable".format(node_name)
+        code = 5015
         super().__init__(message, code)

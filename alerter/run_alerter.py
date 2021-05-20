@@ -19,6 +19,7 @@ from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
+from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
 from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
@@ -36,7 +37,10 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  GITHUB_MONITORS_MANAGER_NAME,
                                  DATA_TRANSFORMERS_MANAGER_NAME,
                                  CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME)
+                                 CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME,
+                                 NODE_MONITORS_MANAGER_NAME,
+                                 NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 NODE_MON_MAN_ROUTING_KEY_CHAINS)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -180,6 +184,35 @@ def _initialise_github_monitors_manager() -> GitHubMonitorsManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_monitors_manager
+
+
+def _initialise_node_monitors_manager() -> NodeMonitorsManager:
+    manager_display_name = NODE_MONITORS_MANAGER_NAME
+
+    node_monitors_manager_logger = _initialise_logger(
+        manager_display_name, NodeMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the node monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=node_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            node_monitors_manager = NodeMonitorsManager(
+                node_monitors_manager_logger, manager_display_name, rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), node_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          node_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return node_monitors_manager
 
 
 def _initialise_data_transformers_manager() -> DataTransformersManager:
@@ -368,6 +401,11 @@ def run_system_monitors_manager() -> None:
 def run_github_monitors_manager() -> None:
     github_monitors_manager = _initialise_github_monitors_manager()
     run_monitors_manager(github_monitors_manager)
+
+
+def run_node_monitors_manager() -> None:
+    node_monitors_manager = _initialise_node_monitors_manager()
+    run_monitors_manager(node_monitors_manager)
 
 
 def run_system_alerters_manager() -> None:
@@ -663,6 +701,21 @@ def _initialise_and_declare_config_queues() -> None:
             rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE, 'general.systems_config')
 
+            # Node Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODE_MON_MAN_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                NODE_MON_MAN_ROUTING_KEY_CHAINS)
+
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
                 STORE_CONFIGS_QUEUE_NAME), dummy_logger)
@@ -736,6 +789,10 @@ if __name__ == '__main__':
         target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
 
+    node_monitors_manager_process = multiprocessing.Process(
+        target=run_node_monitors_manager, args=())
+    node_monitors_manager_process.start()
+
     # Start the alerters in a separate process
     system_alerters_manager_process = multiprocessing.Process(
         target=run_system_alerters_manager, args=())
@@ -772,6 +829,7 @@ if __name__ == '__main__':
     # exit
     config_manager_runner_process.join()
     github_monitors_manager_process.join()
+    node_monitors_manager_process.join()
     system_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
