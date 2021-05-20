@@ -1,12 +1,12 @@
 import json
 import logging
+import time
 import unittest
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock
 from unittest.mock import call
 
-import time
 import pika
 import pika.exceptions
 from freezegun import freeze_time

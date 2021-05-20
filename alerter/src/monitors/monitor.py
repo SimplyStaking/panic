@@ -2,15 +2,18 @@ import logging
 import sys
 from abc import ABC, abstractmethod
 from types import FrameType
-from typing import Dict, Optional
+from typing import Dict, List, Any
 
 import pika.exceptions
+import urllib3
 
 from src.abstract.publisher import PublisherComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
-from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Monitor(PublisherComponent, ABC):
@@ -41,7 +44,7 @@ class Monitor(PublisherComponent, ABC):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False,
                                        True, False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
@@ -51,19 +54,19 @@ class Monitor(PublisherComponent, ABC):
     def _get_data(self) -> Dict:
         pass
 
-    def _process_data(self, data: Dict, data_retrieval_failed: bool,
-                      error: Optional[PANICException]) -> Dict:
+    def _process_data(self, data_retrieval_failed: bool,
+                      failure_args: List[Any], success_args: List[Any]) -> Dict:
         if data_retrieval_failed:
-            return self._process_error(error)
+            return self._process_error(*failure_args)
         else:
-            return self._process_retrieved_data(data)
+            return self._process_retrieved_data(*success_args)
 
     @abstractmethod
-    def _process_error(self, error: PANICException) -> Dict:
+    def _process_error(self, *args) -> Dict:
         pass
 
     @abstractmethod
-    def _process_retrieved_data(self, data: Dict) -> Dict:
+    def _process_retrieved_data(self, *args) -> Dict:
         pass
 
     @abstractmethod

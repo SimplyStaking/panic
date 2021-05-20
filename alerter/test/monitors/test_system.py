@@ -53,15 +53,22 @@ class TestSystemMonitor(unittest.TestCase):
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
-        self.metrics_to_monitor = [
-            'process_cpu_seconds_total', 'go_memstats_alloc_bytes',
-            'go_memstats_alloc_bytes_total', 'process_virtual_memory_bytes',
-            'process_max_fds', 'process_open_fds', 'node_cpu_seconds_total',
-            'node_filesystem_avail_bytes', 'node_filesystem_size_bytes',
-            'node_memory_MemTotal_bytes', 'node_memory_MemAvailable_bytes',
-            'node_network_transmit_bytes_total',
-            'node_network_receive_bytes_total',
-            'node_disk_io_time_seconds_total']
+        self.metrics_to_monitor = {
+            'process_cpu_seconds_total': 'strict',
+            'go_memstats_alloc_bytes': 'strict',
+            'go_memstats_alloc_bytes_total': 'strict',
+            'process_virtual_memory_bytes': 'strict',
+            'process_max_fds': 'strict',
+            'process_open_fds': 'strict',
+            'node_cpu_seconds_total': 'strict',
+            'node_filesystem_avail_bytes': 'strict',
+            'node_filesystem_size_bytes': 'strict',
+            'node_memory_MemTotal_bytes': 'strict',
+            'node_memory_MemAvailable_bytes': 'strict',
+            'node_network_transmit_bytes_total': 'strict',
+            'node_network_receive_bytes_total': 'strict',
+            'node_disk_io_time_seconds_total': 'strict'
+        }
         self.retrieved_metrics_example = {
             'go_memstats_alloc_bytes': 2003024.0,
             'go_memstats_alloc_bytes_total': 435777412600.0,
@@ -154,7 +161,7 @@ class TestSystemMonitor(unittest.TestCase):
             self.test_monitor.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
             self.test_monitor.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
 
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
@@ -232,8 +239,7 @@ class TestSystemMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_error.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, True,
-                                        self.test_exception)
+        self.test_monitor._process_data(True, [self.test_exception], [])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
@@ -247,7 +253,7 @@ class TestSystemMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_retrieved_data.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, False, None)
+        self.test_monitor._process_data(False, [], [self.test_data_dict])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called

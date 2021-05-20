@@ -10,9 +10,9 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.alerts.internal_alerts import (ComponentResetAll,
                                                 ComponentReset)
-from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi

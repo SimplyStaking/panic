@@ -10,12 +10,11 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
-from unittest.mock import call
 
 from src.alerter.alerters.system import SystemAlerter
-from src.alerter.metric_code import SystemMetricCode
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
+from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
@@ -628,10 +627,10 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
         ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
         ('system_storage_usage', 'mock_storage_usage_increase', '46',
-            'self.warning'),
+         'self.warning'),
         ('system_storage_usage', 'mock_storage_usage_increase', '56',
-            'self.critical'),
-        ])
+         'self.critical'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -657,7 +656,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_no_increase_or_decrease_alerts_then_warning_or_critical_alert(
-        self, metric_param, mock_param, mock_pad, mock_severity,
+            self, metric_param, mock_param, mock_pad, mock_severity,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -727,10 +726,10 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
         ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
         ('system_storage_usage', 'mock_storage_usage_increase', '46',
-            'self.warning'),
+         'self.warning'),
         ('system_storage_usage', 'mock_storage_usage_increase', '56',
-            'self.critical'),
-        ])
+         'self.critical'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -756,7 +755,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_alerts_above_warning_and_critical_threshold(
-        self, metric_param, mock_param, mock_pad, mock_severity,
+            self, metric_param, mock_param, mock_pad, mock_severity,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -785,12 +784,12 @@ class TestSystemAlerter(unittest.TestCase):
     @parameterized.expand([
         ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
         ('system_cpu_usage', 'mock_cpu_usage_increase',
-            'mock_cpu_usage_decrease'),
+         'mock_cpu_usage_decrease'),
         ('system_ram_usage', 'mock_ram_usage_increase',
-            'mock_ram_usage_decrease'),
+         'mock_ram_usage_decrease'),
         ('system_storage_usage', 'mock_storage_usage_increase',
-            'mock_storage_usage_decrease'),
-        ])
+         'mock_storage_usage_decrease'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -816,7 +815,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_info_alert_on_decrease(
-        self, metric_param, mock_param, mock_param_2,
+            self, metric_param, mock_param, mock_param_2,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -862,7 +861,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -888,7 +887,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_critical_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -938,7 +937,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -964,7 +963,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alerts_then_increase_in_warning_no_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1012,12 +1011,12 @@ class TestSystemAlerter(unittest.TestCase):
     @parameterized.expand([
         ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
         ('system_cpu_usage', 'mock_cpu_usage_increase',
-            'mock_cpu_usage_decrease'),
+         'mock_cpu_usage_decrease'),
         ('system_ram_usage', 'mock_ram_usage_increase',
-            'mock_ram_usage_decrease'),
+         'mock_ram_usage_decrease'),
         ('system_storage_usage', 'mock_storage_usage_increase',
-            'mock_storage_usage_decrease'),
-        ])
+         'mock_storage_usage_decrease'),
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1043,7 +1042,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
-        self, metric_param, mock_param, mock_param_2,
+            self, metric_param, mock_param, mock_param_2,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1097,7 +1096,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1126,7 +1125,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_no_alerts_before_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1156,7 +1155,7 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['current'] = self.percent_usage + 58
         data[metric_param]['previous'] = self.percent_usage + 56
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds - 1
+                                      self.critical_repeat_seconds - 1
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_results(
             data, meta_data, data_for_alerting)
@@ -1179,7 +1178,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1208,7 +1207,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1236,7 +1235,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds
+                                      self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 56
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1261,7 +1260,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1290,7 +1289,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
         autospec=True)
     def test_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
-        self, metric_param, mock_param, mock_last_time_that_did_task,
+            self, metric_param, mock_param, mock_last_time_that_did_task,
             mock_storage_usage_decrease, mock_storage_usage_increase,
             mock_ram_usage_decrease, mock_ram_usage_increase,
             mock_cpu_usage_decrease, mock_cpu_usage_increase,
@@ -1314,7 +1313,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         meta_data['last_monitored'] = self.last_monitored + \
-            self.critical_repeat_seconds
+                                      self.critical_repeat_seconds
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 57
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1387,7 +1386,7 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
                 autospec=True)
     def test_system_went_down_at_no_alert_below_warning_threshold(
-        self, mock_system_is_down) -> None:
+            self, mock_system_is_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1409,7 +1408,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
-            self.warning_threshold_seconds
+                                    self.warning_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
@@ -1428,7 +1427,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['meta_data']['time'] = self.last_monitored + \
-            self.critical_threshold_seconds
+                                    self.critical_threshold_seconds
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
@@ -1640,7 +1639,8 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
                 autospec=True)
     def test_process_error_metric_not_found_alert_metric_found_alert(self,
-        mock_alert_not_found, mock_alert_found) -> None:
+                                                                     mock_alert_not_found,
+                                                                     mock_alert_found) -> None:
 
         data_for_alerting = []
         data = self.data_received_error_data['error']
@@ -1658,7 +1658,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         data = self.data_received_error_data['error']
-        data['code'] = 600000000 # This code doesn't exist
+        data['code'] = 600000000  # This code doesn't exist
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_found.assert_called_once_with(
@@ -1674,8 +1674,9 @@ class TestSystemAlerter(unittest.TestCase):
                 autospec=True)
     @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
                 autospec=True)
-    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(self,
-        mock_alert_not_found, mock_alert_found) -> None:
+    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(
+            self,
+            mock_alert_not_found, mock_alert_found) -> None:
 
         data_for_alerting = []
         data = self.data_received_error_data['error']
@@ -1726,7 +1727,8 @@ class TestSystemAlerter(unittest.TestCase):
     @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
     def test_process_errors_invalid_url_alert_then_valid_url_alert(self,
-        mock_alert_invalid, mock_alert_valid) -> None:
+                                                                   mock_alert_invalid,
+                                                                   mock_alert_valid) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
@@ -1742,7 +1744,7 @@ class TestSystemAlerter(unittest.TestCase):
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
         data = self.data_received_error_data['error']
-        data['code'] = 600000000 # This code doesn't exist
+        data['code'] = 600000000  # This code doesn't exist
         self.test_system_alerter._process_errors(data, data_for_alerting)
         try:
             mock_alert_valid.assert_called_once_with(
@@ -1756,8 +1758,9 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
     @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(self,
-        mock_alert_invalid, mock_alert_valid) -> None:
+    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(
+            self,
+            mock_alert_invalid, mock_alert_valid) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
         data['code'] = 5009
@@ -1809,7 +1812,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1835,7 +1838,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_warning_alerts_disabled_increase_above_warning_threshold_no_alerts_occur(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1853,7 +1856,7 @@ class TestSystemAlerter(unittest.TestCase):
             mock_ram_usage_decrease.assert_not_called()
             mock_cpu_usage_decrease.assert_not_called()
             mock_ofd_decrease.assert_not_called()
-            
+
             eval(mock_param).assert_not_called()
             self.assertEqual(0, len(data_for_alerting))
         except AssertionError as e:
@@ -1881,7 +1884,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1907,7 +1910,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_disabled_increase_above_critical_threshold_warning_alert(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1935,7 +1938,7 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_cpu_usage', 'mock_cpu_usage_increase'),
         ('system_ram_usage', 'mock_ram_usage_increase'),
         ('system_storage_usage', 'mock_storage_usage_increase'),
-        ])
+    ])
     @mock.patch(
         "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
@@ -1961,7 +1964,7 @@ class TestSystemAlerter(unittest.TestCase):
         "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_and_warning_alerts_disabled_increase_above_critical_threshold_no_alerts(
-        self, metric_param, mock_param, mock_storage_usage_decrease,
+            self, metric_param, mock_param, mock_storage_usage_decrease,
             mock_storage_usage_increase, mock_ram_usage_decrease,
             mock_ram_usage_increase, mock_cpu_usage_decrease,
             mock_cpu_usage_increase, mock_ofd_decrease,
@@ -1979,7 +1982,6 @@ class TestSystemAlerter(unittest.TestCase):
             eval(mock_param).assert_not_called()
         except AssertionError as e:
             self.fail("Test failed: {}".format(e))
-
 
     @mock.patch.object(SystemAlerter, "_classify_alert")
     def test_alerts_all_alerts_disabled_metric_above_critical_threshold_and_warning_threshold(

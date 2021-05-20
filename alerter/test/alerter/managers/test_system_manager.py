@@ -308,7 +308,8 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing, 'Process')
     @mock.patch("src.alerter.managers.system.ComponentReset")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
+    @mock.patch(
+        "src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_terminate_and_join_chain_alerter_processes_creates_alert(
             self, mock_push_latest_data_to_queue_and_send,
             mock_component_reset, mock_process, mock_join,
@@ -361,10 +362,10 @@ class TestSystemAlertersManager(unittest.TestCase):
             # will also check if the size of the queues is 0 to confirm that
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
-            # created, then either an exception will be thrown or the queue size
-            # would be 1. Note when deleting the exchanges in the beginning we
-            # also released every binding, hence there are no other queue binded
-            # with the same routing key to any exchange at this point.
+            # created, then an exception will be thrown. Note when deleting the
+            # exchanges in the beginning we also released every binding, hence there
+            # is no other queue binded with the same routing key to any exchange at
+            # this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,

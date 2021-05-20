@@ -710,7 +710,7 @@ class TestDataTransformersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing, 'Process')
     def test_process_ping_does_not_send_hb_if_processing_fails(
             self, mock_process, mock_start, mock_is_alive, mock_send_hb
-                ) -> None:
+    ) -> None:
         # We will perform this test by checking that _send_heartbeat is not
         # called. Note we will generate an exception from is_alive
         mock_is_alive.side_effect = self.test_exception
