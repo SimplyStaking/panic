@@ -34,6 +34,9 @@ _key_chain_mute_alerts = 'ch1'
 # confx_<config_type>
 _key_config = 'conf1'
 
+# bcX_<base_chain>
+_key_base_chain_monitorables_info = 'bc1'
+
 # alert_systemX_<origin_id>
 _key_alert_open_file_descriptors = 'alert_system1'
 _key_alert_system_cpu_usage = 'alert_system2'
@@ -189,3 +192,7 @@ class Keys:
     @staticmethod
     def get_alert_cannot_access_github(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id
+
+    @staticmethod
+    def get_base_chain_monitorables_info(base_chain: str) -> str:
+        return Keys._as_prefix(_key_base_chain_monitorables_info) + base_chain

@@ -11,13 +11,13 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
-from src.alerter.alerts.internal_alerts import (ComponentReset)
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GITHUB_MANAGER_INPUT_QUEUE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
                                  ALERT_EXCHANGE)
+from src.alerter.alerts.internal_alerts import ComponentResetAllChains
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -55,6 +55,12 @@ class GithubAlerterManager(AlertersManager):
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
         self.rabbitmq.confirm_delivery()
 
@@ -119,10 +125,10 @@ class GithubAlerterManager(AlertersManager):
             We must clear out all the metrics which are found in REDIS,
             sending this alert to the data store will achieve this.
             """
-            alert = ComponentReset(type(self).__name__,
-                                   datetime.now().timestamp(),
-                                   type(self).__name__,
-                                   type(self).__name__)
+            alert = ComponentResetAllChains(type(self).__name__,
+                                            datetime.now().timestamp(),
+                                            type(self).__name__,
+                                            type(self).__name__)
             self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def start(self) -> None:
@@ -154,10 +160,10 @@ class GithubAlerterManager(AlertersManager):
                           self.logger)
             process.terminate()
             process.join()
-            alert = ComponentReset(type(self).__name__,
-                                   datetime.now().timestamp(),
-                                   type(self).__name__,
-                                   type(self).__name__)
+            alert = ComponentResetAllChains(type(self).__name__,
+                                            datetime.now().timestamp(),
+                                            type(self).__name__,
+                                            type(self).__name__)
             self._push_latest_data_to_queue_and_send(alert.alert_data)
 
         self.disconnect_from_rabbit()

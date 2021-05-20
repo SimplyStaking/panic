@@ -150,11 +150,13 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                    InternalAlertCode.ComponentResetAll.value and
+                InternalAlertCode.ComponentResetAllChains.value and
                     alert['origin_id'] == 'SystemAlertersManager'):
 
+                self.logger.debug("Resetting the system metrics for all "
+                                  "chains.")
                 """
-                The `ComponentResetAll` alert indicates that PANIC has
+                The `ComponentResetAllChains` alert indicates that PANIC has
                 started, or restarted. This means that we cannot be sure if the
                 configurations are the same as the previous run and the Alert
                 Metrics should be cleared for each CHAIN.
@@ -175,16 +177,21 @@ class AlertStore(Store):
                             self.redis.hremove(chain, key)
 
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentReset.value and
+                  InternalAlertCode.ComponentResetChains.value and
                   alert['origin_id'] == 'SystemAlertersManager'):
-
                 """
                 This internal alert is sent whenever an Alerter is
                 terminated due to change in configuration or shut down signal.
                 """
-                # For the specified chain we need to load all the keys and only
-                # delete the ones that match the pattern `alert_system*`
-                # REDIS doesn't support this natively
+
+                self.logger.debug("Resetting system metrics for chain %s.",
+                                  alert['parent_id'])
+
+                """
+                For the specified chain we need to load all the keys and only
+                delete the ones that match the pattern `alert_system*` as
+                REDIS doesn't support this natively.
+                """
                 chain_hash = Keys.get_hash_parent(alert['parent_id'])
                 for key in self.redis.hkeys(chain_hash):
                     # We only want to delete alert keys
@@ -193,15 +200,18 @@ class AlertStore(Store):
                         self.redis.hremove(chain_hash, key)
 
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentReset.value and
+                  InternalAlertCode.ComponentResetAllChains.value and
                   alert['origin_id'] == 'GithubAlerterManager'):
                 """
-                The `ComponentReset` alert for the `GithubAlerterManager`
-                indicates that PANIC has started, or restarted. This means
-                that we cannot be sure if the configurations are the same as
-                the previous run and the Alert Metrics should be cleared for
-                each CHAIN.
+                The `ComponentResetAllChains` alert for the
+                `GithubAlerterManager` indicates that PANIC has started, or
+                restarted. This means that we cannot be sure if the
+                configurations are the same as the previous run and the Alert
+                Metrics should be cleared for each CHAIN.
                 """
+
+                self.logger.debug("Resetting GitHub metrics for all chains.")
+
                 parent_hash = Keys.get_hash_parent_raw()
                 chain_hashes_list = self.redis.get_keys_unsafe(
                     '*' + parent_hash + '*')
@@ -218,8 +228,11 @@ class AlertStore(Store):
                                                                          key):
                             self.redis.hremove(chain, key)
         else:
-            # If the alert is not of severity Internal, the metric needs to be
-            # stored in REDIS
+            """
+            If the alert is not of severity Internal, the metric needs to be
+            stored in REDIS, this will be used for easier querying on the UI.
+            """
+            self.logger.debug("Saving alert in REDIS: %s.", alert)
             metric_data = {'severity': alert['severity'],
                            'message': alert['message']}
             key = alert['origin_id']

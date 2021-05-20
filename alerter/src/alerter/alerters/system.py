@@ -22,7 +22,7 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
