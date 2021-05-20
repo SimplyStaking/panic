@@ -25,7 +25,6 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
-                                 ALERT_ROUTER_SYSTEM_ROUTING_KEY,
                                  ALERT_EXCHANGE)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
@@ -312,7 +311,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing, 'Process')
-    @mock.patch("src.alerter.managers.system.ComponentReset")
+    @mock.patch("src.alerter.managers.system.ComponentResetChains")
     @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_terminate_and_join_chain_alerter_processes_creates_alert(
             self, mock_push_latest_data_to_queue_and_send,
@@ -390,7 +389,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=ALERT_ROUTER_SYSTEM_ROUTING_KEY,
+                routing_key='alert_router.system',
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False

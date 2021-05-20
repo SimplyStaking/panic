@@ -194,5 +194,5 @@ class Keys:
         return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id
 
     @staticmethod
-    def get_base_chain_monitorables_info(config_info: str) -> str:
-        return Keys._as_prefix(_key_base_chain_monitorables_info) + config_info
+    def get_base_chain_monitorables_info(base_chain: str) -> str:
+        return Keys._as_prefix(_key_base_chain_monitorables_info) + base_chain

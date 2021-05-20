@@ -10,8 +10,8 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.alerter.alerts.internal_alerts import (ComponentResetAll,
-                                                ComponentReset)
+from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
+                                                ComponentResetChains)
 from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
@@ -23,9 +23,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
-                                 ALERT_EXCHANGE,
-                                 ALERT_ROUTER_SYSTEM_ROUTING_KEY,
-                                 )
+                                 ALERT_EXCHANGE)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -50,12 +48,6 @@ class SystemAlertersManager(AlertersManager):
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
-        # Declare exchange to send data to
-        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
-                                       durable=True, auto_delete=False,
-                                       internal=False)
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
@@ -102,6 +94,12 @@ class SystemAlertersManager(AlertersManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
@@ -125,7 +123,7 @@ class SystemAlertersManager(AlertersManager):
 
                 # Send an internal alert to reset all the REDIS metrics for
                 # this chain
-                alert = ComponentReset(chain,
+                alert = ComponentResetChains(chain,
                                        datetime.now().timestamp(),
                                        parent_id,
                                        type(self).__name__)
@@ -164,11 +162,13 @@ class SystemAlertersManager(AlertersManager):
 
         try:
             """
-            Send an internal alert to clear everything from that chain
-            The process for the received config is also terminated as it
-            indicates that a configuration is removed or changed.
+            Send an internal alert to clear every metric from Redis for the
+            chain in question, and terminate the process for the received
+            config. Note that all this happens if a configuration is modified
+            or deleted.
             """
             self._terminate_and_join_chain_alerter_processes(chain)
+
             # Checking if we received a configuration, therefore we start the
             # process again
             if bool(sent_configs):
@@ -253,8 +253,8 @@ class SystemAlertersManager(AlertersManager):
         while True:
             try:
                 # Send an internal alert to reset system alert REDIS metrics
-                # for all chains. 
-                alert = ComponentResetAll(type(self).__name__,
+                # for all chains.
+                alert = ComponentResetAllChains(type(self).__name__,
                                           datetime.now().timestamp(),
                                           type(self).__name__,
                                           type(self).__name__)
@@ -295,7 +295,7 @@ class SystemAlertersManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key=ALERT_ROUTER_SYSTEM_ROUTING_KEY,
+            routing_key='alert_router.system',
             properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True
         )

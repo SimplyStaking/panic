@@ -148,17 +148,15 @@ class AlertStore(Store):
             )
 
     def _process_redis_store(self, alert: Dict) -> None:
-        self.logger.debug("Successfully received alert %s.", alert)
-
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                InternalAlertCode.ComponentResetAll.value and
+                InternalAlertCode.ComponentResetAllChains.value and
                     alert['origin_id'] == 'SystemAlertersManager'):
 
                 self.logger.debug("Resetting the system metrics for all "
                                   "chains.")
                 """
-                The `ComponentResetAll` alert indicates that PANIC has
+                The `ComponentResetAllChains` alert indicates that PANIC has
                 started, or restarted. This means that we cannot be sure if the
                 configurations are the same as the previous run and the Alert
                 Metrics should be cleared for each CHAIN.
@@ -179,7 +177,7 @@ class AlertStore(Store):
                             self.redis.hremove(chain, key)
 
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentReset.value and
+                  InternalAlertCode.ComponentResetChains.value and
                   alert['origin_id'] == 'SystemAlertersManager'):
                 """
                 This internal alert is sent whenever an Alerter is
@@ -191,8 +189,8 @@ class AlertStore(Store):
 
                 """
                 For the specified chain we need to load all the keys and only
-                delete the ones that match the pattern `alert_system*`
-                REDIS doesn't support this natively
+                delete the ones that match the pattern `alert_system*` as
+                REDIS doesn't support this natively.
                 """
                 chain_hash = Keys.get_hash_parent(alert['parent_id'])
                 for key in self.redis.hkeys(chain_hash):
@@ -202,14 +200,14 @@ class AlertStore(Store):
                         self.redis.hremove(chain_hash, key)
 
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentReset.value and
+                  InternalAlertCode.ComponentResetAllChains.value and
                   alert['origin_id'] == 'GithubAlerterManager'):
                 """
-                The `ComponentReset` alert for the `GithubAlerterManager`
-                indicates that PANIC has started, or restarted. This means
-                that we cannot be sure if the configurations are the same as
-                the previous run and the Alert Metrics should be cleared for
-                each CHAIN.
+                The `ComponentResetAllChains` alert for the
+                `GithubAlerterManager` indicates that PANIC has started, or
+                restarted. This means that we cannot be sure if the
+                configurations are the same as the previous run and the Alert
+                Metrics should be cleared for each CHAIN.
                 """
 
                 self.logger.debug("Resetting GitHub metrics for all chains.")

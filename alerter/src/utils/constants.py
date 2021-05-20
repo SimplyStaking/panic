@@ -16,10 +16,6 @@ GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME = \
     'system_monitors_manager_configs_queue'
 
-# Alert Router Keys
-ALERT_ROUTER_SYSTEM_ROUTING_KEY = 'alert_router.system'
-ALERT_ROUTER_GITHUB_ROUTING_KEY = 'alert_router.github'
-
 # Routing keys and queue names
 GITHUB_ALERTER_INPUT_QUEUE = 'github_alerter_queue'
 GITHUB_ALERTER_INPUT_ROUTING_KEY = 'alerter.github'

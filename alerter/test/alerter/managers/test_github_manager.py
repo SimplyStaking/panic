@@ -20,8 +20,7 @@ from src.utils import env
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_MANAGER_INPUT_QUEUE,
                                  GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE,
-                                 ALERT_ROUTER_GITHUB_ROUTING_KEY)
+                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -157,7 +156,7 @@ class TestGithubAlertersManager(unittest.TestCase):
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=ALERT_ROUTER_GITHUB_ROUTING_KEY,
+                routing_key='alert_router.github',
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False

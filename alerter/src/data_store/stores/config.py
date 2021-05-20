@@ -28,7 +28,7 @@ class ConfigStore(Store):
         systems, therefore by storing them in a list and iterating through
         the dictionaries it is easier to bundle up the list of monitorable
         data.
-        """ 
+        """
         self.helper_configuration = {
             REPOS_CONFIG: [{
                 "id": 'id',
@@ -106,7 +106,8 @@ class ConfigStore(Store):
         """
         config_data = json.loads(body.decode())
 
-        self.logger.debug("Received %s. Now processing this data.", config_data)
+        self.logger.debug(
+            "Received %s. Now processing this data.", config_data)
 
         if 'DEFAULT' in config_data:
             del config_data['DEFAULT']
@@ -156,12 +157,12 @@ class ConfigStore(Store):
                                                 received_config: Dict) -> None:
 
         # Helper function to extract data from the routing key
-        redis_store_key, source_name, config_type_key = \
+        redis_store_key, source_chain_name, config_type_key = \
             self._process_routing_key(routing_key)
 
         # If after processing the routing key there was a missing value
         # do not proceed with the storage of chain_monitorables
-        if '' in [redis_store_key, source_name, config_type_key]:
+        if '' in [redis_store_key, source_chain_name, config_type_key]:
             return
 
         # Load the currently saved data from REDIS if it exists
@@ -184,7 +185,7 @@ class ConfigStore(Store):
             data_for_store = self._sort_monitorable_configs(received_config,
                                                             config_type_key,
                                                             data_for_store,
-                                                            source_name)
+                                                            source_chain_name)
 
             self.redis.set(Keys.get_base_chain_monitorables_info(
                 redis_store_key), json.dumps(dict(data_for_store)))
@@ -199,15 +200,15 @@ class ConfigStore(Store):
                         self.helper_configuration[config_type_key]
 
                     for helper_keys in current_helper_config:
-                        del data_for_store[source_name]['monitored'][
+                        del data_for_store[source_chain_name]['monitored'][
                             helper_keys['config_key']]
-                        del data_for_store[source_name]['not_monitored'][
+                        del data_for_store[source_chain_name]['not_monitored'][
                             helper_keys['config_key']]
 
                     # If the monitored and not_monitored are empty then remove
                     # the chain from REDIS
-                    if len(data_for_store[source_name]['monitored']) == 0 \
-                        and len(data_for_store[source_name][
+                    if len(data_for_store[source_chain_name]['monitored']) == 0 \
+                        and len(data_for_store[source_chain_name][
                             'not_monitored']) == 0:
                         self.redis.remove(
                             Keys.get_base_chain_monitorables_info(
@@ -222,37 +223,37 @@ class ConfigStore(Store):
         The following values need to be determined from the routing_key:
         `redis_store_key`: is the identifiable base chain e.g GENERAl, COSMOS,
         SUBSTRATE.
-        `source_name`: Name of the chain that is built on top of the base chain
+        `source_chain_name`: Name of the chain that is built on top of the base chain
         such as regen, moonbeam ...etc.
         `config_type_key`: The configuration type received the ones that are
         needed for this process are SYSTEMS, NODES, REPOS. If anything else
         is received it should be ignored.
         """
         redis_store_key = ''
-        source_name = ''
+        source_chain_name = ''
         config_type_key = ''
 
         parsed_routing_key = routing_key.split('.')
 
         if parsed_routing_key[0] == GENERAL:
             redis_store_key = GENERAL
-            source_name = GLOBAL
+            source_chain_name = GLOBAL
             # Determine the configuration that needs to be changed
             if parsed_routing_key[1] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
                 config_type_key = parsed_routing_key[1]
         elif parsed_routing_key[0] == CHAINS:
             redis_store_key = parsed_routing_key[1]
-            source_name = parsed_routing_key[2]
+            source_chain_name = parsed_routing_key[2]
             if parsed_routing_key[3] in [REPOS_CONFIG, SYSTEMS_CONFIG]:
                 config_type_key = parsed_routing_key[3]
             elif parsed_routing_key[3] == NODES_CONFIG:
                 config_type_key = parsed_routing_key[1]
 
-        return redis_store_key, source_name, config_type_key
+        return redis_store_key, source_chain_name, config_type_key
 
     def _sort_monitorable_configs(self, received_config: Dict,
                                   config_type_key: str, data_for_store: Dict,
-                                  source_name: str
+                                  source_chain_name: str
                                   ) -> Dict:
         """
         Using the received configuration together with the data which is
@@ -281,13 +282,13 @@ class ConfigStore(Store):
             # If we load data from REDIS we can overwrite it, no need for new
             # structure
             if data_for_store:
-                data_for_store[source_name]['monitored'][
+                data_for_store[source_chain_name]['monitored'][
                     helper_keys['config_key']] = monitored_list
-                data_for_store[source_name]['not_monitored'][
+                data_for_store[source_chain_name]['not_monitored'][
                     helper_keys['config_key']] = not_monitored_list
             else:
                 data_for_store = {
-                    source_name: {
+                    source_chain_name: {
                         'monitored': {
                             helper_keys['config_key']: monitored_list
                         },
