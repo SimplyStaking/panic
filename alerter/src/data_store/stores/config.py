@@ -14,7 +14,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS,
                                  GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
                                  NODES_CONFIG, COSMOS_NODE_CONFIG,
-                                 SUBSTRATE_NODE_CONFIG, GLOBAL,
+                                 SUBSTRATE_NODE_CONFIG, GENERAL,
                                  MONITORABLES_PARSING_HELPER)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -209,7 +209,7 @@ class ConfigStore(Store):
 
             if parsed_routing_key[0].lower() == GENERAL.lower():
                 redis_store_key = GENERAL
-                source_chain_name = GLOBAL
+                source_chain_name = GENERAL
                 # Determine the configuration that needs to be changed
                 if parsed_routing_key[1].lower() in [REPOS_CONFIG.lower(),
                                                      SYSTEMS_CONFIG.lower()]:
