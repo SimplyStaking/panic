@@ -134,6 +134,10 @@ class TestGithubAlerter(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_github_alerter.rabbitmq.connect()
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, 'topic', False, True, False, False)
             self.test_github_alerter.rabbitmq.queue_declare(
                 queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False

@@ -13,8 +13,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  CONFIGS_STORE_INPUT_QUEUE_NAME,
                                  CONFIGS_STORE_INPUT_ROUTING_KEY,
                                  GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
-                                 NODES_CONFIG, COSMOS_NODE_CONFIG,
-                                 SUBSTRATE_NODE_CONFIG, GLOBAL,
+                                 NODES_CONFIG, GLOBAL,
                                  MONITORABLES_PARSING_HELPER)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)

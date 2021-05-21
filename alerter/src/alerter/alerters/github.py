@@ -47,6 +47,11 @@ class GithubAlerter(Alerter):
         self.rabbitmq.queue_bind(
             queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, exchange=ALERT_EXCHANGE,
             routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions")
+        self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                    on_message_callback=self._process_data,
+                                    auto_ack=False, exclusive=False,
+                                    consumer_tag=None)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -55,11 +60,6 @@ class GithubAlerter(Alerter):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE_NAME,
-                                    on_message_callback=self._process_data,
-                                    auto_ack=False, exclusive=False,
-                                    consumer_tag=None)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)

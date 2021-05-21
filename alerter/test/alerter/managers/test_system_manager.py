@@ -642,18 +642,21 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_stores_modified_configs_to_be_alerted_on_correctly(
             self, mock_join, mock_terminate, mock_start, mock_ack,
-            mock_system_alerts_config) -> None:
+            mock_push_and_send, mock_system_alerts_config) -> None:
 
         mock_ack.return_value = None
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
+        mock_push_and_send.return_value = None
 
         try:
             # Must create a connection so that the blocking channel is passed

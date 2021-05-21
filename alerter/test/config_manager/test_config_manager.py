@@ -21,7 +21,8 @@ from src.config_manager import ConfigsManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 CONFIGS_MANAGER_HEARTBEAT_QUEUE)
+                                 CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                                 PING_ROUTING_KEY)
 from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
@@ -187,7 +188,7 @@ class TestConfigsManager(unittest.TestCase):
 
             blocking_channel = self.test_config_manager._rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key="ping"
+                routing_key=PING_ROUTING_KEY
             )
             properties = pika.spec.BasicProperties()
 
