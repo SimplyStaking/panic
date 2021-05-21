@@ -152,7 +152,7 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                InternalAlertCode.ComponentResetAllChains.value and
+                    InternalAlertCode.ComponentResetAllChains.value and
                     alert['origin_id'] == SystemAlertersManager.__name__):
 
                 self.logger.debug("Resetting the system metrics for all "

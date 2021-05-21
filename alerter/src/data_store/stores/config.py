@@ -1,10 +1,10 @@
 import json
 import logging
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, Tuple
 
 import pika.exceptions
-from collections import defaultdict
 
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
@@ -139,7 +139,7 @@ class ConfigStore(Store):
                 Keys.get_base_chain_monitorables_info(redis_store_key)):
             data_for_store = json.loads(self.redis.get(
                 Keys.get_base_chain_monitorables_info(redis_store_key)).decode(
-                    'utf-8'))
+                'utf-8'))
         else:
             data_for_store = {}
 
@@ -166,7 +166,7 @@ class ConfigStore(Store):
                 # Delete the data corresponding to the routing key
                 if data_for_store:
                     current_helper_config = \
-                       MONITORABLES_PARSING_HELPER[config_type_key]
+                        MONITORABLES_PARSING_HELPER[config_type_key]
 
                     for helper_keys in current_helper_config:
                         del data_for_store[source_chain_name]['monitored'][
@@ -177,8 +177,8 @@ class ConfigStore(Store):
                     # If the monitored and not_monitored are empty then remove
                     # the chain from REDIS
                     if (len(data_for_store[source_chain_name]['monitored']) ==
-                        0 and len(data_for_store[source_chain_name][
-                            'not_monitored']) == 0):
+                            0 and len(data_for_store[source_chain_name][
+                                          'not_monitored']) == 0):
                         self.redis.remove(
                             Keys.get_base_chain_monitorables_info(
                                 redis_store_key))
@@ -221,7 +221,7 @@ class ConfigStore(Store):
                     config_type_key = parsed_routing_key[3]
                 elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
                     config_type_key = parsed_routing_key[1] + \
-                        '_' + NODES_CONFIG.lower()
+                                      '_' + NODES_CONFIG.lower()
         except KeyError as ke:
             self._logger.error("Failed to process routing_key %s",
                                routing_key)
@@ -254,11 +254,11 @@ class ConfigStore(Store):
                 if str_to_bool(config_details[helper_keys['monitor_key']]):
                     monitored_list.append({
                         config_details[helper_keys['id']]:
-                        config_details[helper_keys['name_key']]})
+                            config_details[helper_keys['name_key']]})
                 else:
                     not_monitored_list.append({
                         config_details[helper_keys['id']]:
-                        config_details[helper_keys['name_key']]})
+                            config_details[helper_keys['name_key']]})
             # If we load data from REDIS we can overwrite it, no need for new
             # structure
             if data_for_store:

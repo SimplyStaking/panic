@@ -315,7 +315,8 @@ class TestSystemAlertersManager(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing, 'Process')
     @mock.patch("src.alerter.managers.system.ComponentResetChains")
-    @mock.patch("src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
+    @mock.patch(
+        "src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
     def test_terminate_and_join_chain_alerter_processes_creates_alert(
             self, mock_push_latest_data_to_queue_and_send,
             mock_component_reset, mock_process) -> None:
@@ -810,9 +811,9 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_1]['process'].is_alive())
+                                self.parent_id_1]['process'].is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_2]['process'].is_alive())
+                                self.parent_id_2]['process'].is_alive())
 
             # Give some time till the process starts
             time.sleep(1)
@@ -849,10 +850,10 @@ class TestSystemAlertersManager(unittest.TestCase):
             # started.
             self.assertFalse(parent_id_1_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_1]['process'].is_alive())
+                                self.parent_id_1]['process'].is_alive())
             self.assertFalse(parent_id_2_old_proc.is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_2]['process'].is_alive())
+                                self.parent_id_2]['process'].is_alive())
 
             # Clean before finishing
             self.test_manager.parent_id_process_dict[self.parent_id_1][
@@ -899,9 +900,9 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_1]['process'].is_alive())
+                                self.parent_id_1]['process'].is_alive())
             self.assertTrue(self.test_manager.parent_id_process_dict[
-                self.parent_id_2]['process'].is_alive())
+                                self.parent_id_2]['process'].is_alive())
 
             # Give some time till the process starts
             time.sleep(1)
@@ -1197,7 +1198,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                        'component_name'],
+                         'component_name'],
                      self.test_manager.parent_id_process_dict[self.parent_id_2][
                          'component_name']],
                 'dead_processes': [],
@@ -1276,9 +1277,9 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                        'component_name']],
+                         'component_name']],
                 'dead_processes': [self.test_manager.parent_id_process_dict[
-                    self.parent_id_2]['component_name']],
+                                       self.parent_id_2]['component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
@@ -1355,7 +1356,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 'running_processes': [],
                 'dead_processes':
                     [self.test_manager.parent_id_process_dict[self.parent_id_1][
-                        'component_name'],
+                         'component_name'],
                      self.test_manager.parent_id_process_dict[self.parent_id_2][
                          'component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
@@ -1410,9 +1411,9 @@ class TestSystemAlertersManager(unittest.TestCase):
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_manager.parent_id_process_dict[
-                self.parent_id_1]['process'].is_alive())
+                                 self.parent_id_1]['process'].is_alive())
             self.assertFalse(self.test_manager.parent_id_process_dict[
-                self.parent_id_2]['process'].is_alive())
+                                 self.parent_id_2]['process'].is_alive())
 
             # initialise
             method_hb = pika.spec.Basic.Deliver(

@@ -20,7 +20,8 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY)
+                                 SYSTEM_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY,
+                                 NODES_CONFIG)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -133,13 +134,10 @@ class SystemMonitorsManager(MonitorsManager):
             config_type = parsed_routing_key[3]
             chain = base_chain + ' ' + specific_chain
 
-            # TODO: Reminder, when we merge !42 change nodes_config to one of
-            #     : the constants in utils/constants. Also we can refactor all
-            #     : general instances found here and in other modules.
             # For such chains the nodes_config.ini file has no system confs,
             # therefore ignore the contents and acknowledge the message.
             if base_chain.lower() in self.BASE_CHAINS_WITH_SEPARATE_SYS_CONF \
-                    and config_type.lower() == 'nodes_config':
+                    and config_type.lower() == NODES_CONFIG:
                 self.rabbitmq.basic_ack(method.delivery_tag, False)
                 return
 

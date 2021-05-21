@@ -180,7 +180,6 @@ OPSGENIE_CONFIG = 'opsgenie_config'
 PAGERDUTY_CONFIG = 'pagerduty_config'
 TWILIO_CONFIG = 'twilio_config'
 
-
 # Helpers to assist with routing key parsing
 """
 This configuration object is useful as when COSMOS and SUBSTRATE nodes

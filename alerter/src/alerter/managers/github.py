@@ -11,13 +11,13 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.alerts.internal_alerts import ComponentResetAllChains
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                  PING_ROUTING_KEY, ALERT_EXCHANGE,
                                  GITHUB_ALERT_ROUTING_KEY)
-from src.alerter.alerts.internal_alerts import ComponentResetAllChains
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
