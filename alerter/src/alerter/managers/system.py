@@ -10,9 +10,9 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
+                                                ComponentResetChains)
 from src.alerter.alerter_starters import start_system_alerter
-from src.alerter.alerts.internal_alerts import (ComponentResetAll,
-                                                ComponentReset)
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -94,6 +94,12 @@ class SystemAlertersManager(AlertersManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type='topic', passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
@@ -117,10 +123,10 @@ class SystemAlertersManager(AlertersManager):
 
                 # Send an internal alert to reset all the REDIS metrics for
                 # this chain
-                alert = ComponentReset(chain,
-                                       datetime.now().timestamp(),
-                                       parent_id,
-                                       type(self).__name__)
+                alert = ComponentResetChains(chain,
+                                             datetime.now().timestamp(),
+                                             parent_id,
+                                             type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _create_and_start_alerter_process(
@@ -155,10 +161,17 @@ class SystemAlertersManager(AlertersManager):
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
-            if not bool(sent_configs):
-                # Send an internal alert to clear everything from that chain
-                self._terminate_and_join_chain_alerter_processes(chain)
-            else:
+            """
+            Send an internal alert to clear every metric from Redis for the
+            chain in question, and terminate the process for the received
+            config. Note that all this happens if a configuration is modified
+            or deleted.
+            """
+            self._terminate_and_join_chain_alerter_processes(chain)
+
+            # Checking if we received a configuration, therefore we start the
+            # process again
+            if bool(sent_configs):
                 # Check if all the parent_ids in the received configuration
                 # are the same
                 parent_id = sent_configs['1']['parent_id']
@@ -178,15 +191,6 @@ class SystemAlertersManager(AlertersManager):
                     system_ram_usage=filtered['system_ram_usage'],
                     system_is_down=filtered['system_is_down'],
                 )
-                if parent_id in self.systems_alerts_configs:
-                    previous_process = \
-                        self.parent_id_process_dict[parent_id]['process']
-                    previous_process.terminate()
-                    previous_process.join()
-
-                    log_and_print("Restarting the system alerter of {} with "
-                                  "latest configuration".format(chain),
-                                  self.logger)
 
                 self._create_and_start_alerter_process(
                     system_alerts_config, parent_id, chain)
@@ -248,14 +252,16 @@ class SystemAlertersManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
-                self._listen_for_data()
                 # Send an internal alert to reset system alert REDIS metrics
                 # for all chains.
-                alert = ComponentResetAll(type(self).__name__,
-                                          datetime.now().timestamp(),
-                                          type(self).__name__,
-                                          type(self).__name__)
+                alert = ComponentResetAllChains(type(self).__name__,
+                                                datetime.now().timestamp(),
+                                                type(self).__name__,
+                                                type(self).__name__)
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
+                # `listen_for_data()` is called after the initial alert is sent
+                # as it's a blocking function.
+                self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the

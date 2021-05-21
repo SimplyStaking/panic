@@ -196,8 +196,8 @@ class TestAlertStore(unittest.TestCase):
         REDIS. Note: we only care about alert_code.code and severity for
         this alert.
 
-        internal_alert_1 = ComponentReset: reset data for one chain
-        internal_alert_2 = ComponentResetAll: reset data for all chains
+        internal_alert_1 = ComponentResetChains: reset data for one chain
+        internal_alert_2 = ComponentResetAllChains: reset data for all chains
         """
         self.alert_internal_system_1 = {
             'parent_id': self.parent_id,
@@ -239,8 +239,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -251,8 +251,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -263,8 +263,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
