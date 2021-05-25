@@ -13,11 +13,12 @@ from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 HB_HANDLER_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_INPUT_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          HB_HANDLER_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_INPUT_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import ReceivedUnexpectedDataException
 from src.utils.logging import log_and_print
 from src.utils.types import RedisType

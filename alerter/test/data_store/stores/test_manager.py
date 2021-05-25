@@ -17,12 +17,14 @@ from src.data_store.starters import (start_system_store, start_github_store,
 from src.data_store.stores.manager import StoreManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
-                                 PING_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 CONFIG_STORE_NAME, TOPIC)
+from src.utils.constants.names import (SYSTEM_STORE_NAME,
+                                       GITHUB_STORE_NAME, ALERT_STORE_NAME,
+                                       CONFIG_STORE_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (PANICException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
                               delete_exchange_if_exists, delete_queue_if_exists)

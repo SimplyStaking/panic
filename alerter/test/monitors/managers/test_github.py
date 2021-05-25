@@ -17,14 +17,15 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
-from src.utils.constants import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 GITHUB_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY,
-                                 TOPIC)
+from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          CONFIG_EXCHANGE, PING_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn

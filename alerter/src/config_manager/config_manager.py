@@ -20,11 +20,10 @@ from watchdog.observers.polling import PollingObserver
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import routing_key
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 RE_INITIALISE_SLEEPING_PERIOD,
-                                 CONFIGS_MANAGER_HEARTBEAT_QUEUE,
-                                 PING_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+    PING_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
+from src.utils.constants.starters import RE_INITIALISE_SLEEPING_PERIOD
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitialisedException)
 from .config_update_event_handler import ConfigFileEventHandler

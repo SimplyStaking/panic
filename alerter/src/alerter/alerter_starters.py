@@ -8,10 +8,10 @@ from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 GITHUB_ALERTER_NAME)
+from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
+                                       GITHUB_ALERTER_NAME)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
                            RABBIT_IP, ALERTER_PUBLISHING_QUEUE_SIZE)
 from src.utils.logging import create_logger, log_and_print

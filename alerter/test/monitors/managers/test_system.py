@@ -18,15 +18,13 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.system import SystemMonitorsManager
 from src.monitors.starters import start_system_monitor
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE,
-                                 SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 PING_ROUTING_KEY,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+from src.utils.constants.names import SYSTEM_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+    SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,

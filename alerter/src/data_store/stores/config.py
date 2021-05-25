@@ -9,12 +9,14 @@ import pika.exceptions
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 CONFIGS_STORE_INPUT_QUEUE_NAME,
-                                 CONFIGS_STORE_INPUT_ROUTING_KEY,
-                                 GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
-                                 NODES_CONFIG, GLOBAL,
-                                 MONITORABLES_PARSING_HELPER, TOPIC)
+from src.utils.constants.configs import (GENERAL, CHAINS, REPOS_CONFIG,
+                                         SYSTEMS_CONFIG,
+                                         NODES_CONFIG, GLOBAL,
+                                         MONITORABLES_PARSING_HELPER)
+from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE, TOPIC,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          CONFIGS_STORE_INPUT_QUEUE_NAME,
+                                          CONFIGS_STORE_INPUT_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import str_to_bool

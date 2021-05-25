@@ -23,9 +23,10 @@ from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
-                                 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          RAW_DATA_EXCHANGE,
+                                          CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   EnabledSourceIsEmptyException,
                                   MetricNotFoundException, NodeIsDownException,

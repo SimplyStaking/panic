@@ -10,10 +10,10 @@ from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_DATA_TRANSFORMER_NAME,
-                                 GITHUB_DATA_TRANSFORMER_NAME)
+from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
+                                       GITHUB_DATA_TRANSFORMER_NAME)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)

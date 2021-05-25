@@ -16,15 +16,14 @@ from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
-                                 PING_ROUTING_KEY,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 ALERT_EXCHANGE,
-                                 SYSTEM_ALERT_ROUTING_KEY, TOPIC)
+from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
+    SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print

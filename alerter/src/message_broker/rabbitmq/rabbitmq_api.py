@@ -8,7 +8,7 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.constants import DIRECT
+from src.utils.constants.rabbitmq import DIRECT
 from src.utils.exceptions import (ConnectionNotInitialisedException,
                                   MessageWasNotDeliveredException,
                                   BlankCredentialException)

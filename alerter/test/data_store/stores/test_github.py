@@ -16,10 +16,11 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.github import GithubStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_STORE_INPUT_QUEUE_NAME,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_STORE_INPUT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,

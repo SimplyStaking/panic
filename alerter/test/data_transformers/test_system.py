@@ -18,12 +18,11 @@ from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.system import System
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
-                                 STORE_EXCHANGE, ALERT_EXCHANGE,
-                                 SYSTEM_DT_INPUT_QUEUE_NAME,
-                                 SYSTEM_RAW_DATA_ROUTING_KEY,
-                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
+    SYSTEM_DT_INPUT_QUEUE_NAME, SYSTEM_RAW_DATA_ROUTING_KEY,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)

@@ -12,11 +12,12 @@ from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store, start_config_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 PING_ROUTING_KEY, CONFIG_STORE_NAME, TOPIC)
+from src.utils.constants.names import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
+                                       ALERT_STORE_NAME, CONFIG_STORE_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 

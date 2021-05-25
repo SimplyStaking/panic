@@ -5,7 +5,8 @@ from typing import List
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.channels.channel import Channel
-from src.utils.constants import EMAIL_TEXT_TEMPLATE, EMAIL_HTML_TEMPLATE
+from src.utils.constants.channels import (EMAIL_TEXT_TEMPLATE,
+                                          EMAIL_HTML_TEMPLATE)
 from src.utils.data import RequestStatus
 
 

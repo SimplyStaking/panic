@@ -18,15 +18,14 @@ from src.alerter.managers.system import SystemAlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
-                                 PING_ROUTING_KEY,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 SYSTEM_ALERT_ROUTING_KEY, ALERT_EXCHANGE,
-                                 TOPIC)
+from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, SYSTEM_ALERT_ROUTING_KEY,
+    ALERT_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 

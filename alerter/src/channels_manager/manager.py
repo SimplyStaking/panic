@@ -20,22 +20,23 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
-                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
-                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 PING_ROUTING_KEY,
-                                 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
-                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY, TOPIC)
+from src.utils.constants.names import (
+    TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+    TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+    PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+    OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+    LOG_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
+    LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
+)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          CONFIG_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY,
+                                          CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                                          CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                          CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,

@@ -22,11 +22,10 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
-                                 SYSTEM_ALERT_ROUTING_KEY,
-                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-                                 TOPIC)
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE, SYSTEM_ALERT_ROUTING_KEY,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter

@@ -15,13 +15,15 @@ from src.monitors.starters import start_github_monitor
 from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GH_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 GITHUB_MONITOR_NAME_TEMPLATE,
-                                 GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 PING_ROUTING_KEY,
-                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN, TOPIC)
+from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                          TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool

@@ -15,11 +15,10 @@ from src.alerter.metric_code import MetricCode
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.handlers import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE,
-                                 CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE,
-                                 TOPIC)
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+    CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE,
+    CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE, TOPIC)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print

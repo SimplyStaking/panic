@@ -18,9 +18,10 @@ from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 SYSTEM_RAW_DATA_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          SYSTEM_RAW_DATA_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   DataReadingException, InvalidUrlException,
                                   MetricNotFoundException,

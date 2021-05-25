@@ -13,12 +13,10 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
-from src.utils.constants import (ALERT_EXCHANGE, STORE_EXCHANGE,
-                                 RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYSTEM_DT_INPUT_QUEUE_NAME,
-                                 SYSTEM_RAW_DATA_ROUTING_KEY,
-                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-                                 TOPIC)
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    SYSTEM_DT_INPUT_QUEUE_NAME, SYSTEM_RAW_DATA_ROUTING_KEY,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE, TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
