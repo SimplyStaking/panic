@@ -21,7 +21,7 @@ async function CheckForConfigs() {
         res[2] === 'periodic_config.ini'
         || res[2] === 'github_repos_config.ini'
         || res[2] === 'systems_config.ini'
-        || res[2] === 'docker_config.ini'
+        || res[2] === 'dockerhub_repos_config.ini'
         || res[2] === 'alerts_config.ini'
         || res[2] === 'email_config.ini'
         || res[2] === 'opsgenie_config.ini'
@@ -39,7 +39,7 @@ async function CheckForConfigs() {
         || res[4] === 'github_repos_config.ini'
         || res[4] === 'alerts_config.ini'
         || res[4] === 'systems_config.ini'
-        || res[4] === 'docker_config.ini'
+        || res[4] === 'dockerhub_repos_config.ini'
       ) {
         return true;
       }

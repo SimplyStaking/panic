@@ -143,7 +143,7 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'docker_config.ini',
+          'dockerhub_repos_config.ini',
           chainConfig.chain_name,
           'cosmos',
           dockerHubsToSave,
@@ -280,7 +280,7 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'docker_config.ini',
+          'dockerhub_repos_config.ini',
           chainConfig.chain_name,
           'substrate',
           dockerHubsToSave,
@@ -419,7 +419,7 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'docker_config.ini',
+          'dockerhub_repos_config.ini',
           chainConfig.chain_name,
           'chainlink',
           dockerHubsToSave,
@@ -540,7 +540,7 @@ class SaveConfig extends Component {
     for (let k = 0; k < general.dockerHubs.length; k += 1) {
       generalDockerHub[general.dockerHubs[k]] = dockerHub.byId[general.dockerHubs[k]];
     }
-    await sendConfig('general', 'docker_config.ini', '', '', generalDockerHub);
+    await sendConfig('general', 'dockerhub_repos_config.ini', '', '', generalDockerHub);
 
     // Redo the structure of these alerts to be able to save them in the .ini
     // file

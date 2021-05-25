@@ -127,7 +127,7 @@ async function loadAuthenticationToDB() {
       await collection.updateOne({ username }, newDoc);
     }
   } catch (err) {
-    // If an error is raised throw a MongoError-
+    // If an error is raised throw a MongoError
     throw new errors.MongoError(err.message);
   } finally {
     // Check if an error was thrown after a connection was established. If this
@@ -540,7 +540,7 @@ app.post('/server/database/drop', verify, async (req, res) => {
 
 // This endpoint is used to a list of paths inside the configuration
 // folder
-app.get('/server/paths', async (req, res) => {
+app.get('/server/paths', verify, async (req, res) => {
   console.log('Received GET request for %s', req.url);
   const configPath = path.join(__dirname, '../../', 'config');
   try {

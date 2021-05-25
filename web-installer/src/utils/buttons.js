@@ -280,7 +280,7 @@ function PingDockerHubButton({ disabled, name }) {
   };
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
-      Test DockerHub
+      Test Docker
     </Button>
   );
 }

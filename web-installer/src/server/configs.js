@@ -20,7 +20,7 @@ const CHANNELS_CONFIGS_LOCATION = path.join('../config', 'channels');
 // Chain configs and config locations
 const USER_CONFIG_NODES = 'nodes_config.ini';
 const USER_CONFIG_REPOS = 'github_repos_config.ini';
-const USER_CONFIG_DOCKER = 'docker_config.ini';
+const USER_CONFIG_DOCKER = 'dockerhub_repos_config.ini';
 const USER_CONFIG_CHANNELS = 'channels_config.ini';
 const USER_CONFIG_ALERTS = 'alerts_config.ini';
 const USER_CONFIG_REPEAT_ALERTS = 'repeat_alerts_config.ini';

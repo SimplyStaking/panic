@@ -220,8 +220,8 @@ class LoadConfig extends Component {
               payload.monitor_system = payload.monitor_system === 'true';
               addSystemDetails(payload);
             });
-          } else if (filePath[2] === 'docker_config.ini') {
-            config = await getConfig('general', 'docker_config.ini', '', '');
+          } else if (filePath[2] === 'dockerhub_repos_config.ini') {
+            config = await getConfig('general', 'dockerhub_repos_config.ini', '', '');
             Object.values(config.data.result).forEach((value) => {
               const payload = JSON.parse(JSON.stringify(value));
               payload.monitor_docker = payload.monitor_docker === 'true';
@@ -267,8 +267,8 @@ class LoadConfig extends Component {
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'docker_config.ini') {
-              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'cosmos');
+            } else if (filePath[4] === 'dockerhub_repos_config.ini') {
+              config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'cosmos');
               CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
@@ -395,8 +395,8 @@ class LoadConfig extends Component {
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'docker_config.ini') {
-              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'substrate');
+            } else if (filePath[4] === 'dockerhub_repos_config.ini') {
+              config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'substrate');
               CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
@@ -519,8 +519,8 @@ class LoadConfig extends Component {
                 payload.monitor_repo = payload.monitor_repo === 'true';
                 addRepositoryDetails(payload);
               });
-            } else if (filePath[4] === 'docker_config.ini') {
-              config = await getConfig('chain', 'docker_config.ini', filePath[3], 'chainlink');
+            } else if (filePath[4] === 'dockerhub_repos_config.ini') {
+              config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'chainlink');
               CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));

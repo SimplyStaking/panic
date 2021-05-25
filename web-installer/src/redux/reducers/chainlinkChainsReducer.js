@@ -134,12 +134,12 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 120,
+        threshold: 60,
         enabled: true,
       },
       critical: {
         threshold: 180,
-        repeat: 300,
+        repeat: 180,
         enabled: true,
       },
       enabled: true,
@@ -158,7 +158,7 @@ const chainlinkThresholdAlerts = {
       },
       critical: {
         threshold: 5,
-        repeat: 300,
+        repeat: 180,
         enabled: true,
       },
       enabled: true,
@@ -172,38 +172,17 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 120,
+        threshold: 60,
         enabled: true,
       },
       critical: {
         threshold: 180,
-        repeat: 300,
+        repeat: 180,
         enabled: true,
       },
       enabled: true,
     },
     9: {
-      name: 'Dropped block headers',
-      identifier: 'head_tracker_num_heads_dropped_total',
-      description: 'Amount of block headers dropped over a time period. Note:  '
-      + 'the repeat time is also used to indicate the period of time over which '
-      + 'that amount of block headers is dropped an alert will occur. For a '
-      + 'Warning Alert it is instant.',
-      adornment: 'Block Headers',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 1,
-        enabled: true,
-      },
-      critical: {
-        threshold: 5,
-        repeat: 300,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    10: {
       name: 'Max Unconfirmed Blocks',
       identifier: 'max_unconfirmed_blocks',
       description: 'The max number of blocks a transaction has been unconfirmed for.',
@@ -216,12 +195,12 @@ const chainlinkThresholdAlerts = {
       },
       critical: {
         threshold: 30,
-        repeat: 300,
+        repeat: 120,
         enabled: true,
       },
       enabled: true,
     },
-    11: {
+    10: {
       name: "Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description: 'If the current gas price is higher than the gas limit of '
@@ -240,7 +219,7 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
-    12: {
+    11: {
       name: 'Number of unconfirmed transactions',
       identifier: 'unconfirmed_transactions',
       description: 'Number of unconfirmed transactions per node.',
@@ -258,7 +237,7 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
-    13: {
+    12: {
       name: 'Ethereum Balance',
       identifier: 'eth_balance_amount',
       description: 'If the amount of Ethereum is less than the threshold an '
@@ -278,12 +257,12 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    14: {
+    13: {
       name: 'Dropped block headers',
       identifier: 'head_tracker_num_heads_dropped_total',
       description: 'Amount of block headers dropped over a time period. Note:  '
@@ -306,7 +285,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    15: {
+    14: {
       name: 'Run status update total',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error in a time period.',
@@ -327,7 +306,7 @@ const chainlinkTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['14', '15'],
+  allIds: ['13', '14'],
 };
 
 const chainlinkSeverityAlerts = {
