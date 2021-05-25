@@ -7,8 +7,8 @@ import pika.exceptions
 
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
-from src.alerter.managers.github import GithubAlerterManager
-from src.alerter.managers.system import SystemAlertersManager
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
@@ -152,64 +152,55 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                    InternalAlertCode.ComponentResetAllChains.value and
-                    alert['origin_id'] == SystemAlertersManager.__name__):
-
-                self.logger.debug("Resetting the system metrics for all "
-                                  "chains.")
+                    InternalAlertCode.ComponentResetAlert.value and
+                    alert['origin_id'] == SystemAlerter.__name__):
                 """
-                The `ComponentResetAllChains` alert indicates that PANIC has
-                started, or restarted. This means that we cannot be sure if the
-                configurations are the same as the previous run and the Alert
-                Metrics should be cleared for each CHAIN.
+                The `ComponentReset` alert for the `SystemAlerter` indicates 
+                that PANIC or the System Alerter for a particular chain have 
+                started or restarted. This means that we must either reset the 
+                system metrics for all chains, or for the associated chains 
+                depending on the parent_id value.
                 """
-                parent_hash = Keys.get_hash_parent_raw()
-                chain_hashes_list = self.redis.get_keys_unsafe(
-                    '*' + parent_hash + '*')
+                if alert['parent_id'] is None:
+                    self.logger.debug("Resetting the system metrics for all "
+                                      "chains.")
+                    parent_hash = Keys.get_hash_parent_raw()
+                    chain_hashes_list = self.redis.get_keys_unsafe(
+                        '*' + parent_hash + '*')
 
-                # Go through all the chains that are in REDIS
-                for chain in chain_hashes_list:
-                    # For each chain we need to load all the keys and only
-                    # delete the ones that match the pattern `alert_system*`
-                    # REDIS doesn't support this natively
-                    for key in self.redis.hkeys(chain):
+                    # Go through all the chains that are in REDIS
+                    for chain in chain_hashes_list:
+                        # For each chain we need to load all the keys and only
+                        # delete the ones that match the pattern `alert_system*`
+                        # REDIS doesn't support this natively
+                        for key in self.redis.hkeys(chain):
+                            # We only want to delete alert keys
+                            if 'alert_system' in key and self.redis.hexists(
+                                    chain, key):
+                                self.redis.hremove(chain, key)
+                else:
+                    self.logger.debug("Resetting system metrics for chain %s.",
+                                      alert['parent_id'])
+                    """
+                    For the specified chain we need to load all the keys and 
+                    only delete the ones that match the pattern `alert_system*`
+                    as REDIS doesn't support this natively.
+                    """
+                    chain_hash = Keys.get_hash_parent(alert['parent_id'])
+                    for key in self.redis.hkeys(chain_hash):
                         # We only want to delete alert keys
-                        if 'alert_system' in key and self.redis.hexists(chain,
-                                                                        key):
-                            self.redis.hremove(chain, key)
-
+                        if 'alert_system' in key and self.redis.hexists(
+                                chain_hash, key):
+                            self.redis.hremove(chain_hash, key)
             elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentResetChains.value and
-                  alert['origin_id'] == SystemAlertersManager.__name__):
+                  InternalAlertCode.ComponentResetAlert.value and
+                  alert['origin_id'] == GithubAlerter.__name__):
                 """
-                This internal alert is sent whenever an Alerter is
-                terminated due to change in configuration or shut down signal.
-                """
-
-                self.logger.debug("Resetting system metrics for chain %s.",
-                                  alert['parent_id'])
-
-                """
-                For the specified chain we need to load all the keys and only
-                delete the ones that match the pattern `alert_system*` as
-                REDIS doesn't support this natively.
-                """
-                chain_hash = Keys.get_hash_parent(alert['parent_id'])
-                for key in self.redis.hkeys(chain_hash):
-                    # We only want to delete alert keys
-                    if 'alert_system' in key and self.redis.hexists(chain_hash,
-                                                                    key):
-                        self.redis.hremove(chain_hash, key)
-
-            elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentResetAllChains.value and
-                  alert['origin_id'] == GithubAlerterManager.__name__):
-                """
-                The `ComponentResetAllChains` alert for the
-                `GithubAlerterManager` indicates that PANIC has started, or
-                restarted. This means that we cannot be sure if the
-                configurations are the same as the previous run and the Alert
-                Metrics should be cleared for each CHAIN.
+                The `ComponentReset` alert for the `GithubAlerter` indicates 
+                that PANIC or the GitHub Alerter have started or restarted. This 
+                means that we cannot be sure if the configurations are the same 
+                as the previous run, and the Alert Metrics should be cleared for
+                each CHAIN.
                 """
 
                 self.logger.debug("Resetting GitHub metrics for all chains.")
