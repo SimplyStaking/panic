@@ -1,14 +1,14 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import DockerForm from 'components/chains/common/forms/dockerForm';
-import DockerTable from 'components/chains/common/tables/dockerTable';
-import { addDocker, removeDocker } from 'redux/actions/generalActions';
+import DockerHubForm from 'components/chains/common/forms/dockerHubForm';
+import DockerHubTable from 'components/chains/common/tables/dockerHubTable';
+import { addDockerHub, removeDockerHub } from 'redux/actions/generalActions';
 import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import ChainlinkData from 'data/chainlink';
-import DockerSchema from './schemas/dockerSchema';
+import DockerHubSchema from './schemas/dockerHubSchema';
 
 // This performs docker validation, by checking if the docker is already
 // setup.
@@ -20,41 +20,41 @@ const Form = withFormik({
     name: '',
     monitor_docker: true,
   }),
-  validationSchema: (props) => DockerSchema(props),
+  validationSchema: (props) => DockerHubSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
-    const { saveDockerDetails, currentChain } = props;
+    const { saveDockerHubDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
       name: values.name,
       monitor_docker: values.monitor_docker,
     };
-    saveDockerDetails(payload);
+    saveDockerHubDetails(payload);
     resetForm();
   },
-})(DockerForm);
+})(DockerHubForm);
 
 // ------------------------- Common Actions --------------------------
 
-// Function to be used by all configuration processes to add docker
+// Function to be used by all configuration processes to add dockerHub
 // details to the redux state.
 function mapDispatchToProps(dispatch) {
   return {
-    saveDockerDetails: (details) => dispatch(addDocker(details)),
+    saveDockerHubDetails: (details) => dispatch(addDockerHub(details)),
   };
 }
 
-// Function to be used by all configuration processes to remove docker
+// Function to be used by all configuration processes to remove dockerHub
 // details from the table and state.
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeDockerDetails: (details) => dispatch(removeDocker(details)),
+    removeDockerHubDetails: (details) => dispatch(removeDockerHub(details)),
   };
 }
 
 // ------------------------- General Data ----------------------------
 
 // General redux data that will be used to control the repo form and populate
-// the docker table.
+// the dockerHub table.
 const mapGeneralStateToProps = (state) => ({
   currentChain: GENERAL,
   config: state.GeneralReducer,
@@ -63,26 +63,26 @@ const mapGeneralStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: GeneralData,
 });
 
-// Combine general state and dispatch functions to the docker form
-const DockerGeneralFormContainer = connect(
+// Combine general state and dispatch functions to the dockerHub form
+const DockerHubGeneralFormContainer = connect(
   mapGeneralStateToProps,
   mapDispatchToProps,
 )(Form);
 
-// Combine general state and dispatch functions to the docker table
-const DockerGeneralTableContainer = connect(
+// Combine general state and dispatch functions to the dockerHub table
+const DockerHubGeneralTableContainer = connect(
   mapGeneralStateToProps,
   mapDispatchToPropsRemove,
-)(DockerTable);
+)(DockerHubTable);
 
 // ------------------------- Cosmos Based Chain Data -----------------
 
 // Cosmos redux data that will be used to control the repo form and populate
-// the docker table.
+// the dockerHub table.
 const mapCosmosStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
   config: state.CosmosChainsReducer,
@@ -91,26 +91,26 @@ const mapCosmosStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: CosmosData,
 });
 
-// Combine cosmos state and dispatch functions to the docker form
-const DockerCosmosFormContainer = connect(
+// Combine cosmos state and dispatch functions to the dockerHub form
+const DockerHubCosmosFormContainer = connect(
   mapCosmosStateToProps,
   mapDispatchToProps,
 )(Form);
 
-// Combine cosmos state and dispatch functions to the docker table
-const DockerCosmosTableContainer = connect(
+// Combine cosmos state and dispatch functions to the dockerHub table
+const DockerHubCosmosTableContainer = connect(
   mapCosmosStateToProps,
   mapDispatchToPropsRemove,
-)(DockerTable);
+)(DockerHubTable);
 
 // ------------------------- Chainlink Based Chain Data -----------------
 
 // Chainlink redux data that will be used to control the repo form and populate
-// the docker table.
+// the dockerHub table.
 const mapChainlinkStateToProps = (state) => ({
   currentChain: state.CurrentChainlinkChain,
   config: state.ChainlinkChainsReducer,
@@ -119,26 +119,26 @@ const mapChainlinkStateToProps = (state) => ({
   chainlinkNodesConfig: state.ChainlinkNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: ChainlinkData,
 });
 
-// Combine chainlink state and dispatch functions to the docker form
-const DockerChainlinkFormContainer = connect(
+// Combine chainlink state and dispatch functions to the dockerHub form
+const DockerHubChainlinkFormContainer = connect(
   mapChainlinkStateToProps,
   mapDispatchToProps,
 )(Form);
 
-// Combine chainlink state and dispatch functions to the docker table
-const DockerChainlinkTableContainer = connect(
+// Combine chainlink state and dispatch functions to the dockerHub table
+const DockerHubChainlinkTableContainer = connect(
   mapChainlinkStateToProps,
   mapDispatchToPropsRemove,
-)(DockerTable);
+)(DockerHubTable);
 
 // ------------------------- Substrate Based Chain Data -----------------
 
 // Substrate redux data that will be used to control the repo form and populate
-// the docker table.
+// the dockerHub table.
 const mapSubstrateStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   config: state.SubstrateChainsReducer,
@@ -147,29 +147,29 @@ const mapSubstrateStateToProps = (state) => ({
   chainlinkNodesConfig: state.ChainlinkNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: SubstrateData,
 });
 
-// Combine substrate state and dispatch functions to the docker form
-const DockerSubstrateFormContainer = connect(
+// Combine substrate state and dispatch functions to the dockerHub form
+const DockerHubSubstrateFormContainer = connect(
   mapSubstrateStateToProps,
   mapDispatchToProps,
 )(Form);
 
-// Combine substrate state and dispatch functions to the docker table
-const DockerSubstrateTableContainer = connect(
+// Combine substrate state and dispatch functions to the dockerHub table
+const DockerHubSubstrateTableContainer = connect(
   mapSubstrateStateToProps,
   mapDispatchToPropsRemove,
-)(DockerTable);
+)(DockerHubTable);
 
 export {
-  DockerGeneralFormContainer,
-  DockerGeneralTableContainer,
-  DockerCosmosFormContainer,
-  DockerCosmosTableContainer,
-  DockerSubstrateFormContainer,
-  DockerSubstrateTableContainer,
-  DockerChainlinkFormContainer,
-  DockerChainlinkTableContainer,
+  DockerHubGeneralFormContainer,
+  DockerHubGeneralTableContainer,
+  DockerHubCosmosFormContainer,
+  DockerHubCosmosTableContainer,
+  DockerHubSubstrateFormContainer,
+  DockerHubSubstrateTableContainer,
+  DockerHubChainlinkFormContainer,
+  DockerHubChainlinkTableContainer,
 };

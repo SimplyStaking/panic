@@ -60,7 +60,7 @@ const mapGeneralStateToProps = (state) => ({
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   systemConfig: state.SystemsReducer,
   data: GeneralData,
 });
@@ -84,7 +84,7 @@ const mapChainlinkStateToProps = (state) => ({
   chainlinkNodesConfig: state.ChainlinkNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   systemConfig: state.SystemsReducer,
   data: ChainlinkData,
 });

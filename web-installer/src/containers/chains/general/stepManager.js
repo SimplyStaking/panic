@@ -12,9 +12,9 @@ import {
   RepositoriesGeneralTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  DockerGeneralFormContainer,
-  DockerGeneralTableContainer,
-} from 'containers/chains/common/dockerContainer';
+  DockerHubGeneralFormContainer,
+  DockerHubGeneralTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHANNELS_STEP,
@@ -51,8 +51,8 @@ function getStep(stepName) {
     case DOCKER_STEP:
       return (
         <div>
-          <DockerGeneralFormContainer />
-          <DockerGeneralTableContainer />
+          <DockerHubGeneralFormContainer />
+          <DockerHubGeneralTableContainer />
         </div>
       );
     default:

@@ -5,7 +5,7 @@ const NodeSchema = (props) => Yup.object().shape({
     .test('unique-node-name', 'Node name is not unique.', (value) => {
       const {
         cosmosNodesConfig, substrateNodesConfig, systemConfig, reposConfig,
-        chainlinkNodesConfig, dockerConfig,
+        chainlinkNodesConfig, dockerHubConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -33,8 +33,8 @@ const NodeSchema = (props) => Yup.object().shape({
           return false;
         }
       }
-      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
-        if (dockerConfig.byId[dockerConfig.allIds[i]].name === value) {
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].name === value) {
           return false;
         }
       }

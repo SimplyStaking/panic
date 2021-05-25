@@ -32,7 +32,7 @@ const EmailTable = ({ emails, removeEmailDetails }) => {
               <StyledTableCell align="center">SMTP</StyledTableCell>
               <StyledTableCell align="center">Port</StyledTableCell>
               <StyledTableCell align="center">Email From</StyledTableCell>
-              <StyledTableCell align="center">Email To</StyledTableCell>
+              <StyledTableCell align="center">Emails To</StyledTableCell>
               <StyledTableCell align="center">Username</StyledTableCell>
               <StyledTableCell align="center">Password</StyledTableCell>
               <StyledTableCell align="center">Info</StyledTableCell>

@@ -20,7 +20,7 @@ import CssTextField from 'assets/jss/custom-jss/CssTextField';
  * is correct.
  */
 
-const RepositoriesForm = ({
+const GithubRepositoriesForm = ({
   errors, values, handleSubmit, handleChange, setFieldValue, data,
 }) => {
   const classes = useStyles();
@@ -135,7 +135,7 @@ const RepositoriesForm = ({
   );
 };
 
-RepositoriesForm.propTypes = {
+GithubRepositoriesForm.propTypes = {
   errors: PropTypes.shape({
     repo_name: PropTypes.string,
   }).isRequired,
@@ -157,4 +157,4 @@ RepositoriesForm.propTypes = {
   }).isRequired,
 };
 
-export default RepositoriesForm;
+export default GithubRepositoriesForm;

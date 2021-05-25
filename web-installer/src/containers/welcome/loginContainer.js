@@ -19,7 +19,7 @@ async function CheckForConfigs() {
     if (res.length >= 3) {
       if (
         res[2] === 'periodic_config.ini'
-        || res[2] === 'repos_config.ini'
+        || res[2] === 'github_repos_config.ini'
         || res[2] === 'systems_config.ini'
         || res[2] === 'docker_config.ini'
         || res[2] === 'alerts_config.ini'
@@ -36,7 +36,7 @@ async function CheckForConfigs() {
     if (res.length >= 5) {
       if (
         res[4] === 'nodes_config.ini'
-        || res[4] === 'repos_config.ini'
+        || res[4] === 'github_repos_config.ini'
         || res[4] === 'alerts_config.ini'
         || res[4] === 'systems_config.ini'
         || res[4] === 'docker_config.ini'

@@ -24,8 +24,8 @@ from src.utils.types import str_to_bool
 
 GH_MON_MAN_INPUT_QUEUE = 'github_monitors_manager_ping_queue'
 GH_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
-GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
+GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.github_repos_config'
+GH_MON_MAN_ROUTING_KEY_GEN = 'general.github_repos_config'
 
 
 class GitHubMonitorsManager(MonitorsManager):
@@ -34,11 +34,11 @@ class GitHubMonitorsManager(MonitorsManager):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
 
-        self._repos_configs = {}
+        self._github_repos_configs = {}
 
     @property
-    def repos_configs(self) -> Dict:
-        return self._repos_configs
+    def github_repos_configs(self) -> Dict:
+        return self._github_repos_configs
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
@@ -114,16 +114,16 @@ class GitHubMonitorsManager(MonitorsManager):
             del sent_configs['DEFAULT']
 
         if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
-            if 'general' in self.repos_configs:
-                current_configs = self.repos_configs['general']
+            if 'general' in self.github_repos_configs:
+                current_configs = self.github_repos_configs['general']
             else:
                 current_configs = {}
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            if chain in self.repos_configs:
-                current_configs = self.repos_configs[chain]
+            if chain in self.github_repos_configs:
+                current_configs = self.github_repos_configs[chain]
             else:
                 current_configs = {}
 
@@ -131,7 +131,7 @@ class GitHubMonitorsManager(MonitorsManager):
         # configs are correct configs, therefore start from the current and
         # modify as we go along according to the updates. This is done just in
         # case an error occurs.
-        correct_repos_configs = copy.deepcopy(current_configs)
+        correct_github_repos_configs = copy.deepcopy(current_configs)
         try:
             new_configs = get_newly_added_configs(sent_configs,
                                                   current_configs)
@@ -155,7 +155,7 @@ class GitHubMonitorsManager(MonitorsManager):
                                          monitor_repo, releases_page)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
-                correct_repos_configs[config_id] = config
+                correct_github_repos_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
                                                     current_configs)
@@ -186,7 +186,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 # process from the repo and move to the next config
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
-                    del correct_repos_configs[config_id]
+                    del correct_github_repos_configs[config_id]
 
                     log_and_print("Killed the monitor of {} ".format(
                         old_repo_name), self.logger)
@@ -198,7 +198,7 @@ class GitHubMonitorsManager(MonitorsManager):
                         old_repo_name), self.logger)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
-                correct_repos_configs[config_id] = config
+                correct_github_repos_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs,
                                                   current_configs)
@@ -214,7 +214,7 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
                 del self.config_process_dict[config_id]
-                del correct_repos_configs[config_id]
+                del correct_github_repos_configs[config_id]
                 log_and_print("Killed the monitor of {} "
                               .format(repo_name), self.logger)
         except Exception as e:
@@ -226,11 +226,11 @@ class GitHubMonitorsManager(MonitorsManager):
 
         # Must be done at the end in case of errors while processing
         if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
-            self._repos_configs['general'] = correct_repos_configs
+            self._github_repos_configs['general'] = correct_github_repos_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            self._repos_configs[chain] = correct_repos_configs
+            self._github_repos_configs[chain] = correct_github_repos_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
@@ -256,7 +256,7 @@ class GitHubMonitorsManager(MonitorsManager):
 
                     # Restart dead process
                     chain = process_details['chain']
-                    config = self.repos_configs[chain][config_id]
+                    config = self.github_repos_configs[chain][config_id]
                     repo_id = config['id']
                     parent_id = config['parent_id']
 

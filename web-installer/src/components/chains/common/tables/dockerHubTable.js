@@ -19,14 +19,10 @@ import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 import { NEXT, BACK } from 'constants/constants';
 import StepButtonContainer from 'containers/chains/common/stepButtonContainer';
 
-const RepositoriesTable = ({
-  currentChain,
-  config,
-  reposConfig,
-  removeRepositoryDetails,
-  data,
+const DockerHubTable = ({
+  currentChain, config, dockerHubConfig, removeDockerHubDetails, data,
 }) => {
-  if (config.byId[currentChain].repositories.length === 0) {
+  if (config.byId[currentChain].dockerHubs.length === 0) {
     return (
       <div>
         <Box py={4}>
@@ -36,14 +32,14 @@ const RepositoriesTable = ({
               <StepButtonContainer
                 disabled={false}
                 text={BACK}
-                navigation={data.repoForm.backStep}
+                navigation={data.dockerHubForm.backStep}
               />
             </Grid>
             <Grid item xs={2}>
               <StepButtonContainer
                 disabled={false}
                 text={NEXT}
-                navigation={data.repoForm.nextStep}
+                navigation={data.dockerHubForm.nextStep}
               />
             </Grid>
             <Grid item xs={4} />
@@ -55,7 +51,7 @@ const RepositoriesTable = ({
   return (
     <Box pt={5}>
       <TableContainer component={Paper}>
-        <Table className="table" aria-label="repos-table">
+        <Table className="table" aria-label="dockerHub-table">
           <TableHead>
             <TableRow>
               <StyledTableCell align="center">Name</StyledTableCell>
@@ -64,17 +60,17 @@ const RepositoriesTable = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {config.byId[currentChain].repositories.map((id) => (
+            {config.byId[currentChain].dockerHubs.map((id) => (
               <StyledTableRow key={id}>
-                <StyledTableCell align="center">{reposConfig.byId[id].repo_name}</StyledTableCell>
+                <StyledTableCell align="center">{dockerHubConfig.byId[id].name}</StyledTableCell>
                 <StyledTableCell align="center">
-                  {reposConfig.byId[id].monitor_repo ? <CheckIcon /> : <ClearIcon />}
+                  {dockerHubConfig.byId[id].monitor_docker ? <CheckIcon /> : <ClearIcon />}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   <Button
                     onClick={() => {
-                      removeRepositoryDetails({
-                        id: reposConfig.byId[id].id,
+                      removeDockerHubDetails({
+                        id: dockerHubConfig.byId[id].id,
                         parent_id: currentChain,
                       });
                     }}
@@ -91,10 +87,18 @@ const RepositoriesTable = ({
         <Grid container spacing={3} justify="center" alignItems="center">
           <Grid item xs={4} />
           <Grid item xs={2}>
-            <StepButtonContainer disabled={false} text={BACK} navigation={data.repoForm.backStep} />
+            <StepButtonContainer
+              disabled={false}
+              text={BACK}
+              navigation={data.dockerHubForm.backStep}
+            />
           </Grid>
           <Grid item xs={2}>
-            <StepButtonContainer disabled={false} text={NEXT} navigation={data.repoForm.nextStep} />
+            <StepButtonContainer
+              disabled={false}
+              text={NEXT}
+              navigation={data.dockerHubForm.nextStep}
+            />
           </Grid>
           <Grid item xs={4} />
         </Grid>
@@ -103,29 +107,29 @@ const RepositoriesTable = ({
   );
 };
 
-RepositoriesTable.propTypes = {
+DockerHubTable.propTypes = {
   config: PropTypes.shape({
     byId: PropTypes.shape({
-      repositories: PropTypes.arrayOf(PropTypes.string),
+      dockerHubs: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
-  reposConfig: PropTypes.shape({
+  dockerHubConfig: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
-      repo_name: PropTypes.string,
-      monitor_repo: PropTypes.bool,
+      name: PropTypes.string,
+      monitor_docker: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
-  removeRepositoryDetails: PropTypes.func.isRequired,
+  removeDockerHubDetails: PropTypes.func.isRequired,
   currentChain: PropTypes.string.isRequired,
   data: PropTypes.shape({
-    repoForm: PropTypes.shape({
+    dockerHubForm: PropTypes.shape({
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
 };
 
-export default RepositoriesTable;
+export default DockerHubTable;

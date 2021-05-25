@@ -59,7 +59,7 @@ export function removeRepository(payload) {
   };
 }
 
-export function addDocker(payload) {
+export function addDockerHub(payload) {
   // Generate a unique id for the repository
   let id = `docker_${uuidv4()}`;
 
@@ -79,14 +79,14 @@ export function addDocker(payload) {
   };
 }
 
-export function loadDocker(payload) {
+export function loadDockerHub(payload) {
   return {
     type: LOAD_DOCKER,
     payload,
   };
 }
 
-export function removeDocker(payload) {
+export function removeDockerHub(payload) {
   return {
     type: REMOVE_DOCKER,
     payload,

@@ -59,7 +59,7 @@ const EmailSchema = (props) => Yup.object().shape({
       return originalValue ? originalValue.split(/[\s,]+/) : [];
     })
     .of(Yup.string().email(({ value }) => `${value} is not a valid email `))
-    .required('Email To is required.'),
+    .required('Emails To is required.'),
 });
 
 export default EmailSchema;

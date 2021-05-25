@@ -9,9 +9,9 @@ import {
   RepositoriesCosmosTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  DockerCosmosFormContainer,
-  DockerCosmosTableContainer,
-} from 'containers/chains/common/dockerContainer';
+  DockerHubCosmosFormContainer,
+  DockerHubCosmosTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
@@ -52,8 +52,8 @@ function getStep(stepName) {
     case DOCKER_STEP:
       return (
         <div>
-          <DockerCosmosFormContainer />
-          <DockerCosmosTableContainer />
+          <DockerHubCosmosFormContainer />
+          <DockerHubCosmosTableContainer />
         </div>
       );
     default:

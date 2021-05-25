@@ -141,7 +141,7 @@ const SystemForm = ({
                 <Grid item xs={1}>
                   <Grid container justify="flex-start">
                     <MuiThemeProvider theme={theme}>
-                      <Tooltip title={data.systemForm.monitorSystem} placement="left">
+                      <Tooltip title={data.systemForm.monitorSystemTip} placement="left">
                         <InfoIcon />
                       </Tooltip>
                     </MuiThemeProvider>
@@ -195,7 +195,7 @@ SystemForm.propTypes = {
       monitorTip: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       exporterUrl: PropTypes.string.isRequired,
-      monitorSystem: PropTypes.string.isRequired,
+      monitorSystemTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,
     }).isRequired,

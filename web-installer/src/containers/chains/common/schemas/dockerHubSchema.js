@@ -1,11 +1,11 @@
 import * as Yup from 'yup';
 
-const DockerSchema = (props) => Yup.object().shape({
+const DockerHubSchema = (props) => Yup.object().shape({
   name: Yup.string()
-    .test('unique-docker-name', 'Name already exists.', (value) => {
+    .test('unique-dockerHub-name', 'Name already exists.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        dockerConfig, chainlinkNodesConfig,
+        dockerHubConfig, chainlinkNodesConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -33,14 +33,14 @@ const DockerSchema = (props) => Yup.object().shape({
           return false;
         }
       }
-      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
-        if (dockerConfig.byId[dockerConfig.allIds[i]].name === value) {
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].name === value) {
           return false;
         }
       }
       return true;
     })
-    .required('Docker name is required.'),
+    .required('DockerHub name is required.'),
 });
 
-export default DockerSchema;
+export default DockerHubSchema;

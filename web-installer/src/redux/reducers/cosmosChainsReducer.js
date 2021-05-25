@@ -447,7 +447,7 @@ function cosmosChainsById(state = {}, action) {
           chain_name: action.payload.chain_name,
           nodes: [],
           repositories: [],
-          dockers: [],
+          dockerHubs: [],
           repeatAlerts: cosmosRepeatAlerts,
           timeWindowAlerts: cosmosTimeWindowAlerts,
           thresholdAlerts: cosmosThresholdAlerts,
@@ -522,14 +522,14 @@ function cosmosChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (state[action.payload.parent_id].dockers.includes(action.payload.id)) {
+      if (state[action.payload.parent_id].dockerHubs.includes(action.payload.id)) {
         return state;
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          dockers: state[action.payload.parent_id].dockers.concat(action.payload.id),
+          dockerHubs: state[action.payload.parent_id].dockerHubs.concat(action.payload.id),
         },
       };
     case REMOVE_DOCKER:
@@ -542,7 +542,7 @@ function cosmosChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          dockers: state[action.payload.parent_id].dockers.filter(
+          dockerHubs: state[action.payload.parent_id].dockerHubs.filter(
             (config) => config !== action.payload.id,
           ),
         },

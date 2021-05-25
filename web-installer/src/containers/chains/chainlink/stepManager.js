@@ -9,9 +9,9 @@ import {
   RepositoriesChainlinkTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  DockerChainlinkFormContainer,
-  DockerChainlinkTableContainer,
-} from 'containers/chains/common/dockerContainer';
+  DockerHubChainlinkFormContainer,
+  DockerHubChainlinkTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
@@ -55,8 +55,8 @@ function getStep(stepName) {
     case DOCKER_STEP:
       return (
         <div>
-          <DockerChainlinkFormContainer />
-          <DockerChainlinkTableContainer />
+          <DockerHubChainlinkFormContainer />
+          <DockerHubChainlinkTableContainer />
         </div>
       );
     default:

@@ -18,7 +18,7 @@ import {
   pingNodeExporter,
   saveAccount,
   deleteAccount,
-  pingDocker,
+  pingDockerHub,
 } from './data';
 import sleep from './time';
 
@@ -262,7 +262,7 @@ function PingDockerHubButton({ disabled, name }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Connecting with repo ${name}`, 5000);
-      await pingDocker(name);
+      await pingDockerHub(name);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {
@@ -280,7 +280,7 @@ function PingDockerHubButton({ disabled, name }) {
   };
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
-      Test Docker
+      Test DockerHub
     </Button>
   );
 }

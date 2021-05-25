@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-// 349653M
 import React from 'react';
 import PropTypes from 'prop-types';
 import {

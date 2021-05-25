@@ -1,7 +1,7 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import RepositoriesForm from 'components/chains/common/forms/repositoriesForm';
-import RepositoriesTable from 'components/chains/common/tables/repositoriesTable';
+import GithubRepositoriesForm from 'components/chains/common/forms/githubRepositoriesForm';
+import GithubRepositoriesTable from 'components/chains/common/tables/githubRepositoriesTable';
 import { addRepository, removeRepository } from 'redux/actions/generalActions';
 import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
@@ -31,7 +31,7 @@ const Form = withFormik({
     saveRepositoryDetails(payload);
     resetForm();
   },
-})(RepositoriesForm);
+})(GithubRepositoriesForm);
 
 // ------------------------- Common Actions --------------------------
 
@@ -63,7 +63,7 @@ const mapGeneralStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: GeneralData,
 });
 
@@ -77,7 +77,7 @@ const RepositoriesGeneralFormContainer = connect(
 const RepositoriesGeneralTableContainer = connect(
   mapGeneralStateToProps,
   mapDispatchToPropsRemove,
-)(RepositoriesTable);
+)(GithubRepositoriesTable);
 
 // ------------------------- Cosmos Based Chain Data -----------------
 
@@ -91,7 +91,7 @@ const mapCosmosStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: CosmosData,
 });
 
@@ -105,7 +105,7 @@ const RepositoriesCosmosFormContainer = connect(
 const RepositoriesCosmosTableContainer = connect(
   mapCosmosStateToProps,
   mapDispatchToPropsRemove,
-)(RepositoriesTable);
+)(GithubRepositoriesTable);
 
 // ------------------------- Chainlink Based Chain Data -----------------
 
@@ -119,7 +119,7 @@ const mapChainlinkStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: ChainlinkData,
 });
 
@@ -133,7 +133,7 @@ const RepositoriesChainlinkFormContainer = connect(
 const RepositoriesChainlinkTableContainer = connect(
   mapChainlinkStateToProps,
   mapDispatchToPropsRemove,
-)(RepositoriesTable);
+)(GithubRepositoriesTable);
 
 // ------------------------- Substrate Based Chain Data -----------------
 
@@ -147,7 +147,7 @@ const mapSubstrateStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   systemConfig: state.SystemsReducer,
   reposConfig: state.RepositoryReducer,
-  dockerConfig: state.DockerReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: SubstrateData,
 });
 
@@ -161,7 +161,7 @@ const RepositoriesSubstrateFormContainer = connect(
 const RepositoriesSubstrateTableContainer = connect(
   mapSubstrateStateToProps,
   mapDispatchToPropsRemove,
-)(RepositoriesTable);
+)(GithubRepositoriesTable);
 
 export {
   RepositoriesGeneralFormContainer,

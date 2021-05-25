@@ -5,7 +5,7 @@ const SystemSchema = (props) => Yup.object().shape({
     .test('unique-system-name', 'System name is not unique.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        chainlinkNodesConfig, dockerConfig,
+        chainlinkNodesConfig, dockerHubConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -33,8 +33,8 @@ const SystemSchema = (props) => Yup.object().shape({
           return false;
         }
       }
-      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
-        if (dockerConfig.byId[dockerConfig.allIds[i]].repo_name === value) {
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].repo_name === value) {
           return false;
         }
       }

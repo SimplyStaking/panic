@@ -125,7 +125,7 @@ const generalState = {
       chain_name: GENERAL,
       id: GENERAL,
       repositories: [],
-      dockers: [],
+      dockerHubs: [],
       systems: [],
       periodic: periodicState,
       thresholdAlerts: generalThresholdAlerts,
@@ -183,7 +183,7 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GENERAL) {
         return state;
       }
-      if (state.byId[GENERAL].dockers.includes(action.payload.id)) {
+      if (state.byId[GENERAL].dockerHubs.includes(action.payload.id)) {
         return state;
       }
       return {
@@ -192,7 +192,7 @@ function GeneralReducer(state = generalState, action) {
           ...state.byId,
           GENERAL: {
             ...state.byId[GENERAL],
-            dockers: state.byId[GENERAL].dockers.concat(
+            dockerHubs: state.byId[GENERAL].dockerHubs.concat(
               action.payload.id,
             ),
           },
@@ -210,7 +210,7 @@ function GeneralReducer(state = generalState, action) {
           ...state.byId,
           GENERAL: {
             ...state.byId[GENERAL],
-            docker: state.byId[GENERAL].docker.filter(
+            dockerHub: state.byId[GENERAL].dockerHub.filter(
               (config) => config !== action.payload.id,
             ),
           },
@@ -339,8 +339,8 @@ const RepositoryReducer = combineReducers({
   allIds: allRepositories,
 });
 
-// Reducers to add and remove docker configurations from global state
-function dockersById(state = {}, action) {
+// Reducers to add and remove dockerHub configurations from global state
+function dockerHubsById(state = {}, action) {
   switch (action.type) {
     case ADD_DOCKER:
       return {
@@ -354,8 +354,8 @@ function dockersById(state = {}, action) {
   }
 }
 
-// Reducers to remove from list of all docker configs
-function allDockers(state = [], action) {
+// Reducers to remove from list of all dockerHub configs
+function allDockerHubs(state = [], action) {
   switch (action.type) {
     case ADD_DOCKER:
       if (state.includes(action.payload.id)) {
@@ -369,9 +369,9 @@ function allDockers(state = [], action) {
   }
 }
 
-const DockerReducer = combineReducers({
-  byId: dockersById,
-  allIds: allDockers,
+const DockerHubReducer = combineReducers({
+  byId: dockerHubsById,
+  allIds: allDockerHubs,
 });
 
 // Reducers to add and remove system configurations from global state
@@ -415,5 +415,5 @@ export {
   PeriodicReducer,
   GeneralReducer,
   generalThresholdAlerts,
-  DockerReducer,
+  DockerHubReducer,
 };

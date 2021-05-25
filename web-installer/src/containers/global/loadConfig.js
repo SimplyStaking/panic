@@ -16,7 +16,7 @@ import {
   addSlack,
 } from 'redux/actions/channelActions';
 import {
-  addDocker,
+  addDockerHub,
   addSystem,
   addRepository,
   loadThresholdAlertsGeneral,
@@ -117,7 +117,7 @@ function mapDispatchToProps(dispatch) {
     addNodeChainlinkDetails: (details) => dispatch(addNodeChainlink(details)),
     clearChainIdChainlink: () => dispatch(resetCurrentChainIdChainlink()),
     addSystemDetails: (details) => dispatch(addSystem(details)),
-    addDockerDetails: (details) => dispatch(addDocker(details)),
+    addDockerHubDetails: (details) => dispatch(addDockerHub(details)),
     addRepositoryDetails: (details) => dispatch(addRepository(details)),
     loadThresholdAlertsGeneralDetails: (details) => dispatch(loadThresholdAlertsGeneral(details)),
     loadRepeatAlertsCosmosDetails: (details) => dispatch(loadRepeatAlertsCosmos(details)),
@@ -170,7 +170,7 @@ class LoadConfig extends Component {
       addPagerDutyDetails,
       addOpsGenieDetails,
       addSlackDetails,
-      addDockerDetails,
+      addDockerHubDetails,
       addSystemDetails,
       addRepositoryDetails,
       addChainCosmosDetails,
@@ -206,8 +206,8 @@ class LoadConfig extends Component {
       for (let i = 0; i < files.length; i += 1) {
         filePath = files[i].split('/');
         if (filePath[1] === 'general') {
-          if (filePath[2] === 'repos_config.ini') {
-            config = await getConfig('general', 'repos_config.ini', '', '');
+          if (filePath[2] === 'github_repos_config.ini') {
+            config = await getConfig('general', 'github_repos_config.ini', '', '');
             Object.values(config.data.result).forEach((value) => {
               const payload = JSON.parse(JSON.stringify(value));
               payload.monitor_repo = payload.monitor_repo === 'true';
@@ -225,7 +225,7 @@ class LoadConfig extends Component {
             Object.values(config.data.result).forEach((value) => {
               const payload = JSON.parse(JSON.stringify(value));
               payload.monitor_docker = payload.monitor_docker === 'true';
-              addDockerDetails(payload);
+              addDockerHubDetails(payload);
             });
           } else if (filePath[2] === 'alerts_config.ini') {
             config = await getConfig('general', 'alerts_config.ini', '', '');
@@ -259,8 +259,8 @@ class LoadConfig extends Component {
           }
         } else if (filePath[1] === 'chains') {
           if (filePath[2] === 'cosmos') {
-            if (filePath[4] === 'repos_config.ini') {
-              config = await getConfig('chain', 'repos_config.ini', filePath[3], 'cosmos');
+            if (filePath[4] === 'github_repos_config.ini') {
+              config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'cosmos');
               CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
@@ -273,7 +273,7 @@ class LoadConfig extends Component {
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerDetails(payload);
+                addDockerHubDetails(payload);
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'cosmos');
@@ -387,8 +387,8 @@ class LoadConfig extends Component {
               );
             }
           } else if (filePath[2] === 'substrate') {
-            if (filePath[4] === 'repos_config.ini') {
-              config = await getConfig('chain', 'repos_config.ini', filePath[3], 'substrate');
+            if (filePath[4] === 'github_repos_config.ini') {
+              config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'substrate');
               CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
@@ -401,7 +401,7 @@ class LoadConfig extends Component {
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerDetails(payload);
+                addDockerHubDetails(payload);
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'substrate');
@@ -511,8 +511,8 @@ class LoadConfig extends Component {
               );
             }
           } else if (filePath[2] === 'chainlink') {
-            if (filePath[4] === 'repos_config.ini') {
-              config = await getConfig('chain', 'repos_config.ini', filePath[3], 'chainlink');
+            if (filePath[4] === 'github_repos_config.ini') {
+              config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'chainlink');
               CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
@@ -525,7 +525,7 @@ class LoadConfig extends Component {
               Object.values(config.data.result).forEach((value) => {
                 const payload = JSON.parse(JSON.stringify(value));
                 payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerDetails(payload);
+                addDockerHubDetails(payload);
               });
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'chainlink');
@@ -801,7 +801,7 @@ LoadConfig.propTypes = {
   addOpsGenieDetails: PropTypes.func.isRequired,
   addSlackDetails: PropTypes.func.isRequired,
   addSystemDetails: PropTypes.func.isRequired,
-  addDockerDetails: PropTypes.func.isRequired,
+  addDockerHubDetails: PropTypes.func.isRequired,
   addRepositoryDetails: PropTypes.func.isRequired,
   addChainCosmosDetails: PropTypes.func.isRequired,
   addNodeCosmosDetails: PropTypes.func.isRequired,

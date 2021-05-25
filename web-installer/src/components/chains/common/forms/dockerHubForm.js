@@ -15,12 +15,12 @@ import GridItem from 'components/material_ui/Grid/GridItem';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 
 /*
- * Docker form contains all the information and structure needed to setup
- * a docker configuration. Contains functionality to test if the provided config
+ * DockerHub form contains all the information and structure needed to setup
+ * a dockerHub configuration. Contains functionality to test if the provided config
  * is correct.
  */
 
-const DockerForm = ({
+const DockerHubForm = ({
   errors, values, handleSubmit, handleChange, setFieldValue, data,
 }) => {
   const classes = useStyles();
@@ -31,7 +31,7 @@ const DockerForm = ({
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>{data.dockerForm.title}</h1>
+              <h1 className={classes.title}>{data.dockerHubForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -44,7 +44,7 @@ const DockerForm = ({
                   fontSize: '1.2rem',
                 }}
               >
-                {data.dockerForm.description}
+                {data.dockerHubForm.description}
               </p>
             </Box>
           </Typography>
@@ -54,14 +54,14 @@ const DockerForm = ({
               <Grid container spacing={3} justify="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
-                    id="docker-name-outlined-full-width"
+                    id="dockerHub-name-outlined-full-width"
                     error={!!(errors.name)}
                     value={values.name}
                     label="DockerHub Repository Name"
                     type="text"
                     style={{ margin: 8 }}
                     name="name"
-                    placeholder={data.dockerForm.nameHolder}
+                    placeholder={data.dockerHubForm.nameHolder}
                     helperText={errors.name ? errors.name : ''}
                     onChange={handleChange}
                     fullWidth
@@ -75,7 +75,7 @@ const DockerForm = ({
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.dockerForm.nameTip} placement="left">
+                            <Tooltip title={data.dockerHubForm.nameTip} placement="left">
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
@@ -103,7 +103,7 @@ const DockerForm = ({
                 <Grid item xs={1}>
                   <Grid container justify="center">
                     <MuiThemeProvider theme={theme}>
-                      <Tooltip title={data.dockerForm.monitorTip} placement="left">
+                      <Tooltip title={data.dockerHubForm.monitorTip} placement="left">
                         <InfoIcon />
                       </Tooltip>
                     </MuiThemeProvider>
@@ -137,7 +137,7 @@ const DockerForm = ({
   );
 };
 
-DockerForm.propTypes = {
+DockerHubForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
   }).isRequired,
@@ -149,7 +149,7 @@ DockerForm.propTypes = {
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
-    dockerForm: PropTypes.shape({
+    dockerHubForm: PropTypes.shape({
       title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
@@ -161,4 +161,4 @@ DockerForm.propTypes = {
   }).isRequired,
 };
 
-export default DockerForm;
+export default DockerHubForm;

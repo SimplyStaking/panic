@@ -10,7 +10,7 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
         systemConfig,
         reposConfig,
         chainlinkNodesConfig,
-        dockerConfig,
+        dockerHubConfig,
       } = props;
 
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
@@ -38,8 +38,8 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
           return false;
         }
       }
-      for (let i = 0; i < dockerConfig.allIds.length; i += 1) {
-        if (dockerConfig.byId[dockerConfig.allIds[i]].repo_name === value) {
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].repo_name === value) {
           return false;
         }
       }

@@ -24,7 +24,7 @@ const CosmosChainsTable = ({
   removeNodeDetails,
   removeRepositoryDetails,
   removeSlackDetails,
-  removeDockerDetails,
+  removeDockerHubDetails,
   removeOpsGenieDetails,
   removePagerDutyDetails,
   removeEmailDetails,
@@ -146,10 +146,10 @@ const CosmosChainsTable = ({
       }
     }
 
-    // Clear all the configured dockers from state
-    for (let i = 0; i < currentConfig.dockers.length; i += 1) {
-      payload.id = currentConfig.dockers[i];
-      removeDockerDetails(payload);
+    // Clear all the configured dockerHubs from state
+    for (let i = 0; i < currentConfig.dockerHubs.length; i += 1) {
+      payload.id = currentConfig.dockerHubs[i];
+      removeDockerHubDetails(payload);
     }
 
     // Clear all the configured nodes from state
@@ -279,7 +279,7 @@ CosmosChainsTable.propTypes = forbidExtraProps({
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
   removeSlackDetails: PropTypes.func.isRequired,
-  removeDockerDetails: PropTypes.func.isRequired,
+  removeDockerHubDetails: PropTypes.func.isRequired,
 });
 
 export default CosmosChainsTable;

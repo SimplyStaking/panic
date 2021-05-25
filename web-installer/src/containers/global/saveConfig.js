@@ -33,7 +33,7 @@ const mapStateToProps = (state) => ({
   repositories: state.RepositoryReducer,
   general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
-  docker: state.DockerReducer,
+  dockerHub: state.DockerHubReducer,
 });
 
 class SaveConfig extends Component {
@@ -59,7 +59,7 @@ class SaveConfig extends Component {
       substrateNodes,
       general,
       systems,
-      docker,
+      dockerHub,
       closeOnSave,
     } = this.props;
 
@@ -124,19 +124,19 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'repos_config.ini',
+          'github_repos_config.ini',
           chainConfig.chain_name,
           'cosmos',
           reposToSave,
         );
       }
 
-      // Repeat the above process for docker
-      if (chainConfig.dockers.length !== 0) {
-        const dockersToSave = {};
-        for (let j = 0; j < chainConfig.dockers.length; j += 1) {
-          const currentId = chainConfig.dockers[j];
-          dockersToSave[currentId] = docker.byId[currentId];
+      // Repeat the above process for dockerHub
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -146,7 +146,7 @@ class SaveConfig extends Component {
           'docker_config.ini',
           chainConfig.chain_name,
           'cosmos',
-          dockersToSave,
+          dockerHubsToSave,
         );
       }
 
@@ -261,7 +261,7 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'repos_config.ini',
+          'github_repos_config.ini',
           chainConfig.chain_name,
           'substrate',
           reposToSave,
@@ -269,11 +269,11 @@ class SaveConfig extends Component {
       }
 
       // Repeat the above process for docker
-      if (chainConfig.dockers.length !== 0) {
-        const dockersToSave = {};
-        for (let j = 0; j < chainConfig.dockers.length; j += 1) {
-          const currentId = chainConfig.dockers[j];
-          dockersToSave[currentId] = docker.byId[currentId];
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -283,7 +283,7 @@ class SaveConfig extends Component {
           'docker_config.ini',
           chainConfig.chain_name,
           'substrate',
-          dockersToSave,
+          dockerHubsToSave,
         );
       }
 
@@ -400,19 +400,19 @@ class SaveConfig extends Component {
         // save it to it's own file
         await sendConfig(
           'chain',
-          'repos_config.ini',
+          'github_repos_config.ini',
           chainConfig.chain_name,
           'chainlink',
           reposToSave,
         );
       }
 
-      // Repeat the above process for docker
-      if (chainConfig.dockers.length !== 0) {
-        const dockersToSave = {};
-        for (let j = 0; j < chainConfig.dockers.length; j += 1) {
-          const currentId = chainConfig.dockers[j];
-          dockersToSave[currentId] = docker.byId[currentId];
+      // Repeat the above process for dockerHub
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -422,7 +422,7 @@ class SaveConfig extends Component {
           'docker_config.ini',
           chainConfig.chain_name,
           'chainlink',
-          dockersToSave,
+          dockerHubsToSave,
         );
       }
 
@@ -534,13 +534,13 @@ class SaveConfig extends Component {
     for (let k = 0; k < general.repositories.length; k += 1) {
       generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
     }
-    await sendConfig('general', 'repos_config.ini', '', '', generalRepos);
+    await sendConfig('general', 'github_repos_config.ini', '', '', generalRepos);
 
-    const generalDocker = {};
-    for (let k = 0; k < general.dockers.length; k += 1) {
-      generalDocker[general.dockers[k]] = docker.byId[general.dockers[k]];
+    const generalDockerHub = {};
+    for (let k = 0; k < general.dockerHubs.length; k += 1) {
+      generalDockerHub[general.dockerHubs[k]] = dockerHub.byId[general.dockerHubs[k]];
     }
-    await sendConfig('general', 'docker_config.ini', '', '', generalDocker);
+    await sendConfig('general', 'docker_config.ini', '', '', generalDockerHub);
 
     // Redo the structure of these alerts to be able to save them in the .ini
     // file
@@ -661,7 +661,7 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
-  docker: PropTypes.shape({
+  dockerHub: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
@@ -918,7 +918,7 @@ SaveConfig.propTypes = {
   general: PropTypes.shape({
     repositories: PropTypes.arrayOf(PropTypes.string).isRequired,
     systems: PropTypes.arrayOf(PropTypes.string).isRequired,
-    dockers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    dockerHubs: PropTypes.arrayOf(PropTypes.string).isRequired,
     telegrams: PropTypes.arrayOf(PropTypes.string).isRequired,
     twilios: PropTypes.arrayOf(PropTypes.string).isRequired,
     emails: PropTypes.arrayOf(PropTypes.string).isRequired,

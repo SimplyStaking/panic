@@ -248,8 +248,8 @@ NodesForm.propTypes = {
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-    node_address: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+    prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
+    node_address: PropTypes.arrayOf(PropTypes.string.isRequired),
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,

@@ -44,7 +44,7 @@ export const ERROR = 'ERROR';
 export const PERIODIC = 'Periodic';
 export const SYSTEM = 'Systems';
 export const GITHUB = 'Github';
-export const DOCKER = 'Docker';
+export const DOCKER = 'DockerHub';
 
 export const BLACKLIST = [
   '127.0.0.1',

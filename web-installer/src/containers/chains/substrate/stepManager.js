@@ -9,9 +9,9 @@ import {
   RepositoriesSubstrateTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
-  DockerSubstrateFormContainer,
-  DockerSubstrateTableContainer,
-} from 'containers/chains/common/dockerContainer';
+  DockerHubSubstrateFormContainer,
+  DockerHubSubstrateTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
@@ -52,8 +52,8 @@ function getStep(stepName) {
     case DOCKER_STEP:
       return (
         <div>
-          <DockerSubstrateFormContainer />
-          <DockerSubstrateTableContainer />
+          <DockerHubSubstrateFormContainer />
+          <DockerHubSubstrateTableContainer />
         </div>
       );
     default:

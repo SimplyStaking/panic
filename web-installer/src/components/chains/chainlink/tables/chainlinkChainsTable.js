@@ -29,7 +29,7 @@ const ChainlinkChainsTable = ({
   removeTwilioDetails,
   removeTelegramDetails,
   removeSlackDetails,
-  removeDockerDetails,
+  removeDockerHubDetails,
   removeSystemDetails,
   telegrams,
   twilios,
@@ -169,10 +169,10 @@ const ChainlinkChainsTable = ({
       removeRepositoryDetails(payload);
     }
 
-    // Clear all the configured dockers from state
-    for (let i = 0; i < currentConfig.dockers.length; i += 1) {
-      payload.id = currentConfig.dockers[i];
-      removeDockerDetails(payload);
+    // Clear all the configured dockerHubs from state
+    for (let i = 0; i < currentConfig.dockerHubs.length; i += 1) {
+      payload.id = currentConfig.dockerHubs[i];
+      removeDockerHubDetails(payload);
     }
 
     // Clear all the configured systems from state
@@ -290,7 +290,7 @@ ChainlinkChainsTable.propTypes = forbidExtraProps({
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeSystemDetails: PropTypes.func.isRequired,
-  removeDockerDetails: PropTypes.func.isRequired,
+  removeDockerHubDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
