@@ -50,7 +50,7 @@ from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  ALERT_ROUTER_CONFIGS_ROUTING_KEY,
                                  CONFIGS_STORE_INPUT_ROUTING_KEY,
-                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY, TOPIC)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -621,7 +621,7 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print("Creating {} exchange.".format(CONFIG_EXCHANGE),
                           dummy_logger)
             rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, 'topic', False, True, False, False
+                CONFIG_EXCHANGE, TOPIC, False, True, False, False
             )
 
             # Alert router queues

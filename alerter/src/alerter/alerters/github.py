@@ -15,7 +15,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  GITHUB_ALERTER_INPUT_QUEUE_NAME,
                                  GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                                 GITHUB_ALERT_ROUTING_KEY)
+                                 GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 
@@ -34,7 +34,7 @@ class GithubAlerter(Alerter):
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.logger.info("Creating queue '%s'", GITHUB_ALERTER_INPUT_QUEUE_NAME)
@@ -61,7 +61,7 @@ class GithubAlerter(Alerter):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _create_state_for_github(self, github_id: str) -> None:

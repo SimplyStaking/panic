@@ -21,7 +21,7 @@ from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
                                  SYSTEM_ALERT_ROUTING_KEY,
                                  SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -427,9 +427,9 @@ class TestSystemAlerter(unittest.TestCase):
         try:
             self.test_system_alerter.rabbitmq.connect()
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_system_alerter.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
         except Exception as e:
             print("Setup failed: {}".format(e))
 
@@ -2035,7 +2035,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             res = self.test_system_alerter.rabbitmq.queue_declare(
                 queue=self.target_queue_used, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -2080,7 +2080,7 @@ class TestSystemAlerter(unittest.TestCase):
         try:
             self.test_system_alerter._initialise_rabbitmq()
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
 

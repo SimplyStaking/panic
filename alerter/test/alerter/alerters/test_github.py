@@ -18,7 +18,7 @@ from src.utils.constants import (ALERT_EXCHANGE,
                                  GITHUB_ALERT_ROUTING_KEY,
                                  HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                  GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                                 HEALTH_CHECK_EXCHANGE)
+                                 HEALTH_CHECK_EXCHANGE, TOPIC)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -135,9 +135,9 @@ class TestGithubAlerter(unittest.TestCase):
             self.test_rabbit_manager.connect()
             self.test_github_alerter.rabbitmq.connect()
             self.test_github_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_github_alerter.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_github_alerter.rabbitmq.queue_declare(
                 queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False

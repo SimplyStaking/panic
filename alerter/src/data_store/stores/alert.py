@@ -15,7 +15,7 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE_NAME,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
+                                 ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
@@ -38,7 +38,7 @@ class AlertStore(Store):
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, passive=False,
@@ -52,7 +52,7 @@ class AlertStore(Store):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _listen_for_data(self) -> None:

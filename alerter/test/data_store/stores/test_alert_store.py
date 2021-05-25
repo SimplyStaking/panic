@@ -23,7 +23,7 @@ from src.utils import env
 from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  ALERT_STORE_INPUT_QUEUE_NAME,
                                  HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
+                                 ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
@@ -71,9 +71,9 @@ class TestAlertStore(unittest.TestCase):
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)

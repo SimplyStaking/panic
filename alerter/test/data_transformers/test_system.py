@@ -23,7 +23,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
                                  SYSTEM_DT_INPUT_QUEUE_NAME,
                                  SYSTEM_RAW_DATA_ROUTING_KEY,
                                  SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -366,13 +366,13 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer.rabbitmq.queue_declare(
                 SYSTEM_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                STORE_EXCHANGE, 'topic', False, True, False, False)
+                STORE_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_data_transformer.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)

@@ -17,7 +17,8 @@ from src.utils.constants import (ALERT_EXCHANGE, STORE_EXCHANGE,
                                  RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYSTEM_DT_INPUT_QUEUE_NAME,
                                  SYSTEM_RAW_DATA_ROUTING_KEY,
-                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE)
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+                                 TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
@@ -39,7 +40,7 @@ class SystemDataTransformer(DataTransformer):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE_NAME)
         self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE_NAME, False, True,
@@ -63,13 +64,13 @@ class SystemDataTransformer(DataTransformer):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def load_state(self, system: Union[System, GitHubRepo]) \

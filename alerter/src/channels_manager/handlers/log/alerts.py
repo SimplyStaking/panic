@@ -16,7 +16,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                  LOG_HANDLER_INPUT_ROUTING_KEY,
-                                 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE)
+                                 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE,
+                                 TOPIC)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -41,7 +42,7 @@ class LogAlertsHandler(ChannelHandler):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", self._log_alerts_handler_queue)
         self.rabbitmq.queue_declare(self._log_alerts_handler_queue, False, True,
@@ -61,7 +62,7 @@ class LogAlertsHandler(ChannelHandler):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _send_heartbeat(self, data_to_send: dict) -> None:

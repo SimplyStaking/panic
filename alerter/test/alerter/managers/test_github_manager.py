@@ -20,7 +20,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
                                  PING_ROUTING_KEY, GITHUB_ALERT_ROUTING_KEY,
-                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE)
+                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -65,9 +65,9 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
             self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,

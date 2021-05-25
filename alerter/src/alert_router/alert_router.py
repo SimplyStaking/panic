@@ -25,7 +25,7 @@ from src.utils.constants import (
     PING_ROUTING_KEY, ALERT_ROUTER_INPUT_ROUTING_KEY,
     CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE,
     CONSOLE_HANDLER_INPUT_ROUTING_KEY, LOG_HANDLER_INPUT_ROUTING_KEY,
-    ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+    ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (
     MessageWasNotDeliveredException, MissingKeyInConfigException
 )
@@ -74,7 +74,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, TOPIC,
             ALERT_ROUTER_CONFIGS_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
@@ -83,7 +83,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
+            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, TOPIC,
             ALERT_ROUTER_INPUT_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
@@ -95,12 +95,12 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         # Declare store exchange just in case it hasn't been declared
         # yet
         self._rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                        exchange_type='topic', passive=False,
+                                        exchange_type=TOPIC, passive=False,
                                         durable=True, auto_delete=False,
                                         internal=False)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic',
+            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, TOPIC,
             PING_ROUTING_KEY
         )
 

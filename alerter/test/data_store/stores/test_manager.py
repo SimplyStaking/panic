@@ -22,7 +22,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                  PING_ROUTING_KEY,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 CONFIG_STORE_NAME)
+                                 CONFIG_STORE_NAME, TOPIC)
 from src.utils.exceptions import (PANICException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
                               delete_exchange_if_exists, delete_queue_if_exists)
@@ -55,7 +55,7 @@ class TestStoreManager(unittest.TestCase):
 
         connect_to_rabbit(self.rabbitmq)
         connect_to_rabbit(self.test_rabbit_manager)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.rabbitmq.queue_declare(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME, False,
                                     True, False, False)

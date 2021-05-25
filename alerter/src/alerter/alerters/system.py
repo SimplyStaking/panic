@@ -25,7 +25,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE,
                                  SYSTEM_ALERT_ROUTING_KEY,
-                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE)
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+                                 TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.timing import TimedTaskLimiter
@@ -158,7 +159,7 @@ class SystemAlerter(Alerter):
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self._queue_used = SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE.format(
@@ -189,7 +190,7 @@ class SystemAlerter(Alerter):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _process_data(self,

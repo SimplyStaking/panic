@@ -17,7 +17,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
                                  GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                  PING_ROUTING_KEY, ALERT_EXCHANGE,
-                                 GITHUB_ALERT_ROUTING_KEY)
+                                 GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -37,7 +37,7 @@ class GithubAlerterManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
@@ -57,7 +57,7 @@ class GithubAlerterManager(AlertersManager):
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         # Declare exchange to send data to
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")

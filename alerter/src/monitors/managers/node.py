@@ -22,7 +22,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  PING_ROUTING_KEY, CONFIG_EXCHANGE,
                                  NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                 NODE_MONITOR_NAME_TEMPLATE)
+                                 NODE_MONITOR_NAME_TEMPLATE, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -45,7 +45,7 @@ class NodeMonitorsManager(MonitorsManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
@@ -62,7 +62,7 @@ class NodeMonitorsManager(MonitorsManager):
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False,

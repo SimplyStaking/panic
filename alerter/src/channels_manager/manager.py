@@ -35,7 +35,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  PING_ROUTING_KEY,
                                  CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
                                  CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
@@ -71,7 +71,7 @@ class ChannelsManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
@@ -88,7 +88,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
                          CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)

@@ -18,7 +18,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
                                  GITHUB_DATA_TRANSFORMER_NAME,
                                  DT_MAN_HEARTBEAT_QUEUE_NAME,
                                  PING_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -47,7 +47,7 @@ class DataTransformersManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'", DT_MAN_HEARTBEAT_QUEUE_NAME)
         self.rabbitmq.queue_declare(DT_MAN_HEARTBEAT_QUEUE_NAME, False, True,

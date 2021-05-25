@@ -24,7 +24,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  RE_INITIALISE_SLEEPING_PERIOD,
                                  CONFIGS_MANAGER_HEARTBEAT_QUEUE,
                                  PING_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitialisedException)
 from .config_update_event_handler import ConfigFileEventHandler
@@ -106,7 +106,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self.rabbitmq.exchange_declare(
-                    CONFIG_EXCHANGE, 'topic', False, True, False, False
+                    CONFIG_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
@@ -116,7 +116,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self._heartbeat_rabbit.exchange_declare(
-                    HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False
+                    HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   HEALTH_CHECK_EXCHANGE)

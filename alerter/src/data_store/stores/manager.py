@@ -16,7 +16,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
                                  GITHUB_STORE_NAME, ALERT_STORE_NAME,
                                  DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                  HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 PING_ROUTING_KEY, CONFIG_STORE_NAME)
+                                 PING_ROUTING_KEY, CONFIG_STORE_NAME, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -40,7 +40,7 @@ class StoreManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)

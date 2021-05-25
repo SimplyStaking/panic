@@ -24,7 +24,7 @@ from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
                                  SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
                                  ALERT_EXCHANGE,
-                                 SYSTEM_ALERT_ROUTING_KEY)
+                                 SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -51,7 +51,7 @@ class SystemAlertersManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
@@ -68,7 +68,7 @@ class SystemAlertersManager(AlertersManager):
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
                          SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
@@ -97,7 +97,7 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         # Declare exchange to send data to
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")

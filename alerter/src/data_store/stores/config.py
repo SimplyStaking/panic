@@ -14,7 +14,7 @@ from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  CONFIGS_STORE_INPUT_ROUTING_KEY,
                                  GENERAL, CHAINS, REPOS_CONFIG, SYSTEMS_CONFIG,
                                  NODES_CONFIG, GLOBAL,
-                                 MONITORABLES_PARSING_HELPER)
+                                 MONITORABLES_PARSING_HELPER, TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import str_to_bool
@@ -40,7 +40,7 @@ class ConfigStore(Store):
         """
         self.rabbitmq.connect_till_successful()
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", CONFIGS_STORE_INPUT_QUEUE_NAME)
         self.rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
@@ -54,7 +54,7 @@ class ConfigStore(Store):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
