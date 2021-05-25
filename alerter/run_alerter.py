@@ -22,25 +22,29 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
-from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_QUEUE_NAME,
-                                 RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_ALERTERS_MANAGER_NAME,
-                                 GITHUB_ALERTER_MANAGER_NAME,
-                                 SYSTEM_MONITORS_MANAGER_NAME,
-                                 GITHUB_MONITORS_MANAGER_NAME,
-                                 DATA_TRANSFORMERS_MANAGER_NAME,
-                                 CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME,
-                                 NODE_MONITORS_MANAGER_NAME,
-                                 NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 NODE_MON_MAN_ROUTING_KEY_CHAINS)
+from src.utils.constants.names import (
+    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME,
+    SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
+    CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
+)
+from src.utils.constants.rabbitmq import (
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_QUEUE_NAME,
+    SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIGS_STORE_INPUT_QUEUE_NAME,
+    NODE_MON_MAN_CONFIGS_QUEUE_NAME, NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
+    CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
+    TOPIC)
+from src.utils.constants.starters import (
+    RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
+)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -591,8 +595,6 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
 
 def _initialise_and_declare_config_queues() -> None:
-    # TODO: This can be refactored by storing the queue configurations in
-    #     : constant.py so that it is easier to maintain.
     dummy_logger = logging.getLogger('Dummy')
 
     while True:
@@ -613,7 +615,7 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print("Creating {} exchange.".format(CONFIG_EXCHANGE),
                           dummy_logger)
             rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, 'topic', False, True, False, False
+                CONFIG_EXCHANGE, TOPIC, False, True, False, False
             )
 
             # Alert router queues
@@ -623,30 +625,36 @@ def _initialise_and_declare_config_queues() -> None:
                                    False, False)
             log_and_print("Binding queue '{}' to '{}' exchange with routing "
                           "key {}.".format(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                           CONFIG_EXCHANGE, 'channels.*'),
+                                           CONFIG_EXCHANGE,
+                                           ALERT_ROUTER_CONFIGS_ROUTING_KEY),
                           dummy_logger)
             rabbitmq.queue_bind(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                ALERT_ROUTER_CONFIGS_ROUTING_KEY)
 
             # System Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                    False, True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
 
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
@@ -656,81 +664,90 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'channels.*'),
+                                 CONFIG_EXCHANGE,
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY),
                 dummy_logger)
             rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 
             # GitHub Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                GH_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 'chains.*.*.github_repos_config'),
+                "key {}.".format(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
-            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE,
-                                'chains.*.*.github_repos_config')
+            rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 'general.github_repos_config'),
+                "key {}.".format(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.github_repos_config')
+            rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
 
             # System Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                SYS_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.nodes_config'),
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.nodes_config')
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.systems_config'),
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.systems_config')
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN),
+                dummy_logger)
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
 
             # Node Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
-                NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                NODE_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                "key {}.".format(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 NODE_MON_MAN_ROUTING_KEY_CHAINS),
+                                 NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
-            rabbitmq.queue_bind(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+            rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
-                                NODE_MON_MAN_ROUTING_KEY_CHAINS)
+                                NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
 
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
-                STORE_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                CONFIGS_STORE_INPUT_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(STORE_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, '#'),
-                dummy_logger)
-            rabbitmq.queue_bind(STORE_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, '#')
+                "key {}.".format(CONFIGS_STORE_INPUT_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY), dummy_logger)
+            rabbitmq.queue_bind(CONFIGS_STORE_INPUT_QUEUE_NAME, CONFIG_EXCHANGE,
+                                CONFIGS_STORE_INPUT_ROUTING_KEY)
 
             ret = rabbitmq.disconnect()
             if ret == -1:

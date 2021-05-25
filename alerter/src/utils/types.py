@@ -1,15 +1,16 @@
 from enum import Enum
 from typing import Union, Any
 
-from src.alerter.alerts.system_alerts import \
-    OpenFileDescriptorsIncreasedAboveThresholdAlert, \
-    SystemCPUUsageIncreasedAboveThresholdAlert, \
-    SystemRAMUsageIncreasedAboveThresholdAlert, \
-    SystemStorageUsageIncreasedAboveThresholdAlert, \
-    OpenFileDescriptorsDecreasedBelowThresholdAlert, \
-    SystemCPUUsageDecreasedBelowThresholdAlert, \
-    SystemRAMUsageDecreasedBelowThresholdAlert, \
+from src.alerter.alerts.system_alerts import (
+    OpenFileDescriptorsIncreasedAboveThresholdAlert,
+    SystemCPUUsageIncreasedAboveThresholdAlert,
+    SystemRAMUsageIncreasedAboveThresholdAlert,
+    SystemStorageUsageIncreasedAboveThresholdAlert,
+    OpenFileDescriptorsDecreasedBelowThresholdAlert,
+    SystemCPUUsageDecreasedBelowThresholdAlert,
+    SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
+)
 
 RedisType = Union[bytes, str, int, float]
 IncreasedAboveThresholdSystemAlert = Union[

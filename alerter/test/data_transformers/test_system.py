@@ -14,14 +14,15 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
-from src.data_transformers.system import (SystemDataTransformer,
-                                          SYSTEM_DT_INPUT_QUEUE,
-                                          SYSTEM_DT_INPUT_ROUTING_KEY)
+from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.system import System
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
-                                 STORE_EXCHANGE, ALERT_EXCHANGE)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
+    SYSTEM_DT_INPUT_QUEUE_NAME, SYSTEM_RAW_DATA_ROUTING_KEY,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -362,24 +363,24 @@ class TestSystemDataTransformer(unittest.TestCase):
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_data_transformer.rabbitmq.queue_declare(
-                SYSTEM_DT_INPUT_QUEUE, False, True, False, False)
+                SYSTEM_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                STORE_EXCHANGE, 'direct', False, True, False, False)
+                STORE_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_data_transformer.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)
             self.test_data_transformer.rabbitmq.queue_purge(
-                SYSTEM_DT_INPUT_QUEUE)
+                SYSTEM_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.queue_delete(
                 self.test_rabbit_queue_name)
             self.test_data_transformer.rabbitmq.queue_delete(
-                SYSTEM_DT_INPUT_QUEUE)
+                SYSTEM_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_data_transformer.rabbitmq.exchange_delete(
@@ -448,7 +449,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             # declared
             self.rabbitmq.connect()
             self.test_data_transformer.rabbitmq.queue_delete(
-                SYSTEM_DT_INPUT_QUEUE)
+                SYSTEM_DT_INPUT_QUEUE_NAME)
             self.test_data_transformer.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_data_transformer.rabbitmq.exchange_delete(
@@ -495,14 +496,14 @@ class TestSystemDataTransformer(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_data_transformer.rabbitmq.basic_publish_confirm(
                 exchange=RAW_DATA_EXCHANGE,
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY,
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_data_transformer.rabbitmq.queue_declare(
-                SYSTEM_DT_INPUT_QUEUE, False, True, False, False)
+                SYSTEM_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -525,7 +526,8 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_data_transformer.rabbitmq.queue_bind(
                 queue=self.test_rabbit_queue_name,
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker')
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_data_transformer._send_heartbeat(self.test_heartbeat)
 
@@ -946,7 +948,7 @@ class TestSystemDataTransformer(unittest.TestCase):
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
-            'routing_key': 'alerter.system.{}'.format(
+            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
                 self.test_system_parent_id),
             'data': eval(data_for_alerting),
             'properties': pika.BasicProperties(delivery_mode=2),
@@ -954,7 +956,8 @@ class TestSystemDataTransformer(unittest.TestCase):
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
-            'routing_key': 'system',
+            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
+                self.test_system_parent_id),
             'data': eval(data_for_saving),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
@@ -998,7 +1001,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1051,7 +1054,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -1081,7 +1084,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps({'result': self.invalid_transformed_data})
             body_error = json.dumps({'error': self.invalid_transformed_data})
             properties = pika.spec.BasicProperties()
@@ -1117,7 +1120,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1183,7 +1186,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1248,7 +1251,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -1286,7 +1289,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             data_result = copy.deepcopy(self.raw_data_example_result)
             del data_result['result']['meta_data']
             data_error = copy.deepcopy(self.raw_data_example_downtime_error)
@@ -1334,7 +1337,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1390,7 +1393,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1440,7 +1443,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body = json.dumps(invalid_data)
             properties = pika.spec.BasicProperties()
 
@@ -1469,7 +1472,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             data_result = copy.deepcopy(self.raw_data_example_result)
             del data_result['result']['meta_data']
             data_error = copy.deepcopy(self.raw_data_example_downtime_error)
@@ -1508,7 +1511,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1547,7 +1550,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1585,7 +1588,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_general_error)
             properties = pika.spec.BasicProperties()
@@ -1625,7 +1628,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1671,7 +1674,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1712,7 +1715,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1752,7 +1755,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1792,7 +1795,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1831,7 +1834,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1872,7 +1875,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1911,7 +1914,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1952,7 +1955,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -1990,7 +1993,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -2030,7 +2033,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -2068,7 +2071,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()
@@ -2106,7 +2109,7 @@ class TestSystemDataTransformer(unittest.TestCase):
             self.test_data_transformer._initialise_rabbitmq()
             blocking_channel = self.test_data_transformer.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_DT_INPUT_ROUTING_KEY)
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             body_result = json.dumps(self.raw_data_example_result)
             body_error = json.dumps(self.raw_data_example_downtime_error)
             properties = pika.spec.BasicProperties()

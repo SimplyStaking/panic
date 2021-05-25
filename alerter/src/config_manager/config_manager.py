@@ -20,16 +20,16 @@ from watchdog.observers.polling import PollingObserver
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import routing_key
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 RE_INITIALISE_SLEEPING_PERIOD)
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+    PING_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
+from src.utils.constants.starters import RE_INITIALISE_SLEEPING_PERIOD
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitialisedException)
 from .config_update_event_handler import ConfigFileEventHandler
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
-_HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
-CONFIG_PING_QUEUE = "config_ping_queue"
 
 
 class ConfigsManager(PublisherSubscriberComponent):
@@ -105,7 +105,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self.rabbitmq.exchange_declare(
-                    CONFIG_EXCHANGE, 'topic', False, True, False, False
+                    CONFIG_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
@@ -115,33 +115,35 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self._heartbeat_rabbit.exchange_declare(
-                    HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False
+                    HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   HEALTH_CHECK_EXCHANGE)
 
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
-                    "routing key '%s", CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE,
-                    _HEARTBEAT_ROUTING_KEY)
+                    "routing key '%s", CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                    HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
 
-                self._heartbeat_rabbit.queue_declare(CONFIG_PING_QUEUE, False,
-                                                     True, False, False)
-                self._logger.debug("Declared '%s' queue", CONFIG_PING_QUEUE)
+                self._heartbeat_rabbit.queue_declare(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, False, True, False, False)
+                self._logger.debug("Declared '%s' queue",
+                                   CONFIGS_MANAGER_HEARTBEAT_QUEUE)
 
-                self._heartbeat_rabbit.queue_bind(CONFIG_PING_QUEUE,
-                                                  HEALTH_CHECK_EXCHANGE,
-                                                  'ping')
+                self._heartbeat_rabbit.queue_bind(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                    PING_ROUTING_KEY)
                 self._logger.debug("Bound queue '%s' to exchange '%s'",
-                                   CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE)
+                                   CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                                   HEALTH_CHECK_EXCHANGE)
 
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
                 self._logger.debug("Declaring consuming intentions")
-                self._heartbeat_rabbit.basic_consume(CONFIG_PING_QUEUE,
-                                                     self._process_ping,
-                                                     True, False, None)
+                self._heartbeat_rabbit.basic_consume(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, self._process_ping, True,
+                    False, None)
                 break
             except (ConnectionNotInitialisedException,
                     AMQPConnectionError) as connection_error:
@@ -189,9 +191,8 @@ class ConfigsManager(PublisherSubscriberComponent):
         self._logger.debug("Sending %s", data_to_send)
         self._heartbeat_rabbit.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key=_HEARTBEAT_ROUTING_KEY,
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2),
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self._logger.debug("Sent heartbeat to %s exchange",
                            HEALTH_CHECK_EXCHANGE)

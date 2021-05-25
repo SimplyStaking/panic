@@ -20,22 +20,24 @@ from src.channels_manager.handlers.starters import (
 from src.channels_manager.manager import ChannelsManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
-                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 CONSOLE_CHANNEL_ID, CONSOLE_CHANNEL_NAME,
-                                 LOG_CHANNEL_ID, LOG_CHANNEL_NAME,
-                                 CHANNELS_MANAGER_INPUT_QUEUE,
-                                 CHANNELS_MANAGER_HB_ROUTING_KEY,
-                                 CHANNELS_MANAGER_CONFIG_ROUTING_KEY)
+from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                       TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       LOG_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       CONSOLE_CHANNEL_ID,
+                                       CONSOLE_CHANNEL_NAME,
+                                       LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          CONFIG_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY,
+                                          CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME,
+                                          CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
+                                          CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.types import ChannelHandlerTypes, ChannelTypes
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
@@ -429,7 +431,7 @@ class TestChannelsManager(unittest.TestCase):
         connect_to_rabbit(self.test_manager.rabbitmq)
         delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               CHANNELS_MANAGER_INPUT_QUEUE)
+                               CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
         delete_exchange_if_exists(self.test_manager.rabbitmq,
@@ -470,7 +472,7 @@ class TestChannelsManager(unittest.TestCase):
             # declared
             connect_to_rabbit(self.rabbitmq)
             self.test_manager.rabbitmq.queue_delete(
-                CHANNELS_MANAGER_INPUT_QUEUE)
+                CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(
                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
@@ -492,25 +494,26 @@ class TestChannelsManager(unittest.TestCase):
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
             # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence there
-            # is no other queue binded with the same routing key to any exchange at
-            # this point.
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=CHANNELS_MANAGER_CONFIG_ROUTING_KEY,
+                routing_key=CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queues to get the number of messages
             input_queue_res = self.test_manager.rabbitmq.queue_declare(
-                CHANNELS_MANAGER_INPUT_QUEUE, False, True, False, False)
+                CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME, False, True, False,
+                False)
             configs_queue_res = self.test_manager.rabbitmq.queue_declare(
                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, input_queue_res.method.message_count)
@@ -542,7 +545,7 @@ class TestChannelsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -2143,8 +2146,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2209,8 +2211,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2294,8 +2295,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2374,8 +2374,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2518,8 +2517,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2541,8 +2539,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 
@@ -2568,8 +2565,7 @@ class TestChannelsManager(unittest.TestCase):
             # process_ping function
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=CHANNELS_MANAGER_HB_ROUTING_KEY)
+            method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
             body = 'ping'
             properties = pika.spec.BasicProperties()
 

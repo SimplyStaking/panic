@@ -17,7 +17,11 @@ from src.alerter.alerts.system_alerts import (
 from src.alerter.metric_code import SystemMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE, SYSTEM_ALERT_ROUTING_KEY,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -43,12 +47,15 @@ class TestSystemAlerter(unittest.TestCase):
         self.system_name = 'test_system'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.test_routing_key = 'test_alert_router.system'
-        self.queue_used = "system_alerter_queue_" + self.parent_id
+        self.test_output_routing_key = 'test_alert.system'
+        self.queue_used = SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE.format(
+            self.parent_id)
         self.target_queue_used = "alert_router_queue"
-        self.routing_key = "alerter.system." + self.parent_id
-        self.bad_routing_key = "alerter.system.not_real"
-        self.alert_router_routing_key = 'alert_router.system'
+        self.input_routing_key = \
+            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(self.parent_id)
+        self.bad_output_routing_key = "alert.system.not_real"
+        self.output_routing_key = SYSTEM_ALERT_ROUTING_KEY.format(
+            self.parent_id)
         self.heartbeat_queue = 'heartbeat queue'
 
         self.heartbeat_test = {
@@ -116,7 +123,7 @@ class TestSystemAlerter(unittest.TestCase):
         )
 
         """
-        ############# Alerts config warning alerts disabled ######################
+        ############# Alerts config warning alerts disabled ####################
         """
 
         self.base_config['warning_enabled'] = str(
@@ -157,7 +164,7 @@ class TestSystemAlerter(unittest.TestCase):
         )
 
         """
-        ############# Alerts config critical alerts disabled ######################
+        ############# Alerts config critical alerts disabled ###################
         """
         self.base_config['warning_enabled'] = self.warning_enabled
         self.base_config['critical_enabled'] = str(
@@ -420,9 +427,9 @@ class TestSystemAlerter(unittest.TestCase):
         try:
             self.test_system_alerter.rabbitmq.connect()
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_system_alerter.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
         except Exception as e:
             print("Setup failed: {}".format(e))
 
@@ -2028,7 +2035,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.queue_delete(
                 self.target_queue_used)
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             res = self.test_system_alerter.rabbitmq.queue_declare(
                 queue=self.target_queue_used, durable=True, exclusive=False,
                 auto_delete=False, passive=False
@@ -2036,11 +2043,11 @@ class TestSystemAlerter(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_system_alerter.rabbitmq.queue_bind(
                 queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
-                routing_key=self.alert_router_routing_key)
+                routing_key=self.output_routing_key)
 
             self.test_system_alerter.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=self.alert_router_routing_key,
+                routing_key=self.output_routing_key,
                 body=self.alert.alert_data, is_body_dict=True,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
@@ -2073,7 +2080,7 @@ class TestSystemAlerter(unittest.TestCase):
         try:
             self.test_system_alerter._initialise_rabbitmq()
             self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
 
@@ -2084,7 +2091,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_system_alerter.rabbitmq.queue_bind(
                 queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_system_alerter._send_heartbeat(self.heartbeat_test)
 
             res = self.test_system_alerter.rabbitmq.queue_declare(
@@ -2123,7 +2130,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2151,7 +2158,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2182,7 +2189,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2213,7 +2220,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2245,7 +2252,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2272,7 +2279,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2298,7 +2305,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2324,7 +2331,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2345,7 +2352,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2369,7 +2376,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2391,7 +2398,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_initially_no_alert['result']['data']
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
@@ -2416,7 +2423,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_error_data['error']['meta_data']
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
@@ -2445,7 +2452,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2472,7 +2479,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.routing_key)
+                routing_key=self.input_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2491,7 +2498,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2511,7 +2518,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()
             self.test_system_alerter._process_data(blocking_channel, method,
@@ -2530,7 +2537,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_initially_no_alert['result']['data']
             body = json.dumps(self.data_received_initially_no_alert).encode()
             properties = pika.spec.BasicProperties()
@@ -2550,7 +2557,7 @@ class TestSystemAlerter(unittest.TestCase):
             self.test_system_alerter.rabbitmq.connect()
             blocking_channel = self.test_system_alerter.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_routing_key)
+                routing_key=self.bad_output_routing_key)
             del self.data_received_error_data['error']['meta_data']
             body = json.dumps(self.data_received_error_data).encode()
             properties = pika.spec.BasicProperties()

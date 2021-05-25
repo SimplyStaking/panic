@@ -11,13 +11,14 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.alerts.internal_alerts import ComponentResetAllChains
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
-                                 GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 ALERT_EXCHANGE)
-from src.alerter.alerts.internal_alerts import ComponentResetAllChains
+from src.utils.constants.names import GITHUB_ALERTER_NAME
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY, ALERT_EXCHANGE,
+                                          GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -37,28 +38,27 @@ class GithubAlerterManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_MANAGER_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", GITHUB_MANAGER_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         GITHUB_MANAGER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_MANAGER_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+                         "key '%s'", GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.info("Declaring consuming intentions on '%s'",
-                         GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(GITHUB_MANAGER_INPUT_QUEUE,
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         # Declare exchange to send data to
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
@@ -179,8 +179,7 @@ class GithubAlerterManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key='alert_router.github',
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True
+            routing_key=GITHUB_ALERT_ROUTING_KEY,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         self._send_data()

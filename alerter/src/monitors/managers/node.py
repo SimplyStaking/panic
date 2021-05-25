@@ -17,13 +17,11 @@ from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 NODE_MON_MAN_INPUT_QUEUE,
-                                 NODE_MON_MAN_INPUT_ROUTING_KEY,
-                                 CONFIG_EXCHANGE,
-                                 NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 NODE_MON_MAN_ROUTING_KEY_CHAINS,
-                                 NODE_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    CONFIG_EXCHANGE, NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+    NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -46,38 +44,38 @@ class NodeMonitorsManager(MonitorsManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", NODE_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(NODE_MON_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", NODE_MON_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE, NODE_MON_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(NODE_MON_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 NODE_MON_MAN_INPUT_ROUTING_KEY)
+                         "key '%s'", NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          NODE_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(NODE_MON_MAN_INPUT_QUEUE,
+                          NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'",
-                         NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                    False, True, False, False)
+        self.logger.info("Creating queue '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, NODE_MON_MAN_ROUTING_KEY_CHAINS)
-        self.rabbitmq.queue_bind(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "key '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+        self.rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 NODE_MON_MAN_ROUTING_KEY_CHAINS)
+                                 NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(NODE_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                          NODE_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions

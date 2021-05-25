@@ -4,8 +4,8 @@ from datetime import timedelta
 from time import sleep
 from unittest.mock import patch
 
-from redis import ConnectionError as RedisConnectionError, DataError, \
-    AuthenticationError, ResponseError
+from redis import (ConnectionError as RedisConnectionError, DataError,
+                   AuthenticationError, ResponseError)
 
 from src.data_store.redis.redis_api import RedisApi
 from src.utils import env

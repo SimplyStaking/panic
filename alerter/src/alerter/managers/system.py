@@ -10,20 +10,20 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
                                                 ComponentResetChains)
-from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
-                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN,
-                                 ALERT_EXCHANGE)
+from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
+    SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -50,54 +50,53 @@ class SystemAlertersManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                    False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.info("Declaring consuming intentions on "
-                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_INPUT_QUEUE,
+                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
-                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
-        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "'%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.logger.info("Declaring consuming intentions on %s",
-                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         # Declare exchange to send data to
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -154,7 +153,7 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
@@ -295,8 +294,7 @@ class SystemAlertersManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key='alert_router.system',
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True
+            routing_key=SYSTEM_ALERT_ROUTING_KEY,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         self._send_data()

@@ -17,7 +17,11 @@ from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
 from src.utils import env
-from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_RAW_DATA_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (PANICException, GitHubAPICallException,
                                   CannotAccessGitHubPageException,
                                   DataReadingException, JSONDecodeException,
@@ -82,9 +86,9 @@ class TestGitHubMonitor(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_monitor.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_monitor.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
@@ -197,7 +201,7 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_monitor._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -275,7 +279,7 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
 
             self.test_monitor._send_data(self.processed_data_example)
 
@@ -330,10 +334,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_monitor._monitor()
 
@@ -378,10 +382,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_monitor._monitor()
 
@@ -413,10 +417,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.assertRaises(PANICException, self.test_monitor._monitor)
 
@@ -474,10 +478,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_monitor._monitor()
 
@@ -557,10 +561,10 @@ class TestGitHubMonitor(unittest.TestCase):
                 self.assertEqual(0, res.method.message_count)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                    routing_key='github')
+                    routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                    routing_key='heartbeat.worker')
+                    routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
                 self.test_monitor._monitor()
 
@@ -627,7 +631,7 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
 
             self.assertRaises(MessageWasNotDeliveredException,
                               self.test_monitor._monitor)
@@ -694,10 +698,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_monitor._monitor)
@@ -764,10 +768,10 @@ class TestGitHubMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='github')
+                routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_monitor._monitor)
@@ -818,10 +822,10 @@ class TestGitHubMonitor(unittest.TestCase):
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name,
                     exchange=HEALTH_CHECK_EXCHANGE,
-                    routing_key='heartbeat.worker')
+                    routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                    routing_key='github')
+                    routing_key=GITHUB_RAW_DATA_ROUTING_KEY)
 
                 self.assertRaises(exception_type, self.test_monitor._monitor)
 

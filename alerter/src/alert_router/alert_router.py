@@ -18,17 +18,19 @@ from src.abstract.publisher_subscriber import (
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (
-    CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-    ALERT_ROUTER_CONFIGS_QUEUE_NAME
-)
+from src.utils.constants.rabbitmq import (
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
+    CONFIG_EXCHANGE, TOPIC, ALERT_EXCHANGE, ALERT_ROUTER_INPUT_QUEUE_NAME,
+    ALERT_ROUTER_INPUT_ROUTING_KEY, STORE_EXCHANGE,
+    ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
+    CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE,
+    CONSOLE_HANDLER_INPUT_ROUTING_KEY, LOG_HANDLER_INPUT_ROUTING_KEY,
+    ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (
     MessageWasNotDeliveredException, MissingKeyInConfigException
 )
 from src.utils.logging import log_and_print
 
-_ALERT_ROUTER_INPUT_QUEUE_NAME = 'alert_router_input_queue'
-_HEARTBEAT_QUEUE_NAME = 'alert_router_ping'
 _ROUTED_ALERT_QUEUED_LOG_MESSAGE = "Routed Alert queued"
 
 
@@ -72,8 +74,8 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
-            'channels.*'
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, TOPIC,
+            ALERT_ROUTER_CONFIGS_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
             queue=ALERT_ROUTER_CONFIGS_QUEUE_NAME,
@@ -81,11 +83,11 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            _ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
-            'alert_router.*'
+            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, TOPIC,
+            ALERT_ROUTER_INPUT_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
-            queue=_ALERT_ROUTER_INPUT_QUEUE_NAME,
+            queue=ALERT_ROUTER_INPUT_QUEUE_NAME,
             on_message_callback=self._process_alert, auto_ack=False,
             exclusive=False, consumer_tag=None
         )
@@ -93,17 +95,18 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         # Declare store exchange just in case it hasn't been declared
         # yet
         self._rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                        exchange_type='direct', passive=False,
+                                        exchange_type=TOPIC, passive=False,
                                         durable=True, auto_delete=False,
                                         internal=False)
 
         self._declare_exchange_and_bind_queue(
-            _HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic', 'ping'
+            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, TOPIC,
+            PING_ROUTING_KEY
         )
 
         self._logger.debug("Declaring consuming intentions")
-        self._rabbitmq.basic_consume(_HEARTBEAT_QUEUE_NAME, self._process_ping,
-                                     True, False, None)
+        self._rabbitmq.basic_consume(ALERT_ROUTER_HEARTBEAT_QUEUE_NAME,
+                                     self._process_ping, True, False, None)
 
     def _declare_exchange_and_bind_queue(self, queue_name: str,
                                          exchange_name: str, exchange_type: str,
@@ -235,9 +238,10 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
                 self._logger.debug("Queuing %s to be sent to %s",
                                    send_alert, channel_id)
 
-                self._push_to_queue(send_alert, ALERT_EXCHANGE,
-                                    "channel.{}".format(channel_id),
-                                    mandatory=False)
+                self._push_to_queue(
+                    send_alert, ALERT_EXCHANGE,
+                    CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE.format(
+                        channel_id), mandatory=False)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the console
@@ -245,8 +249,8 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
                 self._logger.debug("Queuing %s to be sent to console",
                                    recv_alert)
                 self._push_to_queue(
-                    {**recv_alert, 'destination_id': "console"},
-                    ALERT_EXCHANGE, "channel.console", mandatory=True)
+                    {**recv_alert, 'destination_id': "console"}, ALERT_EXCHANGE,
+                    CONSOLE_HANDLER_INPUT_ROUTING_KEY, mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             if self._enable_log_alerts:
@@ -254,13 +258,13 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
                                    recv_alert)
 
                 self._push_to_queue(
-                    {**recv_alert, 'destination_id': "log"},
-                    ALERT_EXCHANGE, "channel.log", mandatory=True)
+                    {**recv_alert, 'destination_id': "log"}, ALERT_EXCHANGE,
+                    LOG_HANDLER_INPUT_ROUTING_KEY, mandatory=True)
                 self._logger.debug(_ROUTED_ALERT_QUEUED_LOG_MESSAGE)
 
             # Enqueue once to the data store
-            self._push_to_queue(recv_alert, STORE_EXCHANGE, "alert",
-                                mandatory=True)
+            self._push_to_queue(recv_alert, STORE_EXCHANGE,
+                                ALERT_STORE_INPUT_ROUTING_KEY, mandatory=True)
 
             self._logger.debug("Alert routed successfully")
 
@@ -275,9 +279,8 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
     def _send_heartbeat(self, data_to_send: dict) -> None:
         self._rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker', body=data_to_send,
-            is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2),
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self._logger.debug("Sent heartbeat to %s exchange",
                            HEALTH_CHECK_EXCHANGE)
