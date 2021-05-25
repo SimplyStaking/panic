@@ -22,15 +22,18 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
-                                 GITHUB_MONITORS_MANAGER_NAME,
-                                 DATA_TRANSFORMERS_MANAGER_NAME,
-                                 SYSTEM_ALERTERS_MANAGER_NAME,
-                                 GITHUB_ALERTER_MANAGER_NAME,
-                                 DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
-                                 PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME,
-                                 NODE_MONITORS_MANAGER_NAME)
+from src.utils.constants.names import (SYSTEM_MONITORS_MANAGER_NAME,
+                                       GITHUB_MONITORS_MANAGER_NAME,
+                                       DATA_TRANSFORMERS_MANAGER_NAME,
+                                       SYSTEM_ALERTERS_MANAGER_NAME,
+                                       GITHUB_ALERTER_MANAGER_NAME,
+                                       DATA_STORE_MANAGER_NAME,
+                                       ALERT_ROUTER_NAME,
+                                       CONFIGS_MANAGER_NAME,
+                                       CHANNELS_MANAGER_NAME,
+                                       PING_PUBLISHER_NAME,
+                                       HEARTBEAT_HANDLER_NAME,
+                                       NODE_MONITORS_MANAGER_NAME)
 from test.utils.utils import (
     assign_side_effect_if_not_none_otherwise_return_value)
 

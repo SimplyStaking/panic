@@ -13,8 +13,11 @@ from src.alerter.metric_code import MetricCode
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, CONSOLE_HANDLER_INPUT_ROUTING_KEY,
+    TOPIC)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -28,7 +31,7 @@ class ConsoleAlertsHandler(ChannelHandler):
 
         self._console_channel = console_channel
         self._console_alerts_handler_queue = \
-            'console_{}_alerts_handler_queue'.format(
+            CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE.format(
                 self.console_channel.channel_id)
 
     @property
@@ -40,7 +43,7 @@ class ConsoleAlertsHandler(ChannelHandler):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
                          self._console_alerts_handler_queue)
@@ -62,21 +65,21 @@ class ConsoleAlertsHandler(ChannelHandler):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _send_heartbeat(self, data_to_send: dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 
-    def _process_alert(self, ch: BlockingChannel,
-                       method: pika.spec.Basic.Deliver,
-                       properties: pika.spec.BasicProperties, body: bytes) \
-            -> None:
+    def _process_alert(
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties, body: bytes) -> None:
         alert_json = json.loads(body)
         self.logger.debug("Received %s. Now processing this alert.", alert_json)
 

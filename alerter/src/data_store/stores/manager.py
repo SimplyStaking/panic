@@ -12,11 +12,12 @@ from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_alert_store, start_config_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 DATA_STORE_MAN_INPUT_QUEUE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY,
-                                 CONFIG_STORE_NAME)
+from src.utils.constants.names import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
+                                       ALERT_STORE_NAME, CONFIG_STORE_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -40,21 +41,20 @@ class StoreManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(DATA_STORE_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", DATA_STORE_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         DATA_STORE_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(DATA_STORE_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(DATA_STORE_MAN_INPUT_QUEUE,
+                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -66,9 +66,10 @@ class StoreManager(PublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 

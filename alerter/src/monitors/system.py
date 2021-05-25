@@ -15,7 +15,8 @@ from urllib3.exceptions import ProtocolError
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants import RAW_DATA_EXCHANGE
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          SYSTEM_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import (MetricNotFoundException,
                                   SystemIsDownException, DataReadingException,
@@ -233,9 +234,9 @@ class SystemMonitor(Monitor):
 
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=RAW_DATA_EXCHANGE, routing_key='system', body=data,
-            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            exchange=RAW_DATA_EXCHANGE, routing_key=SYSTEM_RAW_DATA_ROUTING_KEY,
+            body=data, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:

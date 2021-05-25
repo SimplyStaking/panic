@@ -7,13 +7,15 @@ import pika.exceptions
 
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
+from src.alerter.managers.github import GithubAlerterManager
+from src.alerter.managers.system import SystemAlertersManager
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          ALERT_STORE_INPUT_QUEUE_NAME,
+                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
@@ -30,19 +32,19 @@ class AlertStore(Store):
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates a store exchange of type `direct`
+        Creates a store exchange of type `topic`
         Declares a queue named `alerts_store_queue` and binds it to the store
         exchange with a routing key `alert`.
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='direct', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, passive=False,
+        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                  exchange=STORE_EXCHANGE,
                                  routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
 
@@ -50,11 +52,11 @@ class AlertStore(Store):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)
@@ -150,8 +152,8 @@ class AlertStore(Store):
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
             if (alert['alert_code']['code'] ==
-                InternalAlertCode.ComponentResetAllChains.value and
-                    alert['origin_id'] == 'SystemAlertersManager'):
+                    InternalAlertCode.ComponentResetAllChains.value and
+                    alert['origin_id'] == SystemAlertersManager.__name__):
 
                 self.logger.debug("Resetting the system metrics for all "
                                   "chains.")
@@ -178,7 +180,7 @@ class AlertStore(Store):
 
             elif (alert['alert_code']['code'] ==
                   InternalAlertCode.ComponentResetChains.value and
-                  alert['origin_id'] == 'SystemAlertersManager'):
+                  alert['origin_id'] == SystemAlertersManager.__name__):
                 """
                 This internal alert is sent whenever an Alerter is
                 terminated due to change in configuration or shut down signal.
@@ -201,7 +203,7 @@ class AlertStore(Store):
 
             elif (alert['alert_code']['code'] ==
                   InternalAlertCode.ComponentResetAllChains.value and
-                  alert['origin_id'] == 'GithubAlerterManager'):
+                  alert['origin_id'] == GithubAlerterManager.__name__):
                 """
                 The `ComponentResetAllChains` alert for the
                 `GithubAlerterManager` indicates that PANIC has started, or

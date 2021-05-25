@@ -23,7 +23,10 @@ from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          RAW_DATA_EXCHANGE,
+                                          CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   EnabledSourceIsEmptyException,
                                   MetricNotFoundException, NodeIsDownException,
@@ -363,7 +366,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
         self.test_monitor._send_heartbeat(self.test_heartbeat)
 
         # By re-declaring the queue again we can get the number of messages
@@ -951,7 +954,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 
         self.test_monitor._send_data(self.processed_prometheus_data_example)
 
@@ -1010,10 +1013,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
         self.test_monitor._monitor()
 
@@ -1086,10 +1089,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
         self.test_monitor._monitor()
 
@@ -1141,10 +1144,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
         self.test_monitor._monitor()
 
@@ -1173,10 +1176,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
         self.assertRaises(PANICException, self.test_monitor._monitor)
 
@@ -1243,10 +1246,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name,
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 
         try:
             self.test_monitor._monitor()
@@ -1296,7 +1299,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 
         self.assertRaises(MessageWasNotDeliveredException,
                           self.test_monitor._monitor)
@@ -1358,10 +1361,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key='heartbeat.worker')
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key='node.chainlink')
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 
         self.assertRaises(exception_class, self.test_monitor._monitor)
 

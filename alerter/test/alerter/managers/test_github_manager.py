@@ -16,10 +16,13 @@ from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.managers.github import (GithubAlerterManager)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                                 GITHUB_ALERTER_NAME, ALERT_EXCHANGE)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY,
+                                          GITHUB_ALERT_ROUTING_KEY,
+                                          ALERT_EXCHANGE, TOPIC)
+from src.utils.constants.names import GITHUB_ALERTER_NAME
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -64,22 +67,24 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
             self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
                 auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_declare(
-                queue=GITHUB_MANAGER_INPUT_QUEUE, durable=True,
+                queue=GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(GITHUB_MANAGER_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_purge(
+                GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
@@ -127,8 +132,10 @@ class TestGithubAlertersManager(unittest.TestCase):
             # To make sure that the exchanges and queues have not already been
             # declared
             self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(GITHUB_MANAGER_INPUT_QUEUE)
+            self.test_manager.rabbitmq.queue_delete(
+                GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
 
             self.test_manager._initialise_rabbitmq()
 
@@ -145,25 +152,25 @@ class TestGithubAlertersManager(unittest.TestCase):
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
             # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence there
-            # is no other queue binded with the same routing key to any exchange at
-            # this point.
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_rabbit_manager.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=GITHUB_MANAGER_INPUT_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key='alert_router.github',
+                routing_key=GITHUB_ALERT_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False
             )
             # Re-declare queue to get the number of messages
             res = self.test_rabbit_manager.queue_declare(
-                GITHUB_MANAGER_INPUT_QUEUE, False, True, False, False)
+                GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
             mock_push_latest_data_to_queue_and_send.assert_not_called()
         except Exception as e:
@@ -184,7 +191,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -269,7 +276,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -278,7 +286,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -332,7 +340,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -341,7 +350,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -402,7 +411,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
             properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
@@ -452,7 +462,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -462,7 +473,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
 
@@ -487,7 +498,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -514,7 +526,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 

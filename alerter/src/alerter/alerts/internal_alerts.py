@@ -10,8 +10,8 @@ to notify the data store what needs to be changed in REDIS.
 ComponentResetChains is used to reset metrics for one chain, this is used when
 an individual alerter starts/stops
 
-ComponentResetAllChains is used to reset metrics for all chains, this is used when
-an alerter manager is started.
+ComponentResetAllChains is used to reset metrics for all chains, this is used 
+when an alerter manager is started.
 """
 
 

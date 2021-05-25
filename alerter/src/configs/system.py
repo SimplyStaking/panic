@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class SystemConfig:
     def __init__(self, system_id: str, parent_id: str, system_name: str,
                  monitor_system: bool, node_exporter_url: str) -> None:
@@ -9,6 +12,9 @@ class SystemConfig:
 
     def __str__(self) -> str:
         return self.system_name
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def system_id(self) -> str:

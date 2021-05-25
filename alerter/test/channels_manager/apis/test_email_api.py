@@ -12,7 +12,8 @@ from parameterized import parameterized
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.email_api import EmailApi
-from src.utils.constants import EMAIL_HTML_TEMPLATE, EMAIL_TEXT_TEMPLATE
+from src.utils.constants.channels import (EMAIL_HTML_TEMPLATE,
+                                          EMAIL_TEXT_TEMPLATE)
 
 
 class TestEmailApi(unittest.TestCase):

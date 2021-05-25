@@ -14,20 +14,20 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.configs import NODES_CONFIG
+from src.utils.constants.names import SYSTEM_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+    SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES, PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
 
-SYS_MON_MAN_INPUT_QUEUE = 'system_monitors_manager_ping_queue'
-SYS_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-SYS_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
-SYS_MON_MAN_ROUTING_KEY_GEN = 'general.systems_config'
-
 
 class SystemMonitorsManager(MonitorsManager):
+    BASE_CHAINS_WITH_SEPARATE_SYS_CONF = ['chainlink']
 
     def __init__(self, logger: logging.Logger, manager_name: str,
                  rabbitmq: RabbitMQApi) -> None:
@@ -44,43 +44,51 @@ class SystemMonitorsManager(MonitorsManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", SYS_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(SYS_MON_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         SYS_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", SYS_MON_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(SYS_MON_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 SYS_MON_MAN_INPUT_ROUTING_KEY)
+                         "key '%s'", SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          SYS_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(SYS_MON_MAN_INPUT_QUEUE,
+                          PING_ROUTING_KEY)
+        self.rabbitmq.basic_consume(SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'",
-                         SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                    False, True, False, False)
+        self.logger.info("Creating queue '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                    False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_CHAINS)
-        self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_ROUTING_KEY_CHAINS)
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, SYS_MON_MAN_ROUTING_KEY_GEN)
+                         "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE,
+                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
+        self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                          SYS_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
@@ -112,7 +120,7 @@ class SystemMonitorsManager(MonitorsManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == SYS_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN:
             if 'general' in self.systems_configs:
                 current_configs = self.systems_configs['general']
             else:
@@ -120,7 +128,18 @@ class SystemMonitorsManager(MonitorsManager):
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            base_chain = parsed_routing_key[1]
+            specific_chain = parsed_routing_key[2]
+            config_type = parsed_routing_key[3]
+            chain = base_chain + ' ' + specific_chain
+
+            # For such chains the nodes_config.ini file has no system confs,
+            # therefore ignore the contents and acknowledge the message.
+            if base_chain.lower() in self.BASE_CHAINS_WITH_SEPARATE_SYS_CONF \
+                    and config_type.lower() == NODES_CONFIG:
+                self.rabbitmq.basic_ack(method.delivery_tag, False)
+                return
+
             if chain in self.systems_configs:
                 current_configs = self.systems_configs[chain]
             else:
@@ -206,7 +225,7 @@ class SystemMonitorsManager(MonitorsManager):
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == SYS_MON_MAN_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN:
             self._systems_configs['general'] = correct_systems_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
