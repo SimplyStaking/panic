@@ -110,6 +110,8 @@ class SystemAlertersManager(AlertersManager):
                 self._parent_id_process_dict.items()):
 
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
+                log_and_print("Terminating alerter process for chain "
+                              "{}".format(chain), self.logger)
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
                 self._parent_id_process_dict[parent_id]['process'].join()
@@ -117,8 +119,6 @@ class SystemAlertersManager(AlertersManager):
                 # anymore
                 del self._parent_id_process_dict[parent_id]
                 del self._systems_alerts_configs[parent_id]
-                log_and_print("Terminating alerter process for chain "
-                              "{}".format(chain), self.logger)
 
     def _create_and_start_alerter_process(
             self, system_alerts_config: SystemAlertsConfig, parent_id: str,
