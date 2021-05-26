@@ -13,16 +13,18 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.github import (GithubAlerterManager)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.names import GITHUB_ALERTER_NAME
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
                                           PING_ROUTING_KEY,
                                           GITHUB_ALERT_ROUTING_KEY,
                                           ALERT_EXCHANGE, TOPIC)
-from src.utils.constants.names import GITHUB_ALERTER_NAME
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -115,8 +117,8 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         self.assertEqual(1, mock_start_consuming.call_count)
 
-    @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+    @mock.patch.object(GithubAlerterManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(GithubAlerterManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
             self, mock_process_ping,
@@ -209,12 +211,13 @@ class TestGithubAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+    @mock.patch.object(GithubAlerterManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_alerter_process_creates_the_correct_process(
             self, mock_start, mock_push_latest_data_to_queue_and_send) -> None:
         mock_start.return_value = None
+        mock_push_latest_data_to_queue_and_send.return_value = None
 
         self.test_manager._start_alerters_processes()
 
@@ -226,26 +229,42 @@ class TestGithubAlertersManager(unittest.TestCase):
         self.assertEqual(start_github_alerter, new_entry_process._target)
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
-    @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(GithubAlerterManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     def test_start_alerters_process_starts_the_process(
-            self, mock_create_logger,
-            mock_push_latest_data_to_queue_and_send) -> None:
+            self, mock_create_logger, mock_push_latest_data_to_queue_and_send,
+            mock_start) -> None:
         mock_create_logger.return_value = self.dummy_logger
+        mock_push_latest_data_to_queue_and_send.return_value = None
+        mock_start.return_value = None
+
         self.test_manager._start_alerters_processes()
 
-        # We need to sleep to give some time for the alerter to be initialised,
-        # otherwise the process would not terminate
-        time.sleep(1)
-
-        new_entry_process = self.test_manager.alerter_process_dict[
-            GITHUB_ALERTER_NAME]
-        self.assertTrue(new_entry_process.is_alive())
-
-        new_entry_process.terminate()
-        new_entry_process.join()
+        mock_start.assert_called_once()
         mock_push_latest_data_to_queue_and_send.assert_called_once()
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(GithubAlerterManager,
+                       "_push_latest_data_to_queue_and_send")
+    @mock.patch("src.alerter.alerter_starters.create_logger")
+    def test_start_alerters_process_sends_a_component_reset_alert(
+            self, mock_create_logger, mock_push_latest_data_to_queue_and_send,
+            mock_start) -> None:
+        mock_create_logger.return_value = self.dummy_logger
+        mock_push_latest_data_to_queue_and_send.return_value = None
+        mock_start.return_value = None
+
+        self.test_manager._start_alerters_processes()
+
+        expected_alert = ComponentResetAlert(GITHUB_ALERTER_NAME,
+                                             datetime.now().timestamp(),
+                                             GithubAlerter.__name__)
+
+        mock_push_latest_data_to_queue_and_send.assert_called_once_with(
+            expected_alert.alert_data)
 
     @freeze_time("2012-01-01")
     @mock.patch(

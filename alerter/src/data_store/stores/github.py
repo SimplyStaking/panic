@@ -70,7 +70,7 @@ class GithubStore(Store):
         Processes the data being received, from the queue. This data will be
         stored in Redis as required. If successful, a heartbeat will be sent.
         """
-        github_data = json.loads(body.decode())
+        github_data = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.", github_data)
 
         processing_error = False

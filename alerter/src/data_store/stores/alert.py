@@ -73,7 +73,7 @@ class AlertStore(Store):
         alerts will be stored in mongo, there isn't a need to store them in
         redis. If successful, a heartbeat will be sent.
         """
-        alert_data = json.loads(body.decode())
+        alert_data = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.", alert_data)
 
         processing_error = False
