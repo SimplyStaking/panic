@@ -297,29 +297,29 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-  },
-  14: {
-    name: 'Max Unconfirmed Blocks.',
-    identifier: 'max_unconfirmed_blocks',
-    description:
-      'The max number of blocks your transactions have been unconfirmed '
-      + 'for over a time period above the threshold. Example: If your transactions are '
-      + 'unconfirmed for 50 blocks after 5 minutes you will get a critical alert.',
-    adornment: 'Block',
-    adornment_time: 'Seconds',
-    parent_id: '',
-    warning: {
-      threshold: 15,
-      time_window: 300,
+    14: {
+      name: 'Max Unconfirmed Blocks.',
+      identifier: 'max_unconfirmed_blocks',
+      description:
+        'The max number of blocks your transactions have been unconfirmed '
+        + 'for over a time period above the threshold. Example: If your transactions are '
+        + 'unconfirmed for 50 blocks after 5 minutes you will get a critical alert.',
+      adornment: 'Block',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 15,
+        time_window: 300,
+        enabled: true,
+      },
+      critical: {
+        threshold: 50,
+        time_window: 300,
+        repeat: 300,
+        enabled: true,
+      },
       enabled: true,
     },
-    critical: {
-      threshold: 50,
-      time_window: 300,
-      repeat: 300,
-      enabled: true,
-    },
-    enabled: true,
   },
   allIds: ['10', '11', '12', '13', '14'],
 };
