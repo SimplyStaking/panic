@@ -372,7 +372,103 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
     def _process_transformed_data_for_alerting(self,
                                                transformed_data: Dict) -> Dict:
-        pass
+        self.logger.debug("Performing further processing for alerting ...")
+
+        if transformed_data['prometheus']:
+            if 'result' in transformed_data:
+                td_meta_data = transformed_data['prometheus']['result'][
+                    'meta_data']
+                td_node_id = td_meta_data['node_id']
+                node = self.state[td_node_id]
+                td_metrics = transformed_data['prometheus']['result']['data']
+
+                processed_data = {
+                    'prometheus': {
+                        'result': {
+                            'meta_data': copy.deepcopy(td_meta_data),
+                            'data': {}
+                        }
+                    }
+                }
+
+                pd_meta_data = processed_data['prometheus']['result'][
+                    'meta_data']
+                pd_data = processed_data['prometheus']['result']['data']
+
+                # Do current and previous for last_source_used
+                pd_meta_data['last_source_used'] = {
+                    'current': td_meta_data['last_source_used'],
+                    'previous': node.last_prometheus_source_used
+                }
+
+                # Reformat the data in such a way that both the previous and
+                # current states are sent to the alerter
+                for metric, value in td_metrics.items():
+                    pd_data[metric] = {}
+                    pd_data[metric]['current'] = value
+
+                pd_data['current_height']['previous'] = node.current_height
+                pd_data['eth_blocks_in_queue'][
+                    'previous'] = node.eth_blocks_in_queue
+                pd_data['total_block_headers_received'][
+                    'previous'] = node.total_block_headers_received
+                pd_data['total_block_headers_dropped'][
+                    'previous'] = node.total_block_headers_dropped
+                pd_data['no_of_active_jobs'][
+                    'previous'] = node.no_of_active_jobs
+                pd_data['max_pending_tx_delay'][
+                    'previous'] = node.max_pending_tx_delay
+                pd_data['process_start_time_seconds'][
+                    'previous'] = node.process_start_time_seconds
+                pd_data['total_gas_bumps']['previous'] = node.total_gas_bumps
+                pd_data['total_gas_bumps_exceeds_limit'][
+                    'previous'] = node.total_gas_bumps_exceeds_limit
+                pd_data['no_of_unconfirmed_txs'][
+                    'previous'] = node.no_of_unconfirmed_txs
+                pd_data['total_errored_job_runs'][
+                    'previous'] = node.total_errored_job_runs
+                pd_data['current_gas_price_info'][
+                    'previous'] = node.current_gas_price_info
+                pd_data['eth_balance_info']['previous'] = node.eth_balance_info
+                pd_data['went_down_at']['previous'] = node.went_down_at
+            elif 'error' in transformed_data:
+                pass
+            else:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _process_transformed_data_for_alerting".format(self))
+        else:
+            raise ReceivedUnexpectedDataException(
+                "{}: _process_transformed_data_for_alerting".format(self))
+
+        # if 'result' in transformed_data:
+        #     pass
+        # elif 'error' in transformed_data:
+        #     td_meta_data = transformed_data['error']['meta_data']
+        #     td_error_code = transformed_data['error']['code']
+        #     td_system_id = td_meta_data['system_id']
+        #     td_system_name = td_meta_data['system_name']
+        #     system = self.state[td_system_id]
+        #     downtime_exception = SystemIsDownException(td_system_name)
+        #
+        #     processed_data = copy.deepcopy(transformed_data)
+        #
+        #     if td_error_code == downtime_exception.code:
+        #         td_metrics = transformed_data['error']['data']
+        #         processed_data_metrics = processed_data['error']['data']
+        #
+        #         for metric, value in td_metrics.items():
+        #             processed_data_metrics[metric] = {}
+        #             processed_data_metrics[metric]['current'] = value
+        #
+        #         processed_data_metrics['went_down_at']['previous'] = \
+        #             system.went_down_at
+        # else:
+        #     raise ReceivedUnexpectedDataException(
+        #         "{}: _process_transformed_data_for_alerting".format(self))
+
+        self.logger.debug("Processing successful.")
+
+        return processed_data
 
     def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         self.logger.debug("Performing data transformation on %s ...", data)
@@ -481,4 +577,3 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 #     : data is there (like prometheus etc (even if empty)).. also, check that
 #     : at least one data is not empty ... so in other words do
 #     : data validation. Check that keys are equal to prometheus, rpc etc
-# TODO: Do previous for last_source_used in meta-data
