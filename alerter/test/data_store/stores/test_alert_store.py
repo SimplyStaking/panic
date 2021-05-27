@@ -14,8 +14,6 @@ from parameterized import parameterized
 
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
-from src.alerter.managers.github import GithubAlerterManager
-from src.alerter.managers.system import SystemAlertersManager
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
@@ -575,7 +573,8 @@ class TestAlertStore(unittest.TestCase):
                 self.alert_data_3['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
 
-        self.test_store._process_redis_store(self.alert_internal_system_all_chains)
+        self.test_store._process_redis_store(
+            self.alert_internal_system_all_chains)
 
         self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
         self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
