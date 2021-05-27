@@ -6,18 +6,12 @@ import {
   ADD_SYSTEM,
   REMOVE_REPOSITORY,
   REMOVE_SYSTEM,
-  ADD_KMS,
-  REMOVE_KMS,
   UPDATE_THRESHOLD_ALERT,
-  UPDATE_REPEAT_ALERT,
-  LOAD_REPOSITORY,
-  LOAD_SYSTEM,
-  LOAD_KMS,
-  LOAD_REPOSITORY_GENERAL,
-  LOAD_SYSTEM_GENERAL,
   LOAD_THRESHOLD_ALERTS_GENERAL,
+  ADD_DOCKER,
+  REMOVE_DOCKER,
 } from 'redux/actions/types';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 
 const generalThresholdAlerts = {
   byId: {
@@ -28,7 +22,7 @@ const generalThresholdAlerts = {
         'Open File Descriptors alerted on based on percentage usage .',
       adornment: '%',
       adornment_time: 'Seconds',
-      parent_id: 'GLOBAL',
+      parent_id: GENERAL,
       warning: {
         threshold: 85,
         enabled: true,
@@ -46,7 +40,7 @@ const generalThresholdAlerts = {
       description: 'System CPU alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      parent_id: 'GLOBAL',
+      parent_id: GENERAL,
       warning: {
         threshold: 85,
         enabled: true,
@@ -64,7 +58,7 @@ const generalThresholdAlerts = {
       description: 'System Storage alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      parent_id: 'GLOBAL',
+      parent_id: GENERAL,
       warning: {
         threshold: 85,
         enabled: true,
@@ -82,7 +76,7 @@ const generalThresholdAlerts = {
       description: 'System RAM alerted on based on percentage usage.',
       adornment: '%',
       adornment_time: 'Seconds',
-      parent_id: 'GLOBAL',
+      parent_id: GENERAL,
       warning: {
         threshold: 85,
         enabled: true,
@@ -102,7 +96,7 @@ const generalThresholdAlerts = {
         + 'system is taken to be down.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
-      parent_id: 'GLOBAL',
+      parent_id: GENERAL,
       warning: {
         threshold: 0,
         enabled: true,
@@ -127,77 +121,96 @@ const periodicState = {
 // Initial general state
 const generalState = {
   byId: {
-    GLOBAL: {
-      chain_name: GLOBAL,
-      id: GLOBAL,
-      repositories: [],
+    GENERAL: {
+      chain_name: GENERAL,
+      id: GENERAL,
+      githubRepositories: [],
+      dockerHubs: [],
       systems: [],
       periodic: periodicState,
       thresholdAlerts: generalThresholdAlerts,
     },
   },
-  allIds: [GLOBAL],
+  allIds: [GENERAL],
 };
 
-// General reducer to keep track of Periodic alive reminder, repositories and
+// General reducer to keep track of Periodic alive reminder, githubRepositories and
 // systems
 function GeneralReducer(state = generalState, action) {
   switch (action.type) {
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
+      if (action.payload.parent_id !== GENERAL) {
         return state;
       }
-      if (
-        // eslint-disable-next-line no-prototype-builtins
-        !state.byId[action.payload.parent_id].hasOwnProperty('repositories')
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        state.byId[action.payload.parent_id].repositories = [];
+      if (state.byId[GENERAL].githubRepositories.includes(action.payload.id)) {
+        return state;
       }
       return {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            repositories: state.byId[GLOBAL].repositories.concat(
+          GENERAL: {
+            ...state.byId[GENERAL],
+            githubRepositories: state.byId[GENERAL].githubRepositories.concat(
               action.payload.id,
             ),
           },
         },
       };
-    case LOAD_REPOSITORY_GENERAL:
-      if (!state.byId[GLOBAL].repositories.includes(action.payload.id)) {
-        return {
-          ...state,
-          byId: {
-            ...state.byId,
-            GLOBAL: {
-              ...state.byId[GLOBAL],
-              repositories: state.byId[GLOBAL].repositories.concat(
-                action.payload.id,
-              ),
-            },
-          },
-        };
-      }
-      return state;
-
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
+      if (action.payload.parent_id !== GENERAL) {
         return state;
       }
       return {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            repositories: state.byId[GLOBAL].repositories.filter(
+          GENERAL: {
+            ...state.byId[GENERAL],
+            githubRepositories: state.byId[GENERAL].githubRepositories.filter(
+              (config) => config !== action.payload.id,
+            ),
+          },
+        },
+      };
+    case ADD_DOCKER:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parent_id !== GENERAL) {
+        return state;
+      }
+      if (state.byId[GENERAL].dockerHubs.includes(action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          GENERAL: {
+            ...state.byId[GENERAL],
+            dockerHubs: state.byId[GENERAL].dockerHubs.concat(
+              action.payload.id,
+            ),
+          },
+        },
+      };
+    case REMOVE_DOCKER:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (action.payload.parent_id !== GENERAL) {
+        return state;
+      }
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          GENERAL: {
+            ...state.byId[GENERAL],
+            dockerHub: state.byId[GENERAL].dockerHub.filter(
               (config) => config !== action.payload.id,
             ),
           },
@@ -206,42 +219,26 @@ function GeneralReducer(state = generalState, action) {
     case ADD_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
+      if (action.payload.parent_id !== GENERAL) {
+        return state;
+      }
+      if (state.byId[GENERAL].systems.includes(action.payload.id)) {
         return state;
       }
       return {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            systems: state.byId[GLOBAL].systems.concat(action.payload.id),
+          GENERAL: {
+            ...state.byId[GENERAL],
+            systems: state.byId[GENERAL].systems.concat(action.payload.id),
           },
         },
       };
-    case LOAD_SYSTEM_GENERAL:
-      if (
-        !state.byId[action.payload.parent_id].systems.includes(
-          action.payload.id,
-        )
-      ) {
-        return {
-          ...state,
-          byId: {
-            ...state.byId,
-            GLOBAL: {
-              ...state.byId[GLOBAL],
-              systems: state.byId[GLOBAL].systems.concat(action.payload.id),
-            },
-          },
-        };
-      }
-      return state;
-
     case REMOVE_SYSTEM:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
+      if (action.payload.parent_id !== GENERAL) {
         return state;
       }
 
@@ -249,52 +246,30 @@ function GeneralReducer(state = generalState, action) {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            systems: state.byId[GLOBAL].systems.filter(
+          GENERAL: {
+            ...state.byId[GENERAL],
+            systems: state.byId[GENERAL].systems.filter(
               (config) => config !== action.payload.id,
             ),
-          },
-        },
-      };
-    case UPDATE_REPEAT_ALERT:
-      // Since this is common for multiple chains and general settings
-      // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
-        return state;
-      }
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
-            repeatAlerts: {
-              ...state.byId[GLOBAL].repeatAlerts,
-              byId: {
-                ...state.byId[GLOBAL].repeatAlerts.byId,
-                [action.payload.id]: action.payload.alert,
-              },
-            },
           },
         },
       };
     case UPDATE_THRESHOLD_ALERT:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
-      if (action.payload.parent_id !== GLOBAL) {
+      if (action.payload.parent_id !== GENERAL) {
         return state;
       }
       return {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
+          GENERAL: {
+            ...state.byId[GENERAL],
             thresholdAlerts: {
-              ...state.byId[GLOBAL].thresholdAlerts,
+              ...state.byId[GENERAL].thresholdAlerts,
               byId: {
-                ...state.byId[GLOBAL].thresholdAlerts.byId,
+                ...state.byId[GENERAL].thresholdAlerts.byId,
                 [action.payload.id]: action.payload.alert,
               },
             },
@@ -306,8 +281,8 @@ function GeneralReducer(state = generalState, action) {
         ...state,
         byId: {
           ...state.byId,
-          GLOBAL: {
-            ...state.byId[GLOBAL],
+          GENERAL: {
+            ...state.byId[GENERAL],
             thresholdAlerts: action.payload.alerts,
           },
         },
@@ -328,14 +303,9 @@ function PeriodicReducer(state = periodicState, action) {
 }
 
 // Reducers to add and remove repository configurations from global state
-function repositoriesById(state = {}, action) {
+function githubRepositoriesById(state = {}, action) {
   switch (action.type) {
     case ADD_REPOSITORY:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_REPOSITORY:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -347,17 +317,16 @@ function repositoriesById(state = {}, action) {
   }
 }
 
-// Reducers to remove from list of all repositories
-function allRepositories(state = [], action) {
+// Reducers to remove from list of all githubRepositories
+// In ADD_REPOSITORY there is a check to ensure that double the repo_id isn't
+// added to the list
+function allGithubRepositories(state = [], action) {
   switch (action.type) {
     case ADD_REPOSITORY:
-      return state.concat(action.payload.id);
-    case LOAD_REPOSITORY:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_REPOSITORY:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -365,20 +334,50 @@ function allRepositories(state = [], action) {
   }
 }
 
-const RepositoryReducer = combineReducers({
-  byId: repositoriesById,
-  allIds: allRepositories,
+const GitHubRepositoryReducer = combineReducers({
+  byId: githubRepositoriesById,
+  allIds: allGithubRepositories,
+});
+
+// Reducers to add and remove dockerHub configurations from global state
+function dockerHubsById(state = {}, action) {
+  switch (action.type) {
+    case ADD_DOCKER:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
+    case REMOVE_DOCKER:
+      return _.omit(state, action.payload.id);
+    default:
+      return state;
+  }
+}
+
+// Reducers to remove from list of all dockerHub configs
+function allDockerHubs(state = [], action) {
+  switch (action.type) {
+    case ADD_DOCKER:
+      if (state.includes(action.payload.id)) {
+        return state;
+      }
+      return state.concat(action.payload.id);
+    case REMOVE_DOCKER:
+      return state.filter((config) => config !== action.payload.id);
+    default:
+      return state;
+  }
+}
+
+const DockerHubReducer = combineReducers({
+  byId: dockerHubsById,
+  allIds: allDockerHubs,
 });
 
 // Reducers to add and remove system configurations from global state
 function systemsById(state = {}, action) {
   switch (action.type) {
     case ADD_SYSTEM:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_SYSTEM:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -394,13 +393,10 @@ function systemsById(state = {}, action) {
 function allSystems(state = [], action) {
   switch (action.type) {
     case ADD_SYSTEM:
-      return state.concat(action.payload.id);
-    case LOAD_SYSTEM:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_SYSTEM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -413,54 +409,11 @@ const SystemsReducer = combineReducers({
   allIds: allSystems,
 });
 
-// Reducers to add and remove kms configurations from global state
-function kmsesById(state = {}, action) {
-  switch (action.type) {
-    case ADD_KMS:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_KMS:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case REMOVE_KMS:
-      return _.omit(state, action.payload.id);
-    default:
-      return state;
-  }
-}
-
-// Reducers to add and remove from list of all kmses
-function allKmses(state = [], action) {
-  switch (action.type) {
-    case ADD_KMS:
-      return state.concat(action.payload.id);
-    case LOAD_KMS:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
-      }
-      return state;
-
-    case REMOVE_KMS:
-      return state.filter((config) => config !== action.payload.id);
-    default:
-      return state;
-  }
-}
-
-const KmsReducer = combineReducers({
-  byId: kmsesById,
-  allIds: allKmses,
-});
-
 export {
-  RepositoryReducer,
+  GitHubRepositoryReducer,
   SystemsReducer,
-  KmsReducer,
   PeriodicReducer,
   GeneralReducer,
   generalThresholdAlerts,
+  DockerHubReducer,
 };

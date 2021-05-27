@@ -115,6 +115,11 @@ function BlackListError(errorValue) {
   this.code = constants.C_451;
 }
 
+function BadParameters(param, url) {
+  this.message = `The ${param} is not valid for the URL ${url}}.`;
+  this.code = constants.C_452;
+}
+
 module.exports = {
   InvalidConfigType,
   InvalidBaseChain,
@@ -138,4 +143,5 @@ module.exports = {
   UsernameDoesNotExists,
   LoginLockedError,
   BlackListError,
+  BadParameters,
 };

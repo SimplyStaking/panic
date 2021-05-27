@@ -7,7 +7,7 @@ const OpsGenieSchema = (props) => Yup.object().shape({
       'OpsGenie config name is not unique.',
       (value) => {
         const {
-          emails, opsGenies, pagerDuties, telegrams, twilios,
+          emails, opsGenies, pagerDuties, telegrams, twilios, slacks,
         } = props;
         for (let i = 0; i < emails.allIds.length; i += 1) {
           if (emails.byId[emails.allIds[i]].channel_name === value) {
@@ -33,6 +33,11 @@ const OpsGenieSchema = (props) => Yup.object().shape({
         }
         for (let i = 0; i < twilios.allIds.length; i += 1) {
           if (twilios.byId[twilios.allIds[i]].channel_name === value) {
+            return false;
+          }
+        }
+        for (let i = 0; i < slacks.allIds.length; i += 1) {
+          if (slacks.byId[slacks.allIds[i]].channel_name === value) {
             return false;
           }
         }

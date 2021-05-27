@@ -1,13 +1,18 @@
 import * as Yup from 'yup';
-import { BLACKLIST } from 'constants/constants';
 
 const SystemSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-system-name', 'System name is not unique.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
+        chainlinkNodesConfig, dockerHubConfig,
       } = props;
 
+      for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
+        if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       for (let i = 0; i < substrateNodesConfig.allIds.length; i += 1) {
         if (substrateNodesConfig.byId[substrateNodesConfig.allIds[i]].name === value) {
           return false;
@@ -28,18 +33,16 @@ const SystemSchema = (props) => Yup.object().shape({
           return false;
         }
       }
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].repo_name === value) {
+          return false;
+        }
+      }
       return true;
     })
     .required('System name is required.'),
   exporter_url: Yup.string()
-    .test('localhost', '127.0.0.1 is not allowed for security reasons.',
-      (value) => {
-        if (BLACKLIST.find((a) => value.includes(a))) {
-          return false;
-        }
-        return true;
-      })
-    .required('Node Exporter Url is required.'),
+    .required('Node Exporter URL is required.'),
 });
 
 export default SystemSchema;

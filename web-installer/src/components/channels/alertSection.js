@@ -18,7 +18,7 @@ export default function AlertsSection() {
           </span>
         )}
         color="default"
-        icon="info_outline"
+        icon={ErrorIcon}
         iconColor="#339900"
       />
       <SnackbarContent
