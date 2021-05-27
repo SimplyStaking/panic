@@ -107,7 +107,7 @@ class TestGithubAlerter(unittest.TestCase):
                 }
             }
         }
-        self.github_json = json.dumps(self.github_data_received).encode()
+        self.github_json = json.dumps(self.github_data_received)
         self.frozen_timestamp = datetime.datetime(2012, 1, 1).timestamp()
         self.github_data_error = {
             "error": {
@@ -121,7 +121,7 @@ class TestGithubAlerter(unittest.TestCase):
                 "message": "error message"
             }
         }
-        self.github_json_error = json.dumps(self.github_data_error).encode()
+        self.github_json_error = json.dumps(self.github_data_error)
 
         # Alert used for rabbitMQ testing
         self.alert = NewGitHubReleaseAlert(
@@ -284,7 +284,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_received).encode()
+                json.dumps(self.github_data_received)
             )
             mock_new_github_release.assert_not_called()
             mock_github_access.assert_not_called()
@@ -328,7 +328,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_received).encode()
+                json.dumps(self.github_data_received)
             )
             call_1 = call(self.repo_name, "PANIC v1.0.0", "1.0.0", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
@@ -381,7 +381,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_error).encode()
+                json.dumps(self.github_data_error)
             )
 
             mock_cannot_access_github_page_alert.assert_called_once_with(
@@ -421,7 +421,7 @@ class TestGithubAlerter(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(github_data_error).encode()
+                json.dumps(github_data_error)
             )
 
             mock_received_unexpected_data_error.assert_called_once()

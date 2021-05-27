@@ -75,7 +75,7 @@ class ConfigStore(Store):
         Processes the data being received, from the queue. This data will be
         stored in Redis as required. If successful, a heartbeat will be sent.
         """
-        config_data = json.loads(body.decode())
+        config_data = json.loads(body)
 
         self.logger.debug(
             "Received %s. Now processing this data.", config_data)

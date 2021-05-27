@@ -500,7 +500,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
             mock_process_mongo.assert_called_once()
             mock_ack.assert_called_once()
@@ -611,7 +611,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
             self.assertRaises(eval(mock_error),
                               self.test_store._process_redis_store,
@@ -658,7 +658,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_1).encode()
+                json.dumps(self.system_data_1)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -711,7 +711,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -821,7 +821,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -929,7 +929,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1072,7 +1072,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1152,7 +1152,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()

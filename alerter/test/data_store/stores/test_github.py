@@ -354,7 +354,7 @@ class TestGithubStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
             mock_ack.assert_called_once()
             mock_send_hb.assert_called_once()
@@ -401,7 +401,7 @@ class TestGithubStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_unexpected).encode()
+                json.dumps(self.github_data_unexpected)
             )
             self.assertRaises(eval(mock_error),
                               self.test_store._process_redis_store,
@@ -445,7 +445,7 @@ class TestGithubStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_1).encode()
+                json.dumps(self.github_data_1)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -497,7 +497,7 @@ class TestGithubStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.github_data_unexpected).encode()
+                json.dumps(self.github_data_unexpected)
             )
 
             res = self.test_rabbit_manager.queue_declare(
