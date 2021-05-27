@@ -330,15 +330,15 @@ class TestGithubAlerter(unittest.TestCase):
                 properties,
                 json.dumps(self.github_data_received).encode()
             )
-            call_1 = call(self.repo_name, "PANIC v2.0.2", "2.0.2", self.info,
+            call_1 = call(self.repo_name, "PANIC v1.0.0", "1.0.0", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
-            call_2 = call(self.repo_name, "PANIC v2.0.1", "2.0.1", self.info,
+            call_2 = call(self.repo_name, "PANIC v1.0.1", "1.0.1", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
             call_3 = call(self.repo_name, "PANIC v2.0.0", "2.0.0", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
-            call_4 = call(self.repo_name, "PANIC v1.0.1", "1.0.1", self.info,
+            call_4 = call(self.repo_name, "PANIC v2.0.1", "2.0.1", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
-            call_5 = call(self.repo_name, "PANIC v1.0.0", "1.0.0", self.info,
+            call_5 = call(self.repo_name, "PANIC v2.0.2", "2.0.2", self.info,
                           self.last_monitored, self.parent_id, self.repo_id)
 
             mock_new_github_release.assert_has_calls([call_1, call_2, call_3,
