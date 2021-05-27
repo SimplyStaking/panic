@@ -12,6 +12,7 @@ Change the contents of this file to this:
 - Added the ChainlinkNodeMonitor, NodeMonitorsManager, and their tests.
 - Refactored RabbitMQ queues and routing keys.
 - The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
+- Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
 
 ## 0.1.2
 
