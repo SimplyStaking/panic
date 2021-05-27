@@ -13,6 +13,7 @@ Change the contents of this file to this:
 - Refactored RabbitMQ queues and routing keys.
 - The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
 - Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
+- Fixed issue with GitHub alerter raising new release alerts in reverse order for multiple releases.
 
 ## 0.1.2
 
