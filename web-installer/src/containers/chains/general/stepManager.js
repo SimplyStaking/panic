@@ -4,18 +4,23 @@ import PropTypes from 'prop-types';
 import { AlertsGeneralTableContainer } from 'containers/chains/common/alertsContainer';
 import { ChannelsGeneralTableContainer } from 'containers/chains/common/channelsContainer';
 import {
-  SystemFormContainer,
-  SystemTableContainer,
+  SystemGeneralFormContainer,
+  SystemGeneralTableContainer,
 } from 'containers/chains/common/systemsContainer';
 import {
   RepositoriesGeneralFormContainer,
   RepositoriesGeneralTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
 import {
+  DockerHubGeneralFormContainer,
+  DockerHubGeneralTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
+import {
   ALERTS_STEP,
   CHANNELS_STEP,
   REPOSITORIES_STEP,
   SYSTEMS_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 
 const mapStateToProps = (state) => ({
@@ -32,8 +37,8 @@ function getStep(stepName) {
     case SYSTEMS_STEP:
       return (
         <div>
-          <SystemFormContainer />
-          <SystemTableContainer />
+          <SystemGeneralFormContainer />
+          <SystemGeneralTableContainer />
         </div>
       );
     case REPOSITORIES_STEP:
@@ -43,11 +48,18 @@ function getStep(stepName) {
           <RepositoriesGeneralTableContainer />
         </div>
       );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerHubGeneralFormContainer />
+          <DockerHubGeneralTableContainer />
+        </div>
+      );
     default:
       return (
         <div>
-          <SystemFormContainer />
-          <SystemTableContainer />
+          <SystemGeneralFormContainer />
+          <SystemGeneralTableContainer />
         </div>
       );
   }

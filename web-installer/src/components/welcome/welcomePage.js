@@ -1,33 +1,51 @@
 import React from 'react';
-import GridContainer from 'components/material_ui/Grid/GridContainer';
-import GridItem from 'components/material_ui/Grid/GridItem';
+import { Grid, Button } from '@material-ui/core';
 import LoginContainer from 'containers/welcome/loginContainer';
-import useStyles from 'assets/jss/material-kit-react/views/components';
-import Data from 'data/welcome';
+import CustomParticles from 'components/material_ui/Particles/BlockchainParticles';
 
 function WelcomePage() {
-  const classes = useStyles();
   return (
-    <div className={classes.backgroundImage}>
-      <div className={classes.container}>
-        <div className={classes.brand}>
-          <GridContainer>
-            <GridItem>
-              <h1 className={classes.title}>
-                {Data.title}
-              </h1>
-              <h2 className={classes.subtitle}>
-                {Data.description}
-              </h2>
-            </GridItem>
-          </GridContainer>
-        </div>
-      </div>
-      <br />
-      <br />
-      <div className={classes.topPadded}>
-        <LoginContainer />
-      </div>
+    <div>
+      <Grid container style={{ minHeight: '100vh' }}>
+        <Grid item xs={12} sm={6}>
+          <div>
+            <CustomParticles />
+          </div>
+        </Grid>
+        <Grid
+          container
+          item
+          xs={12}
+          sm={6}
+          alignItems="center"
+          direction="column"
+          justify="space-between"
+          style={{ padding: 10 }}
+        >
+          <div />
+          <div />
+          <LoginContainer />
+          <div />
+          <Grid container justify="center" spacing={2}>
+            <Grid item>
+              <Button
+                href="https://simply-vc.com.mt/"
+                target="_blank"
+              >
+                Visit the SimplyVC Website!
+              </Button>
+            </Grid>
+            <Grid item>
+              <Button
+                href="https://twitter.com/Simply_VC"
+                target="_blank"
+              >
+                Follow us on Twitter!
+              </Button>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
     </div>
   );
 }

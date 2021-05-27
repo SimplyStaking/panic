@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import ChannelsTable from 'components/chains/common/tables/channelsTable';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
 import {
   addTelegramChannel,
   removeTelegramChannel,
@@ -12,9 +12,12 @@ import {
   removePagerDutyChannel,
   addOpsGenieChannel,
   removeOpsGenieChannel,
+  addSlackChannel,
+  removeSlackChannel,
 } from 'redux/actions/generalActions';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import ChainlinkData from 'data/chainlink';
 import GeneralData from 'data/general';
 
 // ------------------------- Common Functions ---------------------------
@@ -54,6 +57,8 @@ function mapDispatchToProps(dispatch) {
     removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
     addOpsGenieDetails: (details) => dispatch(addOpsGenieChannel(details)),
     removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
+    addSlackDetails: (details) => dispatch(addSlackChannel(details)),
+    removeSlackDetails: (details) => dispatch(removeSlackChannel(details)),
     createPayload,
   };
 }
@@ -67,6 +72,7 @@ const mapCosmosStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
   currentChain: state.CurrentCosmosChain,
   config: state.CosmosChainsReducer,
   data: CosmosData,
@@ -75,6 +81,27 @@ const mapCosmosStateToProps = (state) => ({
 // Combine cosmos state and dispatch functions to the channels table
 const ChannelsCosmosTableContainer = connect(
   mapCosmosStateToProps,
+  mapDispatchToProps,
+)(ChannelsTable);
+
+// ------------------------- Chainlink Based Chain Data --------------------
+
+// Chainlink and channels redux data that will be used to control the channel table
+const mapChainlinkStateToProps = (state) => ({
+  telegrams: state.TelegramsReducer,
+  twilios: state.TwiliosReducer,
+  emails: state.EmailsReducer,
+  pagerduties: state.PagerDutyReducer,
+  opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
+  currentChain: state.CurrentChainlinkChain,
+  config: state.ChainlinkChainsReducer,
+  data: ChainlinkData,
+});
+
+// Combine chainlink state and dispatch functions to the channels table
+const ChannelsChainlinkTableContainer = connect(
+  mapChainlinkStateToProps,
   mapDispatchToProps,
 )(ChannelsTable);
 
@@ -88,6 +115,7 @@ const mapSubstrateStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
   currentChain: state.CurrentSubstrateChain,
   config: state.SubstrateChainsReducer,
   data: SubstrateData,
@@ -109,7 +137,8 @@ const mapGeneralStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
-  currentChain: GLOBAL,
+  slacks: state.SlacksReducer,
+  currentChain: GENERAL,
   config: state.GeneralReducer,
   data: GeneralData,
 });
@@ -123,5 +152,6 @@ const ChannelsGeneralTableContainer = connect(
 export {
   ChannelsCosmosTableContainer,
   ChannelsSubstrateTableContainer,
+  ChannelsChainlinkTableContainer,
   ChannelsGeneralTableContainer,
 };
