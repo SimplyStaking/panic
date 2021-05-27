@@ -163,9 +163,9 @@ const ChainlinkChainsTable = ({
       removeNodeDetails(payload);
     }
 
-    // Clear all the configured repositories from state
-    for (let i = 0; i < currentConfig.repositories.length; i += 1) {
-      payload.id = currentConfig.repositories[i];
+    // Clear all the configured githubRepositories from state
+    for (let i = 0; i < currentConfig.githubRepositories.length; i += 1) {
+      payload.id = currentConfig.githubRepositories[i];
       removeRepositoryDetails(payload);
     }
 

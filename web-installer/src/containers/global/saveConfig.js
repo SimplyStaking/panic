@@ -30,7 +30,7 @@ const mapStateToProps = (state) => ({
   slacks: state.SlacksReducer,
 
   // General data related to
-  repositories: state.RepositoryReducer,
+  githubRepositories: state.GitHubRepositoryReducer,
   general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
   dockerHub: state.DockerHubReducer,
@@ -54,7 +54,7 @@ class SaveConfig extends Component {
       cosmosNodes,
       chainlinkChains,
       chainlinkNodes,
-      repositories,
+      githubRepositories,
       substrateChains,
       substrateNodes,
       general,
@@ -112,12 +112,12 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for repositories
-      if (chainConfig.repositories.length !== 0) {
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
         const reposToSave = {};
-        for (let j = 0; j < chainConfig.repositories.length; j += 1) {
-          const currentId = chainConfig.repositories[j];
-          reposToSave[currentId] = repositories.byId[currentId];
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -249,12 +249,12 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for repositories
-      if (chainConfig.repositories.length !== 0) {
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
         const reposToSave = {};
-        for (let j = 0; j < chainConfig.repositories.length; j += 1) {
-          const currentId = chainConfig.repositories[j];
-          reposToSave[currentId] = repositories.byId[currentId];
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -388,12 +388,12 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for repositories
-      if (chainConfig.repositories.length !== 0) {
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
         const reposToSave = {};
-        for (let j = 0; j < chainConfig.repositories.length; j += 1) {
-          const currentId = chainConfig.repositories[j];
-          reposToSave[currentId] = repositories.byId[currentId];
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -531,8 +531,8 @@ class SaveConfig extends Component {
     await sendConfig('general', 'systems_config.ini', '', '', generalSystems);
 
     const generalRepos = {};
-    for (let k = 0; k < general.repositories.length; k += 1) {
-      generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
+    for (let k = 0; k < general.githubRepositories.length; k += 1) {
+      generalRepos[general.githubRepositories[k]] = githubRepositories.byId[general.githubRepositories[k]];
     }
     await sendConfig('general', 'github_repos_config.ini', '', '', generalRepos);
 
@@ -825,7 +825,7 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
-  repositories: PropTypes.shape({
+  githubRepositories: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
@@ -916,7 +916,7 @@ SaveConfig.propTypes = {
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   general: PropTypes.shape({
-    repositories: PropTypes.arrayOf(PropTypes.string).isRequired,
+    githubRepositories: PropTypes.arrayOf(PropTypes.string).isRequired,
     systems: PropTypes.arrayOf(PropTypes.string).isRequired,
     dockerHubs: PropTypes.arrayOf(PropTypes.string).isRequired,
     telegrams: PropTypes.arrayOf(PropTypes.string).isRequired,

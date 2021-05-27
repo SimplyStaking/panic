@@ -124,7 +124,7 @@ const generalState = {
     GENERAL: {
       chain_name: GENERAL,
       id: GENERAL,
-      repositories: [],
+      githubRepositories: [],
       dockerHubs: [],
       systems: [],
       periodic: periodicState,
@@ -134,7 +134,7 @@ const generalState = {
   allIds: [GENERAL],
 };
 
-// General reducer to keep track of Periodic alive reminder, repositories and
+// General reducer to keep track of Periodic alive reminder, githubRepositories and
 // systems
 function GeneralReducer(state = generalState, action) {
   switch (action.type) {
@@ -144,7 +144,7 @@ function GeneralReducer(state = generalState, action) {
       if (action.payload.parent_id !== GENERAL) {
         return state;
       }
-      if (state.byId[GENERAL].repositories.includes(action.payload.id)) {
+      if (state.byId[GENERAL].githubRepositories.includes(action.payload.id)) {
         return state;
       }
       return {
@@ -153,7 +153,7 @@ function GeneralReducer(state = generalState, action) {
           ...state.byId,
           GENERAL: {
             ...state.byId[GENERAL],
-            repositories: state.byId[GENERAL].repositories.concat(
+            githubRepositories: state.byId[GENERAL].githubRepositories.concat(
               action.payload.id,
             ),
           },
@@ -171,7 +171,7 @@ function GeneralReducer(state = generalState, action) {
           ...state.byId,
           GENERAL: {
             ...state.byId[GENERAL],
-            repositories: state.byId[GENERAL].repositories.filter(
+            githubRepositories: state.byId[GENERAL].githubRepositories.filter(
               (config) => config !== action.payload.id,
             ),
           },
@@ -303,7 +303,7 @@ function PeriodicReducer(state = periodicState, action) {
 }
 
 // Reducers to add and remove repository configurations from global state
-function repositoriesById(state = {}, action) {
+function githubRepositoriesById(state = {}, action) {
   switch (action.type) {
     case ADD_REPOSITORY:
       return {
@@ -317,10 +317,10 @@ function repositoriesById(state = {}, action) {
   }
 }
 
-// Reducers to remove from list of all repositories
+// Reducers to remove from list of all githubRepositories
 // In ADD_REPOSITORY there is a check to ensure that double the repo_id isn't
 // added to the list
-function allRepositories(state = [], action) {
+function allGithubRepositories(state = [], action) {
   switch (action.type) {
     case ADD_REPOSITORY:
       if (state.includes(action.payload.id)) {
@@ -334,9 +334,9 @@ function allRepositories(state = [], action) {
   }
 }
 
-const RepositoryReducer = combineReducers({
-  byId: repositoriesById,
-  allIds: allRepositories,
+const GitHubRepositoryReducer = combineReducers({
+  byId: githubRepositoriesById,
+  allIds: allGithubRepositories,
 });
 
 // Reducers to add and remove dockerHub configurations from global state
@@ -410,7 +410,7 @@ const SystemsReducer = combineReducers({
 });
 
 export {
-  RepositoryReducer,
+  GitHubRepositoryReducer,
   SystemsReducer,
   PeriodicReducer,
   GeneralReducer,

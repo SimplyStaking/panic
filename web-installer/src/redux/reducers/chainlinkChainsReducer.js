@@ -27,8 +27,7 @@ import {
 } from 'redux/actions/types';
 
 const chainlinkRepeatAlerts = {
-  byId: {
-  },
+  byId: {},
   allIds: [],
 };
 
@@ -128,8 +127,8 @@ const chainlinkThresholdAlerts = {
     6: {
       name: 'Latest block height processed by node.',
       identifier: 'head_tracker_current_head',
-      description: 'Keeps track of blocks processed by the node, alerts '
-      + 'if no change over time.',
+      description:
+        'Keeps track of blocks processed by the node, alerts if no change over time.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -147,8 +146,9 @@ const chainlinkThresholdAlerts = {
     7: {
       name: 'New block headers not being received.',
       identifier: 'head_tracker_heads_received_total',
-      description: 'Keeps track of when the last block header was received, '
-      + 'if a block header was not received after a while an alert will be raised.',
+      description:
+        'Keeps track of when the last block header was received, '
+        + 'if a block header was not received after a while an alert will be raised.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -166,9 +166,10 @@ const chainlinkThresholdAlerts = {
     8: {
       name: "Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
-      description: 'If the current gas price is higher than the gas limit of '
-      + 'the node an alert should be raised. If the repeat timer is set to 0, it '
-      + 'will not repeat.',
+      description:
+        'If the current gas price is higher than the gas limit of '
+        + 'the node an alert should be raised. If the repeat timer is set to 0, it '
+        + 'will not repeat.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -186,8 +187,9 @@ const chainlinkThresholdAlerts = {
     9: {
       name: 'ETH Balance',
       identifier: 'eth_balance_amount',
-      description: 'If the amount of ETH is less than the threshold an alert '
-      + 'will be raised. This applies to all EVM networks e.g BNB.',
+      description:
+        'If the amount of ETH is less than the threshold an alert '
+        + 'will be raised. This applies to all EVM networks e.g BNB.',
       adornment: 'ETH Balance',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -211,9 +213,10 @@ const chainlinkTimeWindowAlerts = {
     10: {
       name: 'Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
-      description: 'Number of unconfirmed transactions per node persist over a time period. '
-      + 'Example: If a node has 50 unconfirmed transactions for a period of 5 minutes you will '
-      + 'get a critical alert.',
+      description:
+        'Number of unconfirmed transactions per node persist over a time period. '
+        + 'Example: If a node has 50 unconfirmed transactions for a period of 5 minutes you will '
+        + 'get a critical alert.',
       adornment: 'Transaction Count',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -233,8 +236,9 @@ const chainlinkTimeWindowAlerts = {
     11: {
       name: 'Dropped block headers.',
       identifier: 'head_tracker_num_heads_dropped_total',
-      description: 'Amount of block headers dropped over a time period. Example: '
-      + 'If 5 block headers are dropped over 1 minute a Warning Alert will be raised.',
+      description:
+        'Amount of block headers dropped over a time period. Example: '
+        + 'If 5 block headers are dropped over 1 minute a Warning Alert will be raised.',
       adornment_threshold: 'Block Headers',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -274,8 +278,9 @@ const chainlinkTimeWindowAlerts = {
     13: {
       name: 'ETH blocks in queue to be processed by Chainlink node.',
       identifier: 'head_tracker_heads_in_queue',
-      description: 'Keeps track of blocks in queue to be processed by the node, '
-      + 'alerts if there is a backlog of blocks.',
+      description:
+        'Keeps track of blocks in queue to be processed by the node, '
+        + 'alerts if there is a backlog of blocks.',
       adornment: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -296,9 +301,10 @@ const chainlinkTimeWindowAlerts = {
   14: {
     name: 'Max Unconfirmed Blocks.',
     identifier: 'max_unconfirmed_blocks',
-    description: 'The max number of blocks your transactions have been unconfirmed '
-    + 'for over a time period above the threshold. Example: If your transactions are '
-    + 'unconfirmed for 50 blocks after 5 minutes you will get a critical alert.',
+    description:
+      'The max number of blocks your transactions have been unconfirmed '
+      + 'for over a time period above the threshold. Example: If your transactions are '
+      + 'unconfirmed for 50 blocks after 5 minutes you will get a critical alert.',
     adornment: 'Block',
     adornment_time: 'Seconds',
     parent_id: '',
@@ -319,8 +325,7 @@ const chainlinkTimeWindowAlerts = {
 };
 
 const chainlinkSeverityAlerts = {
-  byId: {
-  },
+  byId: {},
   allIds: [],
 };
 
@@ -371,7 +376,7 @@ function chainlinkChainsById(state = {}, action) {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
-          repositories: [],
+          githubRepositories: [],
           dockerHubs: [],
           systems: [],
           repeatAlerts: chainlinkRepeatAlerts,
@@ -417,14 +422,16 @@ function chainlinkChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (state[action.payload.parent_id].repositories.includes(action.payload.id)) {
+      if (state[action.payload.parent_id].githubRepositories.includes(action.payload.id)) {
         return state;
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
+          githubRepositories: state[action.payload.parent_id].githubRepositories.concat(
+            action.payload.id,
+          ),
         },
       };
     case REMOVE_REPOSITORY:
@@ -437,7 +444,7 @@ function chainlinkChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].repositories.filter(
             (config) => config !== action.payload.id,
           ),
         },

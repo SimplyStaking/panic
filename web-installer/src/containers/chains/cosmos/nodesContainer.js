@@ -60,7 +60,7 @@ const mapStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   chainlinkNodesConfig: state.ChainlinkNodesReducer,
-  reposConfig: state.RepositoryReducer,
+  reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
   dockerHubConfig: state.DockerHubReducer,
   data: CosmosData,

@@ -26,7 +26,7 @@ const GithubRepositoriesTable = ({
   removeRepositoryDetails,
   data,
 }) => {
-  if (config.byId[currentChain].repositories.length === 0) {
+  if (config.byId[currentChain].githubRepositories.length === 0) {
     return (
       <div>
         <Box py={4}>
@@ -64,7 +64,7 @@ const GithubRepositoriesTable = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {config.byId[currentChain].repositories.map((id) => (
+            {config.byId[currentChain].githubRepositories.map((id) => (
               <StyledTableRow key={id}>
                 <StyledTableCell align="center">{reposConfig.byId[id].repo_name}</StyledTableCell>
                 <StyledTableCell align="center">
@@ -106,7 +106,7 @@ const GithubRepositoriesTable = ({
 GithubRepositoriesTable.propTypes = {
   config: PropTypes.shape({
     byId: PropTypes.shape({
-      repositories: PropTypes.arrayOf(PropTypes.string),
+      githubRepositories: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
   }).isRequired,
   reposConfig: PropTypes.shape({

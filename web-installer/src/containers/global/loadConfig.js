@@ -93,7 +93,7 @@ const mapStateToProps = (state) => ({
   slacks: state.SlacksReducer,
 
   // General data related to
-  repositories: state.RepositoryReducer,
+  githubRepositories: state.GitHubRepositoryReducer,
   general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
   periodic: state.PeriodicReducer,

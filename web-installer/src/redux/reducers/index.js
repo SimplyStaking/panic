@@ -25,7 +25,7 @@ import {
   CurrentChainlinkChain,
 } from './chainlinkChainsReducer';
 import {
-  RepositoryReducer,
+  GitHubRepositoryReducer,
   DockerHubReducer,
   SystemsReducer,
   PeriodicReducer,
@@ -49,7 +49,7 @@ export default combineReducers({
   SubstrateNodesReducer,
   SubstrateChainsReducer,
   CurrentSubstrateChain,
-  RepositoryReducer,
+  GitHubRepositoryReducer,
   DockerHubReducer,
   SystemsReducer,
   PeriodicReducer,

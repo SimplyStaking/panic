@@ -446,7 +446,7 @@ function cosmosChainsById(state = {}, action) {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
-          repositories: [],
+          githubRepositories: [],
           dockerHubs: [],
           repeatAlerts: cosmosRepeatAlerts,
           timeWindowAlerts: cosmosTimeWindowAlerts,
@@ -491,14 +491,16 @@ function cosmosChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (state[action.payload.parent_id].repositories.includes(action.payload.id)) {
+      if (state[action.payload.parent_id].githubRepositories.includes(action.payload.id)) {
         return state;
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
+          githubRepositories: state[action.payload.parent_id].githubRepositories.concat(
+            action.payload.id,
+          ),
         },
       };
     case REMOVE_REPOSITORY:
@@ -511,7 +513,7 @@ function cosmosChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].githubRepositories.filter(
             (config) => config !== action.payload.id,
           ),
         },
