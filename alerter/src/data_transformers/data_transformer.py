@@ -42,7 +42,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         return self._redis
 
     @property
-    def state(self) -> Dict[str, Union[System, GitHubRepo]]:
+    def state(self) -> Dict[str, Monitorable]:
         return self._state
 
     @abstractmethod

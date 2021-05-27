@@ -1,13 +1,20 @@
+import copy
 import json
 import logging
+from typing import Dict, Tuple
 
 from src.data_store.redis import RedisApi, Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (RAW_DATA_EXCHANGE, CL_NODE_DT_INPUT_QUEUE_NAME,
-                                 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
-                                 STORE_EXCHANGE, ALERT_EXCHANGE,
-                                 HEALTH_CHECK_EXCHANGE)
+from src.utils.constants.data import VALID_CHAINLINK_SOURCES, \
+    RAW_TO_TRANSFORMED_CHAINLINK_METRICS, INT_CHAINLINK_METRICS
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          CL_NODE_DT_INPUT_QUEUE_NAME,
+                                          CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
+                                          STORE_EXCHANGE, ALERT_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE)
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  NodeIsDownException)
 from src.utils.types import Monitorable, convert_to_float, convert_to_int
 
 
@@ -267,13 +274,211 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
         return cl_node
 
-# TODO: We need to check which metrics are reset whenever a switch of nodes
-#     : happen. This is important because it may effect the state of the alerter
+    def _update_state(self, transformed_data: Dict) -> None:
+        self.logger.debug("Updating state ...")
+
+        if transformed_data['prometheus']:
+            if 'result' in transformed_data:
+                meta_data = transformed_data['prometheus']['result'][
+                    'meta_data']
+                metrics = transformed_data['prometheus']['result']['data']
+                node_id = meta_data['node_id']
+                parent_id = meta_data['node_parent_id']
+                node_name = meta_data['node_name']
+                node = self.state[node_id]
+
+                # Set node details just in case the configs have changed
+                node.set_parent_id(parent_id)
+                node.set_node_name(node_name)
+
+                # Save the new metrics in process memory
+                node.set_current_height(metrics['current_height'])
+                node.set_eth_blocks_in_queue(metrics['eth_blocks_in_queue'])
+                node.set_total_block_headers_received(
+                    metrics['total_block_headers_received'])
+                node.set_total_block_headers_dropped(
+                    metrics['total_block_headers_dropped'])
+                node.set_no_of_active_jobs(metrics['no_of_active_jobs'])
+                node.set_max_pending_tx_delay(metrics['max_pending_tx_delay'])
+                node.set_process_start_time_seconds(
+                    metrics['process_start_time_seconds'])
+                node.set_total_gas_bumps(metrics['total_gas_bumps'])
+                node.set_total_gas_bumps_exceeds_limit(
+                    metrics['total_gas_bumps_exceeds_limit'])
+                node.set_no_of_unconfirmed_txs(metrics['no_of_unconfirmed_txs'])
+                node.set_total_errored_job_runs(
+                    metrics['total_errored_job_runs'])
+
+                # If gas_updater_set_gas_price was disabled, set the metrics to
+                # None
+                if metrics['current_gas_price_info'] is None:
+                    node.set_current_gas_price_info(None, None)
+                else:
+                    node.set_current_gas_price_info(metrics['percentile'],
+                                                    metrics['price'])
+
+                node.set_eth_balance_info(metrics['eth_balance_info'])
+                node.set_last_monitored_prometheus(meta_data['last_monitored'])
+                node.set_last_prometheus_source_used(
+                    meta_data['last_source_used'])
+                node.set_as_up()
+            elif 'error' in transformed_data:
+                meta_data = transformed_data['prometheus']['error']['meta_data']
+                error_code = transformed_data['prometheus']['error']['code']
+                node_id = meta_data['node_id']
+                parent_id = meta_data['node_parent_id']
+                node_name = meta_data['node_name']
+                downtime_exception = NodeIsDownException(node_name)
+                node = self.state[node_id]
+
+                # Set node details just in case the configs have changed
+                node.set_parent_id(parent_id)
+                node.set_node_name(node_name)
+
+                # To store which source errored if an error unrelated to
+                # downtime is received. Reminder: In the monitor
+                # last_source_used is not updated if a downtime error is
+                # detected, as it means that no source was used.
+                node.set_last_prometheus_source_used(
+                    meta_data['last_source_used'])
+
+                if error_code == downtime_exception.code:
+                    new_went_down_at = transformed_data['prometheus']['error'][
+                        'data']['went_down_at']
+                    node.set_as_down(new_went_down_at)
+            else:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _update_state".format(self))
+        else:
+            # If no data source is enabled, then we shouldn't have received the
+            # data in the first place.
+            raise ReceivedUnexpectedDataException(
+                "{}: _update_state".format(self))
+
+        self.logger.debug("State updated successfully")
+
+    def _process_transformed_data_for_saving(self,
+                                             transformed_data: Dict) -> Dict:
+        self.logger.debug("Performing further processing for storage ...")
+
+        # We must check that the source's data is valid
+        for source in VALID_CHAINLINK_SOURCES:
+            if 'result' not in transformed_data[source] \
+                    and 'error' not in transformed_data[source]:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _process_transformed_data_for_saving".format(self))
+
+        return copy.deepcopy(transformed_data)
+
+    def _process_transformed_data_for_alerting(self,
+                                               transformed_data: Dict) -> Dict:
+        pass
+
+    def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
+        self.logger.debug("Performing data transformation on %s ...", data)
+
+        if data['prometheus']:
+            if 'result' in data:
+                meta_data = data['prometheus']['result']['meta_data']
+                node_metrics = data['prometheus']['result']['data']
+                node_id = meta_data['node_id']
+                node = self.state[node_id]
+                transformed_data = copy.deepcopy(data)
+                td_meta_data = transformed_data['prometheus']['result'][
+                    'meta_data']
+                td_node_metrics = transformed_data['prometheus']['result'][
+                    'data']
+
+                # First convert the raw metric names into the transformed names
+                for raw_metric, transformed_metric in \
+                        RAW_TO_TRANSFORMED_CHAINLINK_METRICS.items():
+                    del td_node_metrics[raw_metric]
+                    td_node_metrics[transformed_metric] = node_metrics[
+                        raw_metric]
+
+                # Convert the int metric values
+                for transformed_metric in INT_CHAINLINK_METRICS:
+                    td_node_metrics[transformed_metric] = convert_to_int(
+                        td_node_metrics[transformed_metric], None)
+
+                # If the metric is enabled, transform the
+                # current_gas_price_info's percentile into the correct type.
+                # Note that the raw value is a string.
+                if td_node_metrics['current_gas_price_info']:
+                    str_percentile = td_node_metrics['current_gas_price_info'][
+                        'percentile']
+                    td_node_metrics['current_gas_price_info'][
+                        'percentile'] = convert_to_float(
+                        str_percentile.replace('%', ''), None)
+
+                # Add latest_usage to the eth_balance_info
+                for eth_address, new_balance \
+                        in node_metrics['ethereum_balances'].items():
+                    if eth_address in node.eth_balance_info:
+                        previous_balance = node.eth_balance_info[eth_address][
+                            'balance']
+                        new_info_dict = {
+                            'balance': new_balance,
+                            'latest_usage': previous_balance - new_balance if
+                            previous_balance > new_balance else 0.0
+                        }
+                    else:
+                        new_info_dict = {
+                            'balance': new_balance,
+                            'latest_usage': 0.0
+                        }
+
+                    td_node_metrics[eth_address] = new_info_dict
+
+                # Transform the meta_data by deleting the monitor_name and
+                # changing the time key to last_monitored key
+                del td_meta_data['monitor_name']
+                del td_meta_data['time']
+                td_meta_data['last_monitored'] = meta_data['time']
+                td_node_metrics['went_down_at'] = None
+            elif 'error' in data:
+                meta_data = data['prometheus']['error']['meta_data']
+                error_code = data['prometheus']['error']['code']
+                node_id = meta_data['node_id']
+                node_name = meta_data['node_name']
+                time_of_error = meta_data['time']
+                node = self.state[node_id]
+                downtime_exception = NodeIsDownException(node_name)
+
+                # In case of non-downtime errors only remove the monitor_name
+                # from the meta data
+                transformed_data = copy.deepcopy(data)
+                del transformed_data['prometheus']['error']['meta_data'][
+                    'monitor_name']
+
+                # If we have a downtime error, set went_down_at to the time of
+                # error if the node was up. Otherwise, leave went_down_at as
+                # stored in the node state
+                if error_code == downtime_exception.code:
+                    transformed_data['prometheus']['error']['data'] = {}
+                    td_metrics = transformed_data['prometheus']['error']['data']
+                    td_metrics['went_down_at'] = \
+                        node.went_down_at if node.is_down else time_of_error
+            else:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _transform_data".format(self))
+        else:
+            # If no data source is enabled, then we shouldn't have received the
+            # data in the first place.
+            raise ReceivedUnexpectedDataException(
+                "{}: _transform_data".format(self))
+
+        data_for_alerting = self._process_transformed_data_for_alerting(
+            transformed_data)
+        data_for_saving = self._process_transformed_data_for_saving(
+            transformed_data)
+
+        self.logger.debug("Data transformation successful")
+
+        return transformed_data, data_for_alerting, data_for_saving
+
+# TODO: In start check that system_ids and parent_ids of data are equal, all
+#     : data is there (like prometheus etc (even if empty)).. also, check that
+#     : at least one data is not empty ... so in other words do
+#     : data validation. Check that keys are equal to prometheus, rpc etc
 # TODO: Do previous for last_source_used in meta-data
-# TODO: Get last usage from last element in list to plot data according to
-#     : timestamp
-# TODO: In redis store entire dicts
-# TODO: current_gas_price store as it is
-# TODO: For current_gas_price we still need to update state if
-#     : current_gas_price = None all of a sudden. We Can just send none or send
-#     : the dict immediately.
