@@ -33,17 +33,17 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
-                                 TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 LOG_ALERTS_HANDLER_NAME_TEMPLATE,
-                                 TELEGRAM_COMMAND_HANDLERS_NAME)
+from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                       TELEGRAM_COMMAND_HANDLERS_NAME,
+                                       TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       LOG_ALERTS_HANDLER_NAME_TEMPLATE)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)

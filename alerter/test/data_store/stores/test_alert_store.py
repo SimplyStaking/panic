@@ -20,10 +20,10 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.alert import AlertStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE_NAME,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          ALERT_STORE_INPUT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
@@ -71,9 +71,9 @@ class TestAlertStore(unittest.TestCase):
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
@@ -196,8 +196,8 @@ class TestAlertStore(unittest.TestCase):
         REDIS. Note: we only care about alert_code.code and severity for
         this alert.
 
-        internal_alert_1 = ComponentReset: reset data for one chain
-        internal_alert_2 = ComponentResetAll: reset data for all chains
+        internal_alert_1 = ComponentResetChains: reset data for one chain
+        internal_alert_2 = ComponentResetAllChains: reset data for all chains
         """
         self.alert_internal_system_1 = {
             'parent_id': self.parent_id,
@@ -239,8 +239,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -251,8 +251,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,
@@ -263,8 +263,8 @@ class TestAlertStore(unittest.TestCase):
             'parent_id': self.parent_id,
             'origin_id': GithubAlerterManager.__name__,
             'alert_code': {
-                'name': 'internal_alert_1',
-                'code': 'internal_alert_1',
+                'name': 'internal_alert_2',
+                'code': 'internal_alert_2',
             },
             'severity': self.internal,
             'metric': self.metric,

@@ -18,11 +18,11 @@ from src.abstract.publisher_subscriber import (
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (
-    CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
-    ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_ROUTER_HEARTBEAT_QUEUE_NAME,
-    PING_ROUTING_KEY, ALERT_ROUTER_INPUT_ROUTING_KEY,
+    CONFIG_EXCHANGE, TOPIC, ALERT_EXCHANGE, ALERT_ROUTER_INPUT_QUEUE_NAME,
+    ALERT_ROUTER_INPUT_ROUTING_KEY, STORE_EXCHANGE,
+    ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
     CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE,
     CONSOLE_HANDLER_INPUT_ROUTING_KEY, LOG_HANDLER_INPUT_ROUTING_KEY,
     ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
@@ -74,7 +74,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         self._rabbitmq.basic_qos(prefetch_count=prefetch_count)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, 'topic',
+            ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE, TOPIC,
             ALERT_ROUTER_CONFIGS_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
@@ -83,7 +83,7 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
             exclusive=False, consumer_tag=None)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, 'topic',
+            ALERT_ROUTER_INPUT_QUEUE_NAME, ALERT_EXCHANGE, TOPIC,
             ALERT_ROUTER_INPUT_ROUTING_KEY
         )
         self._rabbitmq.basic_consume(
@@ -95,12 +95,12 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         # Declare store exchange just in case it hasn't been declared
         # yet
         self._rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                        exchange_type='topic', passive=False,
+                                        exchange_type=TOPIC, passive=False,
                                         durable=True, auto_delete=False,
                                         internal=False)
 
         self._declare_exchange_and_bind_queue(
-            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, 'topic',
+            ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, TOPIC,
             PING_ROUTING_KEY
         )
 

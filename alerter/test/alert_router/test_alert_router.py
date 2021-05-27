@@ -18,7 +18,7 @@ from src.alerter.metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (
+from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, ALERT_ROUTER_INPUT_QUEUE_NAME,
     ALERT_ROUTER_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,

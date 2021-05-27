@@ -15,8 +15,8 @@ from urllib3.exceptions import ProtocolError
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants import (RAW_DATA_EXCHANGE,
-                                 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_prometheus_metrics_data
 from src.utils.exceptions import (NodeIsDownException, PANICException,
                                   DataReadingException, InvalidUrlException,

@@ -16,12 +16,13 @@ from src.data_transformers.starters import (start_system_data_transformer,
                                             start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
-                                 DT_MAN_HEARTBEAT_QUEUE_NAME,
-                                 GITHUB_DATA_TRANSFORMER_NAME,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 PING_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
+                                       GITHUB_DATA_TRANSFORMER_NAME)
+from src.utils.constants.rabbitmq import (DT_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          PING_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import infinite_fn
 
@@ -73,7 +74,7 @@ class TestDataTransformersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_declare(
                 DT_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
             self.test_manager.rabbitmq.queue_purge(DT_MAN_HEARTBEAT_QUEUE_NAME)

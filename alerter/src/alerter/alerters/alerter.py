@@ -9,8 +9,8 @@ import pika.exceptions
 from src.abstract.publisher_subscriber import (
     QueuingPublisherSubscriberComponent)
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 

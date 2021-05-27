@@ -18,9 +18,10 @@ from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 SYSTEM_RAW_DATA_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          SYSTEM_RAW_DATA_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   DataReadingException, InvalidUrlException,
                                   MetricNotFoundException,
@@ -161,9 +162,9 @@ class TestSystemMonitor(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_monitor.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_monitor.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)

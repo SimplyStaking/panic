@@ -12,11 +12,12 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
-from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_DT_INPUT_QUEUE_NAME,
-                                 GITHUB_RAW_DATA_ROUTING_KEY,
-                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
+                                          ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_DT_INPUT_QUEUE_NAME,
+                                          GITHUB_RAW_DATA_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import (convert_to_float,
@@ -38,7 +39,7 @@ class GitHubDataTransformer(DataTransformer):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE_NAME)
         self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE_NAME, False, True,
@@ -62,13 +63,13 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def load_state(self, repo: Monitorable) -> Monitorable:

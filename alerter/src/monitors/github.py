@@ -14,7 +14,8 @@ from urllib3.exceptions import ProtocolError
 from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants import RAW_DATA_EXCHANGE, GITHUB_RAW_DATA_ROUTING_KEY
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          GITHUB_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json
 from src.utils.exceptions import (DataReadingException, PANICException,
                                   CannotAccessGitHubPageException,

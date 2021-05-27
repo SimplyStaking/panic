@@ -16,10 +16,13 @@ from src.alerter.alerter_starters import start_github_alerter
 from src.alerter.managers.github import (GithubAlerterManager)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
-                                 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                 PING_ROUTING_KEY, GITHUB_ALERTER_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY,
+                                          GITHUB_ALERT_ROUTING_KEY,
+                                          ALERT_EXCHANGE, TOPIC)
+from src.utils.constants.names import GITHUB_ALERTER_NAME
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -63,6 +66,10 @@ class TestGithubAlertersManager(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_manager.rabbitmq.connect()
+            self.test_manager.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
+            self.test_manager.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             # Declare queues incase they haven't been declared already
             self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -79,6 +86,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(
                 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
             self.test_rabbit_manager.disconnect()
         except Exception as e:
@@ -127,6 +135,7 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(
                 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
 
             self.test_manager._initialise_rabbitmq()
 
@@ -143,16 +152,22 @@ class TestGithubAlertersManager(unittest.TestCase):
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
             # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence there
-            # is no other queue binded with the same routing key to any exchange at
-            # this point.
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_rabbit_manager.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
                 routing_key=PING_ROUTING_KEY, body=self.test_data_str,
                 is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
-
+            self.test_manager.rabbitmq.basic_publish_confirm(
+                exchange=ALERT_EXCHANGE,
+                routing_key=GITHUB_ALERT_ROUTING_KEY,
+                body=self.test_data_str, is_body_dict=False,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=False
+            )
             # Re-declare queue to get the number of messages
             res = self.test_rabbit_manager.queue_declare(
                 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)

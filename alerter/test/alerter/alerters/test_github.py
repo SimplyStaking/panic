@@ -13,12 +13,12 @@ from parameterized import parameterized
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerts.github_alerts import NewGitHubReleaseAlert
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE,
-                                 GITHUB_ALERTER_INPUT_QUEUE_NAME,
-                                 GITHUB_ALERT_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                                 HEALTH_CHECK_EXCHANGE)
+from src.utils.constants.rabbitmq import (ALERT_EXCHANGE,
+                                          GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                          GITHUB_ALERT_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          HEALTH_CHECK_EXCHANGE, TOPIC)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -134,6 +134,10 @@ class TestGithubAlerter(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_github_alerter.rabbitmq.connect()
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_github_alerter.rabbitmq.queue_declare(
                 queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, durable=True,
                 exclusive=False, auto_delete=False, passive=False

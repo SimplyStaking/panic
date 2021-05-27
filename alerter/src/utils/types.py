@@ -9,7 +9,8 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsDecreasedBelowThresholdAlert,
     SystemCPUUsageDecreasedBelowThresholdAlert,
     SystemRAMUsageDecreasedBelowThresholdAlert,
-    SystemStorageUsageDecreasedBelowThresholdAlert)
+    SystemStorageUsageDecreasedBelowThresholdAlert
+)
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System

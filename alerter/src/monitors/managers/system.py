@@ -14,13 +14,13 @@ from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_system_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_QUEUE_NAME,
-                                 SYS_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE, PING_ROUTING_KEY)
+from src.utils.constants.configs import NODES_CONFIG
+from src.utils.constants.names import SYSTEM_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+    SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES, PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -44,7 +44,7 @@ class SystemMonitorsManager(MonitorsManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
         self.logger.info("Creating queue '%s'",
                          SYS_MON_MAN_HEARTBEAT_QUEUE_NAME)
@@ -61,7 +61,7 @@ class SystemMonitorsManager(MonitorsManager):
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(SYS_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
@@ -133,13 +133,10 @@ class SystemMonitorsManager(MonitorsManager):
             config_type = parsed_routing_key[3]
             chain = base_chain + ' ' + specific_chain
 
-            # TODO: Reminder, when we merge !42 change nodes_config to one of
-            #     : the constants in utils/constants. Also we can refactor all
-            #     : general instances found here and in other modules.
             # For such chains the nodes_config.ini file has no system confs,
             # therefore ignore the contents and acknowledge the message.
             if base_chain.lower() in self.BASE_CHAINS_WITH_SEPARATE_SYS_CONF \
-                    and config_type.lower() == 'nodes_config':
+                    and config_type.lower() == NODES_CONFIG:
                 self.rabbitmq.basic_ack(method.delivery_tag, False)
                 return
 

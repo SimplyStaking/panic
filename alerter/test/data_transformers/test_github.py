@@ -18,12 +18,13 @@ from src.data_transformers.github import GitHubDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.utils import env
-from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_DT_INPUT_QUEUE_NAME,
-                                 GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                                 GITHUB_RAW_DATA_ROUTING_KEY,
-                                 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
+                                          ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_DT_INPUT_QUEUE_NAME,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          GITHUB_RAW_DATA_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -222,13 +223,13 @@ class TestGitHubDataTransformer(unittest.TestCase):
             self.test_data_transformer.rabbitmq.queue_declare(
                 GITHUB_DT_INPUT_QUEUE_NAME, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'topic', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                STORE_EXCHANGE, 'topic', False, True, False, False)
+                STORE_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, 'topic', False, True, False, False)
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_data_transformer.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_data_transformer.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)
