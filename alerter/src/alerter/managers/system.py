@@ -11,17 +11,19 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_system_alerter
+from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
+                                                ComponentResetChains)
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_ALERTER_NAME_TEMPLATE,
-                                 SYS_ALERTERS_MAN_INPUT_QUEUE,
-                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN
-                                 )
+from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
+    SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -48,50 +50,55 @@ class SystemAlertersManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                    False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 SYS_ALERTERS_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.info("Declaring consuming intentions on "
-                         "'%s'", SYS_ALERTERS_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_INPUT_QUEUE,
+                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
-                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
-        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_CHAIN)
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "'%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN)
+                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.logger.info("Declaring consuming intentions on %s",
-                         SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type=TOPIC, passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
@@ -99,7 +106,9 @@ class SystemAlertersManager(AlertersManager):
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
         # process should be terminated
-        for parent_id, parent_info in self._parent_id_process_dict.items():
+        for parent_id, parent_info in list(
+                self._parent_id_process_dict.items()):
+
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
@@ -110,6 +119,14 @@ class SystemAlertersManager(AlertersManager):
                 del self._systems_alerts_configs[parent_id]
                 log_and_print("Terminating alerter process for chain "
                               "{}".format(chain), self.logger)
+
+                # Send an internal alert to reset all the REDIS metrics for
+                # this chain
+                alert = ComponentResetChains(chain,
+                                             datetime.now().timestamp(),
+                                             parent_id,
+                                             type(self).__name__)
+                self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _create_and_start_alerter_process(
             self, system_alerts_config: SystemAlertsConfig, parent_id: str,
@@ -136,16 +153,24 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == SYS_ALERTERS_MAN_CONF_ROUTING_KEY_GEN:
+        if method.routing_key == SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
-            if not bool(sent_configs):
-                self._terminate_and_join_chain_alerter_processes(chain)
-            else:
+            """
+            Send an internal alert to clear every metric from Redis for the
+            chain in question, and terminate the process for the received
+            config. Note that all this happens if a configuration is modified
+            or deleted.
+            """
+            self._terminate_and_join_chain_alerter_processes(chain)
+
+            # Checking if we received a configuration, therefore we start the
+            # process again
+            if bool(sent_configs):
                 # Check if all the parent_ids in the received configuration
                 # are the same
                 parent_id = sent_configs['1']['parent_id']
@@ -165,15 +190,6 @@ class SystemAlertersManager(AlertersManager):
                     system_ram_usage=filtered['system_ram_usage'],
                     system_is_down=filtered['system_is_down'],
                 )
-                if parent_id in self.systems_alerts_configs:
-                    previous_process = \
-                        self.parent_id_process_dict[parent_id]['process']
-                    previous_process.terminate()
-                    previous_process.join()
-
-                    log_and_print("Restarting the system alerter of {} with "
-                                  "latest configuration".format(chain),
-                                  self.logger)
 
                 self._create_and_start_alerter_process(
                     system_alerts_config, parent_id, chain)
@@ -235,6 +251,15 @@ class SystemAlertersManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
+                # Send an internal alert to reset system alert REDIS metrics
+                # for all chains.
+                alert = ComponentResetAllChains(type(self).__name__,
+                                                datetime.now().timestamp(),
+                                                type(self).__name__,
+                                                type(self).__name__)
+                self._push_latest_data_to_queue_and_send(alert.alert_data)
+                # `listen_for_data()` is called after the initial alert is sent
+                # as it's a blocking function.
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
@@ -266,5 +291,10 @@ class SystemAlertersManager(AlertersManager):
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
-    def _send_data(self, *args) -> None:
-        pass
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+        self._push_to_queue(
+            data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
+            routing_key=SYSTEM_ALERT_ROUTING_KEY,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
+        )
+        self._send_data()

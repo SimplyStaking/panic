@@ -14,7 +14,8 @@ from urllib3.exceptions import ProtocolError
 from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants import RAW_DATA_EXCHANGE
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          GITHUB_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json
 from src.utils.exceptions import (DataReadingException, PANICException,
                                   CannotAccessGitHubPageException,
@@ -90,52 +91,51 @@ class GitHubMonitor(Monitor):
 
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=RAW_DATA_EXCHANGE, routing_key='github', body=data,
-            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            exchange=RAW_DATA_EXCHANGE, routing_key=GITHUB_RAW_DATA_ROUTING_KEY,
+            body=data, is_body_dict=True,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent data to '%s' exchange.", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
         data_retrieval_exception = None
         data = None
-        data_retrieval_failed = False
+        data_retrieval_failed = True
         try:
             data = self._get_data()
 
             # If response contains a message this indicates an error in the
             # GitHub API Call
             if 'message' in data:
-                data_retrieval_failed = True
                 data_retrieval_exception = GitHubAPICallException(
                     data['message'])
                 self.logger.error("Error when retrieving data from %s: "
                                   "(%s, %s)", self.repo_config.releases_page,
                                   data_retrieval_exception.message,
                                   data_retrieval_exception.code)
+            else:
+                data_retrieval_failed = False
         except (ReqConnectionError, ReadTimeout):
-            data_retrieval_failed = True
             data_retrieval_exception = CannotAccessGitHubPageException(
                 self.repo_config.releases_page)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-            data_retrieval_failed = True
             data_retrieval_exception = DataReadingException(
                 self.monitor_name, self.repo_config.releases_page)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
         except json.JSONDecodeError as e:
-            data_retrieval_failed = True
             data_retrieval_exception = JSONDecodeException(e)
             self.logger.error("Error when retrieving data from %s",
                               self.repo_config.releases_page)
             self.logger.exception(data_retrieval_exception)
 
         try:
-            processed_data = self._process_data(data, data_retrieval_failed,
-                                                data_retrieval_exception)
+            processed_data = self._process_data(data_retrieval_failed,
+                                                [data_retrieval_exception],
+                                                [data])
         except Exception as error:
             self.logger.error("Error when processing data obtained from %s",
                               self.repo_config.releases_page)

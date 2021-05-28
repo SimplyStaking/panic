@@ -2,6 +2,19 @@ Change the contents of this file to this:
 
 # Change Log
 
+## Unreleased
+
+- Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
+- Updated Alerter to fix bugs with regards to metric changes in thresholds.
+- Added Internal Alerts on startup originating from the Alerter, which are used to reset all metrics for that chain.
+- Added functionality to cater for new Internal Alert in Data Store.
+- Added Tests for new Internal Alerts in System/Github Alerter and Alert Store.
+- Added the ChainlinkNodeMonitor, NodeMonitorsManager, and their tests.
+- Refactored RabbitMQ queues and routing keys.
+- The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
+- Web-Installer visually updated to look better
+- Web-Installer Chainlink/DockerHub/Slack have been integrated for the setup process
+
 ## 0.1.2
 
 Released on 25th March 2021

@@ -4,6 +4,7 @@ from typing import TypeVar, Type, Union
 
 import pika.exceptions
 
+from src.configs.nodes.node import NodeConfig
 from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -11,10 +12,11 @@ from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE,
-                                 GITHUB_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
+                                       GITHUB_MONITOR_NAME_TEMPLATE,
+                                       NODE_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
@@ -45,9 +47,10 @@ def _initialise_monitor_logger(monitor_display_name: str,
     return monitor_logger
 
 
-def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
-                        monitoring_period: int,
-                        config: Union[SystemConfig, RepoConfig]) -> T:
+def _initialise_monitor(
+        monitor_type: Type[T], monitor_display_name: str,
+        monitoring_period: int,
+        config: Union[SystemConfig, RepoConfig, NodeConfig]) -> T:
     monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
@@ -90,6 +93,16 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
                                          env.GITHUB_MONITOR_PERIOD_SECONDS,
                                          repo_config)
     start_monitor(github_monitor)
+
+
+def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:
+    # Monitor display name based on node
+    monitor_display_name = NODE_MONITOR_NAME_TEMPLATE.format(
+        node_config.node_name)
+    node_monitor = _initialise_monitor(monitor_type, monitor_display_name,
+                                       env.NODE_MONITOR_PERIOD_SECONDS,
+                                       node_config)
+    start_monitor(node_monitor)
 
 
 def start_monitor(monitor: Monitor) -> None:

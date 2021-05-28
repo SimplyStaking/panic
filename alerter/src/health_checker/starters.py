@@ -8,9 +8,10 @@ from src.data_store.redis import RedisApi
 from src.health_checker.heartbeat_handler import HeartbeatHandler
 from src.health_checker.ping_publisher import PingPublisher
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
+from src.utils.constants.names import (HEARTBEAT_HANDLER_NAME,
+                                       PING_PUBLISHER_NAME)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)

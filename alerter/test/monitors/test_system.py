@@ -18,7 +18,10 @@ from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          SYSTEM_RAW_DATA_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   DataReadingException, InvalidUrlException,
                                   MetricNotFoundException,
@@ -53,15 +56,22 @@ class TestSystemMonitor(unittest.TestCase):
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
-        self.metrics_to_monitor = [
-            'process_cpu_seconds_total', 'go_memstats_alloc_bytes',
-            'go_memstats_alloc_bytes_total', 'process_virtual_memory_bytes',
-            'process_max_fds', 'process_open_fds', 'node_cpu_seconds_total',
-            'node_filesystem_avail_bytes', 'node_filesystem_size_bytes',
-            'node_memory_MemTotal_bytes', 'node_memory_MemAvailable_bytes',
-            'node_network_transmit_bytes_total',
-            'node_network_receive_bytes_total',
-            'node_disk_io_time_seconds_total']
+        self.metrics_to_monitor = {
+            'process_cpu_seconds_total': 'strict',
+            'go_memstats_alloc_bytes': 'strict',
+            'go_memstats_alloc_bytes_total': 'strict',
+            'process_virtual_memory_bytes': 'strict',
+            'process_max_fds': 'strict',
+            'process_open_fds': 'strict',
+            'node_cpu_seconds_total': 'strict',
+            'node_filesystem_avail_bytes': 'strict',
+            'node_filesystem_size_bytes': 'strict',
+            'node_memory_MemTotal_bytes': 'strict',
+            'node_memory_MemAvailable_bytes': 'strict',
+            'node_network_transmit_bytes_total': 'strict',
+            'node_network_receive_bytes_total': 'strict',
+            'node_disk_io_time_seconds_total': 'strict'
+        }
         self.retrieved_metrics_example = {
             'go_memstats_alloc_bytes': 2003024.0,
             'go_memstats_alloc_bytes_total': 435777412600.0,
@@ -152,9 +162,9 @@ class TestSystemMonitor(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_monitor.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
             self.test_monitor.rabbitmq.exchange_declare(
-                RAW_DATA_EXCHANGE, 'direct', False, True, False, False)
+                RAW_DATA_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_monitor.rabbitmq.queue_purge(self.test_queue_name)
             self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
@@ -232,8 +242,7 @@ class TestSystemMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_error.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, True,
-                                        self.test_exception)
+        self.test_monitor._process_data(True, [self.test_exception], [])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
@@ -247,7 +256,7 @@ class TestSystemMonitor(unittest.TestCase):
         # Do not test the processing of data for now
         mock_process_retrieved_data.return_value = self.test_data_dict
 
-        self.test_monitor._process_data(self.test_data_dict, False, None)
+        self.test_monitor._process_data(False, [], [self.test_data_dict])
 
         # Test passes if _process_error is called once and
         # process_retrieved_data is not called
@@ -271,7 +280,7 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_monitor._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -369,7 +378,7 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
 
             self.test_monitor._send_data(self.processed_data_example)
 
@@ -425,10 +434,10 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_monitor._monitor()
 
@@ -473,10 +482,10 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.test_monitor._monitor()
 
@@ -508,10 +517,10 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
             self.assertRaises(PANICException, self.test_monitor._monitor)
 
@@ -589,10 +598,10 @@ class TestSystemMonitor(unittest.TestCase):
                 self.assertEqual(0, res.method.message_count)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                    routing_key='system')
+                    routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                    routing_key='heartbeat.worker')
+                    routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 
                 self.test_monitor._monitor()
 
@@ -660,7 +669,7 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
 
             self.assertRaises(MessageWasNotDeliveredException,
                               self.test_monitor._monitor)
@@ -728,10 +737,10 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
 
             self.assertRaises(pika.exceptions.AMQPChannelError,
                               self.test_monitor._monitor)
@@ -799,10 +808,10 @@ class TestSystemMonitor(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_monitor.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                routing_key='system')
+                routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
 
             self.assertRaises(pika.exceptions.AMQPConnectionError,
                               self.test_monitor._monitor)
@@ -853,10 +862,10 @@ class TestSystemMonitor(unittest.TestCase):
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name,
                     exchange=HEALTH_CHECK_EXCHANGE,
-                    routing_key='heartbeat.worker')
+                    routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
                 self.test_monitor.rabbitmq.queue_bind(
                     queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-                    routing_key='system')
+                    routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
 
                 self.assertRaises(exception_type, self.test_monitor._monitor)
 

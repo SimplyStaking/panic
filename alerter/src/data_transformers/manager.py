@@ -13,14 +13,15 @@ from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_transformers.starters import (start_system_data_transformer,
                                             start_github_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE,
-                                 SYSTEM_DATA_TRANSFORMER_NAME,
-                                 GITHUB_DATA_TRANSFORMER_NAME)
+from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
+                                       GITHUB_DATA_TRANSFORMER_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          DT_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-
-DT_MAN_INPUT_QUEUE = 'data_transformers_manager_queue'
-DT_MAN_INPUT_ROUTING_KEY = 'ping'
 
 
 class DataTransformersManager(PublisherSubscriberComponent):
@@ -47,20 +48,20 @@ class DataTransformersManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", DT_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(DT_MAN_INPUT_QUEUE, False, True, False,
-                                    False)
+        self.logger.info("Creating queue '%s'", DT_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(DT_MAN_HEARTBEAT_QUEUE_NAME, False, True,
+                                    False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                         DT_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(DT_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                 DT_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", DT_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DT_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          DT_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(DT_MAN_INPUT_QUEUE, self._process_ping,
-                                    True, False, None)
+                          PING_ROUTING_KEY)
+        self.rabbitmq.basic_consume(DT_MAN_HEARTBEAT_QUEUE_NAME,
+                                    self._process_ping, True, False, None)
 
         # Declare publishing intentions
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -71,9 +72,10 @@ class DataTransformersManager(PublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 

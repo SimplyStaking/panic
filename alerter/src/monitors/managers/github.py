@@ -15,17 +15,18 @@ from src.monitors.starters import start_github_monitor
 from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 GITHUB_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                          TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
-
-GH_MON_MAN_INPUT_QUEUE = 'github_monitors_manager_ping_queue'
-GH_MON_MAN_INPUT_ROUTING_KEY = 'ping'
-GH_MON_MAN_ROUTING_KEY_CHAINS = 'chains.*.*.repos_config'
-GH_MON_MAN_ROUTING_KEY_GEN = 'general.repos_config'
 
 
 class GitHubMonitorsManager(MonitorsManager):
@@ -34,53 +35,51 @@ class GitHubMonitorsManager(MonitorsManager):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
 
-        self._repos_configs = {}
+        self._github_repos_configs = {}
 
     @property
-    def repos_configs(self) -> Dict:
-        return self._repos_configs
+    def github_repos_configs(self) -> Dict:
+        return self._github_repos_configs
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", GH_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GH_MON_MAN_INPUT_QUEUE, False, True, False,
-                                    False)
+        self.logger.info("Creating queue '%s'", GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GH_MON_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE, GH_MON_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GH_MON_MAN_INPUT_QUEUE, HEALTH_CHECK_EXCHANGE,
-                                 GH_MON_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          GH_MON_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(GH_MON_MAN_INPUT_QUEUE, self._process_ping,
-                                    True, False, None)
+                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                    self._process_ping, True, False, None)
 
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'",
-                         GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                    False, True, False, False)
+        self.logger.info("Creating queue '%s'", GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                    False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_CHAINS)
-        self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 GH_MON_MAN_ROUTING_KEY_CHAINS)
+                         "'%s'", GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+        self.rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, GH_MON_MAN_ROUTING_KEY_GEN)
+                         "key '%s'", GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
+        self.rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
+                          GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
@@ -89,12 +88,12 @@ class GitHubMonitorsManager(MonitorsManager):
 
     def _create_and_start_monitor_process(self, repo_config: RepoConfig,
                                           config_id: str, chain: str) -> None:
+        log_and_print("Creating a new process for the monitor of {}"
+                      .format(repo_config.repo_name), self.logger)
         process = multiprocessing.Process(target=start_github_monitor,
                                           args=(repo_config,))
         # Kill children if parent is killed
         process.daemon = True
-        log_and_print("Creating a new process for the monitor of {}"
-                      .format(repo_config.repo_name), self.logger)
         process.start()
         self._config_process_dict[config_id] = {}
         self._config_process_dict[config_id]['component_name'] = \
@@ -113,17 +112,17 @@ class GitHubMonitorsManager(MonitorsManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
-            if 'general' in self.repos_configs:
-                current_configs = self.repos_configs['general']
+        if method.routing_key == GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN:
+            if 'general' in self.github_repos_configs:
+                current_configs = self.github_repos_configs['general']
             else:
                 current_configs = {}
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            if chain in self.repos_configs:
-                current_configs = self.repos_configs[chain]
+            if chain in self.github_repos_configs:
+                current_configs = self.github_repos_configs[chain]
             else:
                 current_configs = {}
 
@@ -131,7 +130,7 @@ class GitHubMonitorsManager(MonitorsManager):
         # configs are correct configs, therefore start from the current and
         # modify as we go along according to the updates. This is done just in
         # case an error occurs.
-        correct_repos_configs = copy.deepcopy(current_configs)
+        correct_github_repos_configs = copy.deepcopy(current_configs)
         try:
             new_configs = get_newly_added_configs(sent_configs,
                                                   current_configs)
@@ -155,7 +154,7 @@ class GitHubMonitorsManager(MonitorsManager):
                                          monitor_repo, releases_page)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
-                correct_repos_configs[config_id] = config
+                correct_github_repos_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
                                                     current_configs)
@@ -178,32 +177,43 @@ class GitHubMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
 
+                old_repo_name = modified_configs[config_id]['repo_name']
+                if not old_repo_name.endswith('/'):
+                    old_repo_name = old_repo_name + '/'
+
                 # If we should not monitor the repo, delete the previous
                 # process from the repo and move to the next config
                 if not monitor_repo:
                     del self.config_process_dict[config_id]
-                    del correct_repos_configs[config_id]
-                    log_and_print("Killed the monitor of {} "
-                                  .format(config_id), self.logger)
+                    del correct_github_repos_configs[config_id]
+
+                    log_and_print("Killed the monitor of {} ".format(
+                        old_repo_name), self.logger)
                     continue
 
-                log_and_print("Restarting the monitor of {} with latest "
-                              "configuration".format(config_id), self.logger)
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        old_repo_name), self.logger)
                 self._create_and_start_monitor_process(repo_config, config_id,
                                                        chain)
-                correct_repos_configs[config_id] = config
+                correct_github_repos_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs,
                                                   current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 repo_name = config['repo_name']
+
+                if not repo_name.endswith('/'):
+                    repo_name = repo_name + '/'
+
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()
                 previous_process.join()
                 del self.config_process_dict[config_id]
-                del correct_repos_configs[config_id]
+                del correct_github_repos_configs[config_id]
                 log_and_print("Killed the monitor of {} "
                               .format(repo_name), self.logger)
         except Exception as e:
@@ -214,12 +224,12 @@ class GitHubMonitorsManager(MonitorsManager):
             self.logger.exception(e)
 
         # Must be done at the end in case of errors while processing
-        if method.routing_key == GH_MON_MAN_ROUTING_KEY_GEN:
-            self._repos_configs['general'] = correct_repos_configs
+        if method.routing_key == GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN:
+            self._github_repos_configs['general'] = correct_github_repos_configs
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            self._repos_configs[chain] = correct_repos_configs
+            self._github_repos_configs[chain] = correct_github_repos_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 
@@ -245,7 +255,7 @@ class GitHubMonitorsManager(MonitorsManager):
 
                     # Restart dead process
                     chain = process_details['chain']
-                    config = self.repos_configs[chain][config_id]
+                    config = self.github_repos_configs[chain][config_id]
                     repo_id = config['id']
                     parent_id = config['parent_id']
 

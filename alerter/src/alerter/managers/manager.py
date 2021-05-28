@@ -6,12 +6,14 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.publisher_subscriber import PublisherSubscriberComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent)
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 
 
-class AlertersManager(PublisherSubscriberComponent):
+class AlertersManager(QueuingPublisherSubscriberComponent):
     def __init__(self, logger: logging.Logger, name: str,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, rabbitmq)
@@ -29,9 +31,10 @@ class AlertersManager(PublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 
@@ -53,4 +56,8 @@ class AlertersManager(PublisherSubscriberComponent):
 
     @abstractmethod
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
+        pass
+
+    @abstractmethod
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         pass

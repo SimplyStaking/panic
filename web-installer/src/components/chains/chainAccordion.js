@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
-import { Accordion, Grid } from '@material-ui/core';
+import { Accordion, Grid, Box } from '@material-ui/core';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
@@ -22,35 +23,33 @@ function ChainAccordion({
           aria-controls="panel1a-content"
           id="panel1a-header"
         >
-          <img src={icon} className="icon" alt="Chain Icon" />
-          <Typography
-            style={{ textAlign: 'center' }}
-            variant="h5"
-            align="center"
-            gutterBottom
-          >
-            {name}
-          </Typography>
+          <img
+            src={icon}
+            className="icon"
+            alt="Chain Icon"
+            style={{ width: '3rem', height: 'auto' }}
+          />
+          <Box pt={1.5}>
+            <Typography
+              style={{ textAlign: 'center' }}
+              variant="h5"
+              align="center"
+              gutterBottom
+            >
+              {name}
+            </Typography>
+          </Box>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container>
-            <Grid item xs={12} />
-            <br />
-            <br />
-            <Grid item xs={5} />
-            <Grid item xs={2}>
-              {button}
+            <Grid item xs={12}>
+              <Box py={8}>
+                {button}
+              </Box>
             </Grid>
-            <Grid item xs={5} />
-            <Grid item xs={12} />
-            <br />
-            <br />
             <Grid item xs={12}>
               {table}
             </Grid>
-            <br />
-            <br />
-            <Grid item xs={12} />
           </Grid>
         </AccordionDetails>
       </Accordion>

@@ -13,9 +13,12 @@ from parameterized import parameterized
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerts.github_alerts import NewGitHubReleaseAlert
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE, GITHUB_ALERTER_INPUT_QUEUE,
-                                 GITHUB_ALERTER_INPUT_ROUTING_KEY,
-                                 HEALTH_CHECK_EXCHANGE)
+from src.utils.constants.rabbitmq import (ALERT_EXCHANGE,
+                                          GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                          GITHUB_ALERT_ROUTING_KEY,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          HEALTH_CHECK_EXCHANGE, TOPIC)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
 
 
@@ -41,8 +44,8 @@ class TestGithubAlerter(unittest.TestCase):
         self.github_name = 'test_github'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.test_routing_key = 'test_alert_router.github'
-        self.alert_router_routing_key = 'alert_router.system'
+        self.test_routing_key = 'test_alert.github'
+        self.output_routing_key = GITHUB_ALERT_ROUTING_KEY
         self.test_github_alerter = GithubAlerter(
             self.alerter_name,
             self.dummy_logger,
@@ -118,6 +121,7 @@ class TestGithubAlerter(unittest.TestCase):
                 "message": "error message"
             }
         }
+        self.github_json_error = json.dumps(self.github_data_error).encode()
 
         # Alert used for rabbitMQ testing
         self.alert = NewGitHubReleaseAlert(
@@ -130,9 +134,13 @@ class TestGithubAlerter(unittest.TestCase):
         try:
             self.test_rabbit_manager.connect()
             self.test_github_alerter.rabbitmq.connect()
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
+            self.test_github_alerter.rabbitmq.exchange_declare(
+                ALERT_EXCHANGE, TOPIC, False, True, False, False)
             self.test_github_alerter.rabbitmq.queue_declare(
-                queue=GITHUB_ALERTER_INPUT_QUEUE, durable=True, exclusive=False,
-                auto_delete=False, passive=False
+                queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, durable=True,
+                exclusive=False, auto_delete=False, passive=False
             )
             self.test_github_alerter.rabbitmq.queue_declare(
                 queue=self.heartbeat_queue, durable=True, exclusive=False,
@@ -141,11 +149,11 @@ class TestGithubAlerter(unittest.TestCase):
 
             self.test_github_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
             self.test_github_alerter.rabbitmq.queue_purge(
-                GITHUB_ALERTER_INPUT_QUEUE)
+                GITHUB_ALERTER_INPUT_QUEUE_NAME)
 
             self.test_github_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
             self.test_github_alerter.rabbitmq.queue_delete(
-                GITHUB_ALERTER_INPUT_QUEUE)
+                GITHUB_ALERTER_INPUT_QUEUE_NAME)
             self.test_github_alerter.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_github_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
@@ -184,7 +192,7 @@ class TestGithubAlerter(unittest.TestCase):
         try:
             self.test_github_alerter._initialise_rabbitmq()
             self.rabbitmq.connect()
-            self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE,
+            self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE_NAME,
                                         passive=True)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -194,6 +202,7 @@ class TestGithubAlerter(unittest.TestCase):
             self.test_github_alerter._initialise_rabbitmq()
             self.rabbitmq.connect()
             self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
+            self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, passive=True)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -222,7 +231,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_github_alerter._process_data(
@@ -237,11 +246,7 @@ class TestGithubAlerter(unittest.TestCase):
                 self.info, self.last_monitored, self.parent_id,
                 self.repo_id
             )
-            mock_github_access.assert_called_once_with(
-                self.repo_name, self.info,
-                self.last_monitored, self.parent_id,
-                self.repo_id
-            )
+            mock_github_access.assert_not_called()
             mock_basic_publish_confirm.assert_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -270,7 +275,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             self.github_data_received['result']['data'][
                 'no_of_releases']['previous'] = param_input
@@ -282,8 +287,8 @@ class TestGithubAlerter(unittest.TestCase):
                 json.dumps(self.github_data_received).encode()
             )
             mock_new_github_release.assert_not_called()
-            mock_github_access.assert_called_once()
-            self.assertEqual(2, mock_basic_publish_confirm.call_count)
+            mock_github_access.assert_not_called()
+            self.assertEqual(1, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -313,7 +318,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             self.github_data_received['result']['data']['no_of_releases'][
                 'previous'] = 0
@@ -338,15 +343,12 @@ class TestGithubAlerter(unittest.TestCase):
 
             mock_new_github_release.assert_has_calls([call_1, call_2, call_3,
                                                       call_4, call_5])
-            mock_github_access.assert_called_once_with(
-                self.repo_name, self.info, self.last_monitored,
-                self.parent_id, self.repo_id
-            )
+            mock_github_access.assert_not_called()
             # Call count of basic_publish_confirm is higher than
             # github_release call_count because of the hb and initial
             # validation alerts
             self.assertEqual(5, mock_new_github_release.call_count)
-            self.assertEqual(7, mock_basic_publish_confirm.call_count)
+            self.assertEqual(6, mock_basic_publish_confirm.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -372,7 +374,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_github_alerter._process_data(
@@ -411,7 +413,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             github_data_error = "unknown"
@@ -440,7 +442,7 @@ class TestGithubAlerter(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_rabbit_manager.queue_bind(
                 queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.worker')
+                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
             self.test_github_alerter._send_heartbeat(self.heartbeat_test)
 
             res = self.test_rabbit_manager.queue_declare(
@@ -475,7 +477,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_github_alerter._process_data(
@@ -516,7 +518,7 @@ class TestGithubAlerter(unittest.TestCase):
             blocking_channel = self.test_github_alerter.rabbitmq.channel
 
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
 
             properties = pika.spec.BasicProperties()
             self.test_github_alerter._process_data(

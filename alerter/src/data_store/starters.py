@@ -11,10 +11,10 @@ from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 CONFIG_STORE_NAME)
+from src.utils.constants.names import (CONFIG_STORE_NAME, SYSTEM_STORE_NAME,
+                                       GITHUB_STORE_NAME, ALERT_STORE_NAME)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)

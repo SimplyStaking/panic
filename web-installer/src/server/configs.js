@@ -10,16 +10,17 @@ const USER_CONFIG_EMAIL = 'email_config.ini';
 const USER_CONFIG_TWILIO = 'twilio_config.ini';
 const USER_CONFIG_PAGERDUTY = 'pagerduty_config.ini';
 const USER_CONFIG_OPSGENIE = 'opsgenie_config.ini';
+const USER_CONFIG_SLACK = 'slack_config.ini';
 const ALL_CHANNELS_CONFIG_FILES = [
   USER_CONFIG_TELEGRAM, USER_CONFIG_EMAIL, USER_CONFIG_TWILIO,
-  USER_CONFIG_PAGERDUTY, USER_CONFIG_OPSGENIE,
+  USER_CONFIG_PAGERDUTY, USER_CONFIG_OPSGENIE, USER_CONFIG_SLACK,
 ];
 const CHANNELS_CONFIGS_LOCATION = path.join('../config', 'channels');
 
 // Chain configs and config locations
 const USER_CONFIG_NODES = 'nodes_config.ini';
-const USER_CONFIG_REPOS = 'repos_config.ini';
-const USER_CONFIG_KMS = 'kms_config.ini';
+const USER_CONFIG_REPOS = 'github_repos_config.ini';
+const USER_CONFIG_DOCKER = 'dockerhub_repos_config.ini';
 const USER_CONFIG_CHANNELS = 'channels_config.ini';
 const USER_CONFIG_ALERTS = 'alerts_config.ini';
 const USER_CONFIG_REPEAT_ALERTS = 'repeat_alerts_config.ini';
@@ -29,23 +30,23 @@ const USER_CONFIG_SEVERTY_ALERTS = 'severity_alerts_config.ini';
 const USER_CONFIG_SYSTEMS = 'systems_config.ini';
 const USER_CONFIG_PERIODIC = 'periodic_config.ini';
 const ALL_CHAINS_CONFIG_FILES = [
-  USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_KMS, USER_CONFIG_CHANNELS,
+  USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_CHANNELS,
   USER_CONFIG_ALERTS, USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
-  USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS,
+  USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS, USER_CONFIG_DOCKER,
+  USER_CONFIG_SYSTEMS,
 ];
-const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains',
-  'cosmos');
-const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join(
-  '../config', 'chains', 'substrate',
-);
+const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains', 'cosmos');
+const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains', 'substrate');
+const CHAINLINK_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains', 'chainlink');
 const GENERAL_CONFIGS_LOCATION = path.join('../config', 'general');
+
 // Other configs and config locations
 const USER_CONFIG_SYSTEM = 'user_config_systems.ini';
 const ALL_GENERAL_CONFIG_FILES = [USER_CONFIG_SYSTEM, USER_CONFIG_ALERTS,
   USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
   USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS,
   USER_CONFIG_SYSTEMS, USER_CONFIG_PERIODIC, USER_CONFIG_REPOS,
-  USER_CONFIG_CHANNELS,
+  USER_CONFIG_CHANNELS, USER_CONFIG_DOCKER,
 ];
 
 // Gets the full path of the config with the name of the config included. This
@@ -62,6 +63,9 @@ function getConfigPath(configType, file, chainName = null, baseChain = null) {
       }
       if (baseChain.toLowerCase() === 'substrate') {
         return path.join(SUBSTRATE_CHAINS_CONFIGS_LOCATION, chainName, file);
+      }
+      if (baseChain.toLowerCase() === 'chainlink') {
+        return path.join(CHAINLINK_CHAINS_CONFIGS_LOCATION, chainName, file);
       }
       throw new errors.InvalidBaseChain();
     case 'general':

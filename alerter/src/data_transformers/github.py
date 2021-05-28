@@ -13,15 +13,16 @@ from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
-from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
+                                          ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_DT_INPUT_QUEUE_NAME,
+                                          GITHUB_RAW_DATA_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import (convert_to_float_if_not_none,
                              convert_to_int_if_not_none)
-
-GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
-GITHUB_DT_INPUT_ROUTING_KEY = 'github'
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -39,35 +40,37 @@ class GitHubDataTransformer(DataTransformer):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE_NAME, False, True,
+                                    False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         GITHUB_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 GITHUB_DT_INPUT_ROUTING_KEY)
+                         "'%s'", GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
+                         GITHUB_RAW_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
+                                 GITHUB_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug('Declaring consuming intentions')
-        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE,
-                                    self._process_raw_data, False, False, None)
+        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE_NAME,
+                                    self._process_raw_data,
+                                    False, False, None)
 
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def load_state(self, repo: Union[System, GitHubRepo]) \
@@ -259,9 +262,10 @@ class GitHubDataTransformer(DataTransformer):
                                     data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            'alerter.github',
+                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
-        self._push_to_queue(data_for_saving, STORE_EXCHANGE, 'github',
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
+                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _process_raw_data(self, ch: BlockingChannel,

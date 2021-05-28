@@ -9,15 +9,15 @@ const channelStyle = {
     backgroundSize: 'cover',
   },
   brand: {
-    color: '#FFFFFF',
+    color: 'black',
     textAlign: 'center',
   },
   title: {
     fontSize: '4.2rem',
-    fontWeight: '600',
+    fontWeight: '900',
     // display: "inline-block",
     position: 'relative',
-    color: '#FFFFFF',
+    color: 'white',
   },
   mainRaised: {
     margin: '-60px 30px 0px',
@@ -84,6 +84,10 @@ const channelStyle = {
   },
   inputIconsColor: {
     color: '#495057',
+  },
+  media: {
+    maxWidth: '100%',
+    height: '100%',
   },
 };
 

@@ -3,7 +3,6 @@ import {
   ToastsContainer, ToastsContainerPosition, ToastsStore,
 } from 'react-toasts';
 import PageManger from './containers/global/pageManager';
-
 import './App.css';
 
 /*
