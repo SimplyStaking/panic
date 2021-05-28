@@ -1,1 +1,0 @@
-export { baseColors } from "./colors";
