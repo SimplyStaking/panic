@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import abstractmethod
 from types import FrameType
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -11,8 +11,6 @@ from src.abstract.publisher_subscriber import (
     QueuingPublisherSubscriberComponent)
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
