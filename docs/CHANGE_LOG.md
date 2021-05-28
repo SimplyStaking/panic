@@ -14,6 +14,7 @@ Change the contents of this file to this:
 - The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
 - Web-Installer visually updated to look better
 - Web-Installer Chainlink/DockerHub/Slack have been integrated for the setup process
+- Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
 
 ## 0.1.2
 

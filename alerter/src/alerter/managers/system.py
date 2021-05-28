@@ -11,8 +11,8 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_system_alerter
-from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
-                                                ComponentResetChains)
+from src.alerter.alerters.system import SystemAlerter
+from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -105,11 +105,17 @@ class SystemAlertersManager(AlertersManager):
     def _terminate_and_join_chain_alerter_processes(
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
-        # process should be terminated
+        # process should be terminated. Note that here we are not sending
+        # any internal alerts, therefore if a chain is removed completely some
+        # metrics might continue to live in redis until that chain is added
+        # back. This is not a bug because any removed chains will no longer
+        # appear in the list of monitorables for the UI.
         for parent_id, parent_info in list(
                 self._parent_id_process_dict.items()):
 
             if self._parent_id_process_dict[parent_id]['chain'] == chain:
+                log_and_print("Terminating alerter process for chain "
+                              "{}".format(chain), self.logger)
                 # Terminate the process and join it
                 self._parent_id_process_dict[parent_id]['process'].terminate()
                 self._parent_id_process_dict[parent_id]['process'].join()
@@ -117,20 +123,18 @@ class SystemAlertersManager(AlertersManager):
                 # anymore
                 del self._parent_id_process_dict[parent_id]
                 del self._systems_alerts_configs[parent_id]
-                log_and_print("Terminating alerter process for chain "
-                              "{}".format(chain), self.logger)
-
-                # Send an internal alert to reset all the REDIS metrics for
-                # this chain
-                alert = ComponentResetChains(chain,
-                                             datetime.now().timestamp(),
-                                             parent_id,
-                                             type(self).__name__)
-                self._push_latest_data_to_queue_and_send(alert.alert_data)
 
     def _create_and_start_alerter_process(
             self, system_alerts_config: SystemAlertsConfig, parent_id: str,
             chain: str) -> None:
+        alerter_name = SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
+
+        # Send an internal alert to reset all the REDIS metrics for this chain
+        alert = ComponentResetAlert(
+            alerter_name, datetime.now().timestamp(), SystemAlerter.__name__,
+            parent_id, chain)
+        self._push_latest_data_to_queue_and_send(alert.alert_data)
+
         process = multiprocessing.Process(target=start_system_alerter,
                                           args=(system_alerts_config, chain))
         process.daemon = True
@@ -138,8 +142,7 @@ class SystemAlertersManager(AlertersManager):
                       "of {}".format(chain), self.logger)
         process.start()
         self._parent_id_process_dict[parent_id] = {}
-        self._parent_id_process_dict[parent_id]['component_name'] = \
-            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
+        self._parent_id_process_dict[parent_id]['component_name'] = alerter_name
         self._parent_id_process_dict[parent_id]['process'] = process
         self._parent_id_process_dict[parent_id]['chain'] = chain
 
@@ -194,7 +197,15 @@ class SystemAlertersManager(AlertersManager):
                 self._create_and_start_alerter_process(
                     system_alerts_config, parent_id, chain)
                 self._systems_alerts_configs[parent_id] = system_alerts_config
+        except MessageWasNotDeliveredException as e:
+            # If the internal alert cannot be delivered, requeue the config
+            # for re-processing.
+            self.logger.error("Error when processing %s", sent_configs)
+            self.logger.exception(e)
+            self.rabbitmq.basic_nack(method.delivery_tag)
+            return
         except Exception as e:
+            # Otherwise log and reject the message
             self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
@@ -251,15 +262,6 @@ class SystemAlertersManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
-                # Send an internal alert to reset system alert REDIS metrics
-                # for all chains.
-                alert = ComponentResetAllChains(type(self).__name__,
-                                                datetime.now().timestamp(),
-                                                type(self).__name__,
-                                                type(self).__name__)
-                self._push_latest_data_to_queue_and_send(alert.alert_data)
-                # `listen_for_data()` is called after the initial alert is sent
-                # as it's a blocking function.
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:

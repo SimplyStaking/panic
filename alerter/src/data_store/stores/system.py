@@ -75,7 +75,7 @@ class SystemStore(Store):
         saved in Mongo and Redis as required. If successful, a heartbeat will be
         sent.
         """
-        system_data = json.loads(body.decode())
+        system_data = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.", system_data)
 
         processing_error = False
