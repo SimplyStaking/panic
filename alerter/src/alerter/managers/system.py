@@ -105,7 +105,11 @@ class SystemAlertersManager(AlertersManager):
     def _terminate_and_join_chain_alerter_processes(
             self, chain: str) -> None:
         # Go through all the processes and find the chain whose
-        # process should be terminated
+        # process should be terminated. Note that here we are not sending
+        # any internal alerts, therefore if a chain is removed completely some
+        # metrics might continue to live in redis until that chain is added
+        # back. This is not a bug because any removed chains will no longer
+        # appear in the list of monitorables for the UI.
         for parent_id, parent_info in list(
                 self._parent_id_process_dict.items()):
 
