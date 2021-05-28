@@ -12,6 +12,8 @@ Change the contents of this file to this:
 - Added the ChainlinkNodeMonitor, NodeMonitorsManager, and their tests.
 - Refactored RabbitMQ queues and routing keys.
 - The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
+- Web-Installer visually updated to look better
+- Web-Installer Chainlink/DockerHub/Slack have been integrated for the setup process
 - Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
 - Fixed issue with GitHub alerter raising new release alerts in reverse order for multiple releases.
 

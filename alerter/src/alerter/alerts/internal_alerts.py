@@ -5,7 +5,9 @@ from src.alerter.metric_code import InternalMetricCode
 
 """
 Such internal alerts are used to notify that a component has been reset. 
-Normally such alerts are raised only when a desirable action is needed.
+Normally such alerts are raised only when a desirable action is needed. 
+Currently, they are used by the Alerter Managers to notify the Alert Store that
+that some alert metrics need to be reset in Redis.
 """
 
 

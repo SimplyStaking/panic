@@ -6,9 +6,6 @@ import {
   RESET_CHAIN_COSMOS,
   UPDATE_CHAIN_NAME_COSMOS,
   REMOVE_CHAIN_COSMOS,
-  LOAD_NODE_COSMOS,
-  LOAD_REPOSITORY_COSMOS,
-  LOAD_KMS_COSMOS,
   LOAD_REPEAT_ALERTS_COSMOS,
   LOAD_TIMEWINDOW_ALERTS_COSMOS,
   LOAD_THRESHOLD_ALERTS_COSMOS,
@@ -22,10 +19,14 @@ const { v4: uuidv4 } = require('uuid');
 // When creating a new chain, we must add empty lists as we need to initialise
 // the key/value pairs beforehand.
 export function addChainCosmos(payload) {
+  let id = `chain_name_${uuidv4()}`;
+  if ('id' in payload) {
+    id = payload.id;
+  }
   return {
     type: ADD_CHAIN_COSMOS,
     payload: {
-      id: `chain_name_${uuidv4()}`,
+      id,
       chain_name: payload.chain_name,
     },
   };
@@ -61,10 +62,15 @@ export function resetCurrentChainIdCosmos() {
 // Action to add a cosmos node to a configuration, payload is intercepted,
 // and a unique id is generated for it.
 export function addNodeCosmos(payload) {
+  let id = `node_${uuidv4()}`;
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
   return {
     type: ADD_NODE_COSMOS,
     payload: {
-      id: `node_${uuidv4()}`,
+      id,
       parent_id: payload.parent_id,
       name: payload.name,
       tendermint_rpc_url: payload.tendermint_rpc_url,
@@ -83,13 +89,6 @@ export function addNodeCosmos(payload) {
   };
 }
 
-export function loadNodeCosmos(payload) {
-  return {
-    type: LOAD_NODE_COSMOS,
-    payload,
-  };
-}
-
 // Action to remove a cosmos node from the current configuration
 export function removeNodeCosmos(payload) {
   return {
@@ -101,20 +100,6 @@ export function removeNodeCosmos(payload) {
 export function loadConfigCosmos(payload) {
   return {
     type: LOAD_CONFIG_COSMOS,
-    payload,
-  };
-}
-
-export function loadReposCosmos(payload) {
-  return {
-    type: LOAD_REPOSITORY_COSMOS,
-    payload,
-  };
-}
-
-export function loadKMSCosmos(payload) {
-  return {
-    type: LOAD_KMS_COSMOS,
     payload,
   };
 }

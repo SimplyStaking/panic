@@ -2,18 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Box,
+  Table, TableBody, TableContainer, TableHead, TableRow, Button,
+  Box, Typography,
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
 import { COSMOS_SETUP_PAGE } from 'constants/constants';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
@@ -27,7 +23,8 @@ const CosmosChainsTable = ({
   removeChainDetails,
   removeNodeDetails,
   removeRepositoryDetails,
-  removeKmsDetails,
+  removeSlackDetails,
+  removeDockerHubDetails,
   removeOpsGenieDetails,
   removePagerDutyDetails,
   removeEmailDetails,
@@ -38,6 +35,7 @@ const CosmosChainsTable = ({
   emails,
   pagerduties,
   opsgenies,
+  slacks,
 }) => {
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -55,11 +53,11 @@ const CosmosChainsTable = ({
     let emailPayload = {};
     let opsGeniePayload = {};
     let pagerDutyPayload = {};
+    let slackPayload = {};
     let index = 0;
+
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
-      telegramPayload = JSON.parse(
-        JSON.stringify(telegrams.byId[telegrams.allIds[i]]),
-      );
+      telegramPayload = JSON.parse(JSON.stringify(telegrams.byId[telegrams.allIds[i]]));
       if (telegramPayload.parent_ids.includes(chainID)) {
         index = telegramPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -74,9 +72,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < twilios.allIds.length; i += 1) {
-      twilioPayload = JSON.parse(
-        JSON.stringify(twilios.byId[twilios.allIds[i]]),
-      );
+      twilioPayload = JSON.parse(JSON.stringify(twilios.byId[twilios.allIds[i]]));
       if (twilioPayload.parent_ids.includes(chainID)) {
         index = twilioPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -106,9 +102,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < opsgenies.allIds.length; i += 1) {
-      opsGeniePayload = JSON.parse(
-        JSON.stringify(opsgenies.byId[opsgenies.allIds[i]]),
-      );
+      opsGeniePayload = JSON.parse(JSON.stringify(opsgenies.byId[opsgenies.allIds[i]]));
       if (opsGeniePayload.parent_ids.includes(chainID)) {
         index = opsGeniePayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -123,9 +117,7 @@ const CosmosChainsTable = ({
     }
 
     for (let i = 0; i < pagerduties.allIds.length; i += 1) {
-      pagerDutyPayload = JSON.parse(
-        JSON.stringify(pagerduties.byId[pagerduties.allIds[i]]),
-      );
+      pagerDutyPayload = JSON.parse(JSON.stringify(pagerduties.byId[pagerduties.allIds[i]]));
       if (pagerDutyPayload.parent_ids.includes(chainID)) {
         index = pagerDutyPayload.parent_ids.indexOf(chainID);
         if (index > -1) {
@@ -139,22 +131,37 @@ const CosmosChainsTable = ({
       }
     }
 
+    for (let i = 0; i < slacks.allIds.length; i += 1) {
+      slackPayload = JSON.parse(JSON.stringify(slacks.byId[slacks.allIds[i]]));
+      if (slackPayload.parent_ids.includes(chainID)) {
+        index = slackPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          slackPayload.parent_ids.splice(index, 1);
+        }
+        index = slackPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          slackPayload.parent_names.splice(index, 1);
+        }
+        removeSlackDetails(slackPayload);
+      }
+    }
+
+    // Clear all the configured dockerHubs from state
+    for (let i = 0; i < currentConfig.dockerHubs.length; i += 1) {
+      payload.id = currentConfig.dockerHubs[i];
+      removeDockerHubDetails(payload);
+    }
+
     // Clear all the configured nodes from state
     for (let i = 0; i < currentConfig.nodes.length; i += 1) {
       payload.id = currentConfig.nodes[i];
       removeNodeDetails(payload);
     }
 
-    // Clear all the configured repositories from state
-    for (let i = 0; i < currentConfig.repositories.length; i += 1) {
-      payload.id = currentConfig.repositories[i];
+    // Clear all the configured githubRepositories from state
+    for (let i = 0; i < currentConfig.githubRepositories.length; i += 1) {
+      payload.id = currentConfig.githubRepositories[i];
       removeRepositoryDetails(payload);
-    }
-
-    // Clear all the configured kmses from state
-    for (let i = 0; i < currentConfig.kmses.length; i += 1) {
-      payload.id = currentConfig.kmses[i];
-      removeKmsDetails(payload);
     }
     // Finally clear the chain from the configuration
     payload.id = chainID;
@@ -166,21 +173,26 @@ const CosmosChainsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="cosmos chains table">
+      <Table className="table" aria-label="cosmos-chains-table">
         <TableHead>
           <TableRow>
-            <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Manage</TableCell>
-            <TableCell align="center">Delete</TableCell>
+            <StyledTableCell align="center">Chain Name</StyledTableCell>
+            <StyledTableCell align="center">Edit/View Config</StyledTableCell>
+            <StyledTableCell align="center">Delete</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {config.allIds.map((id) => (
-            <TableRow key={id}>
-              <TableCell align="center">{config.byId[id].chain_name}</TableCell>
-              <TableCell align="center">
+            <StyledTableRow key={id}>
+              <StyledTableCell align="center">
+                <Typography variant="h6" style={{ fontWeight: '450' }}>
+                  {config.byId[id].chain_name}
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Box px={2}>
                   <Button
+                    variant="contained"
                     onClick={() => {
                       loadConfiguration(COSMOS_SETUP_PAGE, id);
                     }}
@@ -188,8 +200,8 @@ const CosmosChainsTable = ({
                     Load Chain
                   </Button>
                 </Box>
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Button
                   onClick={() => {
                     clearAllChainDetails(id);
@@ -197,8 +209,8 @@ const CosmosChainsTable = ({
                 >
                   <CancelIcon />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </StyledTableCell>
+            </StyledTableRow>
           ))}
         </TableBody>
       </Table>
@@ -249,17 +261,25 @@ CosmosChainsTable.propTypes = forbidExtraProps({
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeChainDetails: PropTypes.func.isRequired,
   loadConfigDetails: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
   removeNodeDetails: PropTypes.func.isRequired,
   removeRepositoryDetails: PropTypes.func.isRequired,
-  removeKmsDetails: PropTypes.func.isRequired,
   removeOpsGenieDetails: PropTypes.func.isRequired,
   removePagerDutyDetails: PropTypes.func.isRequired,
   removeEmailDetails: PropTypes.func.isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
+  removeSlackDetails: PropTypes.func.isRequired,
+  removeDockerHubDetails: PropTypes.func.isRequired,
 });
 
 export default CosmosChainsTable;

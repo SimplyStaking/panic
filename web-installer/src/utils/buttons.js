@@ -14,11 +14,15 @@ import {
   sendTestOpsGenie,
   pingTendermint,
   pingCosmosPrometheus,
+  pingChainlinkPrometheus,
   pingNodeExporter,
   saveAccount,
   deleteAccount,
+  pingDockerHub,
 } from './data';
 import sleep from './time';
+
+const { WebClient, LogLevel } = require('@slack/web-api');
 
 // Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
@@ -141,7 +145,60 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestAlertButton({ disabled, botChatID, botToken }) {
+function SendTestSlackButton({ disabled, token, chatName }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(
+        'Sending test alert. Make sure to check the slack channel corresponding'
+        + ` with chat name: ${chatName}`,
+        5000,
+      );
+
+      // WebClient instantiates a client that can call API methods
+      // When using Bolt, you can use either `app.client` or the `client`
+      // passed to listeners.
+      const client = new WebClient(token, {
+        // LogLevel can be imported and used to make debugging simpler
+        logLevel: LogLevel.DEBUG,
+      });
+
+      // Return the conversation ID of the channel name
+      // Call the conversations.list method using the built-in WebClient
+      let result = await client.conversations.list({ token });
+      let conversationId;
+      Object.values(result.channels).forEach((value) => {
+        if (value.name === chatName) {
+          conversationId = value.id;
+        }
+      });
+
+      // Call the chat.postMessage method using the built-in WebClient
+      result = await client.chat.postMessage({
+        token,
+        channel: conversationId,
+        text: '*Test Alert*',
+      });
+
+      ToastsStore.success('Test alert sent successfully', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code that
+        // falls out of the range of 2xx
+        ToastsStore.error(`Could not send test alert. Error: ${e.response.data.description}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not send test alert. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function SendTestTelegramButton({ disabled, botChatID, botToken }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
@@ -197,6 +254,33 @@ function PingRepoButton({ disabled, repo }) {
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
       Test Repo
+    </Button>
+  );
+}
+
+function PingDockerHubButton({ disabled, name }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with repo ${name}`, 5000);
+      await pingDockerHub(name);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with repo ${name}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not connect with repo ${name}. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test Docker
     </Button>
   );
 }
@@ -328,6 +412,38 @@ function PingPrometheus({ disabled, prometheusUrl }) {
   );
 }
 
+function PingChainlinkPrometheus({ disabled, prometheusUrl }) {
+  const onClick = async () => {
+    prometheusUrl.forEach(async (url) => {
+      try {
+        ToastsStore.info(`Connecting with Prometheus URL ${url}`, 5000);
+        await pingChainlinkPrometheus(url);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${url}. Error: ${e.response.data.message}`,
+            5000,
+          );
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${url}. Error: ${e.message}`,
+            5000,
+          );
+        }
+      }
+    });
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
 function PingNodeExporter({ disabled, exporterUrl }) {
   const onClick = async () => {
     try {
@@ -361,7 +477,7 @@ function PingNodeExporter({ disabled, exporterUrl }) {
 
 function SaveConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Finish
     </Button>
   );
@@ -369,7 +485,7 @@ function SaveConfigButton({ onClick }) {
 
 function BackButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Back
     </Button>
   );
@@ -377,7 +493,7 @@ function BackButton({ onClick }) {
 
 function StartNewButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Start New
     </Button>
   );
@@ -385,7 +501,7 @@ function StartNewButton({ onClick }) {
 
 function LoadConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Load Config
     </Button>
   );
@@ -413,7 +529,7 @@ function LoginButton({
     }
   };
   return (
-    <Button color="primary" size="lg" disabled={disabled} onClick={onClick}>
+    <Button color="primary" size="lg" disabled={disabled} onClick={onClick} fullWidth>
       Get started
     </Button>
   );
@@ -449,10 +565,16 @@ TestCallButton.propTypes = forbidExtraProps({
   twilioPhoneNumbersToDialValid: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
 });
 
-SendTestAlertButton.propTypes = forbidExtraProps({
+SendTestTelegramButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   botToken: PropTypes.string.isRequired,
   botChatID: PropTypes.string.isRequired,
+});
+
+SendTestSlackButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  token: PropTypes.string.isRequired,
+  chatName: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({
@@ -483,6 +605,16 @@ PingRepoButton.propTypes = forbidExtraProps({
   repo: PropTypes.string.isRequired,
 });
 
+PingDockerHubButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+PingChainlinkPrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrl: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+});
+
 PingPrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrl: PropTypes.string.isRequired,
@@ -511,8 +643,9 @@ DeleteAccount.propTypes = forbidExtraProps({
 });
 
 export {
-  SendTestAlertButton,
+  SendTestTelegramButton,
   TestCallButton,
+  SendTestSlackButton,
   SendTestEmailButton,
   SendTestPagerDutyButton,
   SendTestOpsGenieButton,
@@ -520,6 +653,7 @@ export {
   PingRepoButton,
   PingTendermint,
   PingPrometheus,
+  PingChainlinkPrometheus,
   PingNodeExporter,
   SaveConfigButton,
   LoadConfigButton,
@@ -527,4 +661,5 @@ export {
   DeleteAccount,
   StartNewButton,
   BackButton,
+  PingDockerHubButton,
 };
