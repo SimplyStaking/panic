@@ -6,8 +6,9 @@ from typing import Dict, Tuple
 from src.data_store.redis import RedisApi, Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.data import VALID_CHAINLINK_SOURCES, \
-    RAW_TO_TRANSFORMED_CHAINLINK_METRICS, INT_CHAINLINK_METRICS
+from src.utils.constants.data import (VALID_CHAINLINK_SOURCES,
+                                      RAW_TO_TRANSFORMED_CHAINLINK_METRICS,
+                                      INT_CHAINLINK_METRICS)
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           CL_NODE_DT_INPUT_QUEUE_NAME,
                                           CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
