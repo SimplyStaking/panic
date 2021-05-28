@@ -1,11 +1,17 @@
 import copy
 import json
 import logging
+from datetime import datetime
 from typing import Dict, Tuple
+
+import pika
+import pika.exceptions
+from pika.adapters.blocking_connection import BlockingChannel
 
 from src.data_store.redis import RedisApi, Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.utils.constants.data import (VALID_CHAINLINK_SOURCES,
                                       RAW_TO_TRANSFORMED_CHAINLINK_METRICS,
                                       INT_CHAINLINK_METRICS)
@@ -13,9 +19,11 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           CL_NODE_DT_INPUT_QUEUE_NAME,
                                           CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
                                           STORE_EXCHANGE, ALERT_EXCHANGE,
-                                          HEALTH_CHECK_EXCHANGE)
+                                          HEALTH_CHECK_EXCHANGE,
+                                          CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
-                                  NodeIsDownException)
+                                  NodeIsDownException,
+                                  MessageWasNotDeliveredException)
 from src.utils.types import Monitorable, convert_to_float, convert_to_int
 
 
@@ -433,39 +441,39 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 pd_data['eth_balance_info']['previous'] = node.eth_balance_info
                 pd_data['went_down_at']['previous'] = node.went_down_at
             elif 'error' in transformed_data:
-                pass
+                td_meta_data = transformed_data['prometheus']['error'][
+                    'meta_data']
+                td_error_code = transformed_data['prometheus']['error']['code']
+                td_node_id = td_meta_data['node_id']
+                td_node_name = td_meta_data['node_name']
+                node = self.state[td_node_id]
+                downtime_exception = NodeIsDownException(td_node_name)
+
+                processed_data = copy.deepcopy(transformed_data)
+                pd_meta_data = processed_data['prometheus']['error'][
+                    'meta_data']
+
+                # Do current and previous for last_source_used
+                pd_meta_data['last_source_used'] = {
+                    'current': td_meta_data['last_source_used'],
+                    'previous': node.last_prometheus_source_used
+                }
+
+                if td_error_code == downtime_exception.code:
+                    td_data = transformed_data['prometheus']['error']['data']
+                    pd_data = processed_data['prometheus']['error']['data']
+
+                    for metric, value in td_data.items():
+                        pd_data[metric] = {}
+                        pd_data[metric]['current'] = value
+
+                    pd_data['went_down_at']['previous'] = node.went_down_at
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data_for_alerting".format(self))
         else:
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_alerting".format(self))
-
-        # if 'result' in transformed_data:
-        #     pass
-        # elif 'error' in transformed_data:
-        #     td_meta_data = transformed_data['error']['meta_data']
-        #     td_error_code = transformed_data['error']['code']
-        #     td_system_id = td_meta_data['system_id']
-        #     td_system_name = td_meta_data['system_name']
-        #     system = self.state[td_system_id]
-        #     downtime_exception = SystemIsDownException(td_system_name)
-        #
-        #     processed_data = copy.deepcopy(transformed_data)
-        #
-        #     if td_error_code == downtime_exception.code:
-        #         td_metrics = transformed_data['error']['data']
-        #         processed_data_metrics = processed_data['error']['data']
-        #
-        #         for metric, value in td_metrics.items():
-        #             processed_data_metrics[metric] = {}
-        #             processed_data_metrics[metric]['current'] = value
-        #
-        #         processed_data_metrics['went_down_at']['previous'] = \
-        #             system.went_down_at
-        # else:
-        #     raise ReceivedUnexpectedDataException(
-        #         "{}: _process_transformed_data_for_alerting".format(self))
 
         self.logger.debug("Processing successful.")
 
@@ -574,7 +582,152 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-# TODO: In start check that system_ids and parent_ids of data are equal, all
-#     : data is there (like prometheus etc (even if empty)).. also, check that
-#     : at least one data is not empty ... so in other words do
-#     : data validation. Check that keys are equal to prometheus, rpc etc
+    def _place_latest_data_on_queue(self, transformed_data: Dict,
+                                    data_for_alerting: Dict,
+                                    data_for_saving: Dict) -> None:
+        self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
+                            CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+                            pika.BasicProperties(delivery_mode=2), True)
+
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
+                            CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+                            pika.BasicProperties(delivery_mode=2), True)
+
+    def _raw_data_has_valid_sources_structure(
+            self, raw_data: Dict) -> Tuple[bool, str, str, str]:
+        """
+        This method checks the following things about the raw_data:
+        1. Only valid sources are inside the raw_data
+        2. At least one source is not empty
+        3. All source's data is indexed by 'result' or 'error' and all data
+           has a 'node_parent_id', 'node_id' and 'node_name'
+        4. All node_parent_ids, node_ids, node_names are equal across all
+           sources
+        :param raw_data: The raw_data being received from the monitor
+        :return: True, node_parent_id, node_id, node_name : If valid raw_data
+               : Raises ReceivedUnexpectedDataException   : otherwise
+        """
+
+        # Check that all sources are valid
+        for source in list(raw_data.keys()):
+            if source not in VALID_CHAINLINK_SOURCES:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _raw_data_has_valid_sources_structure".format(self))
+
+        list_of_sources_values = [value for source, value in raw_data.items()]
+
+        # Check that at least one value is not empty
+        if all(not value for value in list_of_sources_values):
+            raise ReceivedUnexpectedDataException(
+                "{}: _raw_data_has_valid_sources_structure".format(self))
+
+        # If all non-empty source data is not indexed by 'result' or 'error', or
+        # some non-empty source data does not have `node_parent_id`, `node_id`
+        # or `node_name`, a  ReceivedUnexpectedDataException is raised.
+        try:
+            list_of_parent_ids = []
+            list_of_node_ids = []
+            list_of_node_names = []
+            for value in list_of_sources_values:
+                if value:
+                    response_index_key = 'result' if 'result' in value \
+                        else 'error'
+                    list_of_parent_ids.append(
+                        value[response_index_key]['meta_data'][
+                            'node_parent_id'])
+                    list_of_node_ids.append(
+                        value[response_index_key]['meta_data']['node_id'])
+                    list_of_node_names.append(
+                        value[response_index_key]['meta_data']['node_name'])
+        except KeyError:
+            raise ReceivedUnexpectedDataException(
+                "{}: _raw_data_has_valid_sources_structure".format(self))
+
+        # Check that all node_parent_ids, node_ids and node_names are equal. If
+        # a list has identical elements, then when converted to a set there must
+        # be only 1 element in the set
+        if (
+                not len(set(list_of_parent_ids)) == 1 or
+                not len(set(list_of_node_ids)) == 1 or
+                not len(set(list_of_node_names)) == 1
+        ):
+            raise ReceivedUnexpectedDataException(
+                "{}: _raw_data_has_valid_sources_structure".format(self))
+
+        return (
+            True,
+            list_of_parent_ids[0],
+            list_of_node_ids[0],
+            list_of_node_names[0]
+        )
+
+    def _process_raw_data(self, ch: BlockingChannel,
+                          method: pika.spec.Basic.Deliver,
+                          properties: pika.spec.BasicProperties, body: bytes) \
+            -> None:
+        raw_data = json.loads(body)
+        self.logger.debug("Received %s from monitors. Now processing this "
+                          "data.", raw_data)
+
+        processing_error = False
+        transformed_data = {}
+        data_for_alerting = {}
+        data_for_saving = {}
+        try:
+            _, node_parent_id, node_id, node_name = \
+                self._raw_data_has_valid_sources_structure(raw_data)
+
+            if node_id not in self.state:
+                new_node = ChainlinkNode(node_name, node_id, node_parent_id)
+                loaded_node = self.load_state(new_node)
+                self._state[node_id] = loaded_node
+
+            transformed_data, data_for_alerting, data_for_saving = \
+                self._transform_data(raw_data)
+        except Exception as e:
+            self.logger.error("Error when processing %s", raw_data)
+            self.logger.exception(e)
+            processing_error = True
+
+        # If the data is processed, it can be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # We want to update the state after the data is acknowledged, otherwise
+        # if acknowledgement fails the state would be erroneous when processing
+        # the data again. Note, only update the state if there were no
+        # processing errors.
+        if not processing_error:
+            try:
+                self._update_state(transformed_data)
+                self.logger.debug("Successfully processed %s", raw_data)
+            except Exception as e:
+                self.logger.error("Error when processing %s", raw_data)
+                self.logger.exception(e)
+                processing_error = True
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue
+        if not processing_error:
+            self._place_latest_data_on_queue(
+                transformed_data, data_for_alerting, data_for_saving)
+
+        # Send any data waiting in the publisher queue, if any
+        try:
+            self._send_data()
+
+            if not processing_error:
+                heartbeat = {
+                    'component_name': self.transformer_name,
+                    'is_alive': True,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as message is residing in the
+            # publisher queue.
+            self.logger.exception(e)
+        except Exception as e:
+            # For any other exception raise it.
+            raise e
