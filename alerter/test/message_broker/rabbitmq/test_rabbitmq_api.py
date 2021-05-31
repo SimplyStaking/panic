@@ -965,6 +965,58 @@ class TestRabbitMQApi(TestCase):
     @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
     @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
     @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_nack_returns_same_if_successful(
+            self, expected_output: Optional[int], mock_safe: MagicMock,
+            mock_connection_initialised: MagicMock, mock_channel: PropertyMock
+
+    ):
+        mock_channel.return_value.basic_nack.return_value = False
+        mock_safe.return_value = expected_output
+        mock_connection_initialised.return_value = True
+        self.assertEqual(expected_output, self.rabbit.basic_nack(
+            delivery_tag=100, multiple=True, requeue=False,
+        ))
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_nack,
+            [100, True, False], -1
+        )
+
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_nack_does_nothing_if_not_connection_initialised(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock
+    ):
+        mock_connection_initialised.return_value = False
+        self.assertIsNone(
+            self.rabbit.basic_nack(delivery_tag=100, multiple=True,
+                                   requeue=False)
+        )
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_not_called()
+
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
+    def test_basic_nack_propagates_error(
+            self, mock_safe: MagicMock, mock_connection_initialised: MagicMock,
+            mock_channel: PropertyMock
+    ):
+        mock_channel.return_value.basic_nack.return_value = False
+        mock_connection_initialised.return_value = True
+        mock_safe.side_effect = Exception(self.TEST_EXCEPTION_TEXT)
+        self.assertRaises(Exception, self.rabbit.basic_nack, delivery_tag=100,
+                          multiple=True, requeue=False)
+        mock_connection_initialised.assert_called_once_with(self.rabbit)
+        mock_safe.assert_called_once_with(
+            self.rabbit, mock_channel.return_value.basic_nack,
+            [100, True, False], -1
+        )
+
+    @parameterized.expand([(0,), (None,), (1,), (-1,)])
+    @mock.patch.object(RabbitMQApi, "channel", new_callable=PropertyMock)
+    @mock.patch.object(RabbitMQApi, "_connection_initialised", autospec=True)
+    @mock.patch.object(RabbitMQApi, "_safe", autospec=True)
     def test_basic_qos_returns_same_if_successful(
             self, expected_output: Optional[int], mock_safe: MagicMock,
             mock_connection_initialised: MagicMock, mock_channel: PropertyMock

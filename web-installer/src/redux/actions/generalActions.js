@@ -4,8 +4,6 @@ import {
   ADD_SYSTEM,
   REMOVE_REPOSITORY,
   REMOVE_SYSTEM,
-  ADD_KMS,
-  REMOVE_KMS,
   UPDATE_THRESHOLD_ALERT,
   ADD_TELEGRAM_CHANNEL,
   REMOVE_TELEGRAM_CHANNEL,
@@ -17,12 +15,12 @@ import {
   REMOVE_PAGERDUTY_CHANNEL,
   ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL,
-  LOAD_REPOSITORY,
-  LOAD_REPOSITORY_GENERAL,
-  LOAD_KMS,
   LOAD_THRESHOLD_ALERTS_GENERAL,
-  LOAD_SYSTEM_GENERAL,
-  LOAD_SYSTEM,
+  ADD_DOCKER,
+  LOAD_DOCKER,
+  REMOVE_DOCKER,
+  ADD_SLACK_CHANNEL,
+  REMOVE_SLACK_CHANNEL,
 } from './types';
 
 const { v4: uuidv4 } = require('uuid');
@@ -35,21 +33,22 @@ export function updatePeriodic(payload) {
 }
 
 export function addRepository(payload) {
+  // Generate a unique id for the repository
+  let id = `repo_${uuidv4()}`;
+
+  // If an ID already exists in the payload use it
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
   return {
     type: ADD_REPOSITORY,
     payload: {
-      id: `repo_${uuidv4()}`,
+      id,
       parent_id: payload.parent_id,
       repo_name: payload.repo_name,
       monitor_repo: payload.monitor_repo,
     },
-  };
-}
-
-export function loadRepository(payload) {
-  return {
-    type: LOAD_REPOSITORY,
-    payload,
   };
 }
 
@@ -60,11 +59,53 @@ export function removeRepository(payload) {
   };
 }
 
+export function addDockerHub(payload) {
+  // Generate a unique id for the repository
+  let id = `docker_${uuidv4()}`;
+
+  // If an ID already exists in the payload use it
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
+  return {
+    type: ADD_DOCKER,
+    payload: {
+      id,
+      parent_id: payload.parent_id,
+      name: payload.name,
+      monitor_docker: payload.monitor_docker,
+    },
+  };
+}
+
+export function loadDockerHub(payload) {
+  return {
+    type: LOAD_DOCKER,
+    payload,
+  };
+}
+
+export function removeDockerHub(payload) {
+  return {
+    type: REMOVE_DOCKER,
+    payload,
+  };
+}
+
 export function addSystem(payload) {
+  // Generate a unique id for the repository
+  let id = `system_${uuidv4()}`;
+
+  // If an ID already exists in the payload use it
+  if ('id' in payload) {
+    id = payload.id;
+  }
+
   return {
     type: ADD_SYSTEM,
     payload: {
-      id: `system_${uuidv4()}`,
+      id,
       parent_id: payload.parent_id,
       name: payload.name,
       exporter_url: payload.exporter_url,
@@ -73,43 +114,9 @@ export function addSystem(payload) {
   };
 }
 
-export function loadSystem(payload) {
-  return {
-    type: LOAD_SYSTEM,
-    payload,
-  };
-}
-
-export function loadSystemGeneral(payload) {
-  return {
-    type: LOAD_SYSTEM_GENERAL,
-    payload,
-  };
-}
-
 export function removeSystem(payload) {
   return {
     type: REMOVE_SYSTEM,
-    payload,
-  };
-}
-
-export function addKms(payload) {
-  return {
-    type: ADD_KMS,
-    payload: {
-      id: `kms_${uuidv4()}`,
-      parent_id: payload.parent_id,
-      kms_name: payload.kms_name,
-      exporter_url: payload.exporter_url,
-      monitor_kms: payload.monitor_kms,
-    },
-  };
-}
-
-export function removeKms(payload) {
-  return {
-    type: REMOVE_KMS,
     payload,
   };
 }
@@ -163,6 +170,20 @@ export function removeEmailChannel(payload) {
   };
 }
 
+export function addSlackChannel(payload) {
+  return {
+    type: ADD_SLACK_CHANNEL,
+    payload,
+  };
+}
+
+export function removeSlackChannel(payload) {
+  return {
+    type: REMOVE_SLACK_CHANNEL,
+    payload,
+  };
+}
+
 export function addPagerDutyChannel(payload) {
   return {
     type: ADD_PAGERDUTY_CHANNEL,
@@ -187,20 +208,6 @@ export function addOpsGenieChannel(payload) {
 export function removeOpsGenieChannel(payload) {
   return {
     type: REMOVE_OPSGENIE_CHANNEL,
-    payload,
-  };
-}
-
-export function loadReposGeneral(payload) {
-  return {
-    type: LOAD_REPOSITORY_GENERAL,
-    payload,
-  };
-}
-
-export function loadKMS(payload) {
-  return {
-    type: LOAD_KMS,
     payload,
   };
 }

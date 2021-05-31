@@ -21,23 +21,65 @@ import {
   REMOVE_PAGERDUTY_CHANNEL,
   ADD_OPSGENIE_CHANNEL,
   REMOVE_OPSGENIE_CHANNEL,
-  LOAD_TELEGRAM,
-  LOAD_TWILIO,
-  LOAD_EMAIL,
-  LOAD_PAGERDUTY,
-  LOAD_OPSGENIE,
+  ADD_SLACK,
+  REMOVE_SLACK,
+  ADD_SLACK_CHANNEL,
+  REMOVE_SLACK_CHANNEL,
 } from 'redux/actions/types';
+
+// Reducers to add and remove slack configurations from global state
+function slacksById(state = {}, action) {
+  let parsed = {};
+  switch (action.type) {
+    case ADD_SLACK:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
+    case REMOVE_SLACK:
+      return _.omit(state, action.payload.id);
+    case ADD_SLACK_CHANNEL:
+      parsed = JSON.parse(JSON.stringify(action.payload));
+      return {
+        ...state,
+        [action.payload.id]: parsed,
+      };
+    case REMOVE_SLACK_CHANNEL:
+      parsed = JSON.parse(JSON.stringify(action.payload));
+      return {
+        ...state,
+        [action.payload.id]: parsed,
+      };
+    default:
+      return state;
+  }
+}
+
+// Reducers to remove from list of all telegrams
+function allSlacks(state = [], action) {
+  switch (action.type) {
+    case ADD_SLACK:
+      if (state.includes(action.payload.id)) {
+        return state;
+      }
+      return state.concat(action.payload.id);
+    case REMOVE_SLACK:
+      return state.filter((config) => config !== action.payload.id);
+    default:
+      return state;
+  }
+}
+
+const SlacksReducer = combineReducers({
+  byId: slacksById,
+  allIds: allSlacks,
+});
 
 // Reducers to add and remove telegram configurations from global state
 function telegramsById(state = {}, action) {
   let parsed = {};
   switch (action.type) {
     case ADD_TELEGRAM:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_TELEGRAM:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -65,13 +107,10 @@ function telegramsById(state = {}, action) {
 function allTelegrams(state = [], action) {
   switch (action.type) {
     case ADD_TELEGRAM:
-      return state.concat(action.payload.id);
-    case LOAD_TELEGRAM:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_TELEGRAM:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -89,11 +128,6 @@ function twiliosById(state = {}, action) {
   let parsed = {};
   switch (action.type) {
     case ADD_TWILIO:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_TWILIO:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -121,13 +155,10 @@ function twiliosById(state = {}, action) {
 function allTwilios(state = [], action) {
   switch (action.type) {
     case ADD_TWILIO:
-      return state.concat(action.payload.id);
-    case LOAD_TWILIO:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_TWILIO:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -145,11 +176,6 @@ function emailsById(state = {}, action) {
   let parsed = {};
   switch (action.type) {
     case ADD_EMAIL:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_EMAIL:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -177,13 +203,10 @@ function emailsById(state = {}, action) {
 function allEmails(state = [], action) {
   switch (action.type) {
     case ADD_EMAIL:
-      return state.concat(action.payload.id);
-    case LOAD_EMAIL:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_EMAIL:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -201,11 +224,6 @@ function pagerdutyById(state = {}, action) {
   let parsed = {};
   switch (action.type) {
     case ADD_PAGERDUTY:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_PAGERDUTY:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -233,13 +251,10 @@ function pagerdutyById(state = {}, action) {
 function allPagerDuties(state = [], action) {
   switch (action.type) {
     case ADD_PAGERDUTY:
-      return state.concat(action.payload.id);
-    case LOAD_PAGERDUTY:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_PAGERDUTY:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -257,11 +272,6 @@ function opsgenieById(state = {}, action) {
   let parsed = {};
   switch (action.type) {
     case ADD_OPSGENIE:
-      return {
-        ...state,
-        [action.payload.id]: action.payload,
-      };
-    case LOAD_OPSGENIE:
       return {
         ...state,
         [action.payload.id]: action.payload,
@@ -289,13 +299,10 @@ function opsgenieById(state = {}, action) {
 function allOpsGenies(state = [], action) {
   switch (action.type) {
     case ADD_OPSGENIE:
-      return state.concat(action.payload.id);
-    case LOAD_OPSGENIE:
-      if (!state.includes(action.payload.id)) {
-        return state.concat(action.payload.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_OPSGENIE:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -314,4 +321,5 @@ export {
   EmailsReducer,
   TwiliosReducer,
   TelegramsReducer,
+  SlacksReducer,
 };

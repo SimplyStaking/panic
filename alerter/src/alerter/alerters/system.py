@@ -197,7 +197,7 @@ class SystemAlerter(Alerter):
                       method: pika.spec.Basic.Deliver,
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
-        data_received = json.loads(body.decode())
+        data_received = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.",
                           data_received)
 

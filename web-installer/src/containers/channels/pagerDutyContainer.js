@@ -31,6 +31,8 @@ const Form = withFormik({
       warning: values.warning,
       critical: values.critical,
       error: values.error,
+      parent_ids: [],
+      parent_names: [],
     };
     savePagerDutyDetails(payload);
     resetForm();
@@ -43,6 +45,7 @@ const mapStateToProps = (state) => ({
   pagerDuties: state.PagerDutyReducer,
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
+  slacks: state.SlacksReducer,
 });
 
 function mapDispatchToProps(dispatch) {

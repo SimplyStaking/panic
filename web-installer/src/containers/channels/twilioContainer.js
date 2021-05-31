@@ -29,6 +29,8 @@ const Form = withFormik({
       auth_token: values.auth_token,
       twilio_phone_no: values.twilio_phone_no,
       twilio_phone_numbers_to_dial_valid: values.twilio_phone_numbers_to_dial_valid,
+      parent_ids: [],
+      parent_names: [],
     };
     saveTwilioDetails(payload);
     resetForm();
@@ -41,6 +43,7 @@ const mapStateToProps = (state) => ({
   pagerDuties: state.PagerDutyReducer,
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
+  slacks: state.SlacksReducer,
 });
 
 function mapDispatchToProps(dispatch) {

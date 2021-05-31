@@ -11,7 +11,6 @@ import NodeSchema from '../common/schemas/nodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',
@@ -22,11 +21,11 @@ const Form = withFormik({
     prometheus_url: '',
     monitor_prometheus: false,
     exporter_url: '',
-    monitor_system: false,
+    monitor_system: true,
     is_validator: false,
     monitor_node: true,
-    is_archive_node: true,
-    use_as_data_source: true,
+    is_archive_node: false,
+    use_as_data_source: false,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
@@ -60,8 +59,10 @@ const mapStateToProps = (state) => ({
   chainConfig: state.CosmosChainsReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
-  reposConfig: state.RepositoryReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
+  reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: CosmosData,
 });
 

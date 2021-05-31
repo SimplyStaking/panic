@@ -11,7 +11,7 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.configs import (GENERAL, CHAINS, REPOS_CONFIG,
                                          SYSTEMS_CONFIG,
-                                         NODES_CONFIG, GLOBAL,
+                                         NODES_CONFIG, GENERAL,
                                          MONITORABLES_PARSING_HELPER)
 from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE, TOPIC,
                                           HEALTH_CHECK_EXCHANGE,
@@ -75,7 +75,7 @@ class ConfigStore(Store):
         Processes the data being received, from the queue. This data will be
         stored in Redis as required. If successful, a heartbeat will be sent.
         """
-        config_data = json.loads(body.decode())
+        config_data = json.loads(body)
 
         self.logger.debug(
             "Received %s. Now processing this data.", config_data)
@@ -210,7 +210,7 @@ class ConfigStore(Store):
 
             if parsed_routing_key[0].lower() == GENERAL.lower():
                 redis_store_key = GENERAL
-                source_chain_name = GLOBAL
+                source_chain_name = GENERAL
                 # Determine the configuration that needs to be changed
                 if parsed_routing_key[1].lower() in [REPOS_CONFIG.lower(),
                                                      SYSTEMS_CONFIG.lower()]:

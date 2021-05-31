@@ -8,7 +8,7 @@ const EmailSchema = (props) => Yup.object().shape({
       'Email config name is not unique.',
       (value) => {
         const {
-          emails, opsGenies, pagerDuties, telegrams, twilios,
+          emails, opsGenies, pagerDuties, telegrams, twilios, slacks,
         } = props;
         for (let i = 0; i < emails.allIds.length; i += 1) {
           if (emails.byId[emails.allIds[i]].channel_name === value) {
@@ -37,6 +37,11 @@ const EmailSchema = (props) => Yup.object().shape({
             return false;
           }
         }
+        for (let i = 0; i < slacks.allIds.length; i += 1) {
+          if (slacks.byId[slacks.allIds[i]].channel_name === value) {
+            return false;
+          }
+        }
         return true;
       },
     )
@@ -54,7 +59,7 @@ const EmailSchema = (props) => Yup.object().shape({
       return originalValue ? originalValue.split(/[\s,]+/) : [];
     })
     .of(Yup.string().email(({ value }) => `${value} is not a valid email `))
-    .required('Email To is required.'),
+    .required('Emails To is required.'),
 });
 
 export default EmailSchema;

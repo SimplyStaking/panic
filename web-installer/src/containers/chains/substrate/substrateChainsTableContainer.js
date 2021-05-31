@@ -12,6 +12,8 @@ import {
   removeEmailChannel,
   removePagerDutyChannel,
   removeOpsGenieChannel,
+  removeSlackChannel,
+  removeDockerHub,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
@@ -22,6 +24,7 @@ const mapStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
   config: state.SubstrateChainsReducer,
 });
 
@@ -39,6 +42,8 @@ function mapDispatchToProps(dispatch) {
     removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
     removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
     removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
+    removeSlackDetails: (details) => dispatch(removeSlackChannel(details)),
+    removeDockerHubDetails: (details) => dispatch(removeDockerHub(details)),
   };
 }
 

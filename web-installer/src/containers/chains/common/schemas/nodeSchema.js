@@ -1,13 +1,18 @@
 import * as Yup from 'yup';
-import { BLACKLIST } from 'constants/constants';
 
 const NodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-node-name', 'Node name is not unique.', (value) => {
       const {
         cosmosNodesConfig, substrateNodesConfig, systemConfig, reposConfig,
+        chainlinkNodesConfig, dockerHubConfig,
       } = props;
 
+      for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
+        if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       for (let i = 0; i < cosmosNodesConfig.allIds.length; i += 1) {
         if (cosmosNodesConfig.byId[cosmosNodesConfig.allIds[i]].name === value) {
           return false;
@@ -28,17 +33,14 @@ const NodeSchema = (props) => Yup.object().shape({
           return false;
         }
       }
+      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       return true;
     })
     .required('Node name is required.'),
-  exporter_url: Yup.string()
-    .test('localhost', '127.0.0.1 is not allowed for security reasons.',
-      (value) => {
-        if (BLACKLIST.find((a) => value.includes(a))) {
-          return false;
-        }
-        return true;
-      }),
 });
 
 export default NodeSchema;

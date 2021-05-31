@@ -1,5 +1,5 @@
 import React from 'react';
-import StepManager from 'containers/chains/other/stepManager';
+import StepManager from 'containers/chains/general/stepManager';
 import Data from 'data/general';
 import Parallax from 'components/material_ui/Parallax/Parallax';
 import GridItem from 'components/material_ui/Grid/GridItem';
@@ -16,7 +16,7 @@ import Background from 'assets/img/backgrounds/background.png';
  * is set as the REPOS_STEP in redux then the repositories form and table will
  * be rendered.
  */
-function OtherSetupPage() {
+function GeneralSetupPage() {
   const classes = useStyles();
 
   return (
@@ -45,4 +45,4 @@ function OtherSetupPage() {
   );
 }
 
-export default OtherSetupPage;
+export default GeneralSetupPage;

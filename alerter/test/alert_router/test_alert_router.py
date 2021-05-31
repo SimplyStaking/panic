@@ -13,6 +13,7 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alert_router.alert_router import AlertRouter
+from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
 from src.alerter.metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
@@ -1296,6 +1297,15 @@ class TestAlertRouter(unittest.TestCase):
             self._test_alert_router._redis, test_redis_hash_key, test_redis_key,
             default=b"{}"
         )
+
+    @parameterized.expand([
+        (None,),
+        ('test_id',),
+    ])
+    def test_is_chain_severity_muted_returns_false_if_severity_INTERNAL(
+            self, parent_id) -> None:
+        self.assertEqual(False, self._test_alert_router.is_chain_severity_muted(
+            parent_id, Severity.INTERNAL.value))
 
     @parameterized.expand([
         ("x", "{}", False),
