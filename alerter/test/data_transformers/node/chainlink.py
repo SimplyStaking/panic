@@ -1,8 +1,13 @@
+import copy
+import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
 from queue import Queue
+from unittest import mock
+
+import pika
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
@@ -11,10 +16,12 @@ from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
-    CL_NODE_DT_INPUT_QUEUE_NAME)
+    CL_NODE_DT_INPUT_QUEUE_NAME, CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import (PANICException, NodeIsDownException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
-                              delete_exchange_if_exists, delete_queue_if_exists)
+                              delete_exchange_if_exists, delete_queue_if_exists,
+                              save_chainlink_node_to_redis)
 
 
 class TestChainlinkNodeDataTransformer(unittest.TestCase):
@@ -31,12 +38,11 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'is_alive': True,
             'timestamp': self.test_last_monitored,
         }
-        self.test_node_is_down_exception = NodeIsDownException(
-            self.test_chainlink_node.node_name)
         self.test_exception = PANICException('test_exception', 1)
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
         self.invalid_transformed_data = {'bad_key': 'bad_value'}
+        self.test_monitor_name = 'test_monitor_name'
 
         # Rabbit instance
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -62,8 +68,247 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node = ChainlinkNode(
             self.test_chainlink_node_name, self.test_chainlink_node_id,
             self.test_chainlink_node_parent_id)
+        self.test_node_is_down_exception = NodeIsDownException(
+            self.test_chainlink_node.node_name)
         self.test_state = {
             self.test_chainlink_node_id: self.test_chainlink_node
+        }
+        self.test_went_down_at = 45.4
+        self.test_current_height = 50000000000
+        self.test_eth_blocks_in_queue = 3
+        self.test_total_block_headers_received = 454545040
+        self.test_total_block_headers_dropped = 4
+        self.test_no_of_active_jobs = 10
+        self.test_max_pending_tx_delay = 6
+        self.test_process_start_time_seconds = 345474.4
+        self.test_total_gas_bumps = 11
+        self.test_total_gas_bumps_exceeds_limit = 13
+        self.test_no_of_unconfirmed_txs = 7
+        self.test_total_errored_job_runs = 15
+        self.test_current_gas_price_info = {
+            'percentile': 50.5,
+            'price': 22,
+        }
+        self.test_eth_balance_info = {
+            'address1': {'balance': 34.4, 'latest_usage': 5.0},
+            'address2': {'balance': 40.0, 'latest_usage': 0.0},
+            'address3': {'balance': 70.0, 'latest_usage': 34.0}
+        }
+        self.test_last_prometheus_source_used = "prometheus_source_1"
+        self.test_last_monitored_prometheus = 45.666786
+        self.test_chainlink_node.set_went_down_at(self.test_went_down_at)
+        self.test_chainlink_node.set_current_height(self.test_current_height)
+        self.test_chainlink_node.set_eth_blocks_in_queue(
+            self.test_eth_blocks_in_queue)
+        self.test_chainlink_node.set_total_block_headers_received(
+            self.test_total_block_headers_received)
+        self.test_chainlink_node.set_total_block_headers_dropped(
+            self.test_total_block_headers_dropped)
+        self.test_chainlink_node.set_no_of_active_jobs(
+            self.test_no_of_active_jobs)
+        self.test_chainlink_node.set_max_pending_tx_delay(
+            self.test_max_pending_tx_delay)
+        self.test_chainlink_node.set_process_start_time_seconds(
+            self.test_process_start_time_seconds)
+        self.test_chainlink_node.set_total_gas_bumps(self.test_total_gas_bumps)
+        self.test_chainlink_node.set_total_gas_bumps_exceeds_limit(
+            self.test_total_gas_bumps_exceeds_limit)
+        self.test_chainlink_node.set_no_of_unconfirmed_txs(
+            self.test_no_of_unconfirmed_txs)
+        self.test_chainlink_node.set_total_errored_job_runs(
+            self.test_total_errored_job_runs)
+        self.test_chainlink_node.set_current_gas_price_info(
+            self.test_current_gas_price_info['percentile'],
+            self.test_current_gas_price_info['price'])
+        self.test_chainlink_node.set_eth_balance_info(
+            self.test_eth_balance_info)
+        self.test_chainlink_node.set_last_prometheus_source_used(
+            self.test_last_prometheus_source_used)
+        self.test_chainlink_node.set_last_monitored_prometheus(
+            self.test_last_monitored_prometheus)
+
+        # Loading objects
+        self.loaded_cl_node_default_data = ChainlinkNode(
+            self.test_chainlink_node_name, self.test_chainlink_node_id,
+            self.test_chainlink_node_parent_id)
+        self.loaded_cl_node_trans_data = ChainlinkNode(
+            self.test_chainlink_node_name, self.test_chainlink_node_id,
+            self.test_chainlink_node_parent_id)
+        self.loaded_cl_node_trans_data.set_went_down_at(self.test_went_down_at)
+        self.loaded_cl_node_trans_data.set_current_height(
+            self.test_current_height)
+        self.loaded_cl_node_trans_data.set_eth_blocks_in_queue(
+            self.test_eth_blocks_in_queue)
+        self.loaded_cl_node_trans_data.set_total_block_headers_received(
+            self.test_total_block_headers_received)
+        self.loaded_cl_node_trans_data.set_total_block_headers_dropped(
+            self.test_total_block_headers_dropped)
+        self.loaded_cl_node_trans_data.set_no_of_active_jobs(
+            self.test_no_of_active_jobs)
+        self.loaded_cl_node_trans_data.set_max_pending_tx_delay(
+            self.test_max_pending_tx_delay)
+        self.loaded_cl_node_trans_data.set_process_start_time_seconds(
+            self.test_process_start_time_seconds)
+        self.loaded_cl_node_trans_data.set_total_gas_bumps(
+            self.test_total_gas_bumps)
+        self.loaded_cl_node_trans_data.set_total_gas_bumps_exceeds_limit(
+            self.test_total_gas_bumps_exceeds_limit)
+        self.loaded_cl_node_trans_data.set_no_of_unconfirmed_txs(
+            self.test_no_of_unconfirmed_txs)
+        self.loaded_cl_node_trans_data.set_total_errored_job_runs(
+            self.test_total_errored_job_runs)
+        self.loaded_cl_node_trans_data.set_current_gas_price_info(
+            self.test_current_gas_price_info['percentile'],
+            self.test_current_gas_price_info['price'])
+        self.loaded_cl_node_trans_data.set_eth_balance_info(
+            self.test_eth_balance_info)
+        self.loaded_cl_node_trans_data.set_last_prometheus_source_used(
+            self.test_last_prometheus_source_used)
+        self.loaded_cl_node_trans_data.set_last_monitored_prometheus(
+            self.test_last_monitored_prometheus)
+        self.test_chainlink_node_new = ChainlinkNode(
+            self.test_chainlink_node_name, self.test_chainlink_node_id,
+            self.test_chainlink_node_parent_id)
+        self.test_went_down_at_new = None
+        self.test_current_height_new = 50000000001
+        self.test_eth_blocks_in_queue_new = 4
+        self.test_total_block_headers_received_new = 454545041
+        self.test_total_block_headers_dropped_new = 5
+        self.test_no_of_active_jobs_new = 11
+        self.test_max_pending_tx_delay_new = 7
+        self.test_process_start_time_seconds_new = 345476.4
+        self.test_total_gas_bumps_new = 13
+        self.test_total_gas_bumps_exceeds_limit_new = 14
+        self.test_no_of_unconfirmed_txs_new = 8
+        self.test_total_errored_job_runs_new = 16
+        self.test_current_gas_price_info_new = {
+            'percentile': 52.5,
+            'price': 24,
+        }
+        self.test_eth_balance_info_new = {
+            'address1': {'balance': 44.4, 'latest_usage': 6.0},
+            'address2': {'balance': 45.0, 'latest_usage': 2.0},
+            'address3': {'balance': 76.0, 'latest_usage': 0.0},
+            'address4': {'balance': 67.0, 'latest_usage': 0.0}
+        }
+        self.test_last_prometheus_source_used_new = "prometheus_source_2"
+        self.test_last_monitored_prometheus_new = 47.666786
+        self.test_chainlink_node_new.set_went_down_at(
+            self.test_went_down_at_new)
+        self.test_chainlink_node_new.set_current_height(
+            self.test_current_height_new)
+        self.test_chainlink_node_new.set_eth_blocks_in_queue(
+            self.test_eth_blocks_in_queue_new)
+        self.test_chainlink_node_new.set_total_block_headers_received(
+            self.test_total_block_headers_received_new)
+        self.test_chainlink_node_new.set_total_block_headers_dropped(
+            self.test_total_block_headers_dropped_new)
+        self.test_chainlink_node_new.set_no_of_active_jobs(
+            self.test_no_of_active_jobs_new)
+        self.test_chainlink_node_new.set_max_pending_tx_delay(
+            self.test_max_pending_tx_delay_new)
+        self.test_chainlink_node_new.set_process_start_time_seconds(
+            self.test_process_start_time_seconds_new)
+        self.test_chainlink_node_new.set_total_gas_bumps(
+            self.test_total_gas_bumps_new)
+        self.test_chainlink_node_new.set_total_gas_bumps_exceeds_limit(
+            self.test_total_gas_bumps_exceeds_limit_new)
+        self.test_chainlink_node_new.set_no_of_unconfirmed_txs(
+            self.test_no_of_unconfirmed_txs_new)
+        self.test_chainlink_node_new.set_total_errored_job_runs(
+            self.test_total_errored_job_runs_new)
+        self.test_chainlink_node_new.set_current_gas_price_info(
+            self.test_current_gas_price_info_new['percentile'],
+            self.test_current_gas_price_info_new['price'])
+        self.test_chainlink_node_new.set_eth_balance_info(
+            self.test_eth_balance_info_new)
+        self.test_chainlink_node_new.set_last_prometheus_source_used(
+            self.test_last_prometheus_source_used_new)
+        self.test_chainlink_node_new.set_last_monitored_prometheus(
+            self.test_last_monitored_prometheus_new)
+
+        # Transformed data examples
+        self.transformed_data_example_result_all = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'last_monitored':
+                            self.test_last_monitored_prometheus_new,
+                    },
+                    'data': {
+                        'went_down_at': self.test_went_down_at_new,
+                        'current_height': self.test_current_height_new,
+                        'eth_blocks_in_queue':
+                            self.test_eth_blocks_in_queue_new,
+                        'total_block_headers_received':
+                            self.test_total_block_headers_received_new,
+                        'total_block_headers_dropped':
+                            self.test_total_block_headers_dropped_new,
+                        'no_of_active_jobs': self.test_no_of_active_jobs_new,
+                        'max_pending_tx_delay':
+                            self.test_max_pending_tx_delay_new,
+                        'process_start_time_seconds':
+                            self.test_process_start_time_seconds_new,
+                        'total_gas_bumps': self.test_total_gas_bumps_new,
+                        'total_gas_bumps_exceeds_limit':
+                            self.test_total_gas_bumps_exceeds_limit_new,
+                        'no_of_unconfirmed_txs':
+                            self.test_no_of_unconfirmed_txs_new,
+                        'total_errored_job_runs':
+                            self.test_total_errored_job_runs_new,
+                        'current_gas_price_info':
+                            self.test_current_gas_price_info_new,
+                        'eth_balance_info': self.test_eth_balance_info_new,
+                    },
+                }
+            }
+        }
+        self.transformed_data_example_result_options_None = copy.deepcopy(
+            self.transformed_data_example_result_all)
+        self.transformed_data_example_result_options_None['prometheus'][
+            'result']['data']['current_gas_price_info'] = None
+        self.transformed_data_example_general_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_exception.message,
+                    'code': self.test_exception.code,
+                }
+            }
+        }
+        self.transformed_data_example_downtime_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_node_is_down_exception.message,
+                    'code': self.test_node_is_down_exception.code,
+                    'data': {
+                        'went_down_at': self.test_last_monitored_prometheus_new
+                    }
+                }
+            }
         }
 
         # Test transformer
@@ -93,304 +338,285 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_node_is_down_exception = None
         self.test_exception = None
         self.test_chainlink_node = None
+        self.test_chainlink_node_new = None
         self.test_state = None
         self.test_publishing_queue = None
         self.test_last_monitored = None
         self.test_heartbeat = None
         self.invalid_transformed_data = None
         self.test_data_transformer = None
+        self.loaded_cl_node_default_data = None
+        self.loaded_cl_node_trans_data = None
+        self.transformed_data_example_result_all = None
+        self.transformed_data_example_result_options_None = None
+        self.transformed_data_example_general_error = None
+        self.transformed_data_example_downtime_error = None
 
-    # def test_str_returns_transformer_name(self) -> None:
-    #     self.assertEqual(self.transformer_name, str(self.test_data_transformer))
-    #
-    # def test_transformer_name_returns_transformer_name(self) -> None:
-    #     self.assertEqual(self.transformer_name,
-    #                      self.test_data_transformer.transformer_name)
-    #
-    # def test_redis_returns_transformer_redis_instance(self) -> None:
-    #     self.assertEqual(self.redis, self.test_data_transformer.redis)
-    #
-    # def test_state_returns_the_systems_state(self) -> None:
-    #     self.test_data_transformer._state = self.test_state
-    #     self.assertEqual(self.test_state, self.test_data_transformer.state)
-    #
-    # def test_publishing_queue_returns_publishing_queue(self) -> None:
-    #     self.test_data_transformer._publishing_queue = \
-    #         self.test_publishing_queue
-    #     self.assertEqual(self.test_publishing_queue,
-    #                      self.test_data_transformer.publishing_queue)
-    #
-    # def test_publishing_queue_has_the_correct_max_size(self) -> None:
-    #     self.assertEqual(self.max_queue_size,
-    #                      self.test_data_transformer.publishing_queue.maxsize)
-    #
-    # @mock.patch.object(RabbitMQApi, "start_consuming")
-    # def test_listen_for_data_calls_start_consuming(
-    #         self, mock_start_consuming) -> None:
-    #     mock_start_consuming.return_value = None
-    #     self.test_data_transformer._listen_for_data()
-    #     mock_start_consuming.assert_called_once()
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_qos")
-    # def test_initialise_rabbit_initializes_everything_as_expected(
-    #         self, mock_basic_qos) -> None:
-    #     try:
-    #         # To make sure that there is no connection/channel already
-    #         # established
-    #         self.assertIsNone(self.rabbitmq.connection)
-    #         self.assertIsNone(self.rabbitmq.channel)
-    #
-    #         # To make sure that the exchanges and queues have not already been
-    #         # declared
-    #         self.rabbitmq.connect()
-    #         self.test_data_transformer.rabbitmq.queue_delete(
-    #             SYSTEM_DT_INPUT_QUEUE_NAME)
-    #         self.test_data_transformer.rabbitmq.exchange_delete(
-    #             HEALTH_CHECK_EXCHANGE)
-    #         self.test_data_transformer.rabbitmq.exchange_delete(
-    #             RAW_DATA_EXCHANGE)
-    #         self.test_data_transformer.rabbitmq.exchange_delete(
-    #             STORE_EXCHANGE)
-    #         self.test_data_transformer.rabbitmq.exchange_delete(
-    #             ALERT_EXCHANGE)
-    #         self.rabbitmq.disconnect()
-    #
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #
-    #         # Perform checks that the connection has been opened and marked as
-    #         # open, that the delivery confirmation variable is set and basic_qos
-    #         # called successfully.
-    #         self.assertTrue(self.test_data_transformer.rabbitmq.is_connected)
-    #         self.assertTrue(
-    #             self.test_data_transformer.rabbitmq.connection.is_open)
-    #         self.assertTrue(
-    #             self.test_data_transformer.rabbitmq
-    #                 .channel._delivery_confirmation)
-    #         mock_basic_qos.assert_called_once_with(prefetch_count=round(
-    #             self.max_queue_size / 5))
-    #
-    #         # Check whether the producing exchanges have been created by
-    #         # using passive=True. If this check fails an exception is raised
-    #         # automatically.
-    #         self.test_data_transformer.rabbitmq.exchange_declare(
-    #             STORE_EXCHANGE, passive=True)
-    #         self.test_data_transformer.rabbitmq.exchange_declare(
-    #             ALERT_EXCHANGE, passive=True)
-    #         self.test_data_transformer.rabbitmq.exchange_declare(
-    #             HEALTH_CHECK_EXCHANGE, passive=True)
-    #
-    #         # Check whether the consuming exchanges and queues have been
-    #         # creating by sending messages with the same routing keys as for the
-    #         # bindings. We will also check if the size of the queues is 0 to
-    #         # confirm that basic_consume was called (it will store the msg in
-    #         # the component memory immediately). If one of the exchanges or
-    #         # queues is not created or basic_consume is not called, then either
-    #         # an exception will be thrown or the queue size would be 1
-    #         # respectively. Note when deleting the exchanges in the beginning we
-    #         # also released every binding, hence there are no other queue binded
-    #         # with the same routing key to any exchange at this point.
-    #         self.test_data_transformer.rabbitmq.basic_publish_confirm(
-    #             exchange=RAW_DATA_EXCHANGE,
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY,
-    #             body=self.test_data_str, is_body_dict=False,
-    #             properties=pika.BasicProperties(delivery_mode=2),
-    #             mandatory=True)
-    #
-    #         # Re-declare queue to get the number of messages
-    #         res = self.test_data_transformer.rabbitmq.queue_declare(
-    #             SYSTEM_DT_INPUT_QUEUE_NAME, False, True, False, False)
-    #         self.assertEqual(0, res.method.message_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones set by send_heartbeat, and checks that the
-    #     # heartbeat is received
-    #     try:
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #
-    #         # Delete the queue before to avoid messages in the queue on error.
-    #         self.test_data_transformer.rabbitmq.queue_delete(
-    #             self.test_rabbit_queue_name)
-    #
-    #         res = self.test_data_transformer.rabbitmq.queue_declare(
-    #             queue=self.test_rabbit_queue_name, durable=True,
-    #             exclusive=False, auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #         self.test_data_transformer.rabbitmq.queue_bind(
-    #             queue=self.test_rabbit_queue_name,
-    #             exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
-    #
-    #         self.test_data_transformer._send_heartbeat(self.test_heartbeat)
-    #
-    #         # By re-declaring the queue again we can get the number of messages
-    #         # in the queue.
-    #         res = self.test_data_transformer.rabbitmq.queue_declare(
-    #             queue=self.test_rabbit_queue_name, durable=True,
-    #             exclusive=False, auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-    #
-    #         # Check that the message received is actually the HB
-    #         _, _, body = self.test_data_transformer.rabbitmq.basic_get(
-    #             self.test_rabbit_queue_name)
-    #         self.assertEqual(self.test_heartbeat, json.loads(body))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # def test_load_state_successful_if_system_exists_in_redis_and_redis_online(
-    #         self) -> None:
-    #     # Save state to Redis first
-    #     save_system_to_redis(self.redis, self.test_system)
-    #
-    #     # Reset system to default values
-    #     self.test_system.reset()
-    #
-    #     # Load state
-    #     loaded_system = self.test_data_transformer.load_state(self.test_system)
-    #
-    #     self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
-    #     self.assertEqual(self.test_process_cpu_seconds_total,
-    #                      loaded_system.process_cpu_seconds_total)
-    #     self.assertEqual(self.test_process_memory_usage,
-    #                      loaded_system.process_memory_usage)
-    #     self.assertEqual(self.test_virtual_memory_usage,
-    #                      loaded_system.virtual_memory_usage)
-    #     self.assertEqual(self.test_open_file_descriptors,
-    #                      loaded_system.open_file_descriptors)
-    #     self.assertEqual(self.test_system_cpu_usage,
-    #                      loaded_system.system_cpu_usage)
-    #     self.assertEqual(self.test_system_ram_usage,
-    #                      loaded_system.system_ram_usage)
-    #     self.assertEqual(self.test_system_storage_usage,
-    #                      loaded_system.system_storage_usage)
-    #     self.assertEqual(self.test_network_transmit_bytes_per_second,
-    #                      loaded_system.network_transmit_bytes_per_second)
-    #     self.assertEqual(self.test_network_transmit_bytes_total,
-    #                      loaded_system.network_transmit_bytes_total)
-    #     self.assertEqual(self.test_network_receive_bytes_per_second,
-    #                      loaded_system.network_receive_bytes_per_second)
-    #     self.assertEqual(self.test_network_receive_bytes_total,
-    #                      loaded_system.network_receive_bytes_total)
-    #     self.assertEqual(self.test_disk_io_time_seconds_in_interval,
-    #                      loaded_system.disk_io_time_seconds_in_interval)
-    #     self.assertEqual(self.test_disk_io_time_seconds_total,
-    #                      loaded_system.disk_io_time_seconds_total)
-    #     self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
-    #
-    # def test_load_state_keeps_same_state_if_system_in_redis_and_redis_offline(
-    #         self) -> None:
-    #     # Save state to Redis first
-    #     save_system_to_redis(self.redis, self.test_system)
-    #
-    #     # Reset system to default values
-    #     self.test_system.reset()
-    #
-    #     # Set the _do_not_use_if_recently_went_down function to return True
-    #     # as if redis is down
-    #     self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
-    #         lambda: True
-    #
-    #     # Load state
-    #     loaded_system = self.test_data_transformer.load_state(self.test_system)
-    #
-    #     self.assertEqual(None, loaded_system.went_down_at)
-    #     self.assertEqual(None, loaded_system.process_cpu_seconds_total)
-    #     self.assertEqual(None, loaded_system.process_memory_usage)
-    #     self.assertEqual(None, loaded_system.virtual_memory_usage)
-    #     self.assertEqual(None, loaded_system.open_file_descriptors)
-    #     self.assertEqual(None, loaded_system.system_cpu_usage)
-    #     self.assertEqual(None, loaded_system.system_ram_usage)
-    #     self.assertEqual(None, loaded_system.system_storage_usage)
-    #     self.assertEqual(None, loaded_system.network_transmit_bytes_per_second)
-    #     self.assertEqual(None, loaded_system.network_transmit_bytes_total)
-    #     self.assertEqual(None, loaded_system.network_receive_bytes_per_second)
-    #     self.assertEqual(None, loaded_system.network_receive_bytes_total)
-    #     self.assertEqual(None, loaded_system.disk_io_time_seconds_in_interval)
-    #     self.assertEqual(None, loaded_system.disk_io_time_seconds_total)
-    #     self.assertEqual(None, loaded_system.last_monitored)
-    #
-    # def test_load_state_keeps_same_state_if_sys_not_in_redis_and_redis_online(
-    #         self) -> None:
-    #     # Clean test db
-    #     self.redis.delete_all()
-    #
-    #     # Load state
-    #     loaded_system = self.test_data_transformer.load_state(self.test_system)
-    #
-    #     self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
-    #     self.assertEqual(self.test_process_cpu_seconds_total,
-    #                      loaded_system.process_cpu_seconds_total)
-    #     self.assertEqual(self.test_process_memory_usage,
-    #                      loaded_system.process_memory_usage)
-    #     self.assertEqual(self.test_virtual_memory_usage,
-    #                      loaded_system.virtual_memory_usage)
-    #     self.assertEqual(self.test_open_file_descriptors,
-    #                      loaded_system.open_file_descriptors)
-    #     self.assertEqual(self.test_system_cpu_usage,
-    #                      loaded_system.system_cpu_usage)
-    #     self.assertEqual(self.test_system_ram_usage,
-    #                      loaded_system.system_ram_usage)
-    #     self.assertEqual(self.test_system_storage_usage,
-    #                      loaded_system.system_storage_usage)
-    #     self.assertEqual(self.test_network_transmit_bytes_per_second,
-    #                      loaded_system.network_transmit_bytes_per_second)
-    #     self.assertEqual(self.test_network_transmit_bytes_total,
-    #                      loaded_system.network_transmit_bytes_total)
-    #     self.assertEqual(self.test_network_receive_bytes_per_second,
-    #                      loaded_system.network_receive_bytes_per_second)
-    #     self.assertEqual(self.test_network_receive_bytes_total,
-    #                      loaded_system.network_receive_bytes_total)
-    #     self.assertEqual(self.test_disk_io_time_seconds_in_interval,
-    #                      loaded_system.disk_io_time_seconds_in_interval)
-    #     self.assertEqual(self.test_disk_io_time_seconds_total,
-    #                      loaded_system.disk_io_time_seconds_total)
-    #     self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
-    #
-    # def test_load_state_keeps_same_state_if_system_not_in_redis_and_redis_off(
-    #         self) -> None:
-    #     # Clean test db
-    #     self.redis.delete_all()
-    #
-    #     # Set the _do_not_use_if_recently_went_down function to return True
-    #     # as if redis is down
-    #     self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
-    #         lambda: True
-    #
-    #     # Load state
-    #     loaded_system = self.test_data_transformer.load_state(self.test_system)
-    #
-    #     self.assertEqual(self.test_went_down_at, loaded_system.went_down_at)
-    #     self.assertEqual(self.test_process_cpu_seconds_total,
-    #                      loaded_system.process_cpu_seconds_total)
-    #     self.assertEqual(self.test_process_memory_usage,
-    #                      loaded_system.process_memory_usage)
-    #     self.assertEqual(self.test_virtual_memory_usage,
-    #                      loaded_system.virtual_memory_usage)
-    #     self.assertEqual(self.test_open_file_descriptors,
-    #                      loaded_system.open_file_descriptors)
-    #     self.assertEqual(self.test_system_cpu_usage,
-    #                      loaded_system.system_cpu_usage)
-    #     self.assertEqual(self.test_system_ram_usage,
-    #                      loaded_system.system_ram_usage)
-    #     self.assertEqual(self.test_system_storage_usage,
-    #                      loaded_system.system_storage_usage)
-    #     self.assertEqual(self.test_network_transmit_bytes_per_second,
-    #                      loaded_system.network_transmit_bytes_per_second)
-    #     self.assertEqual(self.test_network_transmit_bytes_total,
-    #                      loaded_system.network_transmit_bytes_total)
-    #     self.assertEqual(self.test_network_receive_bytes_per_second,
-    #                      loaded_system.network_receive_bytes_per_second)
-    #     self.assertEqual(self.test_network_receive_bytes_total,
-    #                      loaded_system.network_receive_bytes_total)
-    #     self.assertEqual(self.test_disk_io_time_seconds_in_interval,
-    #                      loaded_system.disk_io_time_seconds_in_interval)
-    #     self.assertEqual(self.test_disk_io_time_seconds_total,
-    #                      loaded_system.disk_io_time_seconds_total)
-    #     self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
+    def test_str_returns_transformer_name(self) -> None:
+        self.assertEqual(self.transformer_name, str(self.test_data_transformer))
+
+    def test_transformer_name_returns_transformer_name(self) -> None:
+        self.assertEqual(self.transformer_name,
+                         self.test_data_transformer.transformer_name)
+
+    def test_redis_returns_transformer_redis_instance(self) -> None:
+        self.assertEqual(self.redis, self.test_data_transformer.redis)
+
+    def test_state_returns_the_systems_state(self) -> None:
+        self.test_data_transformer._state = self.test_state
+        self.assertEqual(self.test_state, self.test_data_transformer.state)
+
+    def test_publishing_queue_returns_publishing_queue(self) -> None:
+        self.test_data_transformer._publishing_queue = \
+            self.test_publishing_queue
+        self.assertEqual(self.test_publishing_queue,
+                         self.test_data_transformer.publishing_queue)
+
+    def test_publishing_queue_has_the_correct_max_size(self) -> None:
+        self.assertEqual(self.max_queue_size,
+                         self.test_data_transformer.publishing_queue.maxsize)
+
+    @mock.patch.object(RabbitMQApi, "start_consuming")
+    def test_listen_for_data_calls_start_consuming(
+            self, mock_start_consuming) -> None:
+        mock_start_consuming.return_value = None
+        self.test_data_transformer._listen_for_data()
+        mock_start_consuming.assert_called_once()
+
+    @mock.patch.object(RabbitMQApi, "basic_qos")
+    def test_initialise_rabbit_initializes_everything_as_expected(
+            self, mock_basic_qos) -> None:
+        # To make sure that there is no connection/channel already established
+        self.assertIsNone(self.rabbitmq.connection)
+        self.assertIsNone(self.rabbitmq.channel)
+
+        # To make sure that the exchanges and queues have not already been
+        # declared
+        connect_to_rabbit(self.rabbitmq)
+        self.test_data_transformer.rabbitmq.queue_delete(
+            CL_NODE_DT_INPUT_QUEUE_NAME)
+        self.test_data_transformer.rabbitmq.exchange_delete(
+            HEALTH_CHECK_EXCHANGE)
+        self.test_data_transformer.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
+        self.test_data_transformer.rabbitmq.exchange_delete(STORE_EXCHANGE)
+        self.test_data_transformer.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+        self.rabbitmq.disconnect()
+
+        self.test_data_transformer._initialise_rabbitmq()
+
+        # Perform checks that the connection has been opened and marked as open,
+        # that the delivery confirmation variable is set and basic_qos called
+        # successfully.
+        self.assertTrue(self.test_data_transformer.rabbitmq.is_connected)
+        self.assertTrue(self.test_data_transformer.rabbitmq.connection.is_open)
+        self.assertTrue(
+            self.test_data_transformer.rabbitmq.channel._delivery_confirmation)
+        mock_basic_qos.assert_called_once_with(
+            prefetch_count=round(self.max_queue_size / 5))
+
+        # Check whether the producing exchanges have been created by using
+        # passive=True. If this check fails an exception is raised
+        # automatically.
+        self.test_data_transformer.rabbitmq.exchange_declare(STORE_EXCHANGE,
+                                                             passive=True)
+        self.test_data_transformer.rabbitmq.exchange_declare(ALERT_EXCHANGE,
+                                                             passive=True)
+        self.test_data_transformer.rabbitmq.exchange_declare(
+            HEALTH_CHECK_EXCHANGE, passive=True)
+
+        # Check whether the consuming exchanges and queues have been creating by
+        # sending messages with the same routing keys as for the bindings. We
+        # will also check if the size of the queues is 0 to confirm that
+        # basic_consume was called (it will store the msg in the component
+        # memory immediately). If one of the exchanges or queues is not created
+        # or basic_consume is not called, then either an exception will be
+        # thrown or the queue size would be 1 respectively. Note when deleting
+        # the exchanges in the beginning we also released every binding, hence
+        # there is no other queue binded with the same routing key to any
+        # exchange at this point.
+        self.test_data_transformer.rabbitmq.basic_publish_confirm(
+            exchange=RAW_DATA_EXCHANGE,
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+
+        # Re-declare queue to get the number of messages
+        res = self.test_data_transformer.rabbitmq.queue_declare(
+            CL_NODE_DT_INPUT_QUEUE_NAME, False, True, False, False)
+        self.assertEqual(0, res.method.message_count)
+
+    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones set by send_heartbeat, and checks that the
+        # heartbeat is received
+        self.test_data_transformer._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_data_transformer.rabbitmq.queue_delete(
+            self.test_rabbit_queue_name)
+
+        res = self.test_data_transformer.rabbitmq.queue_declare(
+            queue=self.test_rabbit_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_data_transformer.rabbitmq.queue_bind(
+            queue=self.test_rabbit_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+
+        self.test_data_transformer._send_heartbeat(self.test_heartbeat)
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_data_transformer.rabbitmq.queue_declare(
+            queue=self.test_rabbit_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the HB
+        _, _, body = self.test_data_transformer.rabbitmq.basic_get(
+            self.test_rabbit_queue_name)
+        self.assertEqual(self.test_heartbeat, json.loads(body))
+
+    def test_load_state_successful_if_cl_node_exists_in_redis_and_redis_online(
+            self) -> None:
+        # We will test this for when transformed data has been already stored in
+        # redis and for when default values have been stored in redis.
+
+        # Test for when transformed data is stored in redis
+        # Clean test db
+        self.redis.delete_all()
+
+        # Save state to Redis first
+        save_chainlink_node_to_redis(self.redis, self.loaded_cl_node_trans_data)
+
+        # Reset chainlink node to default values to detect the loading
+        self.test_chainlink_node.reset()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_trans_data, loaded_cl_node)
+
+        # Now for when default values are stored in redis. At this point
+        # self.test_chainlink_node will contain the original data due to the
+        # loaded metrics.
+        self.redis.delete_all()
+
+        # Store default data
+        save_chainlink_node_to_redis(self.redis,
+                                     self.loaded_cl_node_default_data)
+
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_default_data, loaded_cl_node)
+
+        # Clean test db
+        self.redis.delete_all()
+
+    def test_load_state_keeps_same_state_if_cl_node_in_redis_and_redis_offline(
+            self) -> None:
+        # In this test we will check for when redis has transformed data and
+        # default data is stored in the state, and vice-versa.
+
+        # Set the _do_not_use_if_recently_went_down function to return True
+        # as if redis is down
+        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
+            lambda: True
+
+        # First test for when redis has default values, and the state has
+        # transformed metrics
+        # Clean test db
+        self.redis.delete_all()
+
+        # Save state to Redis first.
+        save_chainlink_node_to_redis(self.redis,
+                                     self.loaded_cl_node_default_data)
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_trans_data, loaded_cl_node)
+
+        # Now test for when redis has transformed data values, and the state is
+        # default
+        # Clean test db
+        self.redis.delete_all()
+
+        # Save state to Redis first
+        save_chainlink_node_to_redis(self.redis, self.loaded_cl_node_trans_data)
+
+        # Reset cl_node to default values
+        self.test_chainlink_node.reset()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_default_data, loaded_cl_node)
+
+        # Clean test db
+        self.redis.delete_all()
+
+    def test_load_state_keeps_same_state_if_node_not_in_redis_and_redis_online(
+            self) -> None:
+        # We will perform this test for both when the current state has default
+        # entries, and for when it has transformed data
+
+        # Test for when the state contains transformed data
+        # Clean test db
+        self.redis.delete_all()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_trans_data, loaded_cl_node)
+
+        # Test for when the state contains default data
+        # Clean test db
+        self.redis.delete_all()
+        self.test_chainlink_node.reset()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_default_data, loaded_cl_node)
+
+        # Clean test db
+        self.redis.delete_all()
+
+    def test_load_state_keeps_same_state_if_cl_node_not_in_redis_and_redis_off(
+            self) -> None:
+        # We will perform this test for both when the current state has default
+        # entries, and for when it has transformed data
+
+        # Set the _do_not_use_if_recently_went_down function to return True
+        # as if redis is down
+        self.test_data_transformer.redis._do_not_use_if_recently_went_down = \
+            lambda: True
+
+        # Test for when the state contains transformed data
+        # Clean test db
+        self.redis.delete_all()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_trans_data, loaded_cl_node)
+
+        # Test for when the state contains default data
+        # Clean test db
+        self.redis.delete_all()
+        self.test_chainlink_node.reset()
+
+        # Load state
+        loaded_cl_node = self.test_data_transformer.load_state(
+            self.test_chainlink_node)
+        self.assertEqual(self.loaded_cl_node_default_data, loaded_cl_node)
+
+        # Clean test db
+        self.redis.delete_all()
+
     #
     # def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
     #         self) -> None:

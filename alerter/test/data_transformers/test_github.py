@@ -404,6 +404,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
     def test_load_state_successful_if_repo_exists_in_redis_and_redis_online(
             self) -> None:
+        # Clean test db
+        self.redis.delete_all()
+
         # Save state to Redis first
         save_github_repo_to_redis(self.redis, self.test_repo)
 
@@ -416,8 +419,14 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_no_of_releases, loaded_repo.no_of_releases)
         self.assertEqual(self.test_last_monitored, loaded_repo.last_monitored)
 
+        # Clean test db
+        self.redis.delete_all()
+
     def test_load_state_keeps_same_state_if_repo_in_redis_and_redis_offline(
             self) -> None:
+        # Clean test db
+        self.redis.delete_all()
+
         # Save state to Redis first
         save_github_repo_to_redis(self.redis, self.test_repo)
 
@@ -435,6 +444,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
         self.assertEqual(None, loaded_repo.no_of_releases)
         self.assertEqual(None, loaded_repo.last_monitored)
 
+        # Clean test db
+        self.redis.delete_all()
+
     def test_load_state_keeps_same_state_if_repo_not_in_redis_and_redis_online(
             self) -> None:
         # Clean test db
@@ -445,6 +457,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
         self.assertEqual(self.test_no_of_releases, loaded_repo.no_of_releases)
         self.assertEqual(self.test_last_monitored, loaded_repo.last_monitored)
+
+        # Clean test db
+        self.redis.delete_all()
 
     def test_load_state_keeps_same_state_if_repo_not_in_redis_and_redis_off(
             self) -> None:
@@ -461,6 +476,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
 
         self.assertEqual(self.test_no_of_releases, loaded_repo.no_of_releases)
         self.assertEqual(self.test_last_monitored, loaded_repo.last_monitored)
+
+        # Clean test db
+        self.redis.delete_all()
 
     def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
             self) -> None:

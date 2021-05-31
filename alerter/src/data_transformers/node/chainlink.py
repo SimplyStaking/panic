@@ -114,7 +114,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else redis_total_block_headers_received.decode("utf-8")
         total_block_headers_received = convert_to_int(
             redis_total_block_headers_received, None)
-        cl_node.set_total_block_headers_dropped(total_block_headers_received)
+        cl_node.set_total_block_headers_received(total_block_headers_received)
 
         # Load total_block_headers_dropped from Redis
         state_total_block_headers_dropped = cl_node.total_block_headers_dropped
@@ -248,8 +248,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             redis_hash,
             Keys.get_cl_node_last_prometheus_source_used(cl_node_id),
             bytes(str(state_last_prometheus_source_used), 'utf-8'))
-        last_prometheus_source_used = redis_last_prometheus_source_used.decode(
-            'utf-8')
+        last_prometheus_source_used = None if \
+            redis_last_prometheus_source_used is None \
+            or redis_last_prometheus_source_used == b'None' \
+            else redis_last_prometheus_source_used.decode("utf-8")
         cl_node.set_last_prometheus_source_used(last_prometheus_source_used)
 
         # Load last_monitored_prometheus from Redis

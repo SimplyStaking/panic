@@ -1,3 +1,4 @@
+import json
 from time import sleep
 from unittest.mock import Mock
 
@@ -6,6 +7,7 @@ import pika.exceptions
 from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
@@ -164,3 +166,45 @@ def save_github_repo_to_redis(redis: RedisApi, github_repo: GitHubRepo) -> None:
         Keys.get_github_last_monitored(repo_id):
             str(github_repo.last_monitored),
     })
+
+
+def save_chainlink_node_to_redis(redis: RedisApi,
+                                 cl_node: ChainlinkNode) -> None:
+    redis_hash = Keys.get_hash_parent(cl_node.parent_id)
+    cl_node_id = cl_node.node_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_cl_node_went_down_at(cl_node_id): str(cl_node.went_down_at),
+        Keys.get_cl_node_current_height(cl_node_id):
+            str(cl_node.current_height),
+        Keys.get_cl_node_eth_blocks_in_queue(cl_node_id):
+            str(cl_node.eth_blocks_in_queue),
+        Keys.get_cl_node_total_block_headers_received(cl_node_id):
+            str(cl_node.total_block_headers_received),
+        Keys.get_cl_node_total_block_headers_dropped(cl_node_id):
+            str(cl_node.total_block_headers_dropped),
+        Keys.get_cl_node_no_of_active_jobs(cl_node_id):
+            str(cl_node.no_of_active_jobs),
+        Keys.get_cl_node_max_pending_tx_delay(cl_node_id):
+            str(cl_node.max_pending_tx_delay),
+        Keys.get_cl_node_process_start_time_seconds(cl_node_id):
+            str(cl_node.process_start_time_seconds),
+        Keys.get_cl_node_total_gas_bumps(cl_node_id):
+            str(cl_node.total_gas_bumps),
+        Keys.get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id):
+            str(cl_node.total_gas_bumps_exceeds_limit),
+        Keys.get_cl_node_no_of_unconfirmed_txs(cl_node_id):
+            str(cl_node.no_of_unconfirmed_txs),
+        Keys.get_cl_node_total_errored_job_runs(cl_node_id):
+            str(cl_node.total_errored_job_runs),
+        Keys.get_cl_node_current_gas_price_info(cl_node_id):
+            'None' if cl_node.current_gas_price_info is None else json.dumps(
+                cl_node.current_gas_price_info),
+        Keys.get_cl_node_eth_balance_info(cl_node_id):
+            json.dumps(cl_node.eth_balance_info),
+        Keys.get_cl_node_last_prometheus_source_used(cl_node_id):
+            str(cl_node.last_prometheus_source_used),
+        Keys.get_cl_node_last_monitored_prometheus(cl_node_id):
+            str(cl_node.last_monitored_prometheus)
+    })
+
+    # TODO: Note we must store metrics like this in the data store.

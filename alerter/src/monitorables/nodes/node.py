@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from typing import Any
 
 
 class Node(ABC):
@@ -9,6 +10,9 @@ class Node(ABC):
 
     def __str__(self) -> str:
         return self._node_name
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def node_name(self) -> str:
