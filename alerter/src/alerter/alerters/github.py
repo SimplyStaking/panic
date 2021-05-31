@@ -99,12 +99,16 @@ class GithubAlerter(Alerter):
                 current = data['no_of_releases']['current']
                 previous = data['no_of_releases']['previous']
                 if previous is not None and int(current) > int(previous):
-                    for i in range(0, current - previous):
+                    no_of_new_releases = int(current) - int(previous)
+                    for i in range(0, no_of_new_releases):
+                        # Index 0 is the latest release, thus first raise alerts
+                        # for old releases.
                         alert = NewGitHubReleaseAlert(
                             meta['repo_name'],
-                            data['releases'][str(i)]['release_name'],
-                            data['releases'][str(i)]['tag_name'],
-                            Severity.INFO.value,
+                            data['releases'][str(no_of_new_releases - i - 1)][
+                                'release_name'],
+                            data['releases'][str(no_of_new_releases - i - 1)][
+                                'tag_name'], Severity.INFO.value,
                             meta['last_monitored'], meta['repo_parent_id'],
                             meta['repo_id']
                         )

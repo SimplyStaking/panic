@@ -15,6 +15,7 @@ Change the contents of this file to this:
 - Web-Installer visually updated to look better
 - Web-Installer Chainlink/DockerHub/Slack have been integrated for the setup process
 - Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
+- Fixed issue with GitHub alerter raising new release alerts in reverse order for multiple releases.
 
 ## 0.1.2
 
