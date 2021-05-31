@@ -18,7 +18,8 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
     CL_NODE_DT_INPUT_QUEUE_NAME, CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
-from src.utils.exceptions import (PANICException, NodeIsDownException)
+from src.utils.exceptions import (PANICException, NodeIsDownException,
+                                  ReceivedUnexpectedDataException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
                               delete_exchange_if_exists, delete_queue_if_exists,
                               save_chainlink_node_to_redis)
@@ -127,45 +128,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node.set_last_monitored_prometheus(
             self.test_last_monitored_prometheus)
 
-        # Loading objects
-        self.loaded_cl_node_default_data = ChainlinkNode(
-            self.test_chainlink_node_name, self.test_chainlink_node_id,
-            self.test_chainlink_node_parent_id)
-        self.loaded_cl_node_trans_data = ChainlinkNode(
-            self.test_chainlink_node_name, self.test_chainlink_node_id,
-            self.test_chainlink_node_parent_id)
-        self.loaded_cl_node_trans_data.set_went_down_at(self.test_went_down_at)
-        self.loaded_cl_node_trans_data.set_current_height(
-            self.test_current_height)
-        self.loaded_cl_node_trans_data.set_eth_blocks_in_queue(
-            self.test_eth_blocks_in_queue)
-        self.loaded_cl_node_trans_data.set_total_block_headers_received(
-            self.test_total_block_headers_received)
-        self.loaded_cl_node_trans_data.set_total_block_headers_dropped(
-            self.test_total_block_headers_dropped)
-        self.loaded_cl_node_trans_data.set_no_of_active_jobs(
-            self.test_no_of_active_jobs)
-        self.loaded_cl_node_trans_data.set_max_pending_tx_delay(
-            self.test_max_pending_tx_delay)
-        self.loaded_cl_node_trans_data.set_process_start_time_seconds(
-            self.test_process_start_time_seconds)
-        self.loaded_cl_node_trans_data.set_total_gas_bumps(
-            self.test_total_gas_bumps)
-        self.loaded_cl_node_trans_data.set_total_gas_bumps_exceeds_limit(
-            self.test_total_gas_bumps_exceeds_limit)
-        self.loaded_cl_node_trans_data.set_no_of_unconfirmed_txs(
-            self.test_no_of_unconfirmed_txs)
-        self.loaded_cl_node_trans_data.set_total_errored_job_runs(
-            self.test_total_errored_job_runs)
-        self.loaded_cl_node_trans_data.set_current_gas_price_info(
-            self.test_current_gas_price_info['percentile'],
-            self.test_current_gas_price_info['price'])
-        self.loaded_cl_node_trans_data.set_eth_balance_info(
-            self.test_eth_balance_info)
-        self.loaded_cl_node_trans_data.set_last_prometheus_source_used(
-            self.test_last_prometheus_source_used)
-        self.loaded_cl_node_trans_data.set_last_monitored_prometheus(
-            self.test_last_monitored_prometheus)
+        # Whenever we need to use a new state we use the below
         self.test_chainlink_node_new = ChainlinkNode(
             self.test_chainlink_node_name, self.test_chainlink_node_id,
             self.test_chainlink_node_parent_id)
@@ -226,6 +189,46 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_last_prometheus_source_used_new)
         self.test_chainlink_node_new.set_last_monitored_prometheus(
             self.test_last_monitored_prometheus_new)
+
+        # Loading objects
+        self.loaded_cl_node_default_data = ChainlinkNode(
+            self.test_chainlink_node_name, self.test_chainlink_node_id,
+            self.test_chainlink_node_parent_id)
+        self.loaded_cl_node_trans_data = ChainlinkNode(
+            self.test_chainlink_node_name, self.test_chainlink_node_id,
+            self.test_chainlink_node_parent_id)
+        self.loaded_cl_node_trans_data.set_went_down_at(self.test_went_down_at)
+        self.loaded_cl_node_trans_data.set_current_height(
+            self.test_current_height)
+        self.loaded_cl_node_trans_data.set_eth_blocks_in_queue(
+            self.test_eth_blocks_in_queue)
+        self.loaded_cl_node_trans_data.set_total_block_headers_received(
+            self.test_total_block_headers_received)
+        self.loaded_cl_node_trans_data.set_total_block_headers_dropped(
+            self.test_total_block_headers_dropped)
+        self.loaded_cl_node_trans_data.set_no_of_active_jobs(
+            self.test_no_of_active_jobs)
+        self.loaded_cl_node_trans_data.set_max_pending_tx_delay(
+            self.test_max_pending_tx_delay)
+        self.loaded_cl_node_trans_data.set_process_start_time_seconds(
+            self.test_process_start_time_seconds)
+        self.loaded_cl_node_trans_data.set_total_gas_bumps(
+            self.test_total_gas_bumps)
+        self.loaded_cl_node_trans_data.set_total_gas_bumps_exceeds_limit(
+            self.test_total_gas_bumps_exceeds_limit)
+        self.loaded_cl_node_trans_data.set_no_of_unconfirmed_txs(
+            self.test_no_of_unconfirmed_txs)
+        self.loaded_cl_node_trans_data.set_total_errored_job_runs(
+            self.test_total_errored_job_runs)
+        self.loaded_cl_node_trans_data.set_current_gas_price_info(
+            self.test_current_gas_price_info['percentile'],
+            self.test_current_gas_price_info['price'])
+        self.loaded_cl_node_trans_data.set_eth_balance_info(
+            self.test_eth_balance_info)
+        self.loaded_cl_node_trans_data.set_last_prometheus_source_used(
+            self.test_last_prometheus_source_used)
+        self.loaded_cl_node_trans_data.set_last_monitored_prometheus(
+            self.test_last_monitored_prometheus)
 
         # Transformed data examples
         self.transformed_data_example_result_all = {
@@ -617,88 +620,81 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         # Clean test db
         self.redis.delete_all()
 
-    #
-    # def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
-    #         self) -> None:
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_data_transformer._update_state,
-    #                       self.invalid_transformed_data)
-    #
-    # def test_update_state_leaves_same_state_if_no_result_or_err_in_trans_data(
-    #         self) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     expected_state = copy.deepcopy(self.test_state)
-    #
-    #     # First confirm that an exception is still raised
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_data_transformer._update_state,
-    #                       self.invalid_transformed_data)
-    #
-    #     # Check that there are the same keys in the state
-    #     self.assertEqual(expected_state.keys(),
-    #                      self.test_data_transformer.state.keys())
-    #
-    #     # Check that the stored system state has the same variable values. This
-    #     # must be done separately as otherwise the object's low level address
-    #     # will be compared
-    #     for system_id in expected_state.keys():
-    #         self.assertDictEqual(
-    #             expected_state[system_id].__dict__,
-    #             self.test_data_transformer.state[system_id].__dict__)
-    #
-    # @parameterized.expand([
-    #     ('result', 'self.transformed_data_example_result'),
-    #     ('error', 'self.transformed_data_example_downtime_error'),
-    # ])
-    # def test_update_state_raises_key_error_exception_if_keys_do_not_exist(
-    #         self, transformed_data_index: str, transformed_data: str) -> None:
-    #     invalid_transformed_data = copy.deepcopy(eval(transformed_data))
-    #
-    #     del invalid_transformed_data[transformed_data_index]['data']
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #
-    #     # First confirm that an exception is still raised
-    #     self.assertRaises(KeyError, self.test_data_transformer._update_state,
-    #                       invalid_transformed_data)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result', 'self.test_system_new_metrics',
-    #      True),
-    #     ('self.transformed_data_example_general_error', 'self.test_system',
-    #      True),
-    #     ('self.transformed_data_example_downtime_error',
-    #      'self.test_system_down', False),
-    # ])
-    # def test_update_state_updates_state_correctly_on_result_data(
-    #         self, transformed_data: str, expected_state: str,
-    #         system_expected_up: bool) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     self.test_data_transformer._state['dummy_id'] = self.test_data_str
-    #     old_state = copy.deepcopy(self.test_data_transformer._state)
-    #
-    #     self.test_data_transformer._update_state(eval(transformed_data))
-    #
-    #     # Check that there are the same keys in the state
-    #     self.assertEqual(old_state.keys(),
-    #                      self.test_data_transformer.state.keys())
-    #
-    #     # Check that the systems not in question are not modified
-    #     self.assertEqual(self.test_data_str,
-    #                      self.test_data_transformer._state['dummy_id'])
-    #
-    #     # Check that the system's state values have been modified correctly
-    #     self.assertDictEqual(
-    #         eval(expected_state).__dict__,
-    #         self.test_data_transformer._state[self.test_system_id].__dict__)
-    #
-    #     # Check that the system is marked as up/down accordingly
-    #     if system_expected_up:
-    #         self.assertFalse(
-    #             self.test_data_transformer._state[self.test_system_id].is_down)
-    #     else:
-    #         self.assertTrue(
-    #             self.test_data_transformer._state[self.test_system_id].is_down)
-    #
+    def test_update_state_raises_unexpected_data_exception_if_no_source_enabled(
+            self) -> None:
+        self.transformed_data_example_result_all['prometheus'] = {}
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._update_state,
+                          self.transformed_data_example_result_all)
+
+    def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
+            self) -> None:
+        self.transformed_data_example_result_all['prometheus']['bad_key'] = \
+            copy.deepcopy(self.transformed_data_example_result_all[
+                              'prometheus']['result'])
+        del self.transformed_data_example_result_all['prometheus']['result']
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._update_state,
+                          self.transformed_data_example_result_all)
+
+    def test_update_state_updates_state_correctly_if_result(self) -> None:
+        # We will perform this test for when we receive optionals None, and for
+        # when all metrics are enabled
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+        old_state = copy.deepcopy(self.test_data_transformer._state)
+
+        # First test for when all metrics are enabled
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_result_all)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(old_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the nodes not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        # Check that the nodes's state values have been modified correctly
+        self.assertEqual(
+            self.test_chainlink_node_new,
+            self.test_data_transformer._state[self.test_chainlink_node_id])
+
+        # Check that the node is marked as up
+        self.assertFalse(
+            self.test_data_transformer._state[
+                self.test_chainlink_node_id].is_down)
+
+        # Now test for when optionals are set to None
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_result_options_None)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(old_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the nodes not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        # Check that the nodes's state values have been modified correctly
+        self.test_chainlink_node_new.set_current_gas_price_info(None, None)
+        self.assertEqual(
+            self.test_chainlink_node_new,
+            self.test_data_transformer._state[self.test_chainlink_node_id])
+
+        # Check that the node is marked as up
+        self.assertFalse(
+            self.test_data_transformer._state[
+                self.test_chainlink_node_id].is_down)
+
+    def test_update_state_updates_state_correctly_if_error(self) -> None:
+        # Todo: We may need to refactor into one for this for both general and
+        #     : downtime, having dicts from the outside. The other we couldn't
+        #     : due to optionals None.
+        pass
+
     # @parameterized.expand([
     #     ('self.transformed_data_example_result',
     #      'self.transformed_data_example_result'),

@@ -289,7 +289,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.debug("Updating state ...")
 
         if transformed_data['prometheus']:
-            if 'result' in transformed_data:
+            if 'result' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['result'][
                     'meta_data']
                 metrics = transformed_data['prometheus']['result']['data']
@@ -325,15 +325,16 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 if metrics['current_gas_price_info'] is None:
                     node.set_current_gas_price_info(None, None)
                 else:
-                    node.set_current_gas_price_info(metrics['percentile'],
-                                                    metrics['price'])
+                    node.set_current_gas_price_info(
+                        metrics['current_gas_price_info']['percentile'],
+                        metrics['current_gas_price_info']['price'])
 
                 node.set_eth_balance_info(metrics['eth_balance_info'])
                 node.set_last_monitored_prometheus(meta_data['last_monitored'])
                 node.set_last_prometheus_source_used(
                     meta_data['last_source_used'])
                 node.set_as_up()
-            elif 'error' in transformed_data:
+            elif 'error' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['error']['meta_data']
                 error_code = transformed_data['prometheus']['error']['code']
                 node_id = meta_data['node_id']
