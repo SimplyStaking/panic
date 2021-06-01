@@ -636,19 +636,15 @@ class TestGitHubDataTransformer(unittest.TestCase):
                           raw_data)
 
     @parameterized.expand([
-        ('self.transformed_data_example_result',
-         'self.test_data_for_alerting_result',
+        ('self.test_data_for_alerting_result',
          'self.test_data_for_saving_result'),
         ('self.transformed_data_example_error',
-         'self.transformed_data_example_error',
          'self.transformed_data_example_error'),
     ])
     def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
-            self, transformed_data: str, data_for_alerting: str,
-            data_for_saving: str) -> None:
+            self, data_for_alerting: str, data_for_saving: str) -> None:
         self.test_data_transformer._place_latest_data_on_queue(
-            eval(transformed_data), eval(data_for_alerting),
-            eval(data_for_saving)
+            eval(data_for_alerting), eval(data_for_saving)
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
@@ -1090,10 +1086,9 @@ class TestGitHubDataTransformer(unittest.TestCase):
                                                          method, properties,
                                                          body_result)
             args, _ = mock_place_on_queue.call_args
-            self.assertDictEqual(self.transformed_data_example_result, args[0])
-            self.assertDictEqual(self.test_data_for_alerting_result, args[1])
-            self.assertDictEqual(self.test_data_for_saving_result, args[2])
-            self.assertEqual(3, len(args))
+            self.assertDictEqual(self.test_data_for_alerting_result, args[0])
+            self.assertDictEqual(self.test_data_for_saving_result, args[1])
+            self.assertEqual(2, len(args))
 
             self.test_data_transformer._process_raw_data(blocking_channel,
                                                          method, properties,
@@ -1101,8 +1096,7 @@ class TestGitHubDataTransformer(unittest.TestCase):
             args, _ = mock_place_on_queue.call_args
             self.assertDictEqual(self.transformed_data_example_error, args[0])
             self.assertDictEqual(self.transformed_data_example_error, args[1])
-            self.assertDictEqual(self.transformed_data_example_error, args[2])
-            self.assertEqual(3, len(args))
+            self.assertEqual(2, len(args))
 
             self.assertEqual(2, mock_place_on_queue.call_count)
         except Exception as e:

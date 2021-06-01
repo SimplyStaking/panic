@@ -8,6 +8,9 @@ from queue import Queue
 from unittest import mock
 
 import pika
+from freezegun import freeze_time
+from parameterized import parameterized
+from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
@@ -17,9 +20,10 @@ from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
     CL_NODE_DT_INPUT_QUEUE_NAME, CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
-    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException, NodeIsDownException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit, disconnect_from_rabbit,
                               delete_exchange_if_exists, delete_queue_if_exists,
                               save_chainlink_node_to_redis)
@@ -74,7 +78,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_state = {
             self.test_chainlink_node_id: self.test_chainlink_node
         }
-        self.test_went_down_at = 45.4
+        self.test_went_down_at = None
         self.test_current_height = 50000000000
         self.test_eth_blocks_in_queue = 3
         self.test_total_block_headers_received = 454545040
@@ -88,7 +92,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_total_errored_job_runs = 15
         self.test_current_gas_price_info = {
             'percentile': 50.5,
-            'price': 22,
+            'price': 22.0,
         }
         self.test_eth_balance_info = {
             'address1': {'balance': 34.4, 'latest_usage': 5.0},
@@ -146,12 +150,12 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_total_errored_job_runs_new = 16
         self.test_current_gas_price_info_new = {
             'percentile': 52.5,
-            'price': 24,
+            'price': 24.0,
         }
         self.test_eth_balance_info_new = {
-            'address1': {'balance': 44.4, 'latest_usage': 6.0},
-            'address2': {'balance': 45.0, 'latest_usage': 2.0},
-            'address3': {'balance': 76.0, 'latest_usage': 0.0},
+            'address1': {'balance': 44.4, 'latest_usage': 0.0},
+            'address2': {'balance': 39.0, 'latest_usage': 1.0},
+            'address3': {'balance': 50.0, 'latest_usage': 20.0},
             'address4': {'balance': 67.0, 'latest_usage': 0.0}
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
@@ -230,12 +234,114 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.loaded_cl_node_trans_data.set_last_monitored_prometheus(
             self.test_last_monitored_prometheus)
 
+        # Raw data examples
+        self.raw_data_example_result_all = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new,
+                    },
+                    'data': {
+                        'head_tracker_current_head':
+                            float(self.test_current_height_new),
+                        'head_tracker_heads_in_queue':
+                            float(self.test_eth_blocks_in_queue_new),
+                        'head_tracker_heads_received_total':
+                            float(self.test_total_block_headers_received_new),
+                        'head_tracker_num_heads_dropped_total':
+                            float(self.test_total_block_headers_dropped_new),
+                        'job_subscriber_subscriptions':
+                            float(self.test_no_of_active_jobs_new),
+                        'max_unconfirmed_blocks':
+                            float(self.test_max_pending_tx_delay_new),
+                        'process_start_time_seconds':
+                            self.test_process_start_time_seconds_new,
+                        'tx_manager_num_gas_bumps_total':
+                            float(self.test_total_gas_bumps_new),
+                        'tx_manager_gas_bump_exceeds_limit_total':
+                            float(self.test_total_gas_bumps_exceeds_limit_new),
+                        'unconfirmed_transactions':
+                            float(self.test_no_of_unconfirmed_txs_new),
+                        'run_status_update_total':
+                            self.test_total_errored_job_runs_new,
+                        'gas_updater_set_gas_price':
+                            {
+                                'percentile': '{}%'.format(
+                                    self.test_current_gas_price_info_new[
+                                        'percentile']),
+                                'price':
+                                    self.test_current_gas_price_info_new[
+                                        'price']
+                            },
+                        'eth_balance':
+                            {
+                                'address1':
+                                    self.test_eth_balance_info_new['address1'][
+                                        'balance'],
+                                'address2':
+                                    self.test_eth_balance_info_new['address2'][
+                                        'balance'],
+                                'address3':
+                                    self.test_eth_balance_info_new['address3'][
+                                        'balance'],
+                                'address4':
+                                    self.test_eth_balance_info_new['address4'][
+                                        'balance']
+                            },
+                    },
+                }
+            }
+        }
+        self.raw_data_example_result_options_None = copy.deepcopy(
+            self.raw_data_example_result_all)
+        self.raw_data_example_result_options_None['prometheus'][
+            'result']['data']['gas_updater_set_gas_price'] = None
+        self.raw_data_example_general_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_exception.message,
+                    'code': self.test_exception.code,
+                }
+            }
+        }
+        self.raw_data_example_downtime_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'monitor_name': self.test_monitor_name,
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used':
+                            self.test_last_prometheus_source_used_new,
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_node_is_down_exception.message,
+                    'code': self.test_node_is_down_exception.code,
+                }
+            }
+        }
+
         # Transformed data examples
         self.transformed_data_example_result_all = {
             'prometheus': {
                 'result': {
                     'meta_data': {
-                        'monitor_name': self.test_monitor_name,
                         'node_name': self.test_chainlink_node_name,
                         'last_source_used':
                             self.test_last_prometheus_source_used_new,
@@ -280,7 +386,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'prometheus': {
                 'error': {
                     'meta_data': {
-                        'monitor_name': self.test_monitor_name,
                         'node_name': self.test_chainlink_node_name,
                         'last_source_used':
                             self.test_last_prometheus_source_used_new,
@@ -297,7 +402,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'prometheus': {
                 'error': {
                     'meta_data': {
-                        'monitor_name': self.test_monitor_name,
                         'node_name': self.test_chainlink_node_name,
                         'last_source_used':
                             self.test_last_prometheus_source_used_new,
@@ -309,6 +413,135 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                     'code': self.test_node_is_down_exception.code,
                     'data': {
                         'went_down_at': self.test_last_monitored_prometheus_new
+                    }
+                }
+            }
+        }
+
+        # Processed data examples
+        self.processed_data_example_result_all = {
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used': {
+                            'current':
+                                self.test_last_prometheus_source_used_new,
+                            'previous': self.test_last_prometheus_source_used
+                        },
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'last_monitored':
+                            self.test_last_monitored_prometheus_new,
+                    },
+                    'data': {
+                        'went_down_at': {
+                            'current': self.test_went_down_at_new,
+                            'previous': self.test_went_down_at
+                        },
+                        'current_height': {
+                            'current': self.test_current_height_new,
+                            'previous': self.test_current_height
+                        },
+                        'eth_blocks_in_queue': {
+                            'current': self.test_eth_blocks_in_queue_new,
+                            'previous': self.test_eth_blocks_in_queue
+                        },
+                        'total_block_headers_received': {
+                            'current':
+                                self.test_total_block_headers_received_new,
+                            'previous': self.test_total_block_headers_received,
+                        },
+                        'total_block_headers_dropped': {
+                            'current':
+                                self.test_total_block_headers_dropped_new,
+                            'previous': self.test_total_block_headers_dropped,
+                        },
+                        'no_of_active_jobs': {
+                            'current': self.test_no_of_active_jobs_new,
+                            'previous': self.test_no_of_active_jobs,
+                        },
+                        'max_pending_tx_delay': {
+                            'current': self.test_max_pending_tx_delay_new,
+                            'previous': self.test_max_pending_tx_delay
+                        },
+                        'process_start_time_seconds': {
+                            'current': self.test_process_start_time_seconds_new,
+                            'previous': self.test_process_start_time_seconds,
+                        },
+                        'total_gas_bumps': {
+                            'current': self.test_total_gas_bumps_new,
+                            'previous': self.test_total_gas_bumps
+                        },
+                        'total_gas_bumps_exceeds_limit': {
+                            'current':
+                                self.test_total_gas_bumps_exceeds_limit_new,
+                            'previous': self.test_total_gas_bumps_exceeds_limit,
+                        },
+                        'no_of_unconfirmed_txs': {
+                            'current': self.test_no_of_unconfirmed_txs_new,
+                            'previous': self.test_no_of_unconfirmed_txs,
+                        },
+                        'total_errored_job_runs': {
+                            'current': self.test_total_errored_job_runs_new,
+                            'previous': self.test_total_errored_job_runs,
+                        },
+                        'current_gas_price_info': {
+                            'current': self.test_current_gas_price_info_new,
+                            'previous': self.test_current_gas_price_info
+                        },
+                        'eth_balance_info': {
+                            'current': self.test_eth_balance_info_new,
+                            'previous': self.test_eth_balance_info
+                        },
+                    },
+                }
+            }
+        }
+        self.processed_data_example_result_options_None = copy.deepcopy(
+            self.processed_data_example_result_all)
+        self.processed_data_example_result_options_None['prometheus'][
+            'result']['data']['current_gas_price_info']['current'] = None
+        self.processed_data_example_general_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used': {
+                            'current':
+                                self.test_last_prometheus_source_used_new,
+                            'previous': self.test_last_prometheus_source_used,
+                        },
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_exception.message,
+                    'code': self.test_exception.code,
+                }
+            }
+        }
+        self.processed_data_example_downtime_error = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used': {
+                            'current':
+                                self.test_last_prometheus_source_used_new,
+                            'previous': self.test_last_prometheus_source_used,
+                        },
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_chainlink_node_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_node_is_down_exception.message,
+                    'code': self.test_node_is_down_exception.code,
+                    'data': {
+                        'went_down_at': {
+                            'current': self.test_last_monitored_prometheus_new,
+                            'previous': None
+                        }
                     }
                 }
             }
@@ -354,6 +587,14 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.transformed_data_example_result_options_None = None
         self.transformed_data_example_general_error = None
         self.transformed_data_example_downtime_error = None
+        self.processed_data_example_result_all = None
+        self.processed_data_example_result_options_None = None
+        self.processed_data_example_general_error = None
+        self.processed_data_example_downtime_error = None
+        self.raw_data_example_result_all = None
+        self.raw_data_example_result_options_None = None
+        self.raw_data_example_general_error = None
+        self.raw_data_example_downtime_error = None
 
     def test_str_returns_transformer_name(self) -> None:
         self.assertEqual(self.transformer_name, str(self.test_data_transformer))
@@ -620,22 +861,15 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         # Clean test db
         self.redis.delete_all()
 
-    def test_update_state_raises_unexpected_data_exception_if_no_source_enabled(
-            self) -> None:
-        self.transformed_data_example_result_all['prometheus'] = {}
+    @parameterized.expand([
+        ({'prometheus': {}},),
+        ({'prometheus': 'bad_val'},),
+    ])
+    def test_update_state_raises_unexpected_data_exception_if_unexpected_data(
+            self, transformed_data) -> None:
         self.assertRaises(ReceivedUnexpectedDataException,
                           self.test_data_transformer._update_state,
-                          self.transformed_data_example_result_all)
-
-    def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
-            self) -> None:
-        self.transformed_data_example_result_all['prometheus']['bad_key'] = \
-            copy.deepcopy(self.transformed_data_example_result_all[
-                              'prometheus']['result'])
-        del self.transformed_data_example_result_all['prometheus']['result']
-        self.assertRaises(ReceivedUnexpectedDataException,
-                          self.test_data_transformer._update_state,
-                          self.transformed_data_example_result_all)
+                          transformed_data)
 
     def test_update_state_updates_state_correctly_if_result(self) -> None:
         # We will perform this test for when we receive optionals None, and for
@@ -689,1359 +923,935 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_data_transformer._state[
                 self.test_chainlink_node_id].is_down)
 
-    def test_update_state_updates_state_correctly_if_error(self) -> None:
-        # Todo: We may need to refactor into one for this for both general and
-        #     : downtime, having dicts from the outside. The other we couldn't
-        #     : due to optionals None.
-        pass
+    @parameterized.expand([
+        ('self.transformed_data_example_general_error', False,),
+        ('self.transformed_data_example_downtime_error', True,)
+    ])
+    def test_update_state_updates_state_correctly_if_error(
+            self, transformed_data_err, is_downtime_error) -> None:
+        transformed_data_eval = eval(transformed_data_err)
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+        old_state = copy.deepcopy(self.test_data_transformer._state)
 
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.transformed_data_example_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    # ])
-    # def test_process_transformed_data_for_saving_returns_expected_data(
-    #         self, transformed_data: str, expected_processed_data: str) -> None:
-    #     processed_data = \
-    #         self.test_data_transformer._process_transformed_data_for_saving(
-    #             eval(transformed_data))
-    #     self.assertDictEqual(eval(expected_processed_data), processed_data)
-    #
-    # def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
-    #         self) -> None:
-    #     self.assertRaises(
-    #         ReceivedUnexpectedDataException,
-    #         self.test_data_transformer._process_transformed_data_for_saving,
-    #         self.invalid_transformed_data)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.test_data_for_alerting_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    #     ('self.transformed_data_example_downtime_error',
-    #      'self.test_data_for_alerting_down_error'),
-    # ])
-    # def test_process_transformed_data_for_alerting_returns_expected_data(
-    #         self, transformed_data: str, expected_processed_data: str) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     actual_data = \
-    #         self.test_data_transformer._process_transformed_data_for_alerting(
-    #             eval(transformed_data))
-    #     self.assertDictEqual(eval(expected_processed_data), actual_data)
-    #
-    # def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
-    #         self) -> None:
-    #     self.assertRaises(
-    #         ReceivedUnexpectedDataException,
-    #         self.test_data_transformer._process_transformed_data_for_alerting,
-    #         self.invalid_transformed_data)
-    #
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_alerting")
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_saving")
-    # def test_transform_data_returns_expected_data_if_result_and_first_mon_round(
-    #         self, mock_process_for_saving, mock_process_for_alerting) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     self.test_data_transformer._state[self.test_system_id].reset()
-    #     mock_process_for_saving.return_value = {'key_1': 'val1'}
-    #     mock_process_for_alerting.return_value = {'key_2': 'val2'}
-    #
-    #     trans_data, data_for_alerting, data_for_saving = \
-    #         self.test_data_transformer._transform_data(
-    #             self.raw_data_example_result)
-    #
-    #     # Set metrics which need more than 1 monitoring round to be computed
-    #     # to None.
-    #     expected_trans_data = copy.deepcopy(
-    #         self.transformed_data_example_result)
-    #     expected_trans_data['result']['data'][
-    #         'network_transmit_bytes_per_second'] = None
-    #     expected_trans_data['result']['data'][
-    #         'network_receive_bytes_per_second'] = None
-    #     expected_trans_data['result']['data'][
-    #         'disk_io_time_seconds_in_interval'] = None
-    #
-    #     self.assertDictEqual(expected_trans_data, trans_data)
-    #     self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-    #     self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-    #
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_alerting")
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_saving")
-    # def test_transform_data_ret_expected_data_if_result_and_second_mon_round(
-    #         self, mock_process_for_saving, mock_process_for_alerting) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     mock_process_for_saving.return_value = {'key_1': 'val1'}
-    #     mock_process_for_alerting.return_value = {'key_2': 'val2'}
-    #
-    #     trans_data, data_for_alerting, data_for_saving = \
-    #         self.test_data_transformer._transform_data(
-    #             self.raw_data_example_result)
-    #
-    #     self.assertDictEqual(self.transformed_data_example_result, trans_data)
-    #     self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-    #     self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-    #
-    # @parameterized.expand([
-    #     ('self.raw_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    #     ('self.raw_data_example_downtime_error',
-    #      'self.transformed_data_example_downtime_error'),
-    # ])
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_alerting")
-    # @mock.patch.object(SystemDataTransformer,
-    #                    "_process_transformed_data_for_saving")
-    # def test_transform_data_returns_expected_data_if_error(
-    #         self, raw_data: str, expected_processed_data: str,
-    #         mock_process_for_saving, mock_process_for_alerting) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     mock_process_for_saving.return_value = {'key_1': 'val1'}
-    #     mock_process_for_alerting.return_value = {'key_2': 'val2'}
-    #
-    #     trans_data, data_for_alerting, data_for_saving = \
-    #         self.test_data_transformer._transform_data(eval(raw_data))
-    #
-    #     self.assertDictEqual(eval(expected_processed_data), trans_data)
-    #     self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-    #     self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-    #
-    # def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
-    #         self) -> None:
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_data_transformer._transform_data,
-    #                       self.invalid_transformed_data)
-    #
-    # def test_transform_data_raises_key_error_if_key_does_not_exist_result(
-    #         self) -> None:
-    #     # Test for non first monitoring round data
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     raw_data = copy.deepcopy(self.raw_data_example_result)
-    #     del raw_data['result']['meta_data']['time']
-    #     self.assertRaises(KeyError, self.test_data_transformer._transform_data,
-    #                       raw_data)
-    #
-    #     # Test for first monitoring round data
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     self.test_system.reset()
-    #     raw_data = copy.deepcopy(self.raw_data_example_result)
-    #     del raw_data['result']['meta_data']['time']
-    #     self.assertRaises(KeyError, self.test_data_transformer._transform_data,
-    #                       raw_data)
-    #
-    # def test_transform_data_raises_key_error_if_key_does_not_exist_error(
-    #         self) -> None:
-    #     # Test when the error is not related to downtime
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     raw_data = copy.deepcopy(self.raw_data_example_general_error)
-    #     del raw_data['error']['meta_data']
-    #     self.assertRaises(KeyError, self.test_data_transformer._transform_data,
-    #                       raw_data)
-    #
-    #     # Test when the error is related to downtime
-    #     raw_data = copy.deepcopy(self.raw_data_example_downtime_error)
-    #     del raw_data['error']['meta_data']
-    #     self.assertRaises(KeyError, self.test_data_transformer._transform_data,
-    #                       raw_data)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.test_data_for_alerting_result',
-    #      'self.transformed_data_example_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    # ])
-    # def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
-    #         self, transformed_data: str, data_for_alerting: str,
-    #         data_for_saving: str) -> None:
-    #     self.test_data_transformer._place_latest_data_on_queue(
-    #         eval(transformed_data), eval(data_for_alerting),
-    #         eval(data_for_saving)
-    #     )
-    #     expected_data_for_alerting = {
-    #         'exchange': ALERT_EXCHANGE,
-    #         'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
-    #             self.test_system_parent_id),
-    #         'data': eval(data_for_alerting),
-    #         'properties': pika.BasicProperties(delivery_mode=2),
-    #         'mandatory': True
-    #     }
-    #     expected_data_for_saving = {
-    #         'exchange': STORE_EXCHANGE,
-    #         'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
-    #             self.test_system_parent_id),
-    #         'data': eval(data_for_saving),
-    #         'properties': pika.BasicProperties(delivery_mode=2),
-    #         'mandatory': True
-    #     }
-    #
-    #     self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
-    #     self.assertDictEqual(
-    #         expected_data_for_alerting,
-    #         self.test_data_transformer.publishing_queue.queue[0])
-    #     self.assertDictEqual(
-    #         expected_data_for_saving,
-    #         self.test_data_transformer.publishing_queue.queue[1])
-    #
-    # @parameterized.expand([
-    #     ('result', 'self.transformed_data_example_result',),
-    #     ('error', 'self.transformed_data_example_general_error',),
-    # ])
-    # def test_place_latest_data_on_queue_raises_key_error_if_keys_missing(
-    #         self, response_index_key, transformed_data) -> None:
-    #     invalid_transformed_data = copy.deepcopy(eval(transformed_data))
-    #     del invalid_transformed_data[response_index_key]['meta_data']
-    #     self.assertRaises(
-    #         KeyError, self.test_data_transformer._place_latest_data_on_queue,
-    #         invalid_transformed_data, {}, {})
-    #
-    # @parameterized.expand([({}, False,), ('self.test_state', True), ])
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_transforms_data_if_data_valid(
-    #         self, state: Union[bool, str], state_is_str: bool, mock_ack,
-    #         mock_trans_data) -> None:
-    #     # We will check that the data is transformed by checking that
-    #     # `_transform_data` is called correctly. The actual transformations are
-    #     # already tested. Note we will test for both result and error, and when
-    #     # the system is both in the state and not in the state.
-    #     mock_ack.return_value = None
-    #     mock_trans_data.return_value = (None, None, None)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         if state_is_str:
-    #             self.test_data_transformer._state = copy.deepcopy(eval(state))
-    #         else:
-    #             self.test_data_transformer._state = copy.deepcopy(state)
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         mock_trans_data.assert_called_once_with(
-    #             self.raw_data_example_result)
-    #
-    #         # To reset the state as if the system was not already added
-    #         if state_is_str:
-    #             self.test_data_transformer._state = copy.deepcopy(eval(state))
-    #         else:
-    #             self.test_data_transformer._state = copy.deepcopy(state)
-    #
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         self.assertEqual(2, mock_trans_data.call_count)
-    #         args, _ = mock_trans_data.call_args
-    #         self.assertEqual(self.raw_data_example_general_error, args[0])
-    #         self.assertEqual(1, len(args))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @parameterized.expand([
-    #     ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
-    # ])
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_call_trans_data_if_err_res_not_in_data(
-    #         self, invalid_data: Dict, mock_ack, mock_trans_data) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body = json.dumps(invalid_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body)
-    #
-    #         mock_trans_data.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     mock_ack.assert_called_once()
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_call_trans_data_if_missing_keys_in_data(
-    #         self, mock_ack, mock_trans_data) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`. Here we must cater for both the error
-    #         # and result cases.
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps({'result': self.invalid_transformed_data})
-    #         body_error = json.dumps({'error': self.invalid_transformed_data})
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         mock_trans_data.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_updates_state_if_no_processing_errors_new_system(
-    #         self, mock_ack) -> None:
-    #     # To make sure there is no state in redis as the state must be compared.
-    #     # We will check that the state has been updated correctly.
-    #     self.redis.delete_all()
-    #
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Make the state non-empty to check that the update does not modify
-    #         # systems not in question
-    #         self.test_data_transformer._state['system2'] = self.test_data_str
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #
-    #         # Check that there are 2 entries in the state, one which was not
-    #         # modified, and the other having metrics the same as the newly
-    #         # given data.
-    #         expected_data = copy.deepcopy(self.test_system_new_metrics)
-    #         expected_data.set_network_transmit_bytes_per_second(None)
-    #         expected_data.set_network_receive_bytes_per_second(None)
-    #         expected_data.set_disk_io_time_seconds_in_interval(None)
-    #         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(self.test_data_str,
-    #                          self.test_data_transformer._state['system2'])
-    #         self.assertEqual(
-    #             expected_data.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #
-    #         # To reset the state as if the system was not already added
-    #         del self.test_data_transformer._state[self.test_system_id]
-    #         self.redis.delete_all()
-    #
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         # Check that there are 2 entries in the state, one which was not
-    #         # modified, and the other having metrics the same as the newly
-    #         # given data.
-    #         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(self.test_data_str,
-    #                          self.test_data_transformer._state['system2'])
-    #         expected_data = System(self.test_system_name, self.test_system_id,
-    #                                self.test_system_parent_id)
-    #         self.assertEqual(
-    #             expected_data.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_updates_state_if_no_process_errors_sys_in_state(
-    #         self, mock_ack) -> None:
-    #     # We will check that the state has been updated correctly.
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Define a state. Make sure the state in question is stored in
-    #         # redis.
-    #         self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #         save_system_to_redis(self.redis, self.test_system)
-    #         self.test_data_transformer._state['system2'] = self.test_data_str
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #
-    #         # Check that there are 2 entries in the state, one which was not
-    #         # modified, and the other having metrics the same as the newly
-    #         # given data.
-    #         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(self.test_data_str,
-    #                          self.test_data_transformer._state['system2'])
-    #         self.assertEqual(
-    #             self.test_system_new_metrics.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #
-    #         # Reset state for error path
-    #         self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #         save_system_to_redis(self.redis, self.test_system)
-    #         self.test_data_transformer._state['system2'] = self.test_data_str
-    #
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         # Check that there are 2 entries in the state, one which was not
-    #         # modified, and the other having metrics the same as the newly
-    #         # given data.
-    #         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(self.test_data_str,
-    #                          self.test_data_transformer._state['system2'])
-    #         self.assertEqual(
-    #             self.test_system.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @parameterized.expand([
-    #     ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
-    # ])
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_update_state_if_res_or_err_not_in_data(
-    #         self, invalid_data: Dict, mock_ack) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body = json.dumps(invalid_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Make the state non-empty and save it to redis
-    #         self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #         save_system_to_redis(self.redis, self.test_system)
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body)
-    #
-    #         # Check that there is 1 entry in the state, one which was not
-    #         # modified.
-    #         expected_data = copy.deepcopy(self.test_system)
-    #         self.assertEqual(1, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(
-    #             expected_data.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     mock_ack.assert_called_once()
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_update_state_if_missing_keys_in_data(
-    #         self, mock_ack) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         data_result = copy.deepcopy(self.raw_data_example_result)
-    #         del data_result['result']['meta_data']
-    #         data_error = copy.deepcopy(self.raw_data_example_downtime_error)
-    #         del data_error['error']['meta_data']
-    #         body_result = json.dumps(data_result)
-    #         body_error = json.dumps(data_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Make the state non-empty and save it to redis
-    #         self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #         save_system_to_redis(self.redis, self.test_system)
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         # Check that there is 1 entry in the state, one which was not
-    #         # modified.
-    #         expected_data = copy.deepcopy(self.test_system)
-    #         self.assertEqual(1, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(
-    #             expected_data.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_update_state_if_transform_data_exception(
-    #         self, mock_ack, mock_transform_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_transform_data.side_effect = self.test_exception
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Make the state non-empty and save it to redis
-    #         self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #         save_system_to_redis(self.redis, self.test_system)
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #
-    #         # Check that there is 1 entry in the state, one which was not
-    #         # modified.
-    #         expected_data = copy.deepcopy(self.test_system)
-    #         self.assertEqual(1, len(self.test_data_transformer._state.keys()))
-    #         self.assertEqual(
-    #             expected_data.__dict__,
-    #             self.test_data_transformer._state[self.test_system_id].__dict__)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_places_data_on_queue_if_no_processing_errors(
-    #         self, mock_ack, mock_place_on_queue, mock_trans_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_trans_data.side_effect = [
-    #         (
-    #             self.transformed_data_example_result,
-    #             self.test_data_for_alerting_result,
-    #             self.transformed_data_example_result
-    #         ),
-    #         (
-    #             self.transformed_data_example_downtime_error,
-    #             self.test_data_for_alerting_down_error,
-    #             self.transformed_data_example_downtime_error
-    #         ),
-    #     ]
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         args, _ = mock_place_on_queue.call_args
-    #         self.assertDictEqual(self.transformed_data_example_result, args[0])
-    #         self.assertDictEqual(self.test_data_for_alerting_result, args[1])
-    #         self.assertDictEqual(self.transformed_data_example_result, args[2])
-    #         self.assertEqual(3, len(args))
-    #
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         args, _ = mock_place_on_queue.call_args
-    #         self.assertDictEqual(self.transformed_data_example_downtime_error,
-    #                              args[0])
-    #         self.assertDictEqual(self.test_data_for_alerting_down_error,
-    #                              args[1])
-    #         self.assertDictEqual(self.transformed_data_example_downtime_error,
-    #                              args[2])
-    #         self.assertEqual(3, len(args))
-    #
-    #         self.assertEqual(2, mock_place_on_queue.call_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @parameterized.expand([
-    #     ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
-    # ])
-    # @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_data_on_queue_if_result_or_error_not_in_data(
-    #         self, invalid_data: Dict, mock_ack, mock_place_on_queue) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body = json.dumps(invalid_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body)
-    #         # Check that place_on_queue was not called
-    #         mock_place_on_queue.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     mock_ack.assert_called_once()
-    #
-    # @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_data_on_queue_if_missing_keys_in_data(
-    #         self, mock_ack, mock_place_on_queue) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         data_result = copy.deepcopy(self.raw_data_example_result)
-    #         del data_result['result']['meta_data']
-    #         data_error = copy.deepcopy(self.raw_data_example_downtime_error)
-    #         del data_error['error']['meta_data']
-    #         body_result = json.dumps(data_result)
-    #         body_error = json.dumps(data_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that place_on_queue was not called
-    #         mock_place_on_queue.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_data_on_queue_if_transform_data_exception(
-    #         self, mock_ack, mock_place_on_queue, mock_transform_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_transform_data.side_effect = self.test_exception
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that place_on_queue was not called
-    #         mock_place_on_queue.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_update_state")
-    # @mock.patch.object(SystemDataTransformer, "_place_latest_data_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_data_on_queue_if_update_state_exception(
-    #         self, mock_ack, mock_place_on_queue, mock_update_state) -> None:
-    #     mock_ack.return_value = None
-    #     mock_update_state.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid errors when having the system already in
-    #     # redis due to other tests.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that place_on_queue was not called
-    #         mock_place_on_queue.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_sends_data_waiting_on_queue_if_no_process_errors(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #
-    #     # Load the state to avoid errors when having the system already in
-    #     # redis due to other tests.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_general_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_data was called
-    #         self.assertEqual(2, mock_send_data.call_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_sends_data_waiting_on_queue_if_process_errors(
-    #         self, mock_ack, mock_send_data, mock_transform_data) -> None:
-    #     # We will test this by mocking that _transform_data returns an
-    #     # exception. It is safe to assume that the other error paths will result
-    #     # in the same outcome as all the errors are caught. Thus this test-case
-    #     # was essentially done for completion.
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_transform_data.side_effect = self.test_exception
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_data was called
-    #         self.assertEqual(2, mock_send_data.call_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_sends_hb_if_no_proc_errors_and_send_data_success(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #     test_hb = {
-    #         'component_name': self.transformer_name,
-    #         'is_alive': True,
-    #         'timestamp': datetime.now().timestamp()
-    #     }
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         mock_send_hb.assert_called_once_with(test_hb)
-    #
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_heartbeat was called
-    #         self.assertEqual(2, mock_send_hb.call_count)
-    #         args, _ = mock_send_hb.call_args
-    #         self.assertDictEqual(test_hb, args[0])
-    #         self.assertEqual(1, len(args))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_transform_data")
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_send_hb_if_processing_errors_trans_data(
-    #         self, mock_ack, mock_send_hb, mock_trans_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_hb.return_value = None
-    #     mock_trans_data.side_effect = self.test_exception
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_heartbeat was not called
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_update_state")
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_send_hb_if_proc_errors_update_state(
-    #         self, mock_ack, mock_send_hb, mock_update_state) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_hb.return_value = None
-    #     mock_update_state.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_heartbeat was not called
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_does_not_send_hb_if_send_data_fails(
-    #         self, mock_ack, mock_send_hb, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_hb.return_value = None
-    #     mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_result)
-    #         self.test_data_transformer._process_raw_data(blocking_channel,
-    #                                                      method, properties,
-    #                                                      body_error)
-    #         # Check that send_heartbeat was not called
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = pika.exceptions.AMQPConnectionError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPConnectionError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_chan_err_if_chan_err_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = pika.exceptions.AMQPChannelError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_chan_err_if_chan_err_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPChannelError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data. Test would fail if an exception is raised
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_result
-    #         )
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_error
-    #         )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = MessageWasNotDeliveredException('test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data. Test would fail if an exception is raised
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_result
-    #         )
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_error
-    #         )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
+        self.test_data_transformer._update_state(transformed_data_eval)
+
+        # Check that there are the same keys in the state
+        self.assertEqual(old_state.keys(),
+                         self.test_data_transformer.state.keys())
+
+        # Check that the nodes not in question are not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+
+        old_modified_node_state = old_state[self.test_chainlink_node_id]
+        old_modified_node_state.set_last_prometheus_source_used(
+            transformed_data_eval['prometheus']['error']['meta_data'][
+                'last_source_used'])
+
+        if is_downtime_error:
+            self.assertTrue(
+                self.test_data_transformer._state[
+                    self.test_chainlink_node_id].is_down)
+            old_modified_node_state.set_as_down(
+                transformed_data_eval['prometheus']['error']['data'][
+                    'went_down_at'])
+        else:
+            self.assertFalse(
+                self.test_data_transformer._state[
+                    self.test_chainlink_node_id].is_down)
+
+        self.assertEqual(
+            old_modified_node_state,
+            self.test_data_transformer.state[self.test_chainlink_node_id])
+
+    @parameterized.expand([
+        ('self.transformed_data_example_result_all',),
+        ('self.transformed_data_example_result_options_None',),
+        ('self.transformed_data_example_general_error',),
+        ('self.transformed_data_example_downtime_error',)
+    ])
+    def test_process_transformed_data_for_saving_returns_expected_data(
+            self, transformed_data: str) -> None:
+        transformed_data_eval = eval(transformed_data)
+        processed_data = \
+            self.test_data_transformer._process_transformed_data_for_saving(
+                transformed_data_eval)
+        self.assertDictEqual(transformed_data_eval, processed_data)
+
+    @parameterized.expand([
+        ({'bad_key': 'bad_val'},),
+        ({'prometheus': 'bad_val'},),
+    ])
+    def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
+            self, transformed_data) -> None:
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_saving,
+            transformed_data)
+
+    @parameterized.expand([
+        ('self.transformed_data_example_result_all',
+         'self.processed_data_example_result_all'),
+        ('self.transformed_data_example_result_options_None',
+         'self.processed_data_example_result_options_None'),
+        ('self.transformed_data_example_general_error',
+         'self.processed_data_example_general_error'),
+        ('self.transformed_data_example_downtime_error',
+         'self.processed_data_example_downtime_error'),
+    ])
+    def test_process_transformed_data_for_alerting_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        actual_data = \
+            self.test_data_transformer._process_transformed_data_for_alerting(
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), actual_data)
+
+    @parameterized.expand([
+        ({'prometheus': {}},),
+        ({'prometheus': 'bad_val'},),
+    ])
+    def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
+            self, transformed_data) -> None:
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            transformed_data)
+
+    @parameterized.expand([
+        ('self.raw_data_example_general_error',
+         'self.transformed_data_example_general_error',),
+        ('self.raw_data_example_downtime_error',
+         'self.transformed_data_example_downtime_error',),
+        ('self.raw_data_example_result_all',
+         'self.transformed_data_example_result_all',),
+        ('self.raw_data_example_result_options_None',
+         'self.transformed_data_example_result_options_None',),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_returns_expected_data(
+            self, raw_data, expected_transformed_data, mock_proc_saving,
+            mock_proc_alerting) -> None:
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        proc_saving_return = {'key_1': 'val1'}
+        proc_alerting_return = {'key_2': 'val2'}
+        mock_proc_saving.return_value = proc_saving_return
+        mock_proc_alerting.return_value = proc_alerting_return
+
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(eval(raw_data))
+
+        self.assertEqual(eval(expected_transformed_data), trans_data)
+        self.assertEqual(proc_alerting_return, data_for_alerting)
+        self.assertEqual(proc_saving_return, data_for_saving)
+
+    @parameterized.expand([
+        ({'prometheus': {}},),
+        ({'prometheus': 'bad_val'},),
+    ])
+    def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
+            self, raw_data) -> None:
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._transform_data, raw_data)
+
+    @parameterized.expand([
+        ('self.processed_data_example_general_error',
+         'self.transformed_data_example_general_error'),
+        ('self.processed_data_example_downtime_error',
+         'self.transformed_data_example_downtime_error'),
+        ('self.processed_data_example_result_all',
+         'self.transformed_data_example_result_all'),
+        ('self.processed_data_example_result_options_None',
+         'self.transformed_data_example_result_options_None'),
+    ])
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
+            self, data_for_alerting: str, data_for_saving: str) -> None:
+        self.test_data_transformer._place_latest_data_on_queue(
+            eval(data_for_alerting), eval(data_for_saving)
+        )
+        expected_data_for_alerting = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+            'data': eval(data_for_alerting),
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_for_saving = {
+            'exchange': STORE_EXCHANGE,
+            'routing_key': CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+            'data': eval(data_for_saving),
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+
+        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertDictEqual(
+            expected_data_for_alerting,
+            self.test_data_transformer.publishing_queue.queue[0])
+        self.assertDictEqual(
+            expected_data_for_saving,
+            self.test_data_transformer.publishing_queue.queue[1])
+
+    @parameterized.expand([
+        ({
+             'prometheus': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+        ({
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+        ({
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'bad_node_parent_id_index': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'bad_node_id_index': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'bad_node_name_index': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({
+             'prometheus': {
+                 'bad_index': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({
+             'prometheus': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             },
+             'bad_source': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({
+             'bad_source': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
+        ({'prometheus': {}}, None,),
+    ])
+    def test_raw_data_has_valid_sources_structure_return(
+            self, raw_data, expected_ret) -> None:
+        # TODO: This test must be expanded further as more sources are added.
+        if expected_ret:
+            actual_ret = \
+                self.test_data_transformer \
+                    ._raw_data_has_valid_sources_structure(raw_data)
+            self.assertEqual(expected_ret, actual_ret)
+        else:
+            self.assertRaises(
+                ReceivedUnexpectedDataException,
+                self.test_data_transformer
+                    ._raw_data_has_valid_sources_structure, raw_data)
+
+    @parameterized.expand([({}, False,), ('self.test_state', True), ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_transforms_data_if_data_has_correct_structure(
+            self, state, state_is_str: bool, mock_ack, mock_trans_data) -> None:
+        # We will check that the data is transformed by checking that
+        # `_transform_data` is called correctly. Note that both the validation
+        # and the transformations were tested in previous tests. Also we will
+        # test for both result and error, and for when the node is both in the
+        # state and not in the state.
+        mock_ack.return_value = None
+        mock_trans_data.return_value = (None, None, None)
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body_result = json.dumps(self.raw_data_example_result_all)
+        body_error = json.dumps(self.raw_data_example_general_error)
+        properties = pika.spec.BasicProperties()
+
+        if state_is_str:
+            self.test_data_transformer._state = copy.deepcopy(eval(state))
+        else:
+            self.test_data_transformer._state = copy.deepcopy(state)
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties,
+                                                     body_result)
+        mock_trans_data.assert_called_once_with(
+            self.raw_data_example_result_all)
+
+        # To reset the state as if the node was not already added
+        if state_is_str:
+            self.test_data_transformer._state = copy.deepcopy(eval(state))
+        else:
+            self.test_data_transformer._state = copy.deepcopy(state)
+
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties,
+                                                     body_error)
+
+        self.assertEqual(2, mock_trans_data.call_count)
+        args, _ = mock_trans_data.call_args
+        self.assertEqual(self.raw_data_example_general_error, args[0])
+        self.assertEqual(1, len(args))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(2, mock_ack.call_count)
+
+    @parameterized.expand([
+        (ReceivedUnexpectedDataException,),
+        (KeyError,),
+        (Exception,),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_raw_data_has_valid_sources_structure")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_proc_raw_data_does_not_call_trans_data_if_validate_raise_exception(
+            self, exception, mock_ack, mock_trans_data,
+            mock_validation) -> None:
+        mock_ack.return_value = None
+        mock_trans_data.return_value = None
+        mock_validation.side_effect = exception
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result_all)
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties,
+                                                     body)
+
+        mock_trans_data.assert_not_called()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all',
+         'self.transformed_data_example_result_all',),
+        ('self.raw_data_example_result_options_None',
+         'self.transformed_data_example_result_options_None'),
+        ('self.raw_data_example_general_error',
+         'self.transformed_data_example_general_error',),
+        ('self.raw_data_example_downtime_error',
+         'self.transformed_data_example_downtime_error',),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_updates_state_if_no_processing_errors(
+            self, raw_data, transformed_data, mock_ack,
+            mock_update_state) -> None:
+        mock_ack.return_value = None
+        mock_update_state.return_value = None
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_update_state.assert_called_once_with(eval(transformed_data))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all', Exception('test'), None,),
+        ('self.raw_data_example_result_options_None', Exception('test'), None,),
+        ('self.raw_data_example_general_error', Exception('test'), None,),
+        ('self.raw_data_example_downtime_error', Exception('test'), None,),
+        ('self.raw_data_example_result_all', None, Exception('test'),),
+        ('self.raw_data_example_result_options_None', None, Exception('test'),),
+        ('self.raw_data_example_general_error', None, Exception('test'),),
+        ('self.raw_data_example_downtime_error', None, Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_raw_data_has_valid_sources_structure")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_update_state_if_processing_errors(
+            self, raw_data, validation_exception, transformation_exception,
+            mock_ack, mock_update_state, mock_transform, mock_validate) -> None:
+        # We will test this for both when the raw_data structure is invalid and
+        # when the transformation encounters a problem
+        mock_ack.return_value = None
+        mock_update_state.return_value = None
+        if validation_exception:
+            mock_validate.side_effect = validation_exception
+        else:
+            mock_validate.return_value = (True,
+                                          self.test_chainlink_node_parent_id,
+                                          self.test_chainlink_node_id,
+                                          self.test_chainlink_node_name)
+        if transformation_exception:
+            mock_transform.side_effect = transformation_exception
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_update_state.assert_not_called()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all',
+         'self.transformed_data_example_result_all',
+         'self.processed_data_example_result_all',),
+        ('self.raw_data_example_result_options_None',
+         'self.transformed_data_example_result_options_None',
+         'self.processed_data_example_result_options_None',),
+        ('self.raw_data_example_general_error',
+         'self.transformed_data_example_general_error',
+         'self.processed_data_example_general_error',),
+        ('self.raw_data_example_downtime_error',
+         'self.transformed_data_example_downtime_error',
+         'self.processed_data_example_downtime_error',),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_places_data_on_queue_if_no_processing_errors(
+            self, raw_data, transformed_data, processed_data, mock_ack,
+            mock_update_state, mock_place_on_queue) -> None:
+        mock_ack.return_value = None
+        mock_update_state.return_value = None
+        mock_place_on_queue.return_value = None
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_place_on_queue.assert_called_once_with(eval(processed_data),
+                                                    eval(transformed_data))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all', Exception('test'), None, None,),
+        ('self.raw_data_example_result_all', None, Exception('test'), None,),
+        ('self.raw_data_example_result_all', None, None, Exception('test'),),
+        ('self.raw_data_example_result_options_None', Exception('test'), None,
+         None,),
+        ('self.raw_data_example_result_options_None', None, Exception('test'),
+         None,),
+        ('self.raw_data_example_result_options_None', None, None,
+         Exception('test'),),
+        ('self.raw_data_example_general_error', Exception('test'), None, None,),
+        ('self.raw_data_example_general_error', None, Exception('test'), None,),
+        ('self.raw_data_example_general_error', None, None, Exception('test'),),
+        ('self.raw_data_example_downtime_error', Exception('test'), None,
+         None,),
+        ('self.raw_data_example_downtime_error', None, Exception('test'),
+         None,),
+        ('self.raw_data_example_downtime_error', None, None,
+         Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_raw_data_has_valid_sources_structure")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_place_data_on_queue_if_processing_errors(
+            self, raw_data, validation_exception, transformation_exception,
+            update_exception, mock_ack, mock_update_state, mock_transform,
+            mock_validate, mock_place_on_queue) -> None:
+        # We will test this for whenever a processing error happens in either
+        # stages of the transformation process.
+        mock_ack.return_value = None
+        mock_place_on_queue.return_value = None
+        if validation_exception:
+            mock_validate.side_effect = validation_exception
+        else:
+            mock_validate.return_value = (True,
+                                          self.test_chainlink_node_parent_id,
+                                          self.test_chainlink_node_id,
+                                          self.test_chainlink_node_name)
+        if update_exception:
+            mock_update_state.side_effect = update_exception
+        else:
+            mock_update_state.return_value = None
+        if transformation_exception:
+            mock_transform.side_effect = transformation_exception
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_place_on_queue.assert_not_called()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all',),
+        ('self.raw_data_example_result_options_None',),
+        ('self.raw_data_example_general_error',),
+        ('self.raw_data_example_downtime_error',),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_sends_data_in_queue_if_no_processing_errors(
+            self, raw_data, mock_ack, mock_update_state, mock_place_on_queue,
+            mock_send_data) -> None:
+        mock_ack.return_value = None
+        mock_update_state.return_value = None
+        mock_place_on_queue.return_value = None
+        mock_send_data.return_value = None
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_send_data.assert_called_once()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all', Exception('test'), None, None,),
+        ('self.raw_data_example_result_all', None, Exception('test'), None,),
+        ('self.raw_data_example_result_all', None, None, Exception('test'),),
+        ('self.raw_data_example_result_options_None', Exception('test'), None,
+         None,),
+        ('self.raw_data_example_result_options_None', None, Exception('test'),
+         None,),
+        ('self.raw_data_example_result_options_None', None, None,
+         Exception('test'),),
+        ('self.raw_data_example_general_error', Exception('test'), None, None,),
+        ('self.raw_data_example_general_error', None, Exception('test'), None,),
+        ('self.raw_data_example_general_error', None, None, Exception('test'),),
+        ('self.raw_data_example_downtime_error', Exception('test'), None,
+         None,),
+        ('self.raw_data_example_downtime_error', None, Exception('test'),
+         None,),
+        ('self.raw_data_example_downtime_error', None, None,
+         Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_raw_data_has_valid_sources_structure")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_sends_data_in_queue_if_processing_errors(
+            self, raw_data, validation_exception, transformation_exception,
+            update_exception, mock_ack, mock_update_state, mock_transform,
+            mock_validate, mock_place_on_queue, mock_send_data) -> None:
+        # We will test this for whenever a processing error happens in either
+        # stages of the transformation process.
+        mock_ack.return_value = None
+        mock_place_on_queue.return_value = None
+        mock_send_data.return_value = None
+        if validation_exception:
+            mock_validate.side_effect = validation_exception
+        else:
+            mock_validate.return_value = (True,
+                                          self.test_chainlink_node_parent_id,
+                                          self.test_chainlink_node_id,
+                                          self.test_chainlink_node_name)
+        if update_exception:
+            mock_update_state.side_effect = update_exception
+        else:
+            mock_update_state.return_value = None
+        if transformation_exception:
+            mock_transform.side_effect = transformation_exception
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        mock_send_data.assert_called_once_with()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all',),
+        ('self.raw_data_example_result_options_None',),
+        ('self.raw_data_example_general_error',),
+        ('self.raw_data_example_downtime_error',),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_sends_hb_if_no_proc_errors_and_send_data_success(
+            self, raw_data, mock_ack, mock_update_state, mock_place_on_queue,
+            mock_send_data, mock_send_hb) -> None:
+        mock_ack.return_value = None
+        mock_update_state.return_value = None
+        mock_place_on_queue.return_value = None
+        mock_send_data.return_value = None
+        mock_send_hb.return_value = None
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        self.test_data_transformer._process_raw_data(blocking_channel,
+                                                     method, properties, body)
+
+        test_heartbeat = {
+            'component_name': self.transformer_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+        mock_send_hb.assert_called_with(test_heartbeat)
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_all', Exception('test'), None, None,
+         None,),
+        ('self.raw_data_example_result_all', None, Exception('test'), None,
+         None,),
+        ('self.raw_data_example_result_all', None, None, Exception('test'),
+         None,),
+        ('self.raw_data_example_result_all', None, None, None,
+         Exception('test'),),
+        ('self.raw_data_example_result_options_None', Exception('test'), None,
+         None, None,),
+        ('self.raw_data_example_result_options_None', None, Exception('test'),
+         None, None,),
+        ('self.raw_data_example_result_options_None', None, None,
+         Exception('test'), None,),
+        ('self.raw_data_example_result_options_None', None, None,
+         None, Exception('test'),),
+        ('self.raw_data_example_general_error', Exception('test'), None,
+         None, None,),
+        ('self.raw_data_example_general_error', None, Exception('test'),
+         None, None,),
+        ('self.raw_data_example_general_error', None, None, Exception('test'),
+         None,),
+        ('self.raw_data_example_general_error', None, None, None,
+         Exception('test'),),
+        ('self.raw_data_example_downtime_error', Exception('test'), None,
+         None, None,),
+        ('self.raw_data_example_downtime_error', None, Exception('test'),
+         None, None,),
+        ('self.raw_data_example_downtime_error', None, None,
+         Exception('test'), None,),
+        ('self.raw_data_example_downtime_error', None, None,
+         None, Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_place_latest_data_on_queue")
+    @mock.patch.object(ChainlinkNodeDataTransformer,
+                       "_raw_data_has_valid_sources_structure")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_update_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_send_hb_if_processing_errors(
+            self, raw_data, validation_exception, transformation_exception,
+            update_exception, send_data_exception, mock_ack, mock_update_state,
+            mock_transform, mock_validate, mock_place_on_queue, mock_send_data,
+            mock_send_heartbeat) -> None:
+        # We will test this for whenever a processing error happens in either
+        # stages of the transformation process.
+        mock_ack.return_value = None
+        mock_place_on_queue.return_value = None
+        mock_send_heartbeat.return_value = None
+        if validation_exception:
+            mock_validate.side_effect = validation_exception
+        else:
+            mock_validate.return_value = (True,
+                                          self.test_chainlink_node_parent_id,
+                                          self.test_chainlink_node_id,
+                                          self.test_chainlink_node_name)
+        if update_exception:
+            mock_update_state.side_effect = update_exception
+        else:
+            mock_update_state.return_value = None
+        if transformation_exception:
+            mock_transform.side_effect = transformation_exception
+        self.test_data_transformer._state = self.test_state
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(eval(raw_data))
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data
+        if send_data_exception:
+            mock_send_data.side_effect = send_data_exception
+            self.assertRaises(Exception,
+                              self.test_data_transformer._process_raw_data,
+                              blocking_channel, method, properties, body)
+        else:
+            mock_send_data.return_value = None
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body)
+
+        mock_send_heartbeat.assert_not_called()
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        (MessageWasNotDeliveredException('test'), None,),
+        (None, MessageWasNotDeliveredException('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_does_not_raise_msg_not_del_exce_if_raised(
+            self, send_data_exception, send_hb_exception, mock_ack,
+            mock_send_hb, mock_send_data) -> None:
+        # We will perform this test for both when the exception is raised by
+        # send_data and by send_heartbeat
+        if send_data_exception:
+            mock_send_data.side_effect = send_data_exception
+        else:
+            mock_send_data.return_value = None
+
+        if send_hb_exception:
+            mock_send_hb.side_effect = send_hb_exception
+        else:
+            mock_send_hb.return_value = None
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result_all)
+        properties = pika.spec.BasicProperties()
+
+        try:
+            self.test_data_transformer._process_raw_data(blocking_channel,
+                                                         method, properties,
+                                                         body)
+        except MessageWasNotDeliveredException as e:
+            self.fail("Was not expecting {}".format(e))
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()
+
+    @parameterized.expand([
+        (AMQPConnectionError('test'), None, AMQPConnectionError,),
+        (None, AMQPConnectionError('test'), AMQPConnectionError),
+        (AMQPChannelError('test'), None, AMQPChannelError),
+        (None, AMQPChannelError('test'), AMQPChannelError),
+        (Exception('test'), None, Exception,),
+        (None, Exception('test'), Exception,),
+    ])
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_raises_unexpected_errors_if_raised(
+            self, send_data_exception, send_hb_exception, exception_instance,
+            mock_ack, mock_send_hb, mock_send_data) -> None:
+        # We will perform this test for both when the exception is raised by
+        # send_data and by send_heartbeat
+        if send_data_exception:
+            mock_send_data.side_effect = send_data_exception
+        else:
+            mock_send_data.return_value = None
+
+        if send_hb_exception:
+            mock_send_hb.side_effect = send_hb_exception
+        else:
+            mock_send_hb.return_value = None
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result_all)
+        properties = pika.spec.BasicProperties()
+
+        self.assertRaises(exception_instance,
+                          self.test_data_transformer._process_raw_data,
+                          blocking_channel, method, properties, body)
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        mock_ack.assert_called_once()

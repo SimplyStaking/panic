@@ -255,8 +255,7 @@ class GitHubDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
+    def _place_latest_data_on_queue(self, data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
                             GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
@@ -322,8 +321,7 @@ class GitHubDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(
-                transformed_data, data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

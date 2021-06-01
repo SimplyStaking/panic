@@ -375,8 +375,9 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
         # We must check that the source's data is valid
         for source in VALID_CHAINLINK_SOURCES:
-            if 'result' not in transformed_data[source] \
-                    and 'error' not in transformed_data[source]:
+            if source not in transformed_data or \
+                    ('result' not in transformed_data[source]
+                     and 'error' not in transformed_data[source]):
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data_for_saving".format(self))
 
@@ -387,7 +388,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.debug("Performing further processing for alerting ...")
 
         if transformed_data['prometheus']:
-            if 'result' in transformed_data:
+            if 'result' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['result'][
                     'meta_data']
                 td_node_id = td_meta_data['node_id']
@@ -443,7 +444,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                     'previous'] = node.current_gas_price_info
                 pd_data['eth_balance_info']['previous'] = node.eth_balance_info
                 pd_data['went_down_at']['previous'] = node.went_down_at
-            elif 'error' in transformed_data:
+            elif 'error' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['error'][
                     'meta_data']
                 td_error_code = transformed_data['prometheus']['error']['code']
@@ -486,7 +487,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.debug("Performing data transformation on %s ...", data)
 
         if data['prometheus']:
-            if 'result' in data:
+            if 'result' in data['prometheus']:
                 meta_data = data['prometheus']['result']['meta_data']
                 node_metrics = data['prometheus']['result']['data']
                 node_id = meta_data['node_id']
@@ -521,7 +522,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
                 # Add latest_usage to the eth_balance_info
                 for eth_address, new_balance \
-                        in node_metrics['ethereum_balances'].items():
+                        in node_metrics['eth_balance'].items():
                     if eth_address in node.eth_balance_info:
                         previous_balance = node.eth_balance_info[eth_address][
                             'balance']
@@ -536,7 +537,8 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                             'latest_usage': 0.0
                         }
 
-                    td_node_metrics[eth_address] = new_info_dict
+                    td_node_metrics['eth_balance_info'][
+                        eth_address] = new_info_dict
 
                 # Transform the meta_data by deleting the monitor_name and
                 # changing the time key to last_monitored key
@@ -544,7 +546,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 del td_meta_data['time']
                 td_meta_data['last_monitored'] = meta_data['time']
                 td_node_metrics['went_down_at'] = None
-            elif 'error' in data:
+            elif 'error' in data['prometheus']:
                 meta_data = data['prometheus']['error']['meta_data']
                 error_code = data['prometheus']['error']['code']
                 node_id = meta_data['node_id']
@@ -585,8 +587,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
+    def _place_latest_data_on_queue(self, data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
                             CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
@@ -601,21 +602,21 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         """
         This method checks the following things about the raw_data:
         1. Only valid sources are inside the raw_data
-        2. At least one source is not empty
-        3. All source's data is indexed by 'result' or 'error' and all data
+        2. All valid sources are inside the raw_data
+        3. At least one source is not empty
+        4. All source's data is indexed by 'result' or 'error' and all data
            has a 'node_parent_id', 'node_id' and 'node_name'
-        4. All node_parent_ids, node_ids, node_names are equal across all
+        5. All node_parent_ids, node_ids, node_names are equal across all
            sources
         :param raw_data: The raw_data being received from the monitor
         :return: True, node_parent_id, node_id, node_name : If valid raw_data
                : Raises ReceivedUnexpectedDataException   : otherwise
         """
 
-        # Check that all sources are valid
-        for source in list(raw_data.keys()):
-            if source not in VALID_CHAINLINK_SOURCES:
-                raise ReceivedUnexpectedDataException(
-                    "{}: _raw_data_has_valid_sources_structure".format(self))
+        # Check that all raw_data has all the valid sources and no other sources
+        if set(raw_data.keys()) != set(VALID_CHAINLINK_SOURCES):
+            raise ReceivedUnexpectedDataException(
+                "{}: _raw_data_has_valid_sources_structure".format(self))
 
         list_of_sources_values = [value for source, value in raw_data.items()]
 
@@ -713,8 +714,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(
-                transformed_data, data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

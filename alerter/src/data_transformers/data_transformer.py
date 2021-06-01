@@ -69,9 +69,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         pass
 
     @abstractmethod
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
-                                    data_for_saving: Dict) -> None:
+    def _place_latest_data_on_queue(self, *args) -> None:
         pass
 
     @abstractmethod
