@@ -1,7 +1,6 @@
 import json
 import logging
 import multiprocessing
-import time
 import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
@@ -24,8 +23,7 @@ from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
 from src.utils.constants.rabbitmq import (DT_MAN_HEARTBEAT_QUEUE_NAME,
                                           HEALTH_CHECK_EXCHANGE,
                                           PING_ROUTING_KEY,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          TOPIC)
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -570,4 +568,3 @@ class TestDataTransformersManager(unittest.TestCase):
 
         self.assertRaises(exception_class, self.test_manager._process_ping,
                           blocking_channel, method, properties, body)
-
