@@ -268,7 +268,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             float(self.test_total_gas_bumps_exceeds_limit_new),
                         'unconfirmed_transactions':
                             float(self.test_no_of_unconfirmed_txs_new),
-                        'run_status_update_total':
+                        'run_status_update_total_errors':
                             self.test_total_errored_job_runs_new,
                         'gas_updater_set_gas_price':
                             {

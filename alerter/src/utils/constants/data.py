@@ -12,7 +12,7 @@ RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
     'unconfirmed_transactions': 'no_of_unconfirmed_txs',
     'gas_updater_set_gas_price': 'current_gas_price_info',
     'eth_balance': 'eth_balance_info',
-    'run_status_update_total': 'total_errored_job_runs',
+    'run_status_update_total_errors': 'total_errored_job_runs',
 }
 INT_CHAINLINK_METRICS = ['current_height', 'eth_blocks_in_queue',
                          'total_block_headers_received',
