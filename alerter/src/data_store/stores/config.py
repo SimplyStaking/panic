@@ -9,7 +9,7 @@ import pika.exceptions
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants.configs import (CHAINS, REPOS_CONFIG,
+from src.utils.constants.configs import (CHAINS, GITHUB_REPOS_CONFIG,
                                          SYSTEMS_CONFIG,
                                          NODES_CONFIG, GENERAL,
                                          MONITORABLES_PARSING_HELPER)
@@ -212,13 +212,13 @@ class ConfigStore(Store):
                 redis_store_key = GENERAL
                 source_chain_name = GENERAL
                 # Determine the configuration that needs to be changed
-                if parsed_routing_key[1].lower() in [REPOS_CONFIG.lower(),
+                if parsed_routing_key[1].lower() in [GITHUB_REPOS_CONFIG.lower(),
                                                      SYSTEMS_CONFIG.lower()]:
                     config_type_key = parsed_routing_key[1]
             elif parsed_routing_key[0].lower() == CHAINS.lower():
                 redis_store_key = parsed_routing_key[1]
                 source_chain_name = parsed_routing_key[2]
-                if parsed_routing_key[3] in [REPOS_CONFIG.lower(),
+                if parsed_routing_key[3] in [GITHUB_REPOS_CONFIG.lower(),
                                              SYSTEMS_CONFIG.lower()]:
                     config_type_key = parsed_routing_key[3]
                 elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
