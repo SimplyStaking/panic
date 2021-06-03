@@ -161,42 +161,60 @@ class ConfigStore(Store):
             self.redis.set(Keys.get_base_chain_monitorables_info(
                 redis_store_key), json.dumps(dict(data_for_store)))
         else:
-            # Check if the key exists
-            if self.redis.exists(Keys.get_base_chain_monitorables_info(
-                    redis_store_key)):
 
-                # Delete the data corresponding to the routing key
-                if data_for_store:
-                    current_helper_config = \
-                        MONITORABLES_PARSING_HELPER[config_type_key]
+            # If there is something for storage, check if data corresponding to
+            # the routing key can be removed. Otherwise remove the key
+            # altogether
+            if data_for_store:
 
-                    for helper_keys in current_helper_config:
-                        del data_for_store[source_chain_name]['monitored'][
-                            helper_keys['config_key']]
-                        del data_for_store[source_chain_name]['not_monitored'][
-                            helper_keys['config_key']]
+                # If there is already data stored for the corresponding chain,
+                # remove it. Otherwise do nothing.
+                if source_chain_name in data_for_store:
+                    current_helper_configs = MONITORABLES_PARSING_HELPER[
+                        config_type_key]
+                    for helper_config in current_helper_configs:
+                        config_key = helper_config['config_key']
+                        if config_key in \
+                                data_for_store[source_chain_name]['monitored']:
+                            del data_for_store[source_chain_name]['monitored'][
+                                config_key]
 
-                    # If the monitored and not_monitored are empty then remove
-                    # the chain from REDIS
-                    if (len(data_for_store[source_chain_name]['monitored']) ==
-                            0 and len(data_for_store[source_chain_name][
-                                          'not_monitored']) == 0):
-                        self.redis.remove(
-                            Keys.get_base_chain_monitorables_info(
-                                redis_store_key))
-                else:
-                    # This shouldn't be the case but just incase delete the key
-                    self.redis.remove(Keys.get_base_chain_monitorables_info(
-                        redis_store_key))
+                        if config_key in \
+                                data_for_store[source_chain_name][
+                                    'not_monitored']:
+                            del data_for_store[source_chain_name][
+                                'not_monitored'][config_key]
+
+                    # If monitored and not_monitored are empty then remove the
+                    # chain from REDIS. First must make sure that
+                    # source_chain_name is in data_for_store for the same reason
+                    # above
+                    if not data_for_store[source_chain_name]['monitored'] and \
+                            not data_for_store[source_chain_name][
+                                'not_monitored']:
+                        del data_for_store[source_chain_name]
+
+                    # We must now check that if due to the latest modifications
+                    # data_store is empty, we remove the key from redis.
+                    # Otherwise we save it.
+                    if data_for_store:
+                        self.redis.set(Keys.get_base_chain_monitorables_info(
+                            redis_store_key), json.dumps(dict(data_for_store)))
+                    else:
+                        self.redis.remove(Keys.get_base_chain_monitorables_info(
+                            redis_store_key))
+
+            else:
+                self.redis.remove(Keys.get_base_chain_monitorables_info(
+                    redis_store_key))
 
     def _process_routing_key(self, routing_key: str) -> Tuple[str, str, str]:
         """
         The following values need to be determined from the routing_key:
-        `redis_store_key`: is the identifiable base chain e.g GENERAl, COSMOS,
-        SUBSTRATE.
+        `redis_store_key`: is the identifiable base chain e.g general, cosmos,
+        substrate or chainlink.
         `source_chain_name`: Name of the chain that is built on top of the base
-        chain
-        such as regen, moonbeam ...etc.
+        chain such as regen, moonbeam ...etc.
         `config_type_key`: The configuration type received, the ones that are
         needed for this process are SYSTEMS, NODES, REPOS. If anything else
         is received it should be ignored.
@@ -211,9 +229,10 @@ class ConfigStore(Store):
             if parsed_routing_key[0].lower() == GENERAL.lower():
                 redis_store_key = GENERAL
                 source_chain_name = GENERAL
+
                 # Determine the configuration that needs to be changed
-                if parsed_routing_key[1].lower() in [GITHUB_REPOS_CONFIG.lower(),
-                                                     SYSTEMS_CONFIG.lower()]:
+                if parsed_routing_key[1].lower() in \
+                        [GITHUB_REPOS_CONFIG.lower(), SYSTEMS_CONFIG.lower()]:
                     config_type_key = parsed_routing_key[1]
             elif parsed_routing_key[0].lower() == CHAINS.lower():
                 redis_store_key = parsed_routing_key[1]
@@ -241,41 +260,72 @@ class ConfigStore(Store):
         Using the received configuration together with the data which is
         retrieved from REDIS, a list of monitored and non_monitored sources
         are constructed. Choosing whether a source is monitored or not
-        we go by the key `monitor_key`. To streamline this process we use
-        `self.helper_configuration` which known store keys in the configs
-        so that we have a generic sorting function instead of an if statement
-        sort.
+        we go by the key `master_monitor_key` if `sub_monitor_keys` is None,
+        otherwise a source is said to be monitored if `master_monitor_key` is
+        True and at least one member of `master_monitor_keys is True. To
+        streamline this process we use `self.helper_configuration` with known
+        store keys in the configs so that we have a generic sorting function
+        instead of an if statement sort.
         """
         monitored_list = []
         not_monitored_list = []
-        current_helper_config = MONITORABLES_PARSING_HELPER[config_type_key]
+        current_helper_configs = MONITORABLES_PARSING_HELPER[config_type_key]
 
-        for helper_keys in current_helper_config:
+        for helper_config in current_helper_configs:
             # Get a list of all the id's for the received data
             for _, config_details in received_config.items():
-                if str_to_bool(config_details[helper_keys['monitor_key']]):
-                    monitored_list.append({
-                        config_details[helper_keys['id']]:
-                            config_details[helper_keys['name_key']]})
+                master_monitor_key = helper_config['master_monitor_key']
+                sub_monitor_keys = helper_config['sub_monitor_keys']
+                id_key = helper_config['id']
+                name_key = helper_config['name_key']
+                master_monitor_key_enabled = str_to_bool(
+                    config_details[master_monitor_key])
+
+                if sub_monitor_keys:
+                    sub_monitor_keys_enabled = [str_to_bool(config_details[key])
+                                                for key in sub_monitor_keys]
+                    if master_monitor_key_enabled and any(
+                            sub_monitor_keys_enabled):
+                        monitored_list.append(
+                            {
+                                config_details[id_key]: config_details[name_key]
+                            }
+                        )
+                    else:
+                        not_monitored_list.append(
+                            {
+                                config_details[id_key]: config_details[name_key]
+                            }
+                        )
                 else:
-                    not_monitored_list.append({
-                        config_details[helper_keys['id']]:
-                            config_details[helper_keys['name_key']]})
+                    if master_monitor_key_enabled:
+                        monitored_list.append(
+                            {
+                                config_details[id_key]: config_details[name_key]
+                            }
+                        )
+                    else:
+                        not_monitored_list.append(
+                            {
+                                config_details[id_key]: config_details[name_key]
+                            }
+                        )
             # If we load data from REDIS we can overwrite it, no need for new
             # structure
+            config_key = helper_config['config_key']
             if data_for_store:
                 data_for_store[source_chain_name]['monitored'][
-                    helper_keys['config_key']] = monitored_list
+                    config_key] = monitored_list
                 data_for_store[source_chain_name]['not_monitored'][
-                    helper_keys['config_key']] = not_monitored_list
+                    config_key] = not_monitored_list
             else:
                 data_for_store = {
                     source_chain_name: {
                         'monitored': {
-                            helper_keys['config_key']: monitored_list
+                            config_key: monitored_list
                         },
                         'not_monitored': {
-                            helper_keys['config_key']: not_monitored_list
+                            config_key: not_monitored_list
                         }
                     }
                 }
