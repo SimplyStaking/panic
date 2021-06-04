@@ -173,7 +173,8 @@ def save_chainlink_node_to_redis(redis: RedisApi,
     redis_hash = Keys.get_hash_parent(cl_node.parent_id)
     cl_node_id = cl_node.node_id
     redis.hset_multiple(redis_hash, {
-        Keys.get_cl_node_went_down_at(cl_node_id): str(cl_node.went_down_at),
+        Keys.get_cl_node_went_down_at_prometheus(cl_node_id):
+            str(cl_node.went_down_at_prometheus),
         Keys.get_cl_node_current_height(cl_node_id):
             str(cl_node.current_height),
         Keys.get_cl_node_eth_blocks_in_queue(cl_node_id):
@@ -206,5 +207,3 @@ def save_chainlink_node_to_redis(redis: RedisApi,
         Keys.get_cl_node_last_monitored_prometheus(cl_node_id):
             str(cl_node.last_monitored_prometheus)
     })
-
-    # TODO: Note we must store metrics like this in the data store.

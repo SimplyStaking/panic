@@ -10,7 +10,7 @@ class ChainlinkNode(Node):
         super().__init__(node_name, node_id, parent_id)
 
         # Metrics
-        self._went_down_at = None
+        self._went_down_at_prometheus = None
         self._current_height = None
         self._eth_blocks_in_queue = None
         self._total_block_headers_received = None
@@ -33,12 +33,12 @@ class ChainlinkNode(Node):
         self._last_monitored_prometheus = None
 
     @property
-    def is_down(self) -> bool:
-        return self._went_down_at is not None
+    def is_down_prometheus(self) -> bool:
+        return self._went_down_at_prometheus is not None
 
     @property
-    def went_down_at(self) -> Optional[float]:
-        return self._went_down_at
+    def went_down_at_prometheus(self) -> Optional[float]:
+        return self._went_down_at_prometheus
 
     @property
     def current_height(self) -> Optional[int]:
@@ -100,29 +100,30 @@ class ChainlinkNode(Node):
     def last_monitored_prometheus(self) -> Optional[float]:
         return self._last_monitored_prometheus
 
-    def set_went_down_at(self, went_down_at: Optional[float]) -> None:
-        self._went_down_at = went_down_at
+    def set_went_down_at_prometheus(
+            self, went_down_at_prometheus: Optional[float]) -> None:
+        self._went_down_at_prometheus = went_down_at_prometheus
 
-    def set_as_down(self, downtime: Optional[float]) -> None:
+    def set_prometheus_as_down(self, downtime: Optional[float]) -> None:
         """
-        This function sets the node as down. It set's the time that the node was
-        initially down to the parameter 'downtime' if it is not None, otherwise
-        it sets it to the current timestamp.
+        This function sets the node's prometheus interface as down. It sets the
+        time that the interface was initially down to the parameter 'downtime'
+        if it is not None, otherwise it sets it to the current timestamp.
         :param downtime:
         :return:
         """
         if downtime is None:
-            self.set_went_down_at(datetime.now().timestamp())
+            self.set_went_down_at_prometheus(datetime.now().timestamp())
         else:
-            self.set_went_down_at(downtime)
+            self.set_went_down_at_prometheus(downtime)
 
-    def set_as_up(self) -> None:
+    def set_prometheus_as_up(self) -> None:
         """
-        This function sets a node as up. A node is said to be up if went_down_at
-        is None.
+        This function sets a node's prometheus interface as up. A node's
+        interface is said to be up if went_down_at_prometheus is None.
         :return: None
         """
-        self.set_went_down_at(None)
+        self.set_went_down_at_prometheus(None)
 
     def set_current_height(self, new_height: Optional[int]) -> None:
         self._current_height = new_height
@@ -232,7 +233,7 @@ class ChainlinkNode(Node):
         This method resets all metrics to their initial state
         :return: None
         """
-        self.set_went_down_at(None)
+        self.set_went_down_at_prometheus(None)
         self.set_current_height(None)
         self.set_eth_blocks_in_queue(None)
         self.set_total_block_headers_received(None)

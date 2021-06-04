@@ -232,15 +232,17 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else json.loads(redis_eth_balance_info.decode("utf-8"))
         cl_node.set_eth_balance_info(eth_balance_info)
 
-        # Load went_down_at from Redis
-        state_went_down_at = cl_node.went_down_at
-        redis_went_down_at = self.redis.hget(
-            redis_hash, Keys.get_cl_node_went_down_at(cl_node_id),
-            bytes(str(state_went_down_at), 'utf-8'))
-        redis_went_down_at = 'None' if redis_went_down_at is None \
-            else redis_went_down_at.decode("utf-8")
-        went_down_at = convert_to_float(redis_went_down_at, None)
-        cl_node.set_went_down_at(went_down_at)
+        # Load went_down_at_prometheus from Redis
+        state_went_down_at_prometheus = cl_node.went_down_at_prometheus
+        redis_went_down_at_prometheus = self.redis.hget(
+            redis_hash, Keys.get_cl_node_went_down_at_prometheus(cl_node_id),
+            bytes(str(state_went_down_at_prometheus), 'utf-8'))
+        redis_went_down_at_prometheus = 'None' \
+            if redis_went_down_at_prometheus is None \
+            else redis_went_down_at_prometheus.decode("utf-8")
+        went_down_at_prometheus = convert_to_float(
+            redis_went_down_at_prometheus, None)
+        cl_node.set_went_down_at_prometheus(went_down_at_prometheus)
 
         # Load last_prometheus_source_used from Redis
         state_last_prometheus_source_used = cl_node.last_prometheus_source_used
@@ -275,19 +277,24 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
             "_current_gas_price_info=%s, _eth_balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
-            "_went_down_at=%s", cl_node, current_height, eth_blocks_in_queue,
-            total_block_headers_received, total_block_headers_dropped,
-            no_of_active_jobs, max_pending_tx_delay, process_start_time_seconds,
-            total_gas_bumps, total_gas_bumps_exceeds_limit,
-            no_of_unconfirmed_txs, total_errored_job_runs,
-            current_gas_price_info, eth_balance_info, last_monitored_prometheus,
-            last_prometheus_source_used, went_down_at)
+            "_went_down_at_prometheus=%s", cl_node, current_height,
+            eth_blocks_in_queue, total_block_headers_received,
+            total_block_headers_dropped, no_of_active_jobs,
+            max_pending_tx_delay, process_start_time_seconds, total_gas_bumps,
+            total_gas_bumps_exceeds_limit, no_of_unconfirmed_txs,
+            total_errored_job_runs, current_gas_price_info, eth_balance_info,
+            last_monitored_prometheus, last_prometheus_source_used,
+            went_down_at_prometheus)
 
         return cl_node
 
     def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
 
+        # TODO: This if-else might no longer make sense when doing multiple
+        #     : sources. Consider using a bool variable such that if it's value
+        #     : is not changed, then a ReceivedUnexpectedDataException is
+        #     : raised.
         if transformed_data['prometheus']:
             if 'result' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['result'][
@@ -333,7 +340,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 node.set_last_monitored_prometheus(meta_data['last_monitored'])
                 node.set_last_prometheus_source_used(
                     meta_data['last_source_used'])
-                node.set_as_up()
+                node.set_prometheus_as_up()
             elif 'error' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['error']['meta_data']
                 error_code = transformed_data['prometheus']['error']['code']
@@ -357,7 +364,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 if error_code == downtime_exception.code:
                     new_went_down_at = transformed_data['prometheus']['error'][
                         'data']['went_down_at']
-                    node.set_as_down(new_went_down_at)
+                    node.set_prometheus_as_down(new_went_down_at)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _update_state".format(self))
@@ -373,6 +380,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
+        # TODO: This if-else might no longer make sense when doing multiple
+        #     : sources. Consider using a bool variable such that if it's value
+        #     : is not changed, then a ReceivedUnexpectedDataException is
+        #     : raised.
         # We must check that the source's data is valid
         for source in VALID_CHAINLINK_SOURCES:
             if source not in transformed_data or \
@@ -387,6 +398,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                                                transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for alerting ...")
 
+        # TODO: This if-else might no longer make sense when doing multiple
+        #     : sources. Consider using a bool variable such that if it's value
+        #     : is not changed, then a ReceivedUnexpectedDataException is
+        #     : raised.
         if transformed_data['prometheus']:
             if 'result' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['result'][
@@ -443,7 +458,8 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 pd_data['current_gas_price_info'][
                     'previous'] = node.current_gas_price_info
                 pd_data['eth_balance_info']['previous'] = node.eth_balance_info
-                pd_data['went_down_at']['previous'] = node.went_down_at
+                pd_data['went_down_at'][
+                    'previous'] = node.went_down_at_prometheus
             elif 'error' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['error'][
                     'meta_data']
@@ -471,7 +487,8 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                         pd_data[metric] = {}
                         pd_data[metric]['current'] = value
 
-                    pd_data['went_down_at']['previous'] = node.went_down_at
+                    pd_data['went_down_at'][
+                        'previous'] = node.went_down_at_prometheus
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data_for_alerting".format(self))
@@ -486,6 +503,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
     def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         self.logger.debug("Performing data transformation on %s ...", data)
 
+        # TODO: This if-else might no longer make sense when doing multiple
+        #     : sources. Consider using a bool variable such that if it's value
+        #     : is not changed, then a ReceivedUnexpectedDataException is
+        #     : raised.
         if data['prometheus']:
             if 'result' in data['prometheus']:
                 meta_data = data['prometheus']['result']['meta_data']
@@ -561,14 +582,15 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 del transformed_data['prometheus']['error']['meta_data'][
                     'monitor_name']
 
-                # If we have a downtime error, set went_down_at to the time of
-                # error if the node was up. Otherwise, leave went_down_at as
-                # stored in the node state
+                # If we have a downtime error, set went_down_at_prometheus to
+                # the time of error if the interface was up. Otherwise, leave
+                # went_down_at_prometheus as stored in the node state
                 if error_code == downtime_exception.code:
                     transformed_data['prometheus']['error']['data'] = {}
                     td_metrics = transformed_data['prometheus']['error']['data']
-                    td_metrics['went_down_at'] = \
-                        node.went_down_at if node.is_down else time_of_error
+                    td_metrics[
+                        'went_down_at'] = node.went_down_at_prometheus if \
+                        node.is_down_prometheus else time_of_error
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _transform_data".format(self))

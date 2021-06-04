@@ -78,7 +78,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_state = {
             self.test_chainlink_node_id: self.test_chainlink_node
         }
-        self.test_went_down_at = None
+        self.test_went_down_at_prometheus = None
         self.test_current_height = 50000000000
         self.test_eth_blocks_in_queue = 3
         self.test_total_block_headers_received = 454545040
@@ -101,7 +101,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
         self.test_last_monitored_prometheus = 45.666786
-        self.test_chainlink_node.set_went_down_at(self.test_went_down_at)
+        self.test_chainlink_node.set_went_down_at_prometheus(
+            self.test_went_down_at_prometheus)
         self.test_chainlink_node.set_current_height(self.test_current_height)
         self.test_chainlink_node.set_eth_blocks_in_queue(
             self.test_eth_blocks_in_queue)
@@ -136,7 +137,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node_new = ChainlinkNode(
             self.test_chainlink_node_name, self.test_chainlink_node_id,
             self.test_chainlink_node_parent_id)
-        self.test_went_down_at_new = None
+        self.test_went_down_at_prometheus_new = None
         self.test_current_height_new = 50000000001
         self.test_eth_blocks_in_queue_new = 4
         self.test_total_block_headers_received_new = 454545041
@@ -160,8 +161,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
-        self.test_chainlink_node_new.set_went_down_at(
-            self.test_went_down_at_new)
+        self.test_chainlink_node_new.set_went_down_at_prometheus(
+            self.test_went_down_at_prometheus_new)
         self.test_chainlink_node_new.set_current_height(
             self.test_current_height_new)
         self.test_chainlink_node_new.set_eth_blocks_in_queue(
@@ -201,7 +202,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.loaded_cl_node_trans_data = ChainlinkNode(
             self.test_chainlink_node_name, self.test_chainlink_node_id,
             self.test_chainlink_node_parent_id)
-        self.loaded_cl_node_trans_data.set_went_down_at(self.test_went_down_at)
+        self.loaded_cl_node_trans_data.set_went_down_at_prometheus(
+            self.test_went_down_at_prometheus)
         self.loaded_cl_node_trans_data.set_current_height(
             self.test_current_height)
         self.loaded_cl_node_trans_data.set_eth_blocks_in_queue(
@@ -351,7 +353,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             self.test_last_monitored_prometheus_new,
                     },
                     'data': {
-                        'went_down_at': self.test_went_down_at_new,
+                        'went_down_at': self.test_went_down_at_prometheus_new,
                         'current_height': self.test_current_height_new,
                         'eth_blocks_in_queue':
                             self.test_eth_blocks_in_queue_new,
@@ -436,8 +438,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                     },
                     'data': {
                         'went_down_at': {
-                            'current': self.test_went_down_at_new,
-                            'previous': self.test_went_down_at
+                            'current': self.test_went_down_at_prometheus_new,
+                            'previous': self.test_went_down_at_prometheus
                         },
                         'current_height': {
                             'current': self.test_current_height_new,
@@ -895,10 +897,10 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_chainlink_node_new,
             self.test_data_transformer._state[self.test_chainlink_node_id])
 
-        # Check that the node is marked as up
+        # Check that the prometheus interface is marked as up
         self.assertFalse(
             self.test_data_transformer._state[
-                self.test_chainlink_node_id].is_down)
+                self.test_chainlink_node_id].is_down_prometheus)
 
         # Now test for when optionals are set to None
         self.test_data_transformer._update_state(
@@ -918,10 +920,10 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_chainlink_node_new,
             self.test_data_transformer._state[self.test_chainlink_node_id])
 
-        # Check that the node is marked as up
+        # Check that the prometheus interface is marked as up
         self.assertFalse(
             self.test_data_transformer._state[
-                self.test_chainlink_node_id].is_down)
+                self.test_chainlink_node_id].is_down_prometheus)
 
     @parameterized.expand([
         ('self.transformed_data_example_general_error', False,),
@@ -952,14 +954,14 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         if is_downtime_error:
             self.assertTrue(
                 self.test_data_transformer._state[
-                    self.test_chainlink_node_id].is_down)
-            old_modified_node_state.set_as_down(
+                    self.test_chainlink_node_id].is_down_prometheus)
+            old_modified_node_state.set_prometheus_as_down(
                 transformed_data_eval['prometheus']['error']['data'][
                     'went_down_at'])
         else:
             self.assertFalse(
                 self.test_data_transformer._state[
-                    self.test_chainlink_node_id].is_down)
+                    self.test_chainlink_node_id].is_down_prometheus)
 
         self.assertEqual(
             old_modified_node_state,
