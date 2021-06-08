@@ -83,15 +83,8 @@ class ChainlinkNodeStore(Store):
         try:
             self._process_redis_store(node_data)
             self._process_mongo_store(node_data)
-        except KeyError as e:
-            self.logger.error("Error when parsing %s.", node_data)
-            self.logger.exception(e)
-            processing_error = True
-        except ReceivedUnexpectedDataException as e:
-            self.logger.error("Error when processing %s", node_data)
-            self.logger.exception(e)
-            processing_error = True
         except Exception as e:
+            self.logger.error("Error when processing %s", node_data)
             self.logger.exception(e)
             processing_error = True
 
@@ -121,8 +114,7 @@ class ChainlinkNodeStore(Store):
         :param configuration: A dict with the following schema:
                             {
                                 '<source_name>': {
-                                    'result': <related_processing_fn>
-                                    'error': <related_processing_fn>
+                                    '<data_index_Key>': <related_processing_fn>
                                 }
                             }
         :param transformed_data: The data received from the transformed
@@ -133,16 +125,30 @@ class ChainlinkNodeStore(Store):
         processing_performed = False
         for source, processing_details in configuration.items():
 
+            # If the required source is not in the transformed data, then the
+            # transformed data is malformed, therefore raise an exception.
+            if source not in transformed_data:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _process_store".format(self))
+
             # If the source is enabled, process its transformed data.
             if transformed_data[source]:
 
                 # Check which index_key was passed by the transformer and
                 # execute the appropriate function.
+                sub_processing_performed = False
                 for data_index_key, processing_fn in processing_details.items():
                     if data_index_key in transformed_data[source]:
                         processing_fn(transformed_data[source][data_index_key])
                         processing_performed = True
-                        continue
+                        sub_processing_performed = True
+                        break
+
+                # If this is false, it means that no processing fn could be
+                # applied to the source's data
+                if not sub_processing_performed:
+                    raise ReceivedUnexpectedDataException(
+                        "{}: _process_store".format(self))
 
         # If no processing is performed, it means that the data was not
         # properly formatted, therefore raise an error.
