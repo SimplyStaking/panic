@@ -14,7 +14,8 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, TOPIC,
                                           CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
                                           HEALTH_CHECK_EXCHANGE)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
+                                  MessageWasNotDeliveredException,
+                                  NodeIsDownException)
 
 
 class ChainlinkNodeStore(Store):
@@ -174,7 +175,7 @@ class ChainlinkNodeStore(Store):
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
             "_current_gas_price_info=%s, _eth_balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
-            "_went_down_at=%s", node_name, metrics['current_height'],
+            "_went_down_at_prometheus=%s", node_name, metrics['current_height'],
             metrics['eth_blocks_in_queue'],
             metrics['total_block_headers_received'],
             metrics['total_block_headers_dropped'],
@@ -187,7 +188,7 @@ class ChainlinkNodeStore(Store):
             metrics['went_down_at'])
 
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
-            Keys.get_cl_node_went_down_at(node_id): str(
+            Keys.get_cl_node_went_down_at_prometheus(node_id): str(
                 metrics['went_down_at']),
             Keys.get_cl_node_current_height(node_id):
                 str(metrics['current_height']),
@@ -222,145 +223,168 @@ class ChainlinkNodeStore(Store):
                 str(meta_data['last_monitored'])
         })
 
-    # TODO: Must do a went_down_at for prometheus etc. Must do fixes in both
-    #     : here in error processing and result processing. For other components
-    #     : it is done.
     def _process_redis_prometheus_error_store(self, data: Dict) -> None:
-        pass
+        meta_data = data['meta_data']
+        error_code = data['code']
+        node_name = meta_data['node_name']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+        downtime_exception = NodeIsDownException(node_name)
 
-    #
-    # def _process_redis_error_store(self, data: Dict) -> None:
-    #     # TODO: Here always save last_source_used, went_down_at if down. Do
-          # TODO: Not store the time of monitoring in last_monitored.
-    #     meta_data = data['meta_data']
-    #     error_code = data['code']
-    #     system_name = meta_data['system_name']
-    #     downtime_exception = SystemIsDownException(system_name)
-    #
-    #     if error_code == downtime_exception.code:
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['data']
-    #
-    #         self.logger.debug(
-    #             "Saving %s state: _went_down_at=%s", system_name,
-    #             metrics['went_down_at']
-    #         )
-    #
-    #         self.redis.hset(
-    #             Keys.get_hash_parent(parent_id),
-    #             Keys.get_system_went_down_at(system_id),
-    #             str(metrics['went_down_at'])
-    #         )
-    #
-    # def _process_mongo_store(self, data: Dict) -> None:
-    #     if 'result' in data:
-    #         self._process_mongo_result_store(data['result'])
-    #     elif 'error' in data:
-    #         self._process_mongo_error_store(data['error'])
-    #     else:
-    #         raise ReceivedUnexpectedDataException(
-    #             "{}: _process_mongo_store".format(self))
-    #
-    # def _process_mongo_result_store(self, data: Dict) -> None:
-    #     """
-    #     Updating mongo with system metrics using a time-based document with 60
-    #     entries per hour per system, assuming each system monitoring round is
-    #     60 seconds.
-    #
-    #     Collection is the parent identifier of the system, a document will keep
-    #     incrementing with new system metrics until it's the next hour at which
-    #     point mongo will create a new document and repeat the process.
-    #
-    #     Document type will always be system, as only system metrics are going
-    #     to be stored in this document.
-    #
-    #     Timestamp is the time of when these metrics were extracted.
-    #
-    #     $inc increments n_entries by one each time an entry is added
-    #     """
-    #
-    #     meta_data = data['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['data']
-    #     time_now = datetime.now()
-    #     self.mongo.update_one(
-    #         parent_id,
-    #         {'doc_type': 'system', 'd': time_now.hour},
-    #         {
-    #             '$push': {
-    #                 system_id: {
-    #                     'process_cpu_seconds_total': str(
-    #                         metrics['process_cpu_seconds_total']),
-    #                     'process_memory_usage': str(
-    #                         metrics['process_memory_usage']),
-    #                     'virtual_memory_usage': str(
-    #                         metrics['virtual_memory_usage']),
-    #                     'open_file_descriptors': str(
-    #                         metrics['open_file_descriptors']),
-    #                     'system_cpu_usage': str(metrics['system_cpu_usage']),
-    #                     'system_ram_usage': str(metrics['system_ram_usage']),
-    #                     'system_storage_usage': str(
-    #                         metrics['system_storage_usage']),
-    #                     'network_transmit_bytes_per_second': str(
-    #                         metrics['network_transmit_bytes_per_second']),
-    #                     'network_receive_bytes_per_second': str(
-    #                         metrics['network_receive_bytes_per_second']),
-    #                     'network_receive_bytes_total': str(
-    #                         metrics['network_receive_bytes_total']),
-    #                     'network_transmit_bytes_total': str(
-    #                         metrics['network_transmit_bytes_total']),
-    #                     'disk_io_time_seconds_total': str(
-    #                         metrics['disk_io_time_seconds_total']),
-    #                     'disk_io_time_seconds_in_interval': str(
-    #                         metrics['disk_io_time_seconds_in_interval']),
-    #                     'went_down_at': str(metrics['went_down_at']),
-    #                     'timestamp': meta_data['last_monitored'],
-    #                 }
-    #             },
-    #             '$inc': {'n_entries': 1},
-    #         }
-    #     )
-    #
-    # def _process_mongo_error_store(self, data: Dict) -> None:
-    #     """
-    #     Updating mongo with error metrics using a time-based document with 60
-    #     entries per hour per system, assuming each system monitoring round is
-    #     60 seconds.
-    #
-    #     Collection is the parent identifier of the system, a document will keep
-    #     incrementing with new system metrics until it's the next hour at which
-    #     point mongo will create a new document and repeat the process.
-    #
-    #     Document type will always be system, as only system metrics are going
-    #     to be stored in this document.
-    #
-    #     Timestamp is the time of when these metrics were extracted.
-    #
-    #     $inc increments n_entries by one each time an entry is added
-    #     """
-    #
-    #     meta_data = data['meta_data']
-    #     error_code = data['code']
-    #     system_name = meta_data['system_name']
-    #     downtime_exception = SystemIsDownException(system_name)
-    #
-    #     if error_code == downtime_exception.code:
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['data']
-    #         time_now = datetime.now()
-    #         self.mongo.update_one(
-    #             parent_id,
-    #             {'doc_type': 'system', 'd': time_now.hour},
-    #             {
-    #                 '$push': {
-    #                     system_id: {
-    #                         'went_down_at': str(metrics['went_down_at']),
-    #                         'timestamp': meta_data['time'],
-    #                     }
-    #                 },
-    #                 '$inc': {'n_entries': 1},
-    #             }
-    #         )
+        if error_code == downtime_exception.code:
+            self.logger.debug(
+                "Saving %s state: _went_down_at=%s, "
+                "_last_prometheus_source_used=%s", node_name,
+                metrics['went_down_at'], metrics['last_source_used']
+            )
+
+            self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
+                Keys.get_cl_node_went_down_at_prometheus(node_id): str(
+                    metrics['went_down_at']),
+                Keys.get_cl_node_last_prometheus_source_used(node_id):
+                    str(meta_data['last_source_used']),
+            })
+        else:
+            self.logger.debug(
+                "Saving %s state: _last_prometheus_source_used=%s", node_name,
+                metrics['last_source_used']
+            )
+
+            self.redis.hset(
+                Keys.get_hash_parent(parent_id),
+                Keys.get_cl_node_last_prometheus_source_used(node_id),
+                str(meta_data['last_source_used']),
+            )
+
+    def _process_mongo_store(self, data: Dict) -> None:
+        configuration = {
+            'prometheus': {
+                'result': self._process_mongo_prometheus_result_store,
+                'error': self._process_mongo_prometheus_error_store,
+            }
+        }
+        self._process_store(configuration, data)
+
+    def _process_mongo_prometheus_result_store(self, data: Dict) -> None:
+        """
+        Updating mongo with node metrics using a time-based document with 360
+        entries per hour per node, assuming each node monitoring round is
+        10 seconds.
+
+        Collection is the parent identifier of the node, a document will keep
+        incrementing with new node metrics until it's the next hour at which
+        point mongo will create a new document and repeat the process.
+
+        Document type will always be node, as only node metrics are going to be
+        stored in this document.
+
+        Timestamp is the time of when these metrics were extracted.
+
+        $inc increments n_entries by one each time an entry is added
+        """
+
+        meta_data = data['meta_data']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+        time_now = datetime.now()
+        self.mongo.update_one(
+            parent_id,
+            {'doc_type': 'node', 'd': time_now.hour},
+            {
+                '$push': {
+                    node_id: {
+                        'current_height': str(metrics['current_height']),
+                        'eth_blocks_in_queue': str(
+                            metrics['eth_blocks_in_queue']),
+                        'total_block_headers_received': str(
+                            metrics['total_block_headers_received']),
+                        'total_block_headers_dropped': str(
+                            metrics['total_block_headers_dropped']),
+                        'no_of_active_jobs': str(metrics['no_of_active_jobs']),
+                        'max_pending_tx_delay': str(
+                            metrics['max_pending_tx_delay']),
+                        'process_start_time_seconds': str(
+                            metrics['process_start_time_seconds']),
+                        'total_gas_bumps': str(metrics['total_gas_bumps']),
+                        'total_gas_bumps_exceeds_limit': str(
+                            metrics['total_gas_bumps_exceeds_limit']),
+                        'no_of_unconfirmed_txs': str(
+                            metrics['no_of_unconfirmed_txs']),
+                        'total_errored_job_runs': str(
+                            metrics['total_errored_job_runs']),
+                        'current_gas_price_info':
+                            'None' if metrics['current_gas_price_info'] is None
+                            else json.dumps(metrics['current_gas_price_info']),
+                        'eth_balance_info':
+                            json.dumps(metrics['eth_balance_info']),
+                        'went_down_at_prometheus': str(metrics['went_down_at']),
+                        'last_prometheus_source_used':
+                            str(meta_data['last_source_used']),
+                        'timestamp': meta_data['last_monitored'],
+                    }
+                },
+                '$inc': {'n_entries': 1},
+            }
+        )
+
+    def _process_mongo_prometheus_error_store(self, data: Dict) -> None:
+        """
+        Updating mongo with error metrics using a time-based document with 360
+        entries per hour per node, assuming each node monitoring round is 10
+        seconds.
+
+        Collection is the parent identifier of the node, a document will keep
+        incrementing with new node metrics until it's the next hour at which
+        point mongo will create a new document and repeat the process.
+
+        Document type will always be node, as only node metrics are going to be
+        stored in this document.
+
+        Timestamp is the time of when these metrics were extracted.
+
+        $inc increments n_entries by one each time an entry is added
+        """
+
+        meta_data = data['meta_data']
+        error_code = data['code']
+        node_name = meta_data['node_name']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+        time_now = datetime.now()
+        downtime_exception = NodeIsDownException(node_name)
+
+        if error_code == downtime_exception.code:
+            self.mongo.update_one(
+                parent_id,
+                {'doc_type': 'node', 'd': time_now.hour},
+                {
+                    '$push': {
+                        node_id: {
+                            'went_down_at_prometheus':
+                                str(metrics['went_down_at']),
+                            'last_prometheus_source_used':
+                                str(meta_data['last_source_used']),
+                            'timestamp': meta_data['time'],
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )
+        else:
+            self.mongo.update_one(
+                parent_id,
+                {'doc_type': 'node', 'd': time_now.hour},
+                {
+                    '$push': {
+                        node_id: {
+                            'last_prometheus_source_used':
+                                str(meta_data['last_source_used']),
+                            'timestamp': meta_data['time'],
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )

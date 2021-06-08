@@ -32,7 +32,6 @@ monitored if master_monitor_key is True only. Note that this had to be done
 because multiple monitor_keys could be associated with the same config_key.
 """
 
-# TODO: Reflect the last paragraph above in the user of this function.
 MONITORABLES_PARSING_HELPER = {
     GITHUB_REPOS_CONFIG: [{
         "id": 'id',
