@@ -13,7 +13,7 @@ from parameterized import parameterized
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.data_store.mongo.mongo_api import MongoApi
-from src.data_store.redis import RedisApi
+from src.data_store.redis import RedisApi, Keys
 from src.data_store.stores.node.chainlink import ChainlinkNodeStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -24,6 +24,7 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
 from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
+from src.utils.types import convert_to_int, convert_to_float
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
@@ -556,865 +557,518 @@ class TestSystemStore(unittest.TestCase):
         test_result_fn.assert_called_once_with(10)
         test_error_fn.assert_called_once_with(20)
 
-    # TODO: Start tests for _process_redis_store
+    @mock.patch.object(ChainlinkNodeStore, "_process_store")
+    def test_process_redis_store_calls_process_store_correctly(
+            self, mock_proc_store) -> None:
+        mock_proc_store.return_value = None
+        test_conf = {
+            'prometheus': {
+                'result':
+                    self.test_store._process_redis_prometheus_result_store,
+                'error': self.test_store._process_redis_prometheus_error_store,
+            }
+        }
+        self.test_store._process_redis_store(self.node_data_optionals_enabled)
+        mock_proc_store.assert_called_once_with(
+            test_conf, self.node_data_optionals_enabled)
 
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # @mock.patch.object(RedisApi, "hset_multiple")
-    # def test_process_redis_store_redis_is_called_correctly(
-    #         self, mock_system_data, mock_hset_multiple) -> None:
-    #
-    #     data = eval(mock_system_data)
-    #     self.test_store._process_redis_store(data)
-    #
-    #     meta_data = data['result']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['result']['data']
-    #
-    #     call_1 = call(Keys.get_hash_parent(parent_id), {
-    #         Keys.get_system_process_cpu_seconds_total(system_id):
-    #             str(metrics['process_cpu_seconds_total']),
-    #         Keys.get_system_process_memory_usage(system_id):
-    #             str(metrics['process_memory_usage']),
-    #         Keys.get_system_virtual_memory_usage(system_id):
-    #             str(metrics['virtual_memory_usage']),
-    #         Keys.get_system_open_file_descriptors(system_id):
-    #             str(metrics['open_file_descriptors']),
-    #         Keys.get_system_system_cpu_usage(system_id):
-    #             str(metrics['system_cpu_usage']),
-    #         Keys.get_system_system_ram_usage(system_id):
-    #             str(metrics['system_ram_usage']),
-    #         Keys.get_system_system_storage_usage(system_id):
-    #             str(metrics['system_storage_usage']),
-    #         Keys.get_system_network_transmit_bytes_per_second(
-    #             system_id):
-    #             str(metrics['network_transmit_bytes_per_second']),
-    #         Keys.get_system_network_receive_bytes_per_second(
-    #             system_id):
-    #             str(metrics['network_receive_bytes_per_second']),
-    #         Keys.get_system_network_receive_bytes_total(system_id):
-    #             str(metrics['network_receive_bytes_total']),
-    #         Keys.get_system_network_transmit_bytes_total(system_id):
-    #             str(metrics['network_transmit_bytes_total']),
-    #         Keys.get_system_disk_io_time_seconds_total(system_id):
-    #             str(metrics['disk_io_time_seconds_total']),
-    #         Keys.get_system_disk_io_time_seconds_in_interval(
-    #             system_id):
-    #             str(metrics['disk_io_time_seconds_in_interval']),
-    #         Keys.get_system_went_down_at(system_id):
-    #             str(metrics['went_down_at']),
-    #         Keys.get_system_last_monitored(system_id):
-    #             str(meta_data['last_monitored'])})
-    #     mock_hset_multiple.assert_has_calls([call_1])
-    #
-    # @mock.patch.object(RedisApi, "hset")
-    # def test_process_redis_store_calls_hset_on_error(self, mock_hset) -> None:
-    #     self.test_store._process_redis_store(self.system_data_error)
-    #     call_1 = call(Keys.get_hash_parent(self.parent_id),
-    #                   Keys.get_system_went_down_at(self.system_id),
-    #                   str(self.last_monitored))
-    #     mock_hset.assert_has_calls([call_1])
-    #
-    # def test_process_redis_store_raises_exception_on_unexpected_key(
-    #         self) -> None:
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_store._process_redis_store,
-    #                       self.system_data_unexpected)
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # def test_process_redis_store_redis_stores_correctly(
-    #         self, mock_system_data) -> None:
-    #
-    #     data = eval(mock_system_data)
-    #     self.test_store._process_redis_store(data)
-    #
-    #     meta_data = data['result']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['result']['data']
-    #
-    #     self.assertEqual(str(metrics['process_cpu_seconds_total']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_process_cpu_seconds_total(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['process_memory_usage']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_process_memory_usage(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['virtual_memory_usage']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_virtual_memory_usage(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['open_file_descriptors']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_open_file_descriptors(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['system_cpu_usage']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_system_cpu_usage(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['system_ram_usage']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_system_ram_usage(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['system_storage_usage']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_system_storage_usage(
-    #                                          system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['network_transmit_bytes_per_second']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_network_transmit_bytes_per_second(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_network_receive_bytes_per_second(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['network_receive_bytes_per_second']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_network_receive_bytes_total(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['network_transmit_bytes_total']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_network_transmit_bytes_total(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['disk_io_time_seconds_total']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_disk_io_time_seconds_total(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(str(metrics['disk_io_time_seconds_in_interval']),
-    #                      self.redis.hget(
-    #                          Keys.get_hash_parent(parent_id),
-    #                          Keys.get_system_disk_io_time_seconds_in_interval(
-    #                              system_id)).decode("utf-8"))
-    #     self.assertEqual(self.none, self.redis.hget(Keys.get_hash_parent(
-    #         parent_id), Keys.get_system_went_down_at(
-    #         system_id)))
-    #     self.assertEqual(str(meta_data['last_monitored']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                      Keys.get_system_last_monitored(
-    #                                          system_id)).decode("utf-8"))
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_mongo_store",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # def test_process_data_saves_in_redis(self, mock_system_data, mock_send_hb,
-    #                                      mock_ack, mock_process_mongo) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #         data = eval(mock_system_data)
-    #
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data)
-    #         )
-    #         mock_process_mongo.assert_called_once()
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
-    #
-    #         meta_data = data['result']['meta_data']
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['result']['data']
-    #
-    #         self.assertEqual(str(metrics['process_cpu_seconds_total']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_process_cpu_seconds_total(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['process_memory_usage']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_process_memory_usage(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['virtual_memory_usage']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_virtual_memory_usage(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['open_file_descriptors']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_open_file_descriptors(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['system_cpu_usage']),
-    #                          self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                          Keys.get_system_system_cpu_usage(
-    #                                              system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['system_ram_usage']),
-    #                          self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                          Keys.get_system_system_ram_usage(
-    #                                              system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['system_storage_usage']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_system_storage_usage(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(
-    #             str(metrics['network_transmit_bytes_per_second']),
-    #             self.redis.hget(
-    #                 Keys.get_hash_parent(parent_id),
-    #                 Keys.get_system_network_transmit_bytes_per_second(
-    #                     system_id)).decode("utf-8"))
-    #         self.assertEqual(
-    #             str(metrics['network_receive_bytes_per_second']),
-    #             self.redis.hget(
-    #                 Keys.get_hash_parent(parent_id),
-    #                 Keys.get_system_network_receive_bytes_per_second(
-    #                     system_id)).decode("utf-8"))
-    #         self.assertEqual(
-    #             str(metrics['network_receive_bytes_per_second']),
-    #             self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                             Keys.get_system_network_receive_bytes_total(
-    #                                 system_id)).decode("utf-8"))
-    #         self.assertEqual(
-    #             str(metrics['network_transmit_bytes_total']),
-    #             self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                             Keys.get_system_network_transmit_bytes_total(
-    #                                 system_id)).decode("utf-8"))
-    #         self.assertEqual(str(metrics['disk_io_time_seconds_total']),
-    #                          self.redis.hget(
-    #                              Keys.get_hash_parent(parent_id),
-    #                              Keys.get_system_disk_io_time_seconds_total(
-    #                                  system_id)).decode("utf-8"))
-    #         self.assertEqual(
-    #             str(metrics['disk_io_time_seconds_in_interval']),
-    #             self.redis.hget(
-    #                 Keys.get_hash_parent(parent_id),
-    #                 Keys.get_system_disk_io_time_seconds_in_interval(
-    #                     system_id)).decode("utf-8"))
-    #         self.assertEqual(self.none, self.redis.hget(
-    #             Keys.get_hash_parent(parent_id),
-    #             Keys.get_system_went_down_at(
-    #                 system_id)))
-    #         self.assertEqual(str(meta_data['last_monitored']),
-    #                          self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                                          Keys.get_system_last_monitored(
-    #                                              system_id)).decode("utf-8"))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @parameterized.expand([
-    #     ("KeyError", "self.system_data_key_error "),
-    #     ("ReceivedUnexpectedDataException", "self.system_data_unexpected"),
-    # ])
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # def test_process_data_with_bad_data_does_raises_exceptions(
-    #         self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.system_data_unexpected)
-    #         )
-    #         self.assertRaises(eval(mock_error),
-    #                           self.test_store._process_redis_store,
-    #                           eval(mock_bad_data))
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_mongo_store",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
-    #             autospec=True)
-    # def test_process_data_sends_heartbeat_correctly(self,
-    #                                                 mock_process_redis_store,
-    #                                                 mock_process_mongo_store,
-    #                                                 mock_basic_ack) -> None:
-    #
-    #     mock_basic_ack.return_value = None
-    #     try:
-    #         self.test_rabbit_manager.connect()
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         self.test_rabbit_manager.queue_delete(self.test_queue_name)
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #
-    #         self.test_rabbit_manager.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key=self.heartbeat_routing_key)
-    #
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.system_data_1)
-    #         )
-    #
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-    #
-    #         heartbeat_test = {
-    #             'component_name': self.test_store_name,
-    #             'is_alive': True,
-    #             'timestamp': datetime(2012, 1, 1).timestamp()
-    #         }
-    #
-    #         _, _, body = self.test_rabbit_manager.basic_get(
-    #             self.test_queue_name)
-    #         self.assertEqual(heartbeat_test, json.loads(body))
-    #         mock_process_redis_store.assert_called_once()
-    #         mock_process_mongo_store.assert_called_once()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # def test_process_data_doesnt_send_heartbeat_on_processing_error(
-    #         self, mock_basic_ack) -> None:
-    #
-    #     mock_basic_ack.return_value = None
-    #     try:
-    #         self.test_rabbit_manager.connect()
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         self.test_rabbit_manager.queue_delete(self.test_queue_name)
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #
-    #         self.test_rabbit_manager.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key=self.heartbeat_routing_key)
-    #
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.system_data_unexpected)
-    #         )
-    #
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch.object(MongoApi, "update_one")
-    # def test_process_mongo_store_calls_update_one(self,
-    #                                               mock_update_one) -> None:
-    #     self.test_store._process_mongo_result_store(
-    #         self.system_data_1['result'])
-    #     mock_update_one.assert_called_once()
-    #
-    # def test_process_mongo_store_raises_exception_on_unexpected_key(
-    #         self) -> None:
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_store._process_mongo_store,
-    #                       self.system_data_unexpected)
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(MongoApi, "update_one")
-    # def test_process_mongo_result_store_calls_mongo_correctly(
-    #         self, mock_system_data, mock_update_one) -> None:
-    #     data = eval(mock_system_data)
-    #     self.test_store._process_mongo_result_store(data['result'])
-    #
-    #     meta_data = data['result']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['result']['data']
-    #     call_1 = call(
-    #         parent_id,
-    #         {'doc_type': 'system', 'd': datetime.now().hour},
-    #         {
-    #             '$push': {
-    #                 system_id: {
-    #                     'process_cpu_seconds_total': str(
-    #                         metrics['process_cpu_seconds_total']),
-    #                     'process_memory_usage': str(
-    #                         metrics['process_memory_usage']),
-    #                     'virtual_memory_usage': str(
-    #                         metrics['virtual_memory_usage']),
-    #                     'open_file_descriptors': str(
-    #                         metrics['open_file_descriptors']),
-    #                     'system_cpu_usage': str(metrics['system_cpu_usage']),
-    #                     'system_ram_usage': str(metrics['system_ram_usage']),
-    #                     'system_storage_usage': str(
-    #                         metrics['system_storage_usage']),
-    #                     'network_transmit_bytes_per_second': str(
-    #                         metrics['network_transmit_bytes_per_second']),
-    #                     'network_receive_bytes_per_second': str(
-    #                         metrics['network_receive_bytes_per_second']),
-    #                     'network_receive_bytes_total': str(
-    #                         metrics['network_receive_bytes_total']),
-    #                     'network_transmit_bytes_total': str(
-    #                         metrics['network_transmit_bytes_total']),
-    #                     'disk_io_time_seconds_total': str(
-    #                         metrics['disk_io_time_seconds_total']),
-    #                     'disk_io_time_seconds_in_interval': str(
-    #                         metrics['disk_io_time_seconds_in_interval']),
-    #                     'went_down_at': str(metrics['went_down_at']),
-    #                     'timestamp': meta_data['last_monitored'],
-    #                 }
-    #             },
-    #             '$inc': {'n_entries': 1},
-    #         }
-    #     )
-    #     mock_update_one.assert_has_calls([call_1])
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
-    #             autospec=True)
-    # @mock.patch.object(MongoApi, "update_one")
-    # def test_process_data_calls_mongo_correctly(
-    #         self, mock_system_data, mock_update_one, mock_process_redis_store,
-    #         mock_send_hb, mock_ack) -> None:
-    #
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         data = eval(mock_system_data)
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data)
-    #         )
-    #
-    #         mock_process_redis_store.assert_called_once()
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
-    #
-    #         meta_data = data['result']['meta_data']
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['result']['data']
-    #         call_1 = call(
-    #             parent_id,
-    #             {'doc_type': 'system', 'd': datetime.now().hour},
-    #             {
-    #                 '$push': {
-    #                     system_id: {
-    #                         'process_cpu_seconds_total': str(
-    #                             metrics['process_cpu_seconds_total']),
-    #                         'process_memory_usage': str(
-    #                             metrics['process_memory_usage']),
-    #                         'virtual_memory_usage': str(
-    #                             metrics['virtual_memory_usage']),
-    #                         'open_file_descriptors': str(
-    #                             metrics['open_file_descriptors']),
-    #                         'system_cpu_usage': str(
-    #                             metrics['system_cpu_usage']),
-    #                         'system_ram_usage': str(
-    #                             metrics['system_ram_usage']),
-    #                         'system_storage_usage': str(
-    #                             metrics['system_storage_usage']),
-    #                         'network_transmit_bytes_per_second': str(
-    #                             metrics['network_transmit_bytes_per_second']),
-    #                         'network_receive_bytes_per_second': str(
-    #                             metrics['network_receive_bytes_per_second']),
-    #                         'network_receive_bytes_total': str(
-    #                             metrics['network_receive_bytes_total']),
-    #                         'network_transmit_bytes_total': str(
-    #                             metrics['network_transmit_bytes_total']),
-    #                         'disk_io_time_seconds_total': str(
-    #                             metrics['disk_io_time_seconds_total']),
-    #                         'disk_io_time_seconds_in_interval': str(
-    #                             metrics['disk_io_time_seconds_in_interval']),
-    #                         'went_down_at': str(metrics['went_down_at']),
-    #                         'timestamp': meta_data['last_monitored'],
-    #                     }
-    #                 },
-    #                 '$inc': {'n_entries': 1},
-    #             }
-    #         )
-    #         mock_update_one.assert_has_calls([call_1])
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(MongoApi, "update_one")
-    # def test_process_mongo_error_store_calls_mongo_correctly(
-    #         self, mock_update_one) -> None:
-    #
-    #     data = self.system_data_error
-    #     self.test_store._process_mongo_error_store(data['error'])
-    #
-    #     meta_data = data['error']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['error']['data']
-    #
-    #     call_1 = call(
-    #         parent_id,
-    #         {'doc_type': 'system', 'd': datetime.now().hour},
-    #         {
-    #             '$push': {
-    #                 system_id: {
-    #                     'went_down_at': str(metrics['went_down_at']),
-    #                     'timestamp': meta_data['time'],
-    #                 }
-    #             },
-    #             '$inc': {'n_entries': 1},
-    #         }
-    #     )
-    #     mock_update_one.assert_has_calls([call_1])
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
-    #             autospec=True)
-    # @mock.patch.object(MongoApi, "update_one")
-    # def test_process_data_calls_mongo_correctly_on_error_data(
-    #         self, mock_update_one, mock_process_redis_store,
-    #         mock_send_hb, mock_ack) -> None:
-    #
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         data = self.system_data_error
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data)
-    #         )
-    #
-    #         mock_process_redis_store.assert_called_once()
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
-    #
-    #         meta_data = data['error']['meta_data']
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['error']['data']
-    #
-    #         call_1 = call(
-    #             parent_id,
-    #             {'doc_type': 'system', 'd': datetime.now().hour},
-    #             {
-    #                 '$push': {
-    #                     system_id: {
-    #                         'went_down_at': str(metrics['went_down_at']),
-    #                         'timestamp': meta_data['time'],
-    #                     }
-    #                 },
-    #                 '$inc': {'n_entries': 1},
-    #             }
-    #         )
-    #         mock_update_one.assert_has_calls([call_1])
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # def test_process_mongo_store_mongo_stores_correctly(
-    #         self, mock_system_data) -> None:
-    #
-    #     data = eval(mock_system_data)
-    #     self.test_store._process_mongo_store(data)
-    #
-    #     meta_data = data['result']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['result']['data']
-    #
-    #     documents = self.mongo.get_all(parent_id)
-    #     document = documents[0]
-    #     expected = [
-    #         'system',
-    #         1,
-    #         str(metrics['process_cpu_seconds_total']),
-    #         str(metrics['process_memory_usage']),
-    #         str(metrics['virtual_memory_usage']),
-    #         str(metrics['open_file_descriptors']),
-    #         str(metrics['system_cpu_usage']),
-    #         str(metrics['system_ram_usage']),
-    #         str(metrics['system_storage_usage']),
-    #         str(metrics['network_receive_bytes_total']),
-    #         str(metrics['network_transmit_bytes_total']),
-    #         str(metrics['disk_io_time_seconds_total']),
-    #         str(metrics['network_transmit_bytes_per_second']),
-    #         str(metrics['network_receive_bytes_per_second']),
-    #         str(metrics['disk_io_time_seconds_in_interval']),
-    #         str(metrics['went_down_at'])
-    #     ]
-    #     actual = [
-    #         document['doc_type'],
-    #         document['n_entries'],
-    #         document[system_id][0]['process_cpu_seconds_total'],
-    #         document[system_id][0]['process_memory_usage'],
-    #         document[system_id][0]['virtual_memory_usage'],
-    #         document[system_id][0]['open_file_descriptors'],
-    #         document[system_id][0]['system_cpu_usage'],
-    #         document[system_id][0]['system_ram_usage'],
-    #         document[system_id][0]['system_storage_usage'],
-    #         document[system_id][0]['network_receive_bytes_total'],
-    #         document[system_id][0]['network_transmit_bytes_total'],
-    #         document[system_id][0]['disk_io_time_seconds_total'],
-    #         document[system_id][0]['network_transmit_bytes_per_second'],
-    #         document[system_id][0]['network_receive_bytes_per_second'],
-    #         document[system_id][0]['disk_io_time_seconds_in_interval'],
-    #         document[system_id][0]['went_down_at']
-    #     ]
-    #
-    #     self.assertListEqual(expected, actual)
-    #
-    # @freeze_time("2012-01-01")
-    # def test_process_mongo_error_store_store_correctly(self) -> None:
-    #
-    #     data = self.system_data_error
-    #     self.test_store._process_mongo_error_store(data['error'])
-    #
-    #     meta_data = data['error']['meta_data']
-    #     system_id = meta_data['system_id']
-    #     parent_id = meta_data['system_parent_id']
-    #     metrics = data['error']['data']
-    #
-    #     documents = self.mongo.get_all(parent_id)
-    #     document = documents[0]
-    #     expected = [
-    #         'system',
-    #         1,
-    #         meta_data['time'],
-    #         str(metrics['went_down_at'])
-    #     ]
-    #     actual = [
-    #         document['doc_type'],
-    #         document['n_entries'],
-    #         document[system_id][0]['timestamp'],
-    #         document[system_id][0]['went_down_at']
-    #     ]
-    #
-    #     self.assertListEqual(expected, actual)
-    #
-    # @parameterized.expand([
-    #     ("self.system_data_1",),
-    #     ("self.system_data_2",),
-    #     ("self.system_data_3",),
-    # ])
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
-    #             autospec=True)
-    # def test_process_data_results_stores_in_mongo_correctly(
-    #         self, mock_system_data, mock_process_redis_store,
-    #         mock_send_hb, mock_ack) -> None:
-    #
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         data = eval(mock_system_data)
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data)
-    #         )
-    #
-    #         mock_process_redis_store.assert_called_once()
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
-    #
-    #         meta_data = data['result']['meta_data']
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['result']['data']
-    #
-    #         documents = self.mongo.get_all(parent_id)
-    #         document = documents[0]
-    #         expected = [
-    #             'system',
-    #             1,
-    #             str(metrics['process_cpu_seconds_total']),
-    #             str(metrics['process_memory_usage']),
-    #             str(metrics['virtual_memory_usage']),
-    #             str(metrics['open_file_descriptors']),
-    #             str(metrics['system_cpu_usage']),
-    #             str(metrics['system_ram_usage']),
-    #             str(metrics['system_storage_usage']),
-    #             str(metrics['network_receive_bytes_total']),
-    #             str(metrics['network_transmit_bytes_total']),
-    #             str(metrics['disk_io_time_seconds_total']),
-    #             str(metrics['network_transmit_bytes_per_second']),
-    #             str(metrics['network_receive_bytes_per_second']),
-    #             str(metrics['disk_io_time_seconds_in_interval']),
-    #             str(metrics['went_down_at'])
-    #         ]
-    #         actual = [
-    #             document['doc_type'],
-    #             document['n_entries'],
-    #             document[system_id][0]['process_cpu_seconds_total'],
-    #             document[system_id][0]['process_memory_usage'],
-    #             document[system_id][0]['virtual_memory_usage'],
-    #             document[system_id][0]['open_file_descriptors'],
-    #             document[system_id][0]['system_cpu_usage'],
-    #             document[system_id][0]['system_ram_usage'],
-    #             document[system_id][0]['system_storage_usage'],
-    #             document[system_id][0]['network_receive_bytes_total'],
-    #             document[system_id][0]['network_transmit_bytes_total'],
-    #             document[system_id][0]['disk_io_time_seconds_total'],
-    #             document[system_id][0]['network_transmit_bytes_per_second'],
-    #             document[system_id][0]['network_receive_bytes_per_second'],
-    #             document[system_id][0]['disk_io_time_seconds_in_interval'],
-    #             document[system_id][0]['went_down_at']
-    #         ]
-    #
-    #         self.assertListEqual(expected, actual)
-    #
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.system.SystemStore._process_redis_store",
-    #             autospec=True)
-    # def test_process_data_error_stores_in_mongo_correctly(
-    #         self, mock_process_redis_store,
-    #         mock_send_hb, mock_ack) -> None:
-    #
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #
-    #         data = self.system_data_error
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=self._input_routing_key)
-    #
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data)
-    #         )
-    #
-    #         mock_process_redis_store.assert_called_once()
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
-    #
-    #         meta_data = data['error']['meta_data']
-    #         system_id = meta_data['system_id']
-    #         parent_id = meta_data['system_parent_id']
-    #         metrics = data['error']['data']
-    #
-    #         documents = self.mongo.get_all(parent_id)
-    #         document = documents[0]
-    #         expected = [
-    #             'system',
-    #             1,
-    #             meta_data['time'],
-    #             str(metrics['went_down_at'])
-    #         ]
-    #         actual = [
-    #             document['doc_type'],
-    #             document['n_entries'],
-    #             document[system_id][0]['timestamp'],
-    #             document[system_id][0]['went_down_at']
-    #         ]
-    #
-    #         self.assertListEqual(expected, actual)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
+    @parameterized.expand([
+        ("self.node_data_optionals_enabled",),
+        ("self.node_data_optionals_disabled",),
+        ("self.node_data_optionals_enabled_pad",),
+    ])
+    def test_process_redis_prometheus_result_store_stores_correctly(
+            self, data_var) -> None:
+        data = eval(data_var)['prometheus']['result']
+        redis_hash = Keys.get_hash_parent(self.parent_id)
+
+        self.test_store._process_redis_prometheus_result_store(data)
+
+        self.assertEqual(
+            data['data']['current_height'],
+            convert_to_int(self.redis.hget(redis_hash,
+                                           Keys.get_cl_node_current_height(
+                                               self.node_id)
+                                           ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['eth_blocks_in_queue'],
+            convert_to_int(self.redis.hget(redis_hash,
+                                           Keys.get_cl_node_eth_blocks_in_queue(
+                                               self.node_id)
+                                           ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['total_block_headers_received'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_total_block_headers_received(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['total_block_headers_dropped'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_total_block_headers_dropped(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['no_of_active_jobs'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_no_of_active_jobs(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['max_pending_tx_delay'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_max_pending_tx_delay(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['process_start_time_seconds'],
+            convert_to_float(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_process_start_time_seconds(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['total_gas_bumps'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_total_gas_bumps(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['total_gas_bumps_exceeds_limit'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_total_gas_bumps_exceeds_limit(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['no_of_unconfirmed_txs'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_no_of_unconfirmed_txs(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['total_errored_job_runs'],
+            convert_to_int(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_total_errored_job_runs(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['eth_balance_info'],
+            json.loads(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_eth_balance_info(self.node_id)
+            ).decode("utf-8")))
+        self.assertEqual(
+            data['meta_data']['last_source_used'],
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_last_prometheus_source_used(self.node_id)
+            ).decode("utf-8"))
+        self.assertEqual(
+            data['meta_data']['last_monitored'],
+            convert_to_float(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_last_monitored_prometheus(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+        self.assertEqual(
+            data['data']['went_down_at'],
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_went_down_at_prometheus(self.node_id)
+            ))
+        redis_current_gas_price_info = self.redis.hget(
+            redis_hash,
+            Keys.get_cl_node_current_gas_price_info(self.node_id)
+        )
+        parsed_current_gas_price_info = None \
+            if redis_current_gas_price_info is None \
+            else json.loads(redis_current_gas_price_info.decode('utf-8'))
+        self.assertEqual(data['data']['current_gas_price_info'],
+                         parsed_current_gas_price_info)
+
+    def test_process_redis_prometheus_error_store_stores_correctly_if_down_err(
+            self) -> None:
+        data = self.node_data_down_error['prometheus']['error']
+        redis_hash = Keys.get_hash_parent(self.parent_id)
+        self.test_store._process_redis_prometheus_error_store(data)
+
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_current_height(self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_eth_blocks_in_queue(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_block_headers_received(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_block_headers_dropped(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_no_of_active_jobs(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_max_pending_tx_delay(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_process_start_time_seconds(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_gas_bumps(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_total_gas_bumps_exceeds_limit(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_no_of_unconfirmed_txs(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_total_errored_job_runs(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_eth_balance_info(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_current_gas_price_info(
+                                      self.node_id))
+        )
+        self.assertEqual(None, self.redis.hget(
+            redis_hash, Keys.get_cl_node_last_monitored_prometheus(self.node_id)
+        ))
+        self.assertEqual(
+            data['meta_data']['last_source_used'],
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_last_prometheus_source_used(self.node_id)
+            ).decode("utf-8"))
+        self.assertEqual(
+            data['data']['went_down_at'],
+            convert_to_float(self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_went_down_at_prometheus(self.node_id)
+            ).decode("utf-8"), 'bad_val'))
+
+    def test_process_redis_prometheus_error_store_stores_correctly_not_down_err(
+            self) -> None:
+        data = self.node_data_non_down_err['prometheus']['error']
+        redis_hash = Keys.get_hash_parent(self.parent_id)
+        self.test_store._process_redis_prometheus_error_store(data)
+
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_current_height(self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_eth_blocks_in_queue(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_block_headers_received(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_block_headers_dropped(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_no_of_active_jobs(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_max_pending_tx_delay(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_process_start_time_seconds(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_total_gas_bumps(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_total_gas_bumps_exceeds_limit(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_no_of_unconfirmed_txs(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(
+                redis_hash, Keys.get_cl_node_total_errored_job_runs(
+                    self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_eth_balance_info(
+                                      self.node_id))
+        )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_current_gas_price_info(
+                                      self.node_id))
+        )
+        self.assertEqual(None, self.redis.hget(
+            redis_hash, Keys.get_cl_node_last_monitored_prometheus(self.node_id)
+        ))
+        self.assertEqual(
+            data['meta_data']['last_source_used'],
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cl_node_last_prometheus_source_used(self.node_id)
+            ).decode("utf-8"))
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_cl_node_went_down_at_prometheus(
+                                      self.node_id)))
+
+    @mock.patch.object(ChainlinkNodeStore, "_process_store")
+    def test_process_mongo_store_calls_process_store_correctly(
+            self, mock_proc_store) -> None:
+        mock_proc_store.return_value = None
+        test_conf = {
+            'prometheus': {
+                'result':
+                    self.test_store._process_mongo_prometheus_result_store,
+                'error': self.test_store._process_mongo_prometheus_error_store,
+            }
+        }
+        self.test_store._process_mongo_store(self.node_data_optionals_enabled)
+        mock_proc_store.assert_called_once_with(
+            test_conf, self.node_data_optionals_enabled)
+
+    @parameterized.expand([
+        ("self.node_data_optionals_enabled",),
+        ("self.node_data_optionals_disabled",),
+        ("self.node_data_optionals_enabled_pad",),
+    ])
+    def test_process_mongo_prometheus_result_store_stores_correctly(
+            self, data_var) -> None:
+        data = eval(data_var)['prometheus']['result']
+        meta_data = data['meta_data']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+
+        self.test_store._process_mongo_prometheus_result_store(data)
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+            'node',
+            1,
+            metrics['current_height'],
+            metrics['eth_blocks_in_queue'],
+            metrics['total_block_headers_received'],
+            metrics['total_block_headers_dropped'],
+            metrics['no_of_active_jobs'],
+            metrics['max_pending_tx_delay'],
+            metrics['process_start_time_seconds'],
+            metrics['total_gas_bumps'],
+            metrics['total_gas_bumps_exceeds_limit'],
+            metrics['no_of_unconfirmed_txs'],
+            metrics['total_errored_job_runs'],
+            metrics['current_gas_price_info'],
+            metrics['eth_balance_info'],
+            metrics['went_down_at'],
+            meta_data['last_source_used'],
+            meta_data['last_monitored'],
+        ]
+        actual = [
+            document['doc_type'],
+            document['n_entries'],
+            convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
+            convert_to_int(document[node_id][0]['eth_blocks_in_queue'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_block_headers_received'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_block_headers_dropped'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['no_of_active_jobs'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['max_pending_tx_delay'],
+                           'bad_val'),
+            convert_to_float(document[node_id][0]['process_start_time_seconds'],
+                             'bad_val'),
+            convert_to_int(document[node_id][0]['total_gas_bumps'], 'bad_val'),
+            convert_to_int(
+                document[node_id][0]['total_gas_bumps_exceeds_limit'],
+                'bad_val'),
+            convert_to_int(document[node_id][0]['no_of_unconfirmed_txs'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_errored_job_runs'],
+                           'bad_val'),
+            None if document[node_id][0]['current_gas_price_info'] == 'None'
+            else json.loads(document[node_id][0]['current_gas_price_info']),
+            json.loads(document[node_id][0]['eth_balance_info']),
+            None if document[node_id][0]['went_down_at_prometheus'] == 'None'
+            else convert_to_float(
+                document[node_id][0]['went_down_at_prometheus'], 'bad_val'),
+            document[node_id][0]['last_prometheus_source_used'],
+            document[node_id][0]['timestamp'],
+        ]
+
+        self.assertListEqual(expected, actual)
+
+    @parameterized.expand([
+        ("self.node_data_optionals_enabled",),
+        ("self.node_data_optionals_disabled",),
+        ("self.node_data_optionals_enabled_pad",),
+    ])
+    def test_process_mongo_prometheus_result_store_stores_correctly(
+            self, data_var) -> None:
+        data = eval(data_var)['prometheus']['result']
+        meta_data = data['meta_data']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+
+        self.test_store._process_mongo_prometheus_result_store(data)
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+            'node',
+            1,
+            metrics['current_height'],
+            metrics['eth_blocks_in_queue'],
+            metrics['total_block_headers_received'],
+            metrics['total_block_headers_dropped'],
+            metrics['no_of_active_jobs'],
+            metrics['max_pending_tx_delay'],
+            metrics['process_start_time_seconds'],
+            metrics['total_gas_bumps'],
+            metrics['total_gas_bumps_exceeds_limit'],
+            metrics['no_of_unconfirmed_txs'],
+            metrics['total_errored_job_runs'],
+            metrics['current_gas_price_info'],
+            metrics['eth_balance_info'],
+            metrics['went_down_at'],
+            meta_data['last_source_used'],
+            meta_data['last_monitored'],
+        ]
+        actual = [
+            document['doc_type'],
+            document['n_entries'],
+            convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
+            convert_to_int(document[node_id][0]['eth_blocks_in_queue'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_block_headers_received'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_block_headers_dropped'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['no_of_active_jobs'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['max_pending_tx_delay'],
+                           'bad_val'),
+            convert_to_float(document[node_id][0]['process_start_time_seconds'],
+                             'bad_val'),
+            convert_to_int(document[node_id][0]['total_gas_bumps'], 'bad_val'),
+            convert_to_int(
+                document[node_id][0]['total_gas_bumps_exceeds_limit'],
+                'bad_val'),
+            convert_to_int(document[node_id][0]['no_of_unconfirmed_txs'],
+                           'bad_val'),
+            convert_to_int(document[node_id][0]['total_errored_job_runs'],
+                           'bad_val'),
+            None if document[node_id][0]['current_gas_price_info'] == 'None'
+            else json.loads(document[node_id][0]['current_gas_price_info']),
+            json.loads(document[node_id][0]['eth_balance_info']),
+            None if document[node_id][0]['went_down_at_prometheus'] == 'None'
+            else convert_to_float(
+                document[node_id][0]['went_down_at_prometheus'], 'bad_val'),
+            document[node_id][0]['last_prometheus_source_used'],
+            document[node_id][0]['timestamp'],
+        ]
+
+        self.assertListEqual(expected, actual)
+
+    def test_process_mongo_prometheus_error_store_stores_correctly_if_down_err(
+            self) -> None:
+        data = self.node_data_down_error['prometheus']['error']
+        meta_data = data['meta_data']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+        metrics = data['data']
+
+        self.test_store._process_mongo_prometheus_error_store(data)
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+            'node',
+            1,
+            metrics['went_down_at'],
+            meta_data['last_source_used'],
+            meta_data['time'],
+        ]
+        actual = [
+            document['doc_type'],
+            document['n_entries'],
+            convert_to_float(document[node_id][0]['went_down_at_prometheus'],
+                             'bad_val'),
+            document[node_id][0]['last_prometheus_source_used'],
+            document[node_id][0]['timestamp'],
+        ]
+
+        self.assertEqual(3, len(document[node_id][0]))
+        self.assertListEqual(expected, actual)
+
+    def test_process_mongo_prometheus_error_store_stores_correctly_non_down_err(
+            self) -> None:
+        data = self.node_data_non_down_err['prometheus']['error']
+        meta_data = data['meta_data']
+        node_id = meta_data['node_id']
+        parent_id = meta_data['node_parent_id']
+
+        self.test_store._process_mongo_prometheus_error_store(data)
+
+        documents = self.mongo.get_all(parent_id)
+        document = documents[0]
+        expected = [
+            'node',
+            1,
+            meta_data['last_source_used'],
+            meta_data['time'],
+        ]
+        actual = [
+            document['doc_type'],
+            document['n_entries'],
+            document[node_id][0]['last_prometheus_source_used'],
+            document[node_id][0]['timestamp'],
+        ]
+
+        self.assertEqual(2, len(document[node_id][0]))
+        self.assertListEqual(expected, actual)

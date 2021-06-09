@@ -235,14 +235,14 @@ class ChainlinkNodeStore(Store):
         node_name = meta_data['node_name']
         node_id = meta_data['node_id']
         parent_id = meta_data['node_parent_id']
-        metrics = data['data']
         downtime_exception = NodeIsDownException(node_name)
 
         if error_code == downtime_exception.code:
+            metrics = data['data']
             self.logger.debug(
                 "Saving %s state: _went_down_at=%s, "
                 "_last_prometheus_source_used=%s", node_name,
-                metrics['went_down_at'], metrics['last_source_used']
+                metrics['went_down_at'], meta_data['last_source_used']
             )
 
             self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
@@ -254,7 +254,7 @@ class ChainlinkNodeStore(Store):
         else:
             self.logger.debug(
                 "Saving %s state: _last_prometheus_source_used=%s", node_name,
-                metrics['last_source_used']
+                meta_data['last_source_used']
             )
 
             self.redis.hset(
@@ -358,11 +358,11 @@ class ChainlinkNodeStore(Store):
         node_name = meta_data['node_name']
         node_id = meta_data['node_id']
         parent_id = meta_data['node_parent_id']
-        metrics = data['data']
         time_now = datetime.now()
         downtime_exception = NodeIsDownException(node_name)
 
         if error_code == downtime_exception.code:
+            metrics = data['data']
             self.mongo.update_one(
                 parent_id,
                 {'doc_type': 'node', 'd': time_now.hour},
