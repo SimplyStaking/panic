@@ -1,14 +1,14 @@
 import json
 import logging
+import multiprocessing
 import unittest
 from datetime import timedelta, datetime
-import multiprocessing
 from unittest import mock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
-import pika.exceptions
 
 from src.data_store.starters import (start_system_store, start_github_store,
                                      start_chainlink_node_store,
