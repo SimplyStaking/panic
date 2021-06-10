@@ -8,6 +8,7 @@ import pika.exceptions
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
@@ -151,19 +152,38 @@ class AlertStore(Store):
 
     def _process_redis_store(self, alert: Dict) -> None:
         if alert['severity'] == Severity.INTERNAL.value:
-            if (alert['alert_code']['code'] ==
-                    InternalAlertCode.ComponentResetAlert.value and
-                    alert['origin_id'] == SystemAlerter.__name__):
+            if alert['alert_code']['code'] == \
+                    InternalAlertCode.ComponentResetAlert.value and \
+                    alert['origin_id'] in [SystemAlerter.__name__,
+                                           ChainlinkNodeAlerter.__name__,
+                                           GithubAlerter.__name__]:
                 """
-                The `ComponentReset` alert for the `SystemAlerter` indicates 
-                that PANIC or the System Alerter for a particular chain have 
-                started or restarted. This means that we must either reset the 
-                system metrics for all chains, or for the associated chains 
-                depending on the parent_id value.
+                The `ComponentResetAlert` indicates that a component or PANIC 
+                has restarted. If this component is an alerter, we will reset 
+                the relevant component metrics for all chains or for a 
+                particular chain, depending on whether the parent_id is None or
+                not.
                 """
+                configuration = {
+                    SystemAlerter.__name__: {
+                        'metrics_type': 'system',
+                        'redis_key_index': 'alert_system'
+                    },
+                    ChainlinkNodeAlerter.__name__: {
+                        'metrics_type': 'chainlink node metrics',
+                        'redis_key_index': 'alert_cl_node'
+                    },
+                    GithubAlerter.__name__: {
+                        'metrics_type': 'github',
+                        'redis_key_index': 'alert_github2'
+                    }
+                }
+                alerter_type = alert['origin_id']
+                metrics_type = configuration[alerter_type]['metrics_type']
+                redis_key_index = configuration[alerter_type]['redis_key_index']
                 if alert['parent_id'] is None:
-                    self.logger.debug("Resetting the system metrics for all "
-                                      "chains.")
+                    self.logger.debug("Resetting the %s metrics for all "
+                                      "chains.", metrics_type)
                     parent_hash = Keys.get_hash_parent_raw()
                     chain_hashes_list = self.redis.get_keys_unsafe(
                         '*' + parent_hash + '*')
@@ -172,54 +192,28 @@ class AlertStore(Store):
                     for chain in chain_hashes_list:
                         # For each chain we need to load all the keys and only
                         # delete the ones that match the pattern `alert_system*`
-                        # REDIS doesn't support this natively
+                        # or `alert_cl_node*`, depending on the alerter_type.
+                        # Note, REDIS doesn't support this natively
                         for key in self.redis.hkeys(chain):
                             # We only want to delete alert keys
-                            if 'alert_system' in key and self.redis.hexists(
+                            if redis_key_index in key and self.redis.hexists(
                                     chain, key):
                                 self.redis.hremove(chain, key)
                 else:
-                    self.logger.debug("Resetting system metrics for chain %s.",
-                                      alert['parent_id'])
+                    self.logger.debug("Resetting %s metrics for chain %s.",
+                                      metrics_type, alert['parent_id'])
                     """
                     For the specified chain we need to load all the keys and 
                     only delete the ones that match the pattern `alert_system*`
-                    as REDIS doesn't support this natively.
+                    or `alert_cl_node*`, depending on the alerter_type.
+                    Note, REDIS doesn't support this natively.
                     """
                     chain_hash = Keys.get_hash_parent(alert['parent_id'])
                     for key in self.redis.hkeys(chain_hash):
                         # We only want to delete alert keys
-                        if 'alert_system' in key and self.redis.hexists(
+                        if redis_key_index in key and self.redis.hexists(
                                 chain_hash, key):
                             self.redis.hremove(chain_hash, key)
-            elif (alert['alert_code']['code'] ==
-                  InternalAlertCode.ComponentResetAlert.value and
-                  alert['origin_id'] == GithubAlerter.__name__):
-                """
-                The `ComponentReset` alert for the `GithubAlerter` indicates 
-                that PANIC or the GitHub Alerter have started or restarted. This 
-                means that we cannot be sure if the configurations are the same 
-                as the previous run, and the Alert Metrics should be cleared for
-                each CHAIN.
-                """
-
-                self.logger.debug("Resetting GitHub metrics for all chains.")
-
-                parent_hash = Keys.get_hash_parent_raw()
-                chain_hashes_list = self.redis.get_keys_unsafe(
-                    '*' + parent_hash + '*')
-
-                # Go through all the chains that are in REDIS
-                for chain in chain_hashes_list:
-                    # For each chain we need to load all the keys and only
-                    # delete the ones that match the pattern `alert_github2*`
-                    # REDIS doesn't support this natively
-                    for key in self.redis.hkeys(chain):
-                        # We only want to delete alert_github2 which
-                        # corresponds to the metric `cannot_access_github`
-                        if 'alert_github2' in key and self.redis.hexists(chain,
-                                                                         key):
-                            self.redis.hremove(chain, key)
         else:
             """
             If the alert is not of severity Internal, the metric needs to be
