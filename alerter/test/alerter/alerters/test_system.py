@@ -14,7 +14,7 @@ from parameterized import parameterized
 from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
-from src.alerter.alert_metric_code import SystemAlertMetricCode
+from src.alerter.grouped_alerts_metric_code import GroupedSystemAlertsMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
@@ -1403,7 +1403,7 @@ class TestSystemAlerter(unittest.TestCase):
         data_for_alerting = []
         self.test_system_alerter._create_state_for_system(self.system_id)
         self.test_system_alerter._system_initial_alert_sent[
-            self.system_id][SystemAlertMetricCode.SystemIsDown.value] = True
+            self.system_id][GroupedSystemAlertsMetricCode.SystemIsDown.value] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
@@ -1426,7 +1426,7 @@ class TestSystemAlerter(unittest.TestCase):
         self.test_system_alerter._create_state_for_system(self.system_id)
         # Set that the initial downtime alert was sent already
         self.test_system_alerter._system_initial_alert_sent[
-            self.system_id][SystemAlertMetricCode.SystemIsDown.value] = True
+            self.system_id][GroupedSystemAlertsMetricCode.SystemIsDown.value] = True
         data = self.data_received_initially_no_alert['result']['data']
         data['went_down_at']['previous'] = self.last_monitored
         meta_data = self.data_received_initially_no_alert['result']['meta_data']

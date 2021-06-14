@@ -15,7 +15,7 @@ from parameterized import parameterized
 from src.alert_router.alert_router import AlertRouter
 from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
-from src.alerter.alert_metric_code.github_metric_code import GithubMetricCode
+from src.alerter.grouped_alerts_metric_code.github_metric_code import GithubMetricCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env

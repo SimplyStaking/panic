@@ -1,7 +1,7 @@
-from .alert_metric_code import AlertMetricCode
+from .grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
-class SystemAlertMetricCode(AlertMetricCode):
+class GroupedSystemAlertsMetricCode(GroupedAlertsMetricCode):
     SystemIsDown = 'system_is_down'
     InvalidUrl = 'invalid_url'
     OpenFileDescriptorsThreshold = 'open_file_descriptors'

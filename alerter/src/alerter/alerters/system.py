@@ -19,7 +19,7 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageIncreasedAboveThresholdAlert, SystemWentDownAtAlert,
     OpenFileDescriptorsDecreasedBelowThresholdAlert, MetricNotFoundErrorAlert,
     ValidUrlAlert, MetricFoundAlert)
-from src.alerter.alert_metric_code import SystemAlertMetricCode
+from src.alerter.grouped_alerts_metric_code import GroupedSystemAlertsMetricCode
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
@@ -59,27 +59,35 @@ class SystemAlerter(Alerter):
         # for that metric, irrespective of the severity.
         if system_id not in self._system_initial_alert_sent:
             self._system_initial_alert_sent[system_id] = {
-                SystemAlertMetricCode.SystemIsDown.value: False,
+                GroupedSystemAlertsMetricCode.SystemIsDown.value: False,
             }
 
         # This is for alerts were we want to check if a warning alert was sent
         # for a metric
         if system_id not in self._warning_sent:
             self._warning_sent[system_id] = {
-                SystemAlertMetricCode.OpenFileDescriptorsThreshold.value: False,
-                SystemAlertMetricCode.SystemCPUUsageThreshold.value: False,
-                SystemAlertMetricCode.SystemStorageUsageThreshold.value: False,
-                SystemAlertMetricCode.SystemRAMUsageThreshold.value: False,
+                GroupedSystemAlertsMetricCode.OpenFileDescriptorsThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemCPUUsageThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemStorageUsageThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemRAMUsageThreshold
+                    .value: False,
             }
 
         # This is for alerts were we want to check if a critical alert was sent
         # for a metric
         if system_id not in self._critical_sent:
             self._critical_sent[system_id] = {
-                SystemAlertMetricCode.OpenFileDescriptorsThreshold.value: False,
-                SystemAlertMetricCode.SystemCPUUsageThreshold.value: False,
-                SystemAlertMetricCode.SystemStorageUsageThreshold.value: False,
-                SystemAlertMetricCode.SystemRAMUsageThreshold.value: False,
+                GroupedSystemAlertsMetricCode.OpenFileDescriptorsThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemCPUUsageThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemStorageUsageThreshold
+                    .value: False,
+                GroupedSystemAlertsMetricCode.SystemRAMUsageThreshold
+                    .value: False,
             }
 
         """
@@ -119,26 +127,26 @@ class SystemAlerter(Alerter):
                 is_down['critical_repeat'], timedelta.max.total_seconds() - 1)
 
             system_critical_limiters[
-                SystemAlertMetricCode.OpenFileDescriptorsThreshold.value] = \
-                TimedTaskLimiter(timedelta(seconds=float(
-                    open_fd_critical_repeat)))
+                GroupedSystemAlertsMetricCode.OpenFileDescriptorsThreshold
+                    .value] = TimedTaskLimiter(timedelta(seconds=float(
+                open_fd_critical_repeat)))
             system_critical_limiters[
-                SystemAlertMetricCode.SystemCPUUsageThreshold.value] = \
+                GroupedSystemAlertsMetricCode.SystemCPUUsageThreshold.value] = \
                 TimedTaskLimiter(timedelta(seconds=float(
                     cpu_use_critical_repeat)))
             system_critical_limiters[
-                SystemAlertMetricCode.SystemStorageUsageThreshold.value] = \
-                TimedTaskLimiter(
-                    timedelta(seconds=float(storage_critical_repeat))
-                )
+                GroupedSystemAlertsMetricCode.SystemStorageUsageThreshold
+                    .value] = TimedTaskLimiter(
+                timedelta(seconds=float(storage_critical_repeat))
+            )
             system_critical_limiters[
-                SystemAlertMetricCode.SystemRAMUsageThreshold.value] = \
+                GroupedSystemAlertsMetricCode.SystemRAMUsageThreshold.value] = \
                 TimedTaskLimiter(timedelta(seconds=float(
                     ram_use_critical_repeat)))
             system_critical_limiters[
-                SystemAlertMetricCode.SystemIsDown.value] = TimedTaskLimiter(
-                timedelta(seconds=float(is_down_critical_repeat))
-            )
+                GroupedSystemAlertsMetricCode.SystemIsDown
+                    .value] = TimedTaskLimiter(
+                timedelta(seconds=float(is_down_critical_repeat)))
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -317,10 +325,10 @@ class SystemAlerter(Alerter):
                 is_down_critical_limiter = \
                     self._system_critical_timed_task_limiters[
                         meta_data['system_id']][
-                        SystemAlertMetricCode.SystemIsDown.value]
+                        GroupedSystemAlertsMetricCode.SystemIsDown.value]
                 initial_downtime_alert_sent = \
                     self._system_initial_alert_sent[meta_data['system_id']][
-                        SystemAlertMetricCode.SystemIsDown.value]
+                        GroupedSystemAlertsMetricCode.SystemIsDown.value]
                 downtime = monitoring_timestamp - current
                 critical_threshold = convert_to_float(
                     is_down['critical_threshold'], None)
@@ -344,7 +352,8 @@ class SystemAlerter(Alerter):
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
                         self._system_initial_alert_sent[meta_data['system_id']][
-                            SystemAlertMetricCode.SystemIsDown.value] = True
+                            GroupedSystemAlertsMetricCode.SystemIsDown
+                                .value] = True
                     elif warning_enabled and warning_threshold <= downtime:
                         alert = SystemWentDownAtAlert(
                             meta_data['system_name'], Severity.WARNING.value,
@@ -357,7 +366,8 @@ class SystemAlerter(Alerter):
                         is_down_critical_limiter.set_last_time_that_did_task(
                             monitoring_datetime)
                         self._system_initial_alert_sent[meta_data['system_id']][
-                            SystemAlertMetricCode.SystemIsDown.value] = True
+                            GroupedSystemAlertsMetricCode.SystemIsDown
+                                .value] = True
                 else:
                     if critical_enabled and critical_repeat_enabled and \
                             is_down_critical_limiter.can_do_task(
@@ -410,10 +420,10 @@ class SystemAlerter(Alerter):
             is_down_critical_limiter = \
                 self._system_critical_timed_task_limiters[
                     meta_data['system_id']][
-                    SystemAlertMetricCode.SystemIsDown.value]
+                    GroupedSystemAlertsMetricCode.SystemIsDown.value]
             initial_downtime_alert_sent = \
                 self._system_initial_alert_sent[meta_data['system_id']][
-                    SystemAlertMetricCode.SystemIsDown.value]
+                    GroupedSystemAlertsMetricCode.SystemIsDown.value]
 
             if previous is not None or initial_downtime_alert_sent:
                 alert = SystemBackUpAgainAlert(
@@ -425,7 +435,7 @@ class SystemAlerter(Alerter):
                 self.logger.debug("Successfully classified alert %s",
                                   alert.alert_data)
                 self._system_initial_alert_sent[meta_data['system_id']][
-                    SystemAlertMetricCode.SystemIsDown.value] = False
+                    GroupedSystemAlertsMetricCode.SystemIsDown.value] = False
                 is_down_critical_limiter.reset()
 
         if str_to_bool(open_fd['enabled']):
@@ -436,7 +446,8 @@ class SystemAlerter(Alerter):
                     OpenFileDescriptorsIncreasedAboveThresholdAlert,
                     OpenFileDescriptorsDecreasedBelowThresholdAlert,
                     data_for_alerting,
-                    SystemAlertMetricCode.OpenFileDescriptorsThreshold.value
+                    GroupedSystemAlertsMetricCode.OpenFileDescriptorsThreshold
+                        .value
                 )
         if str_to_bool(storage['enabled']):
             current = metrics['system_storage_usage']['current']
@@ -446,7 +457,8 @@ class SystemAlerter(Alerter):
                     SystemStorageUsageIncreasedAboveThresholdAlert,
                     SystemStorageUsageDecreasedBelowThresholdAlert,
                     data_for_alerting,
-                    SystemAlertMetricCode.SystemStorageUsageThreshold.value
+                    GroupedSystemAlertsMetricCode.SystemStorageUsageThreshold
+                        .value
                 )
         if str_to_bool(cpu_use['enabled']):
             current = metrics['system_cpu_usage']['current']
@@ -456,7 +468,7 @@ class SystemAlerter(Alerter):
                     SystemCPUUsageIncreasedAboveThresholdAlert,
                     SystemCPUUsageDecreasedBelowThresholdAlert,
                     data_for_alerting,
-                    SystemAlertMetricCode.SystemCPUUsageThreshold.value
+                    GroupedSystemAlertsMetricCode.SystemCPUUsageThreshold.value
                 )
         if str_to_bool(ram_use['enabled']):
             current = metrics['system_ram_usage']['current']
@@ -466,7 +478,7 @@ class SystemAlerter(Alerter):
                     SystemRAMUsageIncreasedAboveThresholdAlert,
                     SystemRAMUsageDecreasedBelowThresholdAlert,
                     data_for_alerting,
-                    SystemAlertMetricCode.SystemRAMUsageThreshold.value
+                    GroupedSystemAlertsMetricCode.SystemRAMUsageThreshold.value
                 )
 
     def _classify_alert(

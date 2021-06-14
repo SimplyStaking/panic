@@ -11,7 +11,7 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
-from src.alerter.alert_metric_code import MetricCode
+from src.alerter.grouped_alerts_metric_code import MetricCode
 from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
