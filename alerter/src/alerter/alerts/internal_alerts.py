@@ -1,7 +1,7 @@
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
 from src.alerter.alerts.alert import Alert
-from src.alerter.metric_code import InternalMetricCode
+from src.alerter.alert_metric_code import InternalAlertMetricCode
 
 """
 Such internal alerts are used to notify that a component has been reset. 
@@ -34,4 +34,4 @@ class ComponentResetAlert(Alert):
         super().__init__(
             InternalAlertCode.ComponentResetAlert, msg, Severity.INTERNAL.value,
             timestamp, parent_id, origin_id,
-            InternalMetricCode.ComponentResetAlert)
+            InternalAlertMetricCode.ComponentReset)

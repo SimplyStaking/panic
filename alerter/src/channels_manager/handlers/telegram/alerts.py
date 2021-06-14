@@ -10,7 +10,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
-from src.alerter.metric_code import MetricCode
+from src.alerter.alert_metric_code import MetricCode
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi

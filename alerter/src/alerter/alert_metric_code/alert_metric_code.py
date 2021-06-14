@@ -4,14 +4,14 @@ from src.utils.enum import empty
 
 
 @empty
-class MetricCode(str, Enum):
+class AlertMetricCode(str, Enum):
     """
     No checks are made to ensure all values are unique. You need to make sure
     that no values are duplicated across the subclasses
     """
 
     @classmethod
-    def get_enum_by_value(cls: type, value: str) -> 'MetricCode':
+    def get_enum_by_value(cls: type, value: str) -> 'AlertMetricCode':
         for class_ in [cls] + cls.__subclasses__():
             try:
                 return class_(value)
