@@ -1,8 +1,8 @@
 from ..grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
-class ChainlinkNodeGroupedAlertsMetricCode(GroupedAlertsMetricCode):
-    NoChangeInHeightThreshold = 'head_tacker_current_head'
+class GroupedChainlinkNodeAlertsMetricCode(GroupedAlertsMetricCode):
+    NoChangeInHeight = 'head_tacker_current_head'
     HeadsInQueueThreshold = 'head_tracker_heads_in_queue'
     NoChangeInTotalHeadersReceivedThreshold = \
         'head_tracker_heads_received_total'

@@ -2,8 +2,8 @@ from ..alert_code import AlertCode
 
 
 class ChainlinkNodeAlertCode(AlertCode):
-    NoChangeInHeightIncreasedAboveThresholdAlert = 'cl_node_alert_1'
-    NoChangeInHeightDecreasedBelowThresholdAlert = 'cl_node_alert_2'
+    NoChangeInHeightAlert = 'cl_node_alert_1'
+    BlockHeightUpdatedAlert = 'cl_node_alert_2'
     HeadsInQueueIncreasedAboveThresholdAlert = 'cl_node_alert_3'
     HeadsInQueueDecreasedBelowThresholdAlert = 'cl_node_alert_4'
     NoChangeInTotalHeadersReceivedIncreasedAboveThresholdAlert = \
