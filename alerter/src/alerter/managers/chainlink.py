@@ -19,11 +19,12 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-    SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
     SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
-    SYSTEM_ALERT_ROUTING_KEY, TOPIC)
+    SYSTEM_ALERT_ROUTING_KEY, TOPIC,
+    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -55,60 +56,49 @@ class ChainlinkAlerterManager(AlertersManager):
     def alerter_process_dict(self) -> Dict:
         return self._alerter_process_dict
 
-    # TODO FIX THIS
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
-        # Declare consuming intentions
+        # Declare consuming intentions for the health checker component
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-
         self.logger.info("Creating queue '%s'",
-                         SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
-        self.rabbitmq.queue_declare(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
                                     False, True, False, False)
-
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         "'%s'", CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
                          HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
-        self.rabbitmq.queue_bind(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+        self.rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
                                  HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
-
         self.logger.info("Declaring consuming intentions on "
-                         "'%s'", SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
-        self.rabbitmq.basic_consume(SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         "'%s'", CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
+        # Setting up routing keys and queues for configuration consumption
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
-
         self.logger.info("Creating queue '%s'",
-                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                    False, True, False, False)
-
+                         CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.queue_declare(
+            CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+            False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         "%s'", CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
-        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+        self.rabbitmq.queue_bind(CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
-
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
 
         self.logger.info("Declaring consuming intentions on %s",
-                         SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                    self._process_configs, False, False, None)
+                         CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.basic_consume(
+            CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+            self._process_configs, False, False, None)
 
         # Declare publishing intentions
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
@@ -146,11 +136,9 @@ class ChainlinkAlerterManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
-            chain = 'general'
-        else:
-            parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        parsed_routing_key = method.routing_key.split('.')
+        if parsed_routing_key[1] != 'chainlink':
+            return
 
         try:
             """
@@ -159,6 +147,15 @@ class ChainlinkAlerterManager(AlertersManager):
             config. Note that all this happens if a configuration is modified
             or deleted.
             """
+
+            """
+            We should put it into a config object and store that config object
+            in a dictionary of object, We can store those dictionaries inside
+            the the network type e.g ethereuem.
+            """
+
+            # Create the configuration object
+            self._chainlink_alerts_configs[parsed_routing_key[2]] =
             self._terminate_and_join_chain_alerter_processes(chain)
 
             # Checking if we received a configuration, therefore we start the

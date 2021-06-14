@@ -38,7 +38,7 @@ from src.utils.constants.rabbitmq import (
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
     SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
     TOPIC)
@@ -641,11 +641,11 @@ def _initialise_and_declare_config_queues() -> None:
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN),
+                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN),
                 dummy_logger)
             rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
-                                SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                                ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,

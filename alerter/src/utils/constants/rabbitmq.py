@@ -41,6 +41,12 @@ CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME = 'channels_manager_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
+# Chainlink related queue names
+CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
+    'chainlink_alerter_manager_heartbeat_queue'
+CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME = \
+    'chainlink_alerter_manager_configs_queue'
+
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
@@ -55,7 +61,7 @@ GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
 GITHUB_ALERT_ROUTING_KEY = 'alert.github'
-SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.*'
