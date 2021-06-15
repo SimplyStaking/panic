@@ -6,10 +6,8 @@ class ChainlinkNodeAlertCode(AlertCode):
     BlockHeightUpdatedAlert = 'cl_node_alert_2'
     HeadsInQueueIncreasedAboveThresholdAlert = 'cl_node_alert_3'
     HeadsInQueueDecreasedBelowThresholdAlert = 'cl_node_alert_4'
-    NoChangeInTotalHeadersReceivedIncreasedAboveThresholdAlert = \
-        'cl_node_alert_5'
-    NoChangeInTotalHeadersReceivedDecreasedBelowThresholdAlert = \
-        'cl_node_alert_6'
+    NoChangeInTotalHeadersReceivedAlert = 'cl_node_alert_5'
+    ReceivedANewHeaderAlert = 'cl_node_alert_6'
     DroppedBlockHeadersIncreasedAboveThresholdAlert = 'cl_node_alert_7'
     DroppedBlockHeadersDecreasedBelowThresholdAlert = 'cl_node_alert_8'
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert = 'cl_node_alert_9'
