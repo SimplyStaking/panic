@@ -287,8 +287,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
     def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
+        processing_performed = False
 
         if transformed_data['prometheus']:
+            processing_performed = True
             if 'result' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['result'][
                     'meta_data']
@@ -361,7 +363,8 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _update_state".format(self))
-        else:
+
+        if not processing_performed:
             # If no data source is enabled, then we shouldn't have received the
             # data in the first place.
             raise ReceivedUnexpectedDataException(
@@ -372,22 +375,31 @@ class ChainlinkNodeDataTransformer(DataTransformer):
     def _process_transformed_data_for_saving(self,
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
+        processing_performed = False
 
         # We must check that the source's data is valid
         for source in VALID_CHAINLINK_SOURCES:
-            if source not in transformed_data or \
-                    ('result' not in transformed_data[source]
-                     and 'error' not in transformed_data[source]):
-                raise ReceivedUnexpectedDataException(
-                    "{}: _process_transformed_data_for_saving".format(self))
+            if source in transformed_data and \
+                    ('result' in transformed_data[source]
+                     or 'error' in transformed_data[source]):
+                processing_performed = True
+
+        if not processing_performed:
+            # If no data source is enabled, then we shouldn't have received the
+            # data in the first place.
+            raise ReceivedUnexpectedDataException(
+                "{}: _update_state".format(self))
 
         return copy.deepcopy(transformed_data)
 
     def _process_transformed_data_for_alerting(self,
                                                transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for alerting ...")
+        processing_performed = False
+        processed_data = {}
 
         if transformed_data['prometheus']:
+            processing_performed = True
             if 'result' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['result'][
                     'meta_data']
@@ -475,9 +487,12 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data_for_alerting".format(self))
-        else:
+
+        if not processing_performed:
+            # If no data source is enabled, then we shouldn't have received the
+            # data in the first place.
             raise ReceivedUnexpectedDataException(
-                "{}: _process_transformed_data_for_alerting".format(self))
+                "{}: _update_state".format(self))
 
         self.logger.debug("Processing successful.")
 
@@ -485,8 +500,11 @@ class ChainlinkNodeDataTransformer(DataTransformer):
 
     def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         self.logger.debug("Performing data transformation on %s ...", data)
+        processing_performed = False
+        transformed_data = {}
 
         if data['prometheus']:
+            processing_performed = True
             if 'result' in data['prometheus']:
                 meta_data = data['prometheus']['result']['meta_data']
                 node_metrics = data['prometheus']['result']['data']
@@ -572,11 +590,12 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _transform_data".format(self))
-        else:
+
+        if not processing_performed:
             # If no data source is enabled, then we shouldn't have received the
             # data in the first place.
             raise ReceivedUnexpectedDataException(
-                "{}: _transform_data".format(self))
+                "{}: _update_state".format(self))
 
         data_for_alerting = self._process_transformed_data_for_alerting(
             transformed_data)
