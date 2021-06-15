@@ -291,10 +291,6 @@ class ChainlinkNodeDataTransformer(DataTransformer):
     def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
 
-        # TODO: This if-else might no longer make sense when doing multiple
-        #     : sources. Consider using a bool variable such that if it's value
-        #     : is not changed, then a ReceivedUnexpectedDataException is
-        #     : raised.
         if transformed_data['prometheus']:
             if 'result' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['result'][
@@ -380,10 +376,6 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
-        # TODO: This if-else might no longer make sense when doing multiple
-        #     : sources. Consider using a bool variable such that if it's value
-        #     : is not changed, then a ReceivedUnexpectedDataException is
-        #     : raised.
         # We must check that the source's data is valid
         for source in VALID_CHAINLINK_SOURCES:
             if source not in transformed_data or \
@@ -398,10 +390,6 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                                                transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for alerting ...")
 
-        # TODO: This if-else might no longer make sense when doing multiple
-        #     : sources. Consider using a bool variable such that if it's value
-        #     : is not changed, then a ReceivedUnexpectedDataException is
-        #     : raised.
         if transformed_data['prometheus']:
             if 'result' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['result'][
@@ -503,10 +491,6 @@ class ChainlinkNodeDataTransformer(DataTransformer):
     def _transform_data(self, data: Dict) -> Tuple[Dict, Dict, Dict]:
         self.logger.debug("Performing data transformation on %s ...", data)
 
-        # TODO: This if-else might no longer make sense when doing multiple
-        #     : sources. Consider using a bool variable such that if it's value
-        #     : is not changed, then a ReceivedUnexpectedDataException is
-        #     : raised.
         if data['prometheus']:
             if 'result' in data['prometheus']:
                 meta_data = data['prometheus']['result']['meta_data']
