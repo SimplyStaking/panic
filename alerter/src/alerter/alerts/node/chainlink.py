@@ -8,7 +8,7 @@ from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
 from src.utils.datetime import strfdelta
 
 
-class NoChangeInHeightIncreasedAboveThresholdAlert(Alert):
+class NoChangeInHeightAlert(Alert):
     def __init__(self, origin_name: str, duration: float, severity: str,
                  timestamp: float, parent_id: str, origin_id: str,
                  last_processed_block: int) -> None:
@@ -29,7 +29,7 @@ class BlockHeightUpdatedAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode.BlockHeightUpdatedAlert,
             "{} is now processing blocks again. Last processed block: "
-            "{}".format(origin_name, last_processed_block),
+            "{}.".format(origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight)
 
@@ -40,9 +40,8 @@ class HeadsInQueueIncreasedAboveThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.HeadsInQueueIncreasedAboveThresholdAlert,
-            "The number of Ethereum blocks in queue to be processed by {} "
-            "INCREASED above {} Threshold. Current value: {} for at least "
-            "{}".format(
+            "{} number of Ethereum blocks in queue INCREASED above {} "
+            "threshold. Current value: {} for at least {}.".format(
                 origin_name, threshold_severity, current_value, strfdelta(
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
@@ -56,10 +55,10 @@ class HeadsInQueueDecreasedBelowThresholdAlert(Alert):
                  origin_id: str) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.HeadsInQueueDecreasedBelowThresholdAlert,
-            "The number of Ethereum blocks in queue to be processed by {} "
-            "DECREASED below {} Threshold. Current value: {}".format(
-                origin_name, threshold_severity, current_value),
-            severity, timestamp, parent_id, origin_id,
+            "{} number of Ethereum blocks in queue DECREASED below {} "
+            "threshold. Current value: {}.".format(
+                origin_name, threshold_severity, current_value), severity,
+            timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold)
 
 
@@ -92,8 +91,8 @@ class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .DroppedBlockHeadersIncreasedAboveThresholdAlert,
-            "The number of block headers dropped by {} INCREASED above {} "
-            "Threshold. Dropped {} headers in {} ".format(
+            "{} number of block headers dropped INCREASED above {} threshold. "
+            "Dropped {} headers in {}.".format(
                 origin_name, threshold_severity, current_value, strfdelta(
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
@@ -108,8 +107,8 @@ class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .DroppedBlockHeadersDecreasedBelowThresholdAlert,
-            "The number of block headers dropped by {} DECREASED below {} "
-            "Threshold. Dropped {} headers in {} ".format(
+            "{} number of block headers dropped DECREASED below {} threshold. "
+            "Dropped {} headers in {}.".format(
                 origin_name, threshold_severity, current_value, strfdelta(
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
@@ -124,12 +123,11 @@ class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
-            "The maximum number of blocks a transaction has been unconfirmed "
-            "for by {} has INCREASED above {} Threshold. Current value: {} "
-            "for at least {}".format(
-                origin_name, threshold_severity, current_value, strfdelta(
-                    timedelta(seconds=duration),
-                    "{hours}h, {minutes}m, {seconds}s")),
+            "{} maximum number of blocks a transaction has been unconfirmed "
+            "for has INCREASED above {} threshold. Current value: {} for at "
+            "least {}.".format(origin_name, threshold_severity, current_value,
+                               strfdelta(timedelta(seconds=duration),
+                                         "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold)
 
@@ -141,9 +139,9 @@ class MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
-            "The maximum number of blocks a transaction has been unconfirmed "
-            "for by {} has DECREASED below {} Threshold. Current value: "
-            "{}".format(origin_name, threshold_severity, current_value),
+            "{} maximum number of blocks a transaction has been unconfirmed "
+            "for has DECREASED below {} threshold. Current value: {}.".format(
+                origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold)
 
@@ -177,8 +175,8 @@ class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
-            "The number of unconfirmed transactions by {} have INCREASED "
-            "above {} Threshold. Current value: {} for at least {}".format(
+            "{} number of unconfirmed transactions have INCREASED above {} "
+            "threshold. Current value: {} for at least {}.".format(
                 origin_name, threshold_severity, current_value, strfdelta(
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
@@ -193,82 +191,172 @@ class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode
                 .NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-            "The number of unconfirmed transactions by {} have DECREASED "
-            "below {} Threshold. Current value: {}.".format(
-                origin_name, threshold_severity, current_value),
-            severity, timestamp, parent_id, origin_id,
+            "{} number of unconfirmed transactions have DECREASED below {} "
+            "threshold. Current value: {}.".format(
+                origin_name, threshold_severity, current_value), severity,
+            timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold)
 
 
-class SystemWentDownAtAlert(Alert):
-    def __init__(self, origin_name: str, severity: str, timestamp: float,
+class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.SystemWentDownAtAlert,
-            "{} System is down, last time checked: {}.".format(
-                origin_name, datetime.fromtimestamp(timestamp)),
+            ChainlinkNodeAlertCode
+                .TotalErroredJobRunsIncreasedAboveThresholdAlert,
+            "{} total errored jobs INCREASED above {} threshold. {} jobs "
+            "errored in {}.".format(
+                origin_name, threshold_severity, current_value, strfdelta(
+                    timedelta(seconds=duration),
+                    "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.SystemIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
 
 
-class SystemBackUpAgainAlert(Alert):
-    def __init__(self, origin_name: str, severity: str, timestamp: float,
+class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.SystemBackUpAgainAlert,
-            "{} System is back up, last successful monitor at: {}.".format(
-                origin_name, datetime.fromtimestamp(timestamp)),
+            ChainlinkNodeAlertCode
+                .TotalErroredJobRunsDecreasedBelowThresholdAlert,
+            "{} total errored jobs DECREASED below {} threshold. {} jobs "
+            "errored in {}. ".format(
+                origin_name, threshold_severity, current_value, strfdelta(
+                    timedelta(seconds=duration),
+                    "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.SystemIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
 
 
-class SystemStillDownAlert(Alert):
-    def __init__(self, origin_name: str, difference: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+class EthBalanceIncreasedAboveThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.SystemStillDownAlert,
-            "{} System is still down, it has been down for {}.".format(
-                origin_name, strfdelta(timedelta(seconds=difference),
-                                       "{hours}h, {minutes}m, {seconds}s")),
+            ChainlinkNodeAlertCode.EthBalanceIncreasedAboveThresholdAlert,
+            "{} Ethereum balance has INCREASED above {} threshold. Current "
+            "value: {}.".format(origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.SystemIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold)
 
 
-class MetricNotFoundErrorAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+class EthBalanceDecreasedBelowThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.MetricNotFoundErrorAlert,
-            "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.MetricNotFound)
+            ChainlinkNodeAlertCode.EthBalanceDecreasedBelowThresholdAlert,
+            "{} Ethereum balance has DECREASED below {} threshold. Current "
+            "value: {}.".format(origin_name, threshold_severity, current_value),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold)
 
 
-class MetricFoundAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+class EthBalanceToppedUpAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, increase: float,
+                 severity: str, timestamp: float, parent_id: str,
+                 origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.MetricFoundAlert,
-            "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.MetricNotFound)
-
-
-class ValidUrlAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            SystemAlertCode.ValidUrlAlert,
-            "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.InvalidUrl)
+            ChainlinkNodeAlertCode.EthBalanceToppedUpAlert,
+            "{} Ethereum balance has been topped up by {} ETH. Current "
+            "value: {}.".format(origin_name, increase, current_value),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.EthBalanceTopUp)
 
 
 class InvalidUrlAlert(Alert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
-            SystemAlertCode.InvalidUrlAlert,
-            "{}: {}".format(origin_name, message), severity,
+            ChainlinkNodeAlertCode.InvalidUrlAlert, "{}: {}".format(
+                origin_name, message), severity, timestamp, parent_id,
+            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl)
+
+
+class ValidUrlAlert(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.ValidUrlAlert, "{}: {}".format(
+                origin_name, message), severity, timestamp, parent_id,
+            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl)
+
+
+class PrometheusSourceIsDownAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.PrometheusSourceIsDownAlert,
+            "Cannot access the prometheus source of node {}, last time "
+            "checked: {}.".format(origin_name,
+                                  datetime.fromtimestamp(timestamp)),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown)
+
+
+class PrometheusSourceBackUpAgainAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.PrometheusSourceBackUpAgainAlert,
+            "The prometheus source of node {} is accessible again, last "
+            "successful monitor at: {}.".format(
+                origin_name, datetime.fromtimestamp(timestamp)), severity,
             timestamp, parent_id, origin_id,
-            GroupedSystemAlertsMetricCode.InvalidUrl)
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown)
+
+
+class NodeWentDownAtAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.NodeWentDownAtAlert,
+            "Node {} is down, last time checked: {}.".format(
+                origin_name, datetime.fromtimestamp(timestamp)),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+
+
+class NodeBackUpAgainAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.NodeBackUpAgainAlert,
+            "Node {} is back up, last successful monitor at: {}.".format(
+                origin_name, datetime.fromtimestamp(timestamp)),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+
+
+class NodeStillDownAlert(Alert):
+    def __init__(self, origin_name: str, difference: float, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.NodeStillDownAlert,
+            "Node {} is still down, it has been down for {}.".format(
+                origin_name, strfdelta(timedelta(seconds=difference),
+                                       "{hours}h, {minutes}m, {seconds}s")),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+
+
+class MetricNotFoundErrorAlert(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.MetricNotFoundErrorAlert,
+            "{}: {}".format(origin_name, message), severity, timestamp,
+            parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
+
+
+class MetricFoundAlert(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.MetricFoundAlert,
+            "{}: {}".format(origin_name, message), severity, timestamp,
+            parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
