@@ -863,6 +863,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ({'prometheus': {}},),
+        ({'bad_key': 'bad_val'},),
         ({'prometheus': 'bad_val'},),
     ])
     def test_update_state_raises_unexpected_data_exception_if_unexpected_data(
@@ -1010,6 +1011,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ({'prometheus': {}},),
+        ({'bad_key': 'bad_val'},),
         ({'prometheus': 'bad_val'},),
     ])
     def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
@@ -1051,6 +1053,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ({'prometheus': {}},),
+        ({'bad_key': 'bad_val'},),
         ({'prometheus': 'bad_val'},),
     ])
     def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(

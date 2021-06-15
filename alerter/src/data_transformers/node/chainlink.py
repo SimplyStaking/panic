@@ -289,7 +289,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.debug("Updating state ...")
         processing_performed = False
 
-        if transformed_data['prometheus']:
+        if 'prometheus' in transformed_data and transformed_data['prometheus']:
             processing_performed = True
             if 'result' in transformed_data['prometheus']:
                 meta_data = transformed_data['prometheus']['result'][
@@ -398,7 +398,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         processing_performed = False
         processed_data = {}
 
-        if transformed_data['prometheus']:
+        if 'prometheus' in transformed_data and transformed_data['prometheus']:
             processing_performed = True
             if 'result' in transformed_data['prometheus']:
                 td_meta_data = transformed_data['prometheus']['result'][
@@ -503,7 +503,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         processing_performed = False
         transformed_data = {}
 
-        if data['prometheus']:
+        if 'prometheus' in data and data['prometheus']:
             processing_performed = True
             if 'result' in data['prometheus']:
                 meta_data = data['prometheus']['result']['meta_data']
