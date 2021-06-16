@@ -800,7 +800,41 @@ if __name__ == '__main__':
 
     time.sleep(15)
 
-    # Start the managers in a separate process
+    # Start the components that do not generate or cause alerts to be sent. Then
+    # sleep for a few seconds so that these components are ready reading the
+    # configs before alerting starts.
+
+    # Start the alert router in a separate process
+    alert_router_process = multiprocessing.Process(target=run_alert_router,
+                                                   args=())
+    alert_router_process.start()
+
+    # Start the data store in a separate process
+    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
+                                                 args=())
+    data_store_process.start()
+
+    # Start the channels manager in a separate process
+    channels_manager_process = multiprocessing.Process(
+        target=run_channels_manager, args=())
+    channels_manager_process.start()
+
+    data_transformers_manager_process = multiprocessing.Process(
+        target=run_data_transformers_manager, args=())
+    data_transformers_manager_process.start()
+
+    time.sleep(15)
+
+    # Start the alerters in a separate process
+    system_alerters_manager_process = multiprocessing.Process(
+        target=run_system_alerters_manager, args=())
+    system_alerters_manager_process.start()
+
+    github_alerter_manager_process = multiprocessing.Process(
+        target=run_github_alerters_manager, args=())
+    github_alerter_manager_process.start()
+
+    # Start the monitor managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
         target=run_system_monitors_manager, args=())
     system_monitors_manager_process.start()
@@ -812,34 +846,6 @@ if __name__ == '__main__':
     node_monitors_manager_process = multiprocessing.Process(
         target=run_node_monitors_manager, args=())
     node_monitors_manager_process.start()
-
-    # Start the alerters in a separate process
-    system_alerters_manager_process = multiprocessing.Process(
-        target=run_system_alerters_manager, args=())
-    system_alerters_manager_process.start()
-
-    github_alerter_manager_process = multiprocessing.Process(
-        target=run_github_alerters_manager, args=())
-    github_alerter_manager_process.start()
-
-    data_transformers_manager_process = multiprocessing.Process(
-        target=run_data_transformers_manager, args=())
-    data_transformers_manager_process.start()
-
-    # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
-                                                 args=())
-    data_store_process.start()
-
-    # Start the alert router in a separate process
-    alert_router_process = multiprocessing.Process(target=run_alert_router,
-                                                   args=())
-    alert_router_process.start()
-
-    # Start the channels manager in a separate process
-    channels_manager_process = multiprocessing.Process(
-        target=run_channels_manager, args=())
-    channels_manager_process.start()
 
     signal.signal(signal.SIGTERM, on_terminate)
     signal.signal(signal.SIGINT, on_terminate)

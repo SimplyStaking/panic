@@ -1,5 +1,7 @@
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, List
+
+from schema import Schema, Optional as SchemaOptional
 
 from src.monitorables.nodes.node import Node
 from src.utils.exceptions import InvalidDictSchemaException
@@ -28,8 +30,13 @@ class ChainlinkNode(Node):
         }
         self._eth_balance_info = {}
 
-        # Some meta-data
+        # This variable stores the url of the source used to get prometheus node
+        # data. Note that this had to be done because multiple prometheus
+        # sources can be associated with the same node, where at the same time
+        # only one source is available, and sources switch from time to time.
         self._last_prometheus_source_used = None
+
+        # This stores the timestamp of the last successful monitoring round.
         self._last_monitored_prometheus = None
 
     @property
@@ -99,6 +106,106 @@ class ChainlinkNode(Node):
     @property
     def last_monitored_prometheus(self) -> Optional[float]:
         return self._last_monitored_prometheus
+
+    @staticmethod
+    def get_int_prometheus_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing integer prometheus
+               : metrics.
+        """
+        return [
+            'current_height', 'eth_blocks_in_queue',
+            'total_block_headers_received', 'total_block_headers_dropped',
+            'no_of_active_jobs', 'max_pending_tx_delay', 'total_gas_bumps',
+            'total_gas_bumps_exceeds_limit', 'no_of_unconfirmed_txs',
+            'total_errored_job_runs'
+        ]
+
+    @staticmethod
+    def get_float_prometheus_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing float prometheus
+               : metrics.
+        """
+        return [
+            'went_down_at_prometheus', 'process_start_time_seconds',
+            'last_monitored_prometheus'
+        ]
+
+    @staticmethod
+    def get_dict_prometheus_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing dict prometheus
+               : metrics.
+        """
+        return ['current_gas_price_info', 'eth_balance_info']
+
+    @staticmethod
+    def get_str_prometheus_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing string prometheus
+               : metrics.
+        """
+        return ['last_prometheus_source_used']
+
+    def get_all_prometheus_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing prometheus metrics
+        """
+        str_prometheus_metric_attributes = \
+            self.get_str_prometheus_metric_attributes()
+        int_prometheus_metric_attributes = \
+            self.get_int_prometheus_metric_attributes()
+        float_prometheus_metric_attributes = \
+            self.get_float_prometheus_metric_attributes()
+        dict_prometheus_metric_attributes = \
+            self.get_dict_prometheus_metric_attributes()
+        return [
+            *str_prometheus_metric_attributes,
+            *int_prometheus_metric_attributes,
+            *float_prometheus_metric_attributes,
+            *dict_prometheus_metric_attributes
+        ]
+
+    def get_int_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing int metrics.
+        """
+        int_prometheus_metric_attributes = \
+            self.get_int_prometheus_metric_attributes()
+        return [*int_prometheus_metric_attributes]
+
+    def get_float_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing float metrics.
+        """
+        float_prometheus_metric_attributes = \
+            self.get_float_prometheus_metric_attributes()
+        return [*float_prometheus_metric_attributes]
+
+    def get_dict_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing dict metrics.
+        """
+        dict_prometheus_metric_attributes = \
+            self.get_dict_prometheus_metric_attributes()
+        return [*dict_prometheus_metric_attributes]
+
+    def get_str_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing str metrics.
+        """
+        str_prometheus_metric_attributes = \
+            self.get_str_prometheus_metric_attributes()
+        return [*str_prometheus_metric_attributes]
+
+    def get_all_metric_attributes(self) -> List[str]:
+        """
+        :return: A list of all variable names representing metrics
+        """
+        prometheus_metric_attributes = \
+            self.get_all_prometheus_metric_attributes()
+        return [*prometheus_metric_attributes]
 
     def set_went_down_at_prometheus(
             self, went_down_at_prometheus: Optional[float]) -> None:
@@ -189,22 +296,13 @@ class ChainlinkNode(Node):
         :return: True if the dict obeys the required schema
                : False otherwise
         """
-        if new_eth_balance_info == {}:
-            return True
-
-        # A new_eth_balance info dict is valid if all required keys with float
-        # values are in the new dict.
-        for _, eth_balance_info in new_eth_balance_info.items():
-            if not isinstance(eth_balance_info, Dict):
-                return False
-
-            required_float_keys = ['balance', 'latest_usage']
-            for key in required_float_keys:
-                if key not in eth_balance_info or not isinstance(
-                        eth_balance_info[key], float):
-                    return False
-
-        return True
+        schema = Schema({
+            SchemaOptional(str): {
+                'balance': float,
+                'latest_usage': float,
+            }
+        })
+        return schema.is_valid(new_eth_balance_info)
 
     def set_eth_balance_info(
             self, new_eth_balance_info: Dict[str, Dict[str, float]]) -> None:

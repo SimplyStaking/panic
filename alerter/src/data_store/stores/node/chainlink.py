@@ -173,7 +173,7 @@ class ChainlinkNodeStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            "Restored %s state: _current_height=%s, _eth_blocks_in_queue=%s, "
+            "Saving %s state: _current_height=%s, _eth_blocks_in_queue=%s, "
             "_total_block_headers_received=%s, "
             "_total_block_headers_dropped=%s, _no_of_active_jobs=%s, "
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
