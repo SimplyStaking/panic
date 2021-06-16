@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b8b8f6593e0b9a08c996042ba12ee578df13a4f69915bc616ca84e9547b2930e"
+            "sha256": "c9cdeab5f00125b0a9e95a9f71fe48b7c73be5758f956c597b8e728f39c72f30"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -51,6 +51,14 @@
             ],
             "index": "pypi",
             "version": "==5.0.2"
+        },
+        "contextlib2": {
+            "hashes": [
+                "sha256:01f490098c18b19d2bd5bb5dc445b2054d2fa97f09a4280ba2c5f3c394c8162e",
+                "sha256:3355078a159fbb44ee60ea80abd0d87b80b78c248643b49aa6d94673b413609b"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "version": "==0.6.0.post1"
         },
         "idna": {
             "hashes": [
@@ -206,6 +214,14 @@
             ],
             "index": "pypi",
             "version": "==2.25.1"
+        },
+        "schema": {
+            "hashes": [
+                "sha256:cf97e4cd27e203ab6bb35968532de1ed8991bce542a646f0ff1d643629a4945d",
+                "sha256:fbb6a52eb2d9facf292f233adcc6008cffd94343c63ccac9a1cb1f3e6de1db17"
+            ],
+            "index": "pypi",
+            "version": "==0.7.4"
         },
         "six": {
             "hashes": [
