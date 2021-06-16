@@ -14,15 +14,15 @@ from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
-from src.configs.system_alerts import SystemAlertsConfig
+from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
+    ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
+    ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
     SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
@@ -76,17 +76,17 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
         self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
         self.logger.info("Declaring consuming intentions on %s",
                          SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -156,7 +156,7 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
+        if method.routing_key == ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')

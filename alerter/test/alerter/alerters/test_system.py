@@ -15,7 +15,7 @@ from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.alerter.grouped_alerts_metric_code import GroupedSystemAlertsMetricCode
-from src.configs.system_alerts import SystemAlertsConfig
+from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
