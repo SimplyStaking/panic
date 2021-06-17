@@ -23,8 +23,7 @@ CL_NODE_DT_INPUT_QUEUE_NAME = 'chainlink_node_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
-CL_NODE_ALERTER_INPUT_QUEUE_NAME = 'cl_node_alerter_input_queue'
-CL_NODE_ALERTER_CONFIGS_QUEUE_NAME = 'cl_node_alerter_configs_queue'
+CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = 'cl_node_alerter_input_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \

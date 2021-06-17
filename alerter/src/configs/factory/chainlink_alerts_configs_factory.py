@@ -6,7 +6,7 @@ from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class AlertsConfigsFactory(ConfigsFactory):
+class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     """
     This class manages the alerts configs. The configs are indexed by the
     chain name, and it is expected that each chain has exactly one alerts
