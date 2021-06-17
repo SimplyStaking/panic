@@ -21,8 +21,8 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
-    ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
+    ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
+    ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
     SYSTEM_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
@@ -76,17 +76,17 @@ class SystemAlertersManager(AlertersManager):
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                         ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
         self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                         ALERTS_CONFIGS_ROUTING_KEY_GEN)
         self.rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN)
+                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
         self.logger.info("Declaring consuming intentions on %s",
                          SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -156,7 +156,7 @@ class SystemAlertersManager(AlertersManager):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN:
+        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
             chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
