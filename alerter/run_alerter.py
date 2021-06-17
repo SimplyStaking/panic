@@ -10,6 +10,7 @@ import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
+from src.alerter.managers.chainlink import ChainlinkAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
@@ -27,6 +28,7 @@ from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
+    CHAINLINK_ALERTER_MANAGER_NAME,
 )
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
@@ -130,6 +132,35 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter_manager
+
+
+def _initialise_chainlink_alerter_manager() -> ChainlinkAlerterManager:
+    manager_display_name = CHAINLINK_ALERTER_MANAGER_NAME
+
+    chainlink_alerter_manager_logger = _initialise_logger(
+        manager_display_name, ChainlinkAlerterManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the system alerters manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=chainlink_alerter_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            chainlink_alerter_manager = ChainlinkAlerterManager(
+                chainlink_alerter_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), chainlink_alerter_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          chainlink_alerter_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return chainlink_alerter_manager
 
 
 def _initialise_system_monitors_manager() -> SystemMonitorsManager:
@@ -422,6 +453,11 @@ def run_github_alerters_manager() -> None:
     run_alerters_manager(github_alerter_manager)
 
 
+def run_chainlink_alerters_manager() -> None:
+    chainlink_alerter_manager = _initialise_chainlink_alerter_manager()
+    run_alerters_manager(chainlink_alerter_manager)
+
+
 def run_monitors_manager(manager: MonitorsManager) -> None:
     while True:
         try:
@@ -579,6 +615,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     terminate_and_join_process(github_alerter_manager_process,
                                GITHUB_ALERTER_MANAGER_NAME)
+
+    terminate_and_join_process(chainlink_alerter_manager_process,
+                               CHAINLINK_ALERTER_MANAGER_NAME)
 
     terminate_and_join_process(data_store_process,
                                DATA_STORE_MANAGER_NAME)
@@ -834,6 +873,10 @@ if __name__ == '__main__':
         target=run_github_alerters_manager, args=())
     github_alerter_manager_process.start()
 
+    chainlink_alerter_manager_process = multiprocessing.Process(
+        target=run_chainlink_alerters_manager, args=())
+    chainlink_alerter_manager_process.start()
+
     # Start the monitor managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
         target=run_system_monitors_manager, args=())
@@ -859,6 +902,7 @@ if __name__ == '__main__':
     system_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
+    chainlink_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()
