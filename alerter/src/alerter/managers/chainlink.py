@@ -29,6 +29,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
+from src.configs.factory.alerts_configs_factory import AlertsConfigFactory
 
 """
 Design
@@ -48,6 +49,7 @@ class ChainlinkAlerterManager(AlertersManager):
         super().__init__(logger, manager_name, rabbitmq)
         self._chainlink_alerts_configs = {}
         self._alerter_process_dict = {}
+        self.alerts_config_factory = AlertsConfigFactory()
 
     @property
     def chainlink_alerts_configs(self) -> Dict:
