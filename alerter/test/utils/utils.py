@@ -1,3 +1,4 @@
+import json
 from time import sleep
 from unittest.mock import Mock
 
@@ -6,6 +7,7 @@ import pika.exceptions
 from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
@@ -74,9 +76,8 @@ def delete_queue_if_exists(rabbit: RabbitMQApi, queue_name: str) -> None:
         rabbit.queue_purge(queue_name)
         rabbit.queue_delete(queue_name)
     except pika.exceptions.ChannelClosedByBroker:
-        print("Queue {} does not exist - don't need to close".format(
-            queue_name
-        ))
+        rabbit.logger.debug(
+            "Queue {} does not exist - don't need to close".format(queue_name))
 
 
 def delete_exchange_if_exists(rabbit: RabbitMQApi, exchange_name: str) -> None:
@@ -84,8 +85,9 @@ def delete_exchange_if_exists(rabbit: RabbitMQApi, exchange_name: str) -> None:
         rabbit.exchange_declare(exchange_name, passive=True)
         rabbit.exchange_delete(exchange_name)
     except pika.exceptions.ChannelClosedByBroker:
-        print("Exchange {} does not exist - don't need to close".format(
-            exchange_name))
+        rabbit.logger.debug(
+            "Exchange {} does not exist - don't need to close".format(
+                exchange_name))
 
 
 def disconnect_from_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
@@ -97,9 +99,9 @@ def disconnect_from_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
             return
         except Exception as e:
             tries += 1
-            print("Could not disconnect to rabbit. Attempts so "
-                  "far: {}".format(tries))
-            print(e)
+            rabbit.logger.debug("Could not disconnect to rabbit. Attempts so "
+                                "far: {}".format(tries))
+            rabbit.logger.debug(e)
             if tries >= attempts:
                 raise e
 
@@ -113,9 +115,9 @@ def connect_to_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
             return
         except Exception as e:
             tries += 1
-            print("Could not connect to rabbit. Attempts so far: {}".format(
-                tries))
-            print(e)
+            rabbit.logger.debug("Could not disconnect to rabbit. Attempts so "
+                                "far: {}".format(tries))
+            rabbit.logger.debug(e)
             if tries >= attempts:
                 raise e
 
@@ -125,33 +127,33 @@ def save_system_to_redis(redis: RedisApi, system: System) -> None:
     system_id = system.system_id
     redis.hset_multiple(redis_hash, {
         Keys.get_system_process_cpu_seconds_total(system_id):
-            system.process_cpu_seconds_total,
+            str(system.process_cpu_seconds_total),
         Keys.get_system_process_memory_usage(system_id):
-            system.process_memory_usage,
+            str(system.process_memory_usage),
         Keys.get_system_virtual_memory_usage(system_id):
-            system.virtual_memory_usage,
+            str(system.virtual_memory_usage),
         Keys.get_system_open_file_descriptors(system_id):
-            system.open_file_descriptors,
+            str(system.open_file_descriptors),
         Keys.get_system_system_cpu_usage(system_id):
-            system.system_cpu_usage,
+            str(system.system_cpu_usage),
         Keys.get_system_system_ram_usage(system_id):
-            system.system_ram_usage,
+            str(system.system_ram_usage),
         Keys.get_system_system_storage_usage(system_id):
-            system.system_storage_usage,
+            str(system.system_storage_usage),
         Keys.get_system_network_transmit_bytes_per_second(system_id):
-            system.network_transmit_bytes_per_second,
+            str(system.network_transmit_bytes_per_second),
         Keys.get_system_network_receive_bytes_per_second(system_id):
-            system.network_receive_bytes_per_second,
+            str(system.network_receive_bytes_per_second),
         Keys.get_system_network_transmit_bytes_total(system_id):
-            system.network_transmit_bytes_total,
+            str(system.network_transmit_bytes_total),
         Keys.get_system_network_receive_bytes_total(system_id):
-            system.network_receive_bytes_total,
+            str(system.network_receive_bytes_total),
         Keys.get_system_disk_io_time_seconds_in_interval(system_id):
-            system.disk_io_time_seconds_in_interval,
+            str(system.disk_io_time_seconds_in_interval),
         Keys.get_system_disk_io_time_seconds_total(system_id):
-            system.disk_io_time_seconds_total,
-        Keys.get_system_last_monitored(system_id): system.last_monitored,
-        Keys.get_system_went_down_at(system_id): system.went_down_at,
+            str(system.disk_io_time_seconds_total),
+        Keys.get_system_last_monitored(system_id): str(system.last_monitored),
+        Keys.get_system_went_down_at(system_id): str(system.went_down_at),
     })
 
 
@@ -159,6 +161,49 @@ def save_github_repo_to_redis(redis: RedisApi, github_repo: GitHubRepo) -> None:
     redis_hash = Keys.get_hash_parent(github_repo.parent_id)
     repo_id = github_repo.repo_id
     redis.hset_multiple(redis_hash, {
-        Keys.get_github_no_of_releases(repo_id): github_repo.no_of_releases,
-        Keys.get_github_last_monitored(repo_id): github_repo.last_monitored,
+        Keys.get_github_no_of_releases(repo_id):
+            str(github_repo.no_of_releases),
+        Keys.get_github_last_monitored(repo_id):
+            str(github_repo.last_monitored),
+    })
+
+
+def save_chainlink_node_to_redis(redis: RedisApi,
+                                 cl_node: ChainlinkNode) -> None:
+    redis_hash = Keys.get_hash_parent(cl_node.parent_id)
+    cl_node_id = cl_node.node_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_cl_node_went_down_at_prometheus(cl_node_id):
+            str(cl_node.went_down_at_prometheus),
+        Keys.get_cl_node_current_height(cl_node_id):
+            str(cl_node.current_height),
+        Keys.get_cl_node_eth_blocks_in_queue(cl_node_id):
+            str(cl_node.eth_blocks_in_queue),
+        Keys.get_cl_node_total_block_headers_received(cl_node_id):
+            str(cl_node.total_block_headers_received),
+        Keys.get_cl_node_total_block_headers_dropped(cl_node_id):
+            str(cl_node.total_block_headers_dropped),
+        Keys.get_cl_node_no_of_active_jobs(cl_node_id):
+            str(cl_node.no_of_active_jobs),
+        Keys.get_cl_node_max_pending_tx_delay(cl_node_id):
+            str(cl_node.max_pending_tx_delay),
+        Keys.get_cl_node_process_start_time_seconds(cl_node_id):
+            str(cl_node.process_start_time_seconds),
+        Keys.get_cl_node_total_gas_bumps(cl_node_id):
+            str(cl_node.total_gas_bumps),
+        Keys.get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id):
+            str(cl_node.total_gas_bumps_exceeds_limit),
+        Keys.get_cl_node_no_of_unconfirmed_txs(cl_node_id):
+            str(cl_node.no_of_unconfirmed_txs),
+        Keys.get_cl_node_total_errored_job_runs(cl_node_id):
+            str(cl_node.total_errored_job_runs),
+        Keys.get_cl_node_current_gas_price_info(cl_node_id):
+            'None' if cl_node.current_gas_price_info is None else json.dumps(
+                cl_node.current_gas_price_info),
+        Keys.get_cl_node_eth_balance_info(cl_node_id):
+            json.dumps(cl_node.eth_balance_info),
+        Keys.get_cl_node_last_prometheus_source_used(cl_node_id):
+            str(cl_node.last_prometheus_source_used),
+        Keys.get_cl_node_last_monitored_prometheus(cl_node_id):
+            str(cl_node.last_monitored_prometheus)
     })

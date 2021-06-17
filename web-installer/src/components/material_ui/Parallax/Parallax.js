@@ -1,3 +1,4 @@
+/* eslint-disable react/require-default-props */
 import React from 'react';
 // nodejs library that concatenates classes
 import classNames from 'classnames';
@@ -47,6 +48,8 @@ export default function Parallax(props) {
       style={{
         ...style,
         backgroundImage: `url(${image})`,
+        backgroundSize: 'cover',
+        minHeight: '1rem',
         transform,
       }}
     >
@@ -55,11 +58,15 @@ export default function Parallax(props) {
   );
 }
 
+Parallax.defaultProps = {
+  small: false,
+};
+
 Parallax.propTypes = {
-  className: PropTypes.string.isRequired,
-  filter: PropTypes.bool.isRequired,
-  children: PropTypes.node.isRequired,
-  style: PropTypes.string.isRequired,
-  image: PropTypes.string.isRequired,
-  small: PropTypes.bool.isRequired,
+  className: PropTypes.string,
+  filter: PropTypes.bool,
+  children: PropTypes.node,
+  style: PropTypes.string,
+  image: PropTypes.string,
+  small: PropTypes.bool,
 };

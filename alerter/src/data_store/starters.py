@@ -7,12 +7,14 @@ import pika.exceptions
 from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.github import GithubStore
+from src.data_store.stores.node.chainlink import ChainlinkNodeStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (CONFIG_STORE_NAME, SYSTEM_STORE_NAME,
-                                       GITHUB_STORE_NAME, ALERT_STORE_NAME)
+                                       GITHUB_STORE_NAME, ALERT_STORE_NAME,
+                                       CL_NODE_STORE_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -85,6 +87,11 @@ def start_github_store() -> None:
 def start_alert_store() -> None:
     alert_store = _initialise_store(AlertStore, ALERT_STORE_NAME)
     start_store(alert_store)
+
+
+def start_chainlink_node_store() -> None:
+    cl_node_store = _initialise_store(ChainlinkNodeStore, CL_NODE_STORE_NAME)
+    start_store(cl_node_store)
 
 
 def start_store(store: Store) -> None:

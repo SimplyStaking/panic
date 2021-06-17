@@ -7,8 +7,8 @@ import ChannelsPage from 'components/channels/channelsPage';
 import ChainsPage from 'components/chains/chainsPage';
 import CosmosSetupPage from 'components/chains/cosmos/cosmosSetupPage';
 import SubstrateSetupPage from 'components/chains/substrate/substrateSetupPage';
-import OtherSetupPage from 'components/chains/other/otherSetupPage';
-import GeneralPage from 'components/general/generalPage';
+import ChainlinkSetupPage from 'components/chains/chainlink/chainlinkSetupPage';
+import GeneralSetupPage from 'components/chains/general/generalSetupPage';
 import UsersPage from 'components/users/usersPage';
 import {
   WELCOME_PAGE,
@@ -16,9 +16,9 @@ import {
   CHAINS_PAGE,
   COSMOS_SETUP_PAGE,
   SUBSTRATE_SETUP_PAGE,
-  GENERAL_PAGE,
   USERS_PAGE,
-  OTHER_SETUP_PAGE,
+  GENERAL_SETUP_PAGE,
+  CHAINLINK_SETUP_PAGE,
 } from 'constants/constants';
 import { refreshAccessToken } from 'utils/data';
 
@@ -40,12 +40,12 @@ function getPage(pageName) {
       return <CosmosSetupPage />;
     case SUBSTRATE_SETUP_PAGE:
       return <SubstrateSetupPage />;
-    case OTHER_SETUP_PAGE:
-      return <OtherSetupPage />;
+    case CHAINLINK_SETUP_PAGE:
+      return <ChainlinkSetupPage />;
+    case GENERAL_SETUP_PAGE:
+      return <GeneralSetupPage />;
     case USERS_PAGE:
       return <UsersPage />;
-    case GENERAL_PAGE:
-      return <GeneralPage />;
     default:
       return <WelcomePage />;
   }
@@ -60,7 +60,7 @@ class PageManager extends Component {
   // This is used to refresh the JWT token
   componentDidMount() {
     this.refreshToken();
-    this.dataTimer = setInterval(this.refreshToken.bind(this), 100000);
+    this.dataTimer = setInterval(this.refreshToken.bind(this), 10000);
   }
 
   componentWillUnmount() {

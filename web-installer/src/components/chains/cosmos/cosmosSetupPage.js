@@ -1,13 +1,10 @@
 import React from 'react';
 import StepManager from 'containers/chains/cosmos/stepManager';
-import Data from 'data/cosmos';
 import Parallax from 'components/material_ui/Parallax/Parallax';
-import GridItem from 'components/material_ui/Grid/GridItem';
-import GridContainer from 'components/material_ui/Grid/GridContainer';
 import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
 import Card from 'components/material_ui/Card/Card';
 import CardBody from 'components/material_ui/Card/CardBody';
-import Background from 'assets/img/backgrounds/background.png';
+import Background from 'assets/img/backgrounds/CosmosHeaderCard.png';
 
 /*
  * Main cosmos setup page, this will be constant through out the cosmos chain
@@ -21,17 +18,7 @@ function CosmosSetupPage() {
 
   return (
     <div>
-      <Parallax image={Background}>
-        <div className={classes.container}>
-          <GridContainer>
-            <GridItem>
-              <div className={classes.brand}>
-                <h1 className={classes.title}>{Data.cosmos.title}</h1>
-              </div>
-            </GridItem>
-          </GridContainer>
-        </div>
-      </Parallax>
+      <Parallax image={Background} />
       <div className={classes.mainRaised}>
         <Card>
           <CardBody>

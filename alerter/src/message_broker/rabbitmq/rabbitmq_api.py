@@ -52,6 +52,10 @@ class RabbitMQApi:
         return self._host
 
     @property
+    def logger(self) -> logging.Logger:
+        return self._logger
+
+    @property
     def connection(self) -> Optional[pika.BlockingConnection]:
         return self._connection
 
@@ -326,6 +330,14 @@ class RabbitMQApi:
         # this function will throw a ConnectionNotInitialised exception
         if self._connection_initialised():
             return self._safe(self.channel.basic_ack, args, -1)
+
+    def basic_nack(self, delivery_tag: int = 0, multiple: bool = False,
+                   requeue: bool = True) -> Optional[int]:
+        args = [delivery_tag, multiple, requeue]
+        # Perform operation only if a connection has been initialised, if not,
+        # this function will throw a ConnectionNotInitialised exception
+        if self._connection_initialised():
+            return self._safe(self.channel.basic_nack, args, -1)
 
     def basic_qos(self, prefetch_size: int = 0, prefetch_count: int = 0,
                   global_qos: bool = False) -> Optional[int]:

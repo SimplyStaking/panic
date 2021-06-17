@@ -2,18 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Box,
+  Table, TableBody, TableContainer, TableHead, TableRow, Button,
+  Box, Typography,
 } from '@material-ui/core';
 import CancelIcon from '@material-ui/icons/Cancel';
 import Paper from '@material-ui/core/Paper';
 import { SUBSTRATE_SETUP_PAGE } from 'constants/constants';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 const SubstrateChainsTable = ({
   config,
@@ -21,6 +17,8 @@ const SubstrateChainsTable = ({
   pageChanger,
   removeChainDetails,
   removeNodeDetails,
+  removeSlackDetails,
+  removeDockerHubDetails,
   removeRepositoryDetails,
   removeOpsGenieDetails,
   removePagerDutyDetails,
@@ -32,6 +30,7 @@ const SubstrateChainsTable = ({
   emails,
   pagerduties,
   opsgenies,
+  slacks,
 }) => {
   const loadConfiguration = (page, id) => {
     loadConfigDetails({ id });
@@ -49,6 +48,7 @@ const SubstrateChainsTable = ({
     let emailPayload = {};
     let opsGeniePayload = {};
     let pagerDutyPayload = {};
+    let slackPayload = {};
     let index = 0;
 
     for (let i = 0; i < telegrams.allIds.length; i += 1) {
@@ -134,15 +134,38 @@ const SubstrateChainsTable = ({
       }
     }
 
+    for (let i = 0; i < slacks.allIds.length; i += 1) {
+      slackPayload = JSON.parse(
+        JSON.stringify(slacks.byId[slacks.allIds[i]]),
+      );
+      if (slackPayload.parent_ids.includes(chainID)) {
+        index = slackPayload.parent_ids.indexOf(chainID);
+        if (index > -1) {
+          slackPayload.parent_ids.splice(index, 1);
+        }
+        index = slackPayload.parent_names.indexOf(currentConfig.chain_name);
+        if (index > -1) {
+          slackPayload.parent_names.splice(index, 1);
+        }
+        removeSlackDetails(slackPayload);
+      }
+    }
+
+    // Clear all the configured dockerHubs from state
+    for (let i = 0; i < currentConfig.dockerHubs.length; i += 1) {
+      payload.id = currentConfig.dockerHubs[i];
+      removeDockerHubDetails(payload);
+    }
+
     // Clear all the configured nodes from state
     for (let i = 0; i < currentConfig.nodes.length; i += 1) {
       payload.id = currentConfig.nodes[i];
       removeNodeDetails(payload);
     }
 
-    // Clear all the configured repositories from state
-    for (let i = 0; i < currentConfig.repositories.length; i += 1) {
-      payload.id = currentConfig.repositories[i];
+    // Clear all the configured githubRepositories from state
+    for (let i = 0; i < currentConfig.githubRepositories.length; i += 1) {
+      payload.id = currentConfig.githubRepositories[i];
       removeRepositoryDetails(payload);
     }
 
@@ -156,21 +179,26 @@ const SubstrateChainsTable = ({
   }
   return (
     <TableContainer component={Paper}>
-      <Table className="table" aria-label="substrate chains table" style={{ marginBottom: '150px' }}>
+      <Table className="table" aria-label="substrate-chains-table">
         <TableHead>
           <TableRow>
-            <TableCell align="center">Name</TableCell>
-            <TableCell align="center">Manage</TableCell>
-            <TableCell align="center">Delete</TableCell>
+            <StyledTableCell align="center">Name</StyledTableCell>
+            <StyledTableCell align="center">Edit/View Config</StyledTableCell>
+            <StyledTableCell align="center">Delete</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {config.allIds.map((id) => (
-            <TableRow key={id}>
-              <TableCell align="center">{config.byId[id].chain_name}</TableCell>
-              <TableCell align="center">
+            <StyledTableRow key={id}>
+              <StyledTableCell align="center">
+                <Typography variant="h6" style={{ fontWeight: '450' }}>
+                  {config.byId[id].chain_name}
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Box px={2}>
                   <Button
+                    variant="contained"
                     onClick={() => {
                       loadConfiguration(SUBSTRATE_SETUP_PAGE, id);
                     }}
@@ -178,8 +206,8 @@ const SubstrateChainsTable = ({
                     Load Chain
                   </Button>
                 </Box>
-              </TableCell>
-              <TableCell align="center">
+              </StyledTableCell>
+              <StyledTableCell align="center">
                 <Button
                   onClick={() => {
                     clearAllChainDetails(id);
@@ -187,8 +215,8 @@ const SubstrateChainsTable = ({
                 >
                   <CancelIcon />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </StyledTableCell>
+            </StyledTableRow>
           ))}
         </TableBody>
       </Table>
@@ -239,6 +267,13 @@ SubstrateChainsTable.propTypes = forbidExtraProps({
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   removeChainDetails: PropTypes.func.isRequired,
   loadConfigDetails: PropTypes.func.isRequired,
   pageChanger: PropTypes.func.isRequired,
@@ -249,6 +284,8 @@ SubstrateChainsTable.propTypes = forbidExtraProps({
   removeEmailDetails: PropTypes.func.isRequired,
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
+  removeSlackDetails: PropTypes.func.isRequired,
+  removeDockerHubDetails: PropTypes.func.isRequired,
 });
 
 export default SubstrateChainsTable;

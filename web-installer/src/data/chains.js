@@ -1,13 +1,13 @@
 export default {
   chains: {
-    title: "Chain's Setup",
+    title: 'Chain Setup',
     subtitle_1: 'Everything you need to know about Chains.',
-    subtitle_2: 'Setup the chains now!',
+    subtitle_2: 'Chains Configuration',
     what_title: 'What are Chains?',
-    supported_title: 'Supported Chains',
+    supported_title: 'Supported Chain frameworks',
     how_title: 'How are they setup?',
     what_1:
-      'Chains are the type of blockchain nodes you have running that you '
+      'Chains are the type of blockchain software you have running that you '
       + 'want to be monitored and alerted on.',
     what_2:
       'The chains you will choose from are the underlying technology '
@@ -20,7 +20,7 @@ export default {
       + 'application-specific blockchains.',
     chain_3:
       'Other: Here you can monitor systems which do not belong to any '
-      + 'blockchain, these are monitored through Node Exporter.',
+      + 'blockchain through Node Exporter.',
     how_1:
       'Chains can be setup in the section below, you can configure as '
       + 'many chains as you want.',
@@ -31,40 +31,5 @@ export default {
       'From then on you will setup the chain name, the nodes belonging to '
       + 'the chain, the channels you want alerts for that chain to go to '
       + 'and finally the specific alerts configured for that chain.',
-  },
-  chain_name: {
-    description: 'We will now go through the setup of cosmos based chains.',
-    name:
-      'This will be used to identify the current chain that you are '
-      + 'setting up.',
-  },
-  kms: {
-    description: '',
-    name: 'This will be used to identify the current KMS configuration.',
-    exporter_url: '',
-    monitor_kms: '',
-  },
-  systems: {
-    description: '',
-    name: 'This will be used to identify the current System configuration.',
-    exporter_url: '',
-    monitor_system: '',
-  },
-  nodeDetails: {
-    description: '',
-    name: '',
-    tendermintRPC: '',
-    cosmosSDKRPC: '',
-    prometheus_url: '',
-    nodeExporterURL: '',
-    is_validator: '',
-    isArchive: '',
-    monitor_node: '',
-    use_as_data_source: '',
-  },
-  repositoryDetails: {
-    description: '',
-    name: '',
-    monitor_repo: '',
   },
 };

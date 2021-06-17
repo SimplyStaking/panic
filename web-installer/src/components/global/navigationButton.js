@@ -17,6 +17,7 @@ const NavigationButton = ({
       size="lg"
       color="primary"
       disabled={disabled}
+      fullWidth
     >
       {buttonText}
     </Button>

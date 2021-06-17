@@ -6,7 +6,7 @@ import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
-from src.configs.system_alerts import SystemAlertsConfig
+from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
                                        GITHUB_ALERTER_NAME)

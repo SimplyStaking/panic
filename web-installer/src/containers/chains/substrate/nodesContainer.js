@@ -14,7 +14,6 @@ import NodeSchema from '../common/schemas/nodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',
@@ -29,8 +28,8 @@ const Form = withFormik({
     stash_address: '',
     is_validator: false,
     monitor_node: true,
-    is_archive_node: true,
-    use_as_data_source: true,
+    is_archive_node: false,
+    use_as_data_source: false,
   }),
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
@@ -63,10 +62,12 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   chainConfig: state.SubstrateChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
-  reposConfig: state.RepositoryReducer,
+  reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
+  dockerHubConfig: state.DockerHubReducer,
   data: SubstrateData,
 });
 

@@ -75,7 +75,7 @@ class SystemStore(Store):
         saved in Mongo and Redis as required. If successful, a heartbeat will be
         sent.
         """
-        system_data = json.loads(body.decode())
+        system_data = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.", system_data)
 
         processing_error = False
@@ -270,7 +270,7 @@ class SystemStore(Store):
                         'disk_io_time_seconds_in_interval': str(
                             metrics['disk_io_time_seconds_in_interval']),
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['last_monitored']),
+                        'timestamp': meta_data['last_monitored'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -312,7 +312,7 @@ class SystemStore(Store):
                     '$push': {
                         system_id: {
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['time']),
+                            'timestamp': meta_data['time'],
                         }
                     },
                     '$inc': {'n_entries': 1},

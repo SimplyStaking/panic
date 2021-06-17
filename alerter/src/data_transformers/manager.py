@@ -10,11 +10,13 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
-from src.data_transformers.starters import (start_system_data_transformer,
-                                            start_github_data_transformer)
+from src.data_transformers.starters import (
+    start_system_data_transformer, start_github_data_transformer,
+    start_chainlink_node_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
-                                       GITHUB_DATA_TRANSFORMER_NAME)
+                                       GITHUB_DATA_TRANSFORMER_NAME,
+                                       CL_NODE_DATA_TRANSFORMER_NAME)
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           DT_MAN_HEARTBEAT_QUEUE_NAME,
                                           PING_ROUTING_KEY,
@@ -80,37 +82,29 @@ class DataTransformersManager(PublisherSubscriberComponent):
                           HEALTH_CHECK_EXCHANGE)
 
     def _start_transformers_processes(self) -> None:
-        # Start the system data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
-        if SYSTEM_DATA_TRANSFORMER_NAME not in \
-                self.transformer_process_dict or not \
-                self.transformer_process_dict[
-                    SYSTEM_DATA_TRANSFORMER_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                SYSTEM_DATA_TRANSFORMER_NAME), self.logger)
-            system_data_transformer_process = multiprocessing.Process(
-                target=start_system_data_transformer, args=())
-            system_data_transformer_process.daemon = True
-            system_data_transformer_process.start()
-            self._transformer_process_dict[SYSTEM_DATA_TRANSFORMER_NAME] = \
-                system_data_transformer_process
-
-        # Start the github data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
-        if GITHUB_DATA_TRANSFORMER_NAME not in \
-                self.transformer_process_dict or not \
-                self.transformer_process_dict[
-                    GITHUB_DATA_TRANSFORMER_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                GITHUB_DATA_TRANSFORMER_NAME), self.logger)
-            github_data_transformer_process = multiprocessing.Process(
-                target=start_github_data_transformer, args=())
-            github_data_transformer_process.daemon = True
-            github_data_transformer_process.start()
-            self._transformer_process_dict[GITHUB_DATA_TRANSFORMER_NAME] = \
-                github_data_transformer_process
+        """
+        This method starts the data transformers in a separate process if they
+        are not yet started or not alive. This must be done in case of a restart
+        of a manager.
+        :return: None
+        """
+        configuration = {
+            SYSTEM_DATA_TRANSFORMER_NAME: start_system_data_transformer,
+            GITHUB_DATA_TRANSFORMER_NAME: start_github_data_transformer,
+            CL_NODE_DATA_TRANSFORMER_NAME:
+                start_chainlink_node_data_transformer,
+        }
+        for transformer_name, transformer_starter in configuration.items():
+            if transformer_name not in self.transformer_process_dict or not \
+                    self.transformer_process_dict[transformer_name].is_alive():
+                log_and_print("Attempting to start the {}.".format(
+                    transformer_name), self.logger)
+                transformer_process = multiprocessing.Process(
+                    target=transformer_starter, args=())
+                transformer_process.daemon = True
+                transformer_process.start()
+                self._transformer_process_dict[
+                    transformer_name] = transformer_process
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,

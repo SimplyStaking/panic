@@ -500,7 +500,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
             mock_process_mongo.assert_called_once()
             mock_ack.assert_called_once()
@@ -611,7 +611,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
             self.assertRaises(eval(mock_error),
                               self.test_store._process_redis_store,
@@ -658,7 +658,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_1).encode()
+                json.dumps(self.system_data_1)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -711,7 +711,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -782,7 +782,7 @@ class TestSystemStore(unittest.TestCase):
                         'disk_io_time_seconds_in_interval': str(
                             metrics['disk_io_time_seconds_in_interval']),
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['last_monitored']),
+                        'timestamp': meta_data['last_monitored'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -821,7 +821,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -865,7 +865,7 @@ class TestSystemStore(unittest.TestCase):
                             'disk_io_time_seconds_in_interval': str(
                                 metrics['disk_io_time_seconds_in_interval']),
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['last_monitored']),
+                            'timestamp': meta_data['last_monitored'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -895,7 +895,7 @@ class TestSystemStore(unittest.TestCase):
                 '$push': {
                     system_id: {
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['time']),
+                        'timestamp': meta_data['time'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -929,7 +929,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -948,7 +948,7 @@ class TestSystemStore(unittest.TestCase):
                     '$push': {
                         system_id: {
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['time']),
+                            'timestamp': meta_data['time'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -1031,7 +1031,7 @@ class TestSystemStore(unittest.TestCase):
         expected = [
             'system',
             1,
-            str(meta_data['time']),
+            meta_data['time'],
             str(metrics['went_down_at'])
         ]
         actual = [
@@ -1072,7 +1072,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1152,7 +1152,7 @@ class TestSystemStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1169,7 +1169,7 @@ class TestSystemStore(unittest.TestCase):
             expected = [
                 'system',
                 1,
-                str(meta_data['time']),
+                meta_data['time'],
                 str(metrics['went_down_at'])
             ]
             actual = [

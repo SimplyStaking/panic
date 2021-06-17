@@ -18,7 +18,7 @@ export default function DescriptionSection() {
           <h1 className={classes.title}>{Data.channels.subtitle_1}</h1>
         </GridItem>
       </GridContainer>
-      <div>
+      <div style={{ marginTop: '100px' }}>
         <GridContainer>
           <GridItem xs={12} sm={12} md={4}>
             <InfoArea
@@ -33,7 +33,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={HelpIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -52,7 +52,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={AddIcCallIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -70,7 +70,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={SettingsIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -83,8 +83,15 @@ export default function DescriptionSection() {
         </GridContainer>
         <AlertSection />
         <GridContainer>
-          <GridItem xs={12} sm={12} md={12}>
-            <h1 className={classes.title}>{Data.channels.subtitle_2}</h1>
+          <GridItem
+            xs={12}
+            sm={12}
+            md={12}
+            style={{ marginTop: '50px' }}
+          >
+            <h1 className={classes.title}>
+              {Data.channels.subtitle_2}
+            </h1>
           </GridItem>
         </GridContainer>
       </div>

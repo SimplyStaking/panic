@@ -140,3 +140,11 @@ class NodeIsDownException(PANICException):
         message = "Node {} is unreachable".format(node_name)
         code = 5015
         super().__init__(message, code)
+
+
+class InvalidDictSchemaException(PANICException):
+
+    def __init__(self, dict_name: str) -> None:
+        message = "{} does not obey the valid schema.".format(dict_name)
+        code = 5016
+        super().__init__(message, code)

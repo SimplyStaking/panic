@@ -3,13 +3,8 @@ from typing import Optional
 
 
 class System:
-    # There is no setter for system_id as it is what identifies a system.
-    # Setters for parent_id and system_name were given just in case these are
-    # changed from the config
-
     def __init__(self, system_name: str, system_id: str, parent_id: str) \
             -> None:
-        # System identifiers
         self._system_name = system_name
         self._system_id = system_id
         self._parent_id = parent_id

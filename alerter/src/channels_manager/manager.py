@@ -40,7 +40,7 @@ from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import (str_to_bool, ChannelTypes, ChannelHandlerTypes,
-                             convert_to_int_if_not_none_and_not_empty_str)
+                             convert_to_int)
 
 
 class ChannelsManager(PublisherSubscriberComponent):
@@ -620,8 +620,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
-                port = convert_to_int_if_not_none_and_not_empty_str(
-                    config['port'], 0)
+                port = convert_to_int(config['port'], 0)
 
                 self._create_and_start_email_alerts_handler(
                     smtp, email_from, emails_to, channel_id, channel_name,
@@ -640,8 +639,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 emails_to = config['emails_to'].split(',')
                 username = config['username']
                 password = config['password']
-                port = convert_to_int_if_not_none_and_not_empty_str(
-                    config['port'], 0)
+                port = convert_to_int(config['port'], 0)
 
                 alerts_handler_type = ChannelHandlerTypes.ALERTS.value
                 if alerts_handler_type in self.channel_process_dict[channel_id]:

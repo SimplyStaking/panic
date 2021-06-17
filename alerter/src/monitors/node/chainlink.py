@@ -76,7 +76,7 @@ class ChainlinkNodeMonitor(Monitor):
             "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
             "tx_manager_gas_bump_exceeds_limit_total={}, "
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, "
-            "ethereum_balances={}, run_status_update_total_errors={}"
+            "eth_balance={}, run_status_update_total_errors={}"
             "".format(
                 data_defaultdict['head_tracker_current_head'],
                 data_defaultdict['head_tracker_heads_in_queue'],
@@ -89,7 +89,7 @@ class ChainlinkNodeMonitor(Monitor):
                 data_defaultdict['tx_manager_gas_bump_exceeds_limit_total'],
                 data_defaultdict['unconfirmed_transactions'],
                 data_defaultdict['gas_updater_set_gas_price'],
-                data_defaultdict['ethereum_balances'],
+                data_defaultdict['eth_balance'],
                 data_defaultdict['run_status_update_total_errors'])
         )
 
@@ -243,9 +243,9 @@ class ChainlinkNodeMonitor(Monitor):
             processed_data['result']['data']['gas_updater_set_gas_price'] = None
 
         # Add the ethereum balance of all addresses to the processed data
-        processed_data['result']['data']['ethereum_balances'] = {}
+        processed_data['result']['data']['eth_balance'] = {}
         ethereum_balances_dict = processed_data['result']['data'][
-            'ethereum_balances']
+            'eth_balance']
         for eth_address in self.node_config.ethereum_addresses:
             for _, data_subset in enumerate(data_copy['eth_balance']):
                 if json.loads(data_subset)['account'] == eth_address:
