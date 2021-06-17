@@ -156,8 +156,8 @@ class ChainlinkAlerterManager(AlertersManager):
         self._push_latest_data_to_queue_and_send(alert.alert_data)
 
         """
-        Start the Chainlink Alerter process with the saved factory object.
-        This factory object should hold all the configurations, if any.
+        Start the Chainlink Alerter process with the saved factory.
+        This factory should hold all the configurations, if any.
         """
         log_and_print("Attempting to start the {}.".format(
             CHAINLINK_ALERTER), self.logger)
