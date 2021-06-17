@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 from typing import Dict, List
 
@@ -14,6 +15,7 @@ from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
     ALERTS_CONFIGS_ROUTING_KEY_CHAIN, ALERTS_CONFIGS_ROUTING_KEY_GEN,
     CL_NODE_ALERT_ROUTING_KEY)
+from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
 class ChainlinkNodeAlerter(Alerter):
@@ -103,68 +105,51 @@ class ChainlinkNodeAlerter(Alerter):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
-        pass
-        # sent_configs = json.loads(body)
-        #
-        # self.logger.info("Received configs %s", sent_configs)
-        #
-        # if 'DEFAULT' in sent_configs:
-        #     del sent_configs['DEFAULT']
-        #
-        # if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
-        #     chain = 'general'
-        # else:
-        #     parsed_routing_key = method.routing_key.split('.')
-        #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-        #
-        # try:
-        #     """
-        #     Send an internal alert to clear every metric from Redis for the
-        #     chain in question, and terminate the process for the received
-        #     config. Note that all this happens if a configuration is modified
-        #     or deleted.
-        #     """
-        #     self._terminate_and_join_chain_alerter_processes(chain)
-        #
-        #     # Checking if we received a configuration, therefore we start the
-        #     # process again
-        #     if bool(sent_configs):
-        #         # Check if all the parent_ids in the received configuration
-        #         # are the same
-        #         parent_id = sent_configs['1']['parent_id']
-        #         for _, config in sent_configs.items():
-        #             if parent_id != config['parent_id']:
-        #                 raise ParentIdsMissMatchInAlertsConfiguration(
-        #                     "{}: _process_data".format(self))
-        #         filtered = {}
-        #         for _, config in sent_configs.items():
-        #             filtered[config['name']] = copy.deepcopy(config)
-        #
-        #         system_alerts_config = SystemAlertsConfig(
-        #             parent_id=parent_id,
-        #             open_file_descriptors=filtered['open_file_descriptors'],
-        #             system_cpu_usage=filtered['system_cpu_usage'],
-        #             system_storage_usage=filtered['system_storage_usage'],
-        #             system_ram_usage=filtered['system_ram_usage'],
-        #             system_is_down=filtered['system_is_down'],
-        #         )
-        #
-        #         self._create_and_start_alerter_process(
-        #             system_alerts_config, parent_id, chain)
-        #         self._systems_alerts_configs[parent_id] = system_alerts_config
-        # except MessageWasNotDeliveredException as e:
-        #     # If the internal alert cannot be delivered, requeue the config
-        #     # for re-processing.
-        #     self.logger.error("Error when processing %s", sent_configs)
-        #     self.logger.exception(e)
-        #     self.rabbitmq.basic_nack(method.delivery_tag)
-        #     return
-        # except Exception as e:
-        #     # Otherwise log and reject the message
-        #     self.logger.error("Error when processing %s", sent_configs)
-        #     self.logger.exception(e)
-        #
-        # self.rabbitmq.basic_ack(method.delivery_tag, False)
+        sent_configs = json.loads(body)
+
+        self.logger.info("Received configs %s", sent_configs)
+
+        if 'DEFAULT' in sent_configs:
+            del sent_configs['DEFAULT']
+
+        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
+            chain = 'general'
+        else:
+            parsed_routing_key = method.routing_key.split('.')
+            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+
+        try:
+            # Checking if the configuration is empty. If it is ignore it, if
+            # not add it to the list of configurations. Note, if a configuration
+            # was deleted it won't be used, so might as well not do anything.
+            if bool(sent_configs):
+                # Check if all the parent_ids in the received configuration
+                # are the same, if not there is some misconfiguration
+                parent_id = sent_configs['1']['parent_id']
+                for _, config in sent_configs.items():
+                    if parent_id != config['parent_id']:
+                        raise ParentIdsMissMatchInAlertsConfiguration(
+                            "{}: _process_configs".format(self))
+                filtered = {}
+                for _, config in sent_configs.items():
+                    filtered[config['name']] = copy.deepcopy(config)
+
+                cl_node_alerts_config = ChainlinkNodeAlertsConfig(
+
+                )
+
+                self._create_and_start_alerter_process(
+                    system_alerts_config, parent_id, chain)
+                self._systems_alerts_configs[parent_id] = system_alerts_config
+        except Exception as e:
+            # Otherwise log and reject the message
+            self.logger.error("Error when processing %s", sent_configs)
+            self.logger.exception(e)
+
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    # TODO: Create state for node must be done when configs are received, just
+    #     : in case some thresholds change.
 
     # TODO: When processing alerts check if config is available first, if not
     #     : skip alerts.
