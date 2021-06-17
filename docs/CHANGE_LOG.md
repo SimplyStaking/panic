@@ -9,7 +9,7 @@ Change the contents of this file to this:
 - Added Internal Alerts on startup originating from the Alerter, which are used to reset all metrics for that chain.
 - Added functionality to cater for new Internal Alert in Data Store.
 - Added Tests for new Internal Alerts in System/Github Alerter and Alert Store.
-- Added the ChainlinkNodeMonitor, NodeMonitorsManager, and their tests.
+- Added the ChainlinkNodeMonitor, ChainlinkNodeDataTransformer, DataTransformersManager chainlink logic, NodeMonitorsManager, and their tests.
 - Refactored RabbitMQ queues and routing keys.
 - The SystemMonitorsManager additionally now parses systems belonging to chains from the `system_config.ini` if Chainlink is the base chain. Same schema as `GENERAL` is expected.
 - Web-Installer visually updated to look better

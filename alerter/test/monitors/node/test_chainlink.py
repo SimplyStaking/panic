@@ -158,7 +158,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 'percentile': '20%',
                 'price': 5000000000.0
             },
-            'ethereum_balances': {'eth_add_1': 26.043292035081947},
+            'eth_balance': {'eth_add_1': 26.043292035081947},
             'run_status_update_total_errors': 8
         }
         self.processed_prometheus_data_example_optionals_none = copy.deepcopy(
@@ -394,7 +394,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "eth_balance={}, run_status_update_total_errors={}" \
             "".format(
                 self.processed_prometheus_data_example[
                     'head_tracker_current_head'],
@@ -418,7 +418,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                     'unconfirmed_transactions'],
                 self.processed_prometheus_data_example[
                     'gas_updater_set_gas_price'],
-                self.processed_prometheus_data_example['ethereum_balances'],
+                self.processed_prometheus_data_example['eth_balance'],
                 self.processed_prometheus_data_example[
                     'run_status_update_total_errors']
             )
@@ -437,7 +437,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "eth_balance={}, run_status_update_total_errors={}" \
             "".format(
                 self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_current_head'],
@@ -462,7 +462,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 self.processed_prometheus_data_example_optionals_none[
                     'gas_updater_set_gas_price'],
                 self.processed_prometheus_data_example_optionals_none[
-                    'ethereum_balances'],
+                    'eth_balance'],
                 self.processed_prometheus_data_example_optionals_none[
                     'run_status_update_total_errors']
             )
@@ -475,7 +475,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self) -> None:
         # Test when optionals are not None
         del self.processed_prometheus_data_example['head_tracker_current_head']
-        del self.processed_prometheus_data_example['ethereum_balances']
+        del self.processed_prometheus_data_example['eth_balance']
         expected_output = \
             "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
             "head_tracker_heads_received_total={}, " \
@@ -485,7 +485,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "eth_balance={}, run_status_update_total_errors={}" \
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example[
@@ -521,7 +521,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         del self.processed_prometheus_data_example_optionals_none[
             'head_tracker_current_head']
         del self.processed_prometheus_data_example_optionals_none[
-            'ethereum_balances']
+            'eth_balance']
         expected_output = \
             "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
             "head_tracker_heads_received_total={}, " \
@@ -531,7 +531,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "ethereum_balances={}, run_status_update_total_errors={}" \
+            "eth_balance={}, run_status_update_total_errors={}" \
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example_optionals_none[

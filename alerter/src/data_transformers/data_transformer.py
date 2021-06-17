@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import abstractmethod
 from types import FrameType
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -11,12 +11,11 @@ from src.abstract.publisher_subscriber import (
     QueuingPublisherSubscriberComponent)
 from src.data_store.redis.redis_api import RedisApi
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
+from src.utils.types import Monitorable
 
 
 class DataTransformer(QueuingPublisherSubscriberComponent):
@@ -41,12 +40,11 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         return self._redis
 
     @property
-    def state(self) -> Dict[str, Union[System, GitHubRepo]]:
+    def state(self) -> Dict[str, Monitorable]:
         return self._state
 
     @abstractmethod
-    def load_state(self, monitorable: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
+    def load_state(self, monitorable: Monitorable) -> Monitorable:
         pass
 
     def _listen_for_data(self) -> None:
@@ -71,9 +69,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         pass
 
     @abstractmethod
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
-                                    data_for_saving: Dict) -> None:
+    def _place_latest_data_on_queue(self, *args) -> None:
         pass
 
     @abstractmethod

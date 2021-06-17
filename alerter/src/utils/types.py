@@ -11,8 +11,12 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
+from src.monitorables.nodes.chainlink_node import ChainlinkNode
+from src.monitorables.repo import GitHubRepo
+from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
+Monitorable = Union[System, GitHubRepo, ChainlinkNode]
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -56,18 +60,22 @@ class ChannelHandlerTypes(Enum):
     COMMANDS = 'commands'
 
 
-def convert_to_float_if_not_none(value: Union[int, str, float, bytes, None],
-                                 default_return: Any) -> Any:
-    # This function converts a value to float if it is not None, otherwise it
-    # returns a default return
-    return float(value) if value is not None else default_return
+def convert_to_float(value: Union[int, str, float], default_return: Any) -> Any:
+    # This function converts a value to float, if the transformation fails it
+    # returns a default value
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default_return
 
 
-def convert_to_int_if_not_none(value: Union[int, str, float, bytes, None],
-                               default_return: Any) -> Any:
-    # This function converts a value to int if it is not None, otherwise it
-    # returns a default return
-    return int(value) if value is not None else default_return
+def convert_to_int(value: Union[int, str, float], default_return: Any) -> Any:
+    # This function converts a value to int, if the transformation fails it
+    # returns a default value
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default_return
 
 
 def convert_to_float_if_not_none_and_not_empty_str(value: Union[int, str, float,

@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -11,7 +11,6 @@ from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
@@ -20,7 +19,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import convert_to_float_if_not_none
+from src.utils.types import convert_to_float, Monitorable
 
 
 class SystemDataTransformer(DataTransformer):
@@ -71,80 +70,93 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, system: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
-        # If Redis is down, the data passed as default will be stored as
-        # the system state.
+    def load_state(self, system: Monitorable) -> Monitorable:
+        # Below, we will try and get the data stored in redis and store it
+        # in the system's state. If the data from Redis cannot be obtained, the
+        # state won't be updated.
 
         self.logger.debug("Loading the state of %s from Redis", system)
         redis_hash = Keys.get_hash_parent(system.parent_id)
         system_id = system.system_id
 
-        # Below, we will try and get the data stored in redis and store it
-        # in the system's state. If the data from Redis cannot be obtained, the
-        # state won't be updated.
-
         # Load process_cpu_seconds_total from Redis
         state_process_cpu_seconds_total = system.process_cpu_seconds_total
         redis_process_cpu_seconds_total = self.redis.hget(
             redis_hash, Keys.get_system_process_cpu_seconds_total(system_id),
-            state_process_cpu_seconds_total)
-        process_cpu_seconds_total = \
-            convert_to_float_if_not_none(redis_process_cpu_seconds_total, None)
+            bytes(str(state_process_cpu_seconds_total), 'utf8'))
+        redis_process_cpu_seconds_total = 'None' if \
+            redis_process_cpu_seconds_total is None \
+            else redis_process_cpu_seconds_total.decode("utf-8")
+        process_cpu_seconds_total = convert_to_float(
+            redis_process_cpu_seconds_total, None)
         system.set_process_cpu_seconds_total(process_cpu_seconds_total)
 
         # Load process_memory_usage from Redis
         state_process_memory_usage = system.process_memory_usage
         redis_process_memory_usage = self.redis.hget(
             redis_hash, Keys.get_system_process_memory_usage(system_id),
-            state_process_memory_usage)
-        process_memory_usage = \
-            convert_to_float_if_not_none(redis_process_memory_usage, None)
+            bytes(str(state_process_memory_usage), 'utf-8'))
+        redis_process_memory_usage = 'None' if \
+            redis_process_memory_usage is None \
+            else redis_process_memory_usage.decode("utf-8")
+        process_memory_usage = convert_to_float(redis_process_memory_usage,
+                                                None)
         system.set_process_memory_usage(process_memory_usage)
 
         # Load virtual_memory_usage from Redis
         state_virtual_memory_usage = system.virtual_memory_usage
         redis_virtual_memory_usage = self.redis.hget(
             redis_hash, Keys.get_system_virtual_memory_usage(system_id),
-            state_virtual_memory_usage)
-        virtual_memory_usage = \
-            convert_to_float_if_not_none(redis_virtual_memory_usage, None)
+            bytes(str(state_virtual_memory_usage), 'utf-8'))
+        redis_virtual_memory_usage = 'None' if \
+            redis_virtual_memory_usage is None \
+            else redis_virtual_memory_usage.decode("utf-8")
+        virtual_memory_usage = convert_to_float(redis_virtual_memory_usage,
+                                                None)
         system.set_virtual_memory_usage(virtual_memory_usage)
 
         # Load open_file_descriptors from Redis
         state_open_file_descriptors = system.open_file_descriptors
         redis_open_file_descriptors = self.redis.hget(
             redis_hash, Keys.get_system_open_file_descriptors(system_id),
-            state_open_file_descriptors)
-        open_file_descriptors = \
-            convert_to_float_if_not_none(redis_open_file_descriptors, None)
+            bytes(str(state_open_file_descriptors), 'utf-8'))
+        redis_open_file_descriptors = 'None' if \
+            redis_open_file_descriptors is None \
+            else redis_open_file_descriptors.decode("utf-8")
+        open_file_descriptors = convert_to_float(redis_open_file_descriptors,
+                                                 None)
         system.set_open_file_descriptors(open_file_descriptors)
 
         # Load system_cpu_usage from Redis
         state_system_cpu_usage = system.system_cpu_usage
         redis_system_cpu_usage = self.redis.hget(
             redis_hash, Keys.get_system_system_cpu_usage(system_id),
-            state_system_cpu_usage)
-        system_cpu_usage = \
-            convert_to_float_if_not_none(redis_system_cpu_usage, None)
+            bytes(str(state_system_cpu_usage), 'utf-8'))
+        redis_system_cpu_usage = 'None' if redis_system_cpu_usage is None \
+            else redis_system_cpu_usage.decode("utf-8")
+        system_cpu_usage = convert_to_float(redis_system_cpu_usage, None)
         system.set_system_cpu_usage(system_cpu_usage)
 
         # Load system_ram_usage from Redis
         state_system_ram_usage = system.system_ram_usage
         redis_system_ram_usage = self.redis.hget(
             redis_hash, Keys.get_system_system_ram_usage(system_id),
-            state_system_ram_usage)
-        system_ram_usage = \
-            convert_to_float_if_not_none(redis_system_ram_usage, None)
+            bytes(str(state_system_ram_usage), 'utf-8'))
+        redis_system_ram_usage = 'None' if redis_system_ram_usage is None \
+            else redis_system_ram_usage.decode("utf-8")
+        system_ram_usage = convert_to_float(redis_system_ram_usage, None)
         system.set_system_ram_usage(system_ram_usage)
 
         # Load system_storage_usage from Redis
         state_system_storage_usage = system.system_storage_usage
         redis_system_storage_usage = self.redis.hget(
             redis_hash, Keys.get_system_system_storage_usage(system_id),
-            state_system_storage_usage)
-        system_storage_usage = \
-            convert_to_float_if_not_none(redis_system_storage_usage, None)
+            bytes(str(state_system_storage_usage), 'utf-8'))
+        redis_system_storage_usage = 'None' \
+            if redis_system_storage_usage is None \
+            else redis_system_storage_usage.decode("utf-8")
+        system_storage_usage = convert_to_float(redis_system_storage_usage,
+                                                None)
         system.set_system_storage_usage(system_storage_usage)
 
         # Load network_transmit_bytes_per_second from Redis
@@ -153,10 +165,12 @@ class SystemDataTransformer(DataTransformer):
         redis_network_transmit_bytes_per_second = self.redis.hget(
             redis_hash,
             Keys.get_system_network_transmit_bytes_per_second(system_id),
-            state_network_transmit_bytes_per_second)
-        network_transmit_bytes_per_second = \
-            convert_to_float_if_not_none(
-                redis_network_transmit_bytes_per_second, None)
+            bytes(str(state_network_transmit_bytes_per_second), 'utf-8'))
+        redis_network_transmit_bytes_per_second = 'None' if \
+            redis_network_transmit_bytes_per_second is None \
+            else redis_network_transmit_bytes_per_second.decode("utf-8")
+        network_transmit_bytes_per_second = convert_to_float(
+            redis_network_transmit_bytes_per_second, None)
         system.set_network_transmit_bytes_per_second(
             network_transmit_bytes_per_second)
 
@@ -166,10 +180,12 @@ class SystemDataTransformer(DataTransformer):
         redis_network_receive_bytes_per_second = self.redis.hget(
             redis_hash,
             Keys.get_system_network_receive_bytes_per_second(system_id),
-            state_network_receive_bytes_per_second)
-        network_receive_bytes_per_second = \
-            convert_to_float_if_not_none(
-                redis_network_receive_bytes_per_second, None)
+            bytes(str(state_network_receive_bytes_per_second), 'utf-8'))
+        redis_network_receive_bytes_per_second = 'None' if \
+            redis_network_receive_bytes_per_second is None \
+            else redis_network_receive_bytes_per_second.decode("utf-8")
+        network_receive_bytes_per_second = convert_to_float(
+            redis_network_receive_bytes_per_second, None)
         system.set_network_receive_bytes_per_second(
             network_receive_bytes_per_second)
 
@@ -177,20 +193,24 @@ class SystemDataTransformer(DataTransformer):
         state_network_transmit_bytes_total = system.network_transmit_bytes_total
         redis_network_transmit_bytes_total = self.redis.hget(
             redis_hash, Keys.get_system_network_transmit_bytes_total(system_id),
-            state_network_transmit_bytes_total)
-        network_transmit_bytes_total = \
-            convert_to_float_if_not_none(redis_network_transmit_bytes_total,
-                                         None)
+            bytes(str(state_network_transmit_bytes_total), 'utf-8'))
+        redis_network_transmit_bytes_total = 'None' if \
+            redis_network_transmit_bytes_total is None \
+            else redis_network_transmit_bytes_total.decode("utf-8")
+        network_transmit_bytes_total = convert_to_float(
+            redis_network_transmit_bytes_total, None)
         system.set_network_transmit_bytes_total(network_transmit_bytes_total)
 
         # Load network_receive_bytes_total from Redis
         state_network_receive_bytes_total = system.network_receive_bytes_total
         redis_network_receive_bytes_total = self.redis.hget(
             redis_hash, Keys.get_system_network_receive_bytes_total(system_id),
-            state_network_receive_bytes_total)
-        network_receive_bytes_total = \
-            convert_to_float_if_not_none(redis_network_receive_bytes_total,
-                                         None)
+            bytes(str(state_network_receive_bytes_total), 'utf-8'))
+        redis_network_receive_bytes_total = 'None' if \
+            redis_network_receive_bytes_total is None \
+            else redis_network_receive_bytes_total.decode("utf-8")
+        network_receive_bytes_total = convert_to_float(
+            redis_network_receive_bytes_total, None)
         system.set_network_receive_bytes_total(network_receive_bytes_total)
 
         # Load disk_io_time_seconds_in_interval from Redis
@@ -199,10 +219,12 @@ class SystemDataTransformer(DataTransformer):
         redis_disk_io_time_seconds_in_interval = self.redis.hget(
             redis_hash,
             Keys.get_system_disk_io_time_seconds_in_interval(system_id),
-            state_disk_io_time_seconds_in_interval)
-        disk_io_time_seconds_in_interval = \
-            convert_to_float_if_not_none(
-                redis_disk_io_time_seconds_in_interval, None)
+            bytes(str(state_disk_io_time_seconds_in_interval), 'utf-8'))
+        redis_disk_io_time_seconds_in_interval = 'None' \
+            if redis_disk_io_time_seconds_in_interval is None \
+            else redis_disk_io_time_seconds_in_interval.decode("utf-8")
+        disk_io_time_seconds_in_interval = convert_to_float(
+            redis_disk_io_time_seconds_in_interval, None)
         system.set_disk_io_time_seconds_in_interval(
             disk_io_time_seconds_in_interval)
 
@@ -210,26 +232,32 @@ class SystemDataTransformer(DataTransformer):
         state_disk_io_time_seconds_total = system.disk_io_time_seconds_total
         redis_disk_io_time_seconds_total = self.redis.hget(
             redis_hash, Keys.get_system_disk_io_time_seconds_total(system_id),
-            state_disk_io_time_seconds_total)
-        disk_io_time_seconds_total = \
-            convert_to_float_if_not_none(redis_disk_io_time_seconds_total, None)
+            bytes(str(state_disk_io_time_seconds_total), 'utf-8'))
+        redis_disk_io_time_seconds_total = 'None' if \
+            redis_disk_io_time_seconds_total is None \
+            else redis_disk_io_time_seconds_total.decode("utf-8")
+        disk_io_time_seconds_total = convert_to_float(
+            redis_disk_io_time_seconds_total, None)
         system.set_disk_io_time_seconds_total(disk_io_time_seconds_total)
 
         # Load last_monitored from Redis
         state_last_monitored = system.last_monitored
         redis_last_monitored = self.redis.hget(
             redis_hash, Keys.get_system_last_monitored(system_id),
-            state_last_monitored)
-        last_monitored = convert_to_float_if_not_none(redis_last_monitored,
-                                                      None)
+            bytes(str(state_last_monitored), 'utf-8'))
+        redis_last_monitored = 'None' if redis_last_monitored is None \
+            else redis_last_monitored.decode("utf-8")
+        last_monitored = convert_to_float(redis_last_monitored, None)
         system.set_last_monitored(last_monitored)
 
         # Load went_down_at from Redis
         state_went_down_at = system.went_down_at
         redis_went_down_at = self.redis.hget(
             redis_hash, Keys.get_system_went_down_at(system_id),
-            state_went_down_at)
-        went_down_at = convert_to_float_if_not_none(redis_went_down_at, None)
+            bytes(str(state_went_down_at), 'utf-8'))
+        redis_went_down_at = 'None' if redis_went_down_at is None \
+            else redis_went_down_at.decode("utf-8")
+        went_down_at = convert_to_float(redis_went_down_at, None)
         system.set_went_down_at(went_down_at)
 
         self.logger.debug(

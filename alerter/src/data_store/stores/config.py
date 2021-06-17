@@ -9,7 +9,7 @@ import pika.exceptions
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants.configs import (GENERAL, CHAINS, REPOS_CONFIG,
+from src.utils.constants.configs import (CHAINS, REPOS_CONFIG,
                                          SYSTEMS_CONFIG,
                                          NODES_CONFIG, GENERAL,
                                          MONITORABLES_PARSING_HELPER)

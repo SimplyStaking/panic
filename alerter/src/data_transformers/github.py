@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -12,7 +12,6 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
                                           ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           GITHUB_DT_INPUT_QUEUE_NAME,
@@ -21,8 +20,8 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
                                           TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (convert_to_float_if_not_none,
-                             convert_to_int_if_not_none)
+from src.utils.types import (convert_to_float,
+                             convert_to_int, Monitorable)
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -73,35 +72,33 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, repo: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
-        # If Redis is down, the data passed as default will be stored as
-        # the repo state.
+    def load_state(self, repo: Monitorable) -> Monitorable:
+        # Below, we will try and get the data stored in redis and store it
+        # in the repo's state. If the data from Redis cannot be obtained, the
+        # state won't be updated.
 
         self.logger.debug("Loading the state of %s from Redis", repo)
         redis_hash = Keys.get_hash_parent(repo.parent_id)
         repo_id = repo.repo_id
 
-        # Below, we will try and get the data stored in redis and store it
-        # in the repo's state. If the data from Redis cannot be obtained, the
-        # state won't be updated.
-
         # Load no_of_releases from Redis
         state_no_of_releases = repo.no_of_releases
         redis_no_of_releases = self.redis.hget(
             redis_hash, Keys.get_github_no_of_releases(repo_id),
-            state_no_of_releases)
-        no_of_releases = \
-            convert_to_int_if_not_none(redis_no_of_releases, None)
+            bytes(str(state_no_of_releases), 'utf-8'))
+        redis_no_of_releases = 'None' if redis_no_of_releases is None \
+            else redis_no_of_releases.decode("utf-8")
+        no_of_releases = convert_to_int(redis_no_of_releases, None)
         repo.set_no_of_releases(no_of_releases)
 
         # Load last_monitored from Redis
         state_last_monitored = repo.last_monitored
         redis_last_monitored = self.redis.hget(
             redis_hash, Keys.get_github_last_monitored(repo_id),
-            state_last_monitored)
-        last_monitored = \
-            convert_to_float_if_not_none(redis_last_monitored, None)
+            bytes(str(state_last_monitored), 'utf-8'))
+        redis_last_monitored = 'None' if redis_last_monitored is None \
+            else redis_last_monitored.decode("utf-8")
+        last_monitored = convert_to_float(redis_last_monitored, None)
         repo.set_last_monitored(last_monitored)
 
         self.logger.debug(
@@ -258,8 +255,7 @@ class GitHubDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
+    def _place_latest_data_on_queue(self, data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
                             GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
@@ -325,8 +321,7 @@ class GitHubDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(
-                transformed_data, data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

@@ -256,7 +256,7 @@ def _initialise_channels_manager() -> ChannelsManager:
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
-    # Attempt to initialise the data transformers manager
+    # Attempt to initialise the data channels manager
     while True:
         try:
             rabbitmq = RabbitMQApi(
