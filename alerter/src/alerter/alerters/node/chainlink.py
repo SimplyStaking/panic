@@ -8,6 +8,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerters.alerter import Alerter
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts_configs_factory import AlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_NODE_ALERTER_INPUT_QUEUE_NAME,
@@ -28,13 +29,13 @@ class ChainlinkNodeAlerter(Alerter):
 
     def __init__(
             self, alerter_name: str, logger: logging.Logger,
-            rabbitmq: RabbitMQApi,
-            cl_node_alerts_configs: Dict[str, ChainlinkNodeAlertsConfig],
+            rabbitmq: RabbitMQApi, alerts_configs_factory: AlertsConfigsFactory,
             max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
-        self._cl_node_alerts_configs = cl_node_alerts_configs
+        self._alerts_configs_factory = alerts_configs_factory
 
+        # TODO: Modify this comment when alerter is done
         """
         This dict is to be structured as follows:
         {
@@ -48,11 +49,15 @@ class ChainlinkNodeAlerter(Alerter):
         }
         Whenever a configuration reset happens, 
         """
-        self._cl_node_alerting_state = {}
+        self._alerting_state = {}
 
     @property
-    def cl_node_alerts_configs(self) -> Dict:
-        return self._cl_node_alerts_configs
+    def alerts_configs_factory(self) -> AlertsConfigsFactory:
+        return self._alerts_configs_factory
+
+    @property
+    def alerting_state(self) -> Dict:
+        return self._alerting_state
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -117,6 +122,14 @@ class ChainlinkNodeAlerter(Alerter):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
+    def _create_alerting_state(self, parent_id: str, node_id: str) -> None:
+        # TODO: First must create state for parent_id then node_id
+        pass
+
+    def _remove_chain_alerting_state(self, parent_id: str,
+                                     node_id: str) -> None:
+        pass
+
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -127,6 +140,12 @@ class ChainlinkNodeAlerter(Alerter):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
+        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
+            chain = 'general'
+        else:
+            parsed_routing_key = method.routing_key.split('.')
+            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+
         try:
             # Checking if the configuration is empty. If it is ignore it, if
             # not add it to the list of configurations. Note, if a configuration
@@ -134,10 +153,11 @@ class ChainlinkNodeAlerter(Alerter):
             if bool(sent_configs):
                 pass
                 # TODO: Add new config
+            else:
+                pass
+                # TODO: Remove config
 
-                # TODO: Create state here
-
-            # TODO: Remove is needed?
+            # TODO: Reset state.
         except Exception as e:
             # Otherwise log and reject the message
             self.logger.error("Error when processing %s", sent_configs)

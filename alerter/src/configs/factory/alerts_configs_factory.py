@@ -9,13 +9,13 @@ from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 class AlertsConfigsFactory(ConfigsFactory):
     """
     This class manages the alerts configs. The configs are indexed by the
-    parent_id, and is expected such that each parent_id has exactly one alerts
+    chain name, and it is expected that each chain has exactly one alerts
     config.
     """
     def __init__(self) -> None:
         super().__init__()
 
-    def add_new_config(self, sent_configs: Dict) -> None:
+    def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
         parent_id = sent_configs['1']['parent_id']
@@ -52,8 +52,8 @@ class AlertsConfigsFactory(ConfigsFactory):
             node_is_down=filtered['node_is_down']
         )
 
-        self._configs[parent_id] = cl_node_alerts_config
+        self._configs[chain_name] = cl_node_alerts_config
 
-    def remove_config(self, parent_id: str) -> None:
-        if parent_id in self.configs:
-            del self._configs[parent_id]
+    def remove_config(self, chain_name: str) -> None:
+        if chain_name in self.configs:
+            del self._configs[chain_name]
