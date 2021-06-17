@@ -1,5 +1,5 @@
 import copy
-from typing import Dict
+from typing import Dict, Optional
 
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
@@ -12,6 +12,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     chain name, and it is expected that each chain has exactly one alerts
     config.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -57,3 +58,25 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     def remove_config(self, chain_name: str) -> None:
         if chain_name in self.configs:
             del self._configs[chain_name]
+
+    def config_exists(self, chain_name: str) -> bool:
+        """
+        This function returns True if a configuration exists for a chain.
+        :param chain_name: The name of the chain in question
+        :return: True if config exists
+               : False otherwise
+        """
+        return (chain_name in self.configs
+                and type(self.configs[chain_name]) == ChainlinkNodeAlertsConfig)
+
+    def get_parent_id(self, chain_name: str) -> Optional[str]:
+        """
+        This function returns the parent_id of a chain whose name is chain_name.
+        :param chain_name: The name of the chain in question
+        :return: The parent_id of the chain if chain_name in self.configs
+               : None otherwise
+        """
+        if self.config_exists(chain_name):
+            return self.configs[chain_name].parent_id
+        else:
+            return None

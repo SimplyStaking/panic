@@ -134,7 +134,7 @@ class ChainlinkNodeAlerter(Alerter):
     def _remove_chain_alerting_state(self, parent_id: str) -> None:
         """
         This function deletes an entire alerting state for a chain.
-        :param parent_id: The id of the chain
+        :param parent_id: The id of the chain to be deleted
         :return: None
         """
         if parent_id in self.alerting_state:
@@ -186,13 +186,24 @@ class ChainlinkNodeAlerter(Alerter):
             # stored config (if it exists), and if it not add it to the list of
             # configurations.
             if bool(sent_configs):
-                pass
-                # TODO: Add new config
-            else:
-                pass
-                # TODO: Remove config
+                self.alerts_configs_factory.add_new_config(chain, sent_configs)
 
-            # TODO: Reset state to possibly configs being changed.
+                # We must reset the state since some thresholds might have
+                # changed. A node's state will be recreated in the next
+                # monitoring round automatically. Note we are sure that a
+                # parent_id is to be returned, as we have just added the config
+                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                self._remove_chain_alerting_state(parent_id)
+            else:
+                # We must reset the state since a configuration is to be
+                # removed. Note that first we need to compute the parent_id, as
+                # the parent_id is obtained from the configs to be removed from
+                # the factory. If the parent_id cannot be found, it means that
+                # no storing took place, therefore in that case do nothing.
+                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                if parent_id:
+                    self._remove_chain_alerting_state(parent_id)
+                    self.alerts_configs_factory.remove_config(chain)
         except Exception as e:
             # Otherwise log and reject the message
             self.logger.error("Error when processing %s", sent_configs)
@@ -206,6 +217,9 @@ class ChainlinkNodeAlerter(Alerter):
 
     # TODO: When processing alerts check if config is available first, if not
     #     : skip alerts.
+
+    # TODO: Tomorrow start with alerts and generalisng functions inside the
+    #     : alerter, + creating state also.
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the queue is
