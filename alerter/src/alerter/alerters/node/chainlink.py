@@ -35,6 +35,21 @@ class ChainlinkNodeAlerter(Alerter):
 
         self._cl_node_alerts_configs = cl_node_alerts_configs
 
+        """
+        This dict is to be structured as follows:
+        {
+            <parent_id>: {
+                <system_id>: {
+                    warning_sent,
+                    critical_sent,
+                    limiters etc
+                }
+            }
+        }
+        Whenever a configuration reset happens, 
+        """
+        self._cl_node_alerting_state = {}
+
     @property
     def cl_node_alerts_configs(self) -> Dict:
         return self._cl_node_alerts_configs
@@ -112,35 +127,17 @@ class ChainlinkNodeAlerter(Alerter):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
-            chain = 'general'
-        else:
-            parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-
         try:
             # Checking if the configuration is empty. If it is ignore it, if
             # not add it to the list of configurations. Note, if a configuration
             # was deleted it won't be used, so might as well not do anything.
             if bool(sent_configs):
-                # Check if all the parent_ids in the received configuration
-                # are the same, if not there is some misconfiguration
-                parent_id = sent_configs['1']['parent_id']
-                for _, config in sent_configs.items():
-                    if parent_id != config['parent_id']:
-                        raise ParentIdsMissMatchInAlertsConfiguration(
-                            "{}: _process_configs".format(self))
-                filtered = {}
-                for _, config in sent_configs.items():
-                    filtered[config['name']] = copy.deepcopy(config)
+                pass
+                # TODO: Add new config
 
-                cl_node_alerts_config = ChainlinkNodeAlertsConfig(
+                # TODO: Create state here
 
-                )
-
-                self._create_and_start_alerter_process(
-                    system_alerts_config, parent_id, chain)
-                self._systems_alerts_configs[parent_id] = system_alerts_config
+            # TODO: Remove is needed?
         except Exception as e:
             # Otherwise log and reject the message
             self.logger.error("Error when processing %s", sent_configs)
