@@ -6,6 +6,7 @@ import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkAlerter
 from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
@@ -17,6 +18,8 @@ from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigFactory
 
 
 def _initialise_alerter_logger(alerter_display_name: str,
@@ -102,6 +105,39 @@ def _initialise_github_alerter() -> GithubAlerter:
     return github_alerter
 
 
+def _initialise_chainlink_alerter(
+    chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
+) -> ChainlinkAlerter:
+    alerter_display_name = CHAINLINK_ALERTER_NAME
+
+    chainlink_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, ChainlinkAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            chainlink_alerter = ChainlinkAlerter(
+                alerter_display_name,
+                chainlink_alerter_logger,
+                rabbitmq,
+                chainlink_alerts_configs_factory,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), chainlink_alerter)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, chainlink_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return chainlink_alerter
+
+
 def start_github_alerter() -> None:
     github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
@@ -111,6 +147,14 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig,
                          chain: str) -> None:
     system_alerter = _initialise_system_alerter(system_alerts_config, chain)
     start_alerter(system_alerter)
+
+
+def start_chainlink_alerter(
+        chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
+) -> None:
+    chainlink_alerter = _initialise_chainlink_alerter(
+        chainlink_alerts_configs_factory)
+    start_alerter(chainlink_alerter)
 
 
 def start_alerter(alerter: Alerter) -> None:

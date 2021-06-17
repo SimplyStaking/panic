@@ -8,7 +8,8 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerters.alerter import Alerter
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
-from src.configs.factory.alerts_configs_factory import AlertsConfigsFactory
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_NODE_ALERTER_INPUT_QUEUE_NAME,
@@ -29,11 +30,12 @@ class ChainlinkNodeAlerter(Alerter):
 
     def __init__(
             self, alerter_name: str, logger: logging.Logger,
-            rabbitmq: RabbitMQApi, alerts_configs_factory: AlertsConfigsFactory,
+            rabbitmq: RabbitMQApi,
+            chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory,
             max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
-        self._alerts_configs_factory = alerts_configs_factory
+        self._alerts_configs_factory = chainlink_alerts_configs_factory
 
         # TODO: Modify this comment when alerter is done
         """

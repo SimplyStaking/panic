@@ -15,7 +15,7 @@ from src.alerter.alerters.node.chainlink import ChainlinkAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import CHAINLINK_ALERTER
+from src.utils.constants.names import CHAINLINK_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
@@ -113,12 +113,12 @@ class ChainlinkAlerterManager(AlertersManager):
             heartbeat['running_processes'] = []
             heartbeat['dead_processes'] = []
             chainlink_alerter_process = \
-                self.alerter_process_dict[CHAINLINK_ALERTER]
+                self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
 
             if chainlink_alerter_process.is_alive():
-                heartbeat['running_processes'].append(CHAINLINK_ALERTER)
+                heartbeat['running_processes'].append(CHAINLINK_ALERTER_NAME)
             else:
-                heartbeat['dead_processes'].append(CHAINLINK_ALERTER)
+                heartbeat['dead_processes'].append(CHAINLINK_ALERTER_NAME)
                 chainlink_alerter_process.join()  # Release resources
             heartbeat['timestamp'] = datetime.now().timestamp()
 
@@ -150,7 +150,7 @@ class ChainlinkAlerterManager(AlertersManager):
         achieve this. This is sent on startup of the manager and if the alerter
         process is deemed to be dead.
         """
-        alert = ComponentResetAlert(CHAINLINK_ALERTER,
+        alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                     datetime.now().timestamp(),
                                     ChainlinkAlerter.__name__)
         self._push_latest_data_to_queue_and_send(alert.alert_data)
@@ -160,14 +160,14 @@ class ChainlinkAlerterManager(AlertersManager):
         This factory should hold all the configurations, if any.
         """
         log_and_print("Attempting to start the {}.".format(
-            CHAINLINK_ALERTER), self.logger)
+            CHAINLINK_ALERTER_NAME), self.logger)
         chainlink_alerter_process = multiprocessing.Process(
             target=start_chainlink_alerter,
             args=(self.alerts_config_factory))
         chainlink_alerter_process.daemon = True
         chainlink_alerter_process.start()
 
-        self._alerter_process_dict[CHAINLINK_ALERTER] = \
+        self._alerter_process_dict[CHAINLINK_ALERTER_NAME] = \
             chainlink_alerter_process
 
     def _process_configs(
@@ -200,7 +200,7 @@ class ChainlinkAlerterManager(AlertersManager):
                     self.alerts_config_factory.add_new_config(chain_name,
                                                               sent_configs)
                 if config_updated:
-                    alert = ComponentResetAlert(CHAINLINK_ALERTER,
+                    alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                                 datetime.now().timestamp(),
                                                 ChainlinkAlerter.__name__,
                                                 parent_id,
@@ -224,13 +224,13 @@ class ChainlinkAlerterManager(AlertersManager):
                       "exit.".format(self, self), self.logger)
 
         # Check if the alerter process is actually still there.
-        if CHAINLINK_ALERTER in self.alerter_process_dict:
+        if CHAINLINK_ALERTER_NAME in self.alerter_process_dict:
             chainlink_alerter_process = \
-                self.alerter_process_dict[CHAINLINK_ALERTER]
+                self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
             chainlink_alerter_process.terminate()
             chainlink_alerter_process.join()
 
-            alert = ComponentResetAlert(CHAINLINK_ALERTER,
+            alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                         datetime.now().timestamp(),
                                         ChainlinkAlerter.__name__)
             self._push_latest_data_to_queue_and_send(alert.alert_data)
