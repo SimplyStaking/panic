@@ -16,7 +16,7 @@ from src.alerter.alerts.internal_alerts import (ComponentResetAllChains,
 from src.alerter.managers.manager import AlertersManager
 from src.configs.system_alerts import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.utils.constants.names import CHAINLINK_ALERTER
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
@@ -24,7 +24,8 @@ from src.utils.constants.rabbitmq import (
     ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN,
     SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN, ALERT_EXCHANGE,
     SYSTEM_ALERT_ROUTING_KEY, TOPIC,
-    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+    CHAINLINK_ALERT_ROUTING_KEY)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -111,20 +112,25 @@ class ChainlinkAlerterManager(AlertersManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
-    def _create_and_start_alerter_process(
-            self, system_alerts_config: SystemAlertsConfig, parent_id: str,
-            chain: str) -> None:
-        process = multiprocessing.Process(target=start_system_alerter,
-                                          args=(system_alerts_config, chain))
-        process.daemon = True
-        log_and_print("Creating a new process for the system alerter "
-                      "of {}".format(chain), self.logger)
-        process.start()
-        self._parent_id_process_dict[parent_id] = {}
-        self._parent_id_process_dict[parent_id]['component_name'] = \
-            SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
-        self._parent_id_process_dict[parent_id]['process'] = process
-        self._parent_id_process_dict[parent_id]['chain'] = chain
+    def _start_alerter_process(
+            self, chainlink_alerts_configs: ChainlinkAlertsConfigs) -> None:
+        """
+        Start the Chainlink Alerter process with an empty or an updated
+        configuration.
+        """
+        # @note There should be a message here to reset the data store data for it
+        # @note maybe we should check if there is currently a chainlink alerter
+        # process that is already running and attempt to terminate it
+        log_and_print("Attempting to start the {}.".format(
+            CHAINLINK_ALERTER), self.logger)
+        chainlink_alerter_process = multiprocessing.Process(
+            target=start_chainlink_alerter,
+            args=(chainlink_alerts_configs))
+        chainlink_alerter_process.daemon = True
+        chainlink_alerter_process.start()
+
+        self._alerter_process_dict[CHAINLINK_ALERTER] = \
+            chainlink_alerter_process
 
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -142,10 +148,10 @@ class ChainlinkAlerterManager(AlertersManager):
 
         try:
             """
-            Send an internal alert to clear every metric from Redis for the
-            chain in question, and terminate the process for the received
-            config. Note that all this happens if a configuration is modified
-            or deleted.
+            We must check if the received config is new or a modified version
+            of something that is processed. If it is new then add it to config
+            store otherwise for the modified config, we must reset the metrics
+            and update the object.
             """
 
             """
@@ -156,7 +162,6 @@ class ChainlinkAlerterManager(AlertersManager):
 
             # Create the configuration object
             self._chainlink_alerts_configs[parsed_routing_key[2]] =
-            self._terminate_and_join_chain_alerter_processes(chain)
 
             # Checking if we received a configuration, therefore we start the
             # process again
@@ -193,15 +198,17 @@ class ChainlinkAlerterManager(AlertersManager):
     # If termination signals are received, terminate all child process and exit
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
-                      "closed, and any running github alerters will be "
+                      "closed, and the Chainlink alerter will be "
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
 
-        for alerter, process in self.alerter_process_dict.items():
-            log_and_print("Terminating the process of {}".format(alerter),
-                          self.logger)
-            process.terminate()
-            process.join()
+        # Check if the alerter process is actually still there.
+        if CHAINLINK_ALERTER in self.alerter_process_dict:
+            chainlink_alerter_process = \
+                self.alerter_process_dict[CHAINLINK_ALERTER]
+            chainlink_alerter_process.terminate()
+            chainlink_alerter_process.join()
+
             alert = ComponentResetAllChains(type(self).__name__,
                                             datetime.now().timestamp(),
                                             type(self).__name__,
@@ -215,7 +222,7 @@ class ChainlinkAlerterManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key=GITHUB_ALERT_ROUTING_KEY,
+            routing_key=CHAINLINK_ALERT_ROUTING_KEY,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         self._send_data()
