@@ -52,6 +52,10 @@ class RabbitMQApi:
         return self._host
 
     @property
+    def logger(self) -> logging.Logger:
+        return self._logger
+
+    @property
     def connection(self) -> Optional[pika.BlockingConnection]:
         return self._connection
 

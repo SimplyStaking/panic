@@ -1,0 +1,2 @@
+class ChainlinkNodeAlerter:
+    pass

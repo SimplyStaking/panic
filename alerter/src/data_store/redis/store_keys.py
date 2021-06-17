@@ -35,7 +35,7 @@ _key_cl_node_no_of_unconfirmed_txs = 'cl10'
 _key_cl_node_total_errored_job_runs = 'cl11'
 _key_cl_node_current_gas_price_info = 'cl12'
 _key_cl_node_eth_balance_info = 'cl13'
-_key_cl_node_went_down_at = 'cl14'
+_key_cl_node_went_down_at_prometheus = 'cl14'
 _key_cl_node_last_prometheus_source_used = 'cl15'
 _key_cl_node_last_monitored_prometheus = 'cl16'
 
@@ -212,8 +212,9 @@ class Keys:
         return Keys._as_prefix(_key_cl_node_eth_balance_info) + cl_node_id
 
     @staticmethod
-    def get_cl_node_went_down_at(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_went_down_at) + cl_node_id
+    def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
+        return Keys._as_prefix(_key_cl_node_went_down_at_prometheus) + \
+               cl_node_id
 
     @staticmethod
     def get_cl_node_last_prometheus_source_used(cl_node_id: str) -> str:

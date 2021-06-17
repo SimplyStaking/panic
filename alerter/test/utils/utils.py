@@ -76,9 +76,8 @@ def delete_queue_if_exists(rabbit: RabbitMQApi, queue_name: str) -> None:
         rabbit.queue_purge(queue_name)
         rabbit.queue_delete(queue_name)
     except pika.exceptions.ChannelClosedByBroker:
-        print("Queue {} does not exist - don't need to close".format(
-            queue_name
-        ))
+        rabbit.logger.debug(
+            "Queue {} does not exist - don't need to close".format(queue_name))
 
 
 def delete_exchange_if_exists(rabbit: RabbitMQApi, exchange_name: str) -> None:
@@ -86,8 +85,9 @@ def delete_exchange_if_exists(rabbit: RabbitMQApi, exchange_name: str) -> None:
         rabbit.exchange_declare(exchange_name, passive=True)
         rabbit.exchange_delete(exchange_name)
     except pika.exceptions.ChannelClosedByBroker:
-        print("Exchange {} does not exist - don't need to close".format(
-            exchange_name))
+        rabbit.logger.debug(
+            "Exchange {} does not exist - don't need to close".format(
+                exchange_name))
 
 
 def disconnect_from_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
@@ -99,9 +99,9 @@ def disconnect_from_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
             return
         except Exception as e:
             tries += 1
-            print("Could not disconnect to rabbit. Attempts so "
-                  "far: {}".format(tries))
-            print(e)
+            rabbit.logger.debug("Could not disconnect to rabbit. Attempts so "
+                                "far: {}".format(tries))
+            rabbit.logger.debug(e)
             if tries >= attempts:
                 raise e
 
@@ -115,9 +115,9 @@ def connect_to_rabbit(rabbit: RabbitMQApi, attempts: int = 3) -> None:
             return
         except Exception as e:
             tries += 1
-            print("Could not connect to rabbit. Attempts so far: {}".format(
-                tries))
-            print(e)
+            rabbit.logger.debug("Could not disconnect to rabbit. Attempts so "
+                                "far: {}".format(tries))
+            rabbit.logger.debug(e)
             if tries >= attempts:
                 raise e
 
@@ -173,7 +173,8 @@ def save_chainlink_node_to_redis(redis: RedisApi,
     redis_hash = Keys.get_hash_parent(cl_node.parent_id)
     cl_node_id = cl_node.node_id
     redis.hset_multiple(redis_hash, {
-        Keys.get_cl_node_went_down_at(cl_node_id): str(cl_node.went_down_at),
+        Keys.get_cl_node_went_down_at_prometheus(cl_node_id):
+            str(cl_node.went_down_at_prometheus),
         Keys.get_cl_node_current_height(cl_node_id):
             str(cl_node.current_height),
         Keys.get_cl_node_eth_blocks_in_queue(cl_node_id):
@@ -206,5 +207,3 @@ def save_chainlink_node_to_redis(redis: RedisApi,
         Keys.get_cl_node_last_monitored_prometheus(cl_node_id):
             str(cl_node.last_monitored_prometheus)
     })
-
-    # TODO: Note we must store metrics like this in the data store.

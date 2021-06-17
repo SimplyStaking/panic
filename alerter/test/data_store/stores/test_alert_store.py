@@ -518,7 +518,7 @@ class TestAlertStore(unittest.TestCase):
                         'severity': data['severity'],
                         'metric': data['metric'],
                         'message': data['message'],
-                        'timestamp': str(data['timestamp']),
+                        'timestamp': data['timestamp'],
                     }
                 },
                 '$min': {'first': data['timestamp']},
