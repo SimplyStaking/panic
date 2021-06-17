@@ -84,7 +84,7 @@ class GithubAlerterManager(AlertersManager):
                     process.join()  # Just in case, to release resources
             heartbeat['timestamp'] = datetime.now().timestamp()
 
-            # Restart dead transformers
+            # Restart dead alerter
             if len(heartbeat['dead_processes']) != 0:
                 self._start_alerters_processes()
         except Exception as e:

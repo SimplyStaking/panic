@@ -1,21 +1,30 @@
 import copy
-from typing import Dict
+from typing import Dict, Tuple
 
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class AlertsConfigsFactory(ConfigsFactory):
+class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     """
     This class manages the alerts configs. The configs are indexed by the
     chain name, and it is expected that each chain has exactly one alerts
     config.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
-    def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
+    def add_new_config(self, chain_name: str, sent_configs: Dict
+                       ) -> Tuple[bool, str]:
+        # Assume that the config being received isn't already here
+        config_updated = False
+        # If the chain_name already exists in the config then it is a
+        # modification and not an addition
+        if chain_name in self.configs:
+            config_updated = True
+
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
         parent_id = sent_configs['1']['parent_id']
@@ -53,6 +62,9 @@ class AlertsConfigsFactory(ConfigsFactory):
         )
 
         self._configs[chain_name] = cl_node_alerts_config
+
+        # We need to return these so we are able to reset metrics for the chain
+        return config_updated, parent_id
 
     def remove_config(self, chain_name: str) -> None:
         if chain_name in self.configs:
