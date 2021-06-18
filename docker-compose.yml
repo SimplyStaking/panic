@@ -156,10 +156,10 @@ services:
     depends_on:
       - alerter
       - rabbitmq
-  
+
   api:
     environment:
-      - 'UI_API_PORT=${UI_API_PORT}'
+      - 'API_PORT=${API_PORT}'
       - 'REDIS_IP=${REDIS_IP}'
       - 'REDIS_PORT=${REDIS_PORT}'
       - 'REDIS_DB=${REDIS_DB}'
@@ -171,35 +171,27 @@ services:
     build:
       context: './'
       dockerfile: './api/Dockerfile'
-    image: 'simplyvc/panic_ui:0.1.2'
+    image: 'simplyvc/panic_api:1.0.0'
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
     ports:
-      - '${UI_API_PORT}:9000'
+      - '${API_PORT}:9000'
     restart: always
     networks:
       panic_net:
-        ipv4_address: '${UI_API_IP}'
+        ipv4_address: '${API_IP}'
     depends_on:
       - redis
       - mongo
-    
+
   ui:
     environment:
       - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
-      - 'REDIS_IP=${REDIS_IP}'
-      - 'REDIS_PORT=${REDIS_PORT}'
-      - 'REDIS_DB=${REDIS_DB}'
-      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
-      - 'DB_IP=${DB_IP}'
-      - 'DB_PORT=${DB_PORT}'
-      - 'DB_NAME=${DB_NAME}'
-      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
     build:
       context: './'
       dockerfile: './ui/Dockerfile'
-    image: 'simplyvc/panic_ui:0.1.2'
+    image: 'simplyvc/panic_ui:1.0.0'
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
