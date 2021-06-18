@@ -11,9 +11,6 @@ COPY ./ui ./
 # RUN npm install
 RUN npm install
 
-# Build installer
-RUN npm run build
-
 # Expose port
 EXPOSE 3333
 
