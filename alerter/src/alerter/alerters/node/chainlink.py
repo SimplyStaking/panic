@@ -18,6 +18,8 @@ from src.utils.constants.rabbitmq import (
     ALERTS_CONFIGS_ROUTING_KEY_CHAIN, ALERTS_CONFIGS_ROUTING_KEY_GEN,
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 
 
 class ChainlinkNodeAlerter(Alerter):
@@ -54,7 +56,7 @@ class ChainlinkNodeAlerter(Alerter):
         self._alerting_state = {}
 
     @property
-    def alerts_configs_factory(self) -> AlertsConfigsFactory:
+    def alerts_configs_factory(self) -> ChainlinkAlertsConfigsFactory:
         return self._alerts_configs_factory
 
     @property

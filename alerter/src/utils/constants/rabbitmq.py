@@ -48,8 +48,9 @@ HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 # Chainlink related queue names
 CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
     'chainlink_alerter_manager_heartbeat_queue'
-CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME = \
+CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
     'chainlink_alerter_manager_configs_queue'
+
 
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'

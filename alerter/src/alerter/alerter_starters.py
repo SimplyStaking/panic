@@ -6,11 +6,12 @@ import pika.exceptions
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
-from src.alerter.alerters.node.chainlink import ChainlinkAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
-                                       GITHUB_ALERTER_NAME)
+                                       GITHUB_ALERTER_NAME,
+                                       CHAINLINK_ALERTER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
@@ -19,7 +20,7 @@ from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
 from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigFactory
+    ChainlinkAlertsConfigsFactory
 
 
 def _initialise_alerter_logger(alerter_display_name: str,
@@ -107,11 +108,11 @@ def _initialise_github_alerter() -> GithubAlerter:
 
 def _initialise_chainlink_alerter(
     chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
-) -> ChainlinkAlerter:
+) -> ChainlinkNodeAlerter:
     alerter_display_name = CHAINLINK_ALERTER_NAME
 
     chainlink_alerter_logger = _initialise_alerter_logger(
-        alerter_display_name, ChainlinkAlerter.__name__)
+        alerter_display_name, ChainlinkNodeAlerter.__name__)
 
     # Try initialising an alerter until successful
     while True:
@@ -119,7 +120,7 @@ def _initialise_chainlink_alerter(
             rabbitmq = RabbitMQApi(
                 logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
-            chainlink_alerter = ChainlinkAlerter(
+            chainlink_alerter = ChainlinkNodeAlerter(
                 alerter_display_name,
                 chainlink_alerter_logger,
                 rabbitmq,

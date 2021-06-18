@@ -11,30 +11,29 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_chainlink_alerter
-from src.alerter.alerters.node.chainlink import ChainlinkAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import CHAINLINK_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-    CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+    CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN, ALERT_EXCHANGE, TOPIC,
-    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
-    CHAINLINK_ALERT_ROUTING_KEY)
+    ALERTS_CONFIGS_ROUTING_KEY_CHAIN, ALERT_EXCHANGE, TOPIC,
+    CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
 from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigFactory
+    ChainlinkAlertsConfigsFactory
 
 
-class ChainlinkAlerterManager(AlertersManager):
+class ChainlinkNodeAlerterManager(AlertersManager):
     def __init__(self, logger: logging.Logger, manager_name: str,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
-        self._alerts_config_factory = ChainlinkAlertsConfigFactory()
+        self._alerts_config_factory = ChainlinkAlertsConfigsFactory()
         self._alerter_process_dict = {}
 
     @property
@@ -42,7 +41,7 @@ class ChainlinkAlerterManager(AlertersManager):
         return self._alerter_process_dict
 
     @property
-    def alerts_config_factory(self) -> ChainlinkAlertsConfigFactory:
+    def alerts_config_factory(self) -> ChainlinkAlertsConfigsFactory:
         return self._alerts_config_factory
 
     def _initialise_rabbitmq(self) -> None:
@@ -71,22 +70,22 @@ class ChainlinkAlerterManager(AlertersManager):
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
-                         CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME)
+                         CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(
-            CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
+            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
             False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "%s'", CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+                         "%s'", CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
-        self.rabbitmq.queue_bind(CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+                         ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+        self.rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN)
+                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
 
         self.logger.info("Declaring consuming intentions on %s",
-                         CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME)
+                         CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(
-            CHAINLINK_ALERTER_MANAGER_CONFIGS_QUEUE_NAME,
+            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
             self._process_configs, False, False, None)
 
         # Declare publishing intentions
@@ -99,7 +98,7 @@ class ChainlinkAlerterManager(AlertersManager):
 
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self._start_alerter_process()
+        self._create_and_start_alerter_process()
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -124,7 +123,7 @@ class ChainlinkAlerterManager(AlertersManager):
 
             # Restart dead alerter
             if len(heartbeat['dead_processes']) != 0:
-                self._start_alerter_process()
+                self._create_and_start_alerter_process()
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
@@ -143,7 +142,7 @@ class ChainlinkAlerterManager(AlertersManager):
             # For any other exception raise it.
             raise e
 
-    def _start_alerter_process(self) -> None:
+    def _create_and_start_alerter_process(self) -> None:
         """
         We must clear out all the metrics which are found in Redis.
         Sending this alert to the alert router and then the data store will
@@ -152,7 +151,7 @@ class ChainlinkAlerterManager(AlertersManager):
         """
         alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                     datetime.now().timestamp(),
-                                    ChainlinkAlerter.__name__)
+                                    ChainlinkNodeAlerter.__name__)
         self._push_latest_data_to_queue_and_send(alert.alert_data)
 
         """
@@ -163,7 +162,7 @@ class ChainlinkAlerterManager(AlertersManager):
             CHAINLINK_ALERTER_NAME), self.logger)
         chainlink_alerter_process = multiprocessing.Process(
             target=start_chainlink_alerter,
-            args=(self.alerts_config_factory))
+            args=(self.alerts_config_factory,))
         chainlink_alerter_process.daemon = True
         chainlink_alerter_process.start()
 
@@ -202,7 +201,7 @@ class ChainlinkAlerterManager(AlertersManager):
                 if config_updated:
                     alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                                 datetime.now().timestamp(),
-                                                ChainlinkAlerter.__name__,
+                                                ChainlinkNodeAlerter.__name__,
                                                 parent_id,
                                                 chain_name
                                                 )
@@ -215,6 +214,22 @@ class ChainlinkAlerterManager(AlertersManager):
             self.logger.exception(e)
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def start(self) -> None:
+        log_and_print("{} started.".format(self), self.logger)
+        self._initialise_rabbitmq()
+        while True:
+            try:
+                self._listen_for_data()
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
+                # If we have either a channel error or connection error, the
+                # channel is reset, therefore we need to re-initialise the
+                # connection or channel settings
+                raise e
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
 
     # If termination signals are received, terminate all child process and exit
     def _on_terminate(self, signum: int, stack: FrameType) -> None:
@@ -232,7 +247,7 @@ class ChainlinkAlerterManager(AlertersManager):
 
             alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
                                         datetime.now().timestamp(),
-                                        ChainlinkAlerter.__name__)
+                                        ChainlinkNodeAlerter.__name__)
             self._push_latest_data_to_queue_and_send(alert.alert_data)
 
         self.disconnect_from_rabbit()
@@ -242,7 +257,7 @@ class ChainlinkAlerterManager(AlertersManager):
     def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
         self._push_to_queue(
             data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
-            routing_key=CHAINLINK_ALERT_ROUTING_KEY,
+            routing_key=CL_NODE_ALERT_ROUTING_KEY,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         self._send_data()
