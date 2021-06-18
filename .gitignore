@@ -11,6 +11,8 @@
 web-installer/node_modules
 ui/node_modules
 ui/www
+api/node_modules
+api/**/*.js
 # IDE
 .idea
 
