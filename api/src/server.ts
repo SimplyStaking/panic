@@ -123,7 +123,6 @@ setInterval(async () => {
 app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
         console.log('Received POST request for %s %s', req.url, req.body);
-        console.log(req.body);
         const {baseChains} = req.body;
 
         // Check if some required keys are missing in the body object, if yes
