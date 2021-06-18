@@ -1,4 +1,4 @@
-import {readFile} from "./server/files";
+import { readFile } from "./server/files";
 import path from "path";
 import https from "https";
 import {
@@ -488,7 +488,7 @@ app.get('/*', (req: express.Request, res: express.Response) => {
 
 // ---------------------------------------- Start listen
 
-const port = parseInt(process.env.UI_API_PORT || "9000");
+const port = parseInt(process.env.API_PORT || "9000");
 // Create Https server
 const server = https.createServer(httpsOptions, app);
 // Listen for requests
