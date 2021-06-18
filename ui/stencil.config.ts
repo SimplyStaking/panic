@@ -1,4 +1,5 @@
 import { Config } from '@stencil/core';
+import { readFileSync } from 'fs';
 
 export const config: Config = {
   globalStyle: 'src/global/app.css',
@@ -7,12 +8,16 @@ export const config: Config = {
   outputTargets: [
     {
       type: 'www',
-      // comment the following line to disable service workers in production
       serviceWorker: null,
       baseUrl: 'https://localhost:3333',
     },
   ],
   devServer: {
-    openBrowser: false
-  }
+    openBrowser: false,
+    https: {
+      cert: readFileSync('../certificates/cert.pem', 'utf8'),
+      key: readFileSync('../certificates/key.pem', 'utf8')
+    },
+    logRequests: true
+  },
 };
