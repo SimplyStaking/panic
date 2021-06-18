@@ -123,7 +123,8 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
         if parent_id in self.alerting_state:
             del self.alerting_state[parent_id]
 
-# TODO: Monday start by implementing the current_head_general_alerting
+# TODO: Monday start by implementing the current_head_general_alerting. This
+#     : be implemented in the general alerting factory class
 
 # TODO: When we alert the first critical time window alert we also need to
 #     : do did task for the repeat, so the repeating starts.
