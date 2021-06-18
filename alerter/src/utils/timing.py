@@ -37,6 +37,59 @@ class TimedTaskLimiter:
         self._last_time_that_did_task = time
 
 
+class TimedTaskTracker:
+    def __init__(self, time_interval: timedelta) -> None:
+        super().__init__()
+
+        self._time_interval = time_interval
+        self._start_time = datetime.min
+        self._timer_started = False
+        self._did_task = False
+
+    @property
+    def time_interval(self) -> timedelta:
+        return self._time_interval
+
+    @property
+    def did_task(self) -> bool:
+        return self._did_task
+
+    @property
+    def timer_started(self) -> bool:
+        return self._timer_started
+
+    @property
+    def start_time(self) -> datetime:
+        return self._start_time
+
+    def start_timer(self, start_time: datetime = None) -> None:
+        if start_time is None:
+            self._start_time = datetime.now()
+        else:
+            self._start_time = start_time
+
+        self._timer_started = True
+        self._did_task = False
+
+    def can_do_task(self, time: datetime = None) -> bool:
+        if not self.timer_started or self.did_task:
+            return False
+        else:
+            if time is None:
+                time = datetime.now()
+
+            return (time - self.start_time) >= self.time_interval
+
+    def do_task(self) -> None:
+        if self.timer_started:
+            self._did_task = True
+
+    def reset(self) -> None:
+        self._timer_started = False
+        self._did_task = False
+        self._start_time = datetime.min
+
+
 class TimedOccurrenceTracker:
     def __init__(self, max_occurrences: int, time_interval: timedelta) -> None:
         super().__init__()

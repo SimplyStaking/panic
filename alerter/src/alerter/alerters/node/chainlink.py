@@ -1,12 +1,14 @@
 import copy
 import json
 import logging
-from typing import Dict, List
+from typing import List
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerters.alerter import Alerter
+from src.alerter.factory.chainlink_node_alerting_factory import \
+    ChainlinkNodeAlertingFactory
 from src.configs.factory.chainlink_alerts_configs_factory import (
     ChainlinkAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -33,30 +35,15 @@ class ChainlinkNodeAlerter(Alerter):
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
         self._alerts_configs_factory = cl_alerts_configs_factory
-
-        # TODO: Modify this comment when alerter is done
-        """
-        This dict is to be structured as follows:
-        {
-            <parent_id>: {
-                <system_id>: {
-                    warning_sent,
-                    critical_sent,
-                    limiters etc
-                }
-            }
-        }
-        Whenever a configuration reset happens, 
-        """
-        self._alerting_state = {}
+        self._alerting_factory = ChainlinkNodeAlertingFactory()
 
     @property
     def alerts_configs_factory(self) -> ChainlinkAlertsConfigsFactory:
         return self._alerts_configs_factory
 
     @property
-    def alerting_state(self) -> Dict:
-        return self._alerting_state
+    def alerting_factory(self) -> ChainlinkNodeAlertingFactory:
+        return self._alerting_factory
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -114,32 +101,6 @@ class ChainlinkNodeAlerter(Alerter):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def _create_alerting_state(self, parent_id: str, node_id: str) -> None:
-        """
-        This function will create a new alerting state for a node if no state
-        is already stored. NOTE: This function assumes that the config has
-        already been received, appropriate checks must be done by the caller.
-        :param parent_id: The id of the chain 
-        :param node_id: The id of the node
-        :return: None
-        """
-
-        if parent_id not in self.alerting_state:
-            self.alerting_state[parent_id] = {}
-
-        if node_id not in self.alerting_state[parent_id]:
-            # TODO: Implement state and add.
-            pass
-
-    def _remove_chain_alerting_state(self, parent_id: str) -> None:
-        """
-        This function deletes an entire alerting state for a chain.
-        :param parent_id: The id of the chain to be deleted
-        :return: None
-        """
-        if parent_id in self.alerting_state:
-            del self.alerting_state[parent_id]
-
     def _process_data(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -193,7 +154,7 @@ class ChainlinkNodeAlerter(Alerter):
                 # monitoring round automatically. Note we are sure that a
                 # parent_id is to be returned, as we have just added the config
                 parent_id = self.alerts_configs_factory.get_parent_id(chain)
-                self._remove_chain_alerting_state(parent_id)
+                self.alerting_factory.remove_chain_alerting_state(parent_id)
             else:
                 # We must reset the state since a configuration is to be
                 # removed. Note that first we need to compute the parent_id, as
@@ -202,7 +163,7 @@ class ChainlinkNodeAlerter(Alerter):
                 # no storing took place, therefore in that case do nothing.
                 parent_id = self.alerts_configs_factory.get_parent_id(chain)
                 if parent_id:
-                    self._remove_chain_alerting_state(parent_id)
+                    self.alerting_factory.remove_chain_alerting_state(parent_id)
                     self.alerts_configs_factory.remove_config(chain)
         except Exception as e:
             # Otherwise log and reject the message
