@@ -2,13 +2,13 @@
   "name": "panic-api",
   "version": "1.0.0",
   "description": "API for querying PANIC data.",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Simply-VC",
+  "license": "MIT",
   "devDependencies": {
     "@types/body-parser": "^1.19.0",
     "@types/cookie-parser": "^1.4.2",
