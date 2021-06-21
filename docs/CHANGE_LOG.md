@@ -17,6 +17,7 @@ Change the contents of this file to this:
 - Fixed issue with Internal Alerts generation when the Alert Router is not yet up.
 - Fixed issue with GitHub alerter raising new release alerts in reverse order for multiple releases.
 - The data store components are now compatible with the base Chainlink integration features.
+- Added Chainlink Alerter Manager and tests.
 
 ## 0.1.2
 
