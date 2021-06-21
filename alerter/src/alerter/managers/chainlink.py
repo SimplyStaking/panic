@@ -194,8 +194,8 @@ class ChainlinkNodeAlerterManager(AlertersManager):
 
         try:
             """
-            If we received a config then we must create a new chainlink node
-            alerts configuration object and store it under the routing_key.
+            If we received a config then we must create added to the config
+            factory, which stores all the chainlink alert configurations.
             If the received dictionary is empty then delete the configuration
             pre-taining to the routing_key.
 
