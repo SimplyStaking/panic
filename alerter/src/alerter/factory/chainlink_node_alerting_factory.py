@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import Dict, List
 
@@ -10,7 +11,6 @@ from src.utils.types import convert_to_float
 
 
 class ChainlinkNodeAlertingFactory(AlertingFactory):
-    # TODO: Modify this comment when alerter is done
     """
     This class is in charge of alerting and managing the alerting state for the
     chainlink node alerter. The alerting_state dict is to be structured as
@@ -18,35 +18,35 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
     {
         <parent_id>: {
             <node_id>: {
-                warning_sent: {
-                    GroupedChainlinkNodeAlertsMetricCode: bool
+                Optional[warning_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
                 },
-                critical_sent: {
-                    GroupedChainlinkNodeAlertsMetricCode: bool
+                Optional[critical_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
                 },
-                warning_window_timer: {
-                    GroupedChainlinkNodeAlertsMetricCode: TimedTaskTracker
+                Optional[warning_window_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
                 },
-                critical_window_timer: {
-                    GroupedChainlinkNodeAlertsMetricCode: TimedTaskTracker
+                Optional[critical_window_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
                 },
-                critical_repeat_timer: {
-                    GroupedChainlinkNodeAlertsMetricCode: TimedTaskLimiter
+                Optional[critical_repeat_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskLimiter
                 },
             }
         }
     }
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, component_logger: logging.Logger) -> None:
+        super().__init__(component_logger)
 
     @staticmethod
     def _parse_alert_time_thresholds(expected_thresholds: List[str],
                                      config: Dict) -> Dict:
         """
         This function returns a dict containing all time thresholds parsed in
-        tge appropriate format. The return thresholds are according to the
+        the appropriate format. The returned thresholds are according to the
         value of expected_thresholds.
         :param config: The sub alert config
         :param expected_thresholds: The time thresholds to parse from the config
@@ -79,31 +79,48 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
-                    False
+                    False,
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : False,
             }
             critical_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
-                    False
+                    False,
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : False,
             }
 
             current_head_thresholds = self._parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_current_head)
+            heads_in_queue_thresholds = self._parse_alert_time_thresholds(
+                ['warning_time_window', 'critical_time_window',
+                 'critical_repeat'],
+                cl_node_alerts_config.head_tracker_heads_in_queue)
 
             warning_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskTracker(timedelta(
-                        seconds=current_head_thresholds['warning_threshold']))
+                        seconds=current_head_thresholds['warning_threshold'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskTracker(timedelta(
+                    seconds=heads_in_queue_thresholds['warning_time_window']))
             }
             critical_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskTracker(timedelta(
-                        seconds=current_head_thresholds['critical_threshold']))
+                        seconds=current_head_thresholds['critical_threshold'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskTracker(timedelta(
+                    seconds=heads_in_queue_thresholds['critical_time_window']))
             }
             critical_repeat_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskLimiter(timedelta(
-                        seconds=current_head_thresholds['critical_repeat']))
+                        seconds=current_head_thresholds['critical_repeat'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskLimiter(timedelta(
+                    seconds=heads_in_queue_thresholds['critical_repeat']))
             }
 
             self.alerting_state[parent_id][node_id] = {
@@ -122,9 +139,3 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
         """
         if parent_id in self.alerting_state:
             del self.alerting_state[parent_id]
-
-# TODO: Monday start by implementing the current_head_general_alerting. This
-#     : be implemented in the general alerting factory class
-
-# TODO: When we alert the first critical time window alert we also need to
-#     : do did task for the repeat, so the repeating starts.

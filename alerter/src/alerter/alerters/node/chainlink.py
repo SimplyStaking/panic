@@ -15,8 +15,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
-    CONFIG_EXCHANGE, ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
-    ALERTS_CONFIGS_ROUTING_KEY_GEN, CL_NODE_ALERT_ROUTING_KEY)
+    CONFIG_EXCHANGE, CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
 
 
 class ChainlinkNodeAlerter(Alerter):
@@ -35,7 +34,7 @@ class ChainlinkNodeAlerter(Alerter):
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
         self._alerts_configs_factory = cl_alerts_configs_factory
-        self._alerting_factory = ChainlinkNodeAlertingFactory()
+        self._alerting_factory = ChainlinkNodeAlertingFactory(logger)
 
     @property
     def alerts_configs_factory(self) -> ChainlinkAlertsConfigsFactory:
@@ -74,16 +73,9 @@ class ChainlinkNodeAlerter(Alerter):
                                        False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "%s'", CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+                         CONFIG_EXCHANGE, CL_ALERTS_CONFIGS_ROUTING_KEY)
         self.rabbitmq.queue_bind(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, ALERTS_CONFIGS_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
+                                 CONFIG_EXCHANGE, CL_ALERTS_CONFIGS_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -136,11 +128,8 @@ class ChainlinkNodeAlerter(Alerter):
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
-        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
-            chain = 'general'
-        else:
-            parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        parsed_routing_key = method.routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
             # Checking if the configuration is empty. If it is empty, remove the

@@ -1,6 +1,10 @@
 from enum import Enum
 from typing import Union, Any
 
+from src.alerter.alerts.node.chainlink import (
+    NoChangeInHeightAlert, BlockHeightUpdatedAlert,
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    HeadsInQueueDecreasedBelowThresholdAlert)
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -17,6 +21,9 @@ from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
 Monitorable = Union[System, GitHubRepo, ChainlinkNode]
+
+# TODO: The below system alerts must be refactored to the types beneath them
+#     : when the system alerter is refactored.
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -29,6 +36,24 @@ DecreasedBelowThresholdSystemAlert = Union[
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 ]
+
+ChainlinkNodeNoChangeInAlert = Union[
+    NoChangeInHeightAlert
+]
+ChainlinkNodeChangeInAlert = Union[
+    BlockHeightUpdatedAlert
+]
+NoChangeInAlert = Union[ChainlinkNodeNoChangeInAlert]
+ChangeInAlert = Union[ChainlinkNodeChangeInAlert]
+
+IncreasedAboveThresholdChainlinkNodeAlert = Union[
+    HeadsInQueueIncreasedAboveThresholdAlert
+]
+DecreasedBelowThresholdChainlinkNodeAlert = Union[
+    HeadsInQueueDecreasedBelowThresholdAlert
+]
+IncreasedAboveThresholdAlert = Union[IncreasedAboveThresholdChainlinkNodeAlert]
+DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
 
 
 class OpsgenieSeverities(Enum):
