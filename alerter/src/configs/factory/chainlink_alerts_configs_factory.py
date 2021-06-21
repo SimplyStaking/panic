@@ -18,11 +18,12 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
 
     def add_new_config(self, chain_name: str, sent_configs: Dict
                        ) -> Tuple[bool, str]:
+
         # Assume that the config being received isn't already here
         config_updated = False
         # If the chain_name already exists in the config then it is a
-        # modification and not an addition
-        if chain_name in self.configs:
+        # modification and not an addition.
+        if self.config_exists(chain_name):
             config_updated = True
 
         # Check if all the parent_ids in the received configuration are the
@@ -38,7 +39,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
             filtered[config['name']] = copy.deepcopy(config)
 
         cl_node_alerts_config = ChainlinkNodeAlertsConfig(
-            parent_id=filtered['parent_id'],
+            parent_id=parent_id,
             head_tracker_current_head=filtered[
                 'head_tracker_current_head'],
             head_tracker_heads_in_queue=filtered[
@@ -66,6 +67,11 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
         # We need to return these so we are able to reset metrics for the chain
         return config_updated, parent_id
 
-    def remove_config(self, chain_name: str) -> None:
+    def config_exists(self, chain_name: str) -> bool:
         if chain_name in self.configs:
+            return True
+        return False
+
+    def remove_config(self, chain_name: str) -> None:
+        if self.config_exists(chain_name):
             del self._configs[chain_name]

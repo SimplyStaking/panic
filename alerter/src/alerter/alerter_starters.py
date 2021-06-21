@@ -128,7 +128,7 @@ def _initialise_chainlink_alerter(
                 ALERTER_PUBLISHING_QUEUE_SIZE
             )
             log_and_print("Successfully initialised {}".format(
-                alerter_display_name), chainlink_alerter)
+                alerter_display_name), chainlink_alerter_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)

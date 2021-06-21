@@ -27,7 +27,9 @@ from src.utils.constants.rabbitmq import (
     CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     ALERT_EXCHANGE, TOPIC,
-    CL_NODE_ALERT_ROUTING_KEY, ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+    CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
 
@@ -48,7 +50,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
-        self.github_alerter_name = CHAINLINK_ALERTER_NAME
+        self.chainlink_alerter_name = CHAINLINK_ALERTER_NAME
         self.dummy_process = Process(target=infinite_fn, args=())
         self.dummy_process.daemon = True
 
@@ -59,6 +61,133 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.test_manager = ChainlinkNodeAlerterManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
         self.test_exception = PANICException('test_exception', 1)
+
+        self.routing_key_1 = 'chains.chainlink.ethereum.alerts_config'
+        self.routing_key_2 = 'chains.chainlink.polygon.alerts_config'
+        self.config_1 = {
+            "1": {
+                "name": "1_st_alert",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "6": {
+                "name": "head_tracker_current_head",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "7": {
+                "name": "head_tracker_heads_in_queue",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "8": {
+                "name": "head_tracker_heads_received_total",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "9": {
+                "name": "head_tracker_num_heads_dropped_total",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "10": {
+                "name": "max_unconfirmed_blocks",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "11": {
+                "name": "tx_manager_gas_bump_exceeds_limit_total",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "12": {
+                "name": "unconfirmed_transactions",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "13": {
+                "name": "eth_balance_amount",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "14": {
+                "name": "eth_balance_hours_remaining",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "15": {
+                "name": "head_tracker_num_heads_dropped_total",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "16": {
+                "name": "run_status_update_total",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "17": {
+                "name": "process_start_time_seconds",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "18": {
+                "name": "eth_balance_amount_increase",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            },
+            "19": {
+                "name": "node_is_down",
+                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
+            }
+        }
+        self.config_2 = {
+            "1": {
+                "name": "1_st_alert",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "6": {
+                "name": "head_tracker_current_head",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "7": {
+                "name": "head_tracker_heads_in_queue",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "8": {
+                "name": "head_tracker_heads_received_total",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "9": {
+                "name": "head_tracker_num_heads_dropped_total",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "10": {
+                "name": "max_unconfirmed_blocks",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "11": {
+                "name": "tx_manager_gas_bump_exceeds_limit_total",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "12": {
+                "name": "unconfirmed_transactions",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "13": {
+                "name": "eth_balance_amount",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "14": {
+                "name": "eth_balance_hours_remaining",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "15": {
+                "name": "head_tracker_num_heads_dropped_total",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "16": {
+                "name": "run_status_update_total",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "17": {
+                "name": "process_start_time_seconds",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "18": {
+                "name": "eth_balance_amount_increase",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            },
+            "19": {
+                "name": "node_is_down",
+                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
+            }
+        }
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -190,7 +319,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             )
             self.test_rabbit_manager.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
+                routing_key=CL_ALERTS_CONFIGS_ROUTING_KEY,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False
@@ -252,7 +381,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             _, _, body = self.test_manager.rabbitmq.basic_get(
                 self.test_queue_name)
             self.assertEqual(self.test_heartbeat, json.loads(body))
-            self.assertEqual(1, mock_start_alerter_process.call_count)
+            self.assertEqual(0, mock_start_alerter_process.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -372,7 +501,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
             self.assertEqual(
-                2, mock_push_latest_data_to_queue_and_send.call_count)
+                1, mock_push_latest_data_to_queue_and_send.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -437,7 +566,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 self.test_queue_name)
             self.assertEqual(expected_output, json.loads(body))
             self.assertEqual(
-                3,
+                2,
                 mock_push_latest_data_to_queue_and_send.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -472,7 +601,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_manager.alerter_process_dict[
-                                 CHAINLINK_ALERTER_NAME].is_alive())
+                CHAINLINK_ALERTER_NAME].is_alive())
 
             # initialise
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -487,7 +616,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             time.sleep(1)
 
             self.assertTrue(self.test_manager.alerter_process_dict[
-                                CHAINLINK_ALERTER_NAME].is_alive())
+                CHAINLINK_ALERTER_NAME].is_alive())
 
             # Clean before test finishes
             self.test_manager.alerter_process_dict[
@@ -495,8 +624,249 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             self.test_manager.alerter_process_dict[
                 CHAINLINK_ALERTER_NAME].join()
             self.assertEqual(
-                3,
+                2,
                 mock_push_latest_data_to_queue_and_send.call_count
             )
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing, 'Process')
+    def test_process_ping_does_not_send_hb_if_processing_fails(
+            self, mock_process, mock_start, is_alive_mock,
+            mock_push_latest_data_to_queue_and_send) -> None:
+        # This test creates a queue which receives messages with the same
+        # routing key as the ones sent by send_heartbeat. In this test we will
+        # check that no heartbeat is sent when mocking a raised exception.
+        is_alive_mock.side_effect = self.test_exception
+        mock_start.return_value = None
+        mock_process.side_effect = self.dummy_process
+        try:
+            self.test_manager._initialise_rabbitmq()
+            self.test_manager._create_and_start_alerter_process()
+
+            self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+
+            # Delete the queue before to avoid messages in the queue on error.
+            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+
+            # initialise
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+            self.test_manager.rabbitmq.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+
+            # By re-declaring the queue again we can get the number of messages
+            # in the queue.
+            res = self.test_manager.rabbitmq.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(0, res.method.message_count)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+    def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
+            self, mock_push_latest_data_to_queue_and_send) -> None:
+        try:
+            self.test_manager._initialise_rabbitmq()
+            self.test_manager._create_and_start_alerter_process()
+
+            # initialise
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+            mock_push_latest_data_to_queue_and_send.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("pika.exceptions.AMQPChannelError('test')",
+         "pika.exceptions.AMQPChannelError"),
+        ("self.test_exception", "PANICException"),
+    ])
+    @mock.patch(
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+    @mock.patch.object(ChainlinkNodeAlerterManager, "_send_heartbeat")
+    def test_process_ping_send_hb_raises_exceptions(
+            self, param_input, param_expected, hb_mock,
+            mock_push_latest_data_to_queue_and_send) -> None:
+        hb_mock.side_effect = eval(param_input)
+        try:
+            self.test_manager._initialise_rabbitmq()
+
+            # initialise
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+            properties = pika.spec.BasicProperties()
+            body = 'ping'
+
+            self.assertRaises(eval(param_expected),
+                              self.test_manager._process_ping,
+                              blocking_channel,
+                              method, properties, body)
+            mock_push_latest_data_to_queue_and_send.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("self.config_1", "self.routing_key_1"),
+        ("self.config_2", "self.routing_key_2")
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    def test_process_configs_calls_config_factory_correctly(
+            self, param_config, param_routing_key, mock_add_new_config,
+            mock_ack) -> None:
+        mock_ack.return_value = None
+
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            routing_key = eval(param_routing_key)
+            parsed_routing_key = routing_key.split('.')
+
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=routing_key)
+            body = json.dumps(eval(param_config))
+            properties = pika.spec.BasicProperties()
+            self.test_manager._process_configs(
+                blocking_channel, method_chains, properties, body)
+
+            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            mock_add_new_config.assert_called_once_with(
+                chain_name, eval(param_config))
+
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("self.routing_key_1",),
+        ("self.routing_key_2",)
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    def test_process_config_calls_config_factory_remove_config_correctly(
+            self, param_routing_key, mock_remove_config, mock_ack) -> None:
+        mock_ack.return_value = None
+
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            routing_key = eval(param_routing_key)
+            parsed_routing_key = routing_key.split('.')
+
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=routing_key)
+            body = json.dumps({})
+            properties = pika.spec.BasicProperties()
+            self.test_manager._process_configs(
+                blocking_channel, method_chains, properties, body)
+
+            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            mock_remove_config.assert_called_once_with(
+                chain_name)
+
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("self.config_1", "self.routing_key_1"),
+        ("self.config_2", "self.routing_key_2")
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch(
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+    def test_process_configs_configs_get_updated_and_generates_alert(
+            self, param_config, param_routing_key, mock_push_data_to_queue,
+            mock_ack) -> None:
+        mock_ack.return_value = None
+
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            routing_key = eval(param_routing_key)
+            parsed_routing_key = routing_key.split('.')
+
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=routing_key)
+            body = json.dumps(eval(param_config))
+            properties = pika.spec.BasicProperties()
+            self.test_manager._process_configs(
+                blocking_channel, method_chains, properties, body)
+
+            # First time it's received nothing should be reset
+            mock_push_data_to_queue.assert_not_called()
+
+            self.test_manager._process_configs(
+                blocking_channel, method_chains, properties, body)
+
+            # Second time the config is updated therefore a reset alert should
+            # be sent.
+            mock_push_data_to_queue.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        ("self.config_1", "self.routing_key_1"),
+        ("self.config_2", "self.routing_key_2")
+    ])
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_stores_configs_in_factory(
+            self, param_config, param_routing_key, mock_ack) -> None:
+        mock_ack.return_value = None
+
+        try:
+            self.test_manager.rabbitmq.connect()
+
+            routing_key = eval(param_routing_key)
+            parsed_routing_key = routing_key.split('.')
+            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+
+            self.assertFalse(
+                self.test_manager.alerts_config_factory.config_exists(
+                    chain_name))
+
+            blocking_channel = self.test_manager.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=routing_key)
+            body = json.dumps(eval(param_config))
+            properties = pika.spec.BasicProperties()
+            self.test_manager._process_configs(
+                blocking_channel, method_chains, properties, body)
+
+            self.assertTrue(
+                self.test_manager.alerts_config_factory.config_exists(
+                    chain_name))
+
         except Exception as e:
             self.fail("Test failed: {}".format(e))

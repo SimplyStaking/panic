@@ -64,67 +64,7 @@ class ChainlinkNodeAlerter(Alerter):
         return self._alerting_state
 
     def _initialise_rabbitmq(self) -> None:
-        # An alerter is both a consumer and producer, therefore we need to
-        # initialise both the consuming and producing configurations.
-        self.rabbitmq.connect_till_successful()
-
-        # Set alerts consuming configuration
-        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(
-            exchange=ALERT_EXCHANGE, exchange_type=TOPIC, passive=False,
-            durable=True, auto_delete=False, internal=False)
-        self.logger.info("Creating queue '%s'",
-                         CL_NODE_ALERTER_INPUT_QUEUE_NAME)
-        self.rabbitmq.queue_declare(CL_NODE_ALERTER_INPUT_QUEUE_NAME,
-                                    passive=False, durable=True,
-                                    exclusive=False, auto_delete=False)
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", CL_NODE_ALERTER_INPUT_QUEUE_NAME,
-                         ALERT_EXCHANGE, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
-        self.rabbitmq.queue_bind(
-            queue=CL_NODE_ALERTER_INPUT_QUEUE_NAME, exchange=ALERT_EXCHANGE,
-            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
-
-        # Pre-fetch count is 5 times less the maximum queue size
-        prefetch_count = round(self.publishing_queue.maxsize / 5)
-        self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(
-            queue=CL_NODE_ALERTER_INPUT_QUEUE_NAME,
-            on_message_callback=self._process_data, auto_ack=False,
-            exclusive=False, consumer_tag=None)
-
-        # Set configs consuming configuration
-        self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
-                                       False, False)
-        self.logger.info("Creating queue '%s'",
-                         CL_NODE_ALERTER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.queue_declare(CL_NODE_ALERTER_CONFIGS_QUEUE_NAME, False,
-                                    True, False, False)
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "%s'", CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
-        self.rabbitmq.queue_bind(CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE, ALERTS_CONFIGS_ROUTING_KEY_GEN)
-        self.rabbitmq.queue_bind(CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
-        self.logger.info("Declaring consuming intentions on %s",
-                         CL_NODE_ALERTER_CONFIGS_QUEUE_NAME)
-        self.rabbitmq.basic_consume(CL_NODE_ALERTER_CONFIGS_QUEUE_NAME,
-                                    self._process_configs, False, False, None)
-
-        # Set producing configuration
-        self.logger.info("Setting delivery confirmation on RabbitMQ channel")
-        self.rabbitmq.confirm_delivery()
-        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
-                                       True, False, False)
+        pass
 
     def _create_alerting_state(self, parent_id: str, node_id: str) -> None:
         # TODO: First must create state for parent_id then node_id
@@ -137,56 +77,10 @@ class ChainlinkNodeAlerter(Alerter):
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
-        sent_configs = json.loads(body)
-
-        self.logger.info("Received configs %s", sent_configs)
-
-        if 'DEFAULT' in sent_configs:
-            del sent_configs['DEFAULT']
-
-        if method.routing_key == ALERTS_CONFIGS_ROUTING_KEY_GEN:
-            chain = 'general'
-        else:
-            parsed_routing_key = method.routing_key.split('.')
-            chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-
-        try:
-            # Checking if the configuration is empty. If it is ignore it, if
-            # not add it to the list of configurations. Note, if a configuration
-            # was deleted it won't be used, so might as well not do anything.
-            if bool(sent_configs):
-                pass
-                # TODO: Add new config
-            else:
-                pass
-                # TODO: Remove config
-
-            # TODO: Reset state.
-        except Exception as e:
-            # Otherwise log and reject the message
-            self.logger.error("Error when processing %s", sent_configs)
-            self.logger.exception(e)
-
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-    # TODO: Create state for node must be done when configs are received, just
-    #     : in case some thresholds change.
-
-    # TODO: When processing alerts check if config is available first, if not
-    #     : skip alerts.
+        pass
 
     def _place_latest_data_on_queue(self, data_list: List) -> None:
-        # Place the latest alert data on the publishing queue. If the queue is
-        # full, remove old data.
-        for alert in data_list:
-            self.logger.debug("Adding %s to the publishing queue.", alert)
-            if self.publishing_queue.full():
-                self.publishing_queue.get()
-            self.publishing_queue.put({
-                'exchange': ALERT_EXCHANGE,
-                'routing_key': CL_NODE_ALERT_ROUTING_KEY,
-                'data': copy.deepcopy(alert),
-                'properties': pika.BasicProperties(delivery_mode=2),
-                'mandatory': True})
-            self.logger.debug("%s added to the publishing queue successfully.",
-                              alert)
+        pass
+
+    def _process_data(self, *args) -> None:
+        pass

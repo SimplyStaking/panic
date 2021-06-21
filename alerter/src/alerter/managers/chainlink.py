@@ -1,7 +1,7 @@
 import copy
 import json
 import logging
-import multiprocessing
+from multiprocessing import Process
 import sys
 from datetime import datetime
 from types import FrameType
@@ -20,7 +20,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    ALERTS_CONFIGS_ROUTING_KEY_CHAIN, ALERT_EXCHANGE, TOPIC,
+    CL_ALERTS_CONFIGS_ROUTING_KEY, ALERT_EXCHANGE, TOPIC,
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
                                   MessageWasNotDeliveredException)
@@ -77,10 +77,10 @@ class ChainlinkNodeAlerterManager(AlertersManager):
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "%s'", CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE,
-                         ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+                         CL_ALERTS_CONFIGS_ROUTING_KEY)
         self.rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY)
 
         self.logger.info("Declaring consuming intentions on %s",
                          CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
@@ -98,7 +98,6 @@ class ChainlinkNodeAlerterManager(AlertersManager):
 
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self._create_and_start_alerter_process()
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -111,16 +110,18 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             heartbeat['component_name'] = self.name
             heartbeat['running_processes'] = []
             heartbeat['dead_processes'] = []
-            chainlink_alerter_process = \
-                self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
 
-            if chainlink_alerter_process.is_alive():
-                heartbeat['running_processes'].append(CHAINLINK_ALERTER_NAME)
-            else:
-                heartbeat['dead_processes'].append(CHAINLINK_ALERTER_NAME)
-                chainlink_alerter_process.join()  # Release resources
+            if CHAINLINK_ALERTER_NAME in self.alerter_process_dict:
+                chainlink_alerter_process = \
+                    self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
+                if chainlink_alerter_process.is_alive():
+                    heartbeat['running_processes'].append(
+                        CHAINLINK_ALERTER_NAME)
+                else:
+                    heartbeat['dead_processes'].append(CHAINLINK_ALERTER_NAME)
+                    chainlink_alerter_process.join()  # Release resources
+
             heartbeat['timestamp'] = datetime.now().timestamp()
-
             # Restart dead alerter
             if len(heartbeat['dead_processes']) != 0:
                 self._create_and_start_alerter_process()
@@ -144,30 +145,39 @@ class ChainlinkNodeAlerterManager(AlertersManager):
 
     def _create_and_start_alerter_process(self) -> None:
         """
-        We must clear out all the metrics which are found in Redis.
-        Sending this alert to the alert router and then the data store will
-        achieve this. This is sent on startup of the manager and if the alerter
-        process is deemed to be dead.
+        Start the Chainlink Node Alerter in a separate process if it is not yet
+        started or it is not alive. This must be done in case of a restart of
+        the manager.
         """
-        alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
-                                    datetime.now().timestamp(),
-                                    ChainlinkNodeAlerter.__name__)
-        self._push_latest_data_to_queue_and_send(alert.alert_data)
+        if (CHAINLINK_ALERTER_NAME not in self.alerter_process_dict or
+                not self.alerter_process_dict[
+                    CHAINLINK_ALERTER_NAME].is_alive()):
 
-        """
-        Start the Chainlink Alerter process with the saved factory.
-        This factory should hold all the configurations, if any.
-        """
-        log_and_print("Attempting to start the {}.".format(
-            CHAINLINK_ALERTER_NAME), self.logger)
-        chainlink_alerter_process = multiprocessing.Process(
-            target=start_chainlink_alerter,
-            args=(self.alerts_config_factory,))
-        chainlink_alerter_process.daemon = True
-        chainlink_alerter_process.start()
+            """
+            We must clear out all the metrics which are found in Redis.
+            Sending this alert to the alert router and then the data store will
+            achieve this. This is sent on startup of the manager and if the
+            alerter process is deemed to be dead.
+            """
+            alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
+                                        datetime.now().timestamp(),
+                                        ChainlinkNodeAlerter.__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
-        self._alerter_process_dict[CHAINLINK_ALERTER_NAME] = \
-            chainlink_alerter_process
+            """
+            Start the Chainlink Alerter process with the saved factory.
+            This factory should hold all the configurations, if any.
+            """
+            log_and_print("Attempting to start the {}.".format(
+                CHAINLINK_ALERTER_NAME), self.logger)
+            chainlink_alerter_process = Process(
+                target=start_chainlink_alerter,
+                args=(self.alerts_config_factory,))
+            chainlink_alerter_process.daemon = True
+            chainlink_alerter_process.start()
+
+            self._alerter_process_dict[CHAINLINK_ALERTER_NAME] = \
+                chainlink_alerter_process
 
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -180,8 +190,6 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             del sent_configs['DEFAULT']
 
         parsed_routing_key = method.routing_key.split('.')
-        if parsed_routing_key[1] != 'chainlink':
-            return
         chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         try:
@@ -220,6 +228,13 @@ class ChainlinkNodeAlerterManager(AlertersManager):
         self._initialise_rabbitmq()
         while True:
             try:
+                # Empty the queue so that on restart we don't send multiple
+                # reset alerts. We are not sending the alert before starting
+                # a component, so that should be enough.
+                if not self.publishing_queue.empty():
+                    self.publishing_queue.queue.clear()
+
+                self._create_and_start_alerter_process()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:

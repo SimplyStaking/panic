@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import Dict
+from typing import Dict, Tuple
 
 
 class ConfigsFactory(ABC):
@@ -11,7 +11,12 @@ class ConfigsFactory(ABC):
         return self._configs
 
     @abstractmethod
-    def add_new_config(self, *args) -> None:
+    def add_new_config(self, chain_name: str, sent_configs: Dict
+                       ) -> Tuple[bool, str]:
+        pass
+
+    @abstractmethod
+    def config_exists(self, chain_name: str) -> bool:
         pass
 
     @abstractmethod
