@@ -171,6 +171,8 @@ class ChainlinkNodeAlerter(Alerter):
     # TODO: Tomorrow start with alerts and generalisng functions inside the
     #     : alerter, + creating state also.
 
+    # TODO: Don't forget that some metrics can be None.
+
     def _place_latest_data_on_queue(self, data_list: List) -> None:
         # Place the latest alert data on the publishing queue. If the queue is
         # full, remove old data.

@@ -135,3 +135,46 @@ class TimedOccurrenceTracker:
             self._last_occurrences.get()
         for i in range(self._max_occurrences):
             self._last_occurrences.put(datetime.min)
+
+
+class OccurrencesInTimePeriodTracker:
+    """
+    This class keeps track of how many occurrences happened in a time period.
+    Each element represents the time of an occurrence and thus the length of the
+    queue is the number of occurrences. When adding a new occurrence the class
+    attempts to keep the occurrences happened within a time period.
+    """
+    def __init__(self, time_period: timedelta) -> None:
+        super().__init__()
+
+        self._time_period = time_period
+        self._occurrences_queue = Queue()
+
+    @property
+    def time_period(self) -> timedelta:
+        return self._time_period
+
+    def add_occurrence(self, time: datetime = None) -> None:
+        if time is None:
+            time = datetime.now()
+
+        self.remove_old_occurrences(time)
+
+        self._occurrences_queue.put(time)
+
+    def remove_old_occurrences(self, time: datetime = None) -> None:
+        if time is None:
+            time = datetime.now()
+
+        while not self._occurrences_queue.empty():
+            oldest_occurrence = self._occurrences_queue.queue[0]
+            if (time - oldest_occurrence) > self.time_period:
+                self._occurrences_queue.get()
+            else:
+                break
+
+    def no_of_occurrences(self) -> int:
+        return self._occurrences_queue.qsize()
+
+    def reset(self) -> None:
+        self._occurrences_queue.queue.clear()

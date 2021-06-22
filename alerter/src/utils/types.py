@@ -4,7 +4,17 @@ from typing import Union, Any
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
     HeadsInQueueIncreasedAboveThresholdAlert,
-    HeadsInQueueDecreasedBelowThresholdAlert)
+    HeadsInQueueDecreasedBelowThresholdAlert,
+    NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
+    DroppedBlockHeadersIncreasedAboveThresholdAlert,
+    DroppedBlockHeadersDecreasedBelowThresholdAlert,
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, ChangeInSourceNodeAlert,
+    GasBumpIncreasedOverNodeGasPriceLimitAlert,
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsIncreasedAboveThresholdAlert)
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -38,22 +48,35 @@ DecreasedBelowThresholdSystemAlert = Union[
 ]
 
 ChainlinkNodeNoChangeInAlert = Union[
-    NoChangeInHeightAlert
+    NoChangeInHeightAlert, NoChangeInTotalHeadersReceivedAlert,
 ]
 ChainlinkNodeChangeInAlert = Union[
-    BlockHeightUpdatedAlert
+    BlockHeightUpdatedAlert, ReceivedANewHeaderAlert
 ]
 NoChangeInAlert = Union[ChainlinkNodeNoChangeInAlert]
 ChangeInAlert = Union[ChainlinkNodeChangeInAlert]
 
 IncreasedAboveThresholdChainlinkNodeAlert = Union[
-    HeadsInQueueIncreasedAboveThresholdAlert
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    DroppedBlockHeadersIncreasedAboveThresholdAlert,
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+    TotalErroredJobRunsIncreasedAboveThresholdAlert
 ]
 DecreasedBelowThresholdChainlinkNodeAlert = Union[
-    HeadsInQueueDecreasedBelowThresholdAlert
+    HeadsInQueueDecreasedBelowThresholdAlert,
+    DroppedBlockHeadersDecreasedBelowThresholdAlert,
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsDecreasedBelowThresholdAlert
 ]
 IncreasedAboveThresholdAlert = Union[IncreasedAboveThresholdChainlinkNodeAlert]
 DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
+
+SeverityChainlinkNodeAlert = Union[
+    ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
+]
+SeverityAlert = Union[SeverityChainlinkNodeAlert]
 
 
 class OpsgenieSeverities(Enum):

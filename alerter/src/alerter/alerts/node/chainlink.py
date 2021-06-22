@@ -90,7 +90,7 @@ class ReceivedANewHeaderAlert(Alert):
 
 
 class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -106,7 +106,7 @@ class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
 
 
 class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -122,7 +122,7 @@ class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
 
 
 class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -138,7 +138,7 @@ class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
 
 
 class MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
@@ -174,7 +174,7 @@ class GasBumpIncreasedOverNodeGasPriceLimitAlert(Alert):
 
 
 class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -190,7 +190,7 @@ class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
 
 
 class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
@@ -204,7 +204,7 @@ class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
 
 
 class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -220,7 +220,7 @@ class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
 
 
 class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -234,7 +234,7 @@ class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
 
-
+# TODO: Tomorrow keep adding alerts from here
 class EthBalanceIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, current_value: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
