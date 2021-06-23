@@ -10,7 +10,7 @@ import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.github import GithubAlerterManager
-from src.alerter.managers.chainlink import ChainlinkAlerterManager
+from src.alerter.managers.chainlink import ChainlinkNodeAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
@@ -44,7 +44,8 @@ from src.utils.constants.rabbitmq import (
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
     TOPIC, CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, CL_NODE_ALERT_ROUTING_KEY)
+    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, CL_NODE_ALERT_ROUTING_KEY,
+    CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -135,11 +136,11 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
     return github_alerter_manager
 
 
-def _initialise_chainlink_alerter_manager() -> ChainlinkAlerterManager:
+def _initialise_chainlink_alerter_manager() -> ChainlinkNodeAlerterManager:
     manager_display_name = CHAINLINK_ALERTER_MANAGER_NAME
 
     chainlink_alerter_manager_logger = _initialise_logger(
-        manager_display_name, ChainlinkAlerterManager.__name__,
+        manager_display_name, ChainlinkNodeAlerterManager.__name__,
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
@@ -149,7 +150,7 @@ def _initialise_chainlink_alerter_manager() -> ChainlinkAlerterManager:
             rabbitmq = RabbitMQApi(
                 logger=chainlink_alerter_manager_logger.getChild(
                     RabbitMQApi.__name__), host=env.RABBIT_IP)
-            chainlink_alerter_manager = ChainlinkAlerterManager(
+            chainlink_alerter_manager = ChainlinkNodeAlerterManager(
                 chainlink_alerter_manager_logger, manager_display_name,
                 rabbitmq)
             break
@@ -695,6 +696,21 @@ def _initialise_and_declare_config_queues() -> None:
             rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
+
+            # Chainlink Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
 
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
