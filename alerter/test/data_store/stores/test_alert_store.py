@@ -14,6 +14,7 @@ from parameterized import parameterized
 
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.system import SystemAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
@@ -24,6 +25,7 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
+from src.utils.constants.data import EXPIRE_METRICS
 from src.utils.exceptions import (PANICException,
                                   MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit,
@@ -122,16 +124,17 @@ class TestAlertStore(unittest.TestCase):
         self.message_3 = 'alert message 3'
         self.value_3 = 'alert_code_3'
 
+        self.alert_id_4 = 'test_alert_id_4'
+        self.origin_id_4 = 'test_origin_id_4'
+        self.alert_name_4 = 'test_alert_4'
+        self.metric_4 = 'node_is_down'
+        self.severity_4 = 'info'
+        self.message_4 = 'alert message 4'
+        self.value_4 = 'alert_code_4'
+
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
-        self.system_alert_metrics = ['open_file_descriptors',
-                                     'system_cpu_usage',
-                                     'system_storage_usage',
-                                     'system_ram_usage',
-                                     'system_is_down',
-                                     'invalid_url',
-                                     'metric_not_found']
         # We do not want to reset `github_release` for Github metrics as we
         # will lose the pending upgrades
         self.github_alert_metrics = ['cannot_access_github']
@@ -171,6 +174,30 @@ class TestAlertStore(unittest.TestCase):
             'severity': self.severity_3,
             'metric': self.metric_3,
             'message': self.message_3,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_data_4 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_4,
+            'alert_code': {
+                'name': self.alert_name_4,
+                'code': self.value_4,
+            },
+            'severity': self.severity_4,
+            'metric': self.metric_4,
+            'message': self.message_4,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_data_5 = {
+            'parent_id': self.parent_id2,
+            'origin_id': self.origin_id_4,
+            'alert_code': {
+                'name': self.alert_name_4,
+                'code': self.value_4,
+            },
+            'severity': self.severity_4,
+            'metric': self.metric_4,
+            'message': self.message_4,
             'timestamp': self.last_monitored,
         }
 
@@ -223,6 +250,31 @@ class TestAlertStore(unittest.TestCase):
             'metric': self.metric_2,
             'message': self.message_2,
             'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': ChainlinkNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_all_chains = {
+            'parent_id': None,
+            'origin_id': ChainlinkNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_2,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+
         }
         self.alert_internal_github_chain_1 = {
             'parent_id': self.parent_id,
@@ -540,7 +592,8 @@ class TestAlertStore(unittest.TestCase):
         self.test_store._process_redis_store(data)
 
         metric_data = {'severity': data['severity'],
-                       'message': data['message']}
+                       'message': data['message'],
+                       'expiry': None}
         key = data['origin_id']
 
         call_1 = call(Keys.get_hash_parent(data['parent_id']),
@@ -605,11 +658,60 @@ class TestAlertStore(unittest.TestCase):
                 self.alert_data_3['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
 
-        self.test_store._process_redis_store(self.alert_internal_system_chain_1)
+        self.test_store._process_redis_store(
+            self.alert_internal_system_chain_1)
 
         self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
         self.assertFalse(self.redis.hexists(chain_hash_3, metric_key_3))
+
+    def test_process_redis_store_chainlink_removes_all_chainlink_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_4)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_4['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4['origin_id'])".format(
+                self.alert_data_4['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_5['origin_id'])".format(
+                self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_chainlink_removes_all_chainlink_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_4)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_4['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4['origin_id'])".format(
+                self.alert_data_4['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_5['origin_id'])".format(
+                self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
     @parameterized.expand([
         ('self.alert_internal_github_all_chains',),
@@ -621,7 +723,7 @@ class TestAlertStore(unittest.TestCase):
         # we always delete all github metrics for all chains
         self.test_store._process_redis_store(self.alert_data_github_1)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_github_1[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_{}(self.alert_data_github_1['origin_id'])".format(
                 self.alert_data_github_1['metric']))
@@ -629,7 +731,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_2)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_github_2[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_{}(self.alert_data_github_2['origin_id'])".format(
                 self.alert_data_github_2['metric']))
@@ -637,7 +739,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_3)
         chain_hash_3 = Keys.get_hash_parent(self.alert_data_github_3[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_3 = eval(
             "Keys.get_alert_{}(self.alert_data_github_3['origin_id'])".format(
                 self.alert_data_github_3['metric']))

@@ -17,6 +17,8 @@ from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
+from src.utils.constants.data import (EXPIRE_METRICS,
+                                      CHAINLINK_METRICS_TO_STORE)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 
@@ -221,9 +223,21 @@ class AlertStore(Store):
             """
             self.logger.debug("Saving alert in REDIS: %s.", alert)
             metric_data = {'severity': alert['severity'],
-                           'message': alert['message']}
+                           'message': alert['message'],
+                           'expiry': None}
             key = alert['origin_id']
-            self.redis.hset(
-                Keys.get_hash_parent(alert['parent_id']),
-                eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
-                json.dumps(metric_data))
+
+            # Check if this metric cannot be overwritten and has to be deleted
+            if alert['metric'] in EXPIRE_METRICS:
+                metric_data['expiry'] = int(alert['timestamp']) + 600
+
+            if alert['metric'] in CHAINLINK_METRICS_TO_STORE:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_cl_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data))
+            else:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data))
