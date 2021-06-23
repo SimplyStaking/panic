@@ -194,10 +194,10 @@ class ChainlinkNodeAlerterManager(AlertersManager):
 
         try:
             """
-            If we received a config then we must create added to the config
+            If we received a config then we must add it to the config
             factory, which stores all the chainlink alert configurations.
             If the received dictionary is empty then delete the configuration
-            pre-taining to the routing_key.
+            which is saved under the routing_key.
 
             We also check if the configuration has been updated, if it has then
             the metrics in Redis need to be reset.
