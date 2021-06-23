@@ -14,7 +14,12 @@ from src.alerter.alerts.node.chainlink import (
     NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
-    TotalErroredJobRunsIncreasedAboveThresholdAlert)
+    TotalErroredJobRunsIncreasedAboveThresholdAlert,
+    EthBalanceIncreasedAboveThresholdAlert,
+    EthBalanceDecreasedBelowThresholdAlert, EthBalanceToppedUpAlert,
+    InvalidUrlAlert, ValidUrlAlert, MetricNotFoundErrorAlert, MetricFoundAlert,
+    PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert,
+    NodeStillDownAlert, NodeWentDownAtAlert, NodeBackUpAgainAlert)
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -61,22 +66,40 @@ IncreasedAboveThresholdChainlinkNodeAlert = Union[
     DroppedBlockHeadersIncreasedAboveThresholdAlert,
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
-    TotalErroredJobRunsIncreasedAboveThresholdAlert
+    TotalErroredJobRunsIncreasedAboveThresholdAlert,
+    EthBalanceIncreasedAboveThresholdAlert
 ]
 DecreasedBelowThresholdChainlinkNodeAlert = Union[
     HeadsInQueueDecreasedBelowThresholdAlert,
     DroppedBlockHeadersDecreasedBelowThresholdAlert,
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-    TotalErroredJobRunsDecreasedBelowThresholdAlert
+    TotalErroredJobRunsDecreasedBelowThresholdAlert,
+    EthBalanceDecreasedBelowThresholdAlert
 ]
 IncreasedAboveThresholdAlert = Union[IncreasedAboveThresholdChainlinkNodeAlert]
 DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
 
-SeverityChainlinkNodeAlert = Union[
+ChainlinkNodeConditionalAlert = Union[
     ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
+    EthBalanceToppedUpAlert, PrometheusSourceIsDownAlert,
+    PrometheusSourceBackUpAgainAlert
 ]
-SeverityAlert = Union[SeverityChainlinkNodeAlert]
+ConditionalAlert = Union[ChainlinkNodeConditionalAlert]
+
+ChainlinkNodeErrorAlert = Union[
+    InvalidUrlAlert, MetricNotFoundErrorAlert
+]
+ChainlinkNodeErrorSolvedAlert = Union[
+    ValidUrlAlert, MetricFoundAlert
+]
+ErrorAlert = Union[ChainlinkNodeErrorAlert]
+ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]
+
+
+DownAlert = Union[NodeWentDownAtAlert]
+StillDownAlert = Union[NodeStillDownAlert]
+BackUpAlert = Union[NodeBackUpAgainAlert]
 
 
 class OpsgenieSeverities(Enum):

@@ -168,8 +168,10 @@ class ChainlinkNodeAlerter(Alerter):
     # TODO: When processing alerts check if config is available first, if not
     #     : skip alerts.
 
-    # TODO: Tomorrow start with alerts and generalisng functions inside the
-    #     : alerter, + creating state also.
+    # TODO: Don't forget to make the class compatible with multiple sources
+    #     : immediately
+
+    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
 
     # TODO: Don't forget that some metrics can be None.
 

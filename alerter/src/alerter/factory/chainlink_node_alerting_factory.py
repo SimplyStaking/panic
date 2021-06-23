@@ -25,6 +25,9 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 Optional[critical_sent]: {
                     GroupedChainlinkNodeAlertsMetricCode.value: bool
                 },
+                Optional[error_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                },
                 Optional[warning_window_timer]: {
                     GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
                 },
@@ -101,6 +104,10 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     NoOfUnconfirmedTxsThreshold.value: False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     TotalErroredJobRunsThreshold.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
+                    False,
+                GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
+                    False,
             }
             critical_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
@@ -117,6 +124,15 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     NoOfUnconfirmedTxsThreshold.value: False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     TotalErroredJobRunsThreshold.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
+                    False,
+                GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
+                    False,
+            }
+            error_sent = {
+                GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value:
+                    False,
             }
 
             current_head_thresholds = self._parse_alert_time_thresholds(
@@ -149,6 +165,13 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                  'critical_repeat'],
                 cl_node_alerts_config.run_status_update_total
             )
+            eth_balance_thresholds = self._parse_alert_time_thresholds(
+                ['critical_repeat'], cl_node_alerts_config.eth_balance_amount
+            )
+            node_is_down_thresholds = self._parse_alert_time_thresholds(
+                ['warning_threshold', 'critical_threshold',
+                 'critical_repeat'], cl_node_alerts_config.node_is_down
+            )
 
             warning_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
@@ -169,6 +192,9 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
                     timedelta(seconds=unconfirmed_txs_thresholds[
                         'warning_time_window'])),
+                GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
+                    TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
+                        'warning_time_window'])),
             }
             critical_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
@@ -188,6 +214,9 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 GroupedChainlinkNodeAlertsMetricCode.
                     NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
                     timedelta(seconds=unconfirmed_txs_thresholds[
+                        'critical_time_window'])),
+                GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
+                    TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
                         'critical_time_window'])),
             }
             critical_repeat_timer = {
@@ -217,6 +246,12 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     TotalErroredJobRunsThreshold.value: TimedTaskLimiter(
                     timedelta(seconds=error_jobs_thresholds[
                         'critical_repeat'])),
+                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
+                    TimedTaskLimiter(timedelta(seconds=eth_balance_thresholds[
+                        'critical_repeat'])),
+                GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
+                    TimedTaskLimiter(timedelta(seconds=node_is_down_thresholds[
+                        'critical_repeat'])),
             }
             warning_occurrences_in_period_tracker = {
                 GroupedChainlinkNodeAlertsMetricCode.
@@ -244,6 +279,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
             self.alerting_state[parent_id][node_id] = {
                 'warning_sent': warning_sent,
                 'critical_sent': critical_sent,
+                'error_sent': error_sent,
                 'warning_window_timer': warning_window_timer,
                 'critical_window_timer': critical_window_timer,
                 'critical_repeat_timer': critical_repeat_timer,

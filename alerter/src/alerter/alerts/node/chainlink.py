@@ -234,7 +234,7 @@ class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
 
-# TODO: Tomorrow keep adding alerts from here
+
 class EthBalanceIncreasedAboveThresholdAlert(Alert):
     def __init__(self, origin_name: str, current_value: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
