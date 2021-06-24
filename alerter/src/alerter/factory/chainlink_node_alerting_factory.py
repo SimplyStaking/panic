@@ -59,7 +59,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
         """
         This function returns a dict containing all time thresholds parsed in
         the appropriate format. The returned thresholds are according to the
-        value of expected_thresholds.
+        values in expected_thresholds.
         :param config: The sub alert config
         :param expected_thresholds: The time thresholds to parse from the config
         :return: A dict containing all available time thresholds parsed from the

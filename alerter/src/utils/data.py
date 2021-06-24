@@ -7,7 +7,8 @@ import requests
 from prometheus_client.parser import text_string_to_metric_families
 
 from src.utils.exceptions import (NoMetricsGivenException,
-                                  MetricNotFoundException)
+                                  MetricNotFoundException,
+                                  ReceivedUnexpectedDataException)
 
 
 class RequestStatus(Enum):
@@ -83,3 +84,56 @@ def get_prometheus_metrics_data(endpoint: str,
             raise MetricNotFoundException(metric, endpoint)
 
     return response
+
+
+def transformed_data_processing_helper(component_name: str, configuration: Dict,
+                                       transformed_data: Dict,
+                                       *other_args) -> None:
+    """
+    This function attempts to execute the appropriate processing function
+    on the transformed data based on a configuration. If the transformed
+    data is malformed, this function will raise an UnexpectedDataException
+    :param configuration: A dict with the following schema:
+                        {
+                            '<source_name>': {
+                                '<data_index_Key>': <related_processing_fn>
+                            }
+                        }
+    :param transformed_data: The data received from the transformed
+    :param component_name: The name fo the component receiving the transformed
+                         : data
+    :return: None
+           : Raises an UnexpectedDataException if the transformed_data is
+             malformed
+    """
+    processing_performed = False
+    for source, processing_details in configuration.items():
+
+        # If the required source is not in the transformed data, then the
+        # transformed data is malformed, therefore raise an exception.
+        if source not in transformed_data:
+            raise ReceivedUnexpectedDataException(component_name)
+
+        # If the source is enabled, process its transformed data.
+        if transformed_data[source]:
+
+            # Check which index_key was passed by the transformer and
+            # execute the appropriate function.
+            sub_processing_performed = False
+            for data_index_key, processing_fn in processing_details.items():
+                if data_index_key in transformed_data[source]:
+                    processing_fn(transformed_data[source][data_index_key],
+                                  *other_args)
+                    processing_performed = True
+                    sub_processing_performed = True
+                    break
+
+            # If this is false, it means that no processing fn could be
+            # applied to the source's data
+            if not sub_processing_performed:
+                raise ReceivedUnexpectedDataException(component_name)
+
+    # If no processing is performed, it means that the data was not
+    # properly formatted, therefore raise an error.
+    if not processing_performed:
+        raise ReceivedUnexpectedDataException(component_name)

@@ -61,7 +61,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
 
     def config_exists(self, chain_name: str) -> bool:
         """
-        This function returns True if a configuration exists for a chain.
+        This function returns True if a configuration exists for a chain name.
         :param chain_name: The name of the chain in question
         :return: True if config exists
                : False otherwise
@@ -80,3 +80,17 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
             return self.configs[chain_name].parent_id
         else:
             return None
+
+    def get_chain_name(self, parent_id: str) -> Optional[str]:
+        """
+        This function returns the chain name associated with the id.
+        :param parent_id: The id of the chain in question
+        :return: The name of the chain if there is a config having the given
+               : parent_id
+               : None otherwise
+        """
+        for chain_name, config in self.configs.items():
+            if config.parent_id == parent_id:
+                return chain_name
+
+        return None

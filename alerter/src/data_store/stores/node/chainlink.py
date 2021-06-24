@@ -13,8 +13,8 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, TOPIC,
                                           CL_NODE_STORE_INPUT_QUEUE_NAME,
                                           CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
                                           HEALTH_CHECK_EXCHANGE)
-from src.utils.exceptions import (ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException,
+from src.utils.data import transformed_data_processing_helper
+from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   NodeIsDownException)
 
 
@@ -105,57 +105,6 @@ class ChainlinkNodeStore(Store):
                 # For any other exception raise it.
                 raise e
 
-    def _process_store(self, configuration: Dict,
-                       transformed_data: Dict) -> None:
-        """
-        This function attempts to execute the appropriate processing function
-        on the transformed data based on a configuration. If the transformed
-        data is malformed, this function will raise an UnexpectedDataException
-        :param configuration: A dict with the following schema:
-                            {
-                                '<source_name>': {
-                                    '<data_index_Key>': <related_processing_fn>
-                                }
-                            }
-        :param transformed_data: The data received from the transformed
-        :return: None
-               : Raises an UnexpectedDataException if the transformed_data is
-                 malformed
-        """
-        processing_performed = False
-        for source, processing_details in configuration.items():
-
-            # If the required source is not in the transformed data, then the
-            # transformed data is malformed, therefore raise an exception.
-            if source not in transformed_data:
-                raise ReceivedUnexpectedDataException(
-                    "{}: _process_store".format(self))
-
-            # If the source is enabled, process its transformed data.
-            if transformed_data[source]:
-
-                # Check which index_key was passed by the transformer and
-                # execute the appropriate function.
-                sub_processing_performed = False
-                for data_index_key, processing_fn in processing_details.items():
-                    if data_index_key in transformed_data[source]:
-                        processing_fn(transformed_data[source][data_index_key])
-                        processing_performed = True
-                        sub_processing_performed = True
-                        break
-
-                # If this is false, it means that no processing fn could be
-                # applied to the source's data
-                if not sub_processing_performed:
-                    raise ReceivedUnexpectedDataException(
-                        "{}: _process_store".format(self))
-
-        # If no processing is performed, it means that the data was not
-        # properly formatted, therefore raise an error.
-        if not processing_performed:
-            raise ReceivedUnexpectedDataException(
-                "{}: _process_store".format(self))
-
     def _process_redis_store(self, data: Dict) -> None:
         configuration = {
             'prometheus': {
@@ -163,7 +112,7 @@ class ChainlinkNodeStore(Store):
                 'error': self._process_redis_prometheus_error_store,
             }
         }
-        self._process_store(configuration, data)
+        transformed_data_processing_helper(self.name, configuration, data)
 
     def _process_redis_prometheus_result_store(self, data: Dict) -> None:
         meta_data = data['meta_data']
@@ -270,7 +219,7 @@ class ChainlinkNodeStore(Store):
                 'error': self._process_mongo_prometheus_error_store,
             }
         }
-        self._process_store(configuration, data)
+        transformed_data_processing_helper(self.name, configuration, data)
 
     def _process_mongo_prometheus_result_store(self, data: Dict) -> None:
         """

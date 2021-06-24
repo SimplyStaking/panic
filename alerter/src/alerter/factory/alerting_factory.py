@@ -18,26 +18,36 @@ class AlertingFactory(ABC):
         The alerting_state dict is to be structured as follows by the
         sub-classes:
         {
-            <parent_id>: {
-                <monitorable_id>: {
-                    Optional[warning_sent]: {
-                        GroupedAlertsMetricCode.value: bool
-                    },
-                    Optional[critical_sent]: {
-                        GroupedAlertsMetricCode.value: bool
-                    },
-                    Optional[warning_window_timer]: {
-                        GroupedAlertsMetricCode.value: TimedTaskTracker
-                    },
-                    Optional[critical_window_timer]: {
-                        GroupedAlertsMetricCode.value: TimedTaskTracker
-                    },
-                    Optional[critical_repeat_timer]: {
-                        GroupedAlertsMetricCode.value: TimedTaskLimiter
-                    },
-                }
+        <parent_id>: {
+            <node_id>: {
+                Optional[warning_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                },
+                Optional[critical_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                },
+                Optional[error_sent]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                },
+                Optional[warning_window_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                },
+                Optional[critical_window_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                },
+                Optional[critical_repeat_timer]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskLimiter
+                },
+                Optional[warning_occurrences_in_period_tracker]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value:
+                    OccurrencesInTimePeriodTracker
+                },
+                Optional[critical_occurrences_in_period_tracker]: {
+                    GroupedChainlinkNodeAlertsMetricCode.value:
+                    OccurrencesInTimePeriodTracker
+                },
             }
-        }
+        }}
         """
         self._alerting_state = {}
         self._component_logger = component_logger
@@ -54,7 +64,7 @@ class AlertingFactory(ABC):
     def create_alerting_state(self, *args) -> None:
         pass
 
-    def _classify_no_change_in_alert(
+    def classify_no_change_in_alert(
             self, current: Any, previous: Any, config: Dict,
             no_change_alert: Type[NoChangeInAlert],
             change_alert: Type[ChangeInAlert], data_for_alerting: List,
@@ -170,7 +180,7 @@ class AlertingFactory(ABC):
                 critical_window_timer.reset()
                 critical_repeat_limiter.reset()
 
-    def _classify_thresholded_time_window_alert(
+    def classify_thresholded_time_window_alert(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
@@ -315,7 +325,7 @@ class AlertingFactory(ABC):
                 self.alerting_state[parent_id][monitorable_id][
                     'warning_sent'][metric_name] = True
 
-    def _classify_thresholded_in_time_period_alert(
+    def classify_thresholded_in_time_period_alert(
             self, current: Any, previous: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
@@ -466,7 +476,7 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'warning_sent'][metric_name] = True
 
-    def _classify_conditional_alert(
+    def classify_conditional_alert(
             self, condition_true_alert: Type[ConditionalAlert],
             condition_function: Callable, condition_fn_args: List[Any],
             alert_args: List[Any], data_for_alerting: List,
@@ -483,7 +493,7 @@ class AlertingFactory(ABC):
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
 
-    def _classify_thresholded_alert_critical_is_smaller_or_equal_than_warning(
+    def classify_thresholded_alert_critical_is_smaller_or_equal_than_warning(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
@@ -608,7 +618,7 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'warning_sent'][metric_name] = True
 
-    def _classify_error_alert(
+    def classify_error_alert(
             self, error_code_to_detect: int,
             error_alert: Type[ErrorAlert],
             error_solved_alert: Type[ErrorSolvedAlert], data_for_alerting: List,
@@ -666,7 +676,7 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'error_sent'][metric_name] = True
 
-    def _classify_downtime_alert(
+    def classify_downtime_alert(
             self, current_went_down: Optional[float], config: Dict,
             went_down_at_alert: Type[DownAlert],
             still_down_alert: Type[StillDownAlert],

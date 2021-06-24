@@ -2599,60 +2599,6 @@ class TestSystemAlerter(unittest.TestCase):
 
     @mock.patch(
         "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_send_data_called(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results, mock_place_latest_data_on_queue) -> None:
-
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_results.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_send_data_called(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors, mock_place_latest_data_on_queue) -> None:
-
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_errors.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_place_latest_data_on_queue_not_called_bad_routing_key(
             self, mock_ack, mock_place_latest_data_on_queue) -> None:

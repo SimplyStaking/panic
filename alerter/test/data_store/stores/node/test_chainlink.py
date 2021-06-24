@@ -5,7 +5,6 @@ import unittest
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock
-from unittest.mock import Mock
 
 import pika
 from freezegun import freeze_time
@@ -22,14 +21,12 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
                                           CL_NODE_STORE_INPUT_QUEUE_NAME)
 from src.utils.exceptions import (PANICException, NodeIsDownException,
-                                  MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  MessageWasNotDeliveredException)
 from src.utils.types import convert_to_int, convert_to_float
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
-                              delete_queue_if_exists, dummy_function,
-                              dummy_none_function)
+                              delete_queue_if_exists)
 
 
 class TestSystemStore(unittest.TestCase):
@@ -505,62 +502,11 @@ class TestSystemStore(unittest.TestCase):
 
         mock_ack.assert_called_once()
 
-    @parameterized.expand([
-        ({'prometheus': {'error': 4}, 'rpc': {'bad_index_key': {}, }, },),
-        ({'prometheus': {}, 'rpc': {}, },),
-        ({'prometheus': {}, },),
-        ({},),
-    ])
-    def test_process_store_raises_ReceivedUnexpectDataExcept_if_bad_trans_data(
-            self, test_trans_data) -> None:
-        # Note that for this test we will only consider the data's structure,
-        # not the metrics.
-        test_config = {
-            'prometheus': {
-                'result': dummy_function,
-                'error': dummy_none_function,
-            },
-            'rpc': {
-                'result': dummy_function,
-                'error': dummy_none_function,
-            },
-        }
-
-        self.assertRaises(ReceivedUnexpectedDataException,
-                          self.test_store._process_store, test_config,
-                          test_trans_data)
-
-    def test_process_store_calls_correct_function_for_sources(self) -> None:
-        test_result_fn = Mock(return_value="result")
-        test_error_fn = Mock(return_value="error")
-        test_config = {
-            'prometheus': {
-                'result': test_result_fn,
-                'error': test_error_fn,
-            },
-            'rpc': {
-                'result': test_result_fn,
-                'error': test_error_fn,
-            }
-        }
-        test_trans_data = {
-            'prometheus': {
-                'error': 20,
-            },
-            'rpc': {
-                'result': 10
-            }
-        }
-
-        self.test_store._process_store(test_config, test_trans_data)
-
-        test_result_fn.assert_called_once_with(10)
-        test_error_fn.assert_called_once_with(20)
-
-    @mock.patch.object(ChainlinkNodeStore, "_process_store")
-    def test_process_redis_store_calls_process_store_correctly(
-            self, mock_proc_store) -> None:
-        mock_proc_store.return_value = None
+    @mock.patch("src.data_store.stores.node.chainlink."
+                "transformed_data_processing_helper")
+    def test_process_redis_store_calls_transformed_data_helper_fn_correctly(
+            self, mock_helper_fn) -> None:
+        mock_helper_fn.return_value = None
         test_conf = {
             'prometheus': {
                 'result':
@@ -569,8 +515,8 @@ class TestSystemStore(unittest.TestCase):
             }
         }
         self.test_store._process_redis_store(self.node_data_optionals_enabled)
-        mock_proc_store.assert_called_once_with(
-            test_conf, self.node_data_optionals_enabled)
+        mock_helper_fn.assert_called_once_with(self.test_store_name, test_conf,
+                                               self.node_data_optionals_enabled)
 
     @parameterized.expand([
         ("self.node_data_optionals_enabled",),
@@ -854,10 +800,11 @@ class TestSystemStore(unittest.TestCase):
                                   Keys.get_cl_node_went_down_at_prometheus(
                                       self.node_id)))
 
-    @mock.patch.object(ChainlinkNodeStore, "_process_store")
-    def test_process_mongo_store_calls_process_store_correctly(
-            self, mock_proc_store) -> None:
-        mock_proc_store.return_value = None
+    @mock.patch("src.data_store.stores.node.chainlink."
+                "transformed_data_processing_helper")
+    def test_process_mongo_store_calls_transformed_data_helper_fn_correctly(
+            self, mock_helper_fn) -> None:
+        mock_helper_fn.return_value = None
         test_conf = {
             'prometheus': {
                 'result':
@@ -866,8 +813,8 @@ class TestSystemStore(unittest.TestCase):
             }
         }
         self.test_store._process_mongo_store(self.node_data_optionals_enabled)
-        mock_proc_store.assert_called_once_with(
-            test_conf, self.node_data_optionals_enabled)
+        mock_helper_fn.assert_called_once_with(self.test_store_name, test_conf,
+                                               self.node_data_optionals_enabled)
 
     @parameterized.expand([
         ("self.node_data_optionals_enabled",),
