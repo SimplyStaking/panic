@@ -118,7 +118,7 @@ setInterval(async () => {
 
 // ---------------------------------------- Redis Endpoints
 
-// This endpoint expects a list of base chains (Cosmos, Substrate, or General)
+// This endpoint expects a list of base chains (Cosmos, Substrate, Chainlink or General)
 // inside the body structure.
 app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {

@@ -15,7 +15,7 @@ import {
 } from "./types";
 import {RedisClientNotInitialised} from "./errors";
 
-export const baseChainsRedis = ['Cosmos', 'Substrate', 'General'];
+export const baseChainsRedis = ['Cosmos', 'Substrate', 'Chainlink', 'General'];
 
 export const getRedisHashes = (): RedisHashes => ({
     parent: 'hash_p1'
