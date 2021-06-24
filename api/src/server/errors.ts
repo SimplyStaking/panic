@@ -54,7 +54,7 @@ export class InvalidEndpoint extends UIServerError {
 
 export class MissingKeysInBody extends UIServerError {
     constructor(...keys: string[]) {
-        let message: string = `Missing key(s) ${keys.join(', ')} in body`;
+        let message: string = `Missing key(s) ${keys.join(', ')} in body.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_532;
         super(message, code)
     }
@@ -99,7 +99,7 @@ export class CouldNotRetrieveDataFromMongo extends UIServerError {
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
         let message: string = `Invalid base chain(s) ${baseChains}.
-        Please enter a list containing some of these values: ${baseChainsRedis.join(', ')}`;
+        Please enter a list containing some of these values: ${baseChainsRedis.join(', ')}.`;
 
         let code: UIServerErrorCode = UIServerErrorCode.E_537;
         super(message, code)
@@ -108,7 +108,7 @@ export class InvalidBaseChains extends UIServerError {
 
 export class InvalidJsonSchema extends UIServerError {
     constructor(whichJson: string) {
-        let message: string = `${whichJson} does not obey the required schema`;
+        let message: string = `${whichJson} does not obey the required schema.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_538;
         super(message, code)
     }
@@ -116,7 +116,7 @@ export class InvalidJsonSchema extends UIServerError {
 
 export class InvalidParameterValue extends UIServerError {
     constructor(parameter: string) {
-        let message: string = `An invalid value was given to ${parameter}`;
+        let message: string = `An invalid value was given to ${parameter}.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_539;
         super(message, code)
     }
