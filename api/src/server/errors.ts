@@ -63,7 +63,7 @@ export class MissingKeysInBody extends UIServerError {
 // Redis related errors
 export class RedisClientNotInitialised extends UIServerError {
     constructor() {
-        let message: string = `Redis client not initialised.`;
+        let message: string = 'Redis client not initialised.';
         let code: UIServerErrorCode = UIServerErrorCode.E_533;
         super(message, code)
     }
@@ -71,7 +71,7 @@ export class RedisClientNotInitialised extends UIServerError {
 
 export class CouldNotRetrieveDataFromRedis extends UIServerError {
     constructor() {
-        let message: string = "Could not retrieve data from Redis.";
+        let message: string = 'Could not retrieve data from Redis.';
         let code: UIServerErrorCode = UIServerErrorCode.E_534;
         super(message, code)
     }
@@ -80,7 +80,7 @@ export class CouldNotRetrieveDataFromRedis extends UIServerError {
 // Mongo related errors
 export class MongoClientNotInitialised extends UIServerError {
     constructor() {
-        let message: string = `Mongo client not initialised.`;
+        let message: string = 'Mongo client not initialised.';
         let code: UIServerErrorCode = UIServerErrorCode.E_535;
         super(message, code)
     }
@@ -89,7 +89,7 @@ export class MongoClientNotInitialised extends UIServerError {
 
 export class CouldNotRetrieveDataFromMongo extends UIServerError {
     constructor() {
-        let message: string = "Could not retrieve data from Mongo.";
+        let message: string = 'Could not retrieve data from Mongo.';
         let code: UIServerErrorCode = UIServerErrorCode.E_536;
         super(message, code)
     }
@@ -98,9 +98,9 @@ export class CouldNotRetrieveDataFromMongo extends UIServerError {
 // Other Errors
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
-        let message: string = `Invalid base chain(s) ${baseChains}. Please ` +
-            'enter a list containing some of these values: ' +
-            `${baseChainsRedis.join(', ')}`;
+        let message: string = `Invalid base chain(s) ${baseChains}.
+        Please enter a list containing some of these values: ${baseChainsRedis.join(', ')}`;
+
         let code: UIServerErrorCode = UIServerErrorCode.E_537;
         super(message, code)
     }
