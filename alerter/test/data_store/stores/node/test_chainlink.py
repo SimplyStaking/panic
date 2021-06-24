@@ -29,7 +29,7 @@ from test.utils.utils import (connect_to_rabbit,
                               delete_queue_if_exists)
 
 
-class TestSystemStore(unittest.TestCase):
+class TestChainlinkNodeStore(unittest.TestCase):
     def setUp(self) -> None:
         # Dummy objects
         self.dummy_logger = logging.getLogger('Dummy')
@@ -96,9 +96,7 @@ class TestSystemStore(unittest.TestCase):
             'price': 22.0,
         }
         self.test_eth_balance_info = {
-            'address1': {'balance': 34.4, 'latest_usage': 5.0},
-            'address2': {'balance': 40.0, 'latest_usage': 0.0},
-            'address3': {'balance': 70.0, 'latest_usage': 34.0}
+            'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
         self.test_last_monitored_prometheus = datetime(2012, 1, 1).timestamp()
@@ -184,30 +182,11 @@ class TestSystemStore(unittest.TestCase):
                                          'price'] + self.pad,
                         },
                         "eth_balance_info": {
-                            'address1': {
-                                'balance': self.test_eth_balance_info[
-                                               'address1'][
-                                               'balance'] + self.pad,
-                                'latest_usage': self.test_eth_balance_info[
-                                                    'address1'][
-                                                    'latest_usage'] + self.pad,
-                            },
-                            'address2': {
-                                'balance': self.test_eth_balance_info[
-                                               'address2'][
-                                               'balance'] + self.pad,
-                                'latest_usage': self.test_eth_balance_info[
-                                                    'address2'][
-                                                    'latest_usage'] + self.pad,
-                            },
-                            'address3': {
-                                'balance': self.test_eth_balance_info[
-                                               'address3'][
-                                               'balance'] + self.pad,
-                                'latest_usage': self.test_eth_balance_info[
-                                                    'address3'][
-                                                    'latest_usage'] + self.pad,
-                            }
+                            'address': 'address1',
+                            'balance': self.test_eth_balance_info[
+                                           'balance'] + self.pad,
+                            'latest_usage': self.test_eth_balance_info[
+                                                'latest_usage'] + self.pad
                         },
                     }
                 }

@@ -125,7 +125,6 @@ class NodeMonitorsManager(MonitorsManager):
                 parent_id = config['parent_id']
                 node_name = config['name']
                 node_prometheus_urls = config['node_prometheus_urls'].split(',')
-                ethereum_addresses = config['ethereum_addresses'].split(',')
                 monitor_node = str_to_bool(config['monitor_node'])
                 monitor_prometheus = str_to_bool(config['monitor_prometheus'])
 
@@ -138,8 +137,7 @@ class NodeMonitorsManager(MonitorsManager):
 
                 node_config = ChainlinkNodeConfig(
                     node_id, parent_id, node_name, monitor_node,
-                    monitor_prometheus, node_prometheus_urls,
-                    ethereum_addresses)
+                    monitor_prometheus, node_prometheus_urls)
                 self._create_and_start_monitor_process(node_config, config_id,
                                                        ChainlinkNodeMonitor)
                 correct_nodes_configs[config_id] = config
@@ -153,14 +151,12 @@ class NodeMonitorsManager(MonitorsManager):
                 parent_id = config['parent_id']
                 node_name = config['name']
                 node_prometheus_urls = config['node_prometheus_urls'].split(',')
-                ethereum_addresses = config['ethereum_addresses'].split(',')
                 monitor_node = str_to_bool(config['monitor_node'])
                 monitor_prometheus = str_to_bool(config['monitor_prometheus'])
                 sources_enabled = [monitor_prometheus]
                 node_config = ChainlinkNodeConfig(
                     node_id, parent_id, node_name, monitor_node,
-                    monitor_prometheus, node_prometheus_urls,
-                    ethereum_addresses)
+                    monitor_prometheus, node_prometheus_urls)
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()

@@ -289,9 +289,10 @@ class ChainlinkNodeAlerter(Alerter):
                         meta_data['node_name'], meta_data['last_monitored']
                     )
             if str_to_bool(configs.eth_balance_amount['enabled']):
-                # TODO: Eth balance threshold and top up alerts must cater for
-                #     : multiple addresses. Or we might need to make it monitor
-                #     : 1 ether address only
+                # TODO: Eth balance threshold and top up alerts will cater for
+                #     : a single address. But the alert must cater for a dict,
+                #     : even the alerting factory (alert args). Note since here
+                #     : we have a dict, current can be {} not None.
                 current = data['']['current']
 
     def _process_prometheus_error(self, prom_data: Dict,

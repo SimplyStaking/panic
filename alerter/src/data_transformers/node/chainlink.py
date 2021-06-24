@@ -422,25 +422,27 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                     'percentile'] = convert_to_float(
                     str_percentile.replace('%', ''), None)
 
-            # Add latest_usage to the eth_balance_info
-            for eth_address, new_balance \
-                    in node_metrics['eth_balance'].items():
-                if eth_address in node.eth_balance_info:
-                    previous_balance = node.eth_balance_info[eth_address][
-                        'balance']
+            # Add latest_usage to the eth_balance_info if not empty
+            if node_metrics['eth_balance']:
+                eth_address = node_metrics['eth_balance']['address']
+                new_balance = node_metrics['eth_balance']['balance']
+                if node.eth_balance_info and \
+                        eth_address == node.eth_balance_info['address']:
+                    previous_balance = node.eth_balance_info['balance']
+                    latest_usage = previous_balance - new_balance if \
+                        previous_balance > new_balance else 0.0
                     new_info_dict = {
                         'balance': new_balance,
-                        'latest_usage': previous_balance - new_balance if
-                        previous_balance > new_balance else 0.0
+                        'latest_usage': latest_usage,
+                        'address': eth_address,
                     }
                 else:
                     new_info_dict = {
                         'balance': new_balance,
-                        'latest_usage': 0.0
+                        'latest_usage': 0.0,
+                        'address': eth_address,
                     }
-
-                td_node_metrics['eth_balance_info'][
-                    eth_address] = new_info_dict
+                td_node_metrics['eth_balance_info'] = new_info_dict
 
             # Transform the meta_data by deleting the monitor_name and
             # changing the time key to last_monitored key

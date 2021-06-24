@@ -56,7 +56,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.node_prometheus_urls = ['https://test_ip_1:1000',
                                      'https://test_ip_2:1000',
                                      'https://test_ip_3:1000']
-        self.ethereum_addresses = ['eth_add_1', 'eth_add_2', 'eth_add_3']
         self.routing_key = 'test_routing_key'
         self.test_data_str = 'test data'
         self.test_data_dict = {
@@ -158,7 +157,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 'percentile': '20%',
                 'price': 5000000000.0
             },
-            'eth_balance': {'eth_add_1': 26.043292035081947},
+            'eth_balance': {
+                'address': 'eth_add_1',
+                'balance': 26.043292035081947
+            },
             'run_status_update_total_errors': 8
         }
         self.processed_prometheus_data_example_optionals_none = copy.deepcopy(
@@ -168,8 +170,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.test_exception = PANICException('test_exception', 1)
         self.node_config = ChainlinkNodeConfig(
             self.node_id, self.parent_id, self.node_name, self.monitor_node,
-            self.monitor_prometheus, self.node_prometheus_urls,
-            self.ethereum_addresses)
+            self.monitor_prometheus, self.node_prometheus_urls)
         self.test_monitor = ChainlinkNodeMonitor(
             self.monitor_name, self.node_config, self.dummy_logger,
             self.monitoring_period, self.rabbitmq
@@ -278,8 +279,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         """
         node_config = ChainlinkNodeConfig(
             self.node_id, self.parent_id, self.node_name, self.monitor_node,
-            self.monitor_prometheus, node_prometheus_urls,
-            self.ethereum_addresses)
+            self.monitor_prometheus, node_prometheus_urls)
         self.assertRaises(
             EnabledSourceIsEmptyException, ChainlinkNodeMonitor,
             self.monitor_name, node_config, self.dummy_logger,

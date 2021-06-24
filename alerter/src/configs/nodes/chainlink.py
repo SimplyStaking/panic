@@ -7,21 +7,15 @@ from src.utils.exceptions import EnabledSourceIsEmptyException
 class ChainlinkNodeConfig(NodeConfig):
     def __init__(self, node_id: str, parent_id: str, node_name: str,
                  monitor_node: bool, monitor_prometheus: bool,
-                 node_prometheus_urls: List[str],
-                 ethereum_addresses: List[str]) -> None:
+                 node_prometheus_urls: List[str]) -> None:
         super().__init__(node_id, parent_id, node_name, monitor_node)
 
         self._monitor_prometheus = monitor_prometheus
         self._node_prometheus_urls = node_prometheus_urls
-        self._ethereum_addresses = ethereum_addresses
 
     @property
     def node_prometheus_urls(self) -> List[str]:
         return self._node_prometheus_urls
-
-    @property
-    def ethereum_addresses(self) -> List[str]:
-        return self._ethereum_addresses
 
     @property
     def monitor_prometheus(self) -> bool:
@@ -29,9 +23,6 @@ class ChainlinkNodeConfig(NodeConfig):
 
     def set_node_prometheus_urls(self, node_prometheus_urls: List[str]) -> None:
         self._node_prometheus_urls = node_prometheus_urls
-
-    def set_ethereum_addresses(self, ethereum_addresses: List[str]) -> None:
-        self._ethereum_addresses = ethereum_addresses
 
     def set_monitor_prometheus(self, monitor_prometheus: bool) -> None:
         self._monitor_prometheus = monitor_prometheus
