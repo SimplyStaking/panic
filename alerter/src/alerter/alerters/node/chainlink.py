@@ -146,6 +146,11 @@ class ChainlinkNodeAlerter(Alerter):
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(
                 meta_data['node_parent_id'], meta_data['node_id'], configs)
+
+            # TODO: Do the good part of the error alerts here as well on
+            #     : wednesday. All alerts are tackled, downtime must be tackled
+            #     : on its own.
+
             if str_to_bool(configs.head_tracker_current_head['enabled']):
                 current = data['current_height']['current']
                 previous = data['current_height']['previous']
@@ -261,7 +266,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['no_of_unconfirmed_txs']['current']
                 sub_config = configs.unconfirmed_transactions
                 if current is not None:
-                    self.alerting_factory.\
+                    self.alerting_factory. \
                         classify_thresholded_time_window_alert(
                         current, sub_config,
                         NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
@@ -289,11 +294,37 @@ class ChainlinkNodeAlerter(Alerter):
                         meta_data['node_name'], meta_data['last_monitored']
                     )
             if str_to_bool(configs.eth_balance_amount['enabled']):
-                # TODO: Eth balance threshold and top up alerts will cater for
-                #     : a single address. But the alert must cater for a dict,
-                #     : even the alerting factory (alert args). Note since here
-                #     : we have a dict, current can be {} not None.
-                current = data['']['current']
+                current = data['eth_balance_info']['current']
+                sub_config = configs.eth_balance_amount
+                if current:
+                    self.alerting_factory \
+                        .classify_thresholded_alert_critical_reverse(
+                        current['balance'], sub_config,
+                        EthBalanceIncreasedAboveThresholdAlert,
+                        EthBalanceDecreasedBelowThresholdAlert,
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'],
+                        GroupedChainlinkNodeAlertsMetricCode.
+                            EthBalanceThreshold.value,
+                        meta_data['node_name'], meta_data['last_monitored']
+                    )
+            if str_to_bool(configs.eth_balance_amount_increase['enabled']):
+                current = data['eth_balance_info']['current']
+                previous = data['eth_balance_info']['previous']
+                sub_config = configs.eth_balance_amount_increase
+                if current:
+                    def condition_function(current_balance: float,
+                                           previous_balance: float) -> bool:
+                        return current_balance > previous_balance
+
+                    self.alerting_factory.classify_conditional_alert(
+                        EthBalanceToppedUpAlert, condition_function,
+                        [current['balance'], previous['balance']], [
+                            meta_data['node_name'], sub_config['severity'],
+                            meta_data['last_monitored'],
+                            meta_data['node_parent_id'], meta_data['node_id']
+                        ], data_for_alerting
+                    )
 
     def _process_prometheus_error(self, prom_data: Dict,
                                   data_for_alerting: List) -> None:

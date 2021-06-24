@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Dict
 
 from src.alerter.alert_code.node.chainlink_alert_code import (
     ChainlinkNodeAlertCode)
@@ -237,22 +236,19 @@ class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
 
 
 class EthBalanceIncreasedAboveThresholdAlert(Alert):
-    """
-    current_value should have the following structure {
-    """
-    def __init__(self, origin_name: str, current_value: Dict, severity: str,
+    def __init__(self, origin_name: str, current_value: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.EthBalanceIncreasedAboveThresholdAlert,
-            "{} {} Ethereum balance has INCREASED above {} threshold. Current "
+            "{} Ethereum balance has INCREASED above {} threshold. Current "
             "value: {}.".format(origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold)
 
 
 class EthBalanceDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: Dict, severity: str,
+    def __init__(self, origin_name: str, current_value: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(

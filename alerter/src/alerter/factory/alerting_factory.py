@@ -493,7 +493,7 @@ class AlertingFactory(ABC):
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
 
-    def classify_thresholded_alert_critical_is_smaller_or_equal_than_warning(
+    def classify_thresholded_alert_critical_reverse(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
