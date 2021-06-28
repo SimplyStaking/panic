@@ -27,13 +27,10 @@ import {
 import {
     allElementsInList,
     allElementsInListHaveTypeString,
-    ERR_STATUS,
     errorJson,
     getElementsNotInList,
     missingValues,
     resultJson,
-    Severities,
-    SUCCESS_STATUS
 } from "./server/utils";
 import express from "express";
 import bodyParser from "body-parser";
@@ -50,6 +47,7 @@ import {
 } from "./server/redis"
 import {MongoInterface} from "./server/mongo";
 import {MongoClientOptions} from "mongodb";
+import { ERR_STATUS, Severities, SUCCESS_STATUS } from "./server/constants";
 
 // Import certificate files
 const httpsKey: Buffer = readFile(path.join(__dirname, '../../', 'certificates',

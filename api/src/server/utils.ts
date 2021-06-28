@@ -33,13 +33,3 @@ export const getElementsNotInList = (elements: any[], list: any[]): any[] => {
 export const allElementsInListHaveTypeString = (list: any[]): boolean => {
     return list.every(item => typeof (item) === "string")
 };
-
-export const SUCCESS_STATUS: number = 200;
-export const ERR_STATUS: number = 400;
-
-export enum Severities {
-    INFO = "INFO",
-    WARNING = "WARNING",
-    CRITICAL = "CRITICAL",
-    ERROR = "ERROR",
-}
