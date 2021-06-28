@@ -38,7 +38,7 @@ class UIServerError extends Error {
 
 export class MissingFile extends UIServerError {
     constructor(filePath: string) {
-        let message: string = `Cannot find ${filePath}.`;
+        let message: string = `Error: Cannot find ${filePath}.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_530;
         super(message, code);
     }
@@ -46,7 +46,7 @@ export class MissingFile extends UIServerError {
 
 export class InvalidEndpoint extends UIServerError {
     constructor(endpoint: string) {
-        let message: string = `'${endpoint}' is an invalid endpoint.`;
+        let message: string = `Error: ${endpoint}' is an invalid endpoint.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_531;
         super(message, code);
     }
@@ -54,7 +54,7 @@ export class InvalidEndpoint extends UIServerError {
 
 export class MissingKeysInBody extends UIServerError {
     constructor(...keys: string[]) {
-        let message: string = `Missing key(s) ${keys.join(', ')} in body.`;
+        let message: string = `Error: Missing key(s) ${keys.join(', ')} in body.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_532;
         super(message, code);
     }
@@ -63,7 +63,7 @@ export class MissingKeysInBody extends UIServerError {
 // Redis related errors
 export class RedisClientNotInitialised extends UIServerError {
     constructor() {
-        let message: string = 'Redis client not initialised.';
+        let message: string = 'Error: Redis client not initialised.';
         let code: UIServerErrorCode = UIServerErrorCode.E_533;
         super(message, code);
     }
@@ -71,7 +71,7 @@ export class RedisClientNotInitialised extends UIServerError {
 
 export class CouldNotRetrieveDataFromRedis extends UIServerError {
     constructor() {
-        let message: string = 'Could not retrieve data from Redis.';
+        let message: string = 'Error: Could not retrieve data from Redis.';
         let code: UIServerErrorCode = UIServerErrorCode.E_534;
         super(message, code);
     }
@@ -80,7 +80,7 @@ export class CouldNotRetrieveDataFromRedis extends UIServerError {
 // Mongo related errors
 export class MongoClientNotInitialised extends UIServerError {
     constructor() {
-        let message: string = 'Mongo client not initialised.';
+        let message: string = 'Error: Mongo client not initialised.';
         let code: UIServerErrorCode = UIServerErrorCode.E_535;
         super(message, code);
     }
@@ -89,7 +89,7 @@ export class MongoClientNotInitialised extends UIServerError {
 
 export class CouldNotRetrieveDataFromMongo extends UIServerError {
     constructor() {
-        let message: string = 'Could not retrieve data from Mongo.';
+        let message: string = 'Error: Could not retrieve data from Mongo.';
         let code: UIServerErrorCode = UIServerErrorCode.E_536;
         super(message, code);
     }
@@ -98,7 +98,7 @@ export class CouldNotRetrieveDataFromMongo extends UIServerError {
 // Other Errors
 export class InvalidBaseChains extends UIServerError {
     constructor(...baseChains: any[]) {
-        let message: string = `Invalid base chain(s) ${baseChains}.
+        let message: string = `Error: Invalid base chain(s) ${baseChains}.
         Please enter a list containing some of these values: ${baseChainsRedis.join(', ')}.`;
 
         let code: UIServerErrorCode = UIServerErrorCode.E_537;
@@ -108,7 +108,7 @@ export class InvalidBaseChains extends UIServerError {
 
 export class InvalidJsonSchema extends UIServerError {
     constructor(whichJson: string) {
-        let message: string = `${whichJson} does not obey the required schema.`;
+        let message: string = `Error: ${whichJson} does not obey the required schema.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_538;
         super(message, code);
     }
@@ -116,7 +116,7 @@ export class InvalidJsonSchema extends UIServerError {
 
 export class InvalidParameterValue extends UIServerError {
     constructor(parameter: string) {
-        let message: string = `An invalid value was given to ${parameter}.`;
+        let message: string = `Error: An invalid value was given to ${parameter}.`;
         let code: UIServerErrorCode = UIServerErrorCode.E_539;
         super(message, code);
     }
