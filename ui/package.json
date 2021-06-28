@@ -1,0 +1,20 @@
+{
+  "name": "ui",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PANIC UI dashboard app.",
+  "author": "Simply-VC",
+  "scripts": {
+    "build": "stencil build",
+    "start": "stencil build --serve --watch",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watchAll",
+    "generate": "stencil generate"
+  },
+  "devDependencies": {
+    "@stencil/core": "^2.0.0",
+    "@stencil/router": "^1.0.1",
+    "@types/node": "^15.12.2"
+  },
+  "license": "MIT"
+}
