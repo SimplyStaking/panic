@@ -263,6 +263,7 @@ app.post('/server/redis/alertsOverview',
                     Object.entries(monitorableKeysObject)) {
                     redisMulti.hmget(parentHash, keysList, (err: any, values: any) => {
                         if (err) {
+                            console.log(err);
                             return
                         }
                         keysList.forEach(
@@ -383,8 +384,7 @@ app.post('/server/mongo/alerts',
 
         for (const severity of severities) {
             if (!(severity in Severities)) {
-                const err = new InvalidParameterValue(
-                    `req.body.severities`);
+                const err = new InvalidParameterValue('req.body.severities');
                 res.status(err.code).send(errorJson(err.message));
                 return;
             }
