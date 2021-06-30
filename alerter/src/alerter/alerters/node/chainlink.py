@@ -119,20 +119,6 @@ class ChainlinkNodeAlerter(Alerter):
         else:
             self.rabbitmq.basic_ack(method.delivery_tag, False)
 
-    # TODO: Create state for node must be done when trans data is received, just
-    #     : in case some thresholds change. The process_configs will reset
-    #     : related state.
-
-    # TODO: When processing alerts check if config is available first, if not
-    #     : skip alerts.
-
-    # TODO: Don't forget to make the class compatible with multiple sources
-    #     : immediately
-
-    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
-
-    # TODO: Don't forget that some metrics can be None.
-
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
         meta_data = prom_data['result']['meta_data']
@@ -147,10 +133,39 @@ class ChainlinkNodeAlerter(Alerter):
             self.alerting_factory.create_alerting_state(
                 meta_data['node_parent_id'], meta_data['node_id'], configs)
 
-            # TODO: Do the good part of the error alerts here as well on
-            #     : wednesday. All alerts are tackled, downtime must be tackled
-            #     : on its own.
+            # Check if some errors have been resolved
+            self.alerting_factory.classify_error_alert(
+                5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['last_monitored'],
+                GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value,
+                "Prometheus url is now valid!. Last source used {}.".format(
+                    meta_data['last_source_used']), None
+            )
+            self.alerting_factory.classify_error_alert(
+                5003, MetricNotFoundErrorAlert, MetricFoundAlert,
+                data_for_alerting, meta_data['node_parent_id'],
+                meta_data['node_id'], meta_data['node_name'],
+                meta_data['last_monitored'],
+                GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value,
+                "All metrics found!. Last source used {}.".format(
+                    meta_data['last_source_used']), None
+            )
 
+            # Check if the alert rules are satisfied for the metrics
+            if str_to_bool(configs.head_tracker_current_head['enabled']):
+                current = data['current_height']['current']
+                previous = data['current_height']['previous']
+                sub_config = configs.head_tracker_current_head
+                if current is not None:
+                    self.alerting_factory.classify_no_change_in_alert(
+                        current, previous, sub_config, NoChangeInHeightAlert,
+                        BlockHeightUpdatedAlert, data_for_alerting,
+                        meta_data['node_parent_id'], meta_data['node_id'],
+                        GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight
+                            .value, meta_data['node_name'],
+                        meta_data['last_monitored']
+                    )
             if str_to_bool(configs.head_tracker_current_head['enabled']):
                 current = data['current_height']['current']
                 previous = data['current_height']['previous']
@@ -325,6 +340,10 @@ class ChainlinkNodeAlerter(Alerter):
                             meta_data['node_parent_id'], meta_data['node_id']
                         ], data_for_alerting
                     )
+
+    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
+
+    # TODO: Don't forget that some metrics can be None.
 
     def _process_prometheus_error(self, prom_data: Dict,
                                   data_for_alerting: List) -> None:
