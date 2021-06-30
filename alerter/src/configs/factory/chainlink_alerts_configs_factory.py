@@ -30,7 +30,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
             filtered[config['name']] = copy.deepcopy(config)
 
         cl_node_alerts_config = ChainlinkNodeAlertsConfig(
-            parent_id=filtered['parent_id'],
+            parent_id=parent_id,
             head_tracker_current_head=filtered[
                 'head_tracker_current_head'],
             head_tracker_heads_in_queue=filtered[
