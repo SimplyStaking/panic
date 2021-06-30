@@ -623,7 +623,8 @@ class AlertingFactory(ABC):
             error_alert: Type[ErrorAlert],
             error_solved_alert: Type[ErrorSolvedAlert], data_for_alerting: List,
             parent_id: str, monitorable_id: str, monitorable_name: str,
-            monitoring_timestamp: float, metric_name: str, message: str,
+            monitoring_timestamp: float, metric_name: str,
+            error_message: str = "", resolved_message: str = "",
             received_error_code: int = None,
     ) -> None:
         """
@@ -645,7 +646,8 @@ class AlertingFactory(ABC):
         :param metric_name: The name of the metric
         :param monitorable_name: The name of the monitorable
         :param monitoring_timestamp: The data timestamp
-        :param message: The alert's message
+        :param error_message: The alert's message when an error is raised
+        :param resolved_message: The alert's message when an error is resolved
         :return: None
         """
 
@@ -655,9 +657,8 @@ class AlertingFactory(ABC):
         if error_sent and (received_error_code != error_code_to_detect or
                            received_error_code is None):
             alert = error_solved_alert(
-                monitorable_name, message, Severity.INFO.value,
-                monitoring_timestamp,
-                parent_id, monitorable_id
+                monitorable_name, resolved_message, Severity.INFO.value,
+                monitoring_timestamp, parent_id, monitorable_id
             )
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
@@ -666,9 +667,8 @@ class AlertingFactory(ABC):
                 'error_sent'][metric_name] = False
         elif received_error_code == error_code_to_detect:
             alert = error_alert(
-                monitorable_name, message, Severity.INFO.value,
-                monitoring_timestamp,
-                parent_id, monitorable_id
+                monitorable_name, error_message, Severity.INFO.value,
+                monitoring_timestamp, parent_id, monitorable_id
             )
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",

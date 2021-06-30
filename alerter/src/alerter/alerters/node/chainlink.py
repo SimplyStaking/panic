@@ -139,8 +139,8 @@ class ChainlinkNodeAlerter(Alerter):
                 meta_data['node_parent_id'], meta_data['node_id'],
                 meta_data['node_name'], meta_data['last_monitored'],
                 GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value,
-                "Prometheus url is now valid!. Last source used {}.".format(
-                    meta_data['last_source_used']), None
+                "", "Prometheus url is now valid!. Last source used {}.".format(
+                    meta_data['last_source_used']['current']), None
             )
             self.alerting_factory.classify_error_alert(
                 5003, MetricNotFoundErrorAlert, MetricFoundAlert,
@@ -148,8 +148,8 @@ class ChainlinkNodeAlerter(Alerter):
                 meta_data['node_id'], meta_data['node_name'],
                 meta_data['last_monitored'],
                 GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value,
-                "All metrics found!. Last source used {}.".format(
-                    meta_data['last_source_used']), None
+                "", "All metrics found!. Last source used {}.".format(
+                    meta_data['last_source_used']['current']), None
             )
 
             # Check if the alert rules are satisfied for the metrics
@@ -341,22 +341,65 @@ class ChainlinkNodeAlerter(Alerter):
                         ], data_for_alerting
                     )
 
-    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
-
-    # TODO: Don't forget that some metrics can be None.
-
     def _process_prometheus_error(self, prom_data: Dict,
                                   data_for_alerting: List) -> None:
         meta_data = prom_data['error']['meta_data']
-        # TODO: Change is source can also happen here
 
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['parent_id'])
         if chain_name is not None:
-            pass
+            configs = self.alerts_configs_factory.configs[chain_name]
 
+            # Check if the source has been changed, if yes alert accordingly
+            if str_to_bool(configs.process_start_time_seconds['enabled']):
+                # Unlike for the process_prometheus_result fn, we need to use
+                # last source used instead of process_start_time_seconds because
+                # the metrics won't be sent
+                current = meta_data['last_source_used']['current']
+                previous = meta_data['last_source_used']['previous']
+                sub_config = configs.process_start_time_seconds
+                if current is not None:
+                    def condition_function(last_source_used: str,
+                                           previous_source_used: str) -> bool:
+                        return last_source_used != previous_source_used
+
+                    self.alerting_factory.classify_conditional_alert(
+                        ChangeInSourceNodeAlert, condition_function,
+                        [current, previous], [
+                            meta_data['node_name'], current,
+                            sub_config['severity'], meta_data['time'],
+                            meta_data['node_parent_id'], meta_data['node_id']
+                        ], data_for_alerting,
+                    )
+
+            # Detect whether some errors need to be raised, or have been
+            # resolved.
+            self.alerting_factory.classify_error_alert(
+                5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['time'],
+                GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value,
+                prom_data['error']['message'],
+                "Prometheus url is now valid!. Last source used {}.".format(
+                    meta_data['last_source_used']['current']),
+                prom_data['error']['code']
+            )
+            self.alerting_factory.classify_error_alert(
+                5003, MetricNotFoundErrorAlert, MetricFoundAlert,
+                data_for_alerting, meta_data['node_parent_id'],
+                meta_data['node_id'], meta_data['node_name'],
+                meta_data['time'],
+                GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value,
+                prom_data['error']['message'],
+                "All metrics found!. Last source used {}.".format(
+                    meta_data['last_source_used']['current']),
+                prom_data['error']['code']
+            )
+
+    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
+    # TODO: Don't forget that some metrics can be None.
     def _process_downtime(self, trans_data: Dict):
         # TODO: Check for alerts configs by getting one of the parent_ids.
         #     : Assuming that all parent-ids are equal. If you want add a
