@@ -1,11 +1,13 @@
 import copy
 import json
 import logging
-from typing import List, Dict
+import sys
+from typing import List, Dict, Optional
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.node.chainlink import *
 from src.alerter.factory.chainlink_node_alerting_factory import \
@@ -15,6 +17,7 @@ from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
 from src.configs.factory.chainlink_alerts_configs_factory import (
     ChainlinkAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
@@ -398,18 +401,131 @@ class ChainlinkNodeAlerter(Alerter):
                 prom_data['error']['code']
             )
 
-    # TODO: If warning_set or critical_sent for downtime, don't raise prom down
-    # TODO: Don't forget that some metrics can be None.
-    def _process_downtime(self, trans_data: Dict):
-        # TODO: Check for alerts configs by getting one of the parent_ids.
-        #     : Assuming that all parent-ids are equal. If you want add a
-        #     : private function for this. We can assume here that the data is
-        #     : well formed, as otherwise the previous 2 functions would have
-        #     : errorred.
-        # TODO: Downtime must be compared holistically on all the data because
-        #     : we need visibility in entire data. The other processing
-        #     : functions will process for individual alerts.
-        pass
+    def _process_downtime(self, trans_data: Dict, data_for_alerting: List):
+        # We will parse some meta_data first, note we will assume that the
+        # transformed data has correct structure and valid data.
+        parent_id = ""
+        origin_id = ""
+        origin_name = ""
+        for source in VALID_CHAINLINK_SOURCES:
+            if trans_data[source]:
+                response_index_key = 'result' if 'result' in trans_data \
+                    else 'error'
+                parent_id = trans_data[source][response_index_key]['meta_data'][
+                    'node_parent_id']
+                origin_id = trans_data[source][response_index_key]['meta_data'][
+                    'node_id']
+                origin_name = trans_data[source][response_index_key][
+                    'meta_data']['node_name']
+                break
+
+        # We must make sure that the alerts_config has been received for the
+        # chain.
+        chain_name = self.alerts_configs_factory.get_chain_name(parent_id)
+        if chain_name is not None:
+            configs = self.alerts_configs_factory.configs[chain_name]
+
+            # Check if downtime is enabled.
+            if str_to_bool(configs.node_is_down['enabled']):
+                # Check if all sources are down, if yes classify the node as
+                # down.
+                all_sources_down = True
+                for source in VALID_CHAINLINK_SOURCES:
+                    if trans_data[source]:
+                        response_index_key = \
+                            'result' if 'result' in trans_data else 'error'
+                        data = trans_data[source][response_index_key]
+                        if response_index_key != 'error' \
+                                or data['code'] != 5015:
+                            all_sources_down = False
+
+                if all_sources_down:
+                    # Choose the smallest timing variables for downtime
+                    current_went_down = sys.float_info.max
+                    monitoring_timestamp = sys.float_info.max
+                    for source in VALID_CHAINLINK_SOURCES:
+                        if trans_data[source]:
+                            data = trans_data[source]['error']
+                            new_went_down = data['data']['went_down_at'][
+                                'current']
+                            new_monitoring_timestamp = data['meta_data']['time']
+                            current_went_down = current_went_down \
+                                if current_went_down <= new_went_down \
+                                else new_went_down
+                            monitoring_timestamp = monitoring_timestamp \
+                                if monitoring_timestamp <= \
+                                   new_monitoring_timestamp \
+                                else new_monitoring_timestamp
+
+                    self.alerting_factory.classify_downtime_alert(
+                        current_went_down, configs.node_is_down,
+                        NodeWentDownAtAlert, NodeStillDownAlert,
+                        NodeBackUpAgainAlert, data_for_alerting, parent_id,
+                        origin_id, GroupedChainlinkNodeAlertsMetricCode.
+                            NodeIsDown.value, origin_name, monitoring_timestamp
+                    )
+                else:
+                    # Choose the smallest timing variables for downtime
+                    monitoring_timestamp = sys.float_info.max
+                    for source in VALID_CHAINLINK_SOURCES:
+                        if trans_data[source]:
+                            response_index_key = \
+                                'result' if 'result' in trans_data else 'error'
+                            data = trans_data[source][response_index_key]
+                            new_monitoring_timestamp = data['meta_data'][
+                                'last_monitored'] \
+                                if response_index_key == 'result' \
+                                else data['meta_data']['time']
+                            monitoring_timestamp = monitoring_timestamp \
+                                if monitoring_timestamp <= \
+                                   new_monitoring_timestamp \
+                                else new_monitoring_timestamp
+
+                    # Classify downtime so that a node back up again alert is
+                    # raised.
+                    self.alerting_factory.classify_downtime_alert(
+                        None, configs.node_is_down,
+                        NodeWentDownAtAlert, NodeStillDownAlert,
+                        NodeBackUpAgainAlert, data_for_alerting, parent_id,
+                        origin_id, GroupedChainlinkNodeAlertsMetricCode.
+                            NodeIsDown.value, origin_name, monitoring_timestamp
+                    )
+
+                    # Classify to check if prometheus is down or back up
+                    if trans_data['prometheus']:
+                        response_index_key = \
+                            'result' if 'result' in trans_data else 'error'
+                        error_code = None if response_index_key == 'result' \
+                            else trans_data['prometheus']['error']['code']
+
+                        def condition_function(
+                                index_key: str, code: Optional[int]) -> bool:
+                            return index_key == 'error' and code == 5015
+
+                        self.alerting_factory.classify_conditional_alert(
+                            PrometheusSourceIsDownAlert, condition_function,
+                            [response_index_key, error_code], [
+                                origin_name, Severity.WARNING.value,
+                                trans_data['prometheus']['error']['meta_data'][
+                                    'time'], parent_id, origin_id
+                            ], data_for_alerting,
+                            PrometheusSourceBackUpAgainAlert
+                        )
+                    else:
+                        # This condition covers the case for when prometheus
+                        # is disabled and we had a prometheus down alert before
+                        # hand.
+                        def condition_function() -> bool:
+                            return False
+
+                        self.alerting_factory.classify_conditional_alert(
+                            PrometheusSourceIsDownAlert, condition_function,
+                            [], [
+                                origin_name, Severity.WARNING.value,
+                                datetime.now().timestamp(), parent_id, origin_id
+                            ], data_for_alerting,
+                            PrometheusSourceBackUpAgainAlert
+                        )
 
     def _process_transformed_data(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -430,7 +546,7 @@ class ChainlinkNodeAlerter(Alerter):
             transformed_data_processing_helper(
                 self.alerter_name, configuration, data_received,
                 data_for_alerting)
-            self._process_downtime(data_received)
+            self._process_downtime(data_received, data_for_alerting)
         except Exception as e:
             self.logger.error("Error when processing %s", data_received)
             self.logger.exception(e)

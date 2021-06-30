@@ -667,7 +667,7 @@ class AlertingFactory(ABC):
                 'error_sent'][metric_name] = False
         elif received_error_code == error_code_to_detect:
             alert = error_alert(
-                monitorable_name, error_message, Severity.INFO.value,
+                monitorable_name, error_message, Severity.ERROR.value,
                 monitoring_timestamp, parent_id, monitorable_id
             )
             data_for_alerting.append(alert.alert_data)
