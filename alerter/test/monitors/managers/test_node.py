@@ -68,22 +68,20 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.monitor_node_1 = True
         self.monitor_prometheus_1 = True
         self.node_prometheus_urls_1 = ['url1', 'url2', 'url3']
-        self.ethereum_addresses_1 = ['eth_add_1', 'eth_add_2', 'eth_add_3']
         self.node_config_1 = ChainlinkNodeConfig(
             self.node_id_1, self.parent_id_1, self.node_name_1,
             self.monitor_node_1, self.monitor_prometheus_1,
-            self.node_prometheus_urls_1, self.ethereum_addresses_1)
+            self.node_prometheus_urls_1)
         self.node_id_2 = 'config_id2'
         self.parent_id_2 = 'chain_2'
         self.node_name_2 = 'node_2'
         self.monitor_node_2 = True
         self.monitor_prometheus_2 = True
         self.node_prometheus_urls_2 = ['url4', 'url5', 'url6']
-        self.ethereum_addresses_2 = ['eth_add_4', 'eth_add_5', 'eth_add_6']
         self.node_config_2 = ChainlinkNodeConfig(
             self.node_id_2, self.parent_id_2, self.node_name_2,
             self.monitor_node_2, self.monitor_prometheus_2,
-            self.node_prometheus_urls_2, self.ethereum_addresses_2)
+            self.node_prometheus_urls_2)
         self.node_id_3 = 'config_id3'
         self.parent_id_3 = 'chain_3'
         self.node_name_3 = 'node_3'
@@ -124,7 +122,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                     'name': self.node_name_1,
                     'node_prometheus_urls':
                         ','.join(self.node_prometheus_urls_1),
-                    'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                     'monitor_node': str(self.monitor_node_1),
                     'monitor_prometheus': str(self.monitor_prometheus_1)
                 },
@@ -134,7 +131,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                     'name': self.node_name_2,
                     'node_prometheus_urls':
                         ','.join(self.node_prometheus_urls_2),
-                    'ethereum_addresses': ','.join(self.ethereum_addresses_2),
                     'monitor_node': str(self.monitor_node_2),
                     'monitor_prometheus': str(self.monitor_prometheus_2)
                 }
@@ -154,7 +150,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'parent_id': self.parent_id_1,
                 'name': self.node_name_1,
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
                 'monitor_prometheus': str(self.monitor_prometheus_1)
             },
@@ -163,7 +158,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'parent_id': self.parent_id_2,
                 'name': self.node_name_2,
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-                'ethereum_addresses': ','.join(self.ethereum_addresses_2),
                 'monitor_node': str(self.monitor_node_2),
                 'monitor_prometheus': str(self.monitor_prometheus_2)
             }
@@ -408,7 +402,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_3,
             'name': self.node_name_3,
             'node_prometheus_urls': 'url7,url8,url9',
-            'ethereum_addresses': 'eth_add_1,eth_add_2,eth_add_3',
             'monitor_node': third_conf_monitor_node,
             'monitor_prometheus': third_conf_monitor_prometheus
         }
@@ -428,7 +421,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'parent_id': self.parent_id_1,
                 'name': self.node_name_1,
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
                 'monitor_prometheus': str(self.monitor_prometheus_1)
             }
@@ -464,7 +456,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_3,
             'name': self.node_name_3,
             'node_prometheus_urls': 'url7,url8,url9',
-            'ethereum_addresses': 'eth_add_1,eth_add_2,eth_add_3',
             'monitor_node': third_conf_monitor_node,
             'monitor_prometheus': third_conf_monitor_prometheus
         }
@@ -481,7 +472,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'parent_id': self.parent_id_1,
                 'name': self.node_name_1,
                 'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'ethereum_addresses': ','.join(self.ethereum_addresses_1),
                 'monitor_node': str(self.monitor_node_1),
                 'monitor_prometheus': str(self.monitor_prometheus_1)
             }
@@ -522,7 +512,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_1,
             'name': self.node_name_1,
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-            'ethereum_addresses': ','.join(self.ethereum_addresses_1),
             'monitor_node': deleted_conf_monitor_node,
             'monitor_prometheus': deleted_conf_monitor_prometheus
         }
@@ -532,7 +521,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_2,
             'name': 'changed_node_name',
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-            'ethereum_addresses': ','.join(self.ethereum_addresses_2),
             'monitor_node': str(self.monitor_node_2),
             'monitor_prometheus': str(self.monitor_prometheus_2)
         }
@@ -543,7 +531,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         modified_node_2_config = ChainlinkNodeConfig(
             self.node_id_2, self.parent_id_2, 'changed_node_name',
             self.monitor_node_2, self.monitor_prometheus_2,
-            self.node_prometheus_urls_2, self.ethereum_addresses_2)
+            self.node_prometheus_urls_2)
         startup_mock.assert_called_once_with(modified_node_2_config,
                                              self.node_id_2,
                                              ChainlinkNodeMonitor)
@@ -582,7 +570,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_1,
             'name': self.node_name_1,
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-            'ethereum_addresses': ','.join(self.ethereum_addresses_1),
             'monitor_node': deleted_conf_monitor_node,
             'monitor_prometheus': deleted_conf_monitor_prometheus
         }
@@ -592,7 +579,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_2,
             'name': 'changed_node_name',
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-            'ethereum_addresses': ','.join(self.ethereum_addresses_2),
             'monitor_node': str(self.monitor_node_2),
             'monitor_prometheus': str(self.monitor_prometheus_2)
         }
@@ -672,7 +658,6 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'parent_id': self.parent_id_1,
             'name': self.node_name_1,
             'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-            'ethereum_addresses': ','.join(self.ethereum_addresses_1),
             'monitor_node': str(self.monitor_node_1),
             'monitor_prometheus': str(self.monitor_prometheus_1)
         }
