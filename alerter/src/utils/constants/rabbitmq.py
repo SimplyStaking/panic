@@ -23,6 +23,8 @@ CL_NODE_DT_INPUT_QUEUE_NAME = 'chainlink_node_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
+CL_NODE_ALERTER_INPUT_QUEUE_NAME = 'cl_node_alerter_input_queue'
+CL_NODE_ALERTER_CONFIGS_QUEUE_NAME = 'cl_node_alerter_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
@@ -43,6 +45,13 @@ CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME = 'channels_manager_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
+# Chainlink related queue names
+CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
+    'chainlink_alerter_manager_heartbeat_queue'
+CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
+    'chainlink_alerter_manager_configs_queue'
+
+
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
@@ -58,8 +67,9 @@ SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 CL_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.chainlink'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
 GITHUB_ALERT_ROUTING_KEY = 'alert.github'
-SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
-SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
+CL_NODE_ALERT_ROUTING_KEY = 'alert.node.chainlink'
+ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.*'
 ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
@@ -73,3 +83,4 @@ PING_ROUTING_KEY = 'ping'
 HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
+CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'

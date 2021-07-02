@@ -17,7 +17,7 @@ from src.alerter.alerter_starters import start_system_alerter
 from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.system import SystemAlertersManager
-from src.configs.system_alerts import SystemAlertsConfig
+from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
@@ -25,7 +25,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+    ALERTS_CONFIGS_ROUTING_KEY_GEN,
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, SYSTEM_ALERT_ROUTING_KEY,
     ALERT_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
@@ -233,7 +233,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         }
         self.chain_example_new = 'Substrate Polkadot'
         self.chains_routing_key = 'chains.Substrate.Polkadot.alerts_config'
-        self.general_routing_key = SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN
+        self.general_routing_key = ALERTS_CONFIGS_ROUTING_KEY_GEN
         self.test_exception = PANICException('test_exception', 1)
         self.systems_alerts_configs = {}
 
@@ -360,7 +360,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+                routing_key=ALERTS_CONFIGS_ROUTING_KEY_GEN,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
