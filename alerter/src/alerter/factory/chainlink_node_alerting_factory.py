@@ -1,14 +1,13 @@
 import logging
 from datetime import timedelta
-from typing import Dict, List
 
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
-from src.utils.types import convert_to_float
 
 
 class ChainlinkNodeAlertingFactory(AlertingFactory):
@@ -52,26 +51,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
 
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
-
-    @staticmethod
-    def _parse_alert_time_thresholds(expected_thresholds: List[str],
-                                     config: Dict) -> Dict:
-        """
-        This function returns a dict containing all time thresholds parsed in
-        the appropriate format. The returned thresholds are according to the
-        values in expected_thresholds.
-        :param config: The sub alert config
-        :param expected_thresholds: The time thresholds to parse from the config
-        :return: A dict containing all available time thresholds parsed from the
-               : alert config. Note a KeyError is raised if a certain threshold
-               : cannot be found
-        """
-        parsed_thresholds = {}
-        for threshold in expected_thresholds:
-            parsed_thresholds[threshold] = convert_to_float(
-                config[threshold], timedelta.max.total_seconds() - 1)
-
-        return parsed_thresholds
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
@@ -135,40 +114,40 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     False,
             }
 
-            current_head_thresholds = self._parse_alert_time_thresholds(
+            current_head_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_current_head)
-            heads_in_queue_thresholds = self._parse_alert_time_thresholds(
+            heads_in_queue_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
                 cl_node_alerts_config.head_tracker_heads_in_queue)
-            total_headers_thresholds = self._parse_alert_time_thresholds(
+            total_headers_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_heads_received_total)
-            dropped_headers_thresholds = self._parse_alert_time_thresholds(
+            dropped_headers_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
                 cl_node_alerts_config.head_tracker_num_heads_dropped_total
             )
-            unconfirmed_blocks_thresholds = self._parse_alert_time_thresholds(
+            unconfirmed_blocks_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
                 cl_node_alerts_config.max_unconfirmed_blocks
             )
-            unconfirmed_txs_thresholds = self._parse_alert_time_thresholds(
+            unconfirmed_txs_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
                 cl_node_alerts_config.unconfirmed_transactions
             )
-            error_jobs_thresholds = self._parse_alert_time_thresholds(
+            error_jobs_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
                 cl_node_alerts_config.run_status_update_total
             )
-            eth_balance_thresholds = self._parse_alert_time_thresholds(
+            eth_balance_thresholds = parse_alert_time_thresholds(
                 ['critical_repeat'], cl_node_alerts_config.eth_balance_amount
             )
-            node_is_down_thresholds = self._parse_alert_time_thresholds(
+            node_is_down_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold',
                  'critical_repeat'], cl_node_alerts_config.node_is_down
             )

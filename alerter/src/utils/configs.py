@@ -1,6 +1,9 @@
 # These functions assume that config files are given as parameters
 
-from typing import Dict
+from datetime import timedelta
+from typing import Dict, List
+
+from src.utils.types import convert_to_float
 
 
 def get_newly_added_configs(new_config_file: Dict, current_config_file: Dict) \
@@ -47,3 +50,23 @@ def get_non_modified_configs(new_config_file: Dict, current_config_file: Dict) \
     return {key: current_config_file[key] for key in retained_keys_set
             if not config_is_modified(new_config_file[key],
                                       current_config_file[key])}
+
+
+def parse_alert_time_thresholds(expected_thresholds: List[str],
+                                config: Dict) -> Dict:
+    """
+    This function returns a dict containing all time thresholds parsed in the
+    appropriate format. The returned thresholds are according to the values in
+    expected_thresholds.
+    :param config: The sub config
+    :param expected_thresholds: The time thresholds to parse from the config
+    :return: A dict containing all available time thresholds parsed from the
+           : alert config. Note a KeyError is raised if a certain threshold
+           : cannot be found
+    """
+    parsed_thresholds = {}
+    for threshold in expected_thresholds:
+        parsed_thresholds[threshold] = convert_to_float(
+            config[threshold], timedelta.max.total_seconds() - 1)
+
+    return parsed_thresholds

@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod, ABC
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any, Type, Callable, Optional
 
 from src.alerter.alert_severities import Severity
@@ -16,35 +16,36 @@ class AlertingFactory(ABC):
     def __init__(self, component_logger: logging.Logger) -> None:
         """
         The alerting_state dict is to be structured as follows by the
-        sub-classes:
+        sub-classes. Note some functions cannot be used if some of the fields
+        in the json structure are omitted:
         {
         <parent_id>: {
-            <node_id>: {
+            <monitorable_id>: {
                 Optional[warning_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedAlertsMetricCode.value: bool
                 },
                 Optional[critical_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedAlertsMetricCode.value: bool
                 },
                 Optional[error_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedAlertsMetricCode.value: bool
                 },
                 Optional[warning_window_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                    GroupedAlertsMetricCode.value: TimedTaskTracker
                 },
                 Optional[critical_window_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                    GroupedAlertsMetricCode.value: TimedTaskTracker
                 },
                 Optional[critical_repeat_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskLimiter
+                    GroupedAlertsMetricCode.value: TimedTaskLimiter
                 },
                 Optional[warning_occurrences_in_period_tracker]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value:
-                    OccurrencesInTimePeriodTracker
+                    GroupedAlertsMetricCode.value:
+                        OccurrencesInTimePeriodTracker
                 },
                 Optional[critical_occurrences_in_period_tracker]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value:
-                    OccurrencesInTimePeriodTracker
+                    GroupedAlertsMetricCode.value:
+                        OccurrencesInTimePeriodTracker
                 },
             }
         }}
@@ -118,7 +119,8 @@ class AlertingFactory(ABC):
                     critical_window_timer.start_timer(monitoring_datetime)
                 elif critical_window_timer.can_do_task(monitoring_datetime):
                     duration = monitoring_timestamp - \
-                               critical_window_timer.start_time.timestamp()
+                               critical_window_timer.start_time.replace(
+                                   tzinfo=timezone.utc).timestamp()
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.CRITICAL.value,
                         monitoring_timestamp, parent_id, monitorable_id,
@@ -136,7 +138,8 @@ class AlertingFactory(ABC):
                       and critical_repeat_limiter.can_do_task(
                             monitoring_datetime)):
                     duration = monitoring_timestamp - \
-                               critical_window_timer.start_time.timestamp()
+                               critical_window_timer.start_time.replace(
+                                   tzinfo=timezone.utc).timestamp()
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.CRITICAL.value,
                         monitoring_timestamp, parent_id, monitorable_id,
@@ -153,7 +156,8 @@ class AlertingFactory(ABC):
                 elif not critical_sent and warning_window_timer.can_do_task(
                         monitoring_datetime):
                     duration = monitoring_timestamp - \
-                               warning_window_timer.start_time.timestamp()
+                               warning_window_timer.start_time.replace(
+                                   tzinfo=timezone.utc).timestamp()
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.WARNING.value,
                         monitoring_timestamp, parent_id, monitorable_id,
@@ -278,7 +282,8 @@ class AlertingFactory(ABC):
                 critical_window_timer.start_timer(monitoring_datetime)
             elif critical_window_timer.can_do_task(monitoring_datetime):
                 duration = monitoring_timestamp - \
-                           critical_window_timer.start_time.timestamp()
+                           critical_window_timer.start_time.replace(
+                               tzinfo=timezone.utc).timestamp()
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, duration, Severity.CRITICAL.value,
@@ -295,7 +300,8 @@ class AlertingFactory(ABC):
                   and critical_repeat_enabled
                   and critical_repeat_limiter.can_do_task(monitoring_datetime)):
                 duration = monitoring_timestamp - \
-                           critical_window_timer.start_time.timestamp()
+                           critical_window_timer.start_time.replace(
+                               tzinfo=timezone.utc).timestamp()
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, duration, Severity.CRITICAL.value,
@@ -312,7 +318,8 @@ class AlertingFactory(ABC):
             elif not critical_sent and warning_window_timer.can_do_task(
                     monitoring_datetime):
                 duration = monitoring_timestamp - \
-                           warning_window_timer.start_time.timestamp()
+                           warning_window_timer.start_time.replace(
+                               tzinfo=timezone.utc).timestamp()
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.WARNING.value,
                     monitoring_timestamp, duration, Severity.WARNING.value,
