@@ -11,7 +11,7 @@ from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
                                        GITHUB_ALERTER_NAME,
-                                       CHAINLINK_ALERTER_NAME)
+                                       CHAINLINK_NODE_ALERTER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
@@ -106,10 +106,10 @@ def _initialise_github_alerter() -> GithubAlerter:
     return github_alerter
 
 
-def _initialise_chainlink_alerter(
+def _initialise_chainlink_node_alerter(
     chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
 ) -> ChainlinkNodeAlerter:
-    alerter_display_name = CHAINLINK_ALERTER_NAME
+    alerter_display_name = CHAINLINK_NODE_ALERTER_NAME
 
     chainlink_alerter_logger = _initialise_alerter_logger(
         alerter_display_name, ChainlinkNodeAlerter.__name__)
@@ -150,10 +150,10 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig,
     start_alerter(system_alerter)
 
 
-def start_chainlink_alerter(
+def start_chainlink_node_alerter(
         chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
 ) -> None:
-    chainlink_alerter = _initialise_chainlink_alerter(
+    chainlink_alerter = _initialise_chainlink_node_alerter(
         chainlink_alerts_configs_factory)
     start_alerter(chainlink_alerter)
 

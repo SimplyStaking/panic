@@ -136,7 +136,7 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
     return github_alerter_manager
 
 
-def _initialise_chainlink_alerter_manager() -> ChainlinkNodeAlerterManager:
+def _initialise_chainlink_node_alerter_manager() -> ChainlinkNodeAlerterManager:
     manager_display_name = CHAINLINK_ALERTER_MANAGER_NAME
 
     chainlink_alerter_manager_logger = _initialise_logger(
@@ -456,7 +456,7 @@ def run_github_alerters_manager() -> None:
 
 
 def run_chainlink_alerters_manager() -> None:
-    chainlink_alerter_manager = _initialise_chainlink_alerter_manager()
+    chainlink_alerter_manager = _initialise_chainlink_node_alerter_manager()
     run_alerters_manager(chainlink_alerter_manager)
 
 
@@ -697,7 +697,7 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
 
-            # Chainlink Alerters Manager queues
+            # Chainlink Node Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
                 CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
             rabbitmq.queue_declare(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,

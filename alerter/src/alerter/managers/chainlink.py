@@ -10,12 +10,12 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.alerter.alerter_starters import start_chainlink_alerter
+from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import CHAINLINK_ALERTER_NAME
+from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
@@ -111,20 +111,17 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             heartbeat['running_processes'] = []
             heartbeat['dead_processes'] = []
 
-            if CHAINLINK_ALERTER_NAME in self.alerter_process_dict:
-                chainlink_alerter_process = \
-                    self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
-                if chainlink_alerter_process.is_alive():
-                    heartbeat['running_processes'].append(
-                        CHAINLINK_ALERTER_NAME)
+            for alerter, process in self.alerter_process_dict.items():
+                log_and_print("Terminating the process of {}".format(
+                              alerter), self.logger)
+                if process.is_alive():
+                    heartbeat['running_processes'].append(alerter)
                 else:
-                    heartbeat['dead_processes'].append(CHAINLINK_ALERTER_NAME)
-                    chainlink_alerter_process.join()  # Release resources
-
+                    heartbeat['dead_processes'].append(alerter)
+                    process.join()  # Just in case, to release resources
+                    # Restart dead process
+                    self._create_and_start_alerter_process()
             heartbeat['timestamp'] = datetime.now().timestamp()
-            # Restart dead alerter
-            if len(heartbeat['dead_processes']) != 0:
-                self._create_and_start_alerter_process()
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
@@ -149,9 +146,9 @@ class ChainlinkNodeAlerterManager(AlertersManager):
         started or it is not alive. This must be done in case of a restart of
         the manager.
         """
-        if (CHAINLINK_ALERTER_NAME not in self.alerter_process_dict or
+        if (CHAINLINK_NODE_ALERTER_NAME not in self.alerter_process_dict or
                 not self.alerter_process_dict[
-                    CHAINLINK_ALERTER_NAME].is_alive()):
+                    CHAINLINK_NODE_ALERTER_NAME].is_alive()):
 
             """
             We must clear out all the metrics which are found in Redis.
@@ -159,24 +156,25 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             achieve this. This is sent on startup of the manager and if the
             alerter process is deemed to be dead.
             """
-            alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
+            alert = ComponentResetAlert(CHAINLINK_NODE_ALERTER_NAME,
                                         datetime.now().timestamp(),
                                         ChainlinkNodeAlerter.__name__)
             self._push_latest_data_to_queue_and_send(alert.alert_data)
 
             """
-            Start the Chainlink Alerter process with the saved factory.
-            This factory should hold all the configurations, if any.
+            Start the Chainlink Node Alerter process with the factory being
+            updated by this manager. This factory should hold all the
+            configurations, if any.
             """
             log_and_print("Attempting to start the {}.".format(
-                CHAINLINK_ALERTER_NAME), self.logger)
+                CHAINLINK_NODE_ALERTER_NAME), self.logger)
             chainlink_alerter_process = Process(
-                target=start_chainlink_alerter,
+                target=start_chainlink_node_alerter,
                 args=(self.alerts_config_factory,))
             chainlink_alerter_process.daemon = True
             chainlink_alerter_process.start()
 
-            self._alerter_process_dict[CHAINLINK_ALERTER_NAME] = \
+            self._alerter_process_dict[CHAINLINK_NODE_ALERTER_NAME] = \
                 chainlink_alerter_process
 
     def _process_configs(
@@ -203,17 +201,17 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             the metrics in Redis need to be reset.
             """
             if bool(sent_configs):
-                config_updated, parent_id = \
-                    self.alerts_config_factory.add_new_config(chain_name,
-                                                              sent_configs)
-                if config_updated:
-                    alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
-                                                datetime.now().timestamp(),
-                                                ChainlinkNodeAlerter.__name__,
-                                                parent_id,
-                                                chain_name
-                                                )
-                    self._push_latest_data_to_queue_and_send(alert.alert_data)
+                self.alerts_config_factory.add_new_config(chain_name,
+                                                          sent_configs)
+                parent_id = self.alerts_config_factory.get_parent_id(
+                    chain_name)
+                alert = ComponentResetAlert(CHAINLINK_NODE_ALERTER_NAME,
+                                            datetime.now().timestamp(),
+                                            ChainlinkNodeAlerter.__name__,
+                                            parent_id,
+                                            chain_name
+                                            )
+                self._push_latest_data_to_queue_and_send(alert.alert_data)
             else:
                 self.alerts_config_factory.remove_config(chain_name)
 
@@ -253,18 +251,11 @@ class ChainlinkNodeAlerterManager(AlertersManager):
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
 
-        # Check if the alerter process is actually still there.
-        if CHAINLINK_ALERTER_NAME in self.alerter_process_dict:
-            chainlink_alerter_process = \
-                self.alerter_process_dict[CHAINLINK_ALERTER_NAME]
-            chainlink_alerter_process.terminate()
-            chainlink_alerter_process.join()
-
-            alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
-                                        datetime.now().timestamp(),
-                                        ChainlinkNodeAlerter.__name__)
-            self._push_latest_data_to_queue_and_send(alert.alert_data)
-
+        for alerter, process in self.alerter_process_dict.items():
+            log_and_print("Terminating the process of {}".format(alerter),
+                          self.logger)
+            process.terminate()
+            process.join()
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()

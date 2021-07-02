@@ -13,13 +13,13 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.alerter.alerter_starters import start_chainlink_alerter
+from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import (ChainlinkNodeAlerterManager)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants.names import CHAINLINK_ALERTER_NAME
+from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE,
@@ -32,6 +32,10 @@ from src.configs.factory.chainlink_alerts_configs_factory import \
     ChainlinkAlertsConfigsFactory
 from src.utils.exceptions import PANICException
 from test.utils.utils import infinite_fn
+from test.utils.utils import (
+    DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
+    disconnect_from_rabbit, connect_to_rabbit
+)
 
 
 class TestChainlinkNodeAlerterManager(unittest.TestCase):
@@ -50,7 +54,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
-        self.chainlink_alerter_name = CHAINLINK_ALERTER_NAME
+        self.chainlink_alerter_name = CHAINLINK_NODE_ALERTER_NAME
         self.dummy_process = Process(target=infinite_fn, args=())
         self.dummy_process.daemon = True
 
@@ -102,26 +106,22 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
             "14": {
-                "name": "eth_balance_hours_remaining",
-                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
-            },
-            "15": {
                 "name": "head_tracker_num_heads_dropped_total",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "16": {
+            "15": {
                 "name": "run_status_update_total",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "17": {
+            "16": {
                 "name": "process_start_time_seconds",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "18": {
+            "17": {
                 "name": "eth_balance_amount_increase",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "19": {
+            "18": {
                 "name": "node_is_down",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             }
@@ -164,26 +164,22 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
             "14": {
-                "name": "eth_balance_hours_remaining",
-                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
-            },
-            "15": {
                 "name": "head_tracker_num_heads_dropped_total",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "16": {
+            "15": {
                 "name": "run_status_update_total",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "17": {
+            "16": {
                 "name": "process_start_time_seconds",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "18": {
+            "17": {
                 "name": "eth_balance_amount_increase",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "19": {
+            "18": {
                 "name": "node_is_down",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             }
@@ -191,46 +187,24 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
-        try:
-            self.test_rabbit_manager.connect()
-            self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
-            self.test_manager.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, TOPIC, False, True, False, False)
-            self.test_manager.rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, TOPIC, False, True, False, False)
-            # Declare queues incase they haven't been declared already
-            self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.test_manager.rabbitmq.queue_declare(
-                queue=CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
-                durable=True, exclusive=False, auto_delete=False, passive=False
-            )
-            self.test_manager.rabbitmq.queue_declare(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
-                False)
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(
-                CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_purge(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(
-                CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME
-            )
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        connect_to_rabbit(self.test_rabbit_manager)
+        connect_to_rabbit(self.test_manager.rabbitmq)
 
-            self.test_manager.rabbitmq.disconnect()
-            self.test_rabbit_manager.disconnect()
-        except Exception as e:
-            print("Test failed: {}".format(e))
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  HEALTH_CHECK_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  ALERT_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  CONFIG_EXCHANGE)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               self.test_queue_name)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+
+        disconnect_from_rabbit(self.test_manager.rabbitmq)
+        disconnect_from_rabbit(self.test_rabbit_manager)
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -241,7 +215,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.dummy_process = None
 
     def test_str_returns_manager_name(self) -> None:
-        self.assertEqual(self.manager_name, self.test_manager.__str__())
+        self.assertEqual(self.manager_name, str(self.test_manager))
 
     def test_name_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.name)
@@ -267,84 +241,81 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_process_ping.return_value = None
         mock_process_configs.return_value = None
         mock_start_alerter_process.return_value = None
-        try:
-            self.test_rabbit_manager.connect()
-            # To make sure that there is no connection/channel already
-            # established
-            self.assertIsNone(self.rabbitmq.connection)
-            self.assertIsNone(self.rabbitmq.channel)
+        self.test_rabbit_manager.connect()
+        # To make sure that there is no connection/channel already
+        # established
+        self.assertIsNone(self.rabbitmq.connection)
+        self.assertIsNone(self.rabbitmq.channel)
 
-            # To make sure that the exchanges and queues have not already been
-            # declared
-            self.test_manager.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(
-                CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME
-            )
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        # To make sure that the exchanges and queues have not already been
+        # declared
+        self.test_manager.rabbitmq.connect()
+        self.test_manager.rabbitmq.queue_delete(
+            CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+        self.test_manager.rabbitmq.queue_delete(
+            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME
+        )
+        self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
 
-            self.test_manager._initialise_rabbitmq()
+        self.test_manager._initialise_rabbitmq()
 
-            # Perform checks that the connection has been opened, marked as open
-            # and that the delivery confirmation variable is set.
-            self.assertTrue(self.test_manager.rabbitmq.is_connected)
-            self.assertTrue(self.test_manager.rabbitmq.connection.is_open)
-            self.assertTrue(
-                self.test_manager.rabbitmq.channel._delivery_confirmation)
+        # Perform checks that the connection has been opened, marked as open
+        # and that the delivery confirmation variable is set.
+        self.assertTrue(self.test_manager.rabbitmq.is_connected)
+        self.assertTrue(self.test_manager.rabbitmq.connection.is_open)
+        self.assertTrue(
+            self.test_manager.rabbitmq.channel._delivery_confirmation)
 
-            # Check whether the exchanges and queues have been creating by
-            # sending messages with the same routing keys as for the queues. We
-            # will also check if the size of the queues is 1 to confirm that the
-            # message was sent. We then check if basic_consume was called
-            # correctly with the correct arguments If one of the exchanges or
-            # queues is not created, then an exception will be thrown.
-            # Note when deleting the exchanges in the beginning we also
-            # released every binding, hence there is no other queue binded with
-            # the same routing key to any exchange at this point.
-            self.test_rabbit_manager.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
-                is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=ALERT_EXCHANGE,
-                routing_key=CL_NODE_ALERT_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=False
-            )
-            self.test_rabbit_manager.basic_publish_confirm(
-                exchange=CONFIG_EXCHANGE,
-                routing_key=CL_ALERTS_CONFIGS_ROUTING_KEY,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=False
-            )
-            # Re-declare queue to get the number of messages
-            res = self.test_rabbit_manager.queue_declare(
-                CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
-                False)
-            self.assertEqual(1, res.method.message_count)
-            res = self.test_rabbit_manager.queue_declare(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
-                False)
-            self.assertEqual(1, res.method.message_count)
-            self.assertEqual(2, mock_basic_consume.call_count)
+        # Check whether the exchanges and queues have been creating by
+        # sending messages with the same routing keys as for the queues. We
+        # will also check if the size of the queues is 1 to confirm that the
+        # message was sent. We then check if basic_consume was called
+        # correctly with the correct arguments If one of the exchanges or
+        # queues is not created, then an exception will be thrown.
+        # Note when deleting the exchanges in the beginning we also
+        # released every binding, hence there is no other queue binded with
+        # the same routing key to any exchange at this point.
+        self.test_rabbit_manager.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+            is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=ALERT_EXCHANGE,
+            routing_key=CL_NODE_ALERT_ROUTING_KEY,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=False
+        )
+        self.test_rabbit_manager.basic_publish_confirm(
+            exchange=CONFIG_EXCHANGE,
+            routing_key=CL_ALERTS_CONFIGS_ROUTING_KEY,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True
+        )
+        # Re-declare queue to get the number of messages
+        res = self.test_rabbit_manager.queue_declare(
+            CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
+            False)
+        self.assertEqual(1, res.method.message_count)
+        res = self.test_rabbit_manager.queue_declare(
+            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+            False)
+        self.assertEqual(1, res.method.message_count)
+        self.assertEqual(2, mock_basic_consume.call_count)
 
-            expected_calls = [
-                call(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
-                     self.test_manager._process_ping, True, False, None),
-                call(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-                     self.test_manager._process_configs, False, False, None)
-            ]
-            mock_basic_consume.assert_has_calls(expected_calls, True)
-            mock_push_latest_data_to_queue_and_send.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        expected_calls = [
+            call(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+                 self.test_manager._process_ping, True, False, None),
+            call(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                 self.test_manager._process_configs, False, False, None)
+        ]
+        mock_basic_consume.assert_has_calls(expected_calls, True)
+        mock_push_latest_data_to_queue_and_send.assert_not_called()
 
     @mock.patch.object(ChainlinkNodeAlerterManager,
                        "_create_and_start_alerter_process")
@@ -353,37 +324,34 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # heartbeat is received
-        try:
-            self.test_manager._initialise_rabbitmq()
+        self.test_manager._initialise_rabbitmq()
 
-            # Delete the queue before to avoid messages in the queue on error.
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_manager.rabbitmq.queue_bind(
-                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            self.test_manager._send_heartbeat(self.test_heartbeat)
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_manager.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        self.test_manager._send_heartbeat(self.test_heartbeat)
 
-            # By re-declaring the queue again we can get the number of messages
-            # in the queue.
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
 
-            # Check that the message received is actually the HB
-            _, _, body = self.test_manager.rabbitmq.basic_get(
-                self.test_queue_name)
-            self.assertEqual(self.test_heartbeat, json.loads(body))
-            self.assertEqual(0, mock_start_alerter_process.call_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # Check that the message received is actually the HB
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(self.test_heartbeat, json.loads(body))
+        self.assertEqual(0, mock_start_alerter_process.call_count)
 
     @mock.patch.object(ChainlinkNodeAlerterManager,
                        "_push_latest_data_to_queue_and_send")
@@ -396,11 +364,12 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.test_manager._create_and_start_alerter_process()
 
         new_entry_process = self.test_manager.alerter_process_dict[
-            CHAINLINK_ALERTER_NAME]
+            CHAINLINK_NODE_ALERTER_NAME]
 
         self.assertTrue(new_entry_process.daemon)
         self.assertEqual(1, len(new_entry_process._args))
-        self.assertEqual(start_chainlink_alerter, new_entry_process._target)
+        self.assertEqual(start_chainlink_node_alerter,
+                         new_entry_process._target)
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @mock.patch.object(multiprocessing.Process, "start")
@@ -433,7 +402,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
         self.test_manager._create_and_start_alerter_process()
 
-        expected_alert = ComponentResetAlert(CHAINLINK_ALERTER_NAME,
+        expected_alert = ComponentResetAlert(CHAINLINK_NODE_ALERTER_NAME,
                                              datetime.now().timestamp(),
                                              ChainlinkNodeAlerter.__name__)
 
@@ -459,51 +428,48 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
-        try:
-            self.test_manager._initialise_rabbitmq()
-            self.test_manager._create_and_start_alerter_process()
+        self.test_manager._initialise_rabbitmq()
+        self.test_manager._create_and_start_alerter_process()
 
-            # Delete the queue before to avoid messages in the queue on error.
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            body = 'ping'
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_manager.rabbitmq.queue_bind(
-                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            self.test_manager._process_ping(blocking_channel, method_hb,
-                                            properties, body)
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        properties = pika.spec.BasicProperties()
+        method_hb = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        body = 'ping'
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_manager.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        self.test_manager._process_ping(blocking_channel, method_hb,
+                                        properties, body)
 
-            # By re-declaring the queue again we can get the number of messages
-            # in the queue.
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
-            expected_output = {
-                "component_name": self.manager_name,
-                "dead_processes": [],
-                "running_processes": [CHAINLINK_ALERTER_NAME],
-                "timestamp": datetime(2012, 1, 1).timestamp()
-            }
-            # Check that the message received is a valid HB
-            _, _, body = self.test_manager.rabbitmq.basic_get(
-                self.test_queue_name)
-            self.assertEqual(expected_output, json.loads(body))
-            self.assertEqual(
-                1, mock_push_latest_data_to_queue_and_send.call_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+        expected_output = {
+            "component_name": self.manager_name,
+            "dead_processes": [],
+            "running_processes": [CHAINLINK_NODE_ALERTER_NAME],
+            "timestamp": datetime(2012, 1, 1).timestamp()
+        }
+        # Check that the message received is a valid HB
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output, json.loads(body))
+        self.assertEqual(
+            1, mock_push_latest_data_to_queue_and_send.call_count)
 
     @freeze_time("2012-01-01")
     @mock.patch(
@@ -524,52 +490,49 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
-        try:
-            self.test_manager._initialise_rabbitmq()
-            self.test_manager._create_and_start_alerter_process()
+        self.test_manager._initialise_rabbitmq()
+        self.test_manager._create_and_start_alerter_process()
 
-            # Delete the queue before to avoid messages in the queue on error.
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            body = 'ping'
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_manager.rabbitmq.queue_bind(
-                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            self.test_manager._process_ping(blocking_channel, method_hb,
-                                            properties, body)
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        properties = pika.spec.BasicProperties()
+        method_hb = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        body = 'ping'
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_manager.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        self.test_manager._process_ping(blocking_channel, method_hb,
+                                        properties, body)
 
-            # By re-declaring the queue again we can get the number of messages
-            # in the queue.
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
-            expected_output = {
-                "component_name": self.manager_name,
-                "dead_processes": [CHAINLINK_ALERTER_NAME],
-                "running_processes": [],
-                "timestamp": datetime(2012, 1, 1).timestamp()
-            }
-            # Check that the message received is a valid HB
-            _, _, body = self.test_manager.rabbitmq.basic_get(
-                self.test_queue_name)
-            self.assertEqual(expected_output, json.loads(body))
-            self.assertEqual(
-                2,
-                mock_push_latest_data_to_queue_and_send.call_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+        expected_output = {
+            "component_name": self.manager_name,
+            "dead_processes": [CHAINLINK_NODE_ALERTER_NAME],
+            "running_processes": [],
+            "timestamp": datetime(2012, 1, 1).timestamp()
+        }
+        # Check that the message received is a valid HB
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            self.test_queue_name)
+        self.assertEqual(expected_output, json.loads(body))
+        self.assertEqual(
+            2,
+            mock_push_latest_data_to_queue_and_send.call_count)
 
     @freeze_time("2012-01-01")
     @mock.patch(
@@ -583,52 +546,49 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         send_hb_mock.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
-        try:
-            self.test_manager._initialise_rabbitmq()
-            self.test_manager._create_and_start_alerter_process()
+        self.test_manager._initialise_rabbitmq()
+        self.test_manager._create_and_start_alerter_process()
 
-            # Give time for the processes to start
-            time.sleep(1)
+        # Give time for the processes to start
+        time.sleep(1)
 
-            # Automate the case when having all processes dead
-            self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].join()
+        # Automate the case when having all processes dead
+        self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].terminate()
+        self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].join()
 
-            # Give time for the processes to terminate
-            time.sleep(1)
+        # Give time for the processes to terminate
+        time.sleep(1)
 
-            # Check that that the processes have terminated
-            self.assertFalse(self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].is_alive())
+        # Check that that the processes have terminated
+        self.assertFalse(self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].is_alive())
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            properties = pika.spec.BasicProperties()
-            method_hb = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            body = 'ping'
-            self.test_manager._process_ping(blocking_channel, method_hb,
-                                            properties, body)
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        properties = pika.spec.BasicProperties()
+        method_hb = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        body = 'ping'
+        self.test_manager._process_ping(blocking_channel, method_hb,
+                                        properties, body)
 
-            # Give time for the processes to start
-            time.sleep(1)
+        # Give time for the processes to start
+        time.sleep(1)
 
-            self.assertTrue(self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].is_alive())
+        self.assertTrue(self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].is_alive())
 
-            # Clean before test finishes
-            self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].terminate()
-            self.test_manager.alerter_process_dict[
-                CHAINLINK_ALERTER_NAME].join()
-            self.assertEqual(
-                2,
-                mock_push_latest_data_to_queue_and_send.call_count
-            )
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # Clean before test finishes
+        self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].terminate()
+        self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME].join()
+        self.assertEqual(
+            2,
+            mock_push_latest_data_to_queue_and_send.call_count
+        )
 
     @mock.patch(
         "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
@@ -644,66 +604,60 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         is_alive_mock.side_effect = self.test_exception
         mock_start.return_value = None
         mock_process.side_effect = self.dummy_process
-        try:
-            self.test_manager._initialise_rabbitmq()
-            self.test_manager._create_and_start_alerter_process()
+        self.test_manager._initialise_rabbitmq()
+        self.test_manager._create_and_start_alerter_process()
 
-            self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
+        self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
 
-            # Delete the queue before to avoid messages in the queue on error.
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            properties = pika.spec.BasicProperties()
-            body = 'ping'
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_manager.rabbitmq.queue_bind(
-                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            self.test_manager._process_ping(blocking_channel, method,
-                                            properties, body)
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        properties = pika.spec.BasicProperties()
+        body = 'ping'
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_manager.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        self.test_manager._process_ping(blocking_channel, method,
+                                        properties, body)
 
-            # By re-declaring the queue again we can get the number of messages
-            # in the queue.
-            res = self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(0, res.method.message_count)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_manager.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(0, res.method.message_count)
+        mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @mock.patch(
         "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
             self, mock_push_latest_data_to_queue_and_send) -> None:
-        try:
-            self.test_manager._initialise_rabbitmq()
-            self.test_manager._create_and_start_alerter_process()
+        self.test_manager._initialise_rabbitmq()
+        self.test_manager._create_and_start_alerter_process()
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            properties = pika.spec.BasicProperties()
-            body = 'ping'
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        properties = pika.spec.BasicProperties()
+        body = 'ping'
 
-            self.test_manager._process_ping(blocking_channel, method,
-                                            properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_manager._process_ping(blocking_channel, method,
+                                        properties, body)
+        mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @parameterized.expand([
         ("pika.exceptions.AMQPChannelError('test')",
@@ -717,23 +671,20 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             self, param_input, param_expected, hb_mock,
             mock_push_latest_data_to_queue_and_send) -> None:
         hb_mock.side_effect = eval(param_input)
-        try:
-            self.test_manager._initialise_rabbitmq()
+        self.test_manager._initialise_rabbitmq()
 
-            # initialise
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
-            properties = pika.spec.BasicProperties()
-            body = 'ping'
+        # initialise
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+        properties = pika.spec.BasicProperties()
+        body = 'ping'
 
-            self.assertRaises(eval(param_expected),
-                              self.test_manager._process_ping,
-                              blocking_channel,
-                              method, properties, body)
-            mock_push_latest_data_to_queue_and_send.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.assertRaises(eval(param_expected),
+                          self.test_manager._process_ping,
+                          blocking_channel,
+                          method, properties, body)
+        mock_push_latest_data_to_queue_and_send.assert_not_called()
 
     @parameterized.expand([
         ("self.config_1", "self.routing_key_1"),
@@ -746,26 +697,22 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             mock_ack) -> None:
         mock_ack.return_value = None
 
-        try:
-            self.test_manager.rabbitmq.connect()
+        self.test_manager.rabbitmq.connect()
 
-            routing_key = eval(param_routing_key)
-            parsed_routing_key = routing_key.split('.')
+        routing_key = eval(param_routing_key)
+        parsed_routing_key = routing_key.split('.')
 
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
-            body = json.dumps(eval(param_config))
-            properties = pika.spec.BasicProperties()
-            self.test_manager._process_configs(
-                blocking_channel, method_chains, properties, body)
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=routing_key)
+        body = json.dumps(eval(param_config))
+        properties = pika.spec.BasicProperties()
+        self.test_manager._process_configs(
+            blocking_channel, method_chains, properties, body)
 
-            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            mock_add_new_config.assert_called_once_with(
-                chain_name, eval(param_config))
-
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        mock_add_new_config.assert_called_once_with(
+            chain_name, eval(param_config))
 
     @parameterized.expand([
         ("self.routing_key_1",),
@@ -777,26 +724,22 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             self, param_routing_key, mock_remove_config, mock_ack) -> None:
         mock_ack.return_value = None
 
-        try:
-            self.test_manager.rabbitmq.connect()
+        self.test_manager.rabbitmq.connect()
 
-            routing_key = eval(param_routing_key)
-            parsed_routing_key = routing_key.split('.')
+        routing_key = eval(param_routing_key)
+        parsed_routing_key = routing_key.split('.')
 
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
-            body = json.dumps({})
-            properties = pika.spec.BasicProperties()
-            self.test_manager._process_configs(
-                blocking_channel, method_chains, properties, body)
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=routing_key)
+        body = json.dumps({})
+        properties = pika.spec.BasicProperties()
+        self.test_manager._process_configs(
+            blocking_channel, method_chains, properties, body)
 
-            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-            mock_remove_config.assert_called_once_with(
-                chain_name)
-
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        mock_remove_config.assert_called_once_with(
+            chain_name)
 
     @parameterized.expand([
         ("self.config_1", "self.routing_key_1"),
@@ -810,31 +753,31 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             mock_ack) -> None:
         mock_ack.return_value = None
 
-        try:
-            self.test_manager.rabbitmq.connect()
+        self.test_manager.rabbitmq.connect()
 
-            routing_key = eval(param_routing_key)
-            parsed_routing_key = routing_key.split('.')
+        routing_key = eval(param_routing_key)
+        parsed_routing_key = routing_key.split('.')
 
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
-            body = json.dumps(eval(param_config))
-            properties = pika.spec.BasicProperties()
-            self.test_manager._process_configs(
-                blocking_channel, method_chains, properties, body)
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=routing_key)
+        body = json.dumps(eval(param_config))
+        properties = pika.spec.BasicProperties()
+        self.test_manager._process_configs(
+            blocking_channel, method_chains, properties, body)
 
-            # First time it's received nothing should be reset
-            mock_push_data_to_queue.assert_not_called()
+        call_1 = call({'alert_code': {'name': 'ComponentResetAlert', 'code': 'internal_alert_1'}, 'metric': 'component_reset_alert', 'message': 'Component: Chainlink Node Alerter has been reset for chainlink polygon.',
+                       'severity': 'INTERNAL', 'parent_id': 'chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4', 'origin_id': 'ChainlinkNodeAlerter', 'timestamp': 1625239987.518717}
+                      )
 
-            self.test_manager._process_configs(
-                blocking_channel, method_chains, properties, body)
+        mock_push_data_to_queue.has_calls(call_1)
 
-            # Second time the config is updated therefore a reset alert should
-            # be sent.
-            mock_push_data_to_queue.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_manager._process_configs(
+            blocking_channel, method_chains, properties, body)
+
+        # Second time the config is updated therefore a reset alert should
+        # be sent.
+        mock_push_data_to_queue.has_calls(call_1, call_1)
 
     @parameterized.expand([
         ("self.config_1", "self.routing_key_1"),
@@ -845,28 +788,24 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             self, param_config, param_routing_key, mock_ack) -> None:
         mock_ack.return_value = None
 
-        try:
-            self.test_manager.rabbitmq.connect()
+        self.test_manager.rabbitmq.connect()
 
-            routing_key = eval(param_routing_key)
-            parsed_routing_key = routing_key.split('.')
-            chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        routing_key = eval(param_routing_key)
+        parsed_routing_key = routing_key.split('.')
+        chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
-            self.assertFalse(
-                self.test_manager.alerts_config_factory.config_exists(
-                    chain_name))
+        self.assertFalse(
+            self.test_manager.alerts_config_factory.config_exists(
+                chain_name))
 
-            blocking_channel = self.test_manager.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=routing_key)
-            body = json.dumps(eval(param_config))
-            properties = pika.spec.BasicProperties()
-            self.test_manager._process_configs(
-                blocking_channel, method_chains, properties, body)
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(
+            routing_key=routing_key)
+        body = json.dumps(eval(param_config))
+        properties = pika.spec.BasicProperties()
+        self.test_manager._process_configs(
+            blocking_channel, method_chains, properties, body)
 
-            self.assertTrue(
-                self.test_manager.alerts_config_factory.config_exists(
-                    chain_name))
-
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.assertTrue(
+            self.test_manager.alerts_config_factory.config_exists(
+                chain_name))

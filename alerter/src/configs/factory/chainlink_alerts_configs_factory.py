@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Tuple
+from typing import Dict, Optional
 
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
@@ -16,16 +16,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     def __init__(self) -> None:
         super().__init__()
 
-    def add_new_config(self, chain_name: str, sent_configs: Dict
-                       ) -> Tuple[bool, str]:
-
-        # Assume that the config being received isn't already here
-        config_updated = False
-        # If the chain_name already exists in the config then it is a
-        # modification and not an addition.
-        if self.config_exists(chain_name):
-            config_updated = True
-
+    def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
         parent_id = sent_configs['1']['parent_id']
@@ -64,14 +55,42 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
 
         self._configs[chain_name] = cl_node_alerts_config
 
-        # We need to return these so we are able to reset metrics for the chain
-        return config_updated, parent_id
+    def remove_config(self, chain_name: str) -> None:
+        if chain_name in self.configs:
+            del self._configs[chain_name]
 
     def config_exists(self, chain_name: str) -> bool:
-        if chain_name in self.configs:
-            return True
-        return False
+        """
+        This function returns True if a configuration exists for a chain name.
+        :param chain_name: The name of the chain in question
+        :return: True if config exists
+               : False otherwise
+        """
+        return (chain_name in self.configs
+                and type(self.configs[chain_name]) == ChainlinkNodeAlertsConfig)
 
-    def remove_config(self, chain_name: str) -> None:
+    def get_parent_id(self, chain_name: str) -> Optional[str]:
+        """
+        This function returns the parent_id of a chain whose name is chain_name.
+        :param chain_name: The name of the chain in question
+        :return: The parent_id of the chain if chain_name in self.configs
+               : None otherwise
+        """
         if self.config_exists(chain_name):
-            del self._configs[chain_name]
+            return self.configs[chain_name].parent_id
+        else:
+            return None
+
+    def get_chain_name(self, parent_id: str) -> Optional[str]:
+        """
+        This function returns the chain name associated with the id.
+        :param parent_id: The id of the chain in question
+        :return: The name of the chain if there is a config having the given
+               : parent_id
+               : None otherwise
+        """
+        for chain_name, config in self.configs.items():
+            if config.parent_id == parent_id:
+                return chain_name
+
+        return None

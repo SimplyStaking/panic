@@ -38,3 +38,8 @@ CHAINLINK_METRICS_TO_STORE = ['head_tracker_current_head',
                               'metric_not_found',
                               'node_is_down',
                               'prometheus_is_down']
+SYSTEM_METRICS_TO_STORE = ['open_file_descriptors',
+                           'system_cpu_usage',
+                           'system_storage_usage',
+                           'system_ram_usage',
+                           'system_is_down']
