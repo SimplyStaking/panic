@@ -39,6 +39,7 @@ const cosmosRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -55,6 +56,7 @@ const cosmosRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -73,6 +75,7 @@ const cosmosRepeatAlerts = {
       },
       critical: {
         repeat: 500,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -98,6 +101,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 200,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -116,6 +120,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 2,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -134,6 +139,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 300,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -154,6 +160,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 180,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -172,6 +179,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -190,6 +198,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -208,6 +217,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -226,6 +236,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -244,6 +255,7 @@ const cosmosThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -270,6 +282,7 @@ const cosmosTimeWindowAlerts = {
         threshold: 100,
         time_window: 3600,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,

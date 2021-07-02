@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -129,7 +130,7 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
+                            label="Warning Alert Enabled"
                             labelPlacement="end"
                           />
                         </Grid>
@@ -214,6 +215,8 @@ const AlertsTable = ({
                                         threshold:
                                           ThresholdAlerts.byId[id].critical
                                             .threshold,
+                                        repeat: ThresholdAlerts.byId[id].critical.repeat,
+                                        repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
                                         enabled: !ThresholdAlerts.byId[id]
                                           .critical.enabled,
                                       },
@@ -224,7 +227,7 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
+                            label="Critical Alert Enabled"
                             labelPlacement="end"
                           />
                         </Grid>
@@ -259,6 +262,7 @@ const AlertsTable = ({
                                     repeat:
                                       ThresholdAlerts.byId[id].critical
                                         .repeat,
+                                    repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
                                     enabled:
                                       ThresholdAlerts.byId[id].critical
                                         .enabled,
@@ -313,6 +317,7 @@ const AlertsTable = ({
                                       ThresholdAlerts.byId[id].critical
                                         .threshold,
                                     repeat: event.target.value,
+                                    repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
                                     enabled:
                                       ThresholdAlerts.byId[id].critical
                                         .enabled,
@@ -336,6 +341,43 @@ const AlertsTable = ({
                               ),
                             }}
                             fullWidth
+                          />
+                        </Grid>
+                        <Grid item>
+                          <FormControlLabel
+                            control={(
+                              <Checkbox
+                                checked={ThresholdAlerts.byId[id].critical.repeat_enabled}
+                                onClick={() => {
+                                  updateThresholdAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: ThresholdAlerts.byId[id].name,
+                                      identifier:
+                                        ThresholdAlerts.byId[id].identifier,
+                                      description:
+                                        ThresholdAlerts.byId[id].description,
+                                      adornment: ThresholdAlerts.byId[id].adornment,
+                                      adornment_time:
+                                        ThresholdAlerts.byId[id].adornment_time,
+                                      warning: ThresholdAlerts.byId[id].warning,
+                                      critical: {
+                                        threshold: ThresholdAlerts.byId[id].critical.threshold,
+                                        repeat: ThresholdAlerts.byId[id].critical.repeat,
+                                        repeat_enabled: !ThresholdAlerts.byId[id].critical.repeat_enabled,
+                                        enabled: ThresholdAlerts.byId[id].critical.enabled,
+                                      },
+                                      enabled: ThresholdAlerts.byId[id].enabled,
+                                    },
+                                  });
+                                }}
+                                name="enabled"
+                                color="primary"
+                              />
+                            )}
+                            label="Repeat Enabled"
+                            labelPlacement="end"
                           />
                         </Grid>
                       </Grid>
@@ -368,7 +410,8 @@ const AlertsTable = ({
                             color="primary"
                           />
                         )}
-                        label=""
+                        label="Alert Enabled"
+                        labelPlacement="end"
                       />
                     </StyledTableCell>
                   </StyledTableRow>
@@ -414,22 +457,6 @@ AlertsTable.propTypes = {
   stepChanger: PropTypes.func.isRequired,
   config: PropTypes.shape({
     byId: PropTypes.shape({
-      repeatAlerts: PropTypes.shape({
-        byId: PropTypes.shape({
-          name: PropTypes.string,
-          description: PropTypes.string,
-          warning: PropTypes.shape({
-            repeat: PropTypes.number,
-            enabled: PropTypes.bool,
-          }),
-          critical: PropTypes.shape({
-            repeat: PropTypes.number,
-            enabled: PropTypes.bool,
-          }),
-          enabled: PropTypes.bool,
-        }),
-        allIds: PropTypes.arrayOf(PropTypes.string),
-      }),
       thresholdAlerts: PropTypes.shape({
         byId: PropTypes.shape({
           name: PropTypes.string,
@@ -439,6 +466,8 @@ AlertsTable.propTypes = {
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,

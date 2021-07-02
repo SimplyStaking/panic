@@ -30,6 +30,7 @@ const generalThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -48,6 +49,7 @@ const generalThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -66,6 +68,7 @@ const generalThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -84,6 +87,7 @@ const generalThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -104,6 +108,7 @@ const generalThresholdAlerts = {
       critical: {
         threshold: 200,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
