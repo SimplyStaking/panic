@@ -480,3 +480,32 @@ class TestAlertingFactory(unittest.TestCase):
             self.test_node_id, 51)
         self.assertTrue(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    def test_classify_thresh_time_win_does_nothing_warning_critical_disabled(
+            self) -> None:
+        pass
+
+    def test_classify_thresh_time_win_raises_alert_if_above_thresh_and_elapsed(
+            self) -> None:
+        pass
+
+    def test_classify_thresh_time_win_no_warning_if_warning_already_sent(
+            self) -> None:
+        pass
+
+    def test_classify_thresh_time_win_raises_critical_if_repeat_elapsed(
+            self) -> None:
+        pass
+
+    def test_classify_thresh_time_win_only_1_critical_if_above_and_no_repeat(
+            self) -> None:
+        pass
+
+    def test_classify_thresh_time_win_info_alert_if_below_thresh_and_alert_sent(
+            self) -> None:
+        # TODO: Assume below warning as well for critical
+        pass
+
+    def test_classify_thresh_time_win_warn_alert_if_below_critical_above_warn(
+            self) -> None:
+        pass
