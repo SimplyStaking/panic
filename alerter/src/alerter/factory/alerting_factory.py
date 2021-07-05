@@ -333,8 +333,6 @@ class AlertingFactory(ABC):
                 self.alerting_state[parent_id][monitorable_id][
                     'warning_sent'][metric_name] = True
 
-    # TODO: warning_sent and critical_sent must be used with the metric_name due
-    #     : to immutability.
     def classify_thresholded_in_time_period_alert(
             self, current: Any, previous: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
@@ -374,7 +372,8 @@ class AlertingFactory(ABC):
             monitorable_id]['warning_occurrences_in_period_tracker'][
             metric_name]
         warning_sent = self.alerting_state[parent_id][monitorable_id][
-            'warning_sent'][metric_name]
+            'warning_sent']
+        warning_period = convert_to_float(config['warning_time_window'], None)
 
         # Parse critical thresholds and limiters
         critical_enabled = str_to_bool(config['critical_enabled'])
@@ -387,7 +386,8 @@ class AlertingFactory(ABC):
             monitorable_id]['critical_occurrences_in_period_tracker'][
             metric_name]
         critical_sent = self.alerting_state[parent_id][monitorable_id][
-            'critical_sent'][metric_name]
+            'critical_sent']
+        critical_period = convert_to_float(config['critical_time_window'], None)
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
@@ -412,11 +412,12 @@ class AlertingFactory(ABC):
         # First check for critical as it is expected that
         # warning_threshold <= critical_threshold
 
-        if critical_sent and critical_occurrences < critical_threshold:
+        if (critical_sent[metric_name]
+                and critical_occurrences < critical_threshold):
             alert = decreased_below_threshold_alert(
                 monitorable_name, critical_occurrences, Severity.INFO.value,
-                monitoring_timestamp, config['critical_time_window'],
-                Severity.CRITICAL.value, parent_id, monitorable_id, )
+                monitoring_timestamp, critical_period, Severity.CRITICAL.value,
+                parent_id, monitorable_id,)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -426,15 +427,17 @@ class AlertingFactory(ABC):
 
             # If this is the case we still need to raise a warning alert to
             # show the correct metric state in the UI.
-            if warning_sent and warning_occurrences >= warning_threshold:
+            if (warning_sent[metric_name]
+                    and warning_occurrences >= warning_threshold):
                 self.alerting_state[parent_id][monitorable_id]['warning_sent'][
                     metric_name] = False
 
-        if warning_sent and warning_occurrences < warning_threshold:
+        if (warning_sent[metric_name]
+                and warning_occurrences < warning_threshold):
             alert = decreased_below_threshold_alert(
                 monitorable_name, warning_occurrences, Severity.INFO.value,
-                monitoring_timestamp, config['warning_time_window'],
-                Severity.WARNING.value, parent_id, monitorable_id)
+                monitoring_timestamp, warning_period, Severity.WARNING.value,
+                parent_id, monitorable_id)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -446,12 +449,12 @@ class AlertingFactory(ABC):
         # we are immediately in critical state
 
         if critical_enabled and critical_occurrences >= critical_threshold:
-            if not critical_sent:
+            if not critical_sent[metric_name]:
                 alert = increased_above_threshold_alert(
                     monitorable_name, critical_occurrences,
                     Severity.CRITICAL.value, monitoring_timestamp,
-                    config['critical_time_window'], Severity.CRITICAL.value,
-                    parent_id, monitorable_id)
+                    critical_period, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -464,8 +467,8 @@ class AlertingFactory(ABC):
                 alert = increased_above_threshold_alert(
                     monitorable_name, critical_occurrences,
                     Severity.CRITICAL.value, monitoring_timestamp,
-                    config['critical_time_window'], Severity.CRITICAL.value,
-                    parent_id, monitorable_id)
+                    critical_period, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -473,13 +476,13 @@ class AlertingFactory(ABC):
                     monitoring_datetime)
 
         if (warning_enabled
-                and not warning_sent
-                and not critical_sent
+                and not warning_sent[metric_name]
+                and not critical_sent[metric_name]
                 and warning_occurrences >= warning_threshold):
             alert = increased_above_threshold_alert(
                 monitorable_name, warning_occurrences, Severity.WARNING.value,
-                monitoring_timestamp, config['warning_time_window'],
-                Severity.WARNING.value, parent_id, monitorable_id)
+                monitoring_timestamp, warning_period, Severity.WARNING.value,
+                parent_id, monitorable_id)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -503,6 +506,8 @@ class AlertingFactory(ABC):
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
 
+    # TODO: warning_sent and critical_sent must be used with the metric_name due
+    #     : to immutability.
     def classify_thresholded_alert_critical_reverse(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
