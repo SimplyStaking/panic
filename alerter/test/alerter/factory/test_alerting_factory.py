@@ -6,8 +6,10 @@ from datetime import timedelta
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.alerter.alerts.node.chainlink import (NoChangeInHeightAlert,
-                                               BlockHeightUpdatedAlert)
+from src.alerter.alerts.node.chainlink import (
+    NoChangeInHeightAlert, BlockHeightUpdatedAlert,
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    HeadsInQueueDecreasedBelowThresholdAlert)
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
@@ -43,12 +45,16 @@ class AlertingFactoryInstance(AlertingFactory):
                     False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     DroppedBlockHeadersThreshold.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : False
             }
             critical_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     DroppedBlockHeadersThreshold.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : False
             }
             error_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value: False,
@@ -62,21 +68,34 @@ class AlertingFactoryInstance(AlertingFactory):
                  'critical_repeat'],
                 cl_node_alerts_config.head_tracker_num_heads_dropped_total
             )
+            heads_in_queue_thresholds = parse_alert_time_thresholds(
+                ['warning_time_window', 'critical_time_window',
+                 'critical_repeat'],
+                cl_node_alerts_config.head_tracker_heads_in_queue)
 
             warning_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskTracker(timedelta(
                         seconds=current_head_thresholds['warning_threshold'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskTracker(timedelta(
+                    seconds=heads_in_queue_thresholds['warning_time_window']))
             }
             critical_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskTracker(timedelta(
                         seconds=current_head_thresholds['critical_threshold'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskTracker(timedelta(
+                    seconds=heads_in_queue_thresholds['critical_time_window'])),
             }
             critical_repeat_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskLimiter(timedelta(
                         seconds=current_head_thresholds['critical_repeat'])),
+                GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value
+                : TimedTaskLimiter(timedelta(
+                    seconds=heads_in_queue_thresholds['critical_repeat'])),
             }
             warning_occurrences_in_period_tracker = {
                 GroupedChainlinkNodeAlertsMetricCode.
@@ -143,12 +162,25 @@ class TestAlertingFactory(unittest.TestCase):
             'warning_time_window': '3',
             'critical_time_window': '7',
         }
+        self.head_tracker_heads_in_queue = {
+            'name': 'head_tracker_heads_in_queue',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'critical_threshold': '5',
+            'critical_repeat': '5',
+            'critical_enabled': 'true',
+            'critical_repeat_enabled': 'true',
+            'warning_threshold': '3',
+            'warning_enabled': 'true',
+            'warning_time_window': '3',
+            'critical_time_window': '7',
+        }
         self.test_alerts_config = ChainlinkNodeAlertsConfig(
             parent_id=self.test_parent_id,
             head_tracker_current_head=self.head_tracker_current_head,
             head_tracker_num_heads_dropped_total=
             self.head_tracker_num_heads_dropped_total,
-            head_tracker_heads_in_queue={},
+            head_tracker_heads_in_queue=self.head_tracker_heads_in_queue,
             head_tracker_heads_received_total={}, max_unconfirmed_blocks={},
             process_start_time_seconds={},
             tx_manager_gas_bump_exceeds_limit_total={},
@@ -178,10 +210,11 @@ class TestAlertingFactory(unittest.TestCase):
     def test_classify_no_change_in_alert_does_nothing_warning_critical_disabled(
             self) -> None:
         """
-        In this test we will check that no alert is raised whenever both
-        warning and critical alerts are disabled. We will perform this test only
-        for when current == previous. For an alert to be raised when
-        current != previous it must be that one of the severities is enabled.
+        In this test we will check that no alert is raised and no timer is
+        started whenever both warning and critical alerts are disabled. We will
+        perform this test only for when current == previous. For an alert to be
+        raised when current != previous it must be that one of the severities is
+        enabled.
         """
         self.test_alerts_config.head_tracker_current_head[
             'warning_enabled'] = 'False'
@@ -197,7 +230,15 @@ class TestAlertingFactory(unittest.TestCase):
             self.test_node_name, datetime.now().timestamp()
         )
 
+        critical_window_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['critical_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value]
+        warning_window_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['warning_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value]
         self.assertEqual([], data_for_alerting)
+        self.assertFalse(critical_window_timer.timer_started)
+        self.assertFalse(warning_window_timer.timer_started)
 
     def test_classify_no_change_does_nothing_if_change_and_no_issue_raised(
             self) -> None:
@@ -265,7 +306,7 @@ class TestAlertingFactory(unittest.TestCase):
         expected_alert = NoChangeInHeightAlert(
             self.test_node_name, pad, severity, alert_timestamp,
             self.test_parent_id, self.test_node_id, 50)
-        self.assertTrue(1, len(data_for_alerting))
+        self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     @freeze_time("2012-01-01")
@@ -375,7 +416,7 @@ class TestAlertingFactory(unittest.TestCase):
         expected_alert = NoChangeInHeightAlert(
             self.test_node_name, pad, 'CRITICAL', alert_timestamp,
             self.test_parent_id, self.test_node_id, 50)
-        self.assertTrue(1, len(data_for_alerting))
+        self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     @freeze_time("2012-01-01")
@@ -478,34 +519,428 @@ class TestAlertingFactory(unittest.TestCase):
         expected_alert = BlockHeightUpdatedAlert(
             self.test_node_name, 'INFO', alert_timestamp, self.test_parent_id,
             self.test_node_id, 51)
-        self.assertTrue(1, len(data_for_alerting))
+        self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     def test_classify_thresh_time_win_does_nothing_warning_critical_disabled(
             self) -> None:
-        pass
+        """
+        In this test we will check that no alert is raised and that no timer is
+        starter whenever both warning and critical alerts are disabled. We will
+        perform this test for both when current >= critical and
+        current >= warning. For an alert to be raised when current < critical or
+        current < warning it must be that one of the severities is enabled.
+        """
+        self.test_alerts_config.head_tracker_heads_in_queue[
+            'warning_enabled'] = 'False'
+        self.test_alerts_config.head_tracker_heads_in_queue[
+            'critical_enabled'] = 'False'
 
+        data_for_alerting = []
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        warning_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['warning_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value]
+        critical_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['critical_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value]
+        self.assertEqual([], data_for_alerting)
+        self.assertFalse(warning_timer.timer_started)
+        self.assertFalse(critical_timer.timer_started)
+
+    @parameterized.expand([
+        ('warning_time_window', 'WARNING',),
+        ('critical_time_window', 'CRITICAL',)
+    ])
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_raises_alert_if_above_thresh_and_elapsed(
-            self) -> None:
-        pass
+            self, threshold, severity) -> None:
+        """
+        In this test we will check that a warning/critical above threshold alert
+        is raised if the time window above warning/critical threshold elapses.
+        We will also first check that no alert is raised first time round,
+        (as the timer is started) and if the warning/critical time does not
+        elapse.
+        """
+        data_for_alerting = []
 
+        # No alert is raised if timer not started yet
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # No alert is raised if the time window is not elapsed yet
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # Above threshold alert is raised if time window elapsed
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        threshold])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        expected_alert = HeadsInQueueIncreasedAboveThresholdAlert(
+            self.test_node_name, current, severity, alert_timestamp, pad,
+            severity, self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_no_warning_if_warning_already_sent(
             self) -> None:
-        pass
+        """
+        In this test we will check that no warning alert is raised if a warning
+        alert has already been sent
+        """
+        data_for_alerting = []
 
+        # Set the timer
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        # Send warning alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'warning_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+
+        # Check that no alert is raised even if the warning window elapses again
+        data_for_alerting.clear()
+        alert_timestamp = datetime.now().timestamp() + (2 * pad)
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_raises_critical_if_repeat_elapsed(
             self) -> None:
-        pass
+        """
+        In this test we will check that a critical above threshold alert is
+        re-raised if the critical window elapses. We will also check that if the
+        critical window does not elapse, a critical alert is not re-raised.
+        """
+        data_for_alerting = []
 
+        # Start timer
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        # First CRITICAL above threshold alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Classify with not elapsed repeat to confirm that no critical alert is
+        # raised.
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window']) + float(
+            self.test_alerts_config.head_tracker_heads_in_queue[
+                'critical_repeat']) - 1
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # Let repeat time to elapse and check that a critical alert is
+        # re-raised
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window']) + float(
+            self.test_alerts_config.head_tracker_heads_in_queue[
+                'critical_repeat'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        expected_alert = HeadsInQueueIncreasedAboveThresholdAlert(
+            self.test_node_name, current, 'CRITICAL', alert_timestamp, pad,
+            'CRITICAL', self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_only_1_critical_if_above_and_no_repeat(
             self) -> None:
-        pass
+        """
+        In this test we will check that if critical_repeat is disabled, an
+        increased abaove critical alert is not re-raised.
+        """
+        self.test_alerts_config.head_tracker_heads_in_queue[
+            'critical_repeat_enabled'] = "False"
+        data_for_alerting = []
 
+        # Start timer
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        # First CRITICAL above threshold alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Let repeat time to elapse and check that a critical alert is
+        # still not re-raised
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window']) + float(
+            self.test_alerts_config.head_tracker_heads_in_queue[
+                'critical_repeat'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('critical_threshold', 'critical_time_window', 'CRITICAL',),
+        ('warning_threshold', 'warning_time_window', 'WARNING',)
+    ])
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_info_alert_if_below_thresh_and_alert_sent(
-            self) -> None:
-        # TODO: Assume below warning as well for critical
-        pass
+            self, threshold, time_window_threshold, threshold_severity) -> None:
+        """
+        In this test we will check that once the current value is less than a
+        threshold, a decreased below threshold info alert is sent. We will
+        perform this test for both warning and critical.
+        """
+        data_for_alerting = []
 
+        # Start timers
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          threshold])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        # First above threshold alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        time_window_threshold])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Check that an INFO alert is raised
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        time_window_threshold])
+        alert_timestamp = datetime.now().timestamp() + pad + 60
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            0,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        expected_alert = HeadsInQueueDecreasedBelowThresholdAlert(
+            self.test_node_name, 0, 'INFO', alert_timestamp,
+            threshold_severity, self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
     def test_classify_thresh_time_win_warn_alert_if_below_critical_above_warn(
             self) -> None:
-        pass
+        """
+        In this test we will check that whenever
+        warning <= current <= critical <= previous, a warning alert is raised to
+        inform that the current value is greater than the critical value. Note
+        we will perform this test for the case when we first alert warning, then
+        critical and not immediately critical, as the warning alerting would be
+        obvious.
+        """
+        data_for_alerting = []
+
+        # Start times
+        current = int(self.test_alerts_config.head_tracker_heads_in_queue[
+                          'critical_threshold'])
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, datetime.now().timestamp()
+        )
+
+        # First above warning threshold alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'warning_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+
+        # First above critical threshold alert
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Check that 2 alerts are raised, below critical and above warning
+        pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
+                        'critical_time_window'])
+        alert_timestamp = datetime.now().timestamp() + pad + 60
+        self.test_factory_instance.classify_thresholded_time_window_alert(
+            current - 1,
+            self.test_alerts_config.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
+                .value, self.test_node_name, alert_timestamp
+        )
+        expected_alert_1 = HeadsInQueueDecreasedBelowThresholdAlert(
+            self.test_node_name, current - 1, 'INFO', alert_timestamp,
+            'CRITICAL', self.test_parent_id, self.test_node_id)
+        expected_alert_2 = HeadsInQueueIncreasedAboveThresholdAlert(
+            self.test_node_name, current - 1, 'WARNING', alert_timestamp,
+            pad + 60, 'WARNING', self.test_parent_id, self.test_node_id
+        )
+        self.assertEqual(2, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+        self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])

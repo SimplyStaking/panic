@@ -96,7 +96,7 @@ class AlertingFactory(ABC):
         warning_window_timer = self.alerting_state[parent_id][monitorable_id][
             'warning_window_timer'][metric_name]
         warning_sent = self.alerting_state[parent_id][monitorable_id][
-            'warning_sent'][metric_name]
+            'warning_sent']
 
         # Parse critical thresholds and limiters
         critical_enabled = str_to_bool(config['critical_enabled'])
@@ -106,7 +106,7 @@ class AlertingFactory(ABC):
         critical_window_timer = self.alerting_state[parent_id][monitorable_id][
             'critical_window_timer'][metric_name]
         critical_sent = self.alerting_state[parent_id][monitorable_id][
-            'critical_sent'][metric_name]
+            'critical_sent']
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
@@ -133,7 +133,7 @@ class AlertingFactory(ABC):
                     critical_window_timer.do_task()
                     critical_repeat_limiter.set_last_time_that_did_task(
                         monitoring_datetime)
-                elif (critical_sent
+                elif (critical_sent[metric_name]
                       and critical_repeat_enabled
                       and critical_repeat_limiter.can_do_task(
                             monitoring_datetime)):
@@ -153,8 +153,9 @@ class AlertingFactory(ABC):
             if warning_enabled:
                 if not warning_window_timer.timer_started:
                     warning_window_timer.start_timer(monitoring_datetime)
-                elif not critical_sent and warning_window_timer.can_do_task(
-                        monitoring_datetime):
+                elif (not critical_sent[metric_name]
+                      and warning_window_timer.can_do_task(
+                            monitoring_datetime)):
                     duration = monitoring_timestamp - \
                                warning_window_timer.start_time.replace(
                                    tzinfo=timezone.utc).timestamp()
@@ -169,7 +170,7 @@ class AlertingFactory(ABC):
                     self.alerting_state[parent_id][monitorable_id][
                         'warning_sent'][metric_name] = True
         else:
-            if warning_sent or critical_sent:
+            if warning_sent[metric_name] or critical_sent[metric_name]:
                 alert = change_alert(
                     monitorable_name, Severity.INFO.value, monitoring_timestamp,
                     parent_id, monitorable_id, current)
@@ -221,7 +222,7 @@ class AlertingFactory(ABC):
         warning_window_timer = self.alerting_state[parent_id][monitorable_id][
             'warning_window_timer'][metric_name]
         warning_sent = self.alerting_state[parent_id][monitorable_id][
-            'warning_sent'][metric_name]
+            'warning_sent']
 
         # Parse critical thresholds and limiters
         critical_enabled = str_to_bool(config['critical_enabled'])
@@ -233,7 +234,7 @@ class AlertingFactory(ABC):
         critical_window_timer = self.alerting_state[parent_id][monitorable_id][
             'critical_window_timer'][metric_name]
         critical_sent = self.alerting_state[parent_id][monitorable_id][
-            'critical_sent'][metric_name]
+            'critical_sent']
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
@@ -241,7 +242,7 @@ class AlertingFactory(ABC):
         # First check for critical as it is expected that
         # warning_threshold <= critical_threshold
 
-        if critical_sent and current < critical_threshold:
+        if critical_sent[metric_name] and current < critical_threshold:
             alert = decreased_below_threshold_alert(
                 monitorable_name, current, Severity.INFO.value,
                 monitoring_timestamp,
@@ -256,13 +257,13 @@ class AlertingFactory(ABC):
 
             # If this is the case we still need to raise a warning alert to
             # show the correct metric state in the UI.
-            if warning_sent and current >= warning_threshold:
+            if warning_sent[metric_name] and current >= warning_threshold:
                 warning_window_timer.start_timer(
                     warning_window_timer.start_time)
                 self.alerting_state[parent_id][monitorable_id]['warning_sent'][
                     metric_name] = False
 
-        if warning_sent and current < warning_threshold:
+        if warning_sent[metric_name] and current < warning_threshold:
             alert = decreased_below_threshold_alert(
                 monitorable_name, current, Severity.INFO.value,
                 monitoring_timestamp,
@@ -296,7 +297,7 @@ class AlertingFactory(ABC):
                 critical_window_timer.do_task()
                 critical_repeat_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
-            elif (critical_sent
+            elif (critical_sent[metric_name]
                   and critical_repeat_enabled
                   and critical_repeat_limiter.can_do_task(monitoring_datetime)):
                 duration = monitoring_timestamp - \
@@ -315,8 +316,8 @@ class AlertingFactory(ABC):
         if warning_enabled and current >= warning_threshold:
             if not warning_window_timer.timer_started:
                 warning_window_timer.start_timer(monitoring_datetime)
-            elif not critical_sent and warning_window_timer.can_do_task(
-                    monitoring_datetime):
+            elif (not critical_sent[metric_name]
+                  and warning_window_timer.can_do_task(monitoring_datetime)):
                 duration = monitoring_timestamp - \
                            warning_window_timer.start_time.replace(
                                tzinfo=timezone.utc).timestamp()
@@ -332,6 +333,8 @@ class AlertingFactory(ABC):
                 self.alerting_state[parent_id][monitorable_id][
                     'warning_sent'][metric_name] = True
 
+    # TODO: warning_sent and critical_sent must be used with the metric_name due
+    #     : to immutability.
     def classify_thresholded_in_time_period_alert(
             self, current: Any, previous: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
