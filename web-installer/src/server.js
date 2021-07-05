@@ -14,6 +14,7 @@ const mongoClient = require('mongodb').MongoClient;
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const parsePrometheusTextFormat = require('parse-prometheus-text-format');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
@@ -734,7 +735,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
       res.status(error.code).send(utils.errorJson(error.message));
     });
 });
-
+ 
 // ---------------------------------------- E-mail
 
 // This endpoint sends a test e-mail to the address.
@@ -895,6 +896,59 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   });
 });
 
+// ---------------------------------------- Common
+
+app.post('/server/common/prometheus', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { prometheusUrl, metric } = req.body;
+
+  // Check if prometheusUrl or metric is missing.
+  const missingParamsList = utils.missingValues({ prometheusUrl, metric });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => prometheusUrl.includes(a))) {
+    const error = new errors.BlackListError(prometheusUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  const url = `${prometheusUrl}`;
+
+  axios
+    .get(url, { params: {} })
+    .then((result) => {
+      const parsed = parsePrometheusTextFormat(result.data);
+      for (let i = 0; i < parsed.length; i += 1) {
+        if (parsed[i].name === metric) {
+          const msg = new msgs.MessagePong();
+          res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+          return;
+        }
+      }
+      const msg = new msgs.MetricNotFound(metric, url);
+      res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing
+        // or prometheus is not enabled)
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    });
+});
+
 // ---------------------------------------- Cosmos
 
 app.post('/server/cosmos/tendermint', verify, async (req, res) => {
@@ -934,136 +988,6 @@ app.post('/server/cosmos/tendermint', verify, async (req, res) => {
       } else {
         const msg = new msgs.ConnectionError();
         // Connection made but error occurred (typically means node is missing)
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      }
-    });
-});
-
-app.post('/server/cosmos/prometheus', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { prometheusUrl } = req.body;
-
-  // Check if prometheusUrl is missing.
-  const missingParamsList = utils.missingValues({ prometheusUrl });
-
-  // If some required parameters are missing inform the user.
-  if (missingParamsList.length !== 0) {
-    const err = new errors.MissingArguments(missingParamsList);
-    res.status(err.code).send(utils.errorJson(err.message));
-    return;
-  }
-
-  if (blackList.find((a) => prometheusUrl.includes(a))) {
-    const error = new errors.BlackListError(prometheusUrl);
-    console.log(error);
-    res.status(error.code).send(utils.errorJson(error.message));
-    return;
-  }
-
-  const url = `${prometheusUrl}`;
-
-  axios
-    .get(url, { params: {} })
-    .then((_) => {
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.code === 'ECONNREFUSED') {
-        const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      } else {
-        const msg = new msgs.ConnectionError();
-        // Connection made but error occurred (typically means node is missing
-        // or prometheus is not enabled)
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      }
-    });
-});
-
-// ---------------------------------------- Chainlink
-
-app.post('/server/chainlink/prometheus', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { prometheusUrl } = req.body;
-
-  // Check if prometheusUrl is missing.
-  const missingParamsList = utils.missingValues({ prometheusUrl });
-
-  // If some required parameters are missing inform the user.
-  if (missingParamsList.length !== 0) {
-    const err = new errors.MissingArguments(missingParamsList);
-    res.status(err.code).send(utils.errorJson(err.message));
-    return;
-  }
-
-  if (blackList.find((a) => prometheusUrl.includes(a))) {
-    const error = new errors.BlackListError(prometheusUrl);
-    console.log(error);
-    res.status(error.code).send(utils.errorJson(error.message));
-    return;
-  }
-
-  const url = `${prometheusUrl}`;
-
-  axios
-    .get(url, { params: {} })
-    .then(() => {
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.code === 'ECONNREFUSED') {
-        const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      } else {
-        const msg = new msgs.ConnectionError();
-        // Connection made but error occurred (typically means node is missing
-        // or prometheus is not enabled)
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      }
-    });
-});
-
-// ---------------------------------------- System (Node Exporter)
-
-app.post('/server/system/exporter', verify, async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { exporterUrl } = req.body;
-
-  // Check if exporterUrl is missing.
-  const missingParamsList = utils.missingValues({ exporterUrl });
-
-  // If some required parameters are missing inform the user.
-  if (missingParamsList.length !== 0) {
-    const err = new errors.MissingArguments(missingParamsList);
-    res.status(err.code).send(utils.errorJson(err.message));
-    return;
-  }
-
-  if (blackList.find((a) => exporterUrl.includes(a))) {
-    const error = new errors.BlackListError(exporterUrl);
-    console.log(error);
-    res.status(error.code).send(utils.errorJson(error.message));
-    return;
-  }
-
-  axios
-    .get(exporterUrl, { params: {} })
-    .then((_) => {
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.code === 'ECONNREFUSED') {
-        const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
-      } else {
-        const msg = new msgs.ConnectionError();
-        // Connection made but error occurred node exporter is not installed
         res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
       }
     });

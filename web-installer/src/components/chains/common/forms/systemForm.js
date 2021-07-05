@@ -7,7 +7,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingNodeExporter } from 'utils/buttons';
+import { PingPrometheus } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
@@ -150,9 +150,10 @@ const SystemForm = ({
                 <Grid item xs={4} />
                 <Grid item xs={4}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingNodeExporter
+                    <PingPrometheus
                       disabled={Object.keys(errors).length !== 0}
-                      exporterUrl={values.exporter_url}
+                      prometheusUrl={values.exporter_url}
+                      metric="go_memstats_alloc_bytes_total"
                     />
                     <Button
                       color="primary"

@@ -544,7 +544,13 @@ class LoadConfig extends Component {
                 } else {
                   node.prometheus_url = node.prometheus_url.split(',');
                 }
+                if (node.geth_prometheus_url.length === 0) {
+                  node.geth_prometheus_url = [];
+                } else {
+                  node.geth_prometheus_url = node.geth_prometheus_url.split(',');
+                }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
+                node.monitor_geth_prometheus = node.monitor_geth_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
                 addNodeChainlinkDetails(node);
               });

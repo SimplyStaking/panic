@@ -131,7 +131,7 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     6: {
-      name: 'Latest block height processed by node.',
+      name: 'Chainlink node: Latest block height processed by node.',
       identifier: 'head_tracker_current_head',
       description: 'Keeps track of blocks processed by the node, alerts if no change over time.',
       adornment: 'Seconds',
@@ -150,7 +150,7 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     7: {
-      name: 'New block headers not being received.',
+      name: 'Chainlink node: New block headers not being received.',
       identifier: 'head_tracker_heads_received_total',
       description:
         'Keeps track of when the last block header was received, '
@@ -171,7 +171,7 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     8: {
-      name: 'ETH Balance',
+      name: 'Chainlink node: ETH Balance',
       identifier: 'eth_balance_amount',
       description:
         'If the amount of ETH is less than the threshold an alert '
@@ -192,7 +192,7 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     9: {
-      name: 'Node is down.',
+      name: 'Chainlink node is down.',
       identifier: 'node_is_down',
       description:
         'All data sources for the node are unreachable therefore the node is is declared to be down.',
@@ -200,7 +200,7 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 0,
+        threshold: 10,
         enabled: true,
       },
       critical: {
@@ -211,14 +211,55 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
+    10: {
+      name: 'Ethereum-based node is down.',
+      identifier: 'ethereum_based_node_is_down',
+      description:
+        'All data sources for the node are unreachable therefore the node is is declared to be down.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 10,
+        enabled: true,
+      },
+      critical: {
+        threshold: 200,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    11: {
+      name: 'Ethereum-based node: height difference between nodes.',
+      identifier: 'ethereum_based_node_height_difference',
+      description:
+        'Difference in node height between nodes being monitored, if a node is '
+        + 'significantly behind the node with the highest block height.',
+      adornment: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 1000,
+        enabled: true,
+      },
+      critical: {
+        threshold: 10000,
+        repeat: 300,
+        repeat_enabled: false,
+        enabled: false,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    10: {
-      name: 'Number of unconfirmed transactions.',
+    12: {
+      name: 'Chianlink node: Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
       description:
         'Number of unconfirmed transactions per node persist over a time period. '
@@ -241,8 +282,8 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    11: {
-      name: 'Run status update total.',
+    13: {
+      name: 'Chainlink node: Run status update total.',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error over a time period.',
       adornment_threshold: 'Errors',
@@ -262,8 +303,8 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    12: {
-      name: 'Max Unconfirmed Blocks.',
+    14: {
+      name: 'Chainlink node: Max Unconfirmed Blocks.',
       identifier: 'max_unconfirmed_blocks',
       description:
         'The max number of blocks your transactions have been unconfirmed '
@@ -286,14 +327,38 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
+    15: {
+      name: 'Ethereum-based node: Block height.',
+      identifier: 'chain_head_block',
+      description:
+        'Last block processed by an ethereum-based node. Example: If no blocks '
+        + 'are processed in 2 minutes then send a warning alert. If less than 5 '
+        + 'blocks are processed in 5 minutes then send a critical alert.',
+      adornment_threshold: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        time_window: 120,
+        enabled: true,
+      },
+      critical: {
+        threshold: 5,
+        time_window: 300,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['10', '11', '12'],
+  allIds: ['12', '13', '14', '15'],
 };
 
 const chainlinkSeverityAlerts = {
   byId: {
-    13: {
-      name: 'Node Switch',
+    16: {
+      name: 'Chainlink node: Node Switch',
       identifier: 'process_start_time_seconds',
       description:
         'Whenever a node being monitored goes down, a back-up Chainlink '
@@ -302,18 +367,17 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    14: {
+    17: {
       name: 'Ethereum Balance Topped Up',
       identifier: 'eth_balance_amount_increase',
       description:
-        'Whenever the ethereum balance of a node is topped up you will get '
-        + 'alerted.',
+        'Whenever the ethereum balance of a node is topped up you will get alerted.',
       severity: INFO,
       parent_id: '',
       enabled: true,
     },
-    15: {
-      name: "Gas price increases over the node's price limit",
+    18: {
+      name: "Chainlink node: Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit',
       description:
         'If the current gas price is higher than the gas limit of the node an '
@@ -325,7 +389,7 @@ const chainlinkSeverityAlerts = {
       enabled: true,
     },
   },
-  allIds: ['13', '14', '15'],
+  allIds: ['16', '17', '18'],
 };
 
 // Reducers to add and remove chainlink node configurations from global state
