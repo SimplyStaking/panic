@@ -30,10 +30,6 @@ const NodesForm = ({
     setFieldValue('prometheus_url', prometheusUrl);
   };
 
-  const updateEthereumAddress = (event, ethereumAddress) => {
-    setFieldValue('node_address', ethereumAddress);
-  };
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
@@ -147,37 +143,6 @@ const NodesForm = ({
                     />
                   </Grid>
                 </Grid>
-                <Grid item xs={8}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    options={[]}
-                    onChange={updateEthereumAddress}
-                    value={values.node_address}
-                    renderInput={(params) => (
-                      <CssTextField
-                        // eslint-disable-next-line react/jsx-props-no-spreading
-                        {...params}
-                        id="node-based-url-outlined-full-width"
-                        error={!!(errors.node_address)}
-                        label="Node addresses"
-                        type="text"
-                        style={{ margin: 8 }}
-                        name="node_address"
-                        placeholder={data.nodeForm.ethereumAddressHolder}
-                        helperText={errors.node_address ? errors.node_address : ''}
-                        fullWidth
-                        margin="normal"
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        autoComplete="off"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid item xs={4} />
                 <Grid item xs={2}>
                   <Box pl={1}>
                     <Typography> Monitor Node </Typography>
@@ -243,13 +208,11 @@ NodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
     prometheus_url: PropTypes.string,
-    node_address: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
     prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
-    node_address: PropTypes.arrayOf(PropTypes.string.isRequired),
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,
