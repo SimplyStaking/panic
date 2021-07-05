@@ -44,6 +44,13 @@ CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME = 'channels_manager_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
 
+# Chainlink related queue names
+CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
+    'chainlink_alerter_manager_heartbeat_queue'
+CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
+    'chainlink_alerter_manager_configs_queue'
+
+
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
@@ -76,3 +83,4 @@ PING_ROUTING_KEY = 'ping'
 HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
+CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'

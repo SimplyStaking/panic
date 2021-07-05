@@ -27,6 +27,7 @@ from src.utils.constants.names import (SYSTEM_MONITORS_MANAGER_NAME,
                                        DATA_TRANSFORMERS_MANAGER_NAME,
                                        SYSTEM_ALERTERS_MANAGER_NAME,
                                        GITHUB_ALERTER_MANAGER_NAME,
+                                       CHAINLINK_ALERTER_MANAGER_NAME,
                                        DATA_STORE_MANAGER_NAME,
                                        ALERT_ROUTER_NAME,
                                        CONFIGS_MANAGER_NAME,
@@ -769,6 +770,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: False,
+                    CHAINLINK_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: False,
                     ALERT_ROUTER_NAME: False,
                     CONFIGS_MANAGER_NAME: False,
@@ -783,6 +785,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: True,
+                    CHAINLINK_ALERTER_MANAGER_NAME: True,
                     DATA_STORE_MANAGER_NAME: True,
                     ALERT_ROUTER_NAME: True,
                     CONFIGS_MANAGER_NAME: True,
@@ -851,6 +854,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    CHAINLINK_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -892,6 +899,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    CHAINLINK_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
                     },
@@ -940,6 +951,7 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                               DATA_TRANSFORMERS_MANAGER_NAME,
                               SYSTEM_ALERTERS_MANAGER_NAME,
                               GITHUB_ALERTER_MANAGER_NAME,
+                              CHAINLINK_ALERTER_MANAGER_NAME,
                               DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
         worker_components = [ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME]
         mock_manager_status.side_effect = [
