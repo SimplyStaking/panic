@@ -11,7 +11,8 @@ from src.alerter.alerts.node.chainlink import (
     HeadsInQueueIncreasedAboveThresholdAlert,
     HeadsInQueueDecreasedBelowThresholdAlert,
     DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    DroppedBlockHeadersDecreasedBelowThresholdAlert)
+    DroppedBlockHeadersDecreasedBelowThresholdAlert, ChangeInSourceNodeAlert,
+    PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
@@ -1295,3 +1296,75 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(2, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
         self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
+
+    @freeze_time("2012-01-01")
+    def test_classify_conditional_alert_raises_condition_true_alert_if_true(
+            self) -> None:
+        """
+        Given a true condition, in this test we will check that the
+        classify_conditional_alert fn calls the condition_true_alert
+        """
+
+        def condition_function(*args): return True
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_conditional_alert(
+            ChangeInSourceNodeAlert, condition_function, [], [
+                self.test_node_name, 'new_source', 'WARNING',
+                datetime.now().timestamp(), self.test_parent_id,
+                self.test_node_id
+            ], data_for_alerting
+        )
+
+        expected_alert_1 = ChangeInSourceNodeAlert(
+            self.test_node_name, 'new_source', 'WARNING',
+            datetime.now().timestamp(), self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_conditional_alert_raises_condition_false_alert_if_false(
+            self) -> None:
+        """
+        Given a false condition, in this test we will check that the
+        classify_conditional_alert fn calls the condition_false_alert if it is
+        not None.
+        """
+
+        def condition_function(*args): return False
+
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_conditional_alert(
+            PrometheusSourceIsDownAlert, condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, PrometheusSourceBackUpAgainAlert
+        )
+
+        expected_alert_1 = PrometheusSourceBackUpAgainAlert(
+            self.test_node_name, 'WARNING', datetime.now().timestamp(),
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_conditional_alert_no_alert_if_no_false_alert_and_false(
+            self) -> None:
+        """
+        Given a false condition and no condition_false_alert, in this test we
+        will check that no alert is raised by the classify_conditional_alert fn.
+        """
+
+        def condition_function(*args): return False
+
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_conditional_alert(
+            PrometheusSourceIsDownAlert, condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting
+        )
+
+        self.assertEqual([], data_for_alerting)
