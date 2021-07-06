@@ -686,8 +686,6 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'error_sent'][metric_name] = True
 
-    # TODO: warning_sent, critical_sent, error_sent must be used with the
-    #     : metric_name due to immutability.
     def classify_downtime_alert(
             self, current_went_down: Optional[float], config: Dict,
             went_down_at_alert: Type[DownAlert],
@@ -701,7 +699,7 @@ class AlertingFactory(ABC):
         warning_window_timer = self.alerting_state[parent_id][monitorable_id][
             'warning_window_timer'][metric_name]
         warning_sent = self.alerting_state[parent_id][monitorable_id][
-            'warning_sent'][metric_name]
+            'warning_sent']
 
         # Parse critical thresholds and limiters
         critical_enabled = str_to_bool(config['critical_enabled'])
@@ -711,26 +709,27 @@ class AlertingFactory(ABC):
         critical_window_timer = self.alerting_state[parent_id][monitorable_id][
             'critical_window_timer'][metric_name]
         critical_sent = self.alerting_state[parent_id][monitorable_id][
-            'critical_sent'][metric_name]
+            'critical_sent']
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
         went_down_datetime = datetime.fromtimestamp(current_went_down)
 
-        if current_went_down is None and (warning_sent or critical_sent):
-            alert = back_up_alert(
-                monitorable_name, Severity.INFO.value, monitoring_timestamp,
-                parent_id, monitorable_id
-            )
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug("Successfully classified alert %s",
-                                        alert.alert_data)
-            self.alerting_state[parent_id][monitorable_id][
-                'warning_sent'][metric_name] = False
-            self.alerting_state[parent_id][monitorable_id][
-                'critical_sent'][metric_name] = False
-            warning_window_timer.reset()
-            critical_window_timer.reset()
-            critical_repeat_limiter.reset()
+        if current_went_down is None:
+            if warning_sent[metric_name] or critical_sent[metric_name]:
+                alert = back_up_alert(
+                    monitorable_name, Severity.INFO.value, monitoring_timestamp,
+                    parent_id, monitorable_id
+                )
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'warning_sent'][metric_name] = False
+                self.alerting_state[parent_id][monitorable_id][
+                    'critical_sent'][metric_name] = False
+                warning_window_timer.reset()
+                critical_window_timer.reset()
+                critical_repeat_limiter.reset()
         else:
             if critical_enabled:
                 if not critical_window_timer.timer_started:
@@ -747,7 +746,7 @@ class AlertingFactory(ABC):
                     critical_window_timer.do_task()
                     critical_repeat_limiter.set_last_time_that_did_task(
                         monitoring_datetime)
-                elif (critical_sent
+                elif (critical_sent[metric_name]
                       and critical_repeat_enabled
                       and critical_repeat_limiter.can_do_task(
                             monitoring_datetime)):
@@ -764,10 +763,10 @@ class AlertingFactory(ABC):
             if warning_enabled:
                 if not warning_window_timer.timer_started:
                     warning_window_timer.start_timer(went_down_datetime)
-                elif not critical_sent and warning_window_timer.can_do_task(
-                        monitoring_datetime):
+                elif not critical_sent[metric_name] and \
+                        warning_window_timer.can_do_task(monitoring_datetime):
                     alert = went_down_at_alert(
-                        monitorable_name, Severity.CRITICAL.value,
+                        monitorable_name, Severity.WARNING.value,
                         monitoring_timestamp, parent_id, monitorable_id)
                     data_for_alerting.append(alert.alert_data)
                     self.component_logger.debug(

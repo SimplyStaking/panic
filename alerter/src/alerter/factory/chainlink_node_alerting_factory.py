@@ -173,7 +173,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                         'warning_time_window'])),
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                     TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
-                        'warning_time_window'])),
+                        'warning_threshold'])),
             }
             critical_window_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
@@ -196,7 +196,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                         'critical_time_window'])),
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                     TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
-                        'critical_time_window'])),
+                        'critical_threshold'])),
             }
             critical_repeat_timer = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
