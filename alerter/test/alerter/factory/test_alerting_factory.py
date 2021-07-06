@@ -14,12 +14,13 @@ from src.alerter.alerts.node.chainlink import (
     DroppedBlockHeadersDecreasedBelowThresholdAlert, ChangeInSourceNodeAlert,
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert,
     EthBalanceIncreasedAboveThresholdAlert,
-    EthBalanceDecreasedBelowThresholdAlert)
+    EthBalanceDecreasedBelowThresholdAlert, InvalidUrlAlert, ValidUrlAlert)
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
+from src.utils.exceptions import InvalidUrlException, MetricNotFoundException
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
 
@@ -1688,3 +1689,79 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(2, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
         self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
+
+    @freeze_time("2012-01-01")
+    def test_classify_error_alert_raises_error_alert_if_matched_error_codes(
+            self) -> None:
+        test_err = InvalidUrlException('test_url')
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_error_alert(
+            test_err.code, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            datetime.now().timestamp(),
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            "resolved msg", test_err.code
+        )
+
+        expected_alert = InvalidUrlAlert(
+            self.test_node_name, 'error msg', 'ERROR',
+            datetime.now().timestamp(), self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_error_alert_does_nothing_if_no_err_received_and_no_raised(
+            self) -> None:
+        test_err = InvalidUrlException('test_url')
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_error_alert(
+            test_err.code, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            datetime.now().timestamp(),
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            "resolved msg", None
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        (None,), (MetricNotFoundException('test-metric', 'test_url').code,),
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_error_alert_raises_err_solved_if_alerted_and_no_error(
+            self, code) -> None:
+        """
+        In this test we will check that an error solved alert is raised whenever
+        no error is detected or a new error is detected after reporting a
+        different error
+        """
+        test_err = InvalidUrlException('test_url')
+        data_for_alerting = []
+
+        # Generate first error alert
+        self.test_factory_instance.classify_error_alert(
+            test_err.code, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            datetime.now().timestamp(),
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            "resolved msg", test_err.code
+        )
+        data_for_alerting.clear()
+
+        # Generate solved alert
+        alerted_timestamp = datetime.now().timestamp() + 10
+        self.test_factory_instance.classify_error_alert(
+            test_err.code, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            alerted_timestamp,
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            "resolved msg", code
+        )
+
+        expected_alert = ValidUrlAlert(
+            self.test_node_name, 'resolved msg', 'INFO', alerted_timestamp,
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])

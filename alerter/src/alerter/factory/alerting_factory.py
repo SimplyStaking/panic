@@ -631,8 +631,6 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'warning_sent'][metric_name] = True
 
-    # TODO: warning_sent, critical_sent, error_sent must be used with the
-    #     : metric_name due to immutability.
     def classify_error_alert(
             self, error_code_to_detect: int,
             error_alert: Type[ErrorAlert],
@@ -645,10 +643,8 @@ class AlertingFactory(ABC):
         """
         This function attempts to raise an error alert with code
         'received_error_code' if 'received_error_code' = 'error_code_to_detect',
-        and raises an info alert that the error has been resolved otherwise.
-        If 'received_error_code' is None this function assumes that no errors
-        were raised by the monitors, thus it will raise an info alert indicating
-        that the error with code 'error_code_to_detect' has been resolved.
+        and raises an info alert that the error has been resolved otherwise,
+        provided that an error alert has already been sent.
         :param received_error_code: The code associated with the received error
         if any. If no errors are received this should be set to None.
         :param error_code_to_detect: The error code to detect in order to raise
@@ -669,8 +665,7 @@ class AlertingFactory(ABC):
         error_sent = self.alerting_state[parent_id][monitorable_id][
             'error_sent'][metric_name]
 
-        if error_sent and (received_error_code != error_code_to_detect or
-                           received_error_code is None):
+        if error_sent and received_error_code != error_code_to_detect:
             alert = error_solved_alert(
                 monitorable_name, resolved_message, Severity.INFO.value,
                 monitoring_timestamp, parent_id, monitorable_id
@@ -691,6 +686,8 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id][
                 'error_sent'][metric_name] = True
 
+    # TODO: warning_sent, critical_sent, error_sent must be used with the
+    #     : metric_name due to immutability.
     def classify_downtime_alert(
             self, current_went_down: Optional[float], config: Dict,
             went_down_at_alert: Type[DownAlert],
