@@ -315,8 +315,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
                 if current:
-                    self.alerting_factory \
-                        .classify_thresholded_alert_critical_reverse(
+                    self.alerting_factory.classify_thresholded_alert_reverse(
                         current['balance'], sub_config,
                         EthBalanceIncreasedAboveThresholdAlert,
                         EthBalanceDecreasedBelowThresholdAlert,
