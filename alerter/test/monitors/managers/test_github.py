@@ -744,7 +744,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 self.sent_configs_example_chain['config_id1']['parent_id'],
                 args[0].parent_id)
             self.assertEqual(self.sent_configs_example_chain['config_id1'][
-                'repo_name'] + '/', args[0].repo_name)
+                                 'repo_name'] + '/', args[0].repo_name)
             self.assertEqual(
                 str_to_bool(
                     self.sent_configs_example_chain['config_id1'][
@@ -784,7 +784,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 self.sent_configs_example_general['config_id2']['parent_id'],
                 args[0].parent_id)
             self.assertEqual(self.sent_configs_example_general['config_id2'][
-                'repo_name'] + '/', args[0].repo_name)
+                                 'repo_name'] + '/', args[0].repo_name)
             self.assertEqual(
                 str_to_bool(
                     self.sent_configs_example_general['config_id2'][
@@ -804,7 +804,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(new_configs_general['config_id5']['parent_id'],
                              args[0].parent_id)
             self.assertEqual(new_configs_general['config_id5'][
-                'repo_name'] + '/', args[0].repo_name)
+                                 'repo_name'] + '/', args[0].repo_name)
             self.assertEqual(
                 str_to_bool(new_configs_general['config_id5']['monitor_repo']),
                 args[0].monitor_repo)
@@ -888,9 +888,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id1']['process'].is_alive())
+                                'config_id1']['process'].is_alive())
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id2']['process'].is_alive())
+                                'config_id2']['process'].is_alive())
 
             # Send the updated configs with `monitor_repo = True`
             conf_id1_old_proc = self.test_manager.config_process_dict[
@@ -910,10 +910,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # started.
             self.assertFalse(conf_id1_old_proc.is_alive())
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id1']['process'].is_alive())
+                                'config_id1']['process'].is_alive())
             self.assertFalse(conf_id2_old_proc.is_alive())
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id2']['process'].is_alive())
+                                'config_id2']['process'].is_alive())
 
             # Send the updated configs with `monitor_repo = False`
             conf_id1_old_proc = self.test_manager.config_process_dict[
@@ -1068,9 +1068,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Assure that the processes have been started
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id1']['process'].is_alive())
+                                'config_id1']['process'].is_alive())
             self.assertTrue(self.test_manager.config_process_dict[
-                'config_id2']['process'].is_alive())
+                                'config_id2']['process'].is_alive())
 
             # Send the updated configs
             conf_id1_old_proc = self.test_manager.config_process_dict[
@@ -1282,7 +1282,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.config_process_dict['config_id1'][
-                        'component_name'],
+                         'component_name'],
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
                 'dead_processes': [],
@@ -1374,10 +1374,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'component_name': self.test_manager.name,
                 'running_processes':
                     [self.test_manager.config_process_dict['config_id2'][
-                        'component_name']],
+                         'component_name']],
                 'dead_processes':
                     [self.test_manager.config_process_dict['config_id1'][
-                        'component_name']],
+                         'component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
             }
             self.assertEqual(expected_output, json.loads(body))
@@ -1467,7 +1467,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'running_processes': [],
                 'dead_processes':
                     [self.test_manager.config_process_dict['config_id1'][
-                        'component_name'],
+                         'component_name'],
                      self.test_manager.config_process_dict['config_id2'][
                          'component_name']],
                 'timestamp': datetime(2012, 1, 1).timestamp(),
@@ -1521,9 +1521,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Check that that the processes have terminated
             self.assertFalse(self.test_manager.config_process_dict[
-                'config_id1']['process'].is_alive())
+                                 'config_id1']['process'].is_alive())
             self.assertFalse(self.test_manager.config_process_dict[
-                'config_id2']['process'].is_alive())
+                                 'config_id2']['process'].is_alive())
 
             # Initialise
             method_hb = pika.spec.Basic.Deliver(
@@ -1536,9 +1536,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             time.sleep(1)
 
             self.assertTrue(self.test_manager.config_process_dict['config_id1'][
-                'process'].is_alive())
+                                'process'].is_alive())
             self.assertTrue(self.test_manager.config_process_dict['config_id2'][
-                'process'].is_alive())
+                                'process'].is_alive())
 
             # Clean before test finishes
             self.test_manager.config_process_dict['config_id1'][
@@ -1586,21 +1586,25 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             args, _ = startup_mock.call_args
             self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
             self.assertEqual(self.github_repos_configs_example[
-                'Substrate Polkadot']['config_id1']['id'], args[0].repo_id)
+                                 'Substrate Polkadot']['config_id1']['id'],
+                             args[0].repo_id)
             self.assertEqual(self.github_repos_configs_example[
-                'Substrate Polkadot']['config_id1']['parent_id'],
-                args[0].parent_id)
+                                 'Substrate Polkadot']['config_id1'][
+                                 'parent_id'],
+                             args[0].parent_id)
             self.assertEqual(self.github_repos_configs_example[
-                'Substrate Polkadot']['config_id1']['repo_name'] + '/',
-                args[0].repo_name)
+                                 'Substrate Polkadot']['config_id1'][
+                                 'repo_name'] + '/',
+                             args[0].repo_name)
             self.assertEqual(
                 str_to_bool(self.github_repos_configs_example[
-                    'Substrate Polkadot']['config_id1']['monitor_repo']),
+                                'Substrate Polkadot']['config_id1'][
+                                'monitor_repo']),
                 args[0].monitor_repo)
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 self.github_repos_configs_example[
                     'Substrate Polkadot']['config_id1']['repo_name'] + '/'),
-                    args[0].releases_page)
+                args[0].releases_page)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

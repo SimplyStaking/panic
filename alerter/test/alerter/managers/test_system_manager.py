@@ -14,8 +14,10 @@ import pika.exceptions
 from freezegun import freeze_time
 
 from src.alerter.alerter_starters import start_system_alerter
+from src.alerter.alerters.system import SystemAlerter
+from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.system import SystemAlertersManager
-from src.configs.system_alerts import SystemAlertsConfig
+from src.configs.alerts.system import SystemAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import SYSTEM_ALERTER_NAME_TEMPLATE
@@ -23,10 +25,10 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
-    SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+    ALERTS_CONFIGS_ROUTING_KEY_GEN,
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, SYSTEM_ALERT_ROUTING_KEY,
     ALERT_EXCHANGE, TOPIC)
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import infinite_fn
 
 
@@ -231,7 +233,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         }
         self.chain_example_new = 'Substrate Polkadot'
         self.chains_routing_key = 'chains.Substrate.Polkadot.alerts_config'
-        self.general_routing_key = SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN
+        self.general_routing_key = ALERTS_CONFIGS_ROUTING_KEY_GEN
         self.test_exception = PANICException('test_exception', 1)
         self.systems_alerts_configs = {}
 
@@ -312,34 +314,6 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
-    @freeze_time("2012-01-01")
-    @mock.patch.object(multiprocessing, 'Process')
-    @mock.patch("src.alerter.managers.system.ComponentResetChains")
-    @mock.patch(
-        "src.alerter.managers.system.SystemAlertersManager._push_latest_data_to_queue_and_send")
-    def test_terminate_and_join_chain_alerter_processes_creates_alert(
-            self, mock_push_latest_data_to_queue_and_send,
-            mock_component_reset, mock_process) -> None:
-        type(mock_component_reset.return_value).alert_data = \
-            mock.PropertyMock(return_value={})
-
-        # Setting it as Data as we don't need to use it
-        self.test_manager._systems_alerts_configs[self.parent_id_1] = "data"
-        self.test_manager._parent_id_process_dict[self.parent_id_1] = \
-            {"chain": "chain_name",
-             "process": mock_process}
-
-        self.test_manager._terminate_and_join_chain_alerter_processes(
-            "chain_name")
-
-        mock_component_reset.assert_called_once_with(
-            "chain_name",
-            datetime.now().timestamp(),
-            self.parent_id_1,
-            type(self.test_manager).__name__
-        )
-        mock_push_latest_data_to_queue_and_send.assert_called_once()
-
     @mock.patch.object(SystemAlertersManager, "_process_ping")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
             self, mock_process_ping) -> None:
@@ -386,7 +360,7 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=SYS_ALERTERS_MAN_CONFIGS_ROUTING_KEY_GEN,
+                routing_key=ALERTS_CONFIGS_ROUTING_KEY_GEN,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
@@ -444,12 +418,15 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
     def test_create_and_start_alerter_process_stores_the_correct_process_info(
-            self, mock_init, mock_start) -> None:
+            self, mock_init, mock_start, mock_push_and_send) -> None:
         mock_start.return_value = None
         mock_init.return_value = self.dummy_process3
+        mock_push_and_send.return_value = None
         self.test_manager._parent_id_process_dict = \
             self.config_process_dict_example
 
@@ -468,10 +445,13 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.assertEqual(self.expected_output,
                          self.test_manager.parent_id_process_dict)
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_alerter_process_creates_the_correct_process(
-            self, mock_start) -> None:
+            self, mock_start, mock_push_and_send) -> None:
         mock_start.return_value = None
+        mock_push_and_send.return_value = None
 
         self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
@@ -485,35 +465,54 @@ class TestSystemAlertersManager(unittest.TestCase):
         self.assertEqual(self.chain_3, new_entry_process._args[1])
         self.assertEqual(start_system_alerter, new_entry_process._target)
 
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     def test_create_and_start_alerter_process_starts_the_process(
-            self, mock_create_logger) -> None:
+            self, mock_create_logger, mock_push_and_send, mock_start) -> None:
         mock_create_logger.return_value = self.dummy_logger
+        mock_push_and_send.return_value = None
+        mock_start.return_value = None
+
         self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
-        # We need to sleep to give some time for the alerter to be initialised,
-        # otherwise the process would not terminate
-        time.sleep(1)
+        mock_start.assert_called_once()
 
-        new_entry = self.test_manager.parent_id_process_dict[self.parent_id_3]
-        new_entry_process = new_entry['process']
-        self.assertTrue(new_entry_process.is_alive())
-
-        new_entry_process.terminate()
-        new_entry_process.join()
-
+    @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
+    @mock.patch("src.alerter.alerter_starters.create_logger")
+    def test_create_and_start_alerter_process_sends_a_component_reset_alert(
+            self, mock_create_logger, mock_push_and_send, mock_start) -> None:
+        mock_create_logger.return_value = self.dummy_logger
+        mock_push_and_send.return_value = None
+        mock_start.return_value = None
+
+        self.test_manager._create_and_start_alerter_process(
+            self.system_alerts_config, self.parent_id_3,
+            self.chain_3)
+
+        test_alert = ComponentResetAlert(
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_3),
+            datetime.now().timestamp(), SystemAlerter.__name__,
+            self.parent_id_3, self.chain_3)
+        mock_push_and_send.assert_called_once_with(test_alert.alert_data)
+
+    @mock.patch.object(SystemAlertersManager,
+                       "_create_and_start_alerter_process")
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_default_key(self, mock_ack,
                                                  mock_alerts_config,
-                                                 mock_start) -> None:
+                                                 mock_create_start) -> None:
         # This test will pass if the stored systems config does not change.
         # This would mean that the DEFAULT key was ignored, otherwise, it would
         # have been included as a new config.
-        mock_start.return_value = None
+        mock_create_start.return_value = None
         mock_ack.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
@@ -553,6 +552,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             )
         except Exception as e:
             self.fail("Test failed: {}".format(e))
+
+        self.assertEqual(2, mock_ack.call_count)
 
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -718,12 +719,15 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemAlertersManager,
                        "_create_and_start_alerter_process")
     def test_proc_configs_starts_new_alerters_for_new_configs_to_be_alerted_on(
-            self, startup_mock, mock_ack, mock_system_alerters_config) -> None:
+            self, startup_mock, mock_ack, mock_system_alerters_config,
+            mock_push_and_send) -> None:
 
         mock_system_alerters_config_1 = mock_system_alerters_config(
             parent_id=self.parent_id_1,
@@ -741,6 +745,7 @@ class TestSystemAlertersManager(unittest.TestCase):
             system_is_down=self.system_is_down_2)
         mock_ack.return_value = None
         startup_mock.return_value = None
+        mock_push_and_send.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -778,13 +783,16 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_proc_confs_term_and_starts_alerters_for_modified_confs_to_be_alerted_on(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_push_and_send) -> None:
 
         mock_ack.return_value = None
         mock_create_logger.return_value = self.dummy_logger
+        mock_push_and_send.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -867,12 +875,15 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_proc_configs_term_and_stops_alerters_for_removed_configs(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_push_and_send) -> None:
 
         mock_ack.return_value = None
+        mock_push_and_send.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         try:
             # Must create a connection so that the blocking channel is passed
@@ -942,13 +953,11 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch("src.alerter.managers.system.SystemAlertsConfig")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemAlertersManager,
-                       "_push_latest_data_to_queue_and_send")
-    @mock.patch.object(SystemAlertersManager,
                        "_create_and_start_alerter_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_alerter_with_the_correct_conf(
-            self, mock_terminate, mock_join, startup_mock, mock_push, mock_ack,
+            self, mock_terminate, mock_join, startup_mock, mock_ack,
             mock_system_alerters_config) -> None:
 
         mock_ack.return_value = None
@@ -1015,7 +1024,6 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mock_system_alerters_config_1, self.parent_id_1,
                 self.chain_1
             )
-            mock_push.assert_called_once()
 
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties,
@@ -1025,17 +1033,19 @@ class TestSystemAlertersManager(unittest.TestCase):
                 mock_system_alerters_config_2, self.parent_id_2,
                 self.chain_2
             )
-            self.assertEqual(2, mock_push.call_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_new_configs_with_missing_keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_push_and_send) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
         # case, and basic_ack must be called to ignore the message.
         mock_ack.return_value = None
+        mock_push_and_send.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -1075,14 +1085,17 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_modified_configs_with_missing_keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_push_and_send) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
         # raised in this case, and basic_ack must be called to ignore the
         # message.
         mock_ack.return_value = None
+        mock_push_and_send.return_value = None
         self.test_manager._systems_alerts_configs[self.parent_id_1] = \
             self.system_alerts_config
         self.test_manager._systems_alerts_configs[self.parent_id_2] = \
@@ -1129,7 +1142,65 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
+    @mock.patch.object(RabbitMQApi, "basic_nack")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_ignores_confs_if_ComponentResetAlert_fails(
+            self, mock_ack, mock_nack, mock_push_and_send) -> None:
+        # We will check whether the state is kept intact if a
+        # ComponentResetAlert fails in being delivered. Exceptions should never
+        # be raised in this case, and basic_nack must be called so the message
+        # is re-delivered.
+        mock_nack.return_value = None
+        mock_ack.return_value = None
+        mock_push_and_send.side_effect = [
+            None, MessageWasNotDeliveredException('test')
+        ]
+        try:
+            # Must create a connection so that the blocking channel is passed
+            self.test_manager.rabbitmq.connect()
+            blocking_channel = self.test_manager.rabbitmq.channel
+
+            # We will send new configs through both the existing and
+            # non-existing chain and general paths to make sure that all routes
+            # work as expected.
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.chains_routing_key)
+            method_general = pika.spec.Basic.Deliver(
+                routing_key=self.general_routing_key)
+            body_new_configs_general = json.dumps(
+                self.sent_configs_example_with_default_2)
+            body_new_configs_chain = json.dumps(
+                self.sent_configs_example_with_default)
+            properties = pika.spec.BasicProperties()
+
+            # This should start a process as normal
+            self.test_manager._process_configs(blocking_channel, method_general,
+                                               properties,
+                                               body_new_configs_general)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertTrue(
+                self.parent_id_2 in self.test_manager.systems_alerts_configs)
+
+            # This should fail to start a process as we will automate a
+            # MessageWasNotDeliveredException
+            self.test_manager._process_configs(blocking_channel, method_chains,
+                                               properties,
+                                               body_new_configs_chain)
+            self.assertEqual(1, mock_ack.call_count)
+            self.assertFalse(
+                self.parent_id_1 in self.test_manager.systems_alerts_configs)
+            self.assertEqual(1, mock_nack.call_count)
+
+            self.test_manager._terminate_and_join_chain_alerter_processes(
+                self.parent_id_2)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
     @freeze_time("2012-01-01")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1137,7 +1208,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack) -> None:
+            mock_ack, mock_push_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1146,6 +1217,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
+        mock_push_and_send.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1209,6 +1281,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1216,7 +1290,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack) -> None:
+            mock_ack, mock_push_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1225,6 +1299,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
+        mock_push_and_send.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1287,6 +1362,8 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -1294,7 +1371,7 @@ class TestSystemAlertersManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
             self, mock_terminate, mock_join, mock_start, mock_is_alive,
-            mock_ack) -> None:
+            mock_ack, mock_push_and_send) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
@@ -1303,6 +1380,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_start.return_value = None
         mock_join.return_value = None
         mock_terminate.return_value = None
+        mock_push_and_send.return_value = None
         try:
             self.test_manager._initialise_rabbitmq()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1366,14 +1444,18 @@ class TestSystemAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(SystemAlertersManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes(
-            self, send_hb_mock, mock_create_logger, mock_ack) -> None:
+            self, send_hb_mock, mock_create_logger, mock_ack,
+            mock_push_and_send) -> None:
         send_hb_mock.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
+        mock_push_and_send.return_value = None
         try:
             self.test_manager.rabbitmq.connect()
             blocking_channel = self.test_manager.rabbitmq.channel
@@ -1444,19 +1526,22 @@ class TestSystemAlertersManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(SystemAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
     @mock.patch.object(SystemAlertersManager, "_send_heartbeat")
     @mock.patch.object(SystemAlertersManager,
                        "_create_and_start_alerter_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     def test_process_ping_restarts_dead_processes_with_correct_info(
-            self, mock_alive, mock_join, startup_mock, send_hb_mock) -> None:
+            self, mock_alive, mock_join, startup_mock, send_hb_mock,
+            mock_push_and_send) -> None:
 
         send_hb_mock.return_value = None
         startup_mock.return_value = None
         mock_alive.return_value = False
         mock_join.return_value = None
-
+        mock_push_and_send.return_value = None
         try:
             self.test_manager.rabbitmq.connect()
 

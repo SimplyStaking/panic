@@ -15,6 +15,7 @@ from pika.exceptions import AMQPConnectionError
 from src.abstract.publisher_subscriber import (
     QueuingPublisherSubscriberComponent
 )
+from src.alerter.alert_severities import Severity
 from src.data_store.redis import Keys, RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -352,6 +353,10 @@ class AlertRouter(QueuingPublisherSubscriberComponent):
         return bool(severities_muted.get(severity, False))
 
     def is_chain_severity_muted(self, parent_id: str, severity: str) -> bool:
+        # INTERNAL Severities cannot be muted
+        if severity == Severity.INTERNAL.value:
+            return False
+
         self._logger.debug("Getting chain mute key")
         mute_alerts_key = Keys.get_chain_mute_alerts()
 

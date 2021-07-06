@@ -548,6 +548,9 @@ class TestSystemDataTransformer(unittest.TestCase):
 
     def test_load_state_successful_if_system_exists_in_redis_and_redis_online(
             self) -> None:
+        # Clean test db
+        self.redis.delete_all()
+
         # Save state to Redis first
         save_system_to_redis(self.redis, self.test_system)
 
@@ -586,8 +589,14 @@ class TestSystemDataTransformer(unittest.TestCase):
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
 
+        # Clean test db
+        self.redis.delete_all()
+
     def test_load_state_keeps_same_state_if_system_in_redis_and_redis_offline(
             self) -> None:
+        # Clean test db
+        self.redis.delete_all()
+
         # Save state to Redis first
         save_system_to_redis(self.redis, self.test_system)
 
@@ -617,6 +626,9 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(None, loaded_system.disk_io_time_seconds_in_interval)
         self.assertEqual(None, loaded_system.disk_io_time_seconds_total)
         self.assertEqual(None, loaded_system.last_monitored)
+
+        # Clean test db
+        self.redis.delete_all()
 
     def test_load_state_keeps_same_state_if_sys_not_in_redis_and_redis_online(
             self) -> None:
@@ -654,6 +666,9 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_disk_io_time_seconds_total,
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
+
+        # Clean test db
+        self.redis.delete_all()
 
     def test_load_state_keeps_same_state_if_system_not_in_redis_and_redis_off(
             self) -> None:
@@ -696,6 +711,9 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_disk_io_time_seconds_total,
                          loaded_system.disk_io_time_seconds_total)
         self.assertEqual(self.test_last_monitored, loaded_system.last_monitored)
+
+        # Clean test db
+        self.redis.delete_all()
 
     def test_update_state_raises_unexpected_data_exception_if_no_result_or_err(
             self) -> None:

@@ -1,6 +1,6 @@
 from src.alerter.alert_code import GithubAlertCode
 from src.alerter.alerts.alert import Alert
-from src.alerter.metric_code import GithubMetricCode
+from src.alerter.grouped_alerts_metric_code import GroupedGithubAlertsMetricCode
 
 
 class NewGitHubReleaseAlert(Alert):
@@ -11,7 +11,8 @@ class NewGitHubReleaseAlert(Alert):
             GithubAlertCode.NewGitHubReleaseAlert,
             "Repo: {} has a new release {} tagged {}.".format(
                 origin_name, release_name, tag_name), severity,
-            timestamp, parent_id, origin_id, GithubMetricCode.GithubRelease)
+            timestamp, parent_id, origin_id,
+            GroupedGithubAlertsMetricCode.GithubRelease)
 
 
 class CannotAccessGitHubPageAlert(Alert):
@@ -21,7 +22,7 @@ class CannotAccessGitHubPageAlert(Alert):
             GithubAlertCode.CannotAccessGitHubPageAlert,
             "Github page inaccessible {}.".format(origin_name), severity,
             timestamp, parent_id, origin_id,
-            GithubMetricCode.CannotAccessGithub)
+            GroupedGithubAlertsMetricCode.CannotAccessGithub)
 
 
 class GitHubPageNowAccessibleAlert(Alert):
@@ -31,4 +32,4 @@ class GitHubPageNowAccessibleAlert(Alert):
             GithubAlertCode.GitHubPageNowAccessibleAlert,
             "Github page accessible {}.".format(origin_name), severity,
             timestamp, parent_id, origin_id,
-            GithubMetricCode.CannotAccessGithub)
+            GroupedGithubAlertsMetricCode.CannotAccessGithub)

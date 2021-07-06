@@ -1,1 +1,2 @@
-node src/server.js
+#!/bin/bash
+npm run start

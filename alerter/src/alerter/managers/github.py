@@ -11,7 +11,8 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
-from src.alerter.alerts.internal_alerts import ComponentResetAllChains
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import GITHUB_ALERTER_NAME
@@ -83,7 +84,7 @@ class GithubAlerterManager(AlertersManager):
                     process.join()  # Just in case, to release resources
             heartbeat['timestamp'] = datetime.now().timestamp()
 
-            # Restart dead transformers
+            # Restart dead alerter
             if len(heartbeat['dead_processes']) != 0:
                 self._start_alerters_processes()
         except Exception as e:
@@ -106,36 +107,42 @@ class GithubAlerterManager(AlertersManager):
 
     def _start_alerters_processes(self) -> None:
         """
-        Start the system data transformer in a separate process if it is not
-        yet started or it is not alive. This must be done in case of a
-        restart of the manager.
+        Start the GitHub Alerter in a separate process if it is not yet started
+        or it is not alive. This must be done in case of a restart of the
+        manager.
         """
         if GITHUB_ALERTER_NAME not in self.alerter_process_dict or \
                 not self.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive():
+            """
+            We must clear out all the metrics which are found in REDIS.
+            Sending this alert to the alert router and then the data store will
+            achieve this.
+            """
+            alert = ComponentResetAlert(GITHUB_ALERTER_NAME,
+                                        datetime.now().timestamp(),
+                                        GithubAlerter.__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
+
             log_and_print("Attempting to start the {}.".format(
                 GITHUB_ALERTER_NAME), self.logger)
             github_alerter_process = Process(target=start_github_alerter,
                                              args=())
             github_alerter_process.daemon = True
             github_alerter_process.start()
-            self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
-                github_alerter_process
-
-            """
-            We must clear out all the metrics which are found in REDIS,
-            sending this alert to the data store will achieve this.
-            """
-            alert = ComponentResetAllChains(type(self).__name__,
-                                            datetime.now().timestamp(),
-                                            type(self).__name__,
-                                            type(self).__name__)
-            self._push_latest_data_to_queue_and_send(alert.alert_data)
+            self._alerter_process_dict[
+                GITHUB_ALERTER_NAME] = github_alerter_process
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:
             try:
+                # Empty the queue so that on restart we don't send multiple
+                # reset alerts. We are not sending the alert before starting
+                # a component, so that should be enough.
+                if not self.publishing_queue.empty():
+                    self.publishing_queue.queue.clear()
+
                 self._start_alerters_processes()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
@@ -160,11 +167,6 @@ class GithubAlerterManager(AlertersManager):
                           self.logger)
             process.terminate()
             process.join()
-            alert = ComponentResetAllChains(type(self).__name__,
-                                            datetime.now().timestamp(),
-                                            type(self).__name__,
-                                            type(self).__name__)
-            self._push_latest_data_to_queue_and_send(alert.alert_data)
 
         self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)

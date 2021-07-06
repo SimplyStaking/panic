@@ -1,17 +1,18 @@
-FROM node:12
+FROM node:14
 
 # Create app directory
 WORKDIR /opt/panic
 
-# Change directory, and copy all ui contents from the host to the container.
+# Change directory, and copy all installer contents from the host to the
+# container.
 WORKDIR ./ui
 COPY ./ui ./
 
 # RUN npm install
-RUN npm ci --only=production
+RUN npm install
 
 # Expose port
-EXPOSE 9000
+EXPOSE 3333
 
 # Tool which waits for dependent containers
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
